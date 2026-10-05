@@ -61,7 +61,7 @@
     store[ex] = next;
     persist();
     if (structural) editorKey = "";
-    tellModel(`${summary} The record is now version ${next.version}.`);
+    tellModel(`${summary} The model is now version ${next.version}.`);
     app.set({});
   }
 
@@ -76,14 +76,14 @@
 
   /** Draw the editor from the record. Only a change of rows, an example, an import or a restore redraws it. @param {any} rec */
   function renderEditor(rec) {
-    const key = `${app.state.example}|${rec.origin}|${["variables", "equations", "conditions", "assumptions"].map((k) => rec[k].map((/** @type {any} */ x) => x.id).join(",")).join("|")}|${rec.restored ?? ""}`;
+    const key = `${app.state.example}|${rec.origin}|${["variables", "equations", "conditions", "assumptions"].map((k) => rec[k].map((/** @type {any} */ x) => x.id).join(",")).join("|")}`;
     if (key === editorKey) return;
     editorKey = key;
     const q = ENGINE.quantities.quantities;
     const vars = rec.variables;
     const symbolOf = (/** @type {string} */ id) => vars.find((/** @type {any} */ v) => v.id === id)?.symbol ?? "";
     $("editor-body").innerHTML = [
-      `<p class="syntax">Each change makes a new version of the record. Equations use plain syntax, such as <code>rho*c_p*d(T,t) = k*d(T,x,x)</code>, or a LaTeX subset, such as <code>\\rho c_p \\frac{\\partial T}{\\partial t}</code>. Units use SI symbols, such as <code>W/(m^2*K)</code>. A lone degC is an absolute temperature; delta_degC is a difference.</p>`,
+      `<p class="syntax">Each change makes a new version of the model. Equations use plain syntax, such as <code>rho*c_p*d(T,t) = k*d(T,x,x)</code>, or a LaTeX subset, such as <code>\\rho c_p \\frac{\\partial T}{\\partial t}</code>. Units use SI symbols, such as <code>W/(m^2*K)</code>. A lone degC is an absolute temperature; delta_degC is a difference.</p>`,
       `<fieldset><legend>Purpose</legend><div class="grid">`,
       input("title", rec.title, "Title", "wide"),
       input("purpose.question", rec.purpose.question, "Research question", "wide"),
@@ -153,13 +153,13 @@
     const vrows = it.variables.map((/** @type {any} */ v) => `<tr><td>${ti(v.tex)}</td><td>${esc(v.meaning)}</td><td>${esc(v.kind)}${v.temperature ? `, ${esc(v.temperature)} temperature` : ""}${v.dimensionless ? `, ${esc(v.dimensionless)}` : ""}</td><td>${v.dimTex ? ti(v.dimTex) : '<span class="sev-error">unknown</span>'}</td><td class="num">${esc(v.value ?? "none")}</td><td>${v.pi ? "yes" : "no"}</td></tr>`).join("");
     const eqs = it.equations.map((/** @type {any} */ e) => `<div>${e.tex ? td(e.tex) : `<p class="sev-error">${esc(e.text)}</p>`}<p class="term-dims"><span class="ids">${esc(e.id)}</span> ${esc(e.kind)}${e.domainText ? `, ${esc(e.domainText)}` : ""}.${e.terms.length ? `</p><ul class="term-dims">${e.terms.map((/** @type {any} */ t) => `<li>${ti(t.tex)}: ${t.dimTex ? ti(t.dimTex) : "unknown dimension"}</li>`).join("")}</ul>` : "</p>"}</div>`).join("");
     const conds = it.conditions.map((/** @type {any} */ c) => `<li>${c.tex ? ti(c.tex) : esc(c.text)} at ${c.atTex ? ti(c.atTex) : esc(c.at)} <span class="ids">${esc(c.id)}, ${esc(c.kind)}</span></li>`).join("");
-    const counts = (it.model.conditionCount ?? []).map((/** @type {any} */ c) => `${esc(c.field)} has ${c.given} of ${c.needed} ${esc(c.kind)} conditions in ${esc(c.coordinate)}`).join(", ");
+    const counts = (it.model.conditionCount ?? []).map((/** @type {any} */ c) => `${esc(c.field)} needs ${c.needed} ${esc(c.kind)} condition${c.needed === 1 ? "" : "s"} in ${esc(c.coordinate)} and has ${c.given}`).join(", ");
     $("interpretation").innerHTML = [
       `<p><strong>Question.</strong> ${esc(it.purpose.question)}</p>`,
       `<p><strong>Quantity of interest:</strong> ${obs ? `${ti(obs.tex)}, ${esc(obs.meaning)}` : "none"}. <strong>Intended calculation:</strong> ${esc(calc?.name ?? "")}.</p>`,
       `<div class="scroll"><table class="data"><caption class="visually-hidden">Interpreted variables</caption><thead><tr><th scope="col">Symbol</th><th scope="col">Meaning</th><th scope="col">Kind</th><th scope="col">Dimension</th><th scope="col">Value in SI</th><th scope="col">Pi set</th></tr></thead><tbody>${vrows}</tbody></table></div>`,
       ...it.variables.filter((/** @type {any} */ v) => v.valueNote).map((/** @type {any} */ v) => `<p class="note">${esc(v.valueNote)}</p>`),
-      `<h4>Equations</h4>${eqs || '<p class="muted">None: the Finder uses the variable list only.</p>'}`,
+      `<h4>Equations</h4>${eqs || '<p class="muted">None. The Finder uses the Pi variables only.</p>'}`,
       `<h4>Conditions</h4>${conds ? `<ul class="plain-list">${conds}</ul>` : '<p class="muted">None.</p>'}`,
       `<p><strong>Geometry:</strong> ${esc(it.geometry.domain || "not stated")}. <strong>Coordinates:</strong> ${esc(it.geometry.coordinates || "not stated")}.</p>`,
       `<p><strong>Model type:</strong> ${esc(it.model.type)}.${counts ? ` <strong>Conditions:</strong> ${counts}.` : ""}</p>`,
@@ -202,7 +202,7 @@
     const cols = f.vars.map((/** @type {any} */ v) => v.tex);
     const rowNames = f.rows.map((/** @type {any} */ r) => (r.base === "Θ" ? "\\mathsf{\\Theta}" : `\\mathsf{${r.base}}`));
     $("finder-summary").innerHTML = [
-      `<p class="summary-line">${f.n} variables, rank ${f.r}: <strong>${f.m} independent group${f.m === 1 ? "" : "s"}</strong>${f.constraints.items.length ? `, of which ${f.constraints.free} can vary independently` : ""}.</p>`,
+      `<p class="summary-line">${f.n} variables, rank ${f.r}: <strong>${f.m} independent group${f.m === 1 ? "" : "s"}</strong>.${f.constraints.items.length ? ` A relation fixes ${f.m - f.constraints.free}, so only ${f.constraints.free} can vary.` : ""}</p>`,
       f.correlation.relation ? td(f.correlation.relation) : "",
       `<p class="note">${chip("evidence")} Buckingham Pi analysis gives the groups of this relation, not the function f. Data or a solved model must supply f (${sourceLink("mit-pi")}). The basis is not unique.</p>`,
       ...d.zeroNote.map((/** @type {string} */ z) => `<div class="callout warn"><p>${esc(z)}</p></div>`),
@@ -241,7 +241,7 @@
       f.r ? td(`D_R=${rep.DRtex},\\qquad \\det D_R=${rep.det}`) : "<p>Rank 0: no repeating variables.</p>",
       f.r ? `<p class="note">${chip("exact")} The determinant is not 0, so the columns are independent. Rows of D_R: ${esc(rep.DRrows.join(", "))}.</p>` : "",
     ].join("\n");
-    $("finder-equations").innerHTML = f.exponentEquations.length ? `<p>For each other variable ${ti("q")}, ${ti(`\\Pi_q=q\\,${rep.texs.map((/** @type {string} */ t, /** @type {number} */ j) => `${t}^{${rep.letters[j]}}`).join("\\,")}`)}. The table has one equation for each base dimension, in the order ${esc(f.rows.map((/** @type {any} */ r) => r.base).join(", "))}.</p>
+    $("finder-equations").innerHTML = f.exponentEquations.length ? `<p>For each Pi variable ${ti("q")} that is not a repeating variable, ${ti(`\\Pi_q=q\\,${rep.texs.map((/** @type {string} */ t, /** @type {number} */ j) => `${/[-+]/.test(t) ? `\\left(${t}\\right)` : t}^{${rep.letters[j]}}`).join("\\,")}`)}. The table has one equation for each base dimension, in the order ${esc(f.rows.map((/** @type {any} */ r) => r.base).join(", "))}.</p>
       <div class="scroll"><table class="data"><caption class="visually-hidden">Exponent equations</caption><thead><tr><th scope="col">Variable</th><th scope="col">Exponent equations</th><th scope="col">Solution (${esc(rep.letters.join(", "))})</th><th scope="col">Group</th></tr></thead><tbody>
       ${f.exponentEquations.map((/** @type {any} */ q) => `<tr><td>${ti(q.tex)}</td><td>${q.lines.map((/** @type {any} */ l) => ti(l.text)).join("<br>")}</td><td>${ti(`(${q.solutionTex.join(",")})`)}</td><td>${ti(q.group)}</td></tr>`).join("")}</tbody></table></div>` : "<p>No other variables.</p>";
 
@@ -256,14 +256,14 @@
     // Equivalent bases and constraints.
     const fam = f.familiar;
     $("finder-bases").innerHTML = [
-      fam ? `<p>${chip("exact")} The familiar basis ${esc(fam.groups.map(Model.groupLabel).join(", "))} is a product of powers of the repeating-variable basis. The columns of T give the exponents:</p>${td(`T=${fam.Ttex},\\qquad \\det T=${fam.det}`)}<ul class="plain-list">${fam.relations.map((/** @type {any} */ r) => `<li>${ti(`${r.group}=${r.combo || "1"}`)}</li>`).join("")}</ul>` : "<p>No familiar basis is complete for this variable set.</p>",
-      f.constraints.items.length ? `<p><strong>Constraints between inputs.</strong> Algebraically, ${f.constraints.algebraic} exponent vectors are independent. Physically, ${f.constraints.free} groups can vary independently:</p><ul class="plain-list">${f.constraints.items.map((/** @type {any} */ c) => `<li>${esc(c.id)}: <code>${esc(c.text)}</code>${c.monomial ? ` fixes ${ti(`${c.group}=${c.value}`)}` : ", not a power law: counted as one constraint"}.</li>`).join("")}</ul>` : "<p>The record states no constraint between the inputs of the Pi set.</p>",
+      fam && !fam.named ? `<p>No group has a familiar name, so the familiar basis is the repeating-variable basis.</p>` : fam ? `<p>${chip("exact")} The familiar basis ${esc(fam.groups.map(Model.groupLabel).join(", "))} is a product of powers of the repeating-variable basis. The columns of T give the exponents:</p>${td(`T=${fam.Ttex},\\qquad \\det T=${fam.det}`)}<ul class="plain-list">${fam.relations.map((/** @type {any} */ r) => `<li>${ti(`${r.group}=${r.combo || "1"}`)}</li>`).join("")}</ul>` : "<p>No familiar basis is complete for this variable set.</p>",
+      f.constraints.items.length ? `<p><strong>Relations between Pi variables.</strong> The ${f.constraints.algebraic} groups are algebraically independent, but only ${f.constraints.free} of them can vary:</p><ul class="plain-list">${f.constraints.items.map((/** @type {any} */ c) => `<li>${esc(c.id)}: ${c.tex ? ti(c.tex) : `<code>${esc(c.text)}</code>`}${c.monomial ? ` fixes ${ti(`${c.group}=${c.value}`)}` : ", not a power law, so it counts as one relation"}.</li>`).join("")}</ul>` : "<p>The model states no relation between the Pi variables.</p>",
     ].join("\n");
     $("finder-needs").innerHTML = `<p>Before a physical correlation, supply these items:</p><ul class="plain-list">
       <li>data or a solved model for the function f over the range of each group</li>
       <li>the geometry and the definition of each reference length${d.interp.geometry.domain ? ` (now: ${esc(d.interp.geometry.domain)})` : ""}</li>
       <li>the statement that the quantity of interest is a local or a mean value</li>
-      <li>the type of boundary condition, such as wall temperature or wall heat flux${d.interp.conditions.length ? "" : " (the record has no conditions)"}</li>
+      <li>the type of boundary condition, such as wall temperature or wall heat flux${d.interp.conditions.length ? "" : " (the model has no conditions)"}</li>
       <li>the reference temperature of the properties, and all further physics that adds variables</li></ul>
       <p class="note">${chip("evidence")} The groups do not specify a universal relation. Geometry, conditions and more physics can add inputs (${sourceLink("spec-5")}).</p>`;
   }
@@ -276,8 +276,8 @@
     const brings = tool === "nondim"
       ? ["scale suggestions with their mechanisms", "the dimensionless variables and their inverses", "the derivative transformations", "each equation and condition in dimensionless form", "an exact reverse substitution"]
       : ["1D diagrams and 2D slices with linear or logarithmic axes", "layers for balances, approximation error, stability and bifurcations", "the inspection of a point, with its dimensional values"];
-    $(`tool-${tool}`).innerHTML = `<div class="callout"><p><strong>The ${esc(Model.TOOLS[tool])} arrives in piece ${piece} of the build plan.</strong> It will read this same model record.</p><p>It brings:</p><ul class="plain-list">${brings.map((/** @type {string} */ b) => `<li>${esc(b)}</li>`).join("")}</ul></div>
-      <h3>This record now</h3>${needs.length ? `<p>${chip("unresolved")} Before it can run on this record, fix these checks:</p><ul class="issue-list">${needs.map((/** @type {any} */ i) => `<li>${esc(i.message)}<span class="next">Next: ${esc(i.next)}</span></li>`).join("")}</ul>` : `<p>The record passes the checks that the ${esc(Model.TOOLS[tool])} needs.</p>`}`;
+    $(`tool-${tool}`).innerHTML = `<div class="callout"><p><strong>Piece ${piece} of the build plan adds the ${esc(Model.TOOLS[tool])}.</strong> It will read this same model.</p><p>It adds:</p><ul class="plain-list">${brings.map((/** @type {string} */ b) => `<li>${esc(b)}</li>`).join("")}</ul></div>
+      <h3>This model now</h3>${needs.length ? `<p>${chip("unresolved")} Before it can run on this model, fix these checks:</p><ul class="issue-list">${needs.map((/** @type {any} */ i) => `<li>${esc(i.message)}<span class="next">Next: ${esc(i.next)}</span></li>`).join("")}</ul>` : `<p>The record passes the checks that the ${esc(Model.TOOLS[tool])} needs.</p>`}`;
   }
 
   /** @param {any} d @param {Record<string, any>} state */
@@ -376,7 +376,7 @@
       execute: async (/** @type {any} */ input = {}) => {
         if (!Array.isArray(input.variables)) {
           const f = app.derived.finder;
-          if (!f || !f.ready) return out({ error: "The current record has no Finder result. Confirm its interpretation, or pass a variable list." });
+          if (!f || !f.ready) return out({ error: "The current model has no Finder result. Confirm its interpretation, or pass a variable list." });
           return out(summary(f));
         }
         const vars = input.variables.slice(0, 40).map((/** @type {any} */ v, /** @type {number} */ i) => R.variable({ id: `v${i + 1}`, symbol: String(v.symbol ?? ""), dimension: String(v.dimension ?? ""), unit: String(v.unit ?? ""), quantity: String(v.quantity ?? ""), kind: "parameter", domain: "positive", pi: true }));
@@ -435,7 +435,7 @@
       if (next !== rec) store[ex] = { ...next, origin: ex };
       persist();
       editorKey = "";
-      tellModel(next === rec ? "The record already holds the example." : `Restored the example as version ${next.version}. Version ${rec.version} stays in the history.`);
+      tellModel(next === rec ? "The model already holds the example." : `Restored the example as version ${next.version}. Version ${rec.version} stays in the history.`);
       app.set({});
     });
     $("save-model").addEventListener("click", () => {

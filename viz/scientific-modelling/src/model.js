@@ -93,21 +93,24 @@
       status: confirmed ? "confirmed" : "proposed", inputs: [] });
     for (const e of interp.equations) {
       const bad = e.issues.filter((c) => c !== "absolute-temperature-scale");
-      add({ id: `r-eq-${e.id}`, kind: "equation-check", title: e.ast === null && !e.plain ? `Equation ${e.id} cannot be read.` : bad.length ? `Equation ${e.id} fails its dimension check.` : `Equation ${e.id} is dimensionally consistent: every term has dimension ${e.dim ?? "?"}.`,
+      const undef = interp.issues.filter((i) => i.code === "undefined-symbol" && i.subject[0] === e.id).map((i) => i.subject[1]);
+      add({ id: `r-eq-${e.id}`, kind: "equation-check", title: !e.plain ? `The page cannot read equation ${e.id}.` : undef.length ? `The page cannot check equation ${e.id}, because ${undef.join(", ")} ${undef.length > 1 ? "are" : "is"} not in the variable table.` : bad.length ? `Equation ${e.id} fails its dimension check.` : `Equation ${e.id} is dimensionally consistent: every term has dimension ${e.dim ?? "?"}.`,
         status: bad.length || !e.plain ? "unresolved" : "exact", inputs: [e.id, ...e.symbols.map((s) => interp.variables.find((v) => v.symbol === s)?.id).filter(Boolean)], steps: [], evidence: ["spec-3"], current: true });
     }
     for (const c of interp.conditions) {
       const bad = c.issues.filter((x) => x !== "absolute-temperature-scale");
       if (!c.plain) continue;
-      add({ id: `r-eq-${c.id}`, kind: "equation-check", title: bad.length ? `Condition ${c.id} fails its dimension check.` : `Condition ${c.id} is dimensionally consistent.`,
+      const undef = interp.issues.filter((i) => i.code === "undefined-symbol" && i.subject[0] === c.id).map((i) => i.subject[1]);
+      add({ id: `r-eq-${c.id}`, kind: "equation-check", title: undef.length ? `The page cannot check condition ${c.id}, because ${undef.join(", ")} ${undef.length > 1 ? "are" : "is"} not in the variable table.` : bad.length ? `Condition ${c.id} fails its dimension check.` : `Condition ${c.id} is dimensionally consistent.`,
         status: bad.length ? "unresolved" : "exact", inputs: [c.id], evidence: ["spec-3"], current: true });
     }
     for (const cc of interp.model.conditionCount ?? []) {
-      add({ id: `r-count-${cc.field}-${cc.coordinate}`, kind: "condition-count", title: `${cc.field} needs ${cc.needed} ${cc.kind} condition${cc.needed === 1 ? "" : "s"} in ${cc.coordinate}, and the record gives ${cc.given}.`,
+      add({ id: `r-count-${cc.field}-${cc.coordinate}`, kind: "condition-count", title: `${cc.field} needs ${cc.needed} ${cc.kind} condition${cc.needed === 1 ? "" : "s"} in ${cc.coordinate}, ${cc.given === cc.needed ? "and the model gives" : cc.given < cc.needed ? "but the model gives only" : "but the model gives"} ${cc.given}.`,
         status: cc.given === cc.needed ? "exact" : "unresolved", inputs: interp.conditions.map((c) => c.id), evidence: ["spec-3"], current: true });
     }
     for (const d of interp.definitionChecks) {
-      add({ id: `r-def-${d.id}`, kind: "definition-check", title: d.ok ? `The values satisfy ${d.text} exactly (${d.left} = ${d.right} in SI units).` : `The values do not satisfy ${d.text}: ${d.left} and ${d.right} in SI units.`,
+      const text = F.plainLabel(d.text, interp.variables);
+      add({ id: `r-def-${d.id}`, kind: "definition-check", title: d.ok ? `The values satisfy ${text} exactly: ${d.left} = ${d.right} in SI units.` : `The values do not satisfy ${text}. The two sides are ${d.left} and ${d.right} in SI units.`,
         status: d.ok ? "exact" : "unresolved", inputs: [d.id], evidence: ["spec-3"], current: true });
     }
     if (finder && finder.ready) {
@@ -120,11 +123,11 @@
             tex: `${g.tex}=${nm.tex}`, status: isConfirmed ? "confirmed" : "proposed", inputs: g.contains, steps: ["s-pi-familiar"], evidence: [nm.source], group: g.id, name: nm.id, key: g.key });
         }
       });
-      if (finder.familiar) add({ id: "r-basis", kind: "basis", title: `The familiar basis ${finder.familiar.groups.map(groupLabel).join(", ")} is equivalent to the direct basis: det T = ${finder.familiar.det}.`,
+      if (finder.familiar) add({ id: "r-basis", kind: "basis", title: `The familiar basis ${finder.familiar.groups.map(groupLabel).join(", ")} is equivalent to the repeating-variable basis: det T = ${finder.familiar.det}.`,
         status: "exact", inputs: piInputs, steps: ["s-pi-familiar"], evidence: ["spec-5"] });
       if (finder.constraints.items.length) {
         const fixed = finder.m - finder.constraints.free;
-        add({ id: "r-free", kind: "constraints", title: `${finder.constraints.free} of the ${finder.m} groups can vary independently. ${finder.constraints.items.length === 1 ? "The relation" : `The ${finder.constraints.items.length} relations`} ${finder.constraints.items.map((c) => c.text).join(", ")} ${finder.constraints.items.length === 1 ? "fixes" : "fix"} ${fixed} group${fixed === 1 ? "" : "s"}.`,
+        add({ id: "r-free", kind: "constraints", title: `The ${finder.m} groups are algebraically independent, but only ${finder.constraints.free} of them can vary. ${finder.constraints.items.length === 1 ? "The relation" : `The ${finder.constraints.items.length} relations`} ${finder.constraints.items.map((c) => c.label).join(", ")} ${finder.constraints.items.length === 1 ? "fixes" : "fix"} ${fixed} group${fixed === 1 ? "" : "s"}.`,
           status: "exact", inputs: [...piInputs, ...finder.constraints.items.map((c) => c.id)], steps: ["s-pi-constraints"], evidence: ["mit-pi"] });
       }
       if (ref) {
@@ -150,7 +153,7 @@
       if (c.ready || (!c.available && !c.intended)) continue;
       const why = c.blockedBy.map((id) => interp.issues.find((i) => i.id === id)).filter(Boolean);
       const unsupported = why.some((i) => i.code === "unsupported-analysis");
-      add({ id: `r-calc-${c.id}`, kind: "calculation", title: `${c.name}: ${unsupported ? "not supported for this model" : !c.available ? `arrives in piece ${c.piece}` : "blocked"}${why.length && !(why.length === 1 && why[0].code === "planned-analysis") ? `. Failed check: ${why.map((i) => i.message).join(" ")}` : "."}`,
+      add({ id: `r-calc-${c.id}`, kind: "calculation", title: `${c.name}: ${unsupported ? "not supported for this model" : !c.available ? `piece ${c.piece} of the build plan adds it` : "blocked"}${why.length && !(why.length === 1 && why[0].code === "planned-analysis") ? `. Failed check: ${why.map((i) => i.message).join(" ")}` : "."}`,
         status: "unresolved", inputs: [], next: why[0]?.next ?? (c.available ? "" : "Use the Finder now."), current: true });
     }
 
@@ -162,7 +165,7 @@
     const zeroNote = zero.length && finder.repeating.complete ? zero.map((e) => {
       const g = finder.groups.find((x) => x.contains.includes(e.id));
       const exp = g ? Number(Object.entries(g.exps).find(([id]) => id === e.id)?.[1] ?? 0) : 0;
-      return `${e.label} cannot be a reference scale: ${e.reason}. The Finder uses ${finder.repeating.labels.join(", ")} instead. ${e.label} now appears only in ${g ? g.label : "one group"}${exp > 0 ? `, with a positive exponent. Thus ${g?.names[0] ? g.names[0].id : "this group"} = 0 is a valid value` : ""}. The interpretation changes: no group uses ${e.label} as a scale.`;
+      return `${e.label} cannot be a reference scale: ${e.reason}. The Finder uses ${finder.repeating.labels.join(", ")} instead. ${e.label} now appears only in ${g ? g.label : "one group"}${exp > 0 ? `, with a positive exponent. Thus ${g?.names[0] ? g.names[0].id : "this group"} = 0 is a valid value` : ""}. Thus no group uses ${e.label} as a scale.`;
     }) : [];
     const basisGroups = !finder || !finder.ready ? [] : state.basis === "direct" ? finder.groups : state.basis === "kernel" ? finder.kernel : (finder.familiar ? finder.familiar.groups : finder.groups);
 

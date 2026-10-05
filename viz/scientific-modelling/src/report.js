@@ -21,9 +21,13 @@
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
   const words = (n) => NUMBER_WORDS[n] ?? String(n);
-  /** Spoken text from record text: no symbols that the narration may not hold, subscripts read as plain words. */
-  const say = (text) => String(text ?? "").replace(/_\{?([A-Za-z0-9∞]+)\}?/g, " $1").replace(/[$\\`*#|<>×%&≈]/g, " ")
+  const SPOKEN = { "ν": "nu", "μ": "mu", "ρ": "rho", "α": "alpha", "Δ": "delta", "θ": "theta", "λ": "lambda", "∞": "infinity", "−": "minus", "=": "equals", "/": "over" };
+  /** Spoken text from model text: Greek letters and signs as words, no symbols that the narration may not hold. */
+  const say = (text) => String(text ?? "").replace(/_\{?([A-Za-z0-9∞]+)\}?/g, " $1").replace(/[νμραΔθλ∞−=/]/g, (c) => ` ${SPOKEN[c]} `).replace(/:/g, ",").replace(/[$\\`*#|<>×%&≈]/g, " ")
     .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/g, "").replace(/\s+/g, " ").trim();
+  /** "1 equation", "2 equations", "no equations", with the number as a word. */
+  const n = (k, one, many) => (k === 0 ? `no ${many}` : `${words(k)} ${k === 1 ? one : many}`);
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
   /** A result line: its status, its text, its inputs and whether a later edit invalidated it. */
   function resultLine(r) {
@@ -31,16 +35,34 @@
     const stale = r.valid ? "" : ` _Invalidated by the change of ${r.invalidatedBy.join(", ")}._`;
     return `- ${status(r.status)}: ${cell(r.title)}${tex}${r.tolerance ? ` Tolerance: ${r.tolerance}.` : ""}${r.next ? ` Next: ${r.next}` : ""}${stale}`;
   }
-  /** The spoken name of a group: its familiar name, or its place in the list. */
-  function spokenGroup(g, i) {
+  /** The spoken name of a group: its familiar name, or the group of its one variable that is not repeating. */
+  function spokenGroup(g, vars = [], repeating = []) {
+    if (g.fixed) return "the group that the relation fixes at one";
     const nm = (g.confirmed && g.names.find((x) => x.id === g.confirmed)) || g.names[0];
-    if (!nm) return `group ${words(i + 1)}`;
-    return `the ${nm.name.split(",")[0]}${nm.power < 0 ? " to the power minus one" : ""}`;
+    if (!nm) {
+      const own = vars.find((v) => v.id === g.contains.find((id) => !repeating.includes(id)));
+      return own ? `the group of the ${say(own.meaning.split(",")[0]).toLowerCase()}` : "a group with no familiar name";
+    }
+    return nm.power < 0 ? `the reciprocal of the ${nm.name.split(",")[0]}` : `the ${nm.name.split(",")[0]}`;
+  }
+  /** Spoken names of a list of groups; a name that occurs twice adds the variable that makes the groups differ. */
+  function spokenGroups(groups, vars, repeating = []) {
+    const names = groups.map((g) => spokenGroup(g, vars, repeating));
+    return names.map((nm, i) => {
+      if (names.filter((x) => x === nm).length < 2) return nm;
+      const others = groups.filter((g, j) => j !== i && names[j] === nm).flatMap((g) => g.contains);
+      const own = groups[i].contains.find((id) => !others.includes(id));
+      const v = vars.find((x) => x.id === own);
+      return v ? `${nm} with the ${v.meaning.toLowerCase()}` : nm;
+    });
   }
   /** A spoken list in short sentences: "A, B and C." or "The first two are A and B. The others are C and D." */
   function spokenList(names) {
     const and = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}` : xs[0] ?? "");
-    return names.length <= 3 ? `In order, they are ${and(names)}.` : `The first two are ${and(names.slice(0, 2))}. The others are ${and(names.slice(2))}.`;
+    const one = `In order, they are ${and(names)}.`;
+    if (names.length <= 3 && one.split(" ").length <= 22) return one;
+    const head = names.length <= 3 ? 1 : 2;
+    return `${head === 1 ? `The first is ${names[0]}` : `The first two are ${and(names.slice(0, 2))}`}. ${names.length - head === 1 ? `The other is ${names[head]}` : `The others are ${and(names.slice(head))}`}.`;
   }
 
   /** @param {Record<string, any>} state @param {any} d @param {any} data */
@@ -59,13 +81,26 @@
         title: `The question: ${d.title}`,
         body: [
           `**Question.** ${cell(it.purpose.question)}`, "",
-          `**Model record:** ${cell(d.title)}, ${version}.`,
+          `**Model:** ${cell(d.title)}, ${version}.`,
           `**Quantity of interest:** ${obs ? `${m(obs.tex)} (${cell(obs.meaning)})` : "not chosen"}.`,
           `**Intended calculation:** ${cell(it.calcs.find((c) => c.intended)?.name ?? "")}.`,
           `**Tool:** ${d.toolName}. **Model type:** ${it.model.type}.`, "",
           `**Interpretation:** ${status(d.confirmed ? "confirmed" : "proposed")}.`,
         ].join("\n"),
-        narration: `This report follows one model record, ${say(d.title)}, at version ${d.version}. ${obs ? `The quantity of interest is the ${say(obs.meaning).toLowerCase()}.` : "The record names no quantity of interest."} ${d.confirmed ? "The researcher confirmed its interpretation." : "Its interpretation is not confirmed yet."}`,
+        narration: `This report follows version ${d.version} of one model. Its title is ${say(d.title)}. ${obs ? `The quantity of interest is the ${say(obs.meaning.split(",")[0]).toLowerCase()}.` : "The model names no quantity of interest."} ${d.confirmed ? "The researcher confirmed its interpretation." : "Its interpretation is not confirmed yet."}`,
+      },
+      {
+        title: "Hand calculation 1: physical set-up and assumptions",
+        body: [
+          `**Geometry:** ${cell(it.geometry.domain || "not stated")}. **Coordinates:** ${cell(it.geometry.coordinates || "not stated")}. **Interfaces:** ${cell(it.geometry.interfaces || "not stated")}.`, "",
+          "**Assumptions:**", "",
+          ...(it.assumptions.length ? it.assumptions.map((a) => `- ${a.id} (${a.kind}): ${cell(a.text)}${a.source ? ` Source: ${sources[a.source] ? `[${cell(sources[a.source].title)}](${sources[a.source].url})` : a.source}.` : ""}`) : ["- None stated."]), "",
+          "**Equations:**", "",
+          ...(it.equations.length ? it.equations.map((e) => `- ${e.id} (${e.kind}): ${e.tex ? m(e.tex) : `\`${cell(e.text)}\``}${e.domainText ? `, ${cell(e.domainText)}` : ""}${e.terms.length ? `. Term dimensions: ${e.terms.map((t) => `${m(t.tex)}: ${t.dimTex ? m(t.dimTex) : "unknown"}`).join(", ")}` : ""}.`) : ["- None. The Finder uses the Pi variables only."]), "",
+          "**Conditions:**", "",
+          ...(it.conditions.length ? it.conditions.map((c) => `- ${c.id} (${c.kind}): ${c.tex ? m(c.tex) : `\`${cell(c.text)}\``} at ${c.atTex ? m(c.atTex) : cell(c.at)}.`) : ["- None."]),
+        ].join("\n"),
+        narration: `The set-up lists the geometry, ${n(it.assumptions.length, "assumption", "assumptions")}, ${n(it.equations.length, "equation", "equations")} and ${n(it.conditions.length, "condition", "conditions")}. Each assumption names its source.`,
       },
       {
         title: "Hand calculation 2: variables, dimensions and units",
@@ -75,26 +110,13 @@
           ...it.variables.map((v) => `| ${v.id} | ${m(v.tex)} | ${cell(v.meaning)} | ${v.kind}${v.temperature ? `, ${v.temperature} temperature` : ""}${v.dimensionless ? `, ${v.dimensionless}` : ""} | ${cell(v.unit || "none")} | ${v.dimTex ? m(v.dimTex) : "unknown"} | ${cell(v.value ?? "none")} | ${v.pi ? "yes" : "no"} |`),
           ...it.variables.filter((v) => v.valueNote).map((v) => `\n${cell(v.valueNote)}`),
         ].join("\n"),
-        narration: `The record has ${words(it.variables.length)} variables. ${words(it.variables.filter((v) => v.pi).length)} of them form the Pi set. The table gives the unit, the dimension and the value in SI units of each variable.`,
-      },
-      {
-        title: "Hand calculation 1: physical set-up and assumptions",
-        body: [
-          `**Geometry:** ${cell(it.geometry.domain || "not stated")}. **Coordinates:** ${cell(it.geometry.coordinates || "not stated")}. **Interfaces:** ${cell(it.geometry.interfaces || "not stated")}.`, "",
-          "**Assumptions:**", "",
-          ...(it.assumptions.length ? it.assumptions.map((a) => `- ${a.id} (${a.kind}): ${cell(a.text)}${a.source ? ` Source: ${sources[a.source] ? `[${cell(sources[a.source].title)}](${sources[a.source].url})` : a.source}.` : ""}`) : ["- None stated."]), "",
-          "**Equations:**", "",
-          ...(it.equations.length ? it.equations.map((e) => `- ${e.id} (${e.kind}): ${e.tex ? m(e.tex) : `\`${cell(e.text)}\``}${e.domainText ? `, ${cell(e.domainText)}` : ""}${e.terms.length ? `. Term dimensions: ${e.terms.map((t) => `${m(t.tex)}: ${t.dimTex ? m(t.dimTex) : "unknown"}`).join(", ")}` : ""}.`) : ["- None: the Finder uses the variable list only."]), "",
-          "**Conditions:**", "",
-          ...(it.conditions.length ? it.conditions.map((c) => `- ${c.id} (${c.kind}): ${c.tex ? m(c.tex) : `\`${cell(c.text)}\``} at ${c.atTex ? m(c.atTex) : cell(c.at)}.`) : ["- None."]),
-        ].join("\n"),
-        narration: `The set-up lists the geometry, ${words(it.assumptions.length)} assumptions, ${words(it.equations.length)} equations and ${words(it.conditions.length)} conditions. Each assumption names its source.`,
+        narration: `The model has ${n(it.variables.length, "variable", "variables")}. ${it.variables.every((v) => v.pi) ? "All of them are Pi variables." : `${cap(n(it.variables.filter((v) => v.pi).length, "of them is a Pi variable", "of them are Pi variables"))}.`} The table gives the unit, the dimension and the value in SI units of each variable.`,
       },
       {
         title: errors.length ? `Checks before analysis: ${count(errors.length, "failed check", "failed checks")}` : "Checks before analysis: no failed check",
         body: it.issues.length ? it.issues.map((i) => `- **${i.severity}** ${cell(i.message)} **Next:** ${cell(i.next)}${i.blocks.length ? ` Blocks: ${i.blocks.join(", ")}.` : ""}`).join("\n")
           : "The dimension check of every term, the units, the conditions, the closure and the domains pass. A dimensional check does not establish physical validity.",
-        narration: errors.length ? `The checks before analysis found ${words(errors.length)} errors. Each one names the next useful action and the calculations that it blocks. Calculations that do not read the failed input still run.` : "The checks before analysis found no error. A dimensional check does not establish physical validity.",
+        narration: errors.length ? `The checks before analysis found ${n(errors.length, "error", "errors")}. Each one names the next useful action and the calculations that it blocks. Calculations that do not read the failed input still run.` : "The checks before analysis found no error. A dimensional check does not establish physical validity.",
       },
     ];
 
@@ -119,13 +141,13 @@
         body: [`Exact rational row operations. Rows are named by position.`, "",
           ...f.rref.steps.map((s) => `${s.n}. ${m(s.tex)}: ${cell(s.reason)}\n\n   ${dm(s.matrixTex)}`),
           "", `Reduced row echelon form, with pivots in the columns ${f.rref.pivots.join(", ") || "none"}:`, "", dm(`\\operatorname{rref}(D)=${f.rref.Rtex}`)].join("\n"),
-        narration: `The row reduction takes ${words(f.rref.steps.length)} exact steps. Each step names its reason. The pivots give the rank.`,
+        narration: `The row reduction takes ${n(f.rref.steps.length, "exact step", "exact steps")}. Each step names its reason. The number of pivots is the rank.`,
       });
       method.push({
         title: `Hand calculation 3: rank ${f.r} and a kernel basis of ${f.m} vectors`,
         body: [`The rank is ${f.r}, so ${f.n} − ${f.r} = ${f.m} independent groups exist. The free columns ${f.rref.free.join(", ") || "none"} give the row-reduced kernel basis:`, "",
           ...f.kernel.map((g) => `- ${m(g.tex)}`), "", "This basis is not unique. The repeating-variable method below gives another basis of the same space."].join("\n"),
-        narration: `The rank is ${words(f.r)}. Thus the variable set has ${words(f.m)} independent groups. The basis is not unique.`,
+        narration: `The rank is ${words(f.r)}. Thus the Pi variables give ${n(f.m, "independent group", "independent groups")}. The basis is not unique.`,
       });
       method.push({
         title: `Hand calculation 4: repeating variables ${f.repeating.labels.join(", ")}`,
@@ -142,10 +164,10 @@
       });
       method.push({
         title: "Hand calculation 4: exponent equations",
-        body: [`For each other variable ${m("q")}, ${m(`\\Pi_q=q\\,${f.repeating.texs.map((t, k) => `${t}^{${f.repeating.letters[k]}}`).join("\\,")}`)}. The table has one equation for each base dimension, in the order ${R0}.`, "",
+        body: [`For each Pi variable ${m("q")} that is not a repeating variable, ${m(`\\Pi_q=q\\,${f.repeating.texs.map((t, k) => `${/[-+]/.test(t) ? `\\left(${t}\\right)` : t}^{${f.repeating.letters[k]}}`).join("\\,")}`)}. The table has one equation for each base dimension, in the order ${R0}.`, "",
           `| Variable | Exponent equations | Solution (${f.repeating.letters.join(", ")}) | Group |`, "| --- | --- | --- | --- |",
           ...f.exponentEquations.map((q) => `| ${m(q.tex)} | ${q.lines.map((l) => m(l.text)).join(", ")} | ${m(`(${q.solutionTex.join(",")})`)} | ${m(q.group)} |`)].join("\n"),
-        narration: `For each other variable, the Finder solves ${words(f.rows.length)} exponent equations exactly. Each solution gives one group.`,
+        narration: `For each Pi variable that is not a repeating variable, the Finder solves ${n(f.rows.length, "exponent equation", "exponent equations")} exactly. Each solution gives one group.`,
       });
       method.push({
         title: "Numerical procedure: none",
@@ -163,7 +185,7 @@
           const names = g.names.map((nm) => `${m(nm.tex)} (${cell(nm.name)}, ${g.confirmed === nm.id ? STATUS.confirmed : STATUS.proposed})`).join(" or ");
           return `- ${m(`\\Pi_{${i + 1}}=${g.tex}`)}${names ? `: matches ${names}` : ": no familiar name"}${g.meaning ? `. Meaning kept: ${g.meaning}` : ""}${g.absolute.length ? `. Uses the absolute temperatures ${g.absolute.join(", ")}: values in K` : ""}.`;
         }).join("\n"),
-        narration: `The repeating-variable basis has ${words(f.m)} groups. ${spokenList(f.groups.map(spokenGroup))} A recognized name is a proposed interpretation until the researcher confirms it.`,
+        narration: `The repeating-variable basis has ${n(f.m, "group", "groups")}. ${spokenList(spokenGroups(f.groups, it.variables, f.repeating.ids))} A recognized name is a proposed interpretation until the researcher confirms it.`,
       });
       if (f.familiar) {
         results.push({
@@ -172,21 +194,22 @@
             "", `Each familiar group is a product of powers of the repeating-variable groups. The columns of ${m("T")} give the exponents:`, "",
             dm(`T=${f.familiar.Ttex},\\qquad \\det T=${f.familiar.det}`),
             "", ...f.familiar.relations.map((rl) => `- ${m(`${rl.group}=${rl.combo || "1"}`)}`)].join("\n"),
-          narration: `An equivalent basis uses familiar groups. ${spokenList(f.familiar.groups.map(spokenGroup))} The exponent matrix between the two bases has a determinant that is not zero, so both bases span the same groups.`,
+          narration: f.familiar.named ? `An equivalent basis uses familiar groups. ${spokenList(spokenGroups(f.familiar.groups, it.variables))} The determinant of the exponent matrix is not zero. Thus each group of one basis is a product of powers of the groups of the other basis.`
+            : "No group has a familiar name, so the familiar basis is the repeating-variable basis.",
         });
       }
       results.push({
         title: "The dimensionless relation and what it still needs",
         body: [f.correlation.relation ? dm(f.correlation.relation) : "No quantity of interest.", "",
-          f.constraints.items.length ? `Constraints between inputs: ${f.constraints.items.map((c) => `${c.id} (${cell(c.text)})${c.monomial ? ` fixes ${m(`${c.group}=${c.value}`)}` : ": not a power law, counted as one constraint"}`).join(". ")}. Algebraically ${f.constraints.algebraic} exponent vectors are independent, but ${f.constraints.free} groups can vary independently.` : "The record states no constraint between the inputs of the Pi set.",
+          f.constraints.items.length ? `Relations between Pi variables: ${f.constraints.items.map((c) => `${c.id} (${c.tex ? m(c.tex) : cell(c.text)})${c.monomial ? ` fixes ${m(`${c.group}=${c.value}`)}` : ", not a power law, so it counts as one relation"}`).join(". ")}. The ${f.constraints.algebraic} groups are algebraically independent, but only ${f.constraints.free} of them can vary.` : "The model states no relation between the Pi variables.",
           "", "Before a physical correlation, the researcher must supply:", "",
           "- data or a solved model for the function f over the range of each group",
           `- the geometry and the definition of each reference length${it.geometry.domain ? ` (now: ${cell(it.geometry.domain)})` : ""}`,
           `- the statement that the quantity of interest is a local or a mean value${obs?.average ? ` (now: ${obs.average})` : ""}`,
-          `- the type of boundary condition, such as wall temperature or wall heat flux${it.conditions.length ? "" : " (the record has no conditions)"}`,
+          `- the type of boundary condition, such as wall temperature or wall heat flux${it.conditions.length ? "" : " (the model has no conditions)"}`,
           "- the reference temperature of the properties, and all further physics that adds variables",
           "", "Buckingham Pi analysis does not determine this correlation."].join("\n"),
-        narration: "The quantity of interest is a function of the other groups. Buckingham Pi analysis does not give that function. Data or a solved model must supply it, with the geometry, the conditions and the property reference.",
+        narration: "The group that contains the quantity of interest is a function of the other groups. Buckingham Pi analysis does not give that function. Data or a solved model must supply it, with the geometry, the conditions and the reference temperature of the properties.",
       });
       const values = d.results.find((r) => r.id === "r-values");
       if (values) results.push({ title: "Group values from the entered values", body: [resultLine(values), ...d.results.filter((r) => r.id === "r-values-float").map(resultLine)].join("\n"), narration: "The entered values give a value for each group whose variables all have values. The arithmetic is exact." });
@@ -194,8 +217,8 @@
     const unresolved = d.results.filter((r) => r.status === "unresolved");
     results.push({
       title: unresolved.length ? `${count(unresolved.length, "unresolved result", "unresolved results")}` : "No unresolved result",
-      body: unresolved.length ? unresolved.map(resultLine).join("\n") : "Every requested calculation of this piece ran.",
-      narration: unresolved.length ? `The report keeps ${words(unresolved.length)} unresolved results visible. Each one states the failed check or the piece that brings the calculation.` : "Every requested calculation of this piece ran.",
+      body: unresolved.length ? unresolved.map(resultLine).join("\n") : "The Finder ran every requested calculation.",
+      narration: unresolved.length ? `The report keeps ${n(unresolved.length, "unresolved result", "unresolved results")} visible. Each one names the failed check, or the later piece of the build plan that adds the calculation.` : "The Finder ran every requested calculation.",
     });
 
     /* ---------- checks and takeaway ---------- */
@@ -204,7 +227,7 @@
       checks.push({
         title: "Hand calculation 5: dimensional cancellation and independence",
         body: [...f.groups.map((g) => dm(g.cancelTex)), "", ...f.checks.map((c) => `- ${status(c.status)}: ${c.passed ? "passed" : "FAILED"}. ${cell(c.title)}: ${cell(c.detail)}`)].join("\n"),
-        narration: `Every group is dimensionless, and the ${words(f.checks.length)} exact checks ${f.checks.every((c) => c.passed) ? "pass" : "do not all pass"}. These checks use exact arithmetic, not a floating-point comparison.`,
+        narration: `Every group is dimensionless, and ${f.checks.every((c) => c.passed) ? `all ${words(f.checks.length)} exact checks pass` : `not all ${words(f.checks.length)} exact checks pass`}. These checks use exact arithmetic, not a floating-point comparison.`,
       });
     }
     checks.push({
@@ -216,12 +239,12 @@
       narration: "Each result carries one of the six statuses, its inputs and its evidence. A dimensional check does not establish physical validity, and a numerical check is not a proof.",
     });
     const key = ok
-      ? `${f.n} variables, rank ${f.r}: ${f.m} independent groups${f.constraints.items.length ? `, of which ${f.constraints.free} vary independently` : ""}. ${f.correlation.relation ? `${m(f.correlation.relation)}.` : ""} Buckingham Pi analysis does not give the function f.`
+      ? `${f.n} Pi variables, rank ${f.r}: ${f.m} independent groups.${f.constraints.items.length ? ` A relation fixes ${f.m - f.constraints.free}, so ${f.constraints.free} can vary.` : ""} ${f.correlation.relation ? `${m(f.correlation.relation)}.` : ""} Buckingham Pi analysis does not give the function f.`
       : d.confirmedVersion === null ? "Confirm the interpretation to run the Finder. The checks before analysis already ran." : `The Finder is blocked. ${cell(it.issues.find((i) => (f?.blockedBy ?? []).includes(i.id))?.next ?? "")}`;
     checks.push({
       title: "Takeaway",
       key,
-      narration: ok ? `The variable set has ${words(f.m)} independent groups. ${f.constraints.items.length ? `Only ${words(f.constraints.free)} of them can vary independently. ` : ""}The quantity of interest is a function of the other groups, and data or a solved model must supply that function.`
+      narration: ok ? `The Pi variables give ${n(f.m, "algebraically independent group", "algebraically independent groups")}. ${f.constraints.items.length ? `A relation fixes some of them, so only ${words(f.constraints.free)} can vary. ` : ""}The group that contains the quantity of interest is a function of the other groups. Data or a solved model must supply that function.`
         : "The Finder did not run on this version. The report names the reason and the next action.",
     });
 

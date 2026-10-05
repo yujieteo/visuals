@@ -24,6 +24,9 @@
       .replace(/-/g, " − ").replace(/\+/g, " + ");
   }
   const supText = (e) => [...Q.str(e)].map((c) => SUPER[c] ?? c).join("");
+  /** Readable text of plain equation text: nu = mu/rho -> ν = μ/ρ, with each symbol as its variable's label. */
+  const plainLabel = (plain, vars) => String(plain).replace(/[A-Za-z][A-Za-z0-9_]*/g, (w) => { const v = vars.find((x) => x.symbol === w); return v ? uni(v.tex) : w; })
+    .replace(/\*/g, "").replace(/ - /g, " − ");
 
   /** TeX of an exponent: 2, -1, 1/2 (as a slash, which reads better in a superscript). */
   const expTex = (e) => (Q.isInteger(e) ? Q.str(e) : `${Q.str(e)}`);
@@ -42,7 +45,10 @@
       const e = exps[j];
       if (Q.isZero(e)) return;
       const a = Q.abs(e);
-      const t = Q.eq(a, Q.ONE) ? vars[j].tex : `${/[_^]/.test(vars[j].tex) || vars[j].tex.length > 1 && !vars[j].tex.startsWith("\\") ? `\\left(${vars[j].tex}\\right)` : vars[j].tex}^{${expTex(a)}}`;
+      const sum = /[-+]/.test(vars[j].tex);
+      const others = exps.filter((x, k) => k !== j && !Q.isZero(x) && Q.sign(x) === Q.sign(e)).length;
+      const wrapped = sum || (!Q.eq(a, Q.ONE) && (/[_^]/.test(vars[j].tex) || (vars[j].tex.length > 1 && !vars[j].tex.startsWith("\\")))) ? `\\left(${vars[j].tex}\\right)` : vars[j].tex;
+      const t = Q.eq(a, Q.ONE) ? (sum && others ? wrapped : vars[j].tex) : `${wrapped}^{${expTex(a)}}`;
       const p = Q.eq(a, Q.ONE) ? vars[j].symbol : `${vars[j].symbol}${expPlain(a)}`;
       let u = uni(vars[j].tex);
       if (/ /.test(u)) u = `(${u})`;
@@ -70,7 +76,10 @@
     if (kind !== "any" && !(kind === v.kind || (kind === "parameter" && v.kind === "constant"))) return null;
     if (t.role && t.role !== v.role) return null;
     if (t.phase && v.phase && t.phase !== v.phase) return null;
-    return t.phase && !v.phase ? `${v.symbol} is ${t.phase === "fluid" ? "the fluid" : "the solid"} conductivity` : "";
+    const notes = [];
+    if (t.phase && !v.phase) notes.push(`${v.symbol} is ${t.phase === "fluid" ? "the fluid" : "the solid"} conductivity`);
+    if (t.note) notes.push(`${v.symbol} is ${t.note}`);
+    return notes.join(" and that ");
   };
 
   /**
@@ -164,6 +173,7 @@
 
     /* row reduction, rank, kernel */
     const labels = vars.map((v) => uni(v.tex));
+    const powLabel = (j) => (/ /.test(labels[j]) ? `(${labels[j]})` : labels[j]);
     const red = rows.length ? LA.rref(D, { cols: labels }) : { R: [], pivots: [], rank: 0, steps: [] };
     const r = red.rank, m = n - r;
     step("s-pi-rref", 3, "Row reduction of D", "Exact row operations bring D to reduced row echelon form. The number of pivots is the rank.", { evidence: ["spec-4"] });
@@ -259,7 +269,7 @@
       }
     }
     step("s-pi-exponents", 4, "Exponent equations", complete
-      ? `For each other variable q, the Finder sets Π_q = q ${chosen.map((j, k) => `${labels[j]}^${letters[k]}`).join(" ")}. Then it solves one equation for each base dimension, in the order ${rows.map((x) => x.base).join(", ")}.`
+      ? `For each Pi variable q that is not a repeating variable, the Finder sets Π_q = q ${chosen.map((j, k) => `${powLabel(j)}^${letters[k]}`).join(" ")}. Then it solves one equation for each base dimension, in the order ${rows.map((x) => x.base).join(", ")}.`
       : "The exponent equations need a complete repeating set.", { evidence: ["spec-5"] });
 
     /* groups with cancellation, names and values */
@@ -304,7 +314,7 @@
       const isIdentity = idRows.every((row, i) => row.every((x, k) => Q.eq(x, k === i ? Q.ONE : Q.ZERO)));
       check("x-identity", "Independence: the rows of the other variables form the identity", isIdentity, `The rows for ${nonRep.map((j) => labels[j]).join(", ")} in the exponent matrix form the ${m} × ${m} identity, so the groups are independent.`);
       check("x-cancel", "Dimensional cancellation of each group", groups.every((g) => g.dimensionless), "Every base dimension has exponent sum 0 in every group.");
-      check("x-kernel", "The row-reduced basis spans the same space", kernel.every((k) => LA.express(direct, k) !== null) && kernel.length === m, `Each of the ${kernel.length} kernel vectors from the reduced form is a combination of the ${m} groups.`);
+      check("x-kernel", "The row-reduced basis spans the same space", kernel.every((k) => LA.express(direct, k) !== null) && kernel.length === m, `Each of the ${kernel.length} kernel vectors of the reduced form is a linear combination of the exponent vectors of the ${m} groups.`);
     }
     step("s-pi-checks", 5, "Dimensional cancellation and independence", "Each group must be dimensionless, and the groups must be independent and complete.", { evidence: ["spec-4", "spec-5"] });
 
@@ -316,15 +326,15 @@
       const mono = e.ast.k === "rel" && e.ast.op === "=" ? monomialOf(e.ast, symbols) : null;
       if (mono) {
         const v = mono.exps;
-        constraintItems.push({ id: e.id, text: e.plain, monomial: true, exps: v, group: monomial(vars, v).tex, value: Q.str(mono.coef), consistent: LA.isZeroVector(LA.mulMV(D, v)) });
-      } else constraintItems.push({ id: e.id, text: e.plain, monomial: false });
+        constraintItems.push({ id: e.id, text: e.plain, tex: e.tex, label: plainLabel(e.plain, vars), monomial: true, exps: v, group: monomial(vars, v).tex, groupLabel: monomial(vars, v).label, value: Q.str(mono.coef), consistent: LA.isZeroVector(LA.mulMV(D, v)) });
+      } else constraintItems.push({ id: e.id, text: e.plain, tex: e.tex, label: plainLabel(e.plain, vars), monomial: false });
     }
     const monos = constraintItems.filter((c) => c.monomial && c.consistent);
     const cRank = monos.length ? LA.rank(LA.transpose(monos.map((c) => c.exps))) : 0;
     const others = constraintItems.filter((c) => !c.monomial).length;
     const free = Math.max(0, m - cRank - others);
     const constraints = { items: constraintItems.map(({ exps, ...rest }) => rest), rank: cRank, other: others, free, algebraic: m };
-    if (constraintItems.length) step("s-pi-constraints", 5, "Constraints between inputs", `The record states ${constraintItems.length} relation${constraintItems.length > 1 ? "s" : ""} between variables of the Pi set. Algebraically ${m} exponent vectors are independent, but only ${free} group${free === 1 ? "" : "s"} can vary independently.`, { evidence: ["mit-pi", "spec-3"] });
+    if (constraintItems.length) step("s-pi-constraints", 5, "Relations between Pi variables", `The model states ${constraintItems.length} relation${constraintItems.length > 1 ? "s" : ""} between Pi variables. The ${m} groups are algebraically independent, but only ${free} of them can vary.`, { evidence: ["mit-pi", "spec-3"] });
 
     /* the familiar basis and the transformation */
     const pool = candidates(vars, catalogue).filter((c) => LA.isZeroVector(LA.mulMV(D, c.exps)));
@@ -354,7 +364,7 @@
       familiar = { groups: famGroups, named: fam.filter((f) => f.id).length, T: Tm.map((row) => row.map(Q.str)),
         Ttex: `\\begin{pmatrix}${Tm.map((row) => row.map(Q.str).join("&")).join("\\\\")}\\end{pmatrix}`, det: Q.str(det), equivalent: !Q.isZero(det),
         relations: famGroups.map((g, i) => ({ group: g.names[0]?.tex ?? g.tex, combo: T[i].map((c, k) => [c, groups[k]]).filter(([c]) => !Q.isZero(c)).map(([c, g2]) => `(${g2.tex})${Q.eq(c, Q.ONE) ? "" : `^{${Q.str(c)}}`}`).join("\\,") })) };
-      check("x-equivalent", "The familiar basis is equivalent to the direct basis", !Q.isZero(det), `Each familiar group is a product of powers of the direct groups. The exponent matrix T has det T = ${Q.str(det)}, which is not 0.`);
+      check("x-equivalent", "The familiar basis is equivalent to the repeating-variable basis", !Q.isZero(det), `Each familiar group is a product of powers of the repeating-variable groups. The exponent matrix T has det T = ${Q.str(det)}, which is not 0.`);
     }
     step("s-pi-familiar", 5, "Familiar groups and equivalent bases", "A familiar name comes from a stored formula with its reference quantities. A product of powers of groups with an invertible exponent matrix gives an equivalent basis.", { evidence: ["spec-10", "comsol-htc"] });
 
@@ -428,5 +438,5 @@
     return { exact: true, lo: Q.str(lo), hi: Q.str(hi), loFloat: Q.toNumber(lo), hiFloat: Q.toNumber(hi), fraction: exactText(lo) };
   }
 
-  return { find, monomial, recognize, candidates, groupKey, monomialOf, value, uni };
+  return { find, monomial, recognize, candidates, groupKey, monomialOf, value, uni, plainLabel };
 });

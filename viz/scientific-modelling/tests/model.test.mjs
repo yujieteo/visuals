@@ -81,7 +81,7 @@ test("failure examples: each failed check names the next useful action, and calc
   assert.ok(entry.some((i) => i.code === "unit-conflict" && /M L T⁻² Θ⁻¹/.test(i.message)));
   assert.ok(entry.some((i) => i.code === "incomplete-closure" && /Fourier's law/.test(i.next)));
   const unsupported = issues("fail-unsupported").find((i) => i.code === "unsupported-analysis");
-  assert.match(unsupported.message, /custom PDE is not in the supported set/);
+  assert.match(unsupported.message, /custom PDE is outside the supported set/);
   assert.match(unsupported.next, /finite ODE system/);
   for (const ex of ["fail-dimensions", "fail-conditions", "fail-unsupported", "fail-zero-scale", "fail-dependent"]) {
     const d = Model.derive(state(ex), DATA, R.confirm(R.fromExample(ENGINE, ex)));
@@ -147,4 +147,15 @@ test("the URL state: the tool, the basis and the detail level change the view, n
   assert.deepEqual(b.basisGroups.map((g) => g.label), ["μc_p/k", "kρU/(hμ)", "hL/k"]);
   assert.equal(b.shownStep, 3);
   assert.equal(Model.derive(state("heat-transfer-pi", { step: 60 }), DATA, rec).shownStep, a.finder.rref.steps.length, "the step clamps to the last one");
+});
+
+test("a variable's own TeX is limited to letters, accents and fonts: a link or a package load falls back to the default form", () => {
+  const rec = R.fromExample(ENGINE, "heat-transfer-pi");
+  const inp = R.inputs(rec);
+  inp.variables.find((v) => v.id === "v-h").tex = "\\href{javascript:alert(1)}{h}";
+  inp.variables.find((v) => v.id === "v-k").tex = "k_{\\mathrm{f}}";
+  const it = C.interpret(inp, ENGINE);
+  assert.equal(it.variables.find((v) => v.id === "v-h").tex, "h");
+  assert.ok(it.issues.some((i) => i.code === "tex-refused" && i.subject[0] === "v-h"));
+  assert.equal(it.variables.find((v) => v.id === "v-k").tex, "k_{\\mathrm{f}}", "an allowed font command stays");
 });

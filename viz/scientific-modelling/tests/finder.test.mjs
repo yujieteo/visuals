@@ -125,5 +125,6 @@ test("a dimensionless input keeps its meaning and forms a group by itself; a con
   assert.equal(ang.meaning, "angle");
   const hl = f.groups.find((g) => g.label === "hL/k");
   assert.deepEqual(hl.names.map((n) => n.id).sort(), ["Bi", "Nu"]);
-  assert.ok(hl.names.every((n) => n.assumes.length === 1), "each name states the phase it assumes");
+  assert.ok(hl.names.every((n) => n.assumes.some((a) => /is the (fluid|solid) conductivity/.test(a))), "each name states the phase it assumes");
+  assert.ok(hl.names.find((n) => n.id === "Bi").assumes.includes("L is the Biot length"), "Bi also states that L must be the Biot length");
 });

@@ -23,6 +23,14 @@
   const EQ_CALCS = CALCS.filter((c) => c.equations).map((c) => c.id);
   const CURRENT_PIECE = 1;
 
+  /** TeX commands a variable's own TeX may use: letters, accents and fonts. Anything else (a link, a style, a
+   * package load) is refused, because an imported record must not add behaviour to the page. */
+  const TEX_COMMANDS = new Set(["alpha", "beta", "gamma", "delta", "epsilon", "varepsilon", "zeta", "eta", "theta", "vartheta", "kappa", "lambda", "mu", "nu", "xi", "pi", "rho", "sigma",
+    "tau", "phi", "varphi", "chi", "psi", "omega", "Gamma", "Delta", "Theta", "Lambda", "Xi", "Pi", "Sigma", "Phi", "Psi", "Omega", "infty", "prime", "partial", "cdot", "mathrm", "mathit",
+    "mathsf", "mathbf", "dot", "ddot", "hat", "bar", "tilde", "vec", "max", "min"]);
+  /** Is a variable's TeX made only of allowed commands and plain characters? */
+  const safeTex = (tex) => /^[A-Za-z0-9_^{}\\ ,.'()+\-]*$/.test(tex) && [...tex.matchAll(/\\([A-Za-z]+)/g)].every((m) => TEX_COMMANDS.has(m[1]));
+
   /** A value or a range in the variable's unit: "200", "4e-5", "1..10", "1 to 10". */
   function parseValue(text) {
     const s = String(text ?? "").trim();
@@ -65,7 +73,9 @@
     /* ---------- variables ---------- */
     const bySymbol = new Map();
     const variables = inp.variables.map((v) => {
-      const out = { id: v.id, symbol: v.symbol, tex: v.tex || E.nameTex(v.symbol), meaning: v.meaning, kind: v.kind, pi: v.pi !== false, domain: v.domain || "real",
+      const ownTex = v.tex && v.tex.length <= 80 && safeTex(v.tex);
+      if (v.tex && !ownTex) addIssue({ code: "tex-refused", subject: [v.id], severity: "warning", message: `${v.symbol}: the TeX "${v.tex.slice(0, 40)}" uses a command or a character that the page does not accept for a symbol.`, next: "Use letters, digits, _ ^ { } and the commands for Greek letters, accents and fonts. The page shows the default form now.", blocks: [] });
+      const out = { id: v.id, symbol: v.symbol, tex: ownTex ? v.tex : E.nameTex(v.symbol), meaning: v.meaning, kind: v.kind, pi: v.pi !== false, domain: v.domain || "real",
         quantity: v.quantity || "", phase: v.phase || "", role: v.role || "", average: v.average || "", unitText: v.unit || "", dimensionText: v.dimension || "",
         dim: null, temperature: null, affine: null, dimensionless: null, value: null, valueText: v.value || "" };
       const blocks = out.pi ? ["pi-groups", ...EQ_CALCS] : EQ_CALCS;
@@ -81,7 +91,7 @@
       if (v.dimension) {
         const d = U.parseDimension(v.dimension);
         if (d.error) addIssue({ code: "dimension-syntax", subject: [v.id], message: `${v.symbol}: the dimension ${v.dimension} cannot be read: ${d.error}.`, next: "Write the dimension with M L T Θ I N J, such as M L^-1 T^-1.", blocks });
-        else found.push({ from: `the dimension formula ${v.dimension}`, dim: d.dim });
+        else found.push({ from: "the dimension formula", dim: d.dim });
       }
       const qty = v.quantity ? quantities[v.quantity] : null;
       if (v.quantity && !qty) addIssue({ code: "quantity-unknown", subject: [v.id], severity: "warning", message: `${v.symbol}: the quantity "${v.quantity}" is not in the vocabulary.`, next: "Choose a quantity from the list, or leave it empty.", blocks: [] });
@@ -94,8 +104,10 @@
           if (g) g.from.push(f.from);
           else groups.push({ dim: f.dim, from: [f.from] });
         }
+        groups.sort((a, b) => a.from.length - b.from.length);
         const say = (g) => `${g.from.join(" and ")} ${g.from.length > 1 ? "give" : "gives"} ${U.text(g.dim)}`;
-        addIssue({ code: "unit-conflict", subject: [v.id], message: `${v.symbol}: ${say(groups[0])}. But ${groups.slice(1).map(say).join(", and ")}.`,
+        const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+        addIssue({ code: "unit-conflict", subject: [v.id], message: `The entries of ${v.symbol} disagree. ${cap(say(groups[0]))}, but ${groups.slice(1).map(say).join(", and ")}.`,
           next: `Correct the unit, the dimension formula or the quantity of ${v.symbol} so that they agree.`, blocks });
       } else if (first) out.dim = first.dim;
       else addIssue({ code: "missing-dimension", subject: [v.id], message: `${v.symbol} has no unit, dimension or quantity.`, next: `Enter the unit of ${v.symbol}, such as m or W/(m*K).`, blocks });
@@ -108,14 +120,14 @@
       }
       out.temperature = qT ?? uT;
       if (out.dim && U.deq(out.dim, U.dim({ Θ: 1 })) && !out.temperature) {
-        addIssue({ code: "temperature-kind", subject: [v.id], severity: "warning", message: `${v.symbol} has the dimension of temperature, but the record does not say if it is an absolute temperature or a difference.`,
+        addIssue({ code: "temperature-kind", subject: [v.id], severity: "warning", message: `${v.symbol} has the dimension of temperature, but the model does not say if it is an absolute temperature or a difference.`,
           next: `Choose the quantity "absolute temperature" or "temperature difference" for ${v.symbol}.`, blocks: EQ_CALCS });
       }
       if (unit?.offset && out.temperature === "absolute") out.affine = unit.notes.length ? (v.unit.includes("F") ? "°F" : "°C") : null;
       // The meaning of a dimensionless input.
       if (out.dim && U.isNone(out.dim)) {
         out.dimensionless = qty?.meaning ?? unit?.meaning ?? null;
-        if (!out.dimensionless && out.pi) addIssue({ code: "dimensionless-meaning", subject: [v.id], severity: "info", message: `${v.symbol} is dimensionless. The record does not say what it means.`, next: `Choose its quantity: angle, aspect ratio, fraction or a material parameter such as emissivity.`, blocks: [] });
+        if (!out.dimensionless && out.pi) addIssue({ code: "dimensionless-meaning", subject: [v.id], severity: "info", message: `${v.symbol} is dimensionless. The model does not say what it means.`, next: `Choose its quantity: angle, aspect ratio, fraction or a material parameter such as emissivity.`, blocks: [] });
       }
       // The value in SI.
       if (v.value) {
@@ -268,11 +280,11 @@
         model.conditionCount.push({ field, coordinate: x, order: p, needed: p, given: given.length, kind: isTime ? "initial" : "boundary", places });
         const noun = isTime ? (p === 1 ? "initial condition" : "initial conditions") : (p === 1 ? "boundary condition" : "boundary conditions");
         if (given.length < p) {
-          addIssue({ code: "missing-conditions", subject: [field, x], message: `${field} has a derivative of order ${p} in ${x}, so it needs ${p} ${noun} in ${x}. The record gives ${given.length}${places.length ? ` (at ${places.join(", ")})` : ""}.`,
+          addIssue({ code: "missing-conditions", subject: [field, x], message: `${field} has a derivative of order ${p} in ${x}, so it needs ${p} ${noun} in ${x}. The model gives ${given.length}${places.length ? ` (at ${places.join(", ")})` : ""}.`,
             next: isTime ? `Add the initial condition of ${field}, such as ${field} = ${field}_i at ${x} = 0.` : `Add a condition on ${field} at the other end of the ${x} domain, such as a surface condition at ${x} = L.`,
             blocks: EQ_CALCS });
         } else if (given.length > p) {
-          addIssue({ code: "extra-conditions", subject: [field, x], severity: "warning", message: `${field} has a derivative of order ${p} in ${x}, but the record gives ${given.length} conditions in ${x} (at ${places.join(", ")}).`,
+          addIssue({ code: "extra-conditions", subject: [field, x], severity: "warning", message: `${field} has a derivative of order ${p} in ${x}, but the model gives ${given.length} conditions in ${x} (at ${places.join(", ")}).`,
             next: `Check the order of the ${x} derivative in the governing equation, or remove a condition.`, blocks: [] });
         }
       }
@@ -282,7 +294,7 @@
     const open = model.fields.filter((f) => !determined.has(f) && !laws.has(f));
     if (open.length) {
       addIssue({ code: "incomplete-closure", subject: open, message: `No equation determines the field${open.length > 1 ? "s" : ""} ${open.join(", ")}. The model fields are ${model.fields.join(", ")}.`,
-        next: `Add a constitutive law or closure for ${open.join(", ")}, such as ${open[0] === "q" ? "Fourier's law q = -k*d(T,x)" : `an equation for ${open[0]}`}.`, blocks: EQ_CALCS });
+        next: `Add a constitutive law or closure for ${open.join(", ")}, such as ${open[0] === "q" ? "Fourier's law, q = -k*d(T,x) in the equation syntax" : `an equation for ${open[0]}`}.`, blocks: EQ_CALCS });
     }
 
     // Definitions with values: both sides in SI, exact.
@@ -303,18 +315,18 @@
     const purpose = inp.purpose ?? {};
     const piVars = variables.filter((v) => v.pi);
     const observable = variables.find((v) => v.id === purpose.observable) ?? null;
-    if (!observable) addIssue({ code: "observable-missing", subject: [], message: "The record names no quantity of interest.", next: "Choose the quantity of interest in the purpose.", blocks: ["pi-groups"] });
+    if (!observable) addIssue({ code: "observable-missing", subject: [], message: "The model names no quantity of interest.", next: "Choose the quantity of interest in the purpose.", blocks: ["pi-groups"] });
     else if (!observable.pi) addIssue({ code: "observable-missing", subject: [observable.id], message: `The quantity of interest ${observable.symbol} is not in the Pi set.`, next: `Include ${observable.symbol} in the Pi set.`, blocks: ["pi-groups"] });
     if (piVars.length < 2) addIssue({ code: "pi-set-small", subject: [], message: `The Pi set has ${piVars.length} variable${piVars.length === 1 ? "" : "s"}.`, next: "Include at least 2 physical variables in the Pi set.", blocks: ["pi-groups"] });
     const calc = CALCS.find((c) => c.id === purpose.calculation) ?? CALCS[0];
     if (calc.id !== "pi-groups") {
       const customPde = (calc.id === "stability" || calc.id === "bifurcation") && model.type === "PDE";
       if (customPde) {
-        addIssue({ code: "unsupported-analysis", subject: [calc.id], message: `${calc.name} of a custom PDE is not in the supported set. The page supports it only for declared catalogue models and for custom finite ODE systems.`,
-          next: "Write the model as a finite ODE system, such as a lumped body, or use a declared family such as buoyancy convection. Both arrive in piece 4. The Finder result stays valid.", blocks: [calc.id] });
+        addIssue({ code: "unsupported-analysis", subject: [calc.id], message: `${calc.name} of a custom PDE is outside the supported set, also after the later pieces. Piece 4 adds it for declared model families and for custom finite ODE systems.`,
+          next: "Write the model as a finite ODE system, such as a lumped body. Or use a declared model family, such as buoyancy convection, after piece 4. The Finder result stays valid.", blocks: [calc.id] });
       } else {
-        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `${calc.name} arrives in piece ${calc.piece} of the build plan. This preview runs the Finder only.`,
-          next: "Use the Finder now. The record keeps the intended calculation for the later piece.", blocks: [calc.id] });
+        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `Piece ${calc.piece} of the build plan adds ${calc.name.toLowerCase()}. This preview runs the Finder only.`,
+          next: "Use the Finder now. The model keeps the intended calculation for the later piece.", blocks: [calc.id] });
       }
     }
 
