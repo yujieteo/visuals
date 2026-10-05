@@ -30,7 +30,7 @@
     const f = (v) => (Math.abs(v) >= 1e-3 && Math.abs(v) < 1e9 ? String(+v.toPrecision(digits)) : v.toPrecision(Math.min(digits, 6))).replace("-", "−");
     return [f(est), f(lo), f(hi)];
   }
-  const METHOD = /** @type {Record<string, string>} */ ({ independent: "Independent sampling", inverse: "Inverse transform", rejection: "Rejection sampling", none: "None" });
+  const METHOD = /** @type {Record<string, string>} */ ({ independent: "Independent sampling", inverse: "Inverse transform", rejection: "Rejection sampling", stratified: "Stratification", antithetic: "Antithetic variables", control: "Control variates", crn: "Common random numbers", none: "None" });
   const TAG = /** @type {Record<string, string>} */ ({ theorem: "Theorem", numerical: "Numerical approximation", observation: "Finite-run observation" });
   /** @param {"theorem" | "numerical" | "observation"} kind */
   const tag = (kind) => `<span class="tag tag-${kind}">${TAG[kind]}</span>`;
@@ -50,20 +50,22 @@
   let expected = null;
 
   function engineSource() {
-    return ["src-rng", "src-special", "src-expr", "src-laws", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
+    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-laws", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
   }
   function getPool() {
     if (!pool) pool = Pool.createPool({ source: engineSource(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: En });
     return pool;
   }
   /** @param {Record<string, any>} s */
-  const runKey = (s) => JSON.stringify([s.model, s.params, s.method, s.compare, s.size, s.seed, s.failure, s.model === "custom" ? customVersion : 0]);
+  const runKey = (s) => JSON.stringify([s.model, s.params, s.method, s.compare, s.streams, s.strata, s.stratify, s.size, s.seed, s.failure, s.model === "custom" ? customVersion : 0]);
+  /** The engine settings of a state. @param {Record<string, any>} s @param {Record<string, string>} overrides @param {string} [compare] */
+  const settingsOf = (s, overrides, compare = s.compare) => ({ seed: s.seed, method: s.method, compare, failure: s.failure, overrides, streams: s.streams, strata: s.strata, stratify: s.stratify });
 
   /** A new, empty run for the state, or null when the model has errors. @param {Record<string, any>} s @param {any} d */
   function newRun(s, d) {
     if (!d.ok) return null;
     const { record } = M.modelOf(s, data);
-    const settings = { seed: s.seed, method: s.method, compare: s.compare, failure: s.failure, overrides: M.parseParams(s.params).overrides };
+    const settings = settingsOf(s, M.parseParams(s.params).overrides);
     const c = En.prepare(record, settings);
     if (!c.ok) return null;
     return { key: runKey(s), record, settings, c, d, target: 2 ** s.size / En.BLOCK, accum: En.empty(c), status: "idle", message: "", elapsed: 0, started: 0, handle: null, mode: "" };
@@ -174,6 +176,14 @@
   /** @param {Record<string, any>} s @param {any} d */
   function drawControls(s, d) {
     $("size-out").textContent = `2^${s.size} = ${count(2 ** s.size)}`;
+    const stratified = s.method === "stratified" || s.compare === "stratified";
+    $("strata-field").hidden = !stratified;
+    $("strata-out").textContent = `K = 2^${s.strata} = ${2 ** s.strata}${d.ok && d.design.stratify ? `, on the uniform of ${d.design.stratify.name}` : ""}`;
+    const vars = d.design?.scalars ?? [], key = vars.join(",") + s.stratify;
+    if ($("stratify").dataset.key !== key) {
+      $("stratify").innerHTML = [`<option value="">The focus variable</option>`, ...vars.map((/** @type {string} */ v) => `<option value="${esc(v)}"${v === s.stratify ? " selected" : ""}>${esc(v)}</option>`)].join("");
+      $("stratify").dataset.key = key;
+    }
     $("failure-note").textContent = d.ok ? d.failureNote : "";
     const ranges = $("sweep-param");
     const names = d.parameters.map((/** @type {any} */ p) => p.name);
@@ -188,6 +198,25 @@
     const w = d.focus.window;
     if (!h || !h.values) return null;
     const xs = [], ys = [];
+    if (d.focus.continuous) {
+      // Densities at the bin centres; the CDF and the survival function at the right edges.
+      if (kind === "pmf") {
+        for (let k = 0; k < w.bins; k++) { xs.push(w.lo + (k + 0.5) * w.width); ys.push(h.bins[k] / (h.values * w.width)); }
+        return { x: xs, y: ys };
+      }
+      let below = h.under;
+      for (let k = 0; k < w.bins; k++) { below += h.bins[k]; xs.push(w.lo + (k + 1) * w.width); ys.push(kind === "survival" ? 1 - below / h.values : below / h.values); }
+      if (kind === "survival") w.thresholds.forEach((/** @type {number} */ t, /** @type {number} */ i) => { xs.push(t); ys.push(h.exceed[i] / h.values); });
+      if (kind !== "quantile") return { x: xs, y: ys };
+      const qx = [], qy = [];
+      for (const u of Array.from({ length: 199 }, (_, i) => (i + 1) / 200)) {
+        const j = ys.findIndex((v) => v >= u);
+        if (j < 0) break;
+        qx.push(u);
+        qy.push(xs[j]);
+      }
+      return { x: qx, y: qy };
+    }
     if (kind === "pmf") {
       for (let k = 0; k < w.bins; k++) { xs.push(w.lo + k * w.width); ys.push(h.bins[k] / h.values); }
       return { x: xs, y: ys };
@@ -217,9 +246,10 @@
     if (!d.ok) { $("dist-plot").innerHTML = ""; $("conv-plot").innerHTML = ""; return; }
     const a = d.alt - 1, q = d.quantity - 1, h = sm?.[0]?.hists?.[a] ?? null;
     const ylog = s.yscale === "log";
-    $("dist-plot").innerHTML = P.distribution({ kind: s.plot, ylog, xlabel: d.focus.name, theory: d.focus.theory, empirical: empirical(d, h, s.plot), n: h?.values ?? 0 });
-    const outside = h && h.values ? (h.under + h.over) / h.values : 0;
-    $("dist-note").textContent = `${d.focus.name}${d.alternatives.length > 1 ? `, ${d.alternatives[a]}` : ""}. ${h ? `${count(h.values)} values, ${(outside * 100).toFixed(2)} % outside the window ${fmt(d.focus.window.lo)} to ${fmt(d.focus.window.lo + d.focus.window.bins * d.focus.window.width - 1)}${h.max !== null ? `, largest value ${fmt(h.max)}` : ""}.` : "No run yet."} ${d.focus.theory ? "The reference law comes from the law itself or from the enumeration." : "No reference law: the support is too large to enumerate."}`;
+    $("dist-plot").innerHTML = P.distribution({ kind: s.plot, ylog, xlabel: d.focus.name, theory: d.focus.theory, empirical: empirical(d, h, s.plot), n: h?.values ?? 0, continuous: d.focus.continuous, width: d.focus.window.width });
+    $("plot-pmf").textContent = d.focus.continuous ? "PDF" : "PMF";
+    const outside = h && h.values ? (h.under + h.over) / h.values : 0, w = d.focus.window, end = w.lo + w.bins * w.width - (d.focus.continuous ? 0 : 1);
+    $("dist-note").textContent = `${d.focus.name}${d.alternatives.length > 1 ? `, ${d.alternatives[a]}` : ""}. ${h ? `${count(h.values)} values, ${(outside * 100).toFixed(2)} % outside the window ${fmt(w.lo)} to ${fmt(end)}${h.max !== null ? `, largest value ${fmt(h.max)}` : ""}.` : "No run yet."} ${d.focus.theory ? "The reference law comes from the law itself or from the enumeration." : d.focus.continuous ? "No reference law: the focus is a function of several variables. A pilot sample of 2,048 replicates sets the window." : "No reference law: the support is too large to enumerate."}`;
     const ref = d.references[a]?.values[q] ?? null;
     const qd = d.quantities[q];
     // No band where the variance is infinite: the interval of each block would claim a precision that the law lacks.
@@ -235,7 +265,12 @@
     if (q.est === null) return "–";
     if (q.lo === null) return `<span class="warn-text">${esc(q.how)}</span>`;
     const [, lo, hi] = precise(q.est, q.lo, q.hi);
-    return `${lo} to ${hi}<br><span class="note">${esc(q.how)}${status.variance === "unknown" && q.kind === "expectation" ? ". The variance is not shown to be finite" : ""}</span>`;
+    return `${lo} to ${hi}<br><span class="note">${esc(q.how)}${status.variance === "unknown" && q.kind === "expectation" ? ". The variance is not shown to be finite" : ""}${q.gain ? `. ${gainText(q.gain)}` : ""}</span>`;
+  }
+
+  /** The gain of a variance-reduction design in words. @param {any} g */
+  function gainText(g) {
+    return `Variance ratio against plain sampling with the same number of evaluations: ${fmt(g.ratio)}${g.ratio < 1 ? " (a loss)" : ""}`;
   }
 
   /** @param {Record<string, any>} s @param {any} d @param {any} sm */
@@ -247,7 +282,8 @@
     d.alternatives.forEach((/** @type {string} */ label, /** @type {number} */ a) => d.quantities.forEach((/** @type {any} */ qd, /** @type {number} */ k) => {
       const q = m0?.alts[a].quantities[k];
       const ref = d.references[a].values[k];
-      const refNote = ref === null ? (qd.status.mean === "infinite" ? "None: the mean is infinite." : d.references[a].reason || "No reference.") : d.references[a].closed?.[k] ? "closed form" : d.references[a].neglected ? `enumeration, neglected mass ≤ ${fmt(d.references[a].neglected)}` : "enumeration";
+      const r = d.references[a], how = r.method === "quadrature" ? "adaptive quadrature over the quantile functions" : "enumeration";
+      const refNote = ref === null ? (qd.status.mean === "infinite" ? "None: the mean is infinite." : r.reason || (r.method === "quadrature" && qd.status.mean !== "finite" ? "None: the page cannot show that the mean exists." : "No reference.")) : r.closed?.[k] ? "closed form" : r.neglected ? `${how}, neglected mass ≤ ${fmt(r.neglected)}` : how;
       rows.push(`<tr><th scope="row">${esc(label)}</th><td><span class="mono">${esc(qd.name)}</span><br><span class="note">${esc(qd.note)}${qd.unit ? ` [${esc(qd.unit)}]` : ""}</span></td>
 <td class="num">${q ? precise(q.est, q.lo, q.hi)[0] : "–"}${q?.hits !== null && q?.hits !== undefined ? `<br><span class="note">${count(q.hits)} hits</span>` : ""}</td><td class="num">${q ? intervalCell(q, qd.status) : "–"}</td>
 <td class="num">${fmt(ref)}<br><span class="note">${esc(refNote)}</span></td><td>${q ? tag("observation") : ""}${ref !== null ? tag(d.references[a].closed?.[k] ? "theorem" : "numerical") : ""}</td></tr>`);
@@ -258,10 +294,10 @@
     const objective = d.decision?.objective, cons = d.decision?.constraints ?? [];
     const head = `<p>${objective ? `Objective: ${objective.direction} <span class="mono">${esc(objective.quantity)}</span>.` : "The model states no objective."} ${cons.length ? `Constraints: ${cons.map((/** @type {any} */ c) => `<span class="mono">${esc(c.quantity)} ${c.op === "<=" ? "≤" : "≥"} ${c.value}</span>`).join(", ")}.` : "No constraints."}</p>`;
     if (!dec) { $("decision-body").innerHTML = `${head}<p class="note">Run the experiment to compare the alternatives.</p>`; return; }
-    const diffs = m0.diffs.map((/** @type {any} */ p) => `<li>${esc(d.alternatives[p.b])} − ${esc(d.alternatives[p.a])}: ${p.quantities.map((/** @type {any} */ q) => `<span class="mono">${esc(q.name)}</span> ${q.est === null ? esc(q.how) : `${fmt(q.est)} (${q.lo === null ? "no interval" : `${fmt(q.lo)} to ${fmt(q.hi)}`})`}`).join("; ")}</li>`).join("");
+    const diffs = m0.diffs.map((/** @type {any} */ p) => `<li>${esc(d.alternatives[p.b])} − ${esc(d.alternatives[p.a])}: ${p.quantities.map((/** @type {any} */ q) => `<span class="mono">${esc(q.name)}</span> ${q.est === null ? esc(q.how) : `${fmt(q.est)} (${q.lo === null ? "no interval" : `${fmt(q.lo)} to ${fmt(q.hi)}`})${q.crn !== null ? `, variance ratio ${fmt(q.crn)} against independent alternatives` : ""}`}`).join("; ")}</li>`).join("");
     $("decision-body").innerHTML = `${head}<table><thead><tr><th scope="col">Alternative</th><th scope="col">Constraints</th><th scope="col">Admissible</th></tr></thead><tbody>${dec.rows.map((/** @type {any} */ r) => `<tr${r.a === dec.best ? ' class="best"' : ""}><th scope="row">${esc(r.label)}${r.a === dec.best ? " ★ best" : ""}</th><td>${r.checks.length ? r.checks.map((/** @type {any} */ c) => `${esc(c.quantity)}: <span class="verdict-${c.verdict.replace(/ /g, "-")}">${esc(c.verdict)}</span>`).join("<br>") : "none"}</td><td>${r.admissible ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>
 <p>${dec.best === null ? esc(dec.text) : `${esc(d.alternatives[dec.best])} is the best admissible alternative. ${dec.separated ? "Its paired 95 % intervals separate it from every other admissible alternative." : "<strong>Not separable:</strong> a paired interval still includes 0, so the run needs more replicates before this choice."}`} ${tag("observation")}</p>
-${diffs ? `<details><summary>Paired differences, same streams</summary><ul>${diffs}</ul></details>` : ""}`;
+${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "common random numbers" : "separate streams"}</summary><ul>${diffs}</ul><p class="note">The variance ratio is (se_a² + se_b²)/se_d²: about 1 with separate streams, above 1 when common random numbers help, below 1 when they hurt. ${tag("observation")}</p></details>` : ""}`;
   }
 
   /** @param {Record<string, any>} s @param {any} d @param {any} sm */
@@ -273,10 +309,10 @@ ${diffs ? `<details><summary>Paired differences, same streams</summary><ul>${dif
     const rows = sm.map((/** @type {any} */ m) => { const x = m.alts[a].quantities[q]; return { label: METHOD[m.method], est: x.est, lo: x.lo, hi: x.hi, reference: x.reference }; });
     $("compare-plot").innerHTML = P.comparison({ rows, ylabel: d.quantities[q].name });
     const reps = run.accum.n * d.alternatives.length;
-    $("compare-table").innerHTML = `<table><thead><tr><th scope="col">Method</th><th scope="col">Estimate</th><th scope="col">Sample variance</th><th scope="col">Time for each replicate</th><th scope="col">Rejection</th></tr></thead><tbody>${sm.map((/** @type {any} */ m) => {
+    $("compare-table").innerHTML = `<table><thead><tr><th scope="col">Method</th><th scope="col">Estimate</th><th scope="col">Sample variance</th><th scope="col">Variance of the estimate</th><th scope="col">Time for each replicate</th><th scope="col">Rejection</th></tr></thead><tbody>${sm.map((/** @type {any} */ m) => {
       const x = m.alts[a].quantities[q], v = x.sampleSd !== null ? x.sampleSd ** 2 : x.est !== null && x.kind === "probability" ? x.est * (1 - x.est) : null;
-      return `<tr><th scope="row">${METHOD[m.method]}</th><td class="num">${fmt(x.est)}</td><td class="num">${fmt(v)}</td><td class="num">${reps ? `${fmt((m.ms / reps) * 1000)} µs` : "–"}</td><td>${m.rejection.proposals ? `${fmt(m.rejection.accepts / m.rejection.proposals)} accepted` : "not used"}</td></tr>`;
-    }).join("")}</tbody></table><p class="note">Both methods use the same streams. The times are a finite-run observation of this browser, and they include the worker overhead.</p>`;
+      return `<tr><th scope="row">${METHOD[m.method]}</th><td class="num">${fmt(x.est)}</td><td class="num">${fmt(v)}</td><td class="num">${x.se !== null ? fmt(x.se * x.se) : "–"}${x.gain ? `<br><span class="note">ratio ${fmt(x.gain.ratio)}</span>` : ""}</td><td class="num">${reps ? `${fmt((m.ms / reps) * 1000)} µs` : "–"}</td><td>${m.rejection.proposals ? `${fmt(m.rejection.accepts / m.rejection.proposals)} accepted` : "not used"}</td></tr>`;
+    }).join("")}</tbody></table><p class="note">Both methods use the same streams and the same number of evaluations of the model, so the variances of the estimates compare directly. The ratio is the variance of plain sampling over the variance of the design. The times are a finite-run observation of this browser, and they include the worker overhead.</p>`;
   }
 
   /** @param {Record<string, any>} s @param {any} d */
@@ -325,14 +361,16 @@ ${zero ? `<br>At least one alternative had 0 hits. The interval is the exact zer
 ${cov.length ? `<br>${q.status.variance === "infinite" ? "Block coverage of a CLT interval, which is not valid here because the variance is infinite" : "Block coverage of the 95 % interval"}: ${cov.join("; ")}. ${tag("observation")}` : ""}</li>`);
     });
     const rej = m0?.rejection;
+    const sampler = En.METHODS[s.method].sampler === "reference" ? "independent" : En.METHODS[s.method].sampler;
     const samp = d.samplers.map((/** @type {any} */ x) => {
-      const m = x.methods?.[s.method];
+      const m = x.methods?.[sampler];
       return `<li><span class="mono">${esc(x.variable)}</span>, ${esc(x.name)}: ${m ? `${esc(m.label)}. <em>${esc(m.exactness)}</em>${m.acceptance !== null ? `, theoretical acceptance 1/M = ${fmt(m.acceptance)}` : ""}` : "its parameters change between replicates, so the page sets up its sampler for each draw."}</li>`;
     }).join("");
     const fit = d.dataset?.fit;
     const ds = d.dataset ? data.datasets.find((/** @type {any} */ x) => x.id === d.dataset.id) : null;
     $("panel-diagnostics").innerHTML = `<h4>Moments, intervals and coverage</h4><ul>${diag.join("")}</ul>
 <h4>Samplers</h4><ul>${samp}</ul>
+${designDiagnostics(s, d, m0)}
 ${rej && rej.proposals ? `<h4>Rejection</h4><p>${count(rej.accepts)} of ${count(rej.proposals)} proposals accepted (${fmt(rej.accepts / rej.proposals)}). ${rej.violations ? `<strong class="bad-text">${count(rej.violations)} proposals had p/(Mq) > 1: the envelope does not cover the target, so the accepted values do not follow the target law.</strong>` : "No envelope violation."} ${tag("observation")}</p>` : ""}
 ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${fmt(fit.mean)}. Maximum likelihood estimate ${fmt(fit.estimate)}. ${tag("numerical")}</p>
 <table><thead><tr><th scope="col">Value</th><th scope="col">Observed</th><th scope="col">Expected, fitted law</th></tr></thead><tbody>${ds.values.map((/** @type {number} */ v, /** @type {number} */ i) => `<tr><td class="num">${v}${i === ds.values.length - 1 ? " or more" : ""}</td><td class="num">${count(ds.counts[i])}</td><td class="num">${fit.expected[i].toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td></tr>`).join("")}</tbody></table>
@@ -344,27 +382,52 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
 <h4>This run</h4><p>${run?.accum.blocks ? `${count(run.accum.n)} replicates for each alternative, seed ${s.seed}, ${esc(METHOD[s.method].toLowerCase())}. ${dec && dec.best !== null ? `The best admissible alternative in this run is ${esc(d.alternatives[dec.best])}${dec.separated ? "" : ", but it is not separable from the others yet"}.` : ""}` : "No run yet."} ${tag("observation")}</p>`;
   }
 
+  /**
+   * The diagnostics of a variance-reduction design: what the design did in this run, with the gain of each estimate.
+   * @param {Record<string, any>} s @param {any} d @param {any} m0
+   */
+  function designDiagnostics(s, d, m0) {
+    const design = En.METHODS[s.method].design;
+    if (design === "plain") return "";
+    const lines = [];
+    if (design === "stratified" && d.design.stratify) lines.push(`<p>${d.design.stratify.K} equal strata of the uniform of <span class="mono">${esc(d.design.stratify.name)}</span>, ${count(Math.round((run?.accum.n ?? 0) / d.design.stratify.K))} replicates in each stratum. The strata have probability 1/K each, so the estimator is unbiased. ${tag("theorem")}</p>`);
+    if (design === "antithetic") lines.push(`<p>Each pair uses U and 1 − U for every uniform. The interval uses the ${count((run?.accum.n ?? 0) / 2)} independent pair means. ${tag("theorem")}</p>`);
+    if (design === "control" && d.design.control) lines.push(`<p>Control <span class="mono">${esc(d.design.control.name)} = ${esc(d.design.control.expr)}</span>, exact mean ${d.design.control.means.map((/** @type {number | null} */ v, /** @type {number} */ i) => `${fmt(v)}${d.alternatives.length > 1 ? ` (${esc(d.alternatives[i])})` : ""}`).join(", ")} by linearity of expectation. ${tag("theorem")}${s.failure === "control_mean" ? ` <strong class="bad-text">The estimator uses the mean plus 0.1 standard deviation: the assumption failure.</strong>` : ""}</p>`);
+    const rows = d.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
+      const x = m0?.alts[d.alt - 1]?.quantities[k];
+      if (!x || !x.gain) return `<li><span class="mono">${esc(q.name)}</span>: ${q.kind === "ratio" ? "a ratio keeps the plain estimator." : "no gain yet."}</li>`;
+      const g = x.gain, extra = design === "antithetic" && g.rho !== null ? ` Correlation within the pairs: ${fmt(g.rho)}${g.rho > 0 ? ", positive, so the pairs add variance" : ""}.` : design === "control" ? ` β̂ = ${fmt(g.beta)}, correlation with the control ${fmt(g.rho)}, so at best 1/(1 − ρ²) = ${g.rho !== null && Math.abs(g.rho) < 1 ? fmt(1 / (1 - g.rho * g.rho)) : "–"}.` : "";
+      return `<li><span class="mono">${esc(q.name)}</span>: ${gainText(g)}.${extra}</li>`;
+    }).join("");
+    return `<h4>${esc(METHOD[s.method])}</h4>${lines.join("")}<ul>${rows}</ul><p class="note">A ratio above 1 means the design needs fewer evaluations for the same precision. The ratios are a finite-run observation. ${tag("observation")}</p>`;
+  }
+
   /* ---------- cards below the panels ---------- */
 
   /** @param {Record<string, any>} s @param {any} d */
   function drawCards(s, d) {
     const entry = data.models.find((/** @type {any} */ m) => m.id === s.model);
     const lawId = entry?.law ?? (d.ok ? d.samplers[0]?.law : null) ?? "poisson";
-    const key = JSON.stringify([lawId, s.method, s.model, s.params, s.failure, customVersion]);
+    const key = JSON.stringify([lawId, s.method, s.streams, s.model, s.params, s.failure, customVersion]);
     if ($("law-card").dataset.key === key) return;
     $("law-card").dataset.key = key;
     const l = data.laws.find((/** @type {any} */ x) => x.id === lawId), code = Laws.BY_ID[lawId];
-    $("law-card").innerHTML = `<h2>The ${esc(l.name)} law</h2><p>${esc(l.convention)}</p><div class="formula" data-tex="${esc(l.pmf)}"></div>
+    $("law-card").innerHTML = `<h2>The ${esc(l.name)} law</h2><p>${esc(l.convention)}</p><div class="formula" data-tex="${esc(l.pdf ?? l.pmf)}"></div>
 <div class="cols"><div><h3>Parameters and support</h3><ul>${l.params.map((/** @type {any} */ p) => `<li><span data-tex="${esc(p.domain)}"></span></li>`).join("")}<li>Support: <span data-tex="${esc(l.support)}"></span></li></ul>
 <h3>Moments</h3><dl class="readout"><dt>Mean</dt><dd><span data-tex="${esc(l.moments.mean)}"></span></dd><dt>Variance</dt><dd><span data-tex="${esc(l.moments.variance)}"></span></dd></dl><p>${esc(l.moments.existence)}</p></div>
-<div><h3>Transforms</h3><dl class="readout"><dt>PGF</dt><dd><span data-tex="${esc(l.transforms.pgf)}"></span></dd><dt>MGF</dt><dd><span data-tex="${esc(l.transforms.mgf)}"></span></dd><dt>CF</dt><dd><span data-tex="${esc(l.transforms.cf)}"></span></dd></dl>
+<div><h3>Transforms</h3><dl class="readout">${Object.entries({ pgf: "PGF", mgf: "MGF", cf: "CF" }).filter(([k]) => l.transforms[k]).map(([k, label]) => `<dt>${label}</dt><dd><span data-tex="${esc(l.transforms[k])}"></span></dd>`).join("")}</dl>
 <h3>Limiting and special cases</h3><ul>${l.limits.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
 <h3>Linked laws</h3><ul>${l.links.map((/** @type {any} */ x) => `<li><button type="button" class="link" data-open="exp-${esc(x.to)}">${esc(data.laws.find((/** @type {any} */ y) => y.id === x.to).name)}</button>: ${esc(x.relation)}</li>`).join("")}</ul></div></div>
 <h3>Parameters of the code</h3><ul>${code.params.map((/** @type {any} */ p) => `<li><span class="mono">${esc(p.name)}</span>: ${esc(p.text)}</li>`).join("")}</ul>
 <h3>Sampling methods</h3>${samplersOfLaw(d, lawId)}
 <p><button type="button" data-open="exp-${esc(l.id)}">Open the behaviour experiment</button> Workflows: ${data.models.filter((/** @type {any} */ m) => m.kind === "workflow" && m.law === l.id).map((/** @type {any} */ m) => `<button type="button" class="link" data-open="${esc(m.id)}">${esc(m.title)}</button>`).join(", ")}.</p>`;
-    const m = data.methods.find((/** @type {any} */ x) => x.id === s.method);
-    $("method-card").innerHTML = `<h2>${esc(m.name)}</h2><p class="label">${esc(m.family)}</p><div class="formula" data-tex="${esc(m.estimator)}"></div><p>${esc(m.estimatorText)}</p>
+    $("method-card").innerHTML = methodCard(data.methods.find((/** @type {any} */ x) => x.id === s.method));
+    $("crn-card").innerHTML = `${methodCard(data.methods.find((/** @type {any} */ x) => x.id === "crn"))}<p class="note">This page uses ${s.streams === "common" ? "common random numbers" : "separate streams"} now. <button type="button" class="link" data-streams="${s.streams === "common" ? "separate" : "common"}">Use ${s.streams === "common" ? "separate streams" : "common random numbers"}</button></p>`;
+  }
+
+  /** The card of one method of the library. @param {any} m */
+  function methodCard(m) {
+    return `<h2>${esc(m.name)}</h2><p class="label">${esc(m.family)}</p><div class="formula" data-tex="${esc(m.estimator)}"></div><p>${esc(m.estimatorText)}</p>
 <div class="cols"><div><h3>Assumptions</h3><ul>${m.assumptions.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul><h3>Settings</h3><ul>${m.settings.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
 <div><h3>Suitable example</h3><p>${esc(m.suitable.text)} <button type="button" class="link" data-method-open="${esc(m.id)}:suitable">Open it</button></p>
 <h3>Failure example</h3><p>${esc(m.failure.text)} <button type="button" class="link" data-method-open="${esc(m.id)}:failure">Open it</button></p>
@@ -442,7 +505,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     const next = () => {
       if (sweepRun !== sw || sw.i >= xs.length) { schedule(); return; }
       const overrides = { ...M.parseParams(s.params).overrides, [s.sweep]: String(+xs[sw.i].toPrecision(10)) };
-      const settings = { seed: s.seed, method: s.method, compare: "none", failure: s.failure, overrides };
+      const settings = settingsOf(s, overrides, "none");
       const c = En.prepare(record, settings);
       if (!c.ok) { sw.error = `At ${s.sweep} = ${fmt(xs[sw.i])}: ${c.errors[0]}`; schedule(); return; }
       const st = En.momentStatus(c), refs = En.reference(c, st);
@@ -501,9 +564,9 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     return {
       format: "monte-carlo-workbench/run", version: 1, created: new Date().toISOString(),
       generator: { name: "Philox4x32-10", version: Rng.VERSION, streams: Rng.SCHEME, blockSize: En.BLOCK, stream: En.STREAM },
-      seed: s.seed, settings: { model: s.model, params: s.params, method: s.method, compare: s.compare, failure: s.failure, size: s.size, n: 2 ** s.size },
+      seed: s.seed, settings: { model: s.model, params: s.params, method: s.method, compare: s.compare, streams: s.streams, strata: s.strata, stratify: s.stratify, failure: s.failure, size: s.size, n: 2 ** s.size },
       model: modelRecord(), status: run?.status ?? "idle", replicates: run?.accum.n ?? 0,
-      results: (sm ?? []).map((/** @type {any} */ m) => ({ method: m.method, alternatives: m.alts.map((/** @type {any} */ a) => ({ label: a.label, quantities: a.quantities.map((/** @type {any} */ q) => ({ name: q.name, kind: q.kind, n: q.n, estimate: q.est, lo: q.lo, hi: q.hi, interval: q.how, reference: q.reference })) })) })),
+      results: (sm ?? []).map((/** @type {any} */ m) => ({ method: m.method, alternatives: m.alts.map((/** @type {any} */ a) => ({ label: a.label, quantities: a.quantities.map((/** @type {any} */ q) => ({ name: q.name, kind: q.kind, n: q.n, estimate: q.est, lo: q.lo, hi: q.hi, interval: q.how, reference: q.reference, varianceRatio: q.gain?.ratio ?? null })) })) })),
       environment: { userAgent: navigator.userAgent },
       replay: "The same seed, settings and model give the same integer stream. Floating-point results can differ in the last digits between browsers, because Math.log and Math.exp are not exact.",
     };
@@ -513,11 +576,11 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
   function loadRun(doc) {
     if (!doc || doc.format !== "monte-carlo-workbench/run") throw new Error("The file is not a run record of this page.");
     if (doc.version !== 1) throw new Error(`The run record uses version ${String(doc.version).slice(0, 10)}. This page reads version 1.`);
-    const c = En.prepare(doc.model, { seed: doc.seed, method: doc.settings.method, overrides: {} });
+    const c = En.prepare(doc.model, { seed: doc.seed, method: doc.settings.method, overrides: {}, streams: doc.settings.streams ?? "common", strata: doc.settings.strata ?? M.FIELDS.strata.default, stratify: doc.settings.stratify ?? "" });
     if (!c.ok) throw new Error(`The model in the record has errors: ${c.errors[0]}`);
     M.setCustom(doc.model);
     customVersion++;
-    const state = { model: "custom", params: doc.settings.params ?? "", method: doc.settings.method, compare: doc.settings.compare ?? "none", failure: doc.settings.failure ?? "none", size: doc.settings.size, seed: doc.seed };
+    const state = { model: "custom", params: doc.settings.params ?? "", method: doc.settings.method, compare: doc.settings.compare ?? "none", streams: doc.settings.streams ?? "common", strata: doc.settings.strata ?? M.FIELDS.strata.default, stratify: doc.settings.stratify ?? "", failure: doc.settings.failure ?? "none", size: doc.settings.size, seed: doc.seed };
     expected = { key: "", doc };
     app.set(state);
     expected.key = runKey(app.state);
@@ -544,8 +607,8 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     const sm = summary(), s = app.state;
     /** @param {unknown} v */
     const c = (v) => { const t = v === null || v === undefined ? "" : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
-    const rows = [["model", "method", "alternative", "quantity", "kind", "n", "estimate", "lo", "hi", "interval", "reference", "seed"].join(",")];
-    for (const m of sm ?? []) for (const a of m.alts) for (const q of a.quantities) rows.push([s.model, m.method, a.label, q.name, q.kind, q.n, q.est, q.lo, q.hi, q.how, q.reference, s.seed].map(c).join(","));
+    const rows = [["model", "method", "alternative", "quantity", "kind", "n", "estimate", "lo", "hi", "interval", "reference", "variance_ratio", "streams", "seed"].join(",")];
+    for (const m of sm ?? []) for (const a of m.alts) for (const q of a.quantities) rows.push([s.model, m.method, a.label, q.name, q.kind, q.n, q.est, q.lo, q.hi, q.how, q.reference, q.gain?.ratio ?? "", s.streams, s.seed].map(c).join(","));
     return `${rows.join("\n")}\n`;
   }
 
@@ -630,7 +693,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     customVersion++;
     $("editor-status").textContent = "Applied: the custom model is the current model.";
     autosave();
-    app.set({ model: "custom", params: "", sweep: "", quantity: 1, alt: 1 });
+    app.set({ model: "custom", params: "", sweep: "", stratify: "", quantity: 1, alt: 1 });
   }
 
   /* ---------- binding ---------- */
@@ -639,7 +702,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
   function openModel(id) {
     const m = data.models.find((/** @type {any} */ x) => x.id === id);
     if (!m) return;
-    app.set({ ...Object.fromEntries(["params", "method", "compare", "failure", "size", "plot", "yscale", "quantity", "alt", "sweep"].map((k) => [k, M.FIELDS[k].default])), ...M.exampleState(m) });
+    app.set({ ...Object.fromEntries(["params", "method", "compare", "streams", "strata", "stratify", "failure", "size", "plot", "yscale", "quantity", "alt", "sweep"].map((k) => [k, M.FIELDS[k].default])), ...M.exampleState(m) });
   }
 
   /** @param {any} a the kit's app */
@@ -649,7 +712,9 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
       const t = /** @type {HTMLElement} */ (e.target).closest?.("button");
       if (!t) return;
       if (t.dataset.open) openModel(t.dataset.open);
+      else if (t.dataset.method === "crn") { app.set({ streams: "common" }); $("crn-card").scrollIntoView?.({ block: "start" }); }
       else if (t.dataset.method) app.set({ method: t.dataset.method });
+      else if (t.dataset.streams) app.set({ streams: t.dataset.streams });
       else if (t.dataset.theory) app.set({ theory: t.dataset.theory, panel: "theory" });
       else if (t.dataset.unset) {
         const { overrides } = M.parseParams(app.state.params);
@@ -663,7 +728,8 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
         const [id, part] = t.dataset.methodOpen.split(":"), m = data.methods.find((/** @type {any} */ x) => x.id === id);
         const target = m[part];
         openModel(target.model);
-        app.set({ method: id, ...(part === "comparison" ? { compare: target.with } : {}), ...(target.settings ?? {}) });
+        // Common random numbers is the streams setting, not a method of the run.
+        app.set({ ...(En.METHODS[id] ? { method: id } : {}), ...(part === "comparison" && En.METHODS[id] ? { compare: target.with } : {}), ...(target.settings ?? {}) });
       }
     });
     $("param-fields").addEventListener("change", (/** @type {Event} */ e) => {
@@ -686,6 +752,8 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     $("run-reset").addEventListener("click", resetRun);
     $("autorun").addEventListener("change", () => { autorun = $("autorun").checked; });
     $("alt-select").addEventListener("change", () => app.set({ alt: Number($("alt-select").value) }));
+    // The empty value, the focus variable, is a valid choice here, so this select has its own listener.
+    $("stratify").addEventListener("change", () => app.set({ stratify: $("stratify").value }));
     $("quantity-select").addEventListener("change", () => app.set({ quantity: Number($("quantity-select").value) }));
     $("sweep-param").addEventListener("change", () => {
       const name = $("sweep-param").value, p = app.derived.parameters?.find((/** @type {any} */ x) => x.name === name);
@@ -728,7 +796,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
       M.setCustom(doc);
       customVersion++;
       autosave();
-      app.set({ model: "custom", params: "", sweep: "", quantity: 1, alt: 1 });
+      app.set({ model: "custom", params: "", sweep: "", stratify: "", quantity: 1, alt: 1 });
     });
     loader("load-run", loadRun);
     for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"]]) {
@@ -758,7 +826,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
   /** Measure the replicates for each second of the current model, on the main thread and with the workers. */
   function benchmark() {
     const s = app.state, { record } = M.modelOf(s, data);
-    const settings = { seed: s.seed, method: s.method, compare: "none", failure: "none", overrides: M.parseParams(s.params).overrides };
+    const settings = { ...settingsOf(s, M.parseParams(s.params).overrides, "none"), failure: "none" };
     const c = En.prepare(record, settings);
     if (!c.ok) return;
     const t0 = performance.now();

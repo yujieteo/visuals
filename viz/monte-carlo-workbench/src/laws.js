@@ -1,16 +1,17 @@
-/* Monte Carlo Probability Workbench: the probability laws of the discrete group. Each law states its parameter
- * convention and support, and computes its PMF, CDF, survival function, quantile function and moments, with the
- * conditions under which a moment exists. Each law also gives three samplers, one for each method of the method
- * library: its reference sampler for independent sampling, an inverse-transform sampler, and a rejection sampler
- * (or the reason that it has none). A sampler draws from a stream of MCRng. Tests load this file with require().
+/* Monte Carlo Probability Workbench: the probability laws of the discrete group, and the catalogue of every law in
+ * the code (BY_ID), with the continuous laws of continuous.js. Each law states its parameter convention and support,
+ * and computes its PMF, CDF, survival function, quantile function and moments, with the conditions under which a
+ * moment exists. Each law also gives three samplers, one for each method of direct simulation: its reference sampler
+ * for independent sampling, an inverse-transform sampler, and a rejection sampler (or the reason that it has none).
+ * A sampler draws from a stream of MCRng. Tests load this file with require().
  */
-/** @param {any} root the global object @param {(S: any) => any} factory */
+/** @param {any} root the global object @param {(S: any, C: any) => any} factory */
 (function (root, factory) {
   const S = root.MCSpecial ?? require("./special.js");
-  const api = factory(S);
+  const api = factory(S, root.MCContinuous ?? require("./continuous.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MCLaws = api;
-})(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (/** @type {typeof import("./special.js")} */ S) {
+})(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (/** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./continuous.js")} */ C) {
   "use strict";
 
   /** @typedef {{ uniform(): number, u32(): number, below(m: number): number, normal(): number }} Rng */
@@ -82,38 +83,7 @@
   /** A sampler that always returns one value. @param {number} v @param {string} why @returns {Sampler} */
   const constant = (v, why) => ({ label: `Constant ${v} (${why})`, exactness: "exact", draw: () => v });
 
-  /**
-   * The generic rejection sampler from a proposal law q: accept x with probability p(x) / (M q(x)). `factor` below 1
-   * shrinks the envelope constant for the assumption-failure experiment, and `violations` counts proposals where the
-   * ratio exceeds 1, which shows that the envelope does not dominate the target.
-   * @param {string} label @param {(k: number) => number} p @param {(k: number) => number} q @param {(rng: Rng) => number} propose
-   * @param {number} M @param {number} factor @returns {Sampler | NoSampler}
-   */
-  function rejection(label, p, q, propose, M, factor) {
-    if (!(M >= 1) || !Number.isFinite(M)) return { unavailable: `The envelope constant M = ${show(M)} is not finite.` };
-    if (1 / M < 1e-3) return { unavailable: `The acceptance probability 1/M = ${(1 / M).toPrecision(3)} is below 0.001, so the method costs too much here.` };
-    const Mf = M * factor;
-    return {
-      label: `${label}, envelope constant M = ${M.toPrecision(6)}${factor === 1 ? "" : ` multiplied by ${factor}`}`,
-      exactness: factor === 1 ? "exact" : "not exact: the envelope is too small",
-      acceptance: 1 / M,
-      envelope: Mf,
-      draw(rng, stats) {
-        for (;;) {
-          const x = propose(rng);
-          const ratio = p(x) / (Mf * q(x));
-          if (stats) {
-            stats.proposals++;
-            if (ratio > 1 + 1e-12) stats.violations++;
-          }
-          if (rng.uniform() <= ratio) {
-            if (stats) stats.accepts++;
-            return x;
-          }
-        }
-      },
-    };
-  }
+  const { rejection, gamma } = C;
 
   /** The smallest k in [lo, hi] with test(k) true, for a monotone test, by doubling then bisection. @param {(k: number) => boolean} test @param {number} lo @param {number} hi */
   function firstTrue(test, lo, hi) {
@@ -132,31 +102,15 @@
     return a;
   }
 
-  /** The quantile function: the smallest support point k with F(k) >= u, by the CDF below one half and the survival function above it. */
+  /** The quantile function: the smallest support point k with F(k) >= u, by the CDF below one half and the survival function above it. A continuous law has its own. */
   /** @param {any} law @param {number} u @param {Params} p */
   function quantile(law, u, p) {
     const s = law.support(p);
     if (u <= 0) return s.lo;
     if (u >= 1) return s.hi;
+    if (law.continuous) return law.quantile(u, p);
     const test = u <= 0.5 ? (/** @type {number} */ k) => law.cdf(k, p) >= u : (/** @type {number} */ k) => law.sf(k, p) <= 1 - u;
     return firstTrue(test, s.lo, Math.min(s.hi, 9007199254740991));
-  }
-
-  /* ---------- the gamma sampler, for the negative binomial law as a gamma mixture of Poisson laws ---------- */
-
-  /** Gamma(shape a, scale 1) by Marsaglia and Tsang (2000); a < 1 by Gamma(a + 1) U^(1/a). @param {Rng} rng @param {number} a @returns {number} */
-  function gamma(rng, a) {
-    if (a < 1) return gamma(rng, a + 1) * Math.pow(rng.uniform(), 1 / a);
-    const d = a - 1 / 3, c = 1 / Math.sqrt(9 * d);
-    for (;;) {
-      const x = rng.normal();
-      let v = 1 + c * x;
-      if (v <= 0) continue;
-      v = v * v * v;
-      const u = rng.uniform();
-      if (u < 1 - 0.0331 * x * x * x * x) return d * v;
-      if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
-    }
   }
 
   /** A Poisson draw by the reference algorithm: multiplication of uniforms below 10, PTRS (Hormann 1993) above. @param {Rng} rng @param {number} lam */
@@ -200,6 +154,7 @@
    * @property {(p: Params, cut?: number) => Sampler | NoSampler} inverse
    * @property {(p: Params, factor: number) => Sampler | NoSampler} rejection
    * @property {(p: Params, j: number) => { law: string, params: Params }} [marginal]
+   * @property {(p: Params, i: number, j: number) => number} [covariance]
    */
 
   /** @type {Law} */
@@ -314,6 +269,7 @@
     sf: (k, p) => binomial.sf(k, { n: p.n, p: p.p[0] }),
     moments: (p) => binomial.moments({ n: p.n, p: p.p[0] }),
     marginal: (p, j) => ({ law: "binomial", params: { n: p.n, p: p.p[j - 1] } }),
+    covariance: (p, i, j) => p.n * ((i === j ? p.p[i - 1] : 0) - p.p[i - 1] * p.p[j - 1]),
     reference: (p) => {
       const sampler = cached((q) => binomial.reference(q));
       return { label: "Conditional binomial draws, category by category, each by the binomial reference sampler", exactness: "exact", draw: (rng) => multinomialDraw(p, sampler, rng) };
@@ -643,9 +599,11 @@
     return rejection(`Proposal: geometric with success probability ${q.toPrecision(4)}`, (x) => law.pmf(x, p), g, (rng) => /** @type {number} */ (geometricClosed({ p: q }).draw(rng)), best, factor);
   }
 
-  const LAWS = [bernoulli, binomial, categorical, multinomial, uniform, geometric, negbin, poisson, hypergeometric, zipf];
-  /** @type {Record<string, Law>} */
+  const DISCRETE = [bernoulli, binomial, categorical, multinomial, uniform, geometric, negbin, poisson, hypergeometric, zipf];
+  /** Every law of the code: the discrete group, then the continuous group. @type {any[]} */
+  const LAWS = [...DISCRETE, ...C.LAWS];
+  /** @type {Record<string, any>} */
   const BY_ID = Object.fromEntries(LAWS.map((l) => [l.id, l]));
 
-  return { LAWS, BY_ID, quantile: (/** @type {string} */ id, /** @type {number} */ u, /** @type {Params} */ p) => quantile(BY_ID[id], u, p), poissonDraw, gamma, alias };
+  return { LAWS, BY_ID, quantile: (/** @type {string} */ id, /** @type {number} */ u, /** @type {Params} */ p) => quantile(BY_ID[id], u, p), poissonDraw, alias };
 });

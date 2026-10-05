@@ -128,13 +128,15 @@
   }
 
   /**
-   * The law of the focus variable: the PMF, CDF, survival function or quantile function, with the reference law as
-   * a line and the run's frequencies as bars or steps.
+   * The law of the focus variable: the PMF (or the PDF of a continuous law), CDF, survival function or quantile
+   * function, with the reference law as a line and the run's frequencies as bars or steps. A continuous law draws its
+   * run as a histogram of densities, with bins of the given width, and its reference law as a smooth line.
    * @param {{ kind: "pmf" | "cdf" | "survival" | "quantile", ylog: boolean, xlabel: string, theory: { x: number[], y: number[] } | null,
-   *   empirical: { x: number[], y: number[] } | null, n: number, note?: string }} o
+   *   empirical: { x: number[], y: number[] } | null, n: number, note?: string, continuous?: boolean, width?: number }} o
    */
   function distribution(o) {
-    const names = { pmf: "PMF", cdf: "CDF", survival: "Survival function", quantile: "Quantile function" };
+    const cont = !!o.continuous;
+    const names = { pmf: cont ? "PDF" : "PMF", cdf: "CDF", survival: "Survival function", quantile: "Quantile function" };
     const label = `${names[o.kind]} of ${o.xlabel}: ${o.theory ? "reference law as a line" : "no reference law"}${o.empirical ? `, frequencies of ${o.n.toLocaleString("en-US")} draws as ${o.kind === "pmf" ? "bars" : "steps"}` : ""}`;
     const all = [...(o.theory?.x ?? []), ...(o.empirical?.x ?? [])];
     const allY = [...(o.theory?.y ?? []), ...(o.empirical?.y ?? [])];
@@ -147,12 +149,22 @@
     const xlog = !xq && x0 >= 1 && x1 / x0 > 1000;
     const yr = ylog ? logRange(allY) : xq ? /** @type {[number, number]} */ ([Math.min(...allY), Math.max(...allY) || 1]) : /** @type {[number, number]} */ ([0, Math.max(...allY, 1e-12) * (o.kind === "pmf" ? 1.1 : 1)]);
     if (xq && yr[0] === yr[1]) { yr[0] -= 1; yr[1] += 1; }
-    const pad = !xq && !xlog && Number.isInteger(x0) ? 0.5 : 0;
-    const f = frame({ x: [x0 - pad, x1 + pad], y: yr, xlog, ylog, xlabel: xq ? "u" : `${o.xlabel}${xlog ? " (log axis)" : ""}`, ylabel: xq ? o.xlabel : names[o.kind], xint: !xq && pad > 0 });
+    const pad = cont ? (o.kind === "pmf" ? (o.width ?? 0) / 2 : 0) : !xq && !xlog && Number.isInteger(x0) ? 0.5 : 0;
+    const f = frame({ x: [x0 - pad, x1 + pad], y: yr, xlog, ylog, xlabel: xq ? "u" : `${o.xlabel}${xlog ? " (log axis)" : ""}`, ylabel: xq ? o.xlabel : names[o.kind], xint: !cont && !xq && pad > 0 });
     const parts = [f.markup];
     if (o.empirical) {
       const e = o.empirical;
-      if (o.kind === "pmf") {
+      if (o.kind === "pmf" && cont) {
+        // A histogram: each bar spans its bin, centred on x.
+        const half = (o.width ?? 0) / 2;
+        parts.push('<g class="bars">');
+        e.x.forEach((x, i) => {
+          if (!(e.y[i] > 0)) return;
+          const l = f.sx(x - half), r = f.sx(x + half), top = f.sy(e.y[i]), base = f.sy(ylog ? yr[0] : 0);
+          parts.push(`<rect x="${l.toFixed(1)}" y="${top.toFixed(1)}" width="${Math.max(0.5, r - l).toFixed(1)}" height="${Math.max(0, base - top).toFixed(1)}"/>`);
+        });
+        parts.push("</g>");
+      } else if (o.kind === "pmf") {
         const w = Math.max(1, Math.min(18, (f.sx(x0 + 1) - f.sx(x0)) * 0.7));
         parts.push('<g class="bars">');
         e.x.forEach((x, i) => {
@@ -165,13 +177,16 @@
     }
     if (o.theory) {
       const t = o.theory;
-      if (o.kind === "pmf") {
+      if (cont && !xq) {
+        const keep = t.x.map((_, i) => i).filter((i) => !ylog || t.y[i] > 0);
+        parts.push(`<path class="series s2 ref-law" d="${path(keep.map((i) => t.x[i]), keep.map((i) => t.y[i]), f.sx, f.sy)}"/>`);
+      } else if (o.kind === "pmf") {
         parts.push('<g class="pmf-ref">');
         t.x.forEach((x, i) => { if (!ylog || t.y[i] > 0) parts.push(`<circle cx="${f.sx(x).toFixed(1)}" cy="${f.sy(t.y[i]).toFixed(1)}" r="2.6"/>`); });
         parts.push("</g>");
       } else parts.push(`<path class="series s2 ref-law" d="${steps(t.x, t.y, f.sx, f.sy, xq ? 1 : x1 + pad)}"/>`);
     }
-    const key = [o.empirical ? (o.kind === "pmf" ? "bars: frequencies in the run" : "blue steps: the run") : "", o.theory ? (o.kind === "pmf" ? "dots: reference PMF" : "orange: reference law") : ""].filter(Boolean).join(" · ");
+    const key = [o.empirical ? (o.kind === "pmf" ? (cont ? "bars: histogram of the run" : "bars: frequencies in the run") : "blue steps: the run") : "", o.theory ? (o.kind === "pmf" ? (cont ? "orange: reference PDF" : "dots: reference PMF") : "orange: reference law") : ""].filter(Boolean).join(" · ");
     parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">${esc(key)}</text>`);
     return svg(label, parts.join(""));
   }

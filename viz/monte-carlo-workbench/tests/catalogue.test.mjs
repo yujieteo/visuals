@@ -18,7 +18,7 @@ test("the discrete group holds its 10 laws, each with every required part and a 
     for (const k of ["pgf", "mgf", "cf"]) assert.ok(l.transforms[k], `${l.id}: transforms.${k}`);
     const code = L.BY_ID[l.id];
     assert.ok(code, `${l.id} has code`);
-    assert.deepEqual(code.params.map((p) => p.name).sort(), l.params.map((/** @type {any} */ p) => p.name).sort(), `${l.id}: the same parameter names in the catalogue and the code`);
+    assert.deepEqual(code.params.map((/** @type {any} */ p) => p.name).sort(), l.params.map((/** @type {any} */ p) => p.name).sort(), `${l.id}: the same parameter names in the catalogue and the code`);
   }
 });
 

@@ -1,5 +1,5 @@
 /* Monte Carlo Probability Workbench: the worker entry. The page builds each worker from its own inline rng,
- * special, expr, laws and engine scripts plus this file, so a worker runs exactly the page's engine. "init"
+ * special, expr, continuous, laws and engine scripts plus this file, so a worker runs exactly the page's engine. "init"
  * compiles the model of a job; "block" simulates one block and returns its statistics with the job id. */
 /** @type {{ id: number, c: any, opts: any } | null} */
 let job = null;

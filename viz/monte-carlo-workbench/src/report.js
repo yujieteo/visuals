@@ -11,7 +11,10 @@
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function () {
   "use strict";
 
-  const METHOD_NAMES = /** @type {Record<string, string>} */ ({ independent: "independent sampling", inverse: "the inverse transform", rejection: "rejection sampling" });
+  const METHOD_NAMES = /** @type {Record<string, string>} */ ({ independent: "independent sampling", inverse: "the inverse transform", rejection: "rejection sampling", stratified: "stratification", antithetic: "antithetic variables", control: "control variates" });
+
+  /** The sampler of each method's laws: the variance-reduction methods use the inverse transform or the reference sampler. */
+  const SAMPLER = /** @type {Record<string, string>} */ ({ independent: "independent", inverse: "inverse", rejection: "rejection", stratified: "inverse", antithetic: "inverse", control: "independent" });
 
   /** A number as text: at most 4 significant digits, never NaN or Infinity. @param {number | null | undefined} v */
   function num(v) {
@@ -62,11 +65,11 @@
     });
     const methodFrames = [{
       title: `Method: ${method.name}`,
-      body: `$$${method.estimator}$$\n\n${method.estimatorText}\n\n- Number of replicates n = ${d.n} for each alternative\n- Seed ${state.seed}, generator Philox4x32-10, block size 1,024\n- Comparison: ${state.compare === "none" ? "none" : METHOD_NAMES[state.compare]}\n- Assumption failure: ${state.failure === "none" ? "none" : d.failureNote}`,
+      body: `$$${method.estimator}$$\n\n${method.estimatorText}\n\n- Number of replicates n = ${d.n} for each alternative\n- Seed ${state.seed}, generator Philox4x32-10, block size 1,024\n- Alternatives: ${state.streams === "common" ? "common random numbers" : "separate streams"}${d.design?.stratify ? `\n- Strata: ${d.design.stratify.K} equal strata of the uniform of ${d.design.stratify.name}` : ""}${d.design?.control && state.method === "control" ? `\n- Control variate: ${d.design.control.name} = ${d.design.control.expr}` : ""}\n- Comparison: ${state.compare === "none" ? "none" : METHOD_NAMES[state.compare]}\n- Assumption failure: ${state.failure === "none" ? "none" : d.failureNote}`,
       narration: `The run uses ${METHOD_NAMES[state.method]} with ${d.n} replicates for each alternative and the seed ${state.seed}.`,
     }, {
       title: "Samplers",
-      body: d.samplers.map((/** @type {any} */ s) => `- ${s.variable}, ${s.name} law: ${s.methods ? `${s.methods[state.method].label} (${s.methods[state.method].exactness})` : "parameters change from replicate to replicate"}`).join("\n"),
+      body: d.samplers.map((/** @type {any} */ s) => `- ${s.variable}, ${s.name} law: ${s.methods ? `${s.methods[SAMPLER[state.method]].label} (${s.methods[SAMPLER[state.method]].exactness})` : "parameters change from replicate to replicate"}`).join("\n"),
       narration: "Each law names its sampler and whether that sampler is exact.",
     }];
     const sm = run?.summary?.[0];
