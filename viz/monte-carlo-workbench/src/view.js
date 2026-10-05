@@ -270,7 +270,7 @@
 
   /** The gain of a variance-reduction design in words. @param {any} g */
   function gainText(g) {
-    return `Variance ratio against plain sampling with the same number of evaluations: ${fmt(g.ratio)}${g.ratio < 1 ? " (a loss)" : ""}`;
+    return `Variance ratio against independent sampling: ${fmt(g.ratio)}${g.ratio < 1 ? " (a loss)" : ""}`;
   }
 
   /** @param {Record<string, any>} s @param {any} d @param {any} sm */
@@ -403,7 +403,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
       const g = x.gain, extra = design === "antithetic" && g.rho !== null ? ` Correlation within the pairs: ${fmt(g.rho)}${g.rho > 0 ? ", positive, so the pairs add variance" : ""}.` : design === "control" ? ` β̂ = ${fmt(g.beta)}, correlation with the control ${fmt(g.rho)}, so at best 1/(1 − ρ²) = ${g.rho !== null && Math.abs(g.rho) < 1 ? fmt(1 / (1 - g.rho * g.rho)) : "–"}.` : "";
       return `<li><span class="mono">${esc(q.name)}</span>: ${gainText(g)}.${extra}</li>`;
     }).join("");
-    return `<h4>${esc(METHOD[s.method])}</h4>${lines.join("")}<ul>${rows}</ul><p class="note">A ratio above 1 means the design needs fewer evaluations for the same precision. The ratios are a finite-run observation. ${tag("observation")}</p>`;
+    return `<h4>${esc(METHOD[s.method])}</h4>${lines.join("")}<ul>${rows}</ul><p class="note">The ratio compares the variance of independent sampling with the same number of evaluations of the model. A ratio above 1 means the design needs fewer evaluations for the same precision. The ratios are a finite-run observation. ${tag("observation")}</p>`;
   }
 
   /* ---------- cards below the panels ---------- */
