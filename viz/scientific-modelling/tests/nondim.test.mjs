@@ -79,7 +79,7 @@ test("the lumped body: dθ/dτ = −θ with no parameter left; Bi stays out of t
   assert.ok(S.equal(S.read(t.chosen.plain), S.read("rho*c_p*V/(h*A_s)")), "t_c = ρc_pV/(hA_s) from heat storage against convection");
   assert.equal(t.chosen.value, "130", "130 s for the 1 cm steel cube");
   assert.deepEqual(nd.pi.absent.map((a) => a.label), ["Bi"]);
-  assert.match(nd.pi.absentWhy, /do not contain k/);
+  assert.match(nd.pi.absent[0].why, /do not contain k, so Bi cannot appear/);
   assert.ok(nd.enters.filter((e) => ["rho", "c_p", "V", "A_s", "h"].includes(e.name)).every((e) => e.onlyScales), "these parameters change only the time unit");
 });
 
@@ -96,7 +96,7 @@ test("a zero scale: T_i − T_∞ = 0 is refused, the heat-source scale replaces
   assert.equal(initial.value.lo, "0", "θ = (T_i − T_∞)k/(q̇_v L²) = 0 at τ = 0");
   const r = d.results.find((x) => x.id === "r-nd-refused-v-T");
   assert.equal(r.status, "unresolved");
-  assert.match(r.next, /supply another nonzero scale/);
+  assert.match(r.next, /enter it in the model's scales/);
 });
 
 test("failure examples: a failed check blocks the Nondimensionalizer with its next action; a model without equations has nothing to do", () => {
@@ -168,6 +168,7 @@ test("SymPy agrees: its independent substitution and chain rule give the same fa
     }
   }
   assert.ok(compared >= 17, `${compared} forms compared`);
+  for (const ref of refs) assert.equal(derived(ref.example).results.find((r) => r.id === "r-nd-reference")?.status, "exact", `${ref.example}: the page shows the agreement`);
 });
 
 test("a scale with more than one term: the domain length L − L_1 inverts exactly, and the time balance through it is found", () => {

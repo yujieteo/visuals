@@ -200,21 +200,21 @@
             : ["- None: no other mechanism or prescribed value gives a scale."]),
           ...nd.scales.filter((sc) => sc.changed).map((sc) => `\n**${STATUS.unresolved}:** ${cell(sc.changed)}`),
         ].join("\n"),
-        narration: `The Nondimensionalizer chooses a scale for each of the ${words(nd.scales.length)} coordinates and fields. Each scale comes from the geometry, a prescribed value or a balance of two terms, and no scale can be zero.${nd.scales.some((sc) => sc.changed) ? " One natural scale is zero, so the tool uses another scale and states the changed meaning." : ""}`,
+        narration: `The Nondimensionalizer chooses a scale for each coordinate and field, ${words(nd.scales.length)} in all. Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. No scale can be zero.${nd.scales.some((sc) => sc.changed) ? " One natural scale is zero, so the tool uses another scale and states the changed meaning." : ""}`,
       });
       method.push({
         title: "Hand calculation 6: dimensionless variables and derivative transformations",
         body: [
-          ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map undoes the other (exact)" : "the maps do not compose to the identity"}.`),
+          ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map is the inverse of the other (exact)" : "the maps do not compose to the identity"}.`),
           "", ...nd.derivatives.map((x) => `${dm(x.tex)}\n\n${cell(x.reason)}\n`),
         ].join("\n"),
-        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. Each derivative divides by the scale of its coordinate, and the offset drops out. The page checks that each map undoes the other.",
+        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. A derivative takes the scale of the field and divides by the scale of its coordinate once for each order. The page checks that each map is the inverse of the other.",
       });
       method.push({
         title: `Hand calculation 7: substitution and common factors in ${count(nd.equations.length, "equation or condition", "equations and conditions")}`,
         body: nd.equations.map((e) => [`**${e.id}** (${e.kind}${e.output ? `, defines ${e.output}` : ""}):`, "", dm(e.originalTex), e.domainText ? `Holds ${cell(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.` : "",
           "", "Substitute:", "", dm(e.substitutedTex), "", "Simplify:", "", dm(e.simplifiedTex), "",
-          `Divide by the common factor ${m(e.factorTex)}, the coefficient of ${cell(e.reference || "the first term")}:`, "",
+          `Divide by the common factor ${m(e.factorTex)}, the coefficient of the term for ${cell(e.reference || "the first term")}:`, "",
           dm(`${e.dimensionlessTex}${where(e)}`), ""].join("\n")).join("\n"),
         narration: `The tool substitutes the new variables into each of the ${words(nd.equations.length)} equations and conditions. Then it simplifies each one and divides it by its common factor. That factor is the coefficient of the term with the highest derivative of a field.`,
       });
@@ -224,14 +224,19 @@
     const results = [];
     if (ndOk) {
       const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
-      const spokenParam = (p) => (p.names[0] ? `the ${p.names[0].name.split(",")[0]}` : "a group with no familiar name");
+      const spokenParams = (ps) => {
+        const named = ps.filter((p) => p.names[0]).map((p) => `the ${p.names[0].name.split(",")[0]}`);
+        const unnamed = ps.filter((p) => !p.names[0]).length;
+        const parts = [...named, ...(unnamed ? [unnamed === 1 ? "a group with no familiar name" : `${words(unnamed)} groups with no familiar name`] : [])];
+        return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0];
+      };
       const named = nd.parameters.filter((p) => p.role !== "output" && p.names.length);
       results.push({
         title: `Hand calculation 7: the dimensionless model, ${count(params.length, "independent parameter", "independent parameters")}`,
         body: [...nd.equations.filter((e) => !e.output).map((e) => `- ${e.id}: ${m(`${e.namedTex}${where(e)}`)}`),
           ...nd.equations.filter((e) => e.output).map((e) => `- ${e.id}, defines ${e.output}: ${m(`${e.namedTex}${where(e)}`)}`),
           "", named.length ? `The page proposes these names, each a ${STATUS.proposed.toLowerCase()} until the researcher confirms it: ${named.map((p) => `${m(`${p.names[0].tex}=${p.tex}`)} (${cell(p.names[0].name)}${p.confirmed === p.names[0].id ? `, ${STATUS.confirmed}` : ""})`).join(", ")}.` : "No group of the model has a familiar name."].join("\n"),
-        narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(params.map(spokenParam).join(" and "))} ${params.length > 1 ? "are" : "is"} the only physical input left in the equations and conditions.`
+        narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(spokenParams(params))} ${params.length > 1 ? "are the only physical inputs" : "is the only physical input"} left in the equations and conditions.`
           : "The dimensionless model has no parameter. Its solution is the same for every value of the physical parameters.",
       });
       const pi = nd.pi;
@@ -243,11 +248,11 @@
           "", `**Solution fields:** ${nd.fields.map((f) => m(`${f.tex}\\left(${f.of.join(",")}\\right)`)).join(", ") || "none"}. **Coordinates:** ${nd.coordinates.map((c) => m(c.tex)).join(", ") || "none"}. **Prescribed data:** ${nd.prescribed.length ? nd.prescribed.map((x) => `${m(x.tex)} in ${x.id}`).join(", ") : "none"}.`,
           "", pi ? `**Pi basis.** The Finder found ${pi.m} independent groups; the dimensionless model uses ${pi.rank} of them.` : "**Pi basis.** The Finder did not run on this version.",
           ...(pi ? pi.rows.map((r) => `- ${m(r.tex)} (${r.what}): ${r.inPi ? m(`=${r.comboTex}`) : cell(r.note ?? "")}`) : []),
-          ...(pi && pi.absent.length ? ["", `Not used on their own: ${pi.absent.map((a) => m(a.tex)).join(", ")}. ${cell(pi.absentWhy)}`] : []),
+          ...(pi && pi.absent.length ? ["", "Pi groups that the model does not use:", "", ...pi.absent.map((a) => `- ${m(a.tex)}: ${cell(a.why)}`), "", cell(pi.absentWhy)] : []),
           "", "**Where each physical parameter enters:**", "",
           ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join(", "))}`),
         ].join("\n"),
-        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups.${pi.absent.length ? " The others do not appear on their own, and the frame says why." : ""}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
+        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `${pi.rank === pi.m ? `The model uses all ${words(pi.m)} Pi groups.` : `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups. The others do not appear in the model, and the frame says why.`}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
       });
     }
     if (ok) {
@@ -306,7 +311,7 @@
       checks.push({
         title: "Reverse substitution and the checks of the Nondimensionalizer",
         body: nd.checks.map((c) => `- ${status(c.status)}: ${c.passed ? "passed" : "FAILED"}. ${cell(c.title)}: ${cell(c.detail)}`).join("\n"),
-        narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} The reverse substitution gives back each dimensional equation and condition, and each coefficient is dimensionless.`,
+        narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} ${nd.checks.find((c) => c.id === "x-nd-reverse")?.passed ? "The reverse substitution gives back each dimensional equation and condition." : "The reverse substitution does not give back every dimensional form, and the frame names the failed check."}${nd.checks.find((c) => c.id === "x-nd-coefficients")?.passed ? " Each coefficient is dimensionless." : ""}`,
       });
     }
     checks.push({

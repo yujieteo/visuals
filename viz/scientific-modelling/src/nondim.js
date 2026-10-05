@@ -144,7 +144,7 @@
         try { off = S.read(sup); why = "the offset you supplied"; } catch { off = null; }
       }
       if (!off && best) { off = S.symbol(best[0]); why = `${labelOf(best[0])} is the reference value in ${labelOf(f)} − ${labelOf(best[0])}`; }
-      if (!off && values.length && values.every((x) => x.symbol === values[0].symbol)) { off = S.symbol(values[0].symbol); why = `every condition prescribes ${labelOf(values[0].symbol)}`; }
+      if (!off && values.length && values.every((x) => x.symbol === values[0].symbol)) { off = S.symbol(values[0].symbol); why = `each condition that prescribes a value of ${labelOf(f)} gives ${labelOf(values[0].symbol)}`; }
       if (!off) { off = S.zero(); why = "no reference value occurs, so the offset is 0"; }
       offsets.set(f, { poly: off, why });
     }
@@ -500,7 +500,7 @@
           if (d.size === 0) continue;
           const initial = p.kind === "initial";
           out.push({ poly: d, source: NATURAL, rank: initial ? -100 : -95,
-            reason: initial ? `The initial difference: ${p.condition} prescribes ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}, so ${hatLabel(name)} starts at 1.` : `The prescribed difference: ${p.condition} prescribes ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}, so ${hatLabel(name)} = 1 there.`,
+            reason: initial ? `The initial difference from ${p.condition}: ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}.` : `The prescribed difference from ${p.condition}: ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}.`,
             mechanism: initial ? "the initial difference" : "the prescribed boundary difference", items: [p.condition] });
         }
       }
@@ -604,7 +604,7 @@
       const rhs = normal(S.subst(lhs, fmap, ctx));
       const factorLabel = (p) => { const l = labelP(p); return /[ /+−-]/.test(l) ? `(${l})` : l; };
       const maps = [...new Set(xs)].map((x) => `${labelOf(x)} = ${offsets.get(x).poly.size ? `${labelP(offsets.get(x).poly)} + ` : ""}${factorLabel(/** @type {any} */ (choice.get(x)))}${hatLabel(x)}`);
-      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}. Each derivative in ${[...new Set(xs.map(labelOf))].join(" or ")} divides by the scale. The offset of ${labelOf(f)} drops out.` };
+      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}. The derivative takes the scale of ${labelOf(f)} and divides by ${[...new Set(xs)].map((x) => { const k = xs.filter((y) => y === x).length; return `the scale of ${labelOf(x)}${k === 2 ? " twice" : k > 2 ? ` ${k} times` : ""}`; }).join(" and ")}. The offset of ${labelOf(f)} does not appear.` };
     });
 
     /** TeX of an equation with each field, coordinate and derivative replaced by its transformation, before any
@@ -815,7 +815,7 @@
           if (o) base = S.symbol(o.symbol);
         }
         const sc = /** @type {any} */ (choice.get(r.name));
-        if (!base) { quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), outside: [labelOf(r.name)], note: `The Pi set has no variable for ${labelOf(r.name)} − ${labelP((off))}. Add one, such as a temperature difference, to compare ${labelOf(r.hat)} with a Pi group.` }); continue; }
+        if (!base) { quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), outside: [labelOf(r.name)], note: `The Pi set has no variable for ${labelOf(r.name)} − ${labelP((off))}. To compare ${labelOf(r.hat)} with a Pi group, add a variable for ${labelOf(r.name)} − ${labelP((off))}, with its definition, to the Pi set.` }); continue; }
         const m = S.mul(base, S.pow(sc, Q.q(-1), ctx));
         quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), map: compact(expMap(monoOf(m).mono)) });
       }
@@ -823,7 +823,7 @@
       const rows = quantities.map((q) => {
         if (!q.map) return { ...q, inPi: false };
         const outside = [...q.map.keys()].filter((n) => !piSyms.has(n) || !piVars.includes(n));
-        if (outside.length) return { what: q.what, tex: q.tex, label: q.label, inPi: false, outside: outside.map(labelOf), note: `It uses ${outside.map(labelOf).join(", ")}, which ${outside.length > 1 ? "are" : "is"} not in the Pi set: an additional group from a variable absent from the original list.` };
+        if (outside.length) return { what: q.what, tex: q.tex, label: q.label, inPi: false, outside: outside.map(labelOf), note: `The Pi set does not contain ${outside.map(labelOf).join(", ")}. ${outside.length > 1 ? "These variables add" : "This variable adds"} a group that the Pi basis does not have.` };
         const vec = finder.vars.map((v) => q.map.get(v.symbol) ?? Q.ZERO);
         const c = famVecs.length ? LA.express(famVecs, vec) : null;
         const combo = c ? fam.map((g, k) => [c[k], g]).filter(([x]) => !Q.isZero(x)) : null;
@@ -839,15 +839,22 @@
       for (const c of conds) { const r = E.read(c.at ?? ""); if (!r.error) for (const x of E.symbols(r.ast)) used.add(x); }
       // A defined parameter (L_c = V/A_s) is in the model when its definition's names are.
       for (const d of paramDefs) if (d.eq.symbols.some((x) => x !== d.symbol && used.has(x))) used.add(d.symbol);
-      const missingVars = [...new Set(absent.flatMap((g) => g.contains.map((id) => vars.find((v) => v.id === id)).filter((v) => v && !used.has(v.symbol)).map((v) => labelOf(v.symbol))))];
-      const absentWhy = !absent.length ? "" : missingVars.length
-        ? `The equations and conditions do not contain ${missingVars.join(", ")}, so no group with ${missingVars.length > 1 ? "them" : "it"} can appear. ${absent.length > missingVars.length ? "The other variables occur only in the combinations above. " : ""}The Pi basis is complete for the supplied variables. The declared model needs fewer groups.`
-        : "The equations contain these variables only in the combinations above. The Pi basis is complete for the supplied variables. The declared model needs fewer groups.";
-      pi = { m: finder.m, rank: rankModel, rows, absent, absentWhy, basis: finder.familiar ? "familiar" : "direct" };
+      for (const g of absent) {
+        const missing = g.contains.map((id) => vars.find((v) => v.id === id)).filter((v) => v && !used.has(v.symbol));
+        const qoi = missing.find((v) => v.id === interp.observable);
+        g.why = qoi ? `${g.label} contains the quantity of interest ${labelOf(qoi.symbol)}. The model does not define ${labelOf(qoi.symbol)}, so this group cannot appear.`
+          : missing.length ? `The equations and conditions do not contain ${missing.map((v) => labelOf(v.symbol)).join(", ")}, so ${g.label} cannot appear.`
+          : `The equations contain the variables of ${g.label} only in the combinations above.`;
+      }
+      const absentWhy = absent.length ? "The Pi basis is complete for the supplied variables. The declared model needs fewer groups." : "";
+      pi = { m: finder.m, rank: rankModel, rows, absent: absent.map(({ tex: t, label, why }) => ({ tex: t, label, why })), absentWhy, basis: finder.familiar ? "familiar" : "direct" };
     }
 
     /* ---------- where each physical parameter enters ---------- */
-    const physical = [...new Set([...items, ...outputs.map((o) => o.eq), ...paramDefs.map((d) => d.eq)].flatMap((e) => e.symbols).filter((s) => isParam(s) && !outputSyms.has(s)))];
+    // The parameters of the model: in its equations and definitions, the condition locations and where each equation holds.
+    const located = [...conds.map((c) => c.at ?? ""), ...items.map((e) => e.domainText ?? "")].flatMap((t) => String(t).replace(/^\s*at\s+/i, "").split(/,|<=|>=|!=|=|<|>|≤|≥/))
+      .flatMap((t) => { const r = E.read(t.trim()); return r.error ? [] : E.symbols(r.ast); });
+    const physical = [...new Set([...[...items, ...outputs.map((o) => o.eq), ...paramDefs.map((d) => d.eq)].flatMap((e) => e.symbols), ...located].filter((s) => isParam(s) && !outputSyms.has(s)))];
     const placeNames = (p) => new Set([...S.names(p)]);
     const places = [];
     for (const r of varRows) {
@@ -858,8 +865,8 @@
     for (const p of parameters) places.push({ where: p.role === "output" ? `the output ${p.label}` : p.role === "geometry" ? `the geometry ratio ${p.label}` : `the parameter ${p.label}`, names: new Set([...p.map.keys(), ...groupsFound[parameters.indexOf(p)].map.keys()]) });
     const enters = physical.map((name) => {
       const where = places.filter((pl) => pl.names.has(name)).map((pl) => pl.where);
-      const rule = ruleOf.get(name);
-      if (rule && rule.kind === "eliminate") {
+      for (const rule of ruleOf.values()) {
+        if (rule.kind !== "eliminate" || rule.symbol === name || !S.names(rule.rhs).has(name)) continue;
         const viaPlaces = places.filter((pl) => pl.names.has(rule.symbol)).map((pl) => pl.where);
         where.push(...viaPlaces.map((w) => `${w}, as part of ${labelOf(rule.symbol)}${rule.id ? ` (definition ${rule.id})` : ` = ${labelP(rule.rhs)}`}`));
       }
@@ -877,21 +884,23 @@
     const check = (id, title, passed, detail) => checks.push({ id, title, status: "exact", passed, detail });
     check("x-nd-dims", "Each scale has the dimension of its variable", scales.every((s) => s.chosen.dimOk), scales.map((s) => `${labelOf(s.name)}: ${s.chosen.dim ?? "?"}`).join(", ") + ".");
     check("x-nd-nonzero", "No chosen scale can be 0", scales.every((s) => s.chosen.sign === "nonzero"), scales.map((s) => `${labelOf(s.name)}: ${labelP((/** @type {any} */ (choice.get(s.name))))}`).join(", ") + ".");
-    check("x-nd-inverse", "Each dimensionless variable and its inverse compose to the identity", varRows.every((r) => r.inverseOk), "The inverse in the forward definition gives the dimensionless variable, and the forward definition in the inverse gives the variable.");
+    check("x-nd-inverse", "Each dimensionless variable and its inverse compose to the identity", varRows.every((r) => r.inverseOk), "The inverse in the forward definition gives the dimensionless variable. The forward definition in the inverse gives the variable.");
     check("x-nd-coefficients", "Every coefficient of the dimensionless model is dimensionless", transformed.every((t) => t.dimensionless), "The exponents of each base dimension sum to 0 in every coefficient, also inside function arguments.");
-    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${transformed.filter((t) => t.reverseOk).length} of ${transformed.length} forms come back exactly${ruleOf.size ? ", under the definitions " + [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))].join(", ") : ""}.`);
-    check("x-nd-hidden", "Every physical parameter enters a scale, a coefficient or a condition", enters.every((e) => !e.hidden), enters.filter((e) => e.hidden).map((e) => `${e.label} does not enter the dimensionless model.`).join(" ") || `All ${enters.length} parameters enter the dimensionless model.`);
-    if (pi) check("x-nd-pi", "Each dimensionless quantity of the Pi set is a product of powers of the Pi groups", pi.rows.filter((r) => !r.outside && r.vec).every((r) => r.inPi), `${pi.rows.filter((r) => r.inPi).length} quantities are products of powers of the ${pi.basis} basis.`);
+    const defIds = [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))];
+    const okCount = transformed.filter((t) => t.reverseOk).length;
+    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${okCount === transformed.length ? `The original form of all ${transformed.length} equations and conditions comes back exactly` : `The original form of ${okCount} of the ${transformed.length} equations and conditions comes back exactly`}${defIds.length ? `, under the definition${defIds.length > 1 ? "s" : ""} ${defIds.join(", ")}` : ""}.`);
+    check("x-nd-hidden", "Every physical parameter enters a scale, an offset, a coefficient or a condition", enters.every((e) => !e.hidden), enters.filter((e) => e.hidden).map((e) => `${e.label} does not enter the dimensionless model.`).join(" ") || `All ${enters.length} parameters enter a scale, an offset, a coefficient or a condition.`);
+    if (pi) check("x-nd-pi", "Each dimensionless quantity that uses only Pi variables is a product of powers of the Pi groups", pi.rows.filter((r) => !r.outside && r.vec).every((r) => r.inPi), `${pi.rows.filter((r) => r.inPi).length} quantities are products of powers of the ${pi.basis} basis.`);
 
     const steps = [
-      { id: "s-nd-scales", item: 6, title: "Scales", reason: "Each scale comes from the geometry, a prescribed value or a balance of two terms. A scale must not be 0, and no scale may hide a parameter.", evidence: ["spec-6"] },
-      { id: "s-nd-variables", item: 6, title: "Dimensionless variables and their inverses", reason: "Each variable becomes offset + scale × dimensionless variable. The forward and the inverse map compose to the identity.", evidence: ["spec-6", "spec-7"] },
-      { id: "s-nd-derivatives", item: 6, title: "Derivative transformations", reason: "For an affine map, each derivative divides by the scale of its coordinate, and the offset of the field drops out.", evidence: ["spec-7"] },
+      { id: "s-nd-scales", item: 6, title: "Scales", reason: "Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. A scale must not be 0. A scale must not hide a parameter.", evidence: ["spec-6"] },
+      { id: "s-nd-variables", item: 6, title: "Dimensionless variables and their inverses", reason: "Each variable becomes offset + scale × dimensionless variable. Each map is the inverse of the other.", evidence: ["spec-6", "spec-7"] },
+      { id: "s-nd-derivatives", item: 6, title: "Derivative transformations", reason: "For an affine map, a derivative takes the scale of the field and divides by the scale of its coordinate once for each order. The offset of the field does not appear.", evidence: ["spec-7"] },
       { id: "s-nd-substitution", item: 7, title: "Substitution and common factors", reason: "The tool substitutes into every equation and condition. Then it divides each one by the coefficient of the term with the highest derivative of a field.", evidence: ["spec-6", "spec-7"] },
-      { id: "s-nd-parameters", item: 7, title: "Parameters, fields, coordinates and data", reason: "The coefficients that remain are the parameters. The tool keeps them apart from the dimensionless fields and coordinates.", evidence: ["spec-6"] },
+      { id: "s-nd-parameters", item: 7, title: "Parameters, fields, coordinates and data", reason: "The remaining coefficients give the parameters and the output groups. The tool keeps them apart from the dimensionless fields and coordinates.", evidence: ["spec-6"] },
       { id: "s-nd-reverse", item: 7, title: "Reverse substitution", reason: "The tool multiplies by the common factor and substitutes the dimensional variables back. The result must equal the original equation exactly.", evidence: ["spec-6"] },
     ];
-    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity is a product of powers of the Finder's groups. The step names each group that the model does not use, with the reason.", evidence: ["spec-6", "mit-pi"] });
+    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity that uses only Pi variables is a product of powers of the Finder's groups. The step names each group that the model does not use, with the reason.", evidence: ["spec-6", "mit-pi"] });
 
     return {
       ready: true,
@@ -938,8 +947,7 @@
         const names = F.recognize(allVars, disp.exps.map((e) => Q.mul(e, Q.q(k))), catalogue);
         if (names.length) {
           const power = Q.q(1, k);
-          const phrase = { 1: "", 2: "the square root of ", "-1": "the reciprocal of ", "-2": "the reciprocal square root of " }[String(k)];
-          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: `${phrase}the ${n.name.split(",")[0]}`.replace(/^the the /, "the "), power: Q.str(power) })) };
+          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: k === 1 ? n.name.split(",")[0] : `the ${n.name.split(",")[0]}, to the power ${Q.str(power)}`, power: Q.str(power) })) };
         }
       }
       return { tex: disp.tex, label: disp.label, names: [] };

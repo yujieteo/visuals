@@ -278,7 +278,7 @@
     const nd = d.nondim;
     const gate = $("nondim-gate"), main = $("nondim-main");
     if (d.confirmedVersion === null) {
-      gate.innerHTML = `<div class="callout"><p><strong>The Nondimensionalizer runs on a confirmed interpretation.</strong> Read the interpretation of version ${d.version}, then select "Confirm the interpretation".</p><p>The checks before analysis already ran: they do not need the confirmation.</p></div>`;
+      gate.innerHTML = `<div class="callout"><p><strong>The Nondimensionalizer runs on a confirmed interpretation.</strong> Read the interpretation of version ${d.version}. Then select "Confirm the interpretation".</p><p>The checks before analysis already ran: they do not need the confirmation.</p></div>`;
       main.hidden = true;
       return;
     }
@@ -304,7 +304,7 @@
     ].join("\n");
 
     // Hand calculation 6: the scales with their mechanisms and the competing scales.
-    $("nondim-scales").innerHTML = `<p>Each scale comes from the geometry, a prescribed value or a balance of two terms. A scale must not be 0. "Use this scale" writes your choice into the model as a new version.</p>` + nd.scales.map((/** @type {any} */ s) => {
+    $("nondim-scales").innerHTML = `<p>Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. A scale must not be 0. "Use this scale" writes your choice into the model as a new version.</p>` + nd.scales.map((/** @type {any} */ s) => {
       const others = s.candidates.filter((/** @type {any} */ c) => !c.chosen);
       return `<div class="group-card scale-card" data-scale-var="${esc(s.id)}">
         <p><strong>${ti(s.tex)}</strong> (${esc(s.kind)}${s.time ? ", time" : ""}): ${chip(s.status)} scale ${ti(s.chosen.tex)}${s.chosen.value ? ` <span class="note">(${esc(s.chosen.value)} in SI units)</span>` : ""}${s.offsetPlain !== "0" ? `, offset ${ti(s.offsetTex)}` : ""}</p>
@@ -313,7 +313,7 @@
         ${others.length ? `<p class="label">Other candidates</p><ul class="plain-list">${others.map((/** @type {any} */ c) => `<li>${ti(c.tex ?? "?")}${c.valid ? "" : ` ${chip("unresolved")} <span class="sev-error">Refused:</span> ${esc(c.signWhy || c.error || (c.dimOk ? "" : `its dimension ${c.dim ?? "?"} is not that of ${s.label}`))}.`} <span class="note">${esc(c.reason)}</span>${c.ratio ? ` <span class="note">Ratio of the chosen scale to this one: ${ti(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((/** @type {any} */ n) => ti(n.tex)).join(", ")}, ${esc(c.ratio.names.map((/** @type {any} */ n) => n.name).join(", "))} (a proposed name)` : ""}.</span>` : ""}${c.valid && c.record ? ` <button type="button" data-use-scale="${esc(`${s.id}|${c.n}`)}">Use this scale</button>` : ""}</li>`).join("")}</ul>` : `<p class="note">No other candidate: no other mechanism or prescribed value gives a scale for ${esc(s.label)}.</p>`}
       </div>`;
     }).join("");
-    $("nondim-variables").innerHTML = `<h4>Dimensionless variables and their inverses</h4><ul class="plain-list">${nd.variables.map((/** @type {any} */ v) => `<li>${ti(v.defTex)} and ${ti(v.invTex)} ${chip(v.inverseOk ? "exact" : "unresolved")} <span class="note">${v.inverseOk ? "Each map undoes the other." : "The maps do not compose to the identity."}</span></li>`).join("")}</ul>`;
+    $("nondim-variables").innerHTML = `<h4>Dimensionless variables and their inverses</h4><ul class="plain-list">${nd.variables.map((/** @type {any} */ v) => `<li>${ti(v.defTex)} and ${ti(v.invTex)} ${chip(v.inverseOk ? "exact" : "unresolved")} <span class="note">${v.inverseOk ? "Each map is the inverse of the other." : "The maps do not compose to the identity."}</span></li>`).join("")}</ul>`;
     $("nondim-derivatives").innerHTML = nd.derivatives.length ? `<h4>Derivative transformations</h4><ul class="model-list">${nd.derivatives.map((/** @type {any} */ x) => `<li>${td(x.tex)}<span class="note">${esc(x.reason)}</span></li>`).join("")}</ul>` : "";
 
     // Hand calculation 7: every equation and condition, step by step.
@@ -322,7 +322,7 @@
       ${td(e.originalTex)}${e.domainText ? `<p class="note">Holds ${esc(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.</p>` : ""}
       <p class="label">Substitute</p>${td(e.substitutedTex)}
       <p class="label">Simplify</p>${td(e.simplifiedTex)}
-      <p class="label">Divide by the common factor</p><p class="note">The factor is the coefficient of ${esc(e.reference || "the first term")}: ${ti(e.factorTex)}.</p>
+      <p class="label">Divide by the common factor</p><p class="note">The factor is the coefficient of the term for ${esc(e.reference || "the first term")}: ${ti(e.factorTex)}.</p>
       ${td(`${e.dimensionlessTex}${e.at ? `\\quad\\text{at }${e.at.tex}` : e.domainTex ? `,\\quad ${e.domainTex}` : ""}`)}
       <p class="note">${chip(e.dimensionless ? "exact" : "unresolved")} ${e.dimensionless ? "Every coefficient is dimensionless." : "A coefficient is not dimensionless."} ${chip(e.reverseOk ? "exact" : "unresolved")} ${e.reverseOk ? "The reverse substitution gives back the dimensional form." : "The reverse substitution does not give back the dimensional form."}</p>
     </div>`).join("");
@@ -332,7 +332,7 @@
     $("nondim-parameters").innerHTML = [
       `<div class="scroll"><table class="data"><caption class="visually-hidden">Dimensionless groups of the model</caption><thead><tr><th scope="col">Kind</th><th scope="col">Group</th><th scope="col">Name</th><th scope="col">Value</th><th scope="col">In</th></tr></thead><tbody>${nd.parameters.map((/** @type {any} */ p) => `<tr><td>${esc(roleName[/** @type {"parameter"} */ (p.role)])}${p.dependent ? `, dependent: ${esc(p.dependent)}` : ""}</td><td>${ti(p.tex)}</td><td>${p.names.map((/** @type {any} */ nm) => { const yes = p.confirmed === nm.id; return `${chip(yes ? "confirmed" : "proposed")} ${ti(nm.tex)} ${esc(nm.name)} <button type="button" data-name="${esc(`${p.key}|${nm.id}|${yes ? "0" : "1"}`)}">${yes ? "Withdraw" : `Confirm ${esc(nm.label)}`}</button>`; }).join("<br>") || '<span class="muted">none</span>'}</td><td class="num">${p.value ? esc(Model.valueText(p.value)) : '<span class="muted">no values</span>'}</td><td>${esc(p.where.join(", "))}</td></tr>`).join("")}</tbody></table></div>`,
       `<p><strong>Solution fields:</strong> ${nd.fields.map((/** @type {any} */ f) => `${ti(`${f.tex}\\left(${f.of.join(",")}\\right)`)}`).join(", ") || "none"}. <strong>Coordinates:</strong> ${nd.coordinates.map((/** @type {any} */ c) => ti(c.tex)).join(", ") || "none"}. The parameters are constants of the model. The fields and the coordinates are not parameters.</p>`,
-      `<p><strong>Prescribed data:</strong> ${nd.prescribed.length ? nd.prescribed.map((/** @type {any} */ x) => `${ti(x.tex)} in ${esc(x.id)}${x.at ? ` at ${ti(x.at)}` : ""}`).join(", ") : "none: every condition is homogeneous"}.</p>`,
+      `<p><strong>Prescribed data:</strong> ${nd.prescribed.length ? `${nd.prescribed.map((/** @type {any} */ x) => `${ti(x.tex)} in ${esc(x.id)}${x.at ? ` at ${ti(x.at)}` : ""}`).join(", ")}.` : "none. Every condition is homogeneous."}</p>`,
       nd.definitions.length ? `<p><strong>Definitions used:</strong> ${nd.definitions.map((/** @type {any} */ x) => `${ti(x.tex)} (${x.id ? esc(x.id) : "added by the tool"}, ${x.kind === "expand" ? "expanded" : `solved for ${esc(x.eliminated)}`})`).join(", ")}.</p>` : "",
     ].join("\n");
 
@@ -341,11 +341,12 @@
     $("nondim-pi").innerHTML = !pi ? `<p class="note">The Finder did not run on this version, so the comparison is not available.</p>` : [
       `<p>The Finder found ${pi.m} independent groups. The dimensionless model uses ${pi.rank} of them.</p>`,
       `<ul class="plain-list">${pi.rows.map((/** @type {any} */ r) => `<li>${ti(r.tex)} (${esc(r.what)}): ${r.inPi ? `${chip("exact")} ${ti(`=${r.comboTex}`)} in the ${esc(pi.basis)} basis` : `${chip("unresolved")} ${esc(r.note ?? "")}`}</li>`).join("")}</ul>`,
-      pi.absent.length ? `<p><strong>Pi groups that the model does not use on their own:</strong> ${pi.absent.map((/** @type {any} */ a) => ti(a.tex)).join(", ")}. ${esc(pi.absentWhy ?? "")}</p>` : `<p>The model uses every Pi group.</p>`,
+      pi.absent.length ? `<p><strong>Pi groups that the model does not use:</strong></p><ul class="plain-list">${pi.absent.map((/** @type {any} */ a) => `<li>${ti(a.tex)}: ${esc(a.why)}</li>`).join("")}</ul><p class="note">${esc(pi.absentWhy)}</p>` : `<p>The model uses every Pi group.</p>`,
     ].join("\n");
 
-    $("nondim-enters").innerHTML = `<p>No scale may hide a physical parameter. Each parameter below enters a scale, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales: it changes the units of the dimensionless variables, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
-    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>`;
+    $("nondim-enters").innerHTML = `<p>A scale must not hide a physical parameter. Each parameter below enters a scale, an offset, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales or offsets: it changes the conversion to dimensional values, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
+    const ref = d.results.find((/** @type {any} */ r) => r.id === "r-nd-reference");
+    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>${ref ? `<p>${chip(ref.status)} ${esc(ref.title)} <span class="note">The script tools/references.py computed it once.</span></p>` : `<p class="note">No SymPy reference covers this model version. The exact checks above still apply.</p>`}`;
   }
 
   /** @param {any} d @param {string} tool */

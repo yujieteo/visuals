@@ -4064,7 +4064,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         try { off = S.read(sup); why = "the offset you supplied"; } catch { off = null; }
       }
       if (!off && best) { off = S.symbol(best[0]); why = `${labelOf(best[0])} is the reference value in ${labelOf(f)} − ${labelOf(best[0])}`; }
-      if (!off && values.length && values.every((x) => x.symbol === values[0].symbol)) { off = S.symbol(values[0].symbol); why = `every condition prescribes ${labelOf(values[0].symbol)}`; }
+      if (!off && values.length && values.every((x) => x.symbol === values[0].symbol)) { off = S.symbol(values[0].symbol); why = `each condition that prescribes a value of ${labelOf(f)} gives ${labelOf(values[0].symbol)}`; }
       if (!off) { off = S.zero(); why = "no reference value occurs, so the offset is 0"; }
       offsets.set(f, { poly: off, why });
     }
@@ -4420,7 +4420,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           if (d.size === 0) continue;
           const initial = p.kind === "initial";
           out.push({ poly: d, source: NATURAL, rank: initial ? -100 : -95,
-            reason: initial ? `The initial difference: ${p.condition} prescribes ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}, so ${hatLabel(name)} starts at 1.` : `The prescribed difference: ${p.condition} prescribes ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}, so ${hatLabel(name)} = 1 there.`,
+            reason: initial ? `The initial difference from ${p.condition}: ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}.` : `The prescribed difference from ${p.condition}: ${labelOf(name)} = ${labelOf(p.symbol)} at ${p.at}.`,
             mechanism: initial ? "the initial difference" : "the prescribed boundary difference", items: [p.condition] });
         }
       }
@@ -4524,7 +4524,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       const rhs = normal(S.subst(lhs, fmap, ctx));
       const factorLabel = (p) => { const l = labelP(p); return /[ /+−-]/.test(l) ? `(${l})` : l; };
       const maps = [...new Set(xs)].map((x) => `${labelOf(x)} = ${offsets.get(x).poly.size ? `${labelP(offsets.get(x).poly)} + ` : ""}${factorLabel(/** @type {any} */ (choice.get(x)))}${hatLabel(x)}`);
-      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}. Each derivative in ${[...new Set(xs.map(labelOf))].join(" or ")} divides by the scale. The offset of ${labelOf(f)} drops out.` };
+      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}. The derivative takes the scale of ${labelOf(f)} and divides by ${[...new Set(xs)].map((x) => { const k = xs.filter((y) => y === x).length; return `the scale of ${labelOf(x)}${k === 2 ? " twice" : k > 2 ? ` ${k} times` : ""}`; }).join(" and ")}. The offset of ${labelOf(f)} does not appear.` };
     });
 
     /** TeX of an equation with each field, coordinate and derivative replaced by its transformation, before any
@@ -4735,7 +4735,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           if (o) base = S.symbol(o.symbol);
         }
         const sc = /** @type {any} */ (choice.get(r.name));
-        if (!base) { quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), outside: [labelOf(r.name)], note: `The Pi set has no variable for ${labelOf(r.name)} − ${labelP((off))}. Add one, such as a temperature difference, to compare ${labelOf(r.hat)} with a Pi group.` }); continue; }
+        if (!base) { quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), outside: [labelOf(r.name)], note: `The Pi set has no variable for ${labelOf(r.name)} − ${labelP((off))}. To compare ${labelOf(r.hat)} with a Pi group, add a variable for ${labelOf(r.name)} − ${labelP((off))}, with its definition, to the Pi set.` }); continue; }
         const m = S.mul(base, S.pow(sc, Q.q(-1), ctx));
         quantities.push({ what: r.kind === "field" ? "field" : "coordinate", tex: r.hatTex, label: labelOf(r.hat), map: compact(expMap(monoOf(m).mono)) });
       }
@@ -4743,7 +4743,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       const rows = quantities.map((q) => {
         if (!q.map) return { ...q, inPi: false };
         const outside = [...q.map.keys()].filter((n) => !piSyms.has(n) || !piVars.includes(n));
-        if (outside.length) return { what: q.what, tex: q.tex, label: q.label, inPi: false, outside: outside.map(labelOf), note: `It uses ${outside.map(labelOf).join(", ")}, which ${outside.length > 1 ? "are" : "is"} not in the Pi set: an additional group from a variable absent from the original list.` };
+        if (outside.length) return { what: q.what, tex: q.tex, label: q.label, inPi: false, outside: outside.map(labelOf), note: `The Pi set does not contain ${outside.map(labelOf).join(", ")}. ${outside.length > 1 ? "These variables add" : "This variable adds"} a group that the Pi basis does not have.` };
         const vec = finder.vars.map((v) => q.map.get(v.symbol) ?? Q.ZERO);
         const c = famVecs.length ? LA.express(famVecs, vec) : null;
         const combo = c ? fam.map((g, k) => [c[k], g]).filter(([x]) => !Q.isZero(x)) : null;
@@ -4759,15 +4759,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       for (const c of conds) { const r = E.read(c.at ?? ""); if (!r.error) for (const x of E.symbols(r.ast)) used.add(x); }
       // A defined parameter (L_c = V/A_s) is in the model when its definition's names are.
       for (const d of paramDefs) if (d.eq.symbols.some((x) => x !== d.symbol && used.has(x))) used.add(d.symbol);
-      const missingVars = [...new Set(absent.flatMap((g) => g.contains.map((id) => vars.find((v) => v.id === id)).filter((v) => v && !used.has(v.symbol)).map((v) => labelOf(v.symbol))))];
-      const absentWhy = !absent.length ? "" : missingVars.length
-        ? `The equations and conditions do not contain ${missingVars.join(", ")}, so no group with ${missingVars.length > 1 ? "them" : "it"} can appear. ${absent.length > missingVars.length ? "The other variables occur only in the combinations above. " : ""}The Pi basis is complete for the supplied variables. The declared model needs fewer groups.`
-        : "The equations contain these variables only in the combinations above. The Pi basis is complete for the supplied variables. The declared model needs fewer groups.";
-      pi = { m: finder.m, rank: rankModel, rows, absent, absentWhy, basis: finder.familiar ? "familiar" : "direct" };
+      for (const g of absent) {
+        const missing = g.contains.map((id) => vars.find((v) => v.id === id)).filter((v) => v && !used.has(v.symbol));
+        const qoi = missing.find((v) => v.id === interp.observable);
+        g.why = qoi ? `${g.label} contains the quantity of interest ${labelOf(qoi.symbol)}. The model does not define ${labelOf(qoi.symbol)}, so this group cannot appear.`
+          : missing.length ? `The equations and conditions do not contain ${missing.map((v) => labelOf(v.symbol)).join(", ")}, so ${g.label} cannot appear.`
+          : `The equations contain the variables of ${g.label} only in the combinations above.`;
+      }
+      const absentWhy = absent.length ? "The Pi basis is complete for the supplied variables. The declared model needs fewer groups." : "";
+      pi = { m: finder.m, rank: rankModel, rows, absent: absent.map(({ tex: t, label, why }) => ({ tex: t, label, why })), absentWhy, basis: finder.familiar ? "familiar" : "direct" };
     }
 
     /* ---------- where each physical parameter enters ---------- */
-    const physical = [...new Set([...items, ...outputs.map((o) => o.eq), ...paramDefs.map((d) => d.eq)].flatMap((e) => e.symbols).filter((s) => isParam(s) && !outputSyms.has(s)))];
+    // The parameters of the model: in its equations and definitions, the condition locations and where each equation holds.
+    const located = [...conds.map((c) => c.at ?? ""), ...items.map((e) => e.domainText ?? "")].flatMap((t) => String(t).replace(/^\s*at\s+/i, "").split(/,|<=|>=|!=|=|<|>|≤|≥/))
+      .flatMap((t) => { const r = E.read(t.trim()); return r.error ? [] : E.symbols(r.ast); });
+    const physical = [...new Set([...[...items, ...outputs.map((o) => o.eq), ...paramDefs.map((d) => d.eq)].flatMap((e) => e.symbols), ...located].filter((s) => isParam(s) && !outputSyms.has(s)))];
     const placeNames = (p) => new Set([...S.names(p)]);
     const places = [];
     for (const r of varRows) {
@@ -4778,8 +4785,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     for (const p of parameters) places.push({ where: p.role === "output" ? `the output ${p.label}` : p.role === "geometry" ? `the geometry ratio ${p.label}` : `the parameter ${p.label}`, names: new Set([...p.map.keys(), ...groupsFound[parameters.indexOf(p)].map.keys()]) });
     const enters = physical.map((name) => {
       const where = places.filter((pl) => pl.names.has(name)).map((pl) => pl.where);
-      const rule = ruleOf.get(name);
-      if (rule && rule.kind === "eliminate") {
+      for (const rule of ruleOf.values()) {
+        if (rule.kind !== "eliminate" || rule.symbol === name || !S.names(rule.rhs).has(name)) continue;
         const viaPlaces = places.filter((pl) => pl.names.has(rule.symbol)).map((pl) => pl.where);
         where.push(...viaPlaces.map((w) => `${w}, as part of ${labelOf(rule.symbol)}${rule.id ? ` (definition ${rule.id})` : ` = ${labelP(rule.rhs)}`}`));
       }
@@ -4797,21 +4804,23 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const check = (id, title, passed, detail) => checks.push({ id, title, status: "exact", passed, detail });
     check("x-nd-dims", "Each scale has the dimension of its variable", scales.every((s) => s.chosen.dimOk), scales.map((s) => `${labelOf(s.name)}: ${s.chosen.dim ?? "?"}`).join(", ") + ".");
     check("x-nd-nonzero", "No chosen scale can be 0", scales.every((s) => s.chosen.sign === "nonzero"), scales.map((s) => `${labelOf(s.name)}: ${labelP((/** @type {any} */ (choice.get(s.name))))}`).join(", ") + ".");
-    check("x-nd-inverse", "Each dimensionless variable and its inverse compose to the identity", varRows.every((r) => r.inverseOk), "The inverse in the forward definition gives the dimensionless variable, and the forward definition in the inverse gives the variable.");
+    check("x-nd-inverse", "Each dimensionless variable and its inverse compose to the identity", varRows.every((r) => r.inverseOk), "The inverse in the forward definition gives the dimensionless variable. The forward definition in the inverse gives the variable.");
     check("x-nd-coefficients", "Every coefficient of the dimensionless model is dimensionless", transformed.every((t) => t.dimensionless), "The exponents of each base dimension sum to 0 in every coefficient, also inside function arguments.");
-    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${transformed.filter((t) => t.reverseOk).length} of ${transformed.length} forms come back exactly${ruleOf.size ? ", under the definitions " + [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))].join(", ") : ""}.`);
-    check("x-nd-hidden", "Every physical parameter enters a scale, a coefficient or a condition", enters.every((e) => !e.hidden), enters.filter((e) => e.hidden).map((e) => `${e.label} does not enter the dimensionless model.`).join(" ") || `All ${enters.length} parameters enter the dimensionless model.`);
-    if (pi) check("x-nd-pi", "Each dimensionless quantity of the Pi set is a product of powers of the Pi groups", pi.rows.filter((r) => !r.outside && r.vec).every((r) => r.inPi), `${pi.rows.filter((r) => r.inPi).length} quantities are products of powers of the ${pi.basis} basis.`);
+    const defIds = [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))];
+    const okCount = transformed.filter((t) => t.reverseOk).length;
+    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${okCount === transformed.length ? `The original form of all ${transformed.length} equations and conditions comes back exactly` : `The original form of ${okCount} of the ${transformed.length} equations and conditions comes back exactly`}${defIds.length ? `, under the definition${defIds.length > 1 ? "s" : ""} ${defIds.join(", ")}` : ""}.`);
+    check("x-nd-hidden", "Every physical parameter enters a scale, an offset, a coefficient or a condition", enters.every((e) => !e.hidden), enters.filter((e) => e.hidden).map((e) => `${e.label} does not enter the dimensionless model.`).join(" ") || `All ${enters.length} parameters enter a scale, an offset, a coefficient or a condition.`);
+    if (pi) check("x-nd-pi", "Each dimensionless quantity that uses only Pi variables is a product of powers of the Pi groups", pi.rows.filter((r) => !r.outside && r.vec).every((r) => r.inPi), `${pi.rows.filter((r) => r.inPi).length} quantities are products of powers of the ${pi.basis} basis.`);
 
     const steps = [
-      { id: "s-nd-scales", item: 6, title: "Scales", reason: "Each scale comes from the geometry, a prescribed value or a balance of two terms. A scale must not be 0, and no scale may hide a parameter.", evidence: ["spec-6"] },
-      { id: "s-nd-variables", item: 6, title: "Dimensionless variables and their inverses", reason: "Each variable becomes offset + scale × dimensionless variable. The forward and the inverse map compose to the identity.", evidence: ["spec-6", "spec-7"] },
-      { id: "s-nd-derivatives", item: 6, title: "Derivative transformations", reason: "For an affine map, each derivative divides by the scale of its coordinate, and the offset of the field drops out.", evidence: ["spec-7"] },
+      { id: "s-nd-scales", item: 6, title: "Scales", reason: "Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. A scale must not be 0. A scale must not hide a parameter.", evidence: ["spec-6"] },
+      { id: "s-nd-variables", item: 6, title: "Dimensionless variables and their inverses", reason: "Each variable becomes offset + scale × dimensionless variable. Each map is the inverse of the other.", evidence: ["spec-6", "spec-7"] },
+      { id: "s-nd-derivatives", item: 6, title: "Derivative transformations", reason: "For an affine map, a derivative takes the scale of the field and divides by the scale of its coordinate once for each order. The offset of the field does not appear.", evidence: ["spec-7"] },
       { id: "s-nd-substitution", item: 7, title: "Substitution and common factors", reason: "The tool substitutes into every equation and condition. Then it divides each one by the coefficient of the term with the highest derivative of a field.", evidence: ["spec-6", "spec-7"] },
-      { id: "s-nd-parameters", item: 7, title: "Parameters, fields, coordinates and data", reason: "The coefficients that remain are the parameters. The tool keeps them apart from the dimensionless fields and coordinates.", evidence: ["spec-6"] },
+      { id: "s-nd-parameters", item: 7, title: "Parameters, fields, coordinates and data", reason: "The remaining coefficients give the parameters and the output groups. The tool keeps them apart from the dimensionless fields and coordinates.", evidence: ["spec-6"] },
       { id: "s-nd-reverse", item: 7, title: "Reverse substitution", reason: "The tool multiplies by the common factor and substitutes the dimensional variables back. The result must equal the original equation exactly.", evidence: ["spec-6"] },
     ];
-    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity is a product of powers of the Finder's groups. The step names each group that the model does not use, with the reason.", evidence: ["spec-6", "mit-pi"] });
+    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity that uses only Pi variables is a product of powers of the Finder's groups. The step names each group that the model does not use, with the reason.", evidence: ["spec-6", "mit-pi"] });
 
     return {
       ready: true,
@@ -4858,8 +4867,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         const names = F.recognize(allVars, disp.exps.map((e) => Q.mul(e, Q.q(k))), catalogue);
         if (names.length) {
           const power = Q.q(1, k);
-          const phrase = { 1: "", 2: "the square root of ", "-1": "the reciprocal of ", "-2": "the reciprocal square root of " }[String(k)];
-          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: `${phrase}the ${n.name.split(",")[0]}`.replace(/^the the /, "the "), power: Q.str(power) })) };
+          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: k === 1 ? n.name.split(",")[0] : `the ${n.name.split(",")[0]}, to the power ${Q.str(power)}`, power: Q.str(power) })) };
         }
       }
       return { tex: disp.tex, label: disp.label, names: [] };
@@ -4902,9 +4910,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"));
-  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N);
-})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N) {
+    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"), require("./sym.js"));
+  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N, root.SM.S);
+})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N, S) {
   "use strict";
 
   const SLUG = "scientific-modelling";
@@ -5049,7 +5057,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           status: "evidence", inputs: piInputs, steps: ["s-pi-correlation"], evidence: ["mit-pi"] });
       }
     }
-    if (nondim && nondim.ready) addNondim(nondim, interpBase, add, piInputs);
+    if (nondim && nondim.ready) addNondim(nondim, interpBase, add, piInputs, data.references, rec.origin);
     else if (nondim && !nondim.ready && nondim.reason !== "blocked" && (nondim.reason !== "no-equations" || interpBase.calcs.find((c) => c.id === "nondimensionalize")?.intended)) {
       add({ id: "r-nd-unresolved", kind: "nondim", title: `Nondimensionalization: ${nondim.message}`, status: "unresolved", inputs: interpBase.equations.map((e) => e.id).concat((base.scales ?? []).map((x) => x.id)), next: nondim.next, steps: [], evidence: ["spec-6"] });
     }
@@ -5089,7 +5097,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    * The Nondimensionalizer's results: the scales, each dimensionless equation and condition, the parameters and
    * their names, the comparison with the Pi basis, the parameters that enter, and the reverse substitution.
    */
-  function addNondim(nd, it, add, piInputs) {
+  function addNondim(nd, it, add, piInputs, refs, origin) {
     const idOf = (sym) => it.variables.find((v) => v.symbol === sym)?.id;
     const scaleInputs = nd.scales.map((s) => `s-${s.id}`);
     for (const s of nd.scales) {
@@ -5099,7 +5107,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         status: s.status, inputs: [...new Set(ids)], steps: ["s-nd-scales", "s-nd-variables"], evidence: ["spec-6"] });
       if (s.changed) {
         add({ id: `r-nd-refused-${s.id}`, kind: "scale", title: s.changed, status: "unresolved", inputs: [...new Set(ids)], steps: ["s-nd-scales"], evidence: ["spec-6"],
-          next: `Check the values, or supply another nonzero scale for ${s.label} in the model's scales.` });
+          next: `Make sure that the values are correct. To use a different scale for ${s.label}, enter it in the model's scales.` });
       }
     }
     for (const e of nd.equations) {
@@ -5109,7 +5117,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         inputs: [...new Set([...e.inputs, ...scaleInputs])], steps: ["s-nd-substitution"], evidence: ["spec-6"] });
     }
     const ok = nd.equations.every((e) => e.reverseOk && (!e.at || e.at.ok));
-    add({ id: "r-nd-reverse", kind: "reverse", title: ok ? `The reverse substitution recovers each of the ${nd.equations.length} equations and conditions exactly${nd.definitions.length ? `, under the definitions ${[...new Set(nd.definitions.map((d) => d.id).filter(Boolean))].join(", ")}` : ""}.`
+    const defIds = [...new Set(nd.definitions.map((d) => d.id).filter(Boolean))];
+    add({ id: "r-nd-reverse", kind: "reverse", title: ok ? `The reverse substitution recovers each of the ${nd.equations.length} equations and conditions exactly${defIds.length ? `, under the definition${defIds.length > 1 ? "s" : ""} ${defIds.join(", ")}` : ""}.`
       : `The reverse substitution does not recover ${nd.equations.filter((e) => !e.reverseOk).map((e) => e.id).join(", ")}.`, status: ok ? "exact" : "unresolved", inputs: nd.inputs, steps: ["s-nd-reverse"], evidence: ["spec-6"] });
     const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
     const paramName = (p) => (p.names[0] ? `${p.names[0].label} = ${p.label}` : p.label);
@@ -5118,7 +5127,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     for (const p of nd.parameters) {
       for (const nm of p.names) {
         if (p.role === "output" && nm.id === "theta") continue;
-        add({ id: `r-nd-name-${p.id}-${nm.id}`, kind: "name", title: `${p.label} matches the stored formula of the ${nm.name}, ${nm.plain}${nm.power < 0 ? ", as its reciprocal" : ""}.${nm.assumes.length ? ` This match assumes that ${nm.assumes.join(" and that ")}.` : ""}`,
+        add({ id: `r-nd-name-${p.id}-${nm.id}`, kind: "name", title: `${p.label} matches the stored formula of the ${nm.name.split(",")[0]}: ${nm.plain}${nm.power < 0 ? ", as its reciprocal" : ""}.${nm.assumes.length ? ` This match assumes that ${nm.assumes.join(" and that ")}.` : ""}`,
           tex: `${p.tex}=${nm.tex}`, status: p.confirmed === nm.id ? "confirmed" : "proposed", inputs: p.contains, steps: ["s-nd-parameters"], evidence: [nm.source], name: nm.id, key: p.key });
       }
     }
@@ -5126,14 +5135,32 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     if (valued.length) add({ id: "r-nd-values", kind: "values", title: `The entered values give ${valued.map((p) => `${p.names[0] ? p.names[0].label : p.label} = ${valueText(p.value)}`).join(", ")}.`, status: valued.every((p) => p.value.exact) ? "exact" : "numerical", inputs: nd.inputs, steps: ["s-nd-parameters"] });
     if (nd.pi) {
       const outside = nd.pi.rows.filter((r) => !r.inPi);
-      add({ id: "r-nd-pi", kind: "pi", title: `${nd.pi.rows.filter((r) => r.inPi).length} dimensionless quantities are products of powers of the Pi groups. The model uses ${nd.pi.rank} of the ${nd.pi.m} groups.${nd.pi.absent.length ? ` ${nd.pi.absent.map((a) => a.label).join(", ")} ${nd.pi.absent.length > 1 ? "do" : "does"} not appear on ${nd.pi.absent.length > 1 ? "their" : "its"} own.` : ""}${outside.length ? ` ${outside.length} ${outside.length > 1 ? "quantities use" : "quantity uses"} variables outside the Pi set.` : ""}`,
+      add({ id: "r-nd-pi", kind: "pi", title: `${nd.pi.rows.filter((r) => r.inPi).length} dimensionless quantities are products of powers of the Pi groups. The model uses ${nd.pi.rank} of the ${nd.pi.m} groups.${nd.pi.absent.length ? ` ${nd.pi.absent.map((a) => a.label).join(", ")} ${nd.pi.absent.length > 1 ? "do" : "does"} not appear in the model.` : ""}${outside.length ? ` ${outside.length} ${outside.length > 1 ? "quantities use" : "quantity uses"} variables outside the Pi set.` : ""}`,
         status: "exact", inputs: [...new Set([...piInputs, ...nd.inputs])], steps: ["s-nd-pi"], evidence: ["spec-6", "mit-pi"] });
+    }
+    // SymPy's independent substitution (tools/references.py): the same factor and dimensionless form, exactly.
+    const ref = refs?.nondimensional?.find((x) => x.example === origin);
+    if (ref) {
+      const vars = new Set([...nd.fields.map((f) => f.hat), ...nd.coordinates.map((c) => c.hat)]);
+      const ctx = { isField: (n) => nd.fields.some((f) => f.hat === n), isCoordinate: (n) => nd.coordinates.some((c) => c.hat === n), depends: () => true, isVar: (n) => vars.has(n) };
+      const same = (f) => {
+        const e = nd.equations.find((x) => x.id === f.id);
+        if (!e) return false;
+        try {
+          const [l, r] = e.dimensionlessPlain.split(" = ");
+          return S.equal(S.sub(S.read(l, ctx), S.read(r, ctx)), S.read(f.dimensionless, ctx)) && S.equal(S.read(e.factorPlain), S.read(f.factor));
+        } catch { return false; }
+      };
+      if (ref.forms.length && ref.forms.every(same)) {
+        add({ id: "r-nd-reference", kind: "reference", title: `SymPy ${refs.versions.sympy} gives the same common factor and dimensionless form for each of the ${ref.forms.length} equations and conditions, with its own substitution and chain rule.`,
+          status: "exact", inputs: nd.inputs, steps: ["s-nd-reverse"], evidence: [] });
+      }
     }
     const hidden = nd.enters.filter((e) => e.hidden);
     if (hidden.length) {
       for (const h of hidden) add({ id: `r-nd-hidden-${h.id}`, kind: "hidden", title: `${h.label} does not enter the dimensionless model: it cancels from every equation and condition, and no scale contains it.`, status: "unresolved", inputs: [h.id, ...nd.inputs], steps: ["s-nd-parameters"], evidence: ["spec-6"],
         next: `Check whether ${h.label} belongs in the model. A parameter that cancels has no effect on the solution.` });
-    } else add({ id: "r-nd-enters", kind: "hidden", title: `Each of the ${nd.enters.length} physical parameters enters a scale, a coefficient or a condition, so no scale hides a parameter.`, status: "exact", inputs: nd.inputs, steps: ["s-nd-parameters"], evidence: ["spec-6"] });
+    } else add({ id: "r-nd-enters", kind: "hidden", title: `Each of the ${nd.enters.length} physical parameters enters a scale, an offset, a coefficient or a condition, so no scale hides a parameter.`, status: "exact", inputs: nd.inputs, steps: ["s-nd-parameters"], evidence: ["spec-6"] });
   }
 
   /** The plain label of a group: its familiar name when it has one (the confirmed one first), else its formula. */
@@ -5358,21 +5385,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
             : ["- None: no other mechanism or prescribed value gives a scale."]),
           ...nd.scales.filter((sc) => sc.changed).map((sc) => `\n**${STATUS.unresolved}:** ${cell(sc.changed)}`),
         ].join("\n"),
-        narration: `The Nondimensionalizer chooses a scale for each of the ${words(nd.scales.length)} coordinates and fields. Each scale comes from the geometry, a prescribed value or a balance of two terms, and no scale can be zero.${nd.scales.some((sc) => sc.changed) ? " One natural scale is zero, so the tool uses another scale and states the changed meaning." : ""}`,
+        narration: `The Nondimensionalizer chooses a scale for each coordinate and field, ${words(nd.scales.length)} in all. Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. No scale can be zero.${nd.scales.some((sc) => sc.changed) ? " One natural scale is zero, so the tool uses another scale and states the changed meaning." : ""}`,
       });
       method.push({
         title: "Hand calculation 6: dimensionless variables and derivative transformations",
         body: [
-          ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map undoes the other (exact)" : "the maps do not compose to the identity"}.`),
+          ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map is the inverse of the other (exact)" : "the maps do not compose to the identity"}.`),
           "", ...nd.derivatives.map((x) => `${dm(x.tex)}\n\n${cell(x.reason)}\n`),
         ].join("\n"),
-        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. Each derivative divides by the scale of its coordinate, and the offset drops out. The page checks that each map undoes the other.",
+        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. A derivative takes the scale of the field and divides by the scale of its coordinate once for each order. The page checks that each map is the inverse of the other.",
       });
       method.push({
         title: `Hand calculation 7: substitution and common factors in ${count(nd.equations.length, "equation or condition", "equations and conditions")}`,
         body: nd.equations.map((e) => [`**${e.id}** (${e.kind}${e.output ? `, defines ${e.output}` : ""}):`, "", dm(e.originalTex), e.domainText ? `Holds ${cell(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.` : "",
           "", "Substitute:", "", dm(e.substitutedTex), "", "Simplify:", "", dm(e.simplifiedTex), "",
-          `Divide by the common factor ${m(e.factorTex)}, the coefficient of ${cell(e.reference || "the first term")}:`, "",
+          `Divide by the common factor ${m(e.factorTex)}, the coefficient of the term for ${cell(e.reference || "the first term")}:`, "",
           dm(`${e.dimensionlessTex}${where(e)}`), ""].join("\n")).join("\n"),
         narration: `The tool substitutes the new variables into each of the ${words(nd.equations.length)} equations and conditions. Then it simplifies each one and divides it by its common factor. That factor is the coefficient of the term with the highest derivative of a field.`,
       });
@@ -5382,14 +5409,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const results = [];
     if (ndOk) {
       const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
-      const spokenParam = (p) => (p.names[0] ? `the ${p.names[0].name.split(",")[0]}` : "a group with no familiar name");
+      const spokenParams = (ps) => {
+        const named = ps.filter((p) => p.names[0]).map((p) => `the ${p.names[0].name.split(",")[0]}`);
+        const unnamed = ps.filter((p) => !p.names[0]).length;
+        const parts = [...named, ...(unnamed ? [unnamed === 1 ? "a group with no familiar name" : `${words(unnamed)} groups with no familiar name`] : [])];
+        return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0];
+      };
       const named = nd.parameters.filter((p) => p.role !== "output" && p.names.length);
       results.push({
         title: `Hand calculation 7: the dimensionless model, ${count(params.length, "independent parameter", "independent parameters")}`,
         body: [...nd.equations.filter((e) => !e.output).map((e) => `- ${e.id}: ${m(`${e.namedTex}${where(e)}`)}`),
           ...nd.equations.filter((e) => e.output).map((e) => `- ${e.id}, defines ${e.output}: ${m(`${e.namedTex}${where(e)}`)}`),
           "", named.length ? `The page proposes these names, each a ${STATUS.proposed.toLowerCase()} until the researcher confirms it: ${named.map((p) => `${m(`${p.names[0].tex}=${p.tex}`)} (${cell(p.names[0].name)}${p.confirmed === p.names[0].id ? `, ${STATUS.confirmed}` : ""})`).join(", ")}.` : "No group of the model has a familiar name."].join("\n"),
-        narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(params.map(spokenParam).join(" and "))} ${params.length > 1 ? "are" : "is"} the only physical input left in the equations and conditions.`
+        narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(spokenParams(params))} ${params.length > 1 ? "are the only physical inputs" : "is the only physical input"} left in the equations and conditions.`
           : "The dimensionless model has no parameter. Its solution is the same for every value of the physical parameters.",
       });
       const pi = nd.pi;
@@ -5401,11 +5433,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           "", `**Solution fields:** ${nd.fields.map((f) => m(`${f.tex}\\left(${f.of.join(",")}\\right)`)).join(", ") || "none"}. **Coordinates:** ${nd.coordinates.map((c) => m(c.tex)).join(", ") || "none"}. **Prescribed data:** ${nd.prescribed.length ? nd.prescribed.map((x) => `${m(x.tex)} in ${x.id}`).join(", ") : "none"}.`,
           "", pi ? `**Pi basis.** The Finder found ${pi.m} independent groups; the dimensionless model uses ${pi.rank} of them.` : "**Pi basis.** The Finder did not run on this version.",
           ...(pi ? pi.rows.map((r) => `- ${m(r.tex)} (${r.what}): ${r.inPi ? m(`=${r.comboTex}`) : cell(r.note ?? "")}`) : []),
-          ...(pi && pi.absent.length ? ["", `Not used on their own: ${pi.absent.map((a) => m(a.tex)).join(", ")}. ${cell(pi.absentWhy)}`] : []),
+          ...(pi && pi.absent.length ? ["", "Pi groups that the model does not use:", "", ...pi.absent.map((a) => `- ${m(a.tex)}: ${cell(a.why)}`), "", cell(pi.absentWhy)] : []),
           "", "**Where each physical parameter enters:**", "",
           ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join(", "))}`),
         ].join("\n"),
-        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups.${pi.absent.length ? " The others do not appear on their own, and the frame says why." : ""}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
+        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `${pi.rank === pi.m ? `The model uses all ${words(pi.m)} Pi groups.` : `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups. The others do not appear in the model, and the frame says why.`}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
       });
     }
     if (ok) {
@@ -5464,7 +5496,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       checks.push({
         title: "Reverse substitution and the checks of the Nondimensionalizer",
         body: nd.checks.map((c) => `- ${status(c.status)}: ${c.passed ? "passed" : "FAILED"}. ${cell(c.title)}: ${cell(c.detail)}`).join("\n"),
-        narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} The reverse substitution gives back each dimensional equation and condition, and each coefficient is dimensionless.`,
+        narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} ${nd.checks.find((c) => c.id === "x-nd-reverse")?.passed ? "The reverse substitution gives back each dimensional equation and condition." : "The reverse substitution does not give back every dimensional form, and the frame names the failed check."}${nd.checks.find((c) => c.id === "x-nd-coefficients")?.passed ? " Each coefficient is dimensionless." : ""}`,
       });
     }
     checks.push({
@@ -5778,7 +5810,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const nd = d.nondim;
     const gate = $("nondim-gate"), main = $("nondim-main");
     if (d.confirmedVersion === null) {
-      gate.innerHTML = `<div class="callout"><p><strong>The Nondimensionalizer runs on a confirmed interpretation.</strong> Read the interpretation of version ${d.version}, then select "Confirm the interpretation".</p><p>The checks before analysis already ran: they do not need the confirmation.</p></div>`;
+      gate.innerHTML = `<div class="callout"><p><strong>The Nondimensionalizer runs on a confirmed interpretation.</strong> Read the interpretation of version ${d.version}. Then select "Confirm the interpretation".</p><p>The checks before analysis already ran: they do not need the confirmation.</p></div>`;
       main.hidden = true;
       return;
     }
@@ -5804,7 +5836,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     ].join("\n");
 
     // Hand calculation 6: the scales with their mechanisms and the competing scales.
-    $("nondim-scales").innerHTML = `<p>Each scale comes from the geometry, a prescribed value or a balance of two terms. A scale must not be 0. "Use this scale" writes your choice into the model as a new version.</p>` + nd.scales.map((/** @type {any} */ s) => {
+    $("nondim-scales").innerHTML = `<p>Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. A scale must not be 0. "Use this scale" writes your choice into the model as a new version.</p>` + nd.scales.map((/** @type {any} */ s) => {
       const others = s.candidates.filter((/** @type {any} */ c) => !c.chosen);
       return `<div class="group-card scale-card" data-scale-var="${esc(s.id)}">
         <p><strong>${ti(s.tex)}</strong> (${esc(s.kind)}${s.time ? ", time" : ""}): ${chip(s.status)} scale ${ti(s.chosen.tex)}${s.chosen.value ? ` <span class="note">(${esc(s.chosen.value)} in SI units)</span>` : ""}${s.offsetPlain !== "0" ? `, offset ${ti(s.offsetTex)}` : ""}</p>
@@ -5813,7 +5845,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         ${others.length ? `<p class="label">Other candidates</p><ul class="plain-list">${others.map((/** @type {any} */ c) => `<li>${ti(c.tex ?? "?")}${c.valid ? "" : ` ${chip("unresolved")} <span class="sev-error">Refused:</span> ${esc(c.signWhy || c.error || (c.dimOk ? "" : `its dimension ${c.dim ?? "?"} is not that of ${s.label}`))}.`} <span class="note">${esc(c.reason)}</span>${c.ratio ? ` <span class="note">Ratio of the chosen scale to this one: ${ti(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((/** @type {any} */ n) => ti(n.tex)).join(", ")}, ${esc(c.ratio.names.map((/** @type {any} */ n) => n.name).join(", "))} (a proposed name)` : ""}.</span>` : ""}${c.valid && c.record ? ` <button type="button" data-use-scale="${esc(`${s.id}|${c.n}`)}">Use this scale</button>` : ""}</li>`).join("")}</ul>` : `<p class="note">No other candidate: no other mechanism or prescribed value gives a scale for ${esc(s.label)}.</p>`}
       </div>`;
     }).join("");
-    $("nondim-variables").innerHTML = `<h4>Dimensionless variables and their inverses</h4><ul class="plain-list">${nd.variables.map((/** @type {any} */ v) => `<li>${ti(v.defTex)} and ${ti(v.invTex)} ${chip(v.inverseOk ? "exact" : "unresolved")} <span class="note">${v.inverseOk ? "Each map undoes the other." : "The maps do not compose to the identity."}</span></li>`).join("")}</ul>`;
+    $("nondim-variables").innerHTML = `<h4>Dimensionless variables and their inverses</h4><ul class="plain-list">${nd.variables.map((/** @type {any} */ v) => `<li>${ti(v.defTex)} and ${ti(v.invTex)} ${chip(v.inverseOk ? "exact" : "unresolved")} <span class="note">${v.inverseOk ? "Each map is the inverse of the other." : "The maps do not compose to the identity."}</span></li>`).join("")}</ul>`;
     $("nondim-derivatives").innerHTML = nd.derivatives.length ? `<h4>Derivative transformations</h4><ul class="model-list">${nd.derivatives.map((/** @type {any} */ x) => `<li>${td(x.tex)}<span class="note">${esc(x.reason)}</span></li>`).join("")}</ul>` : "";
 
     // Hand calculation 7: every equation and condition, step by step.
@@ -5822,7 +5854,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       ${td(e.originalTex)}${e.domainText ? `<p class="note">Holds ${esc(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.</p>` : ""}
       <p class="label">Substitute</p>${td(e.substitutedTex)}
       <p class="label">Simplify</p>${td(e.simplifiedTex)}
-      <p class="label">Divide by the common factor</p><p class="note">The factor is the coefficient of ${esc(e.reference || "the first term")}: ${ti(e.factorTex)}.</p>
+      <p class="label">Divide by the common factor</p><p class="note">The factor is the coefficient of the term for ${esc(e.reference || "the first term")}: ${ti(e.factorTex)}.</p>
       ${td(`${e.dimensionlessTex}${e.at ? `\\quad\\text{at }${e.at.tex}` : e.domainTex ? `,\\quad ${e.domainTex}` : ""}`)}
       <p class="note">${chip(e.dimensionless ? "exact" : "unresolved")} ${e.dimensionless ? "Every coefficient is dimensionless." : "A coefficient is not dimensionless."} ${chip(e.reverseOk ? "exact" : "unresolved")} ${e.reverseOk ? "The reverse substitution gives back the dimensional form." : "The reverse substitution does not give back the dimensional form."}</p>
     </div>`).join("");
@@ -5832,7 +5864,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     $("nondim-parameters").innerHTML = [
       `<div class="scroll"><table class="data"><caption class="visually-hidden">Dimensionless groups of the model</caption><thead><tr><th scope="col">Kind</th><th scope="col">Group</th><th scope="col">Name</th><th scope="col">Value</th><th scope="col">In</th></tr></thead><tbody>${nd.parameters.map((/** @type {any} */ p) => `<tr><td>${esc(roleName[/** @type {"parameter"} */ (p.role)])}${p.dependent ? `, dependent: ${esc(p.dependent)}` : ""}</td><td>${ti(p.tex)}</td><td>${p.names.map((/** @type {any} */ nm) => { const yes = p.confirmed === nm.id; return `${chip(yes ? "confirmed" : "proposed")} ${ti(nm.tex)} ${esc(nm.name)} <button type="button" data-name="${esc(`${p.key}|${nm.id}|${yes ? "0" : "1"}`)}">${yes ? "Withdraw" : `Confirm ${esc(nm.label)}`}</button>`; }).join("<br>") || '<span class="muted">none</span>'}</td><td class="num">${p.value ? esc(Model.valueText(p.value)) : '<span class="muted">no values</span>'}</td><td>${esc(p.where.join(", "))}</td></tr>`).join("")}</tbody></table></div>`,
       `<p><strong>Solution fields:</strong> ${nd.fields.map((/** @type {any} */ f) => `${ti(`${f.tex}\\left(${f.of.join(",")}\\right)`)}`).join(", ") || "none"}. <strong>Coordinates:</strong> ${nd.coordinates.map((/** @type {any} */ c) => ti(c.tex)).join(", ") || "none"}. The parameters are constants of the model. The fields and the coordinates are not parameters.</p>`,
-      `<p><strong>Prescribed data:</strong> ${nd.prescribed.length ? nd.prescribed.map((/** @type {any} */ x) => `${ti(x.tex)} in ${esc(x.id)}${x.at ? ` at ${ti(x.at)}` : ""}`).join(", ") : "none: every condition is homogeneous"}.</p>`,
+      `<p><strong>Prescribed data:</strong> ${nd.prescribed.length ? `${nd.prescribed.map((/** @type {any} */ x) => `${ti(x.tex)} in ${esc(x.id)}${x.at ? ` at ${ti(x.at)}` : ""}`).join(", ")}.` : "none. Every condition is homogeneous."}</p>`,
       nd.definitions.length ? `<p><strong>Definitions used:</strong> ${nd.definitions.map((/** @type {any} */ x) => `${ti(x.tex)} (${x.id ? esc(x.id) : "added by the tool"}, ${x.kind === "expand" ? "expanded" : `solved for ${esc(x.eliminated)}`})`).join(", ")}.</p>` : "",
     ].join("\n");
 
@@ -5841,11 +5873,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     $("nondim-pi").innerHTML = !pi ? `<p class="note">The Finder did not run on this version, so the comparison is not available.</p>` : [
       `<p>The Finder found ${pi.m} independent groups. The dimensionless model uses ${pi.rank} of them.</p>`,
       `<ul class="plain-list">${pi.rows.map((/** @type {any} */ r) => `<li>${ti(r.tex)} (${esc(r.what)}): ${r.inPi ? `${chip("exact")} ${ti(`=${r.comboTex}`)} in the ${esc(pi.basis)} basis` : `${chip("unresolved")} ${esc(r.note ?? "")}`}</li>`).join("")}</ul>`,
-      pi.absent.length ? `<p><strong>Pi groups that the model does not use on their own:</strong> ${pi.absent.map((/** @type {any} */ a) => ti(a.tex)).join(", ")}. ${esc(pi.absentWhy ?? "")}</p>` : `<p>The model uses every Pi group.</p>`,
+      pi.absent.length ? `<p><strong>Pi groups that the model does not use:</strong></p><ul class="plain-list">${pi.absent.map((/** @type {any} */ a) => `<li>${ti(a.tex)}: ${esc(a.why)}</li>`).join("")}</ul><p class="note">${esc(pi.absentWhy)}</p>` : `<p>The model uses every Pi group.</p>`,
     ].join("\n");
 
-    $("nondim-enters").innerHTML = `<p>No scale may hide a physical parameter. Each parameter below enters a scale, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales: it changes the units of the dimensionless variables, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
-    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>`;
+    $("nondim-enters").innerHTML = `<p>A scale must not hide a physical parameter. Each parameter below enters a scale, an offset, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales or offsets: it changes the conversion to dimensional values, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
+    const ref = d.results.find((/** @type {any} */ r) => r.id === "r-nd-reference");
+    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>${ref ? `<p>${chip(ref.status)} ${esc(ref.title)} <span class="note">The script tools/references.py computed it once.</span></p>` : `<p class="note">No SymPy reference covers this model version. The exact checks above still apply.</p>`}`;
   }
 
   /** @param {any} d @param {string} tool */
