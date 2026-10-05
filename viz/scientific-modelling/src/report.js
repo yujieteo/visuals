@@ -208,7 +208,7 @@
           ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map is the inverse of the other (exact)" : "the maps do not compose to the identity"}.`),
           "", ...nd.derivatives.map((x) => `${dm(x.tex)}\n\n${cell(x.reason)}\n`),
         ].join("\n"),
-        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. A derivative takes the scale of the field and divides by the scale of its coordinate once for each order. The page checks that each map is the inverse of the other.",
+        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. A derivative takes the scale of the field. It divides by the scale of its coordinate once for each order. The page checks that each map is the inverse of the other.",
       });
       method.push({
         title: `Hand calculation 7: substitution and common factors in ${count(nd.equations.length, "equation or condition", "equations and conditions")}`,

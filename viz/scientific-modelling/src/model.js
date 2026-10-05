@@ -250,7 +250,7 @@
         } catch { return false; }
       };
       if (ref.forms.length && ref.forms.every(same)) {
-        add({ id: "r-nd-reference", kind: "reference", title: `SymPy ${refs.versions.sympy} gives the same common factor and dimensionless form for each of the ${ref.forms.length} equations and conditions, with its own substitution and chain rule.`,
+        add({ id: "r-nd-reference", kind: "reference", title: `SymPy ${refs.versions.sympy} makes its own substitution with the chain rule. It gives the same common factor and dimensionless form for each of the ${ref.forms.length} equations and conditions.`,
           status: "exact", inputs: nd.inputs, steps: ["s-nd-reverse"], evidence: [] });
       }
     }
