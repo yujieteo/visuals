@@ -285,6 +285,10 @@ FROM ${ident(table)}`;
   const distinctCount = (table, column, textSource) =>
     `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${ident(column)} FROM ${ident(table)} WHERE ${valued(column, textSource)})`;
 
+  /** Distinct values as read (so "Yes" and "yes", or "1,000" and "1000", are one value), alone for the same reason. */
+  const readDistinct = (table, column, reading) =>
+    `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT v FROM (SELECT ${typed(column, reading)} AS v FROM ${ident(table)}) WHERE v IS NOT NULL)`;
+
   /** The text values present, by count: the markers a file uses for missing values. */
   const markerValues = (table, column) => {
     const y = `trim(${ident(column)})`;
@@ -420,7 +424,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
     ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
     parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
-    textStats, textDateStats, NO_DATES, typedStats, distinctCount, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
+    textStats, textDateStats, NO_DATES, typedStats, distinctCount, readDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
   };
 });

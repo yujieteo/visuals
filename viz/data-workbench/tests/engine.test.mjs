@@ -160,7 +160,9 @@ test("yes or no in mixed letter case reads as yes or no, with two levels", async
   const words = ["Yes", "No", "yes", "no", "YES"];
   const t = await load("answers", encode(["answer", ...Array.from({ length: 60 }, (_, i) => words[i % 5])].join("\n")));
   const c = t.col("answer");
-  assert.deepEqual([c.type, c.role, c.summary.top.map((/** @type {any} */ r) => r.value)], ["boolean", "category", ["true", "false"]]);
+  assert.deepEqual([c.type, c.role, c.distinct, c.summary.top.map((/** @type {any} */ r) => r.value)], ["boolean", "category", 2, ["true", "false"]]);
+  const one = await load("agreed", encode(["answer", ...Array.from({ length: 30 }, (_, i) => (i % 2 ? "Yes" : "yes"))].join("\n")));
+  assert.deepEqual([one.col("answer").distinct, one.col("answer").role], [1, "unknown"], "case variants of one answer are one value: a constant column");
 });
 
 test("Parquet: types, decimals and zoned timestamps are kept; nested columns are excluded with a reason", async () => {

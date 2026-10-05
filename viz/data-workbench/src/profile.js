@@ -59,6 +59,8 @@
     if (reads) {
       const counts = await one(query, Sql.readingCounts(table, name, reading, textSource));
       col.failures.count = counts.failures;
+      // Count distinct values as the reading sees them, for the role and the overview.
+      if (textSource) col.distinct = (await one(query, Sql.readDistinct(table, name, reading))).distinct_values;
       col.madeMissing = counts.made_missing;
       col.share = counts.valued ? (counts.valued - counts.failures) / counts.valued : 0;
       if (counts.failures > 0) col.failures.examples = await query(Sql.failureExamples(table, name, reading, rowColumn, textSource));
