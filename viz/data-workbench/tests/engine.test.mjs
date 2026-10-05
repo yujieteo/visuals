@@ -127,6 +127,8 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   assert.equal(t.col("customer_id").identifier.repeats, 0);
   assert.equal(t.col("ticket").identifier.repeats, 0, "NA markers in an identifier column are not repeated identifiers");
   assert.ok(t.col("ticket").identifier.first.every((/** @type {any} */ r) => r.value !== "NA"));
+  const ratings = await load("ratings", encode(["rating", ...Array.from({ length: 60 }, (_, i) => (i % 2 ? `${1 + (i % 6)}.0` : String(1 + (i % 6))))].join("\n")));
+  assert.deepEqual([ratings.col("rating").type, ratings.col("rating").distinct], ["decimal", 6], "4 and 4.0 are one value");
   const long = await load("orders18", encode(["order_number", ...Array.from({ length: 100 }, (_, i) => String(100000000000000001n + BigInt(i)))].join("\n")));
   assert.deepEqual([long.col("order_number").distinct, long.col("order_number").role], [100, "identifier"], "18-digit identifiers stay distinct");
   const parents = await load("parents", encode(["parent_id", ...Array.from({ length: 40 }, (_, i) => (i % 4 === 0 ? "-1" : String(100 + i)))].join("\n")));

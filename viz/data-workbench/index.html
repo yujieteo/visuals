@@ -1648,14 +1648,23 @@ FROM ${ident(table)}`;
     `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${ident(column)} FROM ${ident(table)} WHERE ${valued(column, textSource)})`;
 
   /**
-   * Distinct values present under a reading (so "Yes" and "yes", or "1,000" and "1000", are one value), alone for
-   * the same reason. Numbers written as text are compared as their digits, never as doubles, which would merge
-   * identifiers longer than 15 digits.
+   * Whether a column's distinct values must be counted again under its reading: when one value can be written in
+   * more than one way ("Yes" and "yes", "1,000" and "1000", "4" and "4.0", two date layouts), or when approval made
+   * some values missing. Otherwise the count of distinct values as written stands, and no second pass runs.
+   */
+  const recount = (reading) => ["boolean", "integer-sep", "decimal", "decimal-sep", "date-format", "date-formats"].includes(reading.kind)
+    || (reading.missingText ?? []).length > 0 || (reading.missingNumbers ?? []).length > 0;
+
+  /**
+   * Distinct values present under a reading, alone for the same reason as distinctCount. Whole numbers are compared
+   * exactly (as 128-bit integers, else as their digits), so identifiers longer than 15 digits never merge.
    */
   function readDistinct(table, column, reading, textSource) {
     const x = ident(column);
-    const digits = ["integer", "integer-sep", "decimal", "decimal-sep"].includes(reading.kind);
-    const key = textSource && digits ? `replace(trim(${x}), ',', '')` : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
+    const digits = `replace(trim(${x}), ',', '')`;
+    const whole = textSource && (reading.kind === "integer" || reading.kind === "integer-sep");
+    const key = whole ? `coalesce(CAST(TRY_CAST(${digits} AS HUGEINT) AS VARCHAR), ${digits})`
+      : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
     return `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${key} FROM ${ident(table)} WHERE ${present(column, reading, textSource)})`;
   }
 
@@ -1797,7 +1806,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
     ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
     parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
-    textStats, textDateStats, NO_DATES, typedStats, distinctCount, readDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
+    textStats, textDateStats, NO_DATES, typedStats, distinctCount, recount, readDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
   };
 });
@@ -2444,8 +2453,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     if (reads) {
       const counts = await one(query, Sql.readingCounts(table, name, reading, textSource));
       col.failures.count = counts.failures;
-      // Count distinct values as the reading sees them, for the role and the overview.
-      col.distinct = (await one(query, Sql.readDistinct(table, name, reading, textSource))).distinct_values;
+      // Count distinct values as the reading sees them, for the role and the overview, when that can differ.
+      if (Sql.recount(reading)) col.distinct = (await one(query, Sql.readDistinct(table, name, reading, textSource))).distinct_values;
       col.madeMissing = counts.made_missing;
       col.share = counts.valued ? (counts.valued - counts.failures) / counts.valued : 0;
       if (counts.failures > 0) col.failures.examples = await query(Sql.failureExamples(table, name, reading, rowColumn, textSource));
