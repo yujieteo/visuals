@@ -724,3 +724,14 @@ The captain approved the build plan of task VISU-9 on 2026-10-05 with these answ
 - Familiar names come from `data/groups.json`, stored as formulas over quantities with their reference quantities. Matching uses the variable's quantity, phase and kind, never its symbol.
 - Condition count: a field with derivative order p in a coordinate needs p conditions in that coordinate, after the constitutive laws of other fields are substituted. The rule does not check well-posedness.
 - Familiar groups and definitions that the specification does not define (Euler, Weber and Froude numbers) are left out until a source is cited.
+
+### Piece 2 (the Model Nondimensionalizer)
+
+- The researcher's scales are the record's Scales item, so a chosen scale is a new version of the record. "Use this scale" writes the candidate into the record; the new version needs a confirmation, and only the results that read a scale are invalidated. The Finder does not read scales.
+- Candidate scales, in this order: a scale in the record; the length of the domain from the condition locations, or a length of the declared geometry; the difference between a prescribed value and the field's offset (the initial difference first); the balance of two terms of one equation or condition, with the scales chosen before it in place and numeric factors dropped. A scale that can be 0 is refused with its reason, and the next valid candidate is used with the changed meaning stated.
+- The offset of a field is the reference value p in a difference f − p of the model, else the one value that every condition prescribes, else 0.
+- Definitions reduce the algebra: a definition whose right side is a product (α = k/(ρc_p)) is expanded; a definition whose right side is a sum (T_i − T_∞) is solved for its prescribed value, which keeps the difference as one symbol. A prescribed value without a declared difference gets a new symbol, such as ΔT_i. The reverse substitution holds under these definitions.
+- The common factor of an equation or condition is the coefficient of the term with the highest derivative of a field (space before time), without its numeric sign, so both sides and every sign stay where the model has them (−θ_X = Bi θ).
+- A definition whose left side is a field (DT = T − T_∞) or whose right side holds a derivative (Q̇ = −kA_c T_x at x = 0) is an output: its dimensionless form defines an output group, not a parameter.
+- Familiar names in the dimensionless form are proposed interpretations until the researcher confirms them, and the formula stays beside each name.
+- The solutions of the examples (the fin profile, the slab modes, the lumped decay) arrive with their families in piece 3.

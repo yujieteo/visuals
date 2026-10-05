@@ -1,8 +1,8 @@
 /* Scientific Modelling: the report. report(state, derived, data) turns the derived data of one model version into
  * the plain-data report that the site's beamdswitch template (Beamdswitch.deck) writes as a narrated deck and the
  * kit writes as the Markdown record. It reads the same derived values and statuses as the page, so the three
- * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 5), with
- * every row operation: an exported derivation is never cut short. Narration is plain spoken prose in ASD-STE100,
+ * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 7), with
+ * every row operation and every substitution: an exported derivation is never cut short. Narration is plain spoken prose in ASD-STE100,
  * with no symbols; equations stay in the frame bodies.
  */
 (function (root, factory) {
@@ -21,9 +21,9 @@
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
   const words = (n) => NUMBER_WORDS[n] ?? String(n);
-  const SPOKEN = { "ν": "nu", "μ": "mu", "ρ": "rho", "α": "alpha", "Δ": "delta", "θ": "theta", "λ": "lambda", "∞": "infinity", "−": "minus", "=": "equals", "/": "over" };
+  const SPOKEN = { "ν": "nu", "μ": "mu", "ρ": "rho", "α": "alpha", "Δ": "delta", "θ": "theta", "λ": "lambda", "τ": "tau", "∞": "infinity", "−": "minus", "=": "equals", "/": "over" };
   /** Spoken text from model text: Greek letters and signs as words, no symbols that the narration may not hold. */
-  const say = (text) => String(text ?? "").replace(/_\{?([A-Za-z0-9∞]+)\}?/g, " $1").replace(/[νμραΔθλ∞−=/]/g, (c) => ` ${SPOKEN[c]} `).replace(/:/g, ",").replace(/[$\\`*#|<>×%&≈]/g, " ")
+  const say = (text) => String(text ?? "").replace(/_\{?([A-Za-z0-9∞]+)\}?/g, " $1").replace(/[νμραΔθλτ∞−=/]/g, (c) => ` ${SPOKEN[c]} `).replace(/:/g, ",").replace(/[$\\`*#|<>×%&≈]/g, " ")
     .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/g, "").replace(/\s+/g, " ").trim();
   /** "1 equation", "2 equations", "no equations", with the number as a word. */
   const n = (k, one, many) => (k === 0 ? `no ${many}` : `${words(k)} ${k === 1 ? one : many}`);
@@ -176,8 +176,85 @@
       });
     }
 
+    /* ---------- method: the Nondimensionalizer (hand calculation items 6 and 7) ---------- */
+    const nd = d.nondim;
+    const ndOk = nd && nd.ready;
+    const where = (e) => (e.at ? `\\quad\\text{at }${e.at.tex}` : e.domainTex ? `,\\quad ${e.domainTex}` : "");
+    if (d.confirmedVersion !== null && nd && !nd.ready) {
+      const why = nd.reason === "blocked" ? nd.blockedBy.map((id) => it.issues.find((i) => i.id === id)?.message ?? id).join(" ") : nd.message;
+      method.push({
+        title: nd.reason === "no-equations" ? "The Nondimensionalizer: no equation to transform" : "The Nondimensionalizer cannot run on this version",
+        body: `${cell(why)}${nd.next ? ` **Next:** ${cell(nd.next)}` : ""}`,
+        narration: nd.reason === "no-equations" ? "The model has no equation, so the Nondimensionalizer has nothing to transform. The Finder result stays valid." : "A failed check blocks the Nondimensionalizer. The report names the failed check and the next action.",
+      });
+    }
+    if (ndOk) {
+      const others = nd.scales.flatMap((sc) => sc.candidates.filter((c) => !c.chosen).map((c) => ({ sc, c })));
+      method.push({
+        title: `Hand calculation 6: ${count(nd.scales.length, "scale", "scales")}`,
+        body: [
+          "| Variable | Dimensionless | Scale | Offset | Status | Reason |", "| --- | --- | --- | --- | --- | --- |",
+          ...nd.scales.map((sc) => `| ${m(sc.tex)} | ${m(sc.hatTex)} | ${m(sc.chosen.tex)}${sc.chosen.value ? ` (${cell(sc.chosen.value)} in SI units)` : ""} | ${m(sc.offsetTex)} | ${STATUS[sc.status]} | ${cell(sc.chosen.reason)} |`),
+          "", "Other candidates:", "",
+          ...(others.length ? others.map(({ sc, c }) => `- ${m(sc.tex)}: ${m(c.tex ?? "?")}. ${cell(c.reason)}${c.valid ? "" : ` Refused: ${cell(c.signWhy || c.error || c.dimWhy)}.`}${c.ratio ? ` Ratio of the chosen scale to this one: ${m(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((x) => m(x.tex)).join(", ")}, ${cell(c.ratio.names.map((x) => x.name).join(", "))} (a proposed name)` : ""}.` : ""}`)
+            : ["- None: no other mechanism or prescribed value gives a scale."]),
+          ...nd.scales.filter((sc) => sc.changed).map((sc) => `\n**${STATUS.unresolved}:** ${cell(sc.changed)}`),
+        ].join("\n"),
+        narration: `The Nondimensionalizer chooses a scale for each coordinate and field, ${words(nd.scales.length)} in all. Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. No scale can be zero.${nd.scales.some((sc) => sc.changed) ? " One natural scale is zero, so the tool uses another scale and states the changed meaning." : ""}`,
+      });
+      method.push({
+        title: "Hand calculation 6: dimensionless variables and derivative transformations",
+        body: [
+          ...nd.variables.map((v) => `- ${m(v.defTex)}, and the inverse ${m(v.invTex)}: ${v.inverseOk ? "each map is the inverse of the other (exact)" : "the maps do not compose to the identity"}.`),
+          "", ...nd.derivatives.map((x) => `${dm(x.tex)}\n\n${cell(x.reason)}\n`),
+        ].join("\n"),
+        narration: "Each variable becomes an offset plus its scale times a dimensionless variable. A derivative takes the scale of the field. It divides by the scale of its coordinate once for each order. The page checks that each map is the inverse of the other.",
+      });
+      method.push({
+        title: `Hand calculation 7: substitution and common factors in ${count(nd.equations.length, "equation or condition", "equations and conditions")}`,
+        body: nd.equations.map((e) => [`**${e.id}** (${e.kind}${e.output ? `, defines ${e.output}` : ""}):`, "", dm(e.originalTex), e.domainText ? `Holds ${cell(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.` : "",
+          "", "Substitute:", "", dm(e.substitutedTex), "", "Simplify:", "", dm(e.simplifiedTex), "",
+          `Divide by the common factor ${m(e.factorTex)}, the coefficient of the term for ${cell(e.reference || "the first term")}:`, "",
+          dm(`${e.dimensionlessTex}${where(e)}`), ""].join("\n")).join("\n"),
+        narration: `The tool substitutes the new variables into each of the ${words(nd.equations.length)} equations and conditions. Then it simplifies each one and divides it by its common factor. That factor is the coefficient of the term with the highest derivative of a field.`,
+      });
+    }
+
     /* ---------- results ---------- */
     const results = [];
+    if (ndOk) {
+      const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
+      const spokenParams = (ps) => {
+        const named = ps.filter((p) => p.names[0]).map((p) => `the ${p.names[0].name.split(",")[0]}`);
+        const unnamed = ps.filter((p) => !p.names[0]).length;
+        const parts = [...named, ...(unnamed ? [unnamed === 1 ? "a group with no familiar name" : `${words(unnamed)} groups with no familiar name`] : [])];
+        return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0];
+      };
+      const named = nd.parameters.filter((p) => p.role !== "output" && p.names.length);
+      results.push({
+        title: `Hand calculation 7: the dimensionless model, ${count(params.length, "independent parameter", "independent parameters")}`,
+        body: [...nd.equations.filter((e) => !e.output).map((e) => `- ${e.id}: ${m(`${e.namedTex}${where(e)}`)}`),
+          ...nd.equations.filter((e) => e.output).map((e) => `- ${e.id}, defines ${e.output}: ${m(`${e.namedTex}${where(e)}`)}`),
+          "", named.length ? `The page proposes these names, each a ${STATUS.proposed.toLowerCase()} until the researcher confirms it: ${named.map((p) => `${m(`${p.names[0].tex}=${p.tex}`)} (${cell(p.names[0].name)}${p.confirmed === p.names[0].id ? `, ${STATUS.confirmed}` : ""})`).join(", ")}.` : "No group of the model has a familiar name."].join("\n"),
+        narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(spokenParams(params))} ${params.length > 1 ? "are the only physical inputs" : "is the only physical input"} left in the equations and conditions.`
+          : "The dimensionless model has no parameter. Its solution is the same for every value of the physical parameters.",
+      });
+      const pi = nd.pi;
+      results.push({
+        title: "Parameters, fields, coordinates and the Pi basis",
+        body: [
+          "| Kind | Group | Names | Value | In |", "| --- | --- | --- | --- | --- |",
+          ...nd.parameters.map((p) => `| ${p.role}${p.dependent ? `, dependent: ${cell(p.dependent)}` : ""} | ${m(p.tex)} | ${p.names.map((x) => `${m(x.tex)} ${cell(x.name)}`).join(", ") || "none"} | ${p.value ? cell(Model.valueText(p.value)) : "no values"} | ${cell(p.where.join(", "))} |`),
+          "", `**Solution fields:** ${nd.fields.map((f) => m(`${f.tex}\\left(${f.of.join(",")}\\right)`)).join(", ") || "none"}. **Coordinates:** ${nd.coordinates.map((c) => m(c.tex)).join(", ") || "none"}. **Prescribed data:** ${nd.prescribed.length ? nd.prescribed.map((x) => `${m(x.tex)} in ${x.id}`).join(", ") : "none"}.`,
+          "", pi ? `**Pi basis.** The Finder found ${pi.m} independent groups; the dimensionless model uses ${pi.rank} of them.` : "**Pi basis.** The Finder did not run on this version.",
+          ...(pi ? pi.rows.map((r) => `- ${m(r.tex)} (${r.what}): ${r.inPi ? m(`=${r.comboTex}`) : cell(r.note ?? "")}`) : []),
+          ...(pi && pi.absent.length ? ["", "Pi groups that the model does not use:", "", ...pi.absent.map((a) => `- ${m(a.tex)}: ${cell(a.why)}`), "", cell(pi.absentWhy)] : []),
+          "", "**Where each physical parameter enters:**", "",
+          ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join(", "))}`),
+        ].join("\n"),
+        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `${pi.rank === pi.m ? `The model uses all ${words(pi.m)} Pi groups.` : `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups. The others do not appear in the model, and the frame says why.`}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
+      });
+    }
     if (ok) {
       results.push({
         title: `${count(f.m, "group", "groups")}: the repeating-variable basis`,
@@ -230,6 +307,13 @@
         narration: `Every group is dimensionless, and ${f.checks.every((c) => c.passed) ? `all ${words(f.checks.length)} exact checks pass` : `not all ${words(f.checks.length)} exact checks pass`}. These checks use exact arithmetic, not a floating-point comparison.`,
       });
     }
+    if (ndOk) {
+      checks.push({
+        title: "Reverse substitution and the checks of the Nondimensionalizer",
+        body: nd.checks.map((c) => `- ${status(c.status)}: ${c.passed ? "passed" : "FAILED"}. ${cell(c.title)}: ${cell(c.detail)}`).join("\n"),
+        narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} ${nd.checks.find((c) => c.id === "x-nd-reverse")?.passed ? "The reverse substitution gives back each dimensional equation and condition." : "The reverse substitution does not give back every dimensional form, and the frame names the failed check."}${nd.checks.find((c) => c.id === "x-nd-coefficients")?.passed ? " Each coefficient is dimensionless." : ""}`,
+      });
+    }
     checks.push({
       title: "Results with their statuses and evidence",
       body: [...d.results.map(resultLine), "", "Status counts: " + Object.entries(d.counts).map(([k, n]) => `${STATUS[k]}: ${n}`).join(", ") + ".", "",
@@ -241,16 +325,18 @@
     const key = ok
       ? `${f.n} Pi variables, rank ${f.r}: ${f.m} independent groups.${f.constraints.items.length ? ` A relation fixes ${f.m - f.constraints.free}, so ${f.constraints.free} can vary.` : ""} ${f.correlation.relation ? `${m(f.correlation.relation)}.` : ""} Buckingham Pi analysis does not give the function f.`
       : d.confirmedVersion === null ? "Confirm the interpretation to run the Finder. The checks before analysis already ran." : `The Finder is blocked. ${cell(it.issues.find((i) => (f?.blockedBy ?? []).includes(i.id))?.next ?? "")}`;
+    const indep = ndOk ? nd.parameters.filter((p) => p.role === "parameter" && p.independent) : [];
+    const ndKey = ndOk ? ` The dimensionless model has ${count(indep.length, "independent parameter", "independent parameters")}${indep.length ? `: ${indep.map((p) => m(p.names[0] ? `${p.names[0].tex}=${p.tex}` : p.tex)).join(", ")}` : ""}${nd.checks.every((c) => c.passed) ? ", and the reverse substitution recovers every equation and condition." : "."}` : "";
     checks.push({
       title: "Takeaway",
-      key,
+      key: `${key}${ndKey}`,
       narration: ok ? `The Pi variables give ${n(f.m, "algebraically independent group", "algebraically independent groups")}. ${f.constraints.items.length ? `A relation fixes some of them, so only ${words(f.constraints.free)} can vary. ` : ""}The group that contains the quantity of interest is a function of the other groups. Data or a solved model must supply that function.`
         : "The Finder did not run on this version. The report names the reason and the next action.",
     });
 
     return {
       meta: { title: TITLE, subtitle: `${d.title}: model version ${d.version}${d.confirmed ? "" : " (not confirmed)"}`, voice: "bf_emma" },
-      narration: `This report comes from the Dimensionless Number Finder, for model version ${d.version}. All arithmetic in it is exact.`,
+      narration: `This report comes from the Dimensionless Number Finder and the Model Nondimensionalizer, for model version ${d.version}. All arithmetic in it is exact.`,
       setup, method, results, checks,
     };
   }

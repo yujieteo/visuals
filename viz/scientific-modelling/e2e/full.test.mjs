@@ -1,8 +1,9 @@
 // Scientific Modelling: the fuller browser checks (§28). The example, tool, repeating set, row-reduction step, basis
 // and detail level live in the URL fragment through the kit; the model record lives in the page and its own JSON.
 // Besides the shared checks, these drive the main path a researcher takes: confirm the interpretation, step through
-// the row reduction with the keyboard, see the MathJax output in the Fira font, and compare the page's results with
-// the Markdown record and the deck, all with no request.
+// the row reduction with the keyboard, see the MathJax output in the Fira font, open the Nondimensionalizer, choose
+// another scale as a new version of the model, and compare the page's results with the Markdown record and the
+// deck, all with no request.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 
@@ -10,6 +11,8 @@ import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullS
 const kitState = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.state);
 /** @param {import("playwright").Page} page @param {string} id */
 const choose = (page, id) => page.locator("#example").selectOption(id);
+/** @param {import("playwright").Page} page */
+const nondim = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.nondim);
 /** @param {import("playwright").Page} page */
 async function confirm(page) {
   await page.locator("#confirm").click();
@@ -29,6 +32,16 @@ await fullSuite("scientific-modelling", {
       assert.match(await link.page.locator("#step-value").innerText(), /^2 of \d+$/, "the URL's step is the stepper's step");
     } finally {
       await link.close();
+    }
+    const tool = await ctx.open("#example=transient-slab&tool=nondim");
+    try {
+      assert.equal(await tool.page.locator("#tab-nondim").getAttribute("aria-selected"), "true", "the URL's tool is the open tab");
+      assert.match(await tool.page.locator("#nondim-gate").innerText(), /runs on a confirmed interpretation/);
+      await tool.page.locator("#confirm").click();
+      await tool.page.waitForSelector("#nondim-main:not([hidden]) .model-list li");
+      assert.match(await tool.page.locator("#nondim-summary").innerText(), /3 dimensionless variables, 1 independent parameter: Bi/);
+    } finally {
+      await tool.close();
     }
     const stale = await ctx.open("#example=no-such-model");
     try {
@@ -66,6 +79,11 @@ await fullSuite("scientific-modelling", {
     const mj = await s.page.evaluate(() => { const M = /** @type {any} */ (window).MathJax; return { version: M.version, font: M.startup.output.font.constructor.NAME, jax: document.querySelector("mjx-container")?.getAttribute("jax"), mml: document.querySelectorAll("mjx-container mjx-assistive-mml").length, n: document.querySelectorAll("mjx-container").length }; });
     assert.deepEqual([mj.version, mj.font, mj.jax], ["4.1.3", "MathJaxFira", "SVG"]);
     assert.equal(mj.mml, mj.n, "every formula carries assistive MathML");
+    // The Nondimensionalizer tab by keyboard: Enter on the focused tab opens it on the same confirmed record.
+    await s.page.locator("#tab-nondim").focus();
+    await s.page.keyboard.press("Enter");
+    await settlesTo(() => kitState(s.page).then((x) => x.tool), "nondim", "Enter on the focused tab opens the Nondimensionalizer");
+    assert.match(await s.page.locator("#nondim-gate").innerText(), /no equation to nondimensionalize/, "a model of variables only names what the Nondimensionalizer needs");
     await blur(s.page);
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
@@ -113,6 +131,23 @@ await fullSuite("scientific-modelling", {
         await fresh.close();
       }
     });
+    // A chosen scale is a new version of the model: "Use this scale", confirm, and the model JSON keeps the choice.
+    await using(() => ctx.open("#example=transient-slab&tool=nondim&detail=full"), async (s) => {
+      await s.page.locator("#confirm").click();
+      await s.page.waitForSelector("#nondim-main:not([hidden]) button[data-use-scale]");
+      await s.page.locator('[data-scale-var="v-x"] button[data-use-scale]').first().click();
+      await s.page.waitForFunction(() => /Version 2, not confirmed/.test(document.getElementById("record-status")?.textContent ?? ""));
+      assert.match(await s.page.locator("#nondim-gate").innerText(), /Version 2 is not confirmed/, "the results of the old scale show as invalidated");
+      await s.page.locator("#nondim-gate button[data-confirm]").click();
+      await s.page.waitForFunction(() => /Version 2, confirmed/.test(document.getElementById("record-status")?.textContent ?? ""));
+      const nd = await nondim(s.page);
+      assert.equal(nd.scales.find((/** @type {any} */ x) => x.name === "x").status, "confirmed", "the chosen scale is the researcher's");
+      assert.equal(nd.equations.find((/** @type {any} */ e) => e.id === "c-surface").at.plain, "L*h*k^(-1)", "the surface now sits at X = hL/k");
+      const file = await saved(s.page, () => s.page.locator("#save-model").click());
+      const doc = JSON.parse(file.text);
+      assert.equal(doc.scales[0].for, "v-x");
+      assert.ok(doc.nondimensionalization.equations.some((/** @type {any} */ e) => e.id === "c-surface"), "the model JSON holds the dimensionless forms");
+    });
   },
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await choose(page, "straight-fin"); await confirm(page); }, "the complete Pi basis", "#save-beamdswitch, #copy-beamdswitch"),
@@ -136,6 +171,12 @@ await fullSuite("scientific-modelling", {
       assert.ok(text.includes("\\frac{h\\,P\\,L^{2}}{k\\,A_{c}}") || text.includes("hPL²/(kA_c)"), "the fin parameter group");
     }
     assert.equal(page.groups, 4, "4 groups for the fin");
+    // The Nondimensionalizer's hand calculation is in both exports, with the same dimensionless forms as the page.
+    const nd = await nondim(s.page);
+    for (const text of [record.text, deck.text]) {
+      assert.match(text, /Hand calculation 6: 2 scales/);
+      for (const e of nd.equations) assert.ok(text.includes(e.dimensionlessTex), `${e.id}: ${e.dimensionlessTex}`);
+    }
   }),
 
   "dark-mode": (ctx) => assertDarkMode(ctx),

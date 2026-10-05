@@ -115,6 +115,49 @@
       "evidence": [{ "id": "ev-spec7", "source": "spec-7", "claim": "The slab conditions and the groups X, Fo = τ, θ and Bi." }]
     },
     {
+      "id": "lumped-body",
+      "label": "Lumped body",
+      "group": "standard",
+      "title": "Lumped body cooled by convection: the dimensionless decay",
+      "purpose": { "question": "Which dimensionless variables describe the cooling of a small body whose temperature stays uniform?", "observable": "v-DT", "calculation": "nondimensionalize" },
+      "variables": [
+        { "id": "v-DT", "symbol": "DT", "tex": "T-T_\\infty", "meaning": "Excess of temperature, T − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "field", "domain": "real", "pi": true },
+        { "id": "v-DTi", "symbol": "DT_i", "tex": "T_i-T_\\infty", "meaning": "Initial excess of temperature, T_i − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "parameter", "domain": "nonzero", "pi": true },
+        { "id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": true },
+        { "id": "v-h", "symbol": "h", "meaning": "Surface heat-transfer coefficient", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "value": "50", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-Lc", "symbol": "L_c", "meaning": "Biot length V/A_s", "quantity": "length", "unit": "m", "value": "1/600", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-As", "symbol": "A_s", "meaning": "Surface area", "quantity": "area", "unit": "m^2", "value": "6e-4", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-V", "symbol": "V", "meaning": "Volume", "quantity": "volume", "unit": "m^3", "value": "1e-6", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-C", "symbol": "C", "tex": "\\rho c_p", "meaning": "Volumetric heat capacity, ρc_p", "quantity": "volumetric-heat-capacity", "unit": "J/(m^3*K)", "value": "3.9e6", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the body", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "value": "50", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-rho", "symbol": "rho", "meaning": "Density", "quantity": "density", "unit": "kg/m^3", "value": "7800", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity", "quantity": "specific-heat", "unit": "J/(kg*K)", "value": "500", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-T", "symbol": "T", "meaning": "Body temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false },
+        { "id": "v-Ti", "symbol": "T_i", "meaning": "Initial temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "200", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-Tinf", "symbol": "T_inf", "meaning": "Fluid temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "20", "kind": "parameter", "domain": "positive", "pi": false }
+      ],
+      "equations": [
+        { "id": "e-energy", "kind": "governing", "text": "rho*c_p*V*d(T,t) = -h*A_s*(T - T_inf)", "domain": "t > 0" },
+        { "id": "e-C", "kind": "definition", "text": "C = rho*c_p" },
+        { "id": "e-Lc", "kind": "definition", "text": "L_c = V/A_s" },
+        { "id": "e-DT", "kind": "definition", "text": "DT = T - T_inf" },
+        { "id": "e-DTi", "kind": "definition", "text": "DT_i = T_i - T_inf" }
+      ],
+      "geometry": { "domain": "A small steel cube with a side of 1 cm, cooled by a fluid on all six faces", "coordinates": "Time t only: the lumped model has no spatial coordinate", "lengths": ["v-Lc"], "interfaces": "The surface A_s, in contact with a fluid at T_∞" },
+      "conditions": [
+        { "id": "c-initial", "kind": "initial", "text": "T = T_i", "at": "t = 0" }
+      ],
+      "assumptions": [
+        { "id": "a-uniform", "kind": "physical", "text": "The temperature is uniform in the body. This needs a small Biot number hL_c/k with L_c = V/A_s; piece 3 compares the lumped model with a spatial model.", "source": "spec-10" },
+        { "id": "a-const", "kind": "physical", "text": "The properties and h are constant.", "source": "spec-10" },
+        { "id": "a-diff", "kind": "mathematical", "text": "T_i is not equal to T_∞.", "relation": "DT_i != 0", "source": "spec-10" },
+        { "id": "a-rhocp", "kind": "physical", "text": "ρ and c_p enter the equation only as ρc_p, and V and A_s only as V/A_s. So C = ρc_p and L_c = V/A_s replace them in the Pi set.", "source": "spec-10" }
+      ],
+      "scales": [],
+      "preferred": ["v-Lc", "v-C", "v-h", "v-DTi"],
+      "evidence": [{ "id": "ev-spec10", "source": "spec-10", "claim": "The lumped body with convection: Bi, the dimensionless time and the temperature ratio." }]
+    },
+    {
       "id": "fail-dimensions",
       "label": "Failure: inconsistent dimensions",
       "group": "failure",
@@ -153,6 +196,50 @@
       ],
       "scales": [],
       "preferred": ["v-rho", "v-U", "v-L", "v-k"],
+      "evidence": []
+    },
+    {
+      "id": "fail-zero-temperature-scale",
+      "label": "Failure: zero temperature scale",
+      "group": "failure",
+      "failure": "zero-scale",
+      "title": "Failure example: a heated slab that starts at the fluid temperature",
+      "purpose": { "question": "Which temperature scale makes the slab with a heat source dimensionless when it starts at the fluid temperature?", "observable": "v-DT", "calculation": "nondimensionalize" },
+      "variables": [
+        { "id": "v-DT", "symbol": "DT", "tex": "T-T_\\infty", "meaning": "Local excess of temperature, T − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "field", "domain": "real", "pi": true },
+        { "id": "v-DTi", "symbol": "DT_i", "tex": "T_i-T_\\infty", "meaning": "Initial excess of temperature, T_i − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "parameter", "domain": "real", "pi": true },
+        { "id": "v-x", "symbol": "x", "meaning": "Distance from the centre plane", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": true },
+        { "id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": true },
+        { "id": "v-L", "symbol": "L", "meaning": "Half-thickness", "quantity": "length", "unit": "m", "value": "0.05", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the slab", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "value": "15", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-alpha", "symbol": "alpha", "meaning": "Thermal diffusivity", "quantity": "thermal-diffusivity", "unit": "m^2/s", "value": "4e-6", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-h", "symbol": "h", "meaning": "Surface heat-transfer coefficient", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "value": "100", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-qv", "symbol": "q_v", "tex": "\\dot{q}_{v}", "meaning": "Uniform volumetric heat source", "quantity": "volumetric-heat-source", "unit": "W/m^3", "value": "1e5", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-rho", "symbol": "rho", "meaning": "Density", "quantity": "density", "unit": "kg/m^3", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity", "quantity": "specific-heat", "unit": "J/(kg*K)", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-T", "symbol": "T", "meaning": "Slab temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false },
+        { "id": "v-Ti", "symbol": "T_i", "meaning": "Uniform initial temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "20", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-Tinf", "symbol": "T_inf", "meaning": "Fluid temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "20", "kind": "parameter", "domain": "positive", "pi": false }
+      ],
+      "equations": [
+        { "id": "e-heat", "kind": "governing", "text": "rho*c_p*d(T,t) = k*d(T,x,x) + q_v", "domain": "0 < x < L, t > 0" },
+        { "id": "e-alpha", "kind": "definition", "text": "alpha = k/(rho*c_p)" },
+        { "id": "e-DT", "kind": "definition", "text": "DT = T - T_inf" },
+        { "id": "e-DTi", "kind": "definition", "text": "DT_i = T_i - T_inf" }
+      ],
+      "geometry": { "domain": "A slab of half-thickness L with a uniform heat source, symmetric about its centre plane", "coordinates": "x from the centre plane (x = 0) to the surface (x = L), and time t", "lengths": ["v-L"], "interfaces": "The surface at x = L, in contact with a fluid at T_∞" },
+      "conditions": [
+        { "id": "c-centre", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0" },
+        { "id": "c-surface", "kind": "boundary", "text": "-k*d(T,x) = h*(T - T_inf)", "at": "x = L" },
+        { "id": "c-initial", "kind": "initial", "text": "T = T_i", "at": "t = 0", "note": "The slab starts at the fluid temperature, so T_i − T_∞ = 0." }
+      ],
+      "assumptions": [
+        { "id": "a-const", "kind": "physical", "text": "The material properties and the heat source are constant.", "source": "spec-7" },
+        { "id": "a-start", "kind": "physical", "text": "The slab starts at the fluid temperature: T_i = T_∞.", "source": "spec-6" },
+        { "id": "a-rhocp", "kind": "physical", "text": "ρ and c_p enter the equation only as ρc_p, so α = k/(ρc_p) replaces them in the Pi set.", "source": "spec-7" }
+      ],
+      "scales": [],
+      "preferred": ["v-L", "v-k", "v-alpha", "v-qv"],
       "evidence": []
     },
     {

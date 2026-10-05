@@ -76,7 +76,7 @@
 
   /** Draw the editor from the record. Only a change of rows, an example, an import or a restore redraws it. @param {any} rec */
   function renderEditor(rec) {
-    const key = `${app.state.example}|${rec.origin}|${["variables", "equations", "conditions", "assumptions"].map((k) => rec[k].map((/** @type {any} */ x) => x.id).join(",")).join("|")}`;
+    const key = `${app.state.example}|${rec.origin}|${["variables", "equations", "conditions", "assumptions", "scales"].map((k) => rec[k].map((/** @type {any} */ x) => x.id).join(",")).join("|")}|${rec.scales.map((/** @type {any} */ x) => `${x.for}:${x.scale}`).join(",")}`;
     if (key === editorKey) return;
     editorKey = key;
     const q = ENGINE.quantities.quantities;
@@ -110,6 +110,9 @@
       `<fieldset><legend>Conditions</legend>`,
       ...rec.conditions.map((/** @type {any} */ c) => `<div class="item"><div class="grid">${select(`conditions.${c.id}.kind`, KIND_OPTIONS.condition, c.kind, `Kind of ${c.id}`)}${input(`conditions.${c.id}.text`, c.text, "Condition", "wide")}${input(`conditions.${c.id}.at`, c.at ?? "", "At, such as x = 0")}<button type="button" data-remove="conditions.${esc(c.id)}">Remove ${esc(c.id)}</button></div></div>`),
       `<button type="button" data-add="conditions">Add a condition</button></fieldset>`,
+      `<fieldset><legend>Scales</legend><p class="syntax">A scale you enter here replaces the suggested scale of its variable, such as <code>L^2/alpha</code> for t. "Use this scale" in the Nondimensionalizer fills these rows.</p>`,
+      ...rec.scales.map((/** @type {any} */ c) => `<div class="item"><div class="grid">${select(`scales.${c.id}.for`, ["", ...vars.filter((/** @type {any} */ v) => v.kind === "coordinate" || v.kind === "field").map((/** @type {any} */ v) => v.id)], c.for ?? "", `Variable of ${c.id}`, ["none", ...vars.filter((/** @type {any} */ v) => v.kind === "coordinate" || v.kind === "field").map((/** @type {any} */ v) => v.symbol)])}${input(`scales.${c.id}.scale`, c.scale ?? "", "Scale, such as L^2/alpha")}${input(`scales.${c.id}.offset`, c.offset ?? "", "Offset, such as T_inf")}${input(`scales.${c.id}.symbol`, c.symbol ?? "", "Dimensionless symbol")}${input(`scales.${c.id}.reason`, c.reason ?? "", "Reason", "wide")}<button type="button" data-remove="scales.${esc(c.id)}">Remove ${esc(c.id)}</button></div></div>`),
+      `<button type="button" data-add="scales">Add a scale</button></fieldset>`,
       `<fieldset><legend>Geometry</legend><div class="grid">${input("geometry.domain", rec.geometry.domain ?? "", "Domain", "wide")}${input("geometry.coordinates", rec.geometry.coordinates ?? "", "Coordinates", "wide")}${input("geometry.interfaces", rec.geometry.interfaces ?? "", "Interfaces", "wide")}</div></fieldset>`,
       `<fieldset><legend>Assumptions</legend>`,
       ...rec.assumptions.map((/** @type {any} */ a) => `<div class="item"><div class="grid">${select(`assumptions.${a.id}.kind`, KIND_OPTIONS.assumption, a.kind, `Kind of ${a.id}`)}${input(`assumptions.${a.id}.text`, a.text, "Assumption", "wide")}${input(`assumptions.${a.id}.relation`, a.relation ?? "", "Relation, such as T_i - T_inf != 0")}${input(`assumptions.${a.id}.source`, a.source ?? "", "Source id")}<button type="button" data-remove="assumptions.${esc(a.id)}">Remove ${esc(a.id)}</button></div></div>`),
@@ -268,14 +271,90 @@
       <p class="note">${chip("evidence")} The groups do not specify a universal relation. Geometry, conditions and more physics can add inputs (${sourceLink("spec-5")}).</p>`;
   }
 
+
+  /** The Model Nondimensionalizer: scales, variables, derivatives, every equation and condition, the parameters,
+   * the Pi basis, the parameters that enter, and the checks. @param {Record<string, any>} state @param {any} d */
+  function renderNondim(state, d) {
+    const nd = d.nondim;
+    const gate = $("nondim-gate"), main = $("nondim-main");
+    if (d.confirmedVersion === null) {
+      gate.innerHTML = `<div class="callout"><p><strong>The Nondimensionalizer runs on a confirmed interpretation.</strong> Read the interpretation of version ${d.version}. Then select "Confirm the interpretation".</p><p>The checks before analysis already ran: they do not need the confirmation.</p></div>`;
+      main.hidden = true;
+      return;
+    }
+    if (!nd || !nd.ready) {
+      const why = nd && nd.reason === "blocked" ? nd.blockedBy.map((/** @type {string} */ id) => d.interp.issues.find((/** @type {any} */ i) => i.id === id)).filter(Boolean) : [];
+      gate.innerHTML = why.length
+        ? `<div class="callout bad"><p><strong>A failed check blocks the Nondimensionalizer.</strong></p>${why.map((/** @type {any} */ i) => `<p>${esc(i.message)} <span class="next">Next: ${esc(i.next)}</span></p>`).join("")}</div>`
+        : `<div class="callout ${nd && nd.reason === "no-equations" ? "" : "bad"}"><p><strong>${nd && nd.reason === "no-equations" ? "This model has no equation to nondimensionalize." : "The Nondimensionalizer cannot run on this model."}</strong> ${esc(nd?.message ?? "")}</p><p class="next">Next: ${esc(nd?.next ?? "")}</p></div>`;
+      main.hidden = true;
+      return;
+    }
+    const stale = d.results.filter((/** @type {any} */ r) => !r.valid && r.id.startsWith("r-nd-"));
+    gate.innerHTML = d.confirmed ? "" : `<div class="callout warn"><p><strong>Version ${d.version} is not confirmed.</strong> The dimensionless model comes from confirmed version ${d.confirmedVersion}.</p><p>${stale.length ? `${stale.length} of its results read a changed input (${esc([...new Set(stale.flatMap((/** @type {any} */ r) => r.invalidatedBy))].join(", "))}) and show as invalidated.` : "No result of the Nondimensionalizer reads a changed input."}</p><p><button type="button" class="primary" data-confirm>Confirm version ${d.version}</button></p></div>`;
+    main.hidden = false;
+    const params = nd.parameters.filter((/** @type {any} */ p) => p.role === "parameter" && p.independent);
+    const named = nd.parameters.filter((/** @type {any} */ p) => p.role !== "output" && p.names.length && !/^\\frac|[+-]/.test(p.names[0].tex));
+    const eqLine = (/** @type {any} */ e) => `<li>${td(`${e.namedTex}${e.at ? `\\quad\\text{at }${e.at.tex}` : e.domainTex ? `,\\quad ${e.domainTex}` : ""}`)}<span class="ids">${esc(e.id)}${e.output ? `, defines ${esc(e.output)}` : ""}</span></li>`;
+    $("nondim-summary").innerHTML = [
+      `<p class="summary-line">${nd.variables.length} dimensionless variable${nd.variables.length === 1 ? "" : "s"}, <strong>${params.length} independent parameter${params.length === 1 ? "" : "s"}</strong>${params.length ? `: ${params.map((/** @type {any} */ p) => esc(p.names[0] ? p.names[0].label : p.label)).join(", ")}` : ""}.</p>`,
+      `<ul class="model-list">${nd.equations.filter((/** @type {any} */ e) => !e.cond && !e.output).map(eqLine).join("")}${nd.equations.filter((/** @type {any} */ e) => e.cond).map(eqLine).join("")}${nd.equations.filter((/** @type {any} */ e) => e.output).map(eqLine).join("")}</ul>`,
+      named.length ? `<p class="note">${chip("proposed")} The page proposes these names: ${named.map((/** @type {any} */ p) => `${ti(`${p.names[0].tex}=${p.tex}`)}`).join(", ")}. Confirm a name in the parameters below.</p>` : "",
+      ...nd.scales.filter((/** @type {any} */ s) => s.changed).map((/** @type {any} */ s) => `<div class="callout warn"><p>${chip("unresolved")} ${esc(s.changed)}</p></div>`),
+    ].join("\n");
+
+    // Hand calculation 6: the scales with their mechanisms and the competing scales.
+    $("nondim-scales").innerHTML = `<p>Each scale comes from your entry, the domain or the geometry, a prescribed value, or a balance of two terms. A scale must not be 0. "Use this scale" writes your choice into the model as a new version.</p>` + nd.scales.map((/** @type {any} */ s) => {
+      const others = s.candidates.filter((/** @type {any} */ c) => !c.chosen);
+      return `<div class="group-card scale-card" data-scale-var="${esc(s.id)}">
+        <p><strong>${ti(s.tex)}</strong> (${esc(s.kind)}${s.time ? ", time" : ""}): ${chip(s.status)} scale ${ti(s.chosen.tex)}${s.chosen.value ? ` <span class="note">(${esc(s.chosen.value)} in SI units)</span>` : ""}${s.offsetPlain !== "0" ? `, offset ${ti(s.offsetTex)}` : ""}</p>
+        <p class="note">${esc(s.chosen.reason)}${s.chosen.also.length ? ` Also: ${esc(s.chosen.also.join(" "))}` : ""}${s.offsetPlain !== "0" ? ` Offset: ${esc(s.offsetWhy)}.` : ""}</p>
+        ${s.status === "confirmed" ? `<p class="note">You supplied this scale. <button type="button" data-unscale="${esc(s.id)}">Use the suggested scale</button></p>` : ""}
+        ${others.length ? `<p class="label">Other candidates</p><ul class="plain-list">${others.map((/** @type {any} */ c) => `<li>${ti(c.tex ?? "?")}${c.valid ? "" : ` ${chip("unresolved")} <span class="sev-error">Refused:</span> ${esc(c.signWhy || c.error || (c.dimOk ? "" : `its dimension ${c.dim ?? "?"} is not that of ${s.label}`))}.`} <span class="note">${esc(c.reason)}</span>${c.ratio ? ` <span class="note">Ratio of the chosen scale to this one: ${ti(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((/** @type {any} */ n) => ti(n.tex)).join(", ")}, ${esc(c.ratio.names.map((/** @type {any} */ n) => n.name).join(", "))} (a proposed name)` : ""}.</span>` : ""}${c.valid && c.record ? ` <button type="button" data-use-scale="${esc(`${s.id}|${c.n}`)}">Use this scale</button>` : ""}</li>`).join("")}</ul>` : `<p class="note">No other candidate: no other mechanism or prescribed value gives a scale for ${esc(s.label)}.</p>`}
+      </div>`;
+    }).join("");
+    $("nondim-variables").innerHTML = `<h4>Dimensionless variables and their inverses</h4><ul class="plain-list">${nd.variables.map((/** @type {any} */ v) => `<li>${ti(v.defTex)} and ${ti(v.invTex)} ${chip(v.inverseOk ? "exact" : "unresolved")} <span class="note">${v.inverseOk ? "Each map is the inverse of the other." : "The maps do not compose to the identity."}</span></li>`).join("")}</ul>`;
+    $("nondim-derivatives").innerHTML = nd.derivatives.length ? `<h4>Derivative transformations</h4><ul class="model-list">${nd.derivatives.map((/** @type {any} */ x) => `<li>${td(x.tex)}<span class="note">${esc(x.reason)}</span></li>`).join("")}</ul>` : "";
+
+    // Hand calculation 7: every equation and condition, step by step.
+    $("nondim-equations").innerHTML = nd.equations.map((/** @type {any} */ e) => `<div class="group-card eq-card" data-eq="${esc(e.id)}">
+      <p><strong>${esc(e.id)}</strong> <span class="ids">${esc(e.kind)}${e.output ? `, defines ${esc(e.output)}` : ""}</span></p>
+      ${td(e.originalTex)}${e.domainText ? `<p class="note">Holds ${esc(/^at /.test(e.domainText) ? e.domainText : `for ${e.domainText}`)}.</p>` : ""}
+      <p class="label">Substitute</p>${td(e.substitutedTex)}
+      <p class="label">Simplify</p>${td(e.simplifiedTex)}
+      <p class="label">Divide by the common factor</p><p class="note">The factor is the coefficient of the term for ${esc(e.reference || "the first term")}: ${ti(e.factorTex)}.</p>
+      ${td(`${e.dimensionlessTex}${e.at ? `\\quad\\text{at }${e.at.tex}` : e.domainTex ? `,\\quad ${e.domainTex}` : ""}`)}
+      <p class="note">${chip(e.dimensionless ? "exact" : "unresolved")} ${e.dimensionless ? "Every coefficient is dimensionless." : "A coefficient is not dimensionless."} ${chip(e.reverseOk ? "exact" : "unresolved")} ${e.reverseOk ? "The reverse substitution gives back the dimensional form." : "The reverse substitution does not give back the dimensional form."}</p>
+    </div>`).join("");
+
+    // Parameters, fields, coordinates and prescribed data.
+    const roleName = { parameter: "Parameter", geometry: "Geometry ratio", output: "Output" };
+    $("nondim-parameters").innerHTML = [
+      `<div class="scroll"><table class="data"><caption class="visually-hidden">Dimensionless groups of the model</caption><thead><tr><th scope="col">Kind</th><th scope="col">Group</th><th scope="col">Name</th><th scope="col">Value</th><th scope="col">In</th></tr></thead><tbody>${nd.parameters.map((/** @type {any} */ p) => `<tr><td>${esc(roleName[/** @type {"parameter"} */ (p.role)])}${p.dependent ? `, dependent: ${esc(p.dependent)}` : ""}</td><td>${ti(p.tex)}</td><td>${p.names.map((/** @type {any} */ nm) => { const yes = p.confirmed === nm.id; return `${chip(yes ? "confirmed" : "proposed")} ${ti(nm.tex)} ${esc(nm.name)} <button type="button" data-name="${esc(`${p.key}|${nm.id}|${yes ? "0" : "1"}`)}">${yes ? "Withdraw" : `Confirm ${esc(nm.label)}`}</button>`; }).join("<br>") || '<span class="muted">none</span>'}</td><td class="num">${p.value ? esc(Model.valueText(p.value)) : '<span class="muted">no values</span>'}</td><td>${esc(p.where.join(", "))}</td></tr>`).join("")}</tbody></table></div>`,
+      `<p><strong>Solution fields:</strong> ${nd.fields.map((/** @type {any} */ f) => `${ti(`${f.tex}\\left(${f.of.join(",")}\\right)`)}`).join(", ") || "none"}. <strong>Coordinates:</strong> ${nd.coordinates.map((/** @type {any} */ c) => ti(c.tex)).join(", ") || "none"}. The parameters are constants of the model. The fields and the coordinates are not parameters.</p>`,
+      `<p><strong>Prescribed data:</strong> ${nd.prescribed.length ? `${nd.prescribed.map((/** @type {any} */ x) => `${ti(x.tex)} in ${esc(x.id)}${x.at ? ` at ${ti(x.at)}` : ""}`).join(", ")}.` : "none. Every condition is homogeneous."}</p>`,
+      nd.definitions.length ? `<p><strong>Definitions used:</strong> ${nd.definitions.map((/** @type {any} */ x) => `${ti(x.tex)} (${x.id ? esc(x.id) : "added by the tool"}, ${x.kind === "expand" ? "expanded" : `solved for ${esc(x.eliminated)}`})`).join(", ")}.</p>` : "",
+    ].join("\n");
+
+    // The Pi basis of the Finder.
+    const pi = nd.pi;
+    $("nondim-pi").innerHTML = !pi ? `<p class="note">The Finder did not run on this version, so the comparison is not available.</p>` : [
+      `<p>The Finder found ${pi.m} independent groups. The dimensionless model uses ${pi.rank} of them.</p>`,
+      `<ul class="plain-list">${pi.rows.map((/** @type {any} */ r) => `<li>${ti(r.tex)} (${esc(r.what)}): ${r.inPi ? `${chip("exact")} ${ti(`=${r.comboTex}`)} in the ${esc(pi.basis)} basis` : `${chip("unresolved")} ${esc(r.note ?? "")}`}</li>`).join("")}</ul>`,
+      pi.absent.length ? `<p><strong>Pi groups that the model does not use:</strong></p><ul class="plain-list">${pi.absent.map((/** @type {any} */ a) => `<li>${ti(a.tex)}: ${esc(a.why)}</li>`).join("")}</ul><p class="note">${esc(pi.absentWhy)}</p>` : `<p>The model uses every Pi group.</p>`,
+    ].join("\n");
+
+    $("nondim-enters").innerHTML = `<p>A scale must not hide a physical parameter. Each parameter below enters a scale, an offset, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales or offsets: it changes the conversion to dimensional values, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
+    const ref = d.results.find((/** @type {any} */ r) => r.id === "r-nd-reference");
+    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>${ref ? `<p>${chip(ref.status)} ${esc(ref.title)} <span class="note">The script tools/references.py computed it once.</span></p>` : `<p class="note">No SymPy reference covers this model version. The exact checks above still apply.</p>`}`;
+  }
+
   /** @param {any} d @param {string} tool */
   function renderLater(d, tool) {
-    const piece = tool === "nondim" ? 2 : 3;
-    const calc = d.interp.calcs.find((/** @type {any} */ c) => c.id === (tool === "nondim" ? "nondimensionalize" : "regime-map"));
+    const piece = 3;
+    const calc = d.interp.calcs.find((/** @type {any} */ c) => c.id === "regime-map");
     const needs = calc.blockedBy.map((/** @type {string} */ id) => d.interp.issues.find((/** @type {any} */ i) => i.id === id)).filter(Boolean);
-    const brings = tool === "nondim"
-      ? ["scale suggestions with their mechanisms", "the dimensionless variables and their inverses", "the derivative transformations", "each equation and condition in dimensionless form", "an exact reverse substitution"]
-      : ["1D diagrams and 2D slices with linear or logarithmic axes", "layers for balances, approximation error, stability and bifurcations", "the inspection of a point, with its dimensional values"];
+    const brings = ["1D diagrams and 2D slices with linear or logarithmic axes", "layers for balances, approximation error, stability and bifurcations", "the inspection of a point, with its dimensional values"];
     $(`tool-${tool}`).innerHTML = `<div class="callout"><p><strong>Piece ${piece} of the build plan adds the ${esc(Model.TOOLS[tool])}.</strong> It will read this same model.</p><p>It adds:</p><ul class="plain-list">${brings.map((/** @type {string} */ b) => `<li>${esc(b)}</li>`).join("")}</ul></div>
       <h3>This model now</h3>${needs.length ? `<p>${chip("unresolved")} Before it can run on this model, fix these checks:</p><ul class="issue-list">${needs.map((/** @type {any} */ i) => `<li>${esc(i.message)}<span class="next">Next: ${esc(i.next)}</span></li>`).join("")}</ul>` : `<p>The record passes the checks that the ${esc(Model.TOOLS[tool])} needs.</p>`}`;
   }
@@ -286,8 +365,9 @@
     const legend = Object.keys(R.STATUS).map((k) => `<li>${chip(k)} <span>${d.counts[k]}</span></li>`).join("");
     const results = d.results.map((/** @type {any} */ r) => `<li class="${r.valid ? "" : "stale"}">${chip(r.status)} <span class="title">${esc(r.title)}</span>${r.tex ? ` ${ti(r.tex)}` : ""}${r.next ? `<span class="next">Next: ${esc(r.next)}</span>` : ""}${r.valid ? "" : `<span class="next">Invalidated by the change of ${esc(r.invalidatedBy.join(", "))}.</span>`}
       <span class="ids">${esc(r.id)}${r.inputs.length && (state.detail === "full" || !r.valid) ? `; inputs ${esc(r.inputs.join(", "))}` : r.inputs.length ? `; ${r.inputs.length} inputs` : ""}${r.steps.length ? `; steps ${esc(r.steps.join(", "))}` : ""}${r.evidence.length ? `; evidence ${esc(r.evidence.join(", "))}` : ""}</span></li>`).join("");
-    const steps = f && f.ready ? f.steps.map((/** @type {any} */ s) => `<li><strong>${esc(s.title)}</strong> <span class="ids">${esc(s.id)}, hand calculation ${s.item}</span><br>${esc(s.reason)}${s.evidence.length ? ` Evidence: ${s.evidence.map(sourceLink).join(", ")}.` : ""}${s.assumptions?.length ? ` Assumptions: ${esc(s.assumptions.join(", "))}.` : ""}</li>`).join("") : "";
-    const used = new Set([...d.results.flatMap((/** @type {any} */ r) => r.evidence), ...(f && f.ready ? f.steps.flatMap((/** @type {any} */ s) => s.evidence) : []), ...d.interp.assumptions.map((/** @type {any} */ a) => a.source)]);
+    const allSteps = [...(f && f.ready ? f.steps : []), ...(d.nondim && d.nondim.ready ? d.nondim.steps : [])];
+    const steps = allSteps.length ? allSteps.map((/** @type {any} */ s) => `<li><strong>${esc(s.title)}</strong> <span class="ids">${esc(s.id)}, hand calculation ${s.item}</span><br>${esc(s.reason)}${s.evidence.length ? ` Evidence: ${s.evidence.map(sourceLink).join(", ")}.` : ""}${s.assumptions?.length ? ` Assumptions: ${esc(s.assumptions.join(", "))}.` : ""}</li>`).join("") : "";
+    const used = new Set([...d.results.flatMap((/** @type {any} */ r) => r.evidence), ...allSteps.flatMap((/** @type {any} */ s) => s.evidence), ...d.interp.assumptions.map((/** @type {any} */ a) => a.source)]);
     const sources = DATA.sources.sources.filter((/** @type {any} */ s) => used.has(s.id)).map((/** @type {any} */ s) => `<li>${sourceLink(s.id)} <span class="ids">${esc(s.id)}, read ${esc(s.read)}</span><br><span class="note">${esc(s.supports)}</span></li>`).join("");
     const hist = d.history.slice().reverse().slice(0, 30).map((/** @type {any} */ h) => `<li>Version ${h.version}: ${esc(h.change)}${h.changed.length ? ` <span class="ids">${esc(h.changed.join(", "))}</span>` : ""}</li>`).join("");
     const diff = d.previousDiff;
@@ -324,6 +404,7 @@
       $(`tool-${t}`).hidden = state.tool !== t;
     }
     if (state.tool === "finder") renderFinder(state, d);
+    else if (state.tool === "nondim") renderNondim(state, d);
     else renderLater(d, state.tool);
     renderTrace(d, state);
     if (state.detail !== lastDetail) {
@@ -352,6 +433,7 @@
     const d = app.derived;
     const doc = { ...R.clone(rec), analyses: d.results, derivation: d.finder && d.finder.ready ? { steps: d.finder.steps, rowReduction: d.finder.rref.steps.map((/** @type {any} */ s) => ({ n: s.n, op: s.op, text: s.text, reason: s.reason, matrix: s.matrix })),
       exponentEquations: d.finder.exponentEquations, groups: d.finder.groups.map((/** @type {any} */ g) => ({ id: g.id, label: g.label, exponents: g.exps, names: g.names.map((/** @type {any} */ n) => n.id), confirmed: g.confirmed })), checks: d.finder.checks } : null,
+      nondimensionalization: nondimSummary(d.nondim),
       items: R.ITEMS };
     return `${JSON.stringify(doc, null, 2)}\n`;
   }
@@ -388,6 +470,13 @@
         if (!f.ready) return out({ error: "A failed check blocks the Finder.", issues: it.issues.filter((/** @type {any} */ i) => f.blockedBy.includes(i.id)) });
         return out(summary(f));
       } },
+    { name: "nondimensionalize", description: "Return the Model Nondimensionalizer's result for the current confirmed record: each scale with its mechanism, its competing scales and refusals, the dimensionless variables and their inverses, the derivative transformations, every equation and condition in dimensionless form with its common factor, the parameters with their names, the comparison with the Pi basis, where each physical parameter enters, and the exact checks.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: RO,
+      execute: async () => {
+        const d = app.derived;
+        if (!d.nondim || !d.nondim.ready) return out({ error: d.confirmedVersion === null ? "Confirm the interpretation first: the Nondimensionalizer runs on a confirmed version." : d.nondim?.message ?? "A failed check blocks the Nondimensionalizer.", next: d.nondim?.next ?? null, version: d.version });
+        return out({ version: d.version, confirmed: d.confirmed, ...nondimSummary(d.nondim) });
+      } },
     { name: "get_derivation", description: "Return the derivation record of the current Finder result: the steps with their reasons and evidence, every row operation with its matrix, the exponent equations, the checks, and each result with its status, inputs and validity.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: RO,
       execute: async () => {
@@ -397,6 +486,19 @@
           finder: f && f.ready ? { steps: f.steps, rowReduction: f.rref.steps.map((/** @type {any} */ s) => ({ n: s.n, text: s.text, reason: s.reason, matrix: s.matrix })), repeating: f.repeating, exponentEquations: f.exponentEquations, checks: f.checks } : null });
       } },
   ];
+  /** The Nondimensionalizer's result as the model JSON and an agent read it. @param {any} nd */
+  function nondimSummary(nd) {
+    if (!nd || !nd.ready) return null;
+    return {
+      scales: nd.scales.map((/** @type {any} */ s) => ({ variable: s.name, dimensionless: s.hat, scale: s.chosen.plain, offset: s.offsetPlain, status: s.status, reason: s.chosen.reason, changed: s.changed,
+        candidates: s.candidates.map((/** @type {any} */ c) => ({ scale: c.plain, source: c.source, valid: c.valid, refused: c.valid ? null : c.signWhy || c.error, reason: c.reason, ratio: c.ratio ? c.ratio.label : null })) })),
+      variables: nd.variables.map((/** @type {any} */ v) => ({ definition: v.defTex, inverse: v.invTex, inverseChecked: v.inverseOk })),
+      derivatives: nd.derivatives,
+      equations: nd.equations.map((/** @type {any} */ e) => ({ id: e.id, kind: e.kind, dimensionless: e.dimensionlessPlain, tex: e.dimensionlessTex, named: e.namedTex, factor: e.factorTex, at: e.at ? e.at.tex : null, holds: e.domainTex, coefficientsDimensionless: e.dimensionless, reverseSubstitution: e.reverseOk })),
+      parameters: nd.parameters.map((/** @type {any} */ p) => ({ role: p.role, group: p.label, names: p.names.map((/** @type {any} */ n) => n.label), confirmed: p.confirmed, dependent: p.dependent, value: p.value ? Model.valueText(p.value) : null })),
+      prescribed: nd.prescribed, pi: nd.pi, enters: nd.enters, checks: nd.checks, steps: nd.steps,
+    };
+  }
   /** The Finder result as an agent reads it. @param {any} f */
   function summary(f) {
     return { variables: f.n, rank: f.r, groups: f.groups.map((/** @type {any} */ g) => ({ label: g.label, tex: g.tex, exponents: g.exps, names: g.names.map((/** @type {any} */ n) => n.label), status: "Exact dimensional or algebraic check" })),
@@ -411,6 +513,7 @@
     { label: "Show the repeating-variable basis", run: () => app.set({ basis: "direct" }) },
     { label: "Show the row-reduced basis", run: () => app.set({ basis: "kernel" }) },
     { label: "Show the full derivation", run: () => app.set({ detail: "full" }) },
+    { label: "Use the suggested scales", run: () => commit((/** @type {any} */ inp) => { inp.scales = []; }, "Removed your scales; the suggested scales apply.", true) },
     { label: "Show the short view", run: () => app.set({ detail: "short" }) },
     ...Object.entries(Model.TOOLS).map(([id, name]) => ({ label: `Tool: ${name}`, run: () => app.set({ tool: id }) })),
     ...Model.EXAMPLES.map((/** @type {KitExample} */ e) => ({ label: `Example: ${e.label}`, run: () => app.set({ example: e.id }) })),
@@ -462,6 +565,34 @@
       file.value = "";
     });
     $("repeating-auto").addEventListener("click", () => app.set({ repeating: "" }));
+    $("tool-nondim").addEventListener("click", (/** @type {Event} */ e) => {
+      const t = /** @type {HTMLElement} */ (e.target);
+      const use = t.closest("button[data-use-scale]")?.getAttribute("data-use-scale");
+      const unscale = t.closest("button[data-unscale]")?.getAttribute("data-unscale");
+      const name = t.closest("button[data-name]")?.getAttribute("data-name");
+      if (t.closest("button[data-confirm]")) { $("confirm").click(); return; }
+      if (use) {
+        const [varId, n] = use.split("|");
+        const s = app.derived.nondim?.scales.find((/** @type {any} */ x) => x.id === varId);
+        const c = s?.candidates.find((/** @type {any} */ x) => String(x.n) === n);
+        if (!s || !c || !c.record) return;
+        commit((/** @type {any} */ inp) => {
+          inp.scales = inp.scales.filter((/** @type {any} */ x) => x.for !== varId);
+          inp.scales.push({ id: `s-${varId}`, ...c.record });
+        }, `Chose the scale ${c.label} for ${s.label}.`, true);
+        tellModel(`You chose the scale ${c.label} for ${s.label}. Confirm the new version to run the Nondimensionalizer on it.`);
+      } else if (unscale) {
+        const s = app.derived.nondim?.scales.find((/** @type {any} */ x) => x.id === unscale);
+        commit((/** @type {any} */ inp) => { inp.scales = inp.scales.filter((/** @type {any} */ x) => x.for !== unscale); }, `Removed your scale of ${s ? s.label : unscale}; the suggested scale applies.`, true);
+      } else if (name) {
+        const [key, nm, yes] = name.split("|");
+        const ex = app.state.example;
+        store[ex] = R.confirmInterpretation(active(ex), key, nm, yes === "1");
+        persist();
+        tellModel(yes === "1" ? `You confirmed the name ${nm}.` : `You withdrew the name ${nm}.`);
+        app.set({});
+      }
+    });
     $("finder-groups").addEventListener("click", (/** @type {Event} */ e) => {
       const b = /** @type {HTMLElement} */ (e.target).closest("button[data-name]");
       if (!b) return;
@@ -486,8 +617,8 @@
       const remove = t.closest("button[data-remove]")?.getAttribute("data-remove");
       if (add) {
         commit((/** @type {any} */ inp) => {
-          const ids = new Set([...inp.variables, ...inp.equations, ...inp.conditions, ...inp.assumptions].map((/** @type {any} */ x) => x.id));
-          const prefix = { variables: "v", equations: "e", conditions: "c", assumptions: "a" }[/** @type {"variables"} */ (add)];
+          const ids = new Set([...inp.variables, ...inp.equations, ...inp.conditions, ...inp.assumptions, ...inp.scales].map((/** @type {any} */ x) => x.id));
+          const prefix = { variables: "v", equations: "e", conditions: "c", assumptions: "a", scales: "s" }[/** @type {"variables"} */ (add)];
           let n = 1;
           while (ids.has(`${prefix}-${n}`)) n++;
           const id = `${prefix}-${n}`;
@@ -497,8 +628,9 @@
             inp.variables.push(R.variable({ id, symbol: `q${s}`, meaning: "New variable", pi: true }));
           } else if (add === "equations") inp.equations.push({ id, kind: "governing", text: "" });
           else if (add === "conditions") inp.conditions.push({ id, kind: "boundary", text: "", at: "" });
+          else if (add === "scales") inp.scales.push({ id, for: "", scale: "", offset: "", symbol: "", reason: "" });
           else inp.assumptions.push({ id, kind: "physical", text: "" });
-        }, `Added ${add === "variables" ? "a variable" : add === "equations" ? "an equation" : add === "conditions" ? "a condition" : "an assumption"}.`, true);
+        }, `Added ${add === "variables" ? "a variable" : add === "equations" ? "an equation" : add === "conditions" ? "a condition" : add === "scales" ? "a scale" : "an assumption"}.`, true);
       } else if (remove) {
         const [list, id] = remove.split(".");
         commit((/** @type {any} */ inp) => {
@@ -506,6 +638,7 @@
           if (list === "variables") {
             inp.preferred = inp.preferred.filter((/** @type {string} */ p) => p !== id);
             if (inp.purpose.observable === id) inp.purpose.observable = "";
+            inp.scales = inp.scales.filter((/** @type {any} */ c) => c.for !== id);
           }
         }, `Removed ${id}.`, true);
       }
