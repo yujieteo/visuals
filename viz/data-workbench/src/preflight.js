@@ -95,6 +95,17 @@
     return { ok: true, decision: {}, problem: "" };
   }
 
+  /**
+   * The choices after an import ran out of memory: the estimate proved too low, so it doubles, and is at least
+   * 10% more than the room that was left, so the file never shows as fitting again.
+   * @param {{ estimate: number, rows: number, columns: number }} q @param {number} budget @param {number} used
+   */
+  function afterOutOfMemory(q, budget, used) {
+    const left = Math.max(0, budget * STORAGE_SHARE - used);
+    const estimate = Math.max(2 * q.estimate, 1.1 * left);
+    return { estimate, decision: decide({ estimate, rows: q.rows, columns: q.columns, budget, used }) };
+  }
+
   /** The estimate of a file read with only some of its columns: proportional to the number of columns kept. */
   const withColumns = (estimateBytes, kept, total) => (total > 0 ? estimateBytes * (kept / total) : estimateBytes);
 
@@ -107,5 +118,5 @@
     return `${n} B`;
   }
 
-  return { MiB, GiB, CSV_FACTOR, VALUE_BYTES, STORAGE_SHARE, BUDGETS, CHOICES, SAMPLE_SEED, MIN_SAMPLE, device, estimate, csvRows, decide, recheck, withColumns, bytes };
+  return { MiB, GiB, CSV_FACTOR, VALUE_BYTES, STORAGE_SHARE, BUDGETS, CHOICES, SAMPLE_SEED, MIN_SAMPLE, device, estimate, csvRows, decide, recheck, afterOutOfMemory, withColumns, bytes };
 });

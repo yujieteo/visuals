@@ -227,7 +227,11 @@
         item.problem = "Cancelled while reading: nothing of this file was kept.";
         note({ kind: "cancelled", table: item.name, text: `Import of ${item.fileName} cancelled while reading; nothing was kept.` });
       } else if (Engine.outOfMemory(error)) {
-        item.problem = `The engine ran out of its ${Preflight.bytes(budget())} memory budget while reading this file, so nothing was kept. Import a sample or fewer columns.`;
+        // The estimate proved too low: offer a sample or fewer columns sized for a larger one.
+        const retry = Preflight.afterOutOfMemory({ estimate: item.estimate, rows: item.rows, columns: item.columns.length }, budget(), used());
+        Object.assign(item, { status: "ready", choice: "", estimate: retry.estimate, decision: retry.decision });
+        item.keep = item.columns.slice(0, Math.max(1, retry.decision.maxColumns));
+        item.problem = `The engine ran out of its ${Preflight.bytes(budget())} memory budget while reading this file, so nothing was kept. Choose a sample or fewer columns below.`;
         note({ kind: "failed", table: item.name, text: `Import of ${item.fileName} stopped at the memory budget (${Preflight.bytes(budget())}); nothing was kept.` });
       } else item.problem = `This file could not be imported: ${message(error)}`;
       return;

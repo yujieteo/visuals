@@ -159,6 +159,16 @@ test("preflight again at import: a choice made before earlier imports is checked
   assert.equal(Preflight.recheck({ ...file, choice: "columns", kept: 5 }, 2 * GiB, 0.5 * GiB).ok, true);
 });
 
+test("after an import runs out of memory, the file is offered again as a sample or fewer columns, never as fitting", () => {
+  const { GiB } = Preflight;
+  const small = Preflight.afterOutOfMemory({ estimate: 0.2 * GiB, rows: 1e6, columns: 10 }, 2 * GiB, 0);
+  assert.equal(small.decision.fits, false, "an estimate that fitted is raised above the room left");
+  assert.ok(small.estimate >= 1.1 * GiB);
+  assert.ok(small.decision.sample.rows < 1e6 && small.decision.maxColumns < 10, "a smaller sample and fewer columns are offered");
+  const large = Preflight.afterOutOfMemory({ estimate: 0.9 * GiB, rows: 1e6, columns: 10 }, 2 * GiB, 0);
+  assert.equal(large.estimate, 1.8 * GiB, "an estimate close to the room left doubles");
+});
+
 test("interval roles: a role the person set pairs with an inferred one", () => {
   const col = (name, inferredRole, role = inferredRole, overridden = []) => ({ name, inferredRole, role, overridden, roleReasons: [], inferredReasons: [] });
   const opened = col("opened", "interval start", "time"), due = col("due", "time", "interval end", ["role"]);
