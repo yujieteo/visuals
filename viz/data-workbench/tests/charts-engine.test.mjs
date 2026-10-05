@@ -212,6 +212,14 @@ test("interval timelines: open ends drawn to the edge and labelled, an end befor
   assert.deepEqual([treaty.ps, treaty.pe], ["year", "year"], "1850 to 1852: both ends known to the year");
 });
 
+test("an end known only to the year or month counts by its whole span: 1850-03 ends after 1850-03-01, 1849 not after 1850", async () => {
+  const lines = ["label,began,ended", "a,1850,1849", "b,1850-03-01,1850-02", "c,1850-03-01,1850-03", "d,1850,1850", ...Array.from({ length: 20 }, (_, i) => `x${i},1800-01-0${1 + (i % 9)},1801`)];
+  const t = await load("spans", encode(lines.join("\n")));
+  const { data } = await chart(t, "interval-timeline", ["began", "ended", "label"]);
+  assert.deepEqual(data.events.filter((/** @type {any} */ x) => "abcd".includes(x.label)).map((/** @type {any} */ x) => x.label), ["d", "c"], "1850 before 1850-03-01");
+  assert.ok(data.facts.notes.some((/** @type {string} */ n) => /^2 rows end before their start/.test(n)), data.facts.notes.join(" "));
+});
+
 test("time zones: values with an offset are ordered in UTC and shown as written; values without one are zone unknown and never shifted", async () => {
   const lines = ["label,seen,naive",
     "Tokyo,2026-01-01T23:30:00+09:00,2026-01-01T23:30:00", "London,2026-01-01T15:00:00Z,2026-01-01T15:00:00", "Lima,2026-01-01T09:00:00-05:00,2026-01-01T09:00:00",

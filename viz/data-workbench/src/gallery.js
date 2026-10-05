@@ -224,7 +224,9 @@
         const zero = t.begun ?? t.start;
         out.push(h("p", { class: "note", "data-timing": "", text: `First figure ${t.first ? `${secs(t.first - zero)} after ${from}` : "not drawn yet"}${t.done ? `; every candidate after ${secs(t.done - zero)}` : ""}, on this device.` }));
       }
-      if (st.status === "incomplete" && !store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", onclick: () => generate(table), text: "Generate the remaining charts" })));
+      // Only candidates that a new run can compute: those beyond the 10,000 cap stay incomplete whatever runs.
+      const again = st.candidates.some((c) => c.outcome === "incomplete" || c.outcome === "failed" || c.outcome === "pending");
+      if (again && !store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", onclick: () => generate(table), text: "Generate the remaining charts" })));
       if (store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", onclick: () => app.cancel(), text: "Cancel" }), h("span", { class: "note", text: ` ${store.busy.text}` })));
       out.push(scope(st));
       out.push(filters(table, st));

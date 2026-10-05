@@ -184,10 +184,17 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
   /** The end of the span a value names: a year or a month for values known only that far, the value itself otherwise. */
   const spanEnd = (t, p) => `CASE ${ident(p)} WHEN 'year' THEN ${ident(t)} + INTERVAL 1 YEAR WHEN 'month' THEN ${ident(t)} + INTERVAL 1 MONTH ELSE ${ident(t)} END`;
 
+  /**
+   * Whether an end is at or after its start: an end known only to the year or month counts when its span reaches
+   * past the start (1850-03 ends after 1850-03-01; 1849 does not end after 1850), any other end when it is not before
+   * the start.
+   */
+  const endsAfter = (e, pe, s) => `(CASE ${ident(pe)} WHEN 'year' THEN ${ident(e)} + INTERVAL 1 YEAR > ${ident(s)} WHEN 'month' THEN ${ident(e)} + INTERVAL 1 MONTH > ${ident(s)} ELSE ${ident(e)} >= ${ident(s)} END)`;
+
   /** For an interval timeline: rows with both ends, and how many end at or after their start (the end's whole span counts). */
   function intervalCheck(rel) {
     return `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS rows, count(*) FILTER (WHERE s IS NOT NULL AND e IS NOT NULL)::DOUBLE AS both_ends,
-  count(*) FILTER (WHERE s IS NOT NULL AND e IS NOT NULL AND ${spanEnd("e", "pe")} >= s)::DOUBLE AS ordered,
+  count(*) FILTER (WHERE s IS NOT NULL AND e IS NOT NULL AND ${endsAfter("e", "pe", "s")})::DOUBLE AS ordered,
   count(*) FILTER (WHERE s IS NULL)::DOUBLE AS no_start, count(*) FILTER (WHERE e IS NULL)::DOUBLE AS no_end FROM d`;
   }
 
@@ -203,7 +210,7 @@ SELECT label, epoch(t)::DOUBLE AS t, p, q, raw, n, first, (SELECT count(*) FROM 
 
   /** One page of intervals in order of their start (an unknown start by its end); an end before its start is left out and counted. */
   function intervalEvents(rel, page, size) {
-    const reversed = `s IS NOT NULL AND e IS NOT NULL AND ${spanEnd("e", "pe")} < s`;
+    const reversed = `s IS NOT NULL AND e IS NOT NULL AND NOT ${endsAfter("e", "pe", "s")}`;
     return `WITH d AS (${rel}), ok AS (SELECT * FROM d WHERE NOT (${reversed})),
 ev AS (SELECT label, s, e, ps, pe, qs, qe, min(sraw) AS sraw, min(eraw) AS eraw, count(*)::DOUBLE AS n, min(r) AS first FROM ok GROUP BY label, s, e, ps, pe, qs, qe)
 SELECT label, epoch(s)::DOUBLE AS s, epoch(e)::DOUBLE AS e, ps, pe, qs, qe, sraw, eraw, n, first, (SELECT count(*) FROM ev)::DOUBLE AS events,
@@ -213,7 +220,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
 
   /** The time range of an interval timeline's events: both ends, with the end's whole span. */
   function intervalRange(rel) {
-    const reversed = `s IS NOT NULL AND e IS NOT NULL AND ${spanEnd("e", "pe")} < s`;
+    const reversed = `s IS NOT NULL AND e IS NOT NULL AND NOT ${endsAfter("e", "pe", "s")}`;
     return `WITH d AS (${rel}) SELECT epoch(least(min(s), min(e)))::DOUBLE AS lo, epoch(greatest(max(${spanEnd("s", "ps")}), max(${spanEnd("e", "pe")})))::DOUBLE AS hi FROM d WHERE NOT (${reversed})`;
   }
 
