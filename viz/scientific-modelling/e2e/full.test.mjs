@@ -195,6 +195,33 @@ await fullSuite("scientific-modelling", {
     } finally {
       await slab.close();
     }
+    // Piece 9, from the URL: the typical section with both methods, the flutter boundary on the map, the release state
+    // (no preview label), and the page's result statuses in the same order in the Markdown record and the deck.
+    const fl = await ctx.open("#example=flutter&tool=regime");
+    try {
+      assert.equal(await fl.page.locator(".preview, #roadmap").count(), 0, "the release has no preview label");
+      await fl.page.locator("#confirm").click();
+      await fl.page.waitForSelector("#stability-panel #st-fsi-damping svg");
+      await fl.page.waitForSelector("#stability-panel #st-fsi-response svg");
+      const trace = await fl.page.locator("#trace").innerText();
+      assert.match(trace, /Method 1, Theodorsen \(k method\): flutter at V_F = 1\.87376/);
+      assert.match(trace, /Method 2, R\. T\. Jones state space: flutter at V = 1\.86142/);
+      assert.match(trace, /V_D² = μr²\/\(1 \+ 2a\) = 16\/3 exactly/);
+      assert.match(trace, /The page gives no oscillation amplitude above the onset/);
+      await fl.page.waitForSelector("#regime-map svg");
+      assert.match(await fl.page.locator("#regime-legend").innerText(), /Flutter and divergence/);
+      const chips = await fl.page.evaluate(() => [...document.querySelectorAll("#trace .result-list > li > .chip")].map((c) => c.textContent));
+      const deck = await saved(fl.page, () => fl.page.locator("#save-beamdswitch").click());
+      assertBeamdswitchDeck(deck.text);
+      const record = await saved(fl.page, () => fl.page.locator("#save-markdown").click());
+      for (const text of [record.text, deck.text]) {
+        assert.ok(text.includes("Hand calculation 9: flutter onset by two methods"), "the flutter panel in the export");
+        const frame = text.split(/^#{2,3} Results with their statuses and evidence$/m)[1].split(/^#{1,3} /m)[0];
+        assert.deepEqual([...frame.matchAll(/^- \*\*(.+?)\*\*: /gm)].map((m) => m[1]), chips, "the flutter results agree with the page");
+      }
+    } finally {
+      await fl.close();
+    }
     const stale = await ctx.open("#example=no-such-model");
     try {
       assert.match(await stale.page.locator("#notice").innerText(), /not a valid value/);

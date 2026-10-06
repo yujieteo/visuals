@@ -5759,6 +5759,86 @@
           "claim": "The two-phase Neumann solution: erf profiles in each phase, s = 2λ(α_l t)^(1/2) and the transcendental equation for λ (eqs. 3.28 to 3.31 with fractional order 1)."
         }
       ]
+    },
+    {
+      "id": "flutter",
+      "label": "Typical section: flutter",
+      "group": "standard",
+      "title": "Typical airfoil section in pitch and plunge: flutter onset by two methods",
+      "purpose": {"question": "At which speed does the typical section flutter, and do two independent methods agree?", "observable": "v-U", "calculation": "regime-map", "declaration": "typical-section"},
+      "variables": [
+        {"id": "v-U", "symbol": "U", "meaning": "Free-stream speed. The flutter speed U_F is its value at the onset", "quantity": "speed", "unit": "m/s", "value": "37.5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-b", "symbol": "b", "meaning": "Semichord", "quantity": "length", "unit": "m", "value": "0.5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-m", "symbol": "m", "meaning": "Mass of the section per unit span", "quantity": "mass-per-length", "unit": "kg/m", "value": "19.242", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-ma", "symbol": "m_a", "meaning": "Apparent mass of the air per unit span, πρb² (ρ = 1.225 kg/m³)", "quantity": "apparent-mass-per-length", "unit": "kg/m", "value": "0.9621", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-I", "symbol": "I_theta", "tex": "I_\\theta", "meaning": "Mass moment of inertia per unit span about the elastic axis", "quantity": "inertia-per-length", "unit": "kg*m", "value": "0.76968", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-wh", "symbol": "omega_h", "tex": "\\omega_h", "meaning": "Uncoupled plunge frequency, √(k_h/m)", "quantity": "angular-frequency", "role": "plunge", "unit": "rad/s", "value": "20", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-wt", "symbol": "omega_theta", "tex": "\\omega_\\theta", "meaning": "Uncoupled pitch frequency, √(k_θ/I_θ)", "quantity": "angular-frequency", "role": "pitch", "unit": "rad/s", "value": "50", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-a", "symbol": "a", "meaning": "Position of the elastic axis aft of the mid-chord, in semichords", "quantity": "length-ratio", "unit": "1", "value": "-0.2", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-xt", "symbol": "x_theta", "tex": "x_\\theta", "meaning": "Distance from the elastic axis to the centre of mass, in semichords (e = a + x_θ = −1/10)", "quantity": "length-ratio", "unit": "1", "value": "0.1", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-th0", "symbol": "theta_0", "tex": "\\theta_0", "meaning": "Initial pitch disturbance", "quantity": "angle", "unit": "rad", "value": "0.01", "kind": "parameter", "domain": "real", "pi": false},
+        {"id": "v-h", "symbol": "h", "meaning": "Plunge displacement of the elastic axis, positive down", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-theta", "symbol": "theta", "tex": "\\theta", "meaning": "Pitch angle, positive nose up", "quantity": "angle", "unit": "rad", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-l1", "symbol": "lambda_1", "tex": "\\lambda_1", "meaning": "First aerodynamic lag state of the R. T. Jones model", "quantity": "speed", "unit": "m/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-l2", "symbol": "lambda_2", "tex": "\\lambda_2", "meaning": "Second aerodynamic lag state of the R. T. Jones model", "quantity": "speed", "unit": "m/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": false}
+      ],
+      "equations": [
+        {"id": "e-plunge", "kind": "governing", "text": "m*d(h,t,t) + m*b*x_theta*d(theta,t,t) + m*omega_h^2*h + m_a*(d(h,t,t) + U*d(theta,t) - b*a*d(theta,t,t)) + 2*m_a*U/b*((1/2)*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) + lambda_1 + lambda_2) = 0", "domain": "t > 0"},
+        {"id": "e-pitch", "kind": "governing", "text": "I_theta*d(theta,t,t) + m*b*x_theta*d(h,t,t) + I_theta*omega_theta^2*theta - m_a*b*(a*d(h,t,t) - U*(1/2 - a)*d(theta,t) - b*(1/8 + a^2)*d(theta,t,t)) - 2*m_a*U*(a + 1/2)*((1/2)*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) + lambda_1 + lambda_2) = 0", "domain": "t > 0"},
+        {"id": "e-lag1", "kind": "governing", "text": "d(lambda_1,t) = 0.0455*U/b*(0.165*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) - lambda_1)", "domain": "t > 0"},
+        {"id": "e-lag2", "kind": "governing", "text": "d(lambda_2,t) = 0.3*U/b*(0.335*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) - lambda_2)", "domain": "t > 0"}
+      ],
+      "geometry": {"domain": "A rigid two-dimensional airfoil section of chord 2b on a plunge spring and a pitch spring at the elastic axis, in an incompressible stream of speed U", "coordinates": "Time t only. The section moves in plunge h and in pitch θ about the elastic axis at ab aft of the mid-chord", "lengths": ["v-b"], "interfaces": "The airfoil surface; thin-airfoil theory with a flat wake"},
+      "conditions": [
+        {"id": "c-h", "kind": "initial", "text": "h = 0", "at": "t = 0"},
+        {"id": "c-hdot", "kind": "initial", "text": "d(h,t) = 0", "at": "t = 0"},
+        {"id": "c-theta", "kind": "initial", "text": "theta = theta_0", "at": "t = 0"},
+        {"id": "c-thetadot", "kind": "initial", "text": "d(theta,t) = 0", "at": "t = 0"},
+        {"id": "c-l1", "kind": "initial", "text": "lambda_1 = 0", "at": "t = 0"},
+        {"id": "c-l2", "kind": "initial", "text": "lambda_2 = 0", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-rigid", "kind": "physical", "text": "The section is rigid. Linear springs at the elastic axis give the plunge and pitch stiffness. The structure has no damping of its own.", "source": "gt-flutter"},
+        {"id": "a-flow", "kind": "physical", "text": "The flow is incompressible, inviscid and attached, with a flat wake: thin-airfoil theory.", "source": "gt-flutter"},
+        {"id": "a-small", "kind": "mathematical", "text": "The motion is small, so the equations are linear in h and θ.", "source": "gt-flutter"},
+        {"id": "a-jones", "kind": "mathematical", "text": "In the time domain, the R. T. Jones approximation replaces the Wagner function.", "source": "byu-wagner"}
+      ],
+      "scales": [
+        {"id": "s-t", "for": "v-t", "scale": "1/omega_theta", "offset": "0", "symbol": "tau", "reason": "The pitch frequency sets the time of one oscillation."},
+        {"id": "s-h", "for": "v-h", "scale": "b", "offset": "0", "symbol": "H", "reason": "The semichord."},
+        {"id": "s-theta", "for": "v-theta", "scale": "1", "offset": "0", "symbol": "Th", "reason": "The pitch angle is already dimensionless."},
+        {"id": "s-l1", "for": "v-l1", "scale": "b*omega_theta", "offset": "0", "symbol": "l1", "reason": "The lag states have the unit of the downwash."},
+        {"id": "s-l2", "for": "v-l2", "scale": "b*omega_theta", "offset": "0", "symbol": "l2", "reason": "The lag states have the unit of the downwash."}
+      ],
+      "preferred": ["v-b", "v-wt", "v-m"],
+      "evidence": [
+        {"id": "ev-gt-problem", "source": "gt-examples", "claim": "Example 1 asks for the flutter speed when a = −1/5, e = −1/10, μ = 20, r = 2/5 and σ = 2/5, by the p, k and p–k methods with Theodorsen aerodynamics."},
+        {"id": "ev-gt-det", "source": "gt-flutter", "claim": "The equations of motion and the flutter determinant of the typical section, with μ = m/(πρb²), r² = I_P/(mb²) and σ = ω_h/ω_θ."},
+        {"id": "ev-jones", "source": "byu-wagner", "claim": "The R. T. Jones approximation of the Wagner function, φ(s) = 1 − 0.165e^(−0.0455s) − 0.335e^(−0.3s), and its two lag states."}
+      ]
+    },
+    {
+      "id": "flutter-hp",
+      "label": "Typical section: flutter, r² = 6/25",
+      "group": "standard",
+      "title": "Typical airfoil section with r² = 6/25, the value of the source's worksheet",
+      "purpose": {"question": "At which speed does the typical section flutter when r² = 6/25, the value of the worksheet, of Hodges and Pierce and of Aeroelasticity.jl?", "observable": "v-U", "calculation": "regime-map", "declaration": "typical-section"},
+      "variables": "flutter",
+      "overrides": {"v-I": {"value": "1.15452"}},
+      "equations": "flutter",
+      "geometry": "flutter",
+      "conditions": "flutter",
+      "assumptions": "flutter",
+      "scales": "flutter",
+      "preferred": ["v-b", "v-wt", "v-m"],
+      "evidence": [
+        {"id": "ev-gt-problem", "source": "gt-examples", "claim": "Example 1 asks for the flutter speed when a = −1/5, e = −1/10, μ = 20, r = 2/5 and σ = 2/5, by the p, k and p–k methods with Theodorsen aerodynamics."},
+        {"id": "ev-gt-det", "source": "gt-flutter", "claim": "The equations of motion and the flutter determinant of the typical section, with μ = m/(πρb²), r² = I_P/(mb²) and σ = ω_h/ω_θ."},
+        {"id": "ev-jones", "source": "byu-wagner", "claim": "The R. T. Jones approximation of the Wagner function, φ(s) = 1 − 0.165e^(−0.0455s) − 0.335e^(−0.3s), and its two lag states."},
+        {"id": "ev-gt-r2", "source": "gt-maple", "claim": "The worksheet of Example 1 sets r2 := 6/25, but the problem text gives r = 2/5, that is r² = 4/25."},
+        {"id": "ev-byu-r2", "source": "byu-section", "claim": "Aeroelasticity.jl analyses the same section with a = −1/5, e = −1/10, μ = 20, r² = 6/25 and σ = 2/5."}
+      ]
     }
   ]
 }

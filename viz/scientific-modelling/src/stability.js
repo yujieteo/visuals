@@ -16,7 +16,7 @@
   const FAMILIES = ["buoyancy-convection", "radiation", "beams-and-columns", "nonlinear-buckling", "vibration",
     "internal-viscous-flow", "compressible-nozzle-flow", "free-surface-flow", "boundary-layers", "external-aerodynamic-flow",
     "advection-diffusion", "viscous-heat-generation", "thermocapillary-heat-transport", "conjugate-heat-transfer",
-    "heat-exchangers", "phase-change", "condensation", "boiling-correlations", "radiation-in-a-medium"];
+    "heat-exchangers", "phase-change", "condensation", "boiling-correlations", "radiation-in-a-medium", "fluid-structure-interaction"];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(12)) : null);
   const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
   const GREEK = { theta: "θ", theta_s: "θ_s", Psi: "Ψ", Omega: "Ω", eps: "ε" };

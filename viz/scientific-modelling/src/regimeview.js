@@ -616,7 +616,7 @@
         ${acc ? `<p><strong>Result on the standard example:</strong></p><ul class="plain-list">${acc.checks.map((/** @type {any} */ c) => `<li>${chip(c.passed ? c.status : "unresolved")} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}${acc.problems.map((/** @type {string} */ p) => `<li>${chip("unresolved")} ${esc(p)}</li>`).join("")}</ul>` : ""}
         <h4>6. ${esc(cat.parts[5].name)}</h4><ul class="plain-list">${["method", "discretization", "convergence", "reproducibility"].map((k) => `<li><strong>${esc(k.charAt(0).toUpperCase() + k.slice(1))}:</strong> ${esc(decl.solver[k])}</li>`).join("")}</ul>
       </section>` : ""}
-      <details><summary>The ${later.length} families still to come</summary><div class="roadmap-grid">${pieces.map((n) => `<div><h4>Piece ${n}</h4><ul>${later.filter((/** @type {any} */ f) => f.piece === n).map((/** @type {any} */ f) => `<li>${esc(f.name)}</li>`).join("")}</ul></div>`).join("")}</div></details>`;
+      ${later.length ? `<details><summary>The ${later.length} families still to come</summary><div class="roadmap-grid">${pieces.map((n) => `<div><h4>Piece ${n}</h4><ul>${later.filter((/** @type {any} */ f) => f.piece === n).map((/** @type {any} */ f) => `<li>${esc(f.name)}</li>`).join("")}</ul></div>`).join("")}</div></details>` : ""}`;
   }
 
   /** @param {string} id @returns {any} */

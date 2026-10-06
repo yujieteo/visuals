@@ -4,15 +4,15 @@
  * fixed parameters. A family module (src/conduction.js, and src/convection.js and src/radiation.js of piece 4) evaluates
  * one point at a time; a module of piece 4 also gives the stability and bifurcation analysis at the record's point, and src/convective.js of piece 7 adds the
  * empirical layers of cited correlations; src/transfer.js of piece 8 adds the exchangers, phase change, condensation,
- * boiling correlations and radiation in a medium.
+ * boiling correlations and radiation in a medium; src/flutter.js of piece 9 adds the typical section in pitch and plunge.
  * This engine samples the grid, finds each boundary between two resolved points only (never across an unresolved
  * point), builds the regions of each layer, the points where no approximation meets the tolerance, the unresolved
  * points with their reasons, the intersections of boundaries, the limit paths, and the inspection of a point or a
  * boundary with its dimensional reconstruction.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js"), require("./flows.js"), require("./convective.js"), require("./transfer.js")]);
-  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR, root.SM.FL, root.SM.CV, root.SM.TR]);
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js"), require("./flows.js"), require("./convective.js"), require("./transfer.js"), require("./flutter.js")]);
+  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR, root.SM.FL, root.SM.CV, root.SM.TR, root.SM.FSI]);
 })(typeof self !== "undefined" ? self : this, function (Q, E, S, SF, D, IMPLS) {
   "use strict";
 

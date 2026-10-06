@@ -23,7 +23,7 @@ const STANDARD = ["lumped-body", "transient-slab", "transient-cylinder", "transi
 
 test("every declaration has the six parts of section 10, the four methods each with a reason, and limitations", () => {
   const list = D.declarations(DATA);
-  assert.equal(list.length, 40);
+  assert.equal(list.length, 41);
   assert.deepEqual(D.PARTS.map((p) => p.id), ["model", "domain", "operations", "methods", "acceptance", "solver"]);
   for (const decl of list) {
     assert.deepEqual(D.problemsOf(decl), [], decl.id);
@@ -32,7 +32,7 @@ test("every declaration has the six parts of section 10, the four methods each w
     assert.ok(Model.EXAMPLES.some((e) => e.id === decl.acceptance.example), `${decl.id}: its standard example exists`);
   }
   const fams = new Set(list.map((d) => d.family));
-  assert.deepEqual([...fams].sort(), ["advection-diffusion", "beams-and-columns", "boiling-correlations", "boundary-layers", "buoyancy-convection", "compressible-nozzle-flow", "condensation", "conjugate-heat-transfer", "external-aerodynamic-flow", "fins-and-extended-surfaces", "free-surface-flow",
+  assert.deepEqual([...fams].sort(), ["advection-diffusion", "beams-and-columns", "boiling-correlations", "boundary-layers", "buoyancy-convection", "compressible-nozzle-flow", "condensation", "conjugate-heat-transfer", "external-aerodynamic-flow", "fins-and-extended-surfaces", "fluid-structure-interaction", "free-surface-flow",
     "heat-exchangers", "internal-viscous-flow", "lumped-thermal-models", "multilayer-conduction", "nonlinear-buckling", "phase-change", "plates-and-shells", "radiation", "radiation-in-a-medium", "thermocapillary-heat-transport", "thermoelasticity", "transient-conduction", "vibration", "viscous-heat-generation"]);
   // Section 10: all four methods across the catalogue. Piece 3 declares two, each with its reason; piece 4 adds stability and bifurcation.
   for (const d of list.filter((x) => x.piece === 3)) assert.ok(d.methods["dominant-balance"].applies && d.methods.asymptotic.applies && !d.methods.stability.applies && !d.methods.bifurcation.applies);
