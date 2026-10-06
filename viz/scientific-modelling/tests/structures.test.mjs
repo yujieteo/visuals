@@ -106,7 +106,7 @@ test("the elastica: branch point π², the exact series 1/8, symmetry, stability
   const byId = Object.fromEntries(d.results.map((r) => [r.id, r]));
   assert.match(byId["r-st-bp"].title, /λ\/π² = 1 /);
   assert.equal(byId["r-st-series"].status, "exact");
-  assert.match(byId["r-st-stable"].title, /0 unstable direction at λ = π²\/2 .* and 1 at the record's λ = 12\. The buckled shape there .* has 0/);
+  assert.match(byId["r-st-stable"].title, /0 unstable directions at λ = π²\/2 .* and 1 at the record's λ = 12\. The buckled shape there .* has 0/);
   assert.equal(byId["r-st-imperfect"].status, "numerical");
   assert.equal(byId["r-st-coverage"].status, "unresolved", "the search coverage stays visible");
   assert.ok(d.regime.layers.some((l) => l.kind === "bifurcation" && l.curves.length === 1));

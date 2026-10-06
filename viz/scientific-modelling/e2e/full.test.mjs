@@ -106,7 +106,7 @@ await fullSuite("scientific-modelling", {
       await ela.page.waitForSelector("#stability-panel #st-elastica-branches svg");
       const panel = await ela.page.locator("#stability-panel").innerText();
       assert.match(panel, /supercritical pitchfork/);
-      assert.match(panel, /makes no claim of exhaustive branch discovery/);
+      assert.match(panel, /does not claim that it found all branches/);
       await ela.page.waitForSelector("#regime-map svg");
     } finally {
       await ela.close();

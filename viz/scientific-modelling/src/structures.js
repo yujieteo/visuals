@@ -61,7 +61,7 @@
     thresholds: () => ({ curves: [{ value: 1, label: `${title}: the neutral condition` }], regions: [{ id: "stable", label: "Below the critical value: the straight state is stable", lo: 0, hi: 1 }, { id: "unstable", label: "Above the critical value: the straight state is not stable", lo: 1, hi: null }] }),
   });
   const noBalance = (intro, terms) => ({ intro, terms, balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." });
-  const noAsymptotic = (why) => ({ limits: [], overlap: why, gaps: "None: the declared solution is used at every point." });
+  const noAsymptotic = (why) => ({ limits: [], overlap: why, gaps: "None: the page uses the declared solution at every point." });
 
   /* ---------- the beam: exact and element solutions ---------- */
 
@@ -414,7 +414,7 @@
   function beamImpl(decl) {
     const params = decl.domain.parameters;
     const evaluate = (p) => {
-      if (!(p.lambda >= 0) || p.lambda >= PI2 * 0.999) return { ok: false, reason: "λ must lie in 0 ≤ λ < π²: at λ = π² the deflection has no bound." };
+      if (!(p.lambda >= 0) || p.lambda >= PI2 * 0.999) return { ok: false, reason: "λ must lie in 0 ≤ λ < 0.999π²: at λ = π² the deflection has no bound." };
       const w = beamMid(p.lambda), w0 = 5 / 384;
       return { ok: true, values: { "err-beam": Math.abs(w0 - w) / w, "err-amp": Math.abs(w0 / (1 - p.lambda / PI2) - w) / w, ratio: Math.max(p.lambda, 1e-12) / PI2, mid: w } };
     };
@@ -446,7 +446,7 @@
         asymptotic: { limits: [{ parameter: "\\lambda\\to0", path: "λ → 0", coupled: false, kind: "Regular perturbation (formal)", fixed: "the pinned supports", setup: "W=W_0+\\lambda W_1+\\dots",
           orders: [{ n: 0, equation: "W_0''''=1", conditions: ["W_0=W_0''=0\\ \\text{at}\\ X=0,1"], result: "W_0=(X-2X^{3}+X^{4})/24" }, { n: 1, equation: "W_1''''=-W_0''", conditions: ["W_1=W_1''=0\\ \\text{at}\\ X=0,1"], result: "W_1(\\tfrac12)=\\tfrac{61}{46080}" }],
           orderLoss: "No loss of order: each order has the four conditions.", error: { formal: "The expansion is formal.", estimated: "The next term estimates the remainder.", proved: null }, validity: "λ well below π²." }],
-          overlap: "The amplification factor holds over the whole range λ < π²; the beam alone only for a small λ.", gaps: "None below λ = π²." } }),
+          overlap: "The amplification factor holds for all λ < π². The beam alone holds only for a small λ.", gaps: "None below λ = π²." } }),
       acceptance: () => beamAcceptance(), stability: (p) => beamStability(p) };
   }
   function beamAcceptance() {
@@ -492,7 +492,7 @@
     const layers = [
       approxLayer("linear", "Linear (secant) theory", "err-linear", "|θ0_lin − θ0| ÷ |θ0| ≤ the tolerance, with θ0_lin = −ê√λ tan(√λ/2) and θ0 from the nonlinear shooting", steps, ["spec-8", "holmes-2019"]),
       approxLayer("perfect", "Perfect elastica (ê = 0)", "err-perfect", "|θ0(ê = 0) − θ0| ÷ |θ0| ≤ the tolerance: the eccentric column follows the buckled branch of the perfect one", steps, ["spec-8", "holmes-2019"]),
-      { ...loadLayer("branch", "Branch point of the perfect column", "ratio", "λ/π²: the perfect column has a branch point at λ = π² (a supercritical pitchfork). With ê > 0 the branch point opens, and the branch from the unloaded state is smooth", ["s-st-branch", "s-st-amplitude"], ["spec-8", "holmes-2019"], "bifurcation", "numerical"),
+      { ...loadLayer("branch", "Branch point of the perfect column", "ratio", "λ/π²: the perfect column has a branch point at λ = π² (a supercritical pitchfork). With ê > 0 the branch point disappears, and the branch from the unloaded state is smooth", ["s-st-branch", "s-st-amplitude"], ["spec-8", "holmes-2019"], "bifurcation", "numerical"),
         thresholds: () => ({ curves: [{ value: 1, label: "λ = π²: branch point of the perfect column" }], regions: [{ id: "below", label: "Below λ = π²: the perfect column stays straight", lo: 0, hi: 1 }, { id: "above", label: "Above λ = π²: the perfect column has a stable buckled branch", lo: 1, hi: null }] }) },
     ];
     const approximations = [
@@ -579,16 +579,16 @@
       { id: "r-st-series", kind: "bifurcation", title: `The exact series is λ/π² = 1 + ${series[1]}·θ0² + ${series[2]}·θ0⁴ + …. The coefficient 1/8 is positive, so the buckled branch rises on both sides of λ = π²: a supercritical pitchfork. The computed branch gives ${fmt(c2, 8)}.`,
         status: series[1] === "1/8" && Math.abs(c2 - 0.125) <= 1e-4 ? "exact" : "unresolved", steps: ["s-st-amplitude"], evidence: ["holmes-2019", "dlmf-19-5", "yong-mahadevan-2025"] },
       { id: "r-st-branch", kind: "bifurcation", title: `Pseudo-arclength continuation followed the buckled branch from λ = π² in both directions: ${up.pts.length + down.pts.length} points, ${up.newton + down.newton} Newton steps, up to |θ0| = ${fmt(deg(opts.thetaMax), 4)}°.`, status: "numerical", tolerance: "Newton 1e-12", steps: ["s-st-branch"], evidence: ["spec-8"] },
-      { id: "r-st-stable", kind: "stability", title: `Second variation with the end constraint (${sv} intervals): the straight state has ${below.negative} unstable direction at λ = π²/2 (smallest eigenvalue ${fmt(below.smallest[0], 6)}, exact π² − λ = ${fmt(PI2 / 2, 6)}) and ${straightAt.negative} at the record's λ = ${fmt(lam, 6)}.${buckled ? ` The buckled shape there (θ0 = ${fmt(deg(tPerf), 5)}°) has ${buckled.negative}: it is stable.` : ""}`,
+      { id: "r-st-stable", kind: "stability", title: `Second variation with the end constraint (${sv} intervals): the straight state has ${below.negative} unstable direction${below.negative === 1 ? "" : "s"} at λ = π²/2 (smallest eigenvalue ${fmt(below.smallest[0], 6)}, exact π² − λ = ${fmt(PI2 / 2, 6)}) and ${straightAt.negative} at the record's λ = ${fmt(lam, 6)}.${buckled ? ` The buckled shape there (θ0 = ${fmt(deg(tPerf), 5)}°) has ${buckled.negative}: it is stable.` : ""}`,
         status: "numerical", tolerance: "the sign of each eigenvalue; 5e-3 relative against π² − λ", steps: ["s-st-eigen"], evidence: ["spec-8"] },
     ];
     if (mirror !== null) results.push({ id: "r-st-mirror", kind: "bifurcation", title: `At the record's load the mirror shape θ0 = −${fmt(deg(tPerf), 5)}° is also a solution (difference ${fmt(mirror, 2)} rad).`, status: mirror <= 1e-10 ? "numerical" : "unresolved", tolerance: "1e-10", steps: ["s-st-branch"], evidence: ["spec-8"] });
     if (imp) {
-      results.push({ id: "r-st-imperfect", kind: "bifurcation", title: `With ê = ${fmt(ehat)} the branch from the unloaded state has no branch point and no limit point: λ increases at every step, and the smallest |∇R| is ${fmt(imp.minGrad, 3)}. At the record's load θ0 = ${fmt(deg(imp.tRec), 6)}°${imp.stable ? `, with ${imp.stable.negative} unstable direction` : ""}.`,
+      results.push({ id: "r-st-imperfect", kind: "bifurcation", title: `With ê = ${fmt(ehat)} the branch from the unloaded state has no branch point and no limit point: λ increases at every step, and the smallest |∇R| is ${fmt(imp.minGrad, 3)}. At the record's load θ0 = ${fmt(deg(imp.tRec), 6)}°${imp.stable ? `, with ${imp.stable.negative} unstable direction${imp.stable.negative === 1 ? "" : "s"}` : ""}.`,
         status: imp.monotone && imp.minGrad > 1e-6 ? "numerical" : "unresolved", tolerance: "|∇R| > 1e-6", steps: ["s-st-branch"], evidence: ["spec-8"] });
       if (imp.mirror !== null) results.push({ id: "r-st-imp-mirror", kind: "bifurcation", title: `The branch for −ê is the mirror image of the branch for ê (difference ${fmt(imp.mirror, 2)} rad at the record's load).`, status: imp.mirror <= 1e-10 ? "numerical" : "unresolved", tolerance: "1e-10", steps: ["s-st-branch"], evidence: ["spec-8"] });
     }
-    results.push({ id: "r-st-coverage", kind: "bifurcation", title: "Not searched: the branches from the higher branch points, disconnected branches of the eccentric column, and three-dimensional or twisting shapes. The calculation makes no claim of exhaustive branch discovery.", status: "unresolved", steps: ["s-st-branch"], evidence: ["farrell-2016"], next: "Other branches need a separate search, such as deflated continuation." });
+    results.push({ id: "r-st-coverage", kind: "bifurcation", title: "Not searched: the branches from the higher branch points, disconnected branches of the eccentric column, and three-dimensional or twisting shapes. The calculation does not claim that it found all branches.", status: "unresolved", steps: ["s-st-branch"], evidence: ["farrell-2016"], next: "Other branches need a separate search, such as deflated continuation." });
     const pts = (list) => list.map((q) => [num(deg(q.theta0)), num(q.mu)]);
     const figs = [{ id: "st-elastica-branches", title: "Branches of the elastica", x: { min: -170, max: 170, label: "end rotation θ0 (degrees)" }, y: { min: 0, max: muMax, label: "λ/π²" },
       series: [{ label: "θ = 0, stable", pts: [[0, 0], [0, 1]] }, { label: "θ = 0, not stable", pts: [[0, 1], [0, muMax]], dash: "6 4" }, { label: "perfect, buckled (stable)", pts: [...pts(down.pts).reverse(), ...pts(up.pts)] },
@@ -615,7 +615,7 @@
       approxLayer("undamped", "Undamped response", "err-undamped", "|1/|1 − r²| − |H|| ÷ |H| ≤ the tolerance: the damper is negligible", steps, ["spec-8", "uofa-forced"]),
       balanceLayer("inertia-stiffness", "Inertia against stiffness", "bal-inertia", "r² = mΩ²/k: the inertia force against the spring force at the forcing frequency", "The spring controls the motion", "The inertia controls the motion", steps, ["spec-8", "uofa-forced"]),
       { id: "rest", kind: "stability", boundary: "stability", title: "Stability of the rest state", measure: "decay", scale: "log", status: "exact", steps: ["s-st-jacobian"], evidence: ["spec-8"],
-        criterion: "The roots of s² + 2ζs + 1 have the real part −ζ < 0 for every ζ > 0 (exact), so every point of the domain is asymptotically stable",
+        criterion: "Both roots of s² + 2ζs + 1 have a negative real part for every ζ > 0 (exact), so every point of the domain is asymptotically stable",
         thresholds: () => ({ curves: [], regions: [{ id: "stable", label: "Asymptotically stable: every free motion decays", lo: 0, hi: null }] }) },
     ];
     const approximations = [
@@ -658,7 +658,7 @@
     const z = ex ? Q.toNumber(ex.zeta) : ctx?.point0?.zeta?.value, r = ex ? Q.toNumber(ex.r) : ctx?.point0?.r?.value;
     if (ex) {
       const e = oscillatorExact(ex.zeta, ex.r);
-      out.push({ id: "particular", title: `X = A cos rτ + B sin rτ with A = ${e.A} and B = ${e.B} satisfies the equation`, passed: e.particular, status: "exact", detail: `ζ = ${Q.str(ex.zeta)}, r = ${Q.str(ex.r)}; the cosine part of the residual is 1 and the sine part is 0.` });
+      out.push({ id: "particular", title: `X = A cos rτ + B sin rτ with A = ${e.A} and B = ${e.B} satisfies the equation`, passed: e.particular, status: "exact", detail: `ζ = ${Q.str(ex.zeta)}, r = ${Q.str(ex.r)}; the left side gives 1·cos rτ + 0·sin rτ.` });
       out.push({ id: "energy", title: "The work of the force in one period equals the energy that the damper removes", passed: e.energy, status: "exact", detail: "B = 2ζr(A² + B²) in rationals." });
     }
     if (z > 0 && r > 0) {
@@ -676,7 +676,7 @@
     const sim = oscillatorRK4(r, z);
     const e = ex ? oscillatorExact(ex.zeta, ex.r) : null;
     const results = [
-      { id: "r-st-roots", kind: "stability", title: `The free motion has the roots s = −ζ ± i√(1 − ζ²) of s² + 2ζs + 1 = 0, with ζ = ${ex ? Q.str(ex.zeta) : fmt(z)}. Their real part −ζ is negative, so the rest state is asymptotically stable.`, status: ex ? "exact" : "numerical", tolerance: ex ? null : "1e-12", steps: ["s-st-jacobian"], evidence: ["spec-8", "uofa-forced"] },
+      { id: "r-st-roots", kind: "stability", title: `For ζ ≤ 1 the free motion has the roots s = −ζ ± i√(1 − ζ²) of s² + 2ζs + 1 = 0, with ζ = ${ex ? Q.str(ex.zeta) : fmt(z)}. Their real part −ζ is negative, so the rest state is asymptotically stable.`, status: ex ? "exact" : "numerical", tolerance: ex ? null : "1e-12", steps: ["s-st-jacobian"], evidence: ["spec-8", "uofa-forced"] },
       { id: "r-st-response", kind: "stability", title: `The steady amplitude ratio at r = ${ex ? Q.str(ex.r) : fmt(r)} is |H| = ${fmt(H(r, z), 8)}${e ? ` (|H|² = ${e.H2} exactly)` : ""}, with the phase lag ${fmt((Math.atan2(2 * z * r, 1 - r * r) * 180) / PI, 6)}°.`, status: e ? "exact" : "numerical", tolerance: e ? null : "1e-12", steps: ["s-st-equilibrium"], evidence: ["uofa-forced"] },
       ...(e?.peak ? [{ id: "r-st-peak", kind: "stability", title: `The peak is at r² = 1 − 2ζ² = ${e.peak.r2}, with |H|² = 1/(4ζ²(1 − ζ²)) = ${e.peak.H2}.`, status: "exact", steps: ["s-st-equilibrium"], evidence: ["uofa-forced"] }] : []),
     ];
@@ -776,7 +776,7 @@
       return !N.tcollect([...N.tderivN(s, 4), ...N.tscale(s, Q.q(-BigInt(m ** 4)), 4)]).length && !N.tcollect([...N.tderivN(t, 2), ...N.tscale(t, Q.q(BigInt(n * n)), 2)]).length
         && [Q.ZERO, Q.ONE].every((X) => !Object.keys(N.tvalue(s, X)).length && !Object.keys(N.tvalue(N.tderivN(s, 2), X)).length);
     });
-    out.push({ id: "terms", title: "Each Navier term sin(mπX)sin(nπY/β) is an eigenfunction of ∇⁴ and meets the edge conditions", passed: termOk, status: "exact", detail: "For m, n = 1, 3: the fourth and second derivatives are (mπ)⁴ and −(nπ)² times the term, in rational multiples of powers of π; the sines and their second derivatives are 0 on the edges." });
+    out.push({ id: "terms", title: "Each Navier term sin(mπX)sin(nπY/β) is an eigenfunction of ∇⁴ and meets the edge conditions", passed: termOk, status: "exact", detail: "For m, n = 1, 3: the fourth X derivative is (mπ)⁴ times the term and the second Y derivative −(nπ/β)² times it, in rational multiples of powers of π; the sines and their second derivatives are 0 on the edges." });
     const ref = ctx?.structures?.plate;
     if (ref) for (const r of ref.navier) {
       const s = navier(r.beta, r.nu, 61);
@@ -787,7 +787,7 @@
     const errs = fd.map((f) => relErr(f.centre, w1));
     const o = N.orders(errs, fd.map((f) => 1 / f.n));
     out.push({ id: "fd", title: "Finite differences (64 cells) agree with the series for a square plate", passed: errs[3] <= 5e-4, status: "numerical", tolerance: "5e-4 relative", detail: `Errors ${errs.map((e) => fmt(e, 2)).join(", ")} on 8, 16, 32, 64 cells.` });
-    out.push({ id: "fd-order", title: "The difference error falls at order 2", passed: o.every((x) => x !== null && x > 1.8), status: "numerical", tolerance: "order above 1.8", detail: `Observed orders ${ords(o)}.` });
+    out.push({ id: "fd-order", title: "The difference error falls at an order near 2", passed: o.every((x) => x !== null && x > 1.8), status: "numerical", tolerance: "order above 1.8", detail: `Observed orders ${ords(o)}.` });
     return out;
   }
 
@@ -815,7 +815,7 @@
     return { id: decl.id, params, axes: { x: "Lhat", y: null }, approximations, layers, evaluate, limits: () => [], inspect, derived: (p) => [{ id: "xl", tex: "\\beta L_s=\\hat L/\\sqrt2", label: "length in units of 1/β", value: num(p.Lhat / Math.SQRT2) }], constraints: (p) => (p.Lhat < 4 ? ["The cylinder is shorter than the bending zone: the membrane state is not reached."] : []),
       analysis: () => ({ note: "Near the clamped end, bending balances the hoop force; far from it, the hoop force alone carries the pressure.",
         balance: { intro: "In W'''' + W = 1 the bending term and the membrane term are equal over the edge length ℓ = (R²D/(Eh))^{1/4}.",
-          terms: [{ tex: "W''''", label: "bending of the wall", scale: "1\\ \\text{near the edge}", why: "X = x/ℓ was chosen to balance the two terms." }, { tex: "W", label: "hoop membrane force", scale: "1", why: "W is scaled by pR²/(Eh)." }],
+          terms: [{ tex: "W''''", label: "bending of the wall", scale: "1\\ \\text{near the edge}", why: "The scale ℓ in X = x/ℓ balances the two terms." }, { tex: "W", label: "hoop membrane force", scale: "1", why: "W is scaled by pR²/(Eh)." }],
           balances: [{ title: "Membrane state", when: "X\\gg1", derivation: "Drop W''''.", reduced: "W=1", neglected: "bending", assumptions: ["Far from the edge."], residual: { tex: "e^{-\\xi}", order: "exponentially small", status: "exact", note: "The edge solution decays as e^{−ξ}." } }],
           crossovers: [{ criterion: "X\\approx1", status: "exact", text: "Bending and the hoop force are equal over the edge length ℓ, of order √(Rh)." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
         asymptotic: { limits: [{ parameter: "\\hat L\\to\\infty", path: "long cylinder", coupled: false, kind: "Boundary layer (exact here)", fixed: "the clamped edge", setup: "W=1-e^{-\\xi}(\\cos\\xi+\\sin\\xi),\\ \\xi=X/\\sqrt2", orders: [{ n: 0, equation: "W_{\\xi\\xi\\xi\\xi}/4+W=1", conditions: ["W(0)=W_\\xi(0)=0", "W\\ \\text{bounded}"], result: "W=1-e^{-\\xi}(\\cos\\xi+\\sin\\xi)" }], orderLoss: "The bounded condition replaces the two far conditions.", error: { formal: "Exact for a semi-infinite cylinder.", estimated: "e^{−L̂/√2} estimates the effect of the far end.", proved: null }, validity: "L̂ ≫ 1." }],
@@ -849,7 +849,7 @@
     });
     const o = N.orders(fd.map((x) => x.err), fd.map((x) => x.h));
     out.push({ id: "fd", title: "Finite differences (400 intervals) agree with the edge solution", passed: fd[3].err <= 5e-4, status: "numerical", tolerance: "5e-4 absolute in W", detail: `Errors ${fd.map((x) => fmt(x.err, 2)).join(", ")}; edge curvature ${fmt(fd[3].curv, 8)} against 2.` });
-    out.push({ id: "fd-order", title: "The difference error falls at order 2", passed: o.every((x) => x !== null && x > 1.8), status: "numerical", tolerance: "order above 1.8", detail: `Observed orders ${ords(o)}.` });
+    out.push({ id: "fd-order", title: "The difference error falls at an order near 2", passed: o.every((x) => x !== null && x > 1.8), status: "numerical", tolerance: "order above 1.8", detail: `Observed orders ${ords(o)}.` });
     return out;
   }
 
@@ -889,13 +889,13 @@
     const strain = Q.mul(al, dT);
     const sigma = Q.mul(Q.mul(E, strain), Q.sub(u1, Q.ONE));
     const uL = Q.mul(Q.mul(strain, L), u1);
-    // Energy: rod EA L (σ/E)²/2 + spring k_s u²/2 equals half the work of the blocked thermal force EAαΔT over u_free − u(L)... here: ½|F|(αΔTL) with F = σA.
+    // Energy: the rod's AL σ²/(2E) plus the spring's k_s u(L)²/2 equals ½|F|·αΔTL with the end force F = σA.
     const rod = Q.div(Q.mul(Q.mul(A, L), Q.mul(sigma, sigma)), Q.mul(Q.q(2n), E));
     const spring = Q.div(Q.mul(ks, Q.mul(uL, uL)), Q.q(2n));
     const work = Q.div(Q.mul(Q.abs(Q.mul(sigma, A)), Q.mul(strain, L)), Q.q(2n));
     return [
       { id: "solution", title: `U = X/(1 + κ) with κ = ${Q.str(kap)} satisfies U'' = 0, U(0) = 0 and U'(1) − 1 + κU(1) = 0`, passed: ok, status: "exact", detail: `σ = EαΔT(U' − 1) = ${Q.str(sigma)} Pa and u(L) = ${Q.str(uL)} m, in rationals.` },
-      { id: "energy", title: "The strain energy of the rod plus the spring energy equals half the work of the thermal force", passed: Q.eq(Q.add(rod, spring), work), status: "exact", detail: `${Q.str(rod)} J + ${Q.str(spring)} J = ${Q.str(work)} J.` },
+      { id: "energy", title: "The strain energy of the rod plus the spring energy equals half the end force times the free expansion αΔTL", passed: Q.eq(Q.add(rod, spring), work), status: "exact", detail: `${Q.str(rod)} J + ${Q.str(spring)} J = ${Q.str(work)} J.` },
       { id: "limits", title: "κ → ∞ gives σ = −EαΔT and κ → 0 gives the free expansion αΔTL", passed: true, status: "exact", detail: `−κ/(1 + κ) → −1 and 1/(1 + κ) → 1; at the record −κ/(1 + κ) = ${Q.str(Q.neg(Q.mul(kap, u1)))}.` },
     ];
   }
@@ -907,7 +907,7 @@
       approxLayer("rod", "Rod formula σ = −EαΔT", "err-rod", "|−EαΔT − σ| ÷ |σ| = ν ≤ the tolerance, with σ = −EαΔT/(1 − ν)", ["s-rm-map"], ["spec-8", "hutchinson-1996"]),
       balanceLayer("bending", "Bending stress against membrane stress", "bal-bending", "g/2 = ΔT_g/(2ΔT): the face bending stress EαΔT_g/(2(1 − ν)) over the membrane stress EαΔT/(1 − ν)", "The membrane stress controls", "The bending stress controls", ["s-rm-map"], ["spec-8", "hutchinson-1996"]),
     ];
-    const approximations = [{ id: "rod", label: "Rod formula", tex: "\\sigma\\approx-E\\alpha\\Delta T", limit: "ν → 0", why: "The plate restrained in one direction only.", error: "exactly ν" }];
+    const approximations = [{ id: "rod", label: "Rod formula", tex: "\\sigma\\approx-E\\alpha\\Delta T", limit: "ν → 0", why: "The rod formula applies when only one direction is restrained.", error: "exactly ν" }];
     const inspect = (p, ctx) => {
       const sc = ctx.exact?.("E*alpha*Delta_T");
       return { ok: true, values: [{ id: "S", tex: "\\hat\\sigma", label: "membrane stress over EαΔT", value: num(-1 / (1 - p.nu)) }, { id: "B", tex: "\\hat\\sigma_b", label: "face bending stress over EαΔT", value: num(p.g / (2 * (1 - p.nu))) }], checks: [],
