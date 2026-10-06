@@ -2,7 +2,7 @@
 
 # Monte Carlo Probability Workbench: specification
 
-Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 3 are on the page.
+Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 6 are on the page.
 
 ## Agreed decisions
 
@@ -73,6 +73,14 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - Multilevel Monte Carlo with coupled coarse and fine paths (`coarsen`), levels with independent seeds, the sample sizes of Giles's algorithm, and the bias estimate kept apart from the Monte Carlo interval. A continuous-time reference of a grid quantity is marked as such, so its difference from the run reads as a discretisation bias.
 - The ergodicity, mixing and time-versus-ensemble panel, with Sklar's theorem and the multilevel complexity theorem.
 - The measured limits of paths and copulas, and the done criteria of groups 1 to 4 for the whole folder, with their results the same.
+
+## Group 6: what done means
+
+- The guided interview is the third entry point. Its rule graph is data (`data/interview.json`): questions on support and mechanism; counts, times, proportions, sizes and maxima; bounds, thresholds, atoms, mixtures and tails; dependence, stationarity and observation; and the data and the decision. A question is asked only when the earlier answers make it relevant.
+- The candidates cover the whole agreed catalogue: every law of groups 1 to 4, censored observations, and the copulas, conditional models and processes of group 5 as model components. Each candidate has a reason (the rules that support it, each with its basis: a named theorem or a modelling assumption), competing explanations, rejection tests and sampling methods, and an answer path that ranks it first.
+- The interview shows the rule path as a graph and as a table. The reader switches a rule off or picks another candidate, and the ranking changes. The interview returns "insufficient evidence", with the rules that give it, when the support is not known, when a tail decision has no tail fact, when selection depends on the value, or when no candidate has a score of 2 or more.
+- "Make the model record" writes the chosen candidate as model text, reads it with the editor's parser and applies it as the custom model: the same record that the editor makes. The parameters match the mean and the standard deviation of the evidence where the law permits, and a value that the interview does not have is marked illustrative.
+- The done criteria of groups 1 to 5 hold for the whole folder.
 
 # The owner's specification
 

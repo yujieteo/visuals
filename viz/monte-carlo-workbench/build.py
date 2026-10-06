@@ -28,9 +28,9 @@ import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
-DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits"]
+DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview"]
 ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl"]
-PAGE = ["plots", "mlmc", "model", "report", "pool", "depview", "view"]
+PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "view"]
 
 
 def read(path):

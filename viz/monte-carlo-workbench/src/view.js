@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -138,7 +138,8 @@
 
   /** @param {Record<string, any>} s */
   function drawNav(s) {
-    for (const id of ["examples", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
+    for (const id of ["examples", "interview", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
+    Ivw.draw(s);
     const list = matches(s.q);
     // The custom input examples of group 4 come last, under their own heading.
     const byLaw = [...data.laws, { id: "custom", name: "Custom law inputs" }].map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
@@ -819,6 +820,18 @@ ${parts}`;
   /** @param {any} a the kit's app */
   function bind(a) {
     app = a;
+    // The guided interview makes the same record as the editor: it applies it the way applyEditor does.
+    Ivw.bind(a, data, {
+      apply(/** @type {any} */ record, /** @type {string} */ text) {
+        M.setCustom(record);
+        customVersion++;
+        autosave();
+        $("editor-text").value = text;
+        $("editor-errors").innerHTML = "";
+        $("editor-status").textContent = "The guided interview made this model record. It is the current custom model, as if you applied this text.";
+        app.set({ model: "custom", params: "", sweep: "", stratify: "", quantity: 1, alt: 1, nav: "editor" });
+      },
+    });
     document.addEventListener("click", (e) => {
       const t = /** @type {HTMLElement} */ (e.target).closest?.("button");
       if (!t) return;
@@ -974,6 +987,7 @@ ${parts}`;
       execute: async (/** @type {any} */ input) => out(data.laws.find((/** @type {any} */ l) => l.id === input?.id) ?? { error: `No law has the id "${String(input?.id).slice(0, 40)}".` }) },
     { name: "get_multilevel", description: "Return the last multilevel Monte Carlo run: its status, target error, seed, method and quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, and the reference.", inputSchema: none, annotations: ro,
       execute: async () => { Dv.sync(app.state, app.derived); return out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }); } },
+    Ivw.tool,
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },
@@ -985,6 +999,7 @@ ${parts}`;
     { label: "Save results CSV", run: () => save(`${app.state.model}-results.csv`, resultsCsv(), "text/csv") },
     ...data.models.map((/** @type {any} */ m) => ({ label: `Open ${m.title}`, run: () => openModel(m.id) })),
     ...data.theory.map((/** @type {any} */ t) => ({ label: `Theory: ${t.title}`, run: () => app.set({ theory: t.id, panel: "theory" }) })),
+    ...Ivw.commands,
   ];
 
   app = K.start({
