@@ -808,6 +808,394 @@
       ],
       "preferred": [],
       "evidence": []
+    },
+    {
+      "id": "euler-column",
+      "label": "Euler column",
+      "group": "standard",
+      "title": "Euler column: the critical load and the buckling mode of a pinned steel strut (anchor test 4)",
+      "purpose": {"question": "At which axial load is a straight pinned column no longer stable, and which shape does it buckle into?", "observable": "v-Pcr", "calculation": "stability", "declaration": "euler-column"},
+      "variables": [
+        {"id": "v-w", "symbol": "w", "meaning": "Lateral deflection of the column axis", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance along the column", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-P", "symbol": "P", "meaning": "Applied axial load (compression)", "quantity": "force", "unit": "N", "value": "100000", "kind": "parameter", "domain": "nonnegative", "pi": false},
+        {"id": "v-Pcr", "symbol": "P_cr", "meaning": "Critical axial load", "quantity": "force", "unit": "N", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of steel", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-I", "symbol": "I", "meaning": "Second moment of area of the cross-section", "quantity": "second-moment-of-area", "unit": "m^4", "value": "2e-6", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Length between the pins", "quantity": "length", "unit": "m", "value": "3", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-column", "kind": "governing", "text": "E*I*d(w,x,x,x,x) + P*d(w,x,x) = 0", "domain": "0 < x < L"}
+      ],
+      "geometry": {"domain": "A straight prismatic steel column of length L between two pins", "coordinates": "x along the axis, from one pin (x = 0) to the other (x = L)", "lengths": ["v-L"], "interfaces": "The pins at x = 0 and x = L"},
+      "conditions": [
+        {"id": "c-w0", "kind": "boundary", "text": "w = 0", "at": "x = 0"},
+        {"id": "c-m0", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = 0"},
+        {"id": "c-wL", "kind": "boundary", "text": "w = 0", "at": "x = L"},
+        {"id": "c-mL", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = L"}
+      ],
+      "assumptions": [
+        {"id": "a-linear", "kind": "physical", "text": "Deflections and slopes are small, so the curvature is w''.", "source": "mit-ms-handout"},
+        {"id": "a-eb", "kind": "physical", "text": "Plane sections stay plane and normal to the axis: there is no shear deformation.", "source": "mit-ms-handout"},
+        {"id": "a-dead", "kind": "physical", "text": "The load stays axial and keeps its value: a dead load.", "source": "mit-ms-handout"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "L", "offset": "0", "symbol": "X", "reason": "The length between the pins."},
+        {"id": "s-w", "for": "v-w", "scale": "L", "offset": "0", "symbol": "W", "reason": "The equation is linear and homogeneous in w, so the scale of w cancels."}
+      ],
+      "preferred": ["v-E", "v-L"],
+      "evidence": [
+        {"id": "ev-euler", "source": "mit-ms-handout", "claim": "P_cr = π²EI/L² and the mode sin(πx/L) for a pinned column."}
+      ]
+    },
+    {
+      "id": "beam-deflection",
+      "label": "Beam under a uniform load",
+      "group": "standard",
+      "title": "Simply supported beam under a uniform load: the exact deflection and the effect of an axial load",
+      "purpose": {"question": "How far does a simply supported steel beam deflect under a uniform load, and how does an axial compression change it?", "observable": "v-wmax", "calculation": "regime-map", "declaration": "beam-column"},
+      "variables": [
+        {"id": "v-w", "symbol": "w", "meaning": "Deflection of the beam axis", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance along the beam", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-wmax", "symbol": "w_max", "meaning": "Midspan deflection", "quantity": "displacement", "unit": "m", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-q", "symbol": "q", "meaning": "Uniform load per unit length", "quantity": "line-load", "unit": "N/m", "value": "5000", "kind": "parameter", "domain": "nonzero", "pi": true},
+        {"id": "v-P", "symbol": "P", "meaning": "Axial compressive load", "quantity": "force", "unit": "N", "value": "0", "kind": "parameter", "domain": "nonnegative", "pi": false},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of steel", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-I", "symbol": "I", "meaning": "Second moment of area", "quantity": "second-moment-of-area", "unit": "m^4", "value": "4e-6", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Span between the supports", "quantity": "length", "unit": "m", "value": "4", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-beam", "kind": "governing", "text": "E*I*d(w,x,x,x,x) + P*d(w,x,x) = q", "domain": "0 < x < L"}
+      ],
+      "geometry": {"domain": "A straight prismatic beam of span L on two simple supports", "coordinates": "x along the axis, from the left support (x = 0) to the right support (x = L)", "lengths": ["v-L"], "interfaces": "The supports at x = 0 and x = L"},
+      "conditions": [
+        {"id": "c-w0", "kind": "boundary", "text": "w = 0", "at": "x = 0"},
+        {"id": "c-m0", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = 0"},
+        {"id": "c-wL", "kind": "boundary", "text": "w = 0", "at": "x = L"},
+        {"id": "c-mL", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = L"}
+      ],
+      "assumptions": [
+        {"id": "a-linear", "kind": "physical", "text": "Deflections and slopes are small.", "source": "mit-ms-handout"},
+        {"id": "a-eb", "kind": "physical", "text": "Plane sections stay plane and normal to the axis.", "source": "mit-ms-handout"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "L", "offset": "0", "symbol": "X", "reason": "The span."},
+        {"id": "s-w", "for": "v-w", "scale": "q*L^4/(E*I)", "offset": "0", "symbol": "W", "reason": "The balance of the bending term and the load."}
+      ],
+      "preferred": ["v-E", "v-L", "v-q"],
+      "evidence": [
+        {"id": "ev-beam", "source": "mit-ms-handout", "claim": "The midspan deflection 5qL⁴/(384EI) of a simply supported beam under a uniform load."}
+      ]
+    },
+    {
+      "id": "elastica",
+      "label": "Nonlinear buckling: the elastica",
+      "group": "standard",
+      "title": "The elastica: post-buckling branches of a perfect and an eccentrically loaded pinned column",
+      "purpose": {"question": "Which shapes does a pinned elastic column take above its critical load, is the branch stable, and how does a small load eccentricity change it?", "observable": "v-theta0", "calculation": "bifurcation", "declaration": "elastica"},
+      "variables": [
+        {"id": "v-theta", "symbol": "theta", "tex": "\\theta", "meaning": "Rotation of the column axis", "quantity": "angle", "unit": "1", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-s", "symbol": "s", "meaning": "Arc length along the column", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-theta0", "symbol": "theta_0", "tex": "\\theta_0", "meaning": "End rotation", "quantity": "angle", "unit": "1", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-P", "symbol": "P", "meaning": "Axial compressive load", "quantity": "force", "unit": "N", "value": "12000", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-e", "symbol": "e", "meaning": "Eccentricity of the load line", "quantity": "length", "unit": "m", "value": "0.02", "kind": "parameter", "domain": "nonnegative", "pi": true},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of steel", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-I", "symbol": "I", "meaning": "Second moment of area", "quantity": "second-moment-of-area", "unit": "m^4", "value": "2e-8", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Length of the column", "quantity": "length", "unit": "m", "value": "2", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-elastica", "kind": "governing", "text": "E*I*d(theta,s,s) + P*sin(theta) = 0", "domain": "0 < s < L"}
+      ],
+      "geometry": {"domain": "A slender column of length L with pinned ends. The load acts on a line at the distance e from the ends.", "coordinates": "Arc length s from one end (s = 0) to the other (s = L)", "lengths": ["v-L"], "interfaces": "The pinned ends at s = 0 and s = L"},
+      "conditions": [
+        {"id": "c-m0", "kind": "boundary", "text": "E*I*d(theta,s) = P*e", "at": "s = 0"},
+        {"id": "c-mL", "kind": "boundary", "text": "E*I*d(theta,s) = P*e", "at": "s = L"}
+      ],
+      "assumptions": [
+        {"id": "a-inext", "kind": "physical", "text": "The column does not stretch and does not shear: the Euler elastica.", "source": "holmes-2019"},
+        {"id": "a-elastic", "kind": "physical", "text": "The moment is EI times the curvature, for any rotation.", "source": "holmes-2019"},
+        {"id": "a-dead", "kind": "physical", "text": "The load is a dead load along the line through the two load points.", "source": "holmes-2019"}
+      ],
+      "scales": [
+        {"id": "s-s", "for": "v-s", "scale": "L", "offset": "0", "symbol": "S", "reason": "The length of the column."},
+        {"id": "s-theta", "for": "v-theta", "scale": "1", "offset": "0", "symbol": "theta_hat", "reason": "An angle is dimensionless; it keeps its meaning."}
+      ],
+      "preferred": ["v-E", "v-L"],
+      "evidence": [
+        {"id": "ev-elastica", "source": "holmes-2019", "claim": "Λ = 2K for mode one with s from 0 to 1, so PL²/(EI) = 4K(m)² with the parameter m = sin²(θ0/2)."}
+      ]
+    },
+    {
+      "id": "damped-oscillator",
+      "label": "Damped oscillator",
+      "group": "standard",
+      "title": "A damped mass–spring oscillator under harmonic force: natural frequency, damping and frequency response",
+      "purpose": {"question": "What is the steady amplitude of a damped mass on a spring under a harmonic force, and how does it depend on the forcing frequency and the damping?", "observable": "v-X0", "calculation": "regime-map", "declaration": "damped-oscillator"},
+      "variables": [
+        {"id": "v-u", "symbol": "u", "meaning": "Displacement of the mass", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-X0", "symbol": "X_0", "meaning": "Steady amplitude", "quantity": "displacement", "unit": "m", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-m", "symbol": "m", "meaning": "Mass", "quantity": "mass", "unit": "kg", "value": "2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-c", "symbol": "c", "meaning": "Viscous damping coefficient", "quantity": "damping-coefficient", "unit": "N*s/m", "value": "8", "kind": "parameter", "domain": "nonnegative", "pi": true},
+        {"id": "v-k", "symbol": "k", "meaning": "Spring stiffness", "quantity": "spring-stiffness", "unit": "N/m", "value": "800", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-F0", "symbol": "F_0", "meaning": "Amplitude of the force", "quantity": "force", "unit": "N", "value": "10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Omega", "symbol": "Omega", "tex": "\\Omega", "meaning": "Angular frequency of the force", "quantity": "angular-frequency", "unit": "1/s", "value": "18", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-motion", "kind": "governing", "text": "m*d(u,t,t) + c*d(u,t) + k*u = F_0*cos(Omega*t)", "domain": "t > 0"}
+      ],
+      "geometry": {"domain": "One mass on a linear spring and a linear damper", "coordinates": "Time t only", "lengths": [], "interfaces": "None"},
+      "conditions": [
+        {"id": "c-u0", "kind": "initial", "text": "u = 0", "at": "t = 0"},
+        {"id": "c-v0", "kind": "initial", "text": "d(u,t) = 0", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-linear", "kind": "physical", "text": "The spring and the damper are linear.", "source": "uofa-forced"}
+      ],
+      "scales": [
+        {"id": "s-t", "for": "v-t", "scale": "sqrt(m/k)", "offset": "0", "symbol": "tau", "reason": "The time scale of the free motion: 1/ω_n."},
+        {"id": "s-u", "for": "v-u", "scale": "F_0/k", "offset": "0", "symbol": "U", "reason": "The static deflection under the force amplitude."}
+      ],
+      "preferred": ["v-m", "v-k", "v-F0"],
+      "evidence": [
+        {"id": "ev-osc", "source": "uofa-forced", "claim": "ω_n = √(k/m), ζ = c/(2√(km)) and the amplitude ratio 1/√((1 − r²)² + (2ζr)²)."}
+      ]
+    },
+    {
+      "id": "beam-modes",
+      "label": "Beam vibration modes",
+      "group": "standard",
+      "title": "Natural frequencies and modes of a pinned aluminium beam, with the effect of an axial load",
+      "purpose": {"question": "What are the first natural frequencies and mode shapes of a pinned beam, and how does an axial compression lower them?", "observable": "v-omega", "calculation": "stability", "declaration": "beam-modes"},
+      "variables": [
+        {"id": "v-W", "symbol": "W", "meaning": "Mode shape: amplitude of the deflection", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance along the beam", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-omega", "symbol": "omega", "tex": "\\omega", "meaning": "Natural angular frequency", "quantity": "angular-frequency", "unit": "1/s", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-P", "symbol": "P", "meaning": "Axial compressive load", "quantity": "force", "unit": "N", "value": "0", "kind": "parameter", "domain": "nonnegative", "pi": false},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of aluminium", "quantity": "elastic-modulus", "unit": "Pa", "value": "7e10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-I", "symbol": "I", "meaning": "Second moment of area", "quantity": "second-moment-of-area", "unit": "m^4", "value": "4e-9", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-m", "symbol": "m_l", "meaning": "Mass per unit length", "quantity": "mass-per-length", "unit": "kg/m", "value": "1.2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Length between the pins", "quantity": "length", "unit": "m", "value": "1", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-modes", "kind": "governing", "text": "E*I*d(W,x,x,x,x) + P*d(W,x,x) - m_l*omega^2*W = 0", "domain": "0 < x < L"}
+      ],
+      "geometry": {"domain": "A straight prismatic beam of length L between two pins. The deflection is w = W(x)cos(ωt).", "coordinates": "x along the axis, from x = 0 to x = L", "lengths": ["v-L"], "interfaces": "The pins at x = 0 and x = L"},
+      "conditions": [
+        {"id": "c-w0", "kind": "boundary", "text": "W = 0", "at": "x = 0"},
+        {"id": "c-m0", "kind": "boundary", "text": "d(W,x,x) = 0", "at": "x = 0"},
+        {"id": "c-wL", "kind": "boundary", "text": "W = 0", "at": "x = L"},
+        {"id": "c-mL", "kind": "boundary", "text": "d(W,x,x) = 0", "at": "x = L"}
+      ],
+      "assumptions": [
+        {"id": "a-eb", "kind": "physical", "text": "Euler–Bernoulli beam: no shear deformation and no rotary inertia.", "source": "mit-1620-unit23"},
+        {"id": "a-harmonic", "kind": "mathematical", "text": "The motion is harmonic in time: w = W(x)cos(ωt).", "source": "mit-1620-unit23"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "L", "offset": "0", "symbol": "X", "reason": "The length between the pins."},
+        {"id": "s-w", "for": "v-W", "scale": "L", "offset": "0", "symbol": "Y", "reason": "The eigenproblem is homogeneous in W, so the scale of W cancels."}
+      ],
+      "preferred": ["v-E", "v-L", "v-m"],
+      "evidence": [
+        {"id": "ev-modes", "source": "mit-1620-unit23", "claim": "ω_n = (nπ)²√(EI/(mL⁴)) and the modes sin(nπx/L) of a pinned beam."}
+      ]
+    },
+    {
+      "id": "navier-plate",
+      "label": "Rectangular plate",
+      "group": "standard",
+      "title": "A simply supported square steel plate under uniform pressure: the Navier solution",
+      "purpose": {"question": "How far does a thin simply supported plate deflect at its centre under a uniform pressure, and how does the aspect ratio change it?", "observable": "v-wc", "calculation": "regime-map", "declaration": "navier-plate"},
+      "variables": [
+        {"id": "v-w", "symbol": "w", "meaning": "Deflection of the middle surface", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Coordinate along the side a", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-y", "symbol": "y", "meaning": "Coordinate along the side b", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-wc", "symbol": "w_c", "meaning": "Centre deflection", "quantity": "displacement", "unit": "m", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-p", "symbol": "p", "meaning": "Uniform pressure", "quantity": "pressure", "unit": "Pa", "value": "10000", "kind": "parameter", "domain": "nonzero", "pi": true},
+        {"id": "v-D", "symbol": "D", "meaning": "Bending stiffness Eh³/(12(1 − ν²)) of a steel plate with E = 200 GPa and h = 10 mm", "quantity": "bending-stiffness", "unit": "N*m", "value": "5000000/273", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-nu", "symbol": "nu", "tex": "\\nu", "meaning": "Poisson's ratio", "quantity": "poisson-ratio", "unit": "1", "value": "0.3", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-a", "symbol": "a", "meaning": "Side length in x", "quantity": "length", "unit": "m", "value": "1", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-b", "symbol": "b", "meaning": "Side length in y", "quantity": "length", "unit": "m", "value": "1", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-plate", "kind": "governing", "text": "D*(d(w,x,x,x,x) + 2*d(w,x,x,y,y) + d(w,y,y,y,y)) = p", "domain": "0 < x < a, 0 < y < b"}
+      ],
+      "geometry": {"domain": "A thin rectangular plate a × b with four simply supported edges", "coordinates": "x and y along the edges, from the corner (0, 0)", "lengths": ["v-a", "v-b"], "interfaces": "The edges x = 0, x = a, y = 0 and y = b"},
+      "conditions": [
+        {"id": "c-wx0", "kind": "boundary", "text": "w = 0", "at": "x = 0"},
+        {"id": "c-mx0", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = 0"},
+        {"id": "c-wxa", "kind": "boundary", "text": "w = 0", "at": "x = a"},
+        {"id": "c-mxa", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = a"},
+        {"id": "c-wy0", "kind": "boundary", "text": "w = 0", "at": "y = 0"},
+        {"id": "c-my0", "kind": "boundary", "text": "d(w,y,y) = 0", "at": "y = 0"},
+        {"id": "c-wyb", "kind": "boundary", "text": "w = 0", "at": "y = b"},
+        {"id": "c-myb", "kind": "boundary", "text": "d(w,y,y) = 0", "at": "y = b"}
+      ],
+      "assumptions": [
+        {"id": "a-kirchhoff", "kind": "physical", "text": "Thin plate (Kirchhoff): normals stay normal, and the deflection is small compared with the thickness.", "source": "kelly-plates"},
+        {"id": "a-ss", "kind": "physical", "text": "On each edge w = 0 and the bending moment is 0. Because w = 0 along the edge, a zero moment means a zero second derivative across the edge.", "source": "kelly-plates"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "a", "offset": "0", "symbol": "X", "reason": "The side a."},
+        {"id": "s-y", "for": "v-y", "scale": "a", "offset": "0", "symbol": "Y", "reason": "The same scale in y keeps the operator ∇⁴."},
+        {"id": "s-w", "for": "v-w", "scale": "p*a^4/D", "offset": "0", "symbol": "W", "reason": "The balance of the bending term and the pressure."}
+      ],
+      "preferred": ["v-D", "v-a"],
+      "evidence": [
+        {"id": "ev-plate", "source": "kelly-plates", "claim": "The Navier double sine series of a simply supported rectangular plate."}
+      ]
+    },
+    {
+      "id": "cylindrical-shell",
+      "label": "Cylindrical shell",
+      "group": "standard",
+      "title": "A long steel pipe under internal pressure: the bending zone at a clamped end",
+      "purpose": {"question": "How far does the bending near a clamped end of a pressurized cylinder reach, and how large is the bending stress there?", "observable": "v-M0", "calculation": "regime-map", "declaration": "cylindrical-shell"},
+      "variables": [
+        {"id": "v-w", "symbol": "w", "meaning": "Radial deflection of the wall", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance from the clamped end", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-M0", "symbol": "M_0", "meaning": "Bending moment per unit length at the clamped end", "quantity": "force", "unit": "N", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-p", "symbol": "p", "meaning": "Internal pressure", "quantity": "pressure", "unit": "Pa", "value": "1000000", "kind": "parameter", "domain": "nonzero", "pi": true},
+        {"id": "v-D", "symbol": "D", "meaning": "Bending stiffness of the wall", "quantity": "bending-stiffness", "unit": "N*m", "value": "5000000/273", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of steel", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-h", "symbol": "h", "meaning": "Wall thickness", "quantity": "length", "unit": "m", "value": "0.01", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-nu", "symbol": "nu", "tex": "\\nu", "meaning": "Poisson's ratio", "quantity": "poisson-ratio", "unit": "1", "value": "0.3", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-R", "symbol": "R", "meaning": "Radius of the middle surface", "quantity": "length", "unit": "m", "value": "1", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Ls", "symbol": "L_s", "meaning": "Distance from the clamped end to the plane of symmetry", "quantity": "length", "unit": "m", "value": "1", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-shell", "kind": "governing", "text": "D*d(w,x,x,x,x) + E*h/R^2*w = p", "domain": "0 < x < L_s"},
+        {"id": "e-D", "kind": "definition", "text": "D = E*h^3/(12*(1 - nu^2))"}
+      ],
+      "geometry": {"domain": "A thin circular cylinder of radius R and wall thickness h, clamped at x = 0. The plane x = L_s is a plane of symmetry.", "coordinates": "x along the axis, from the clamped end", "lengths": ["v-R", "v-h", "v-Ls"], "interfaces": "The clamped end at x = 0"},
+      "conditions": [
+        {"id": "c-w0", "kind": "boundary", "text": "w = 0", "at": "x = 0"},
+        {"id": "c-s0", "kind": "boundary", "text": "d(w,x) = 0", "at": "x = 0"},
+        {"id": "c-sL", "kind": "boundary", "text": "d(w,x) = 0", "at": "x = L_s"},
+        {"id": "c-vL", "kind": "boundary", "text": "d(w,x,x,x) = 0", "at": "x = L_s"}
+      ],
+      "assumptions": [
+        {"id": "a-thin", "kind": "physical", "text": "Thin shell: h is small compared with R.", "source": "mit-2081j"},
+        {"id": "a-axi", "kind": "physical", "text": "The load and the deflection are axisymmetric, and there is no axial force.", "source": "mit-2081j"},
+        {"id": "a-nu", "kind": "mathematical", "text": "Poisson's ratio is below 1/2, so 1 − ν² is not 0.", "relation": "1 - nu^2 > 0", "source": "mit-2081j"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "R^(1/2)*D^(1/4)*E^(-1/4)*h^(-1/4)", "offset": "0", "symbol": "X", "reason": "The length where bending and the hoop membrane force balance."},
+        {"id": "s-w", "for": "v-w", "scale": "p*R^2/(E*h)", "offset": "0", "symbol": "W", "reason": "The membrane deflection under the pressure."}
+      ],
+      "preferred": ["v-E", "v-R", "v-p"],
+      "evidence": [
+        {"id": "ev-shell", "source": "mit-2081j", "claim": "The bending boundary layer of an axisymmetric cylindrical shell."}
+      ]
+    },
+    {
+      "id": "thermal-rod",
+      "label": "Heated rod",
+      "group": "standard",
+      "title": "A heated steel rod between a wall and an elastic support: free expansion, constrained stress and energy",
+      "purpose": {"question": "Which stress does a uniform temperature rise cause in a rod when an elastic support resists its expansion?", "observable": "v-sigma", "calculation": "regime-map", "declaration": "thermal-rod"},
+      "variables": [
+        {"id": "v-u", "symbol": "u", "meaning": "Axial displacement", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance from the wall", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-sigma", "symbol": "sigma", "tex": "\\sigma", "meaning": "Axial stress", "quantity": "stress", "unit": "Pa", "kind": "field", "domain": "real", "pi": true},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of steel", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-A", "symbol": "A", "meaning": "Cross-sectional area", "quantity": "area", "unit": "m^2", "value": "0.001", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Length of the rod", "quantity": "length", "unit": "m", "value": "2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-alpha", "symbol": "alpha", "tex": "\\alpha", "meaning": "Linear thermal expansion coefficient", "quantity": "thermal-expansion", "unit": "1/K", "value": "1.2e-5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-dT", "symbol": "Delta_T", "meaning": "Uniform temperature rise", "quantity": "temperature-difference", "unit": "K", "value": "50", "kind": "parameter", "domain": "nonzero", "pi": true},
+        {"id": "v-ks", "symbol": "k_s", "meaning": "Stiffness of the end support", "quantity": "spring-stiffness", "unit": "N/m", "value": "4e8", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-rod", "kind": "governing", "text": "E*d(u,x,x) = 0", "domain": "0 < x < L"},
+        {"id": "e-sigma", "kind": "definition", "text": "sigma = E*(d(u,x) - alpha*Delta_T)"}
+      ],
+      "geometry": {"domain": "A straight rod of length L and area A. One end is fixed to a wall; the other end bears on a linear spring.", "coordinates": "x along the rod, from the wall (x = 0)", "lengths": ["v-L"], "interfaces": "The wall at x = 0 and the spring at x = L"},
+      "conditions": [
+        {"id": "c-wall", "kind": "boundary", "text": "u = 0", "at": "x = 0"},
+        {"id": "c-spring", "kind": "boundary", "text": "E*A*(d(u,x) - alpha*Delta_T) + k_s*u = 0", "at": "x = L"}
+      ],
+      "assumptions": [
+        {"id": "a-small", "kind": "physical", "text": "Small strains, linear elastic material, properties that do not change with temperature.", "source": "purdue-thermal"},
+        {"id": "a-uniform", "kind": "physical", "text": "The temperature rise is uniform and prescribed: the deformation does not change the temperature.", "source": "purdue-thermal"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "L", "offset": "0", "symbol": "X", "reason": "The length of the rod."},
+        {"id": "s-u", "for": "v-u", "scale": "alpha*Delta_T*L", "offset": "0", "symbol": "U", "reason": "The free thermal expansion of the rod."}
+      ],
+      "preferred": ["v-E", "v-L", "v-alpha"],
+      "evidence": [
+        {"id": "ev-rod", "source": "purdue-thermal", "claim": "Free expansion αΔTL and the stress −EαΔT of a rod with fixed ends."}
+      ]
+    },
+    {
+      "id": "thermal-plate",
+      "label": "Heated plate",
+      "group": "standard",
+      "title": "A heated aluminium plate held at its edges: membrane and bending thermal stress",
+      "purpose": {"question": "Which stresses do a uniform temperature rise and a temperature difference through the thickness cause in a thin plate with held edges?", "observable": "v-sigma", "calculation": "regime-map", "declaration": "thermal-plate"},
+      "variables": [
+        {"id": "v-sigma", "symbol": "sigma", "tex": "\\sigma", "meaning": "Membrane stress, equal in x and y", "quantity": "stress", "unit": "Pa", "kind": "field", "domain": "real", "pi": true},
+        {"id": "v-eps", "symbol": "epsilon", "tex": "\\varepsilon", "meaning": "Membrane strain, equal in x and y", "quantity": "strain", "unit": "1", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus of aluminium", "quantity": "elastic-modulus", "unit": "Pa", "value": "7e10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-nu", "symbol": "nu", "tex": "\\nu", "meaning": "Poisson's ratio", "quantity": "poisson-ratio", "unit": "1", "value": "0.33", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-alpha", "symbol": "alpha", "tex": "\\alpha", "meaning": "Linear thermal expansion coefficient", "quantity": "thermal-expansion", "unit": "1/K", "value": "2.3e-5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-dT", "symbol": "Delta_T", "meaning": "Temperature rise of the middle surface", "quantity": "temperature-difference", "unit": "K", "value": "40", "kind": "parameter", "domain": "nonzero", "pi": true},
+        {"id": "v-dTg", "symbol": "Delta_T_g", "meaning": "Temperature difference between the two faces", "quantity": "temperature-difference", "unit": "K", "value": "20", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-h", "symbol": "h", "meaning": "Thickness", "quantity": "length", "unit": "m", "value": "0.005", "kind": "parameter", "domain": "positive", "pi": false}
+      ],
+      "equations": [
+        {"id": "e-membrane", "kind": "governing", "text": "(1 - nu)*sigma = E*(epsilon - alpha*Delta_T)"},
+        {"id": "e-held", "kind": "governing", "text": "epsilon = 0"}
+      ],
+      "geometry": {"domain": "A thin flat plate of thickness h. Its edges stop the expansion in its plane and the rotation of its normals.", "coordinates": "None: the state is the same at every point of the plate; z through the thickness for the bending part", "lengths": [], "interfaces": "The edges"},
+      "conditions": [],
+      "assumptions": [
+        {"id": "a-small", "kind": "physical", "text": "Small strains, linear elastic isotropic material, plane stress.", "source": "hutchinson-1996"},
+        {"id": "a-linearT", "kind": "physical", "text": "The temperature changes linearly through the thickness.", "source": "hutchinson-1996"}
+      ],
+      "scales": [
+        {"id": "s-sigma", "for": "v-sigma", "scale": "E*alpha*Delta_T", "offset": "0", "symbol": "S", "reason": "The stress that blocks the full thermal strain in one direction."},
+        {"id": "s-eps", "for": "v-eps", "scale": "alpha*Delta_T", "offset": "0", "symbol": "e", "reason": "The free thermal strain."}
+      ],
+      "preferred": ["v-E", "v-alpha"],
+      "evidence": [
+        {"id": "ev-plate", "source": "hutchinson-1996", "claim": "The plate held in its plane: σ = −EαΔT/(1 − ν)."}
+      ]
+    },
+    {
+      "id": "fail-plastic",
+      "label": "Failure: plastic collapse",
+      "group": "failure",
+      "failure": "A plastic collapse load needs plasticity, which requires a separate declaration.",
+      "title": "Failure: the plastic collapse load of a beam needs a separate declaration",
+      "purpose": {"question": "At which uniform load does a simply supported steel beam collapse by a plastic hinge?", "observable": "v-qc", "calculation": "regime-map", "declaration": "plastic-beam"},
+      "variables": [
+        {"id": "v-w", "symbol": "w", "meaning": "Deflection", "quantity": "displacement", "unit": "m", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Distance along the beam", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-qc", "symbol": "q_c", "meaning": "Collapse load per unit length", "quantity": "line-load", "unit": "N/m", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-q", "symbol": "q", "meaning": "Load per unit length", "quantity": "line-load", "unit": "N/m", "value": "5000", "kind": "parameter", "domain": "nonzero", "pi": false},
+        {"id": "v-sy", "symbol": "sigma_y", "tex": "\\sigma_y", "meaning": "Yield stress", "quantity": "stress", "unit": "Pa", "value": "2.5e8", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Z", "symbol": "Z", "meaning": "Plastic section modulus", "quantity": "volume", "unit": "m^3", "value": "1e-4", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-E", "symbol": "E", "meaning": "Young's modulus", "quantity": "elastic-modulus", "unit": "Pa", "value": "2e11", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-I", "symbol": "I", "meaning": "Second moment of area", "quantity": "second-moment-of-area", "unit": "m^4", "value": "4e-6", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-L", "symbol": "L", "meaning": "Span", "quantity": "length", "unit": "m", "value": "4", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-beam", "kind": "governing", "text": "E*I*d(w,x,x,x,x) = q", "domain": "0 < x < L"}
+      ],
+      "geometry": {"domain": "A simply supported beam of span L", "coordinates": "x along the axis", "lengths": ["v-L"], "interfaces": "The supports"},
+      "conditions": [
+        {"id": "c-w0", "kind": "boundary", "text": "w = 0", "at": "x = 0"},
+        {"id": "c-m0", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = 0"},
+        {"id": "c-wL", "kind": "boundary", "text": "w = 0", "at": "x = L"},
+        {"id": "c-mL", "kind": "boundary", "text": "d(w,x,x) = 0", "at": "x = L"}
+      ],
+      "assumptions": [
+        {"id": "a-plastic", "kind": "physical", "text": "The beam yields and forms a plastic hinge at midspan.", "source": "spec-10"}
+      ],
+      "scales": [],
+      "preferred": ["v-sy", "v-L"],
+      "evidence": []
     }
   ]
 }

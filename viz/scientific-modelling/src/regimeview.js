@@ -444,7 +444,7 @@
         ${blocked.map((/** @type {any} */ i) => `<p>${esc(i.message)} <span class="next">Next: ${esc(i.next)}</span></p>`).join("")}
         ${(r.problems ?? []).length ? `<ul class="issue-list">${r.problems.map((/** @type {string} */ p) => `<li>${chip("unresolved")} ${esc(p)}</li>`).join("")}</ul>` : ""}
         ${r.next ? `<p class="next">Next: ${esc(r.next)}</p>` : ""}
-        <p>Standard examples with a declared model: ${["transient-slab", "transient-cylinder", "transient-sphere", "lumped-body", "volumetric-source", "multilayer-wall", "straight-fin", "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation"].map((id) => `<button type="button" data-load-example="${id}">${esc(Model.EXAMPLES.find((/** @type {any} */ e) => e.id === id)?.label ?? id)}</button>`).join(" ")}</p></div>`;
+        <p>Standard examples with a declared model: ${["transient-slab", "transient-cylinder", "transient-sphere", "lumped-body", "volumetric-source", "multilayer-wall", "straight-fin", "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation", "euler-column", "beam-deflection", "elastica", "damped-oscillator", "beam-modes", "navier-plate", "cylindrical-shell", "thermal-rod", "thermal-plate"].map((id) => `<button type="button" data-load-example="${id}">${esc(Model.EXAMPLES.find((/** @type {any} */ e) => e.id === id)?.label ?? id)}</button>`).join(" ")}</p></div>`;
       main.hidden = true;
       return;
     }

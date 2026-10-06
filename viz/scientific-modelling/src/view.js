@@ -515,7 +515,7 @@
         const d = Model.derive(st, DATA, active(st.example));
         return out(d.catalogue);
       } },
-    { name: "get_stability", description: "Return the stability and bifurcation analysis of the current confirmed record (hand calculation 9): for a declared model of piece 4, the exact base-state, perturbation and symmetry checks, the growth rates and modes, the neutral curve, the branch with its comparison data, the amplitude equation and the classification; for a custom ODE system, the equilibria with their eigenvalues, the branches with their folds, branch points and Hopf points, the regions of multiple stable states and the search coverage. Each result has its status and tolerance.",
+    { name: "get_stability", description: "Return the stability and bifurcation analysis of the current confirmed record (hand calculation 9): for a declared model of piece 4, the exact base-state, perturbation and symmetry checks, the growth rates and modes, the neutral curve, the branch with its comparison data, the amplitude equation and the classification; for a structures model that declares them, its stability results (the Euler column, the elastica, the oscillator and the beam modes); for a custom ODE system, the equilibria with their eigenvalues, the branches with their folds, branch points and Hopf points, the regions of multiple stable states and the search coverage. Each result has its status and tolerance.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: RO,
       execute: async () => {
         const d = app.derived;

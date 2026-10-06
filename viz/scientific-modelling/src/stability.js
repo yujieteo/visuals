@@ -2,7 +2,8 @@
  * record of a declared model of piece 4 it takes the family module's numerical analysis from the regime map
  * (src/convection.js, src/radiation.js) and adds the exact symbolic checks on the declared dimensionless model:
  * the base state satisfies every equation and condition, the perturbation equations are the O(ε) part of the
- * substitution, an exact symmetry of the equations, and the exact Jacobian of a lumped balance. For a custom finite
+ * substitution, an exact symmetry of the equations, and the exact Jacobian of a lumped balance. The structures
+ * families of piece 5 (src/structures.js) give their own results and figures through the same panel. For a custom finite
  * ODE system it runs src/ode.js. It returns the results with their statuses, the derivation steps of item 9 and the
  * search coverage, as plain data that the view, the Markdown report and the deck read.
  */
@@ -12,7 +13,7 @@
 })(typeof self !== "undefined" ? self : this, function (Q, S, D, ODE) {
   "use strict";
 
-  const FAMILIES = ["buoyancy-convection", "radiation"];
+  const FAMILIES = ["buoyancy-convection", "radiation", "beams-and-columns", "nonlinear-buckling", "vibration"];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(12)) : null);
   const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
   const GREEK = { theta: "θ", theta_s: "θ_s", Psi: "Ψ", Omega: "Ω", eps: "ε" };
@@ -142,6 +143,8 @@
     const declId = base.purpose?.declaration ?? "";
     if (declId) {
       const decl = D.find(data, declId);
+      const separate = (data.catalogue?.separate ?? []).find((x) => x.id === declId);
+      if (!decl && separate) return { ready: false, reason: "not-applicable", message: `${separate.title} needs ${separate.needs}, which requires a separate declaration. No stability analysis runs.`, next: "" };
       if (!decl) return { ready: false, reason: "unknown-declaration", message: `The declared model "${String(declId).slice(0, 60)}" is not in the catalogue.`, next: "Choose a declared model of the catalogue." };
       const methods = { stability: decl.methods.stability, bifurcation: decl.methods.bifurcation };
       if (!FAMILIES.includes(decl.family)) {
@@ -165,10 +168,10 @@
       if (!an.ok) return { ready: false, reason: "custom-unsupported", message: `Custom ODE system: ${an.reason}`, next: an.next ?? "" };
       return { ready: true, kind: "custom", wanted, analysis: an, steps: ["s-st-ode"], inputs: ["purpose", ...interp.equations.map((e) => e.id), ...interp.variables.map((v) => v.id)] };
     }
-    if (wanted) return { ready: false, reason: "custom-pde", message: "The record names no declared model, and it is not a finite ODE system. Stability and bifurcation of a custom PDE are outside the supported set.", next: "Choose a declared model of piece 4, such as boussinesq-box, or write the model as a finite ODE system." };
+    if (wanted) return { ready: false, reason: "custom-pde", message: "The record names no declared model, and it is not a finite ODE system. Stability and bifurcation of a custom PDE are outside the supported set.", next: "Choose a declared model of piece 4 or 5, such as boussinesq-box or euler-column, or write the model as a finite ODE system." };
     return { ready: false, reason: "none", message: "The record does not ask for a stability or bifurcation analysis, and its declared model has none.", next: "" };
   }
-  const stepsFor = (id) => (id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
+  const stepsFor = (id) => (id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
 
   /* ---------- results ---------- */
 
@@ -194,6 +197,7 @@
     if (an.family === "buoyancy-convection") boxResults(an, add);
     else if (an.model === "lumped-radiation") lumpedResults(an, add);
     else if (an.model === "surface-radiation") for (const c of an.checks ?? []) add({ id: `r-st-net-${c.id}`, kind: "exchange", title: `${c.title}: ${c.passed ? "passed" : "failed"}. ${c.detail}`, status: c.passed ? c.status : "unresolved", tolerance: c.tolerance ?? null, steps: ["s-st-network"], evidence: ["lienhard-2024"] });
+    else if (an.generic) for (const r of an.results) add({ steps: ["s-st-eigen"], evidence: ["spec-8"], ...r });
     else if (an.model === "convection-radiation") add({ id: "r-st-root", kind: "stability", title: `The balance has one root θ = ${short(an.root.theta)}: dQ/dθ = 1 + 4N_rθ³ = ${short(an.root.slope)} > 0. The linearized model gives ${short(an.root.linear)}, the mean-temperature model ${short(an.root.mean)}.`, status: "numerical", tolerance: "1e-15 (Brent)", steps: ["s-st-equilibrium"], evidence: ["lienhard-2024"] });
     return out;
   }

@@ -108,6 +108,15 @@
       narration: `The page writes the system and its Jacobian exactly. It finds ${words(an.equilibria.length)} ${an.equilibria.length === 1 ? "equilibrium" : "equilibria"} at the record's parameter value and follows each branch. It marks ${words(sp.length)} special points, each with the checks that classify it. The search is not exhaustive.` }];
   }
 
+  /** A structures family of piece 5: its method lines and every table it draws. */
+  function genericFrames(an) {
+    return [{ title: `Hand calculation 9: ${an.concept.split(":")[0]}`,
+      body: [`Concept: ${cell(an.concept)}.`, "", ...an.method.flatMap((x) => [cell(x), ""]),
+        ...an.tables.flatMap((t) => [`${cell(t.title)}:`, "", `| ${t.columns.map(cell).join(" | ")} |`, `| ${t.columns.map(() => "---").join(" | ")} |`, ...t.rows.map((r) => `| ${r.map(cell).join(" | ")} |`), ""]),
+        ...an.figures.map((f) => `Figure: ${cell(f.title)}. ${cell(f.caption)}`)].join("\n"),
+      narration: an.model === "elastica" ? "The page follows the buckled branch of the column by continuation. The exact series and the symmetry classify the branch point as a supercritical pitchfork. The second variation of the energy gives the stability of each state." : an.model === "euler-column" ? "The smallest eigenvalue of the buckling problem is pi squared. The element solution converges to it. The linear model gives no deflection after buckling." : "The frame states the stability concept, the numerical procedure and every value that the figures draw." }];
+  }
+
   /** The Method frames and the Results frame of hand calculation 9, or empty lists. */
   function frames(d) {
     const st = d.stability;
@@ -117,7 +126,7 @@
       return { method: [], results: res.length ? [{ title: "Stability and bifurcation: unresolved", body: res.map(line).join("\n"), narration: "The stability analysis did not run on this record. The frame names the reason and the next action." }] : [] };
     }
     const an = st.analysis;
-    const method = st.kind === "custom" ? customFrames(an) : [...exactFrame(st), ...(an?.family === "buoyancy-convection" ? boxFrames(an) : an?.model === "lumped-radiation" ? lumpedFrames(an) : an?.model === "surface-radiation" ? surfaceFrames(an) : [])];
+    const method = st.kind === "custom" ? customFrames(an) : [...exactFrame(st), ...(an?.generic ? genericFrames(an) : an?.family === "buoyancy-convection" ? boxFrames(an) : an?.model === "lumped-radiation" ? lumpedFrames(an) : an?.model === "surface-radiation" ? surfaceFrames(an) : [])];
     const results = [{ title: `Stability and bifurcation: ${res.length} results`, body: res.map(line).join("\n"),
       narration: `The stability and bifurcation analysis gives ${res.length <= 20 ? NUMBERS[res.length] : "more than twenty"} results. Each one has its status and its tolerance. The unresolved results name what the search did not cover.` }];
     return { method, results };

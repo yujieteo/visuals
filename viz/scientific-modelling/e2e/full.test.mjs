@@ -84,6 +84,33 @@ await fullSuite("scientific-modelling", {
     } finally {
       await ode.close();
     }
+    // Piece 5, the Euler column from the URL (anchor test 4): the critical eigenvalue, the modes and the explicit
+    // separation from post-buckling claims; then the elastica's branch diagram with its pitchfork and coverage.
+    const col = await ctx.open("#example=euler-column&tool=regime");
+    try {
+      await col.page.locator("#confirm").click();
+      await col.page.waitForSelector("#stability-panel #st-euler-modes svg");
+      const panel = await col.page.locator("#stability-panel").innerText();
+      assert.match(panel, /λ = PL²\/\(EI\) = 9\/4/);
+      assert.match(panel, /λ_cr = π²/);
+      assert.match(panel, /It gives no deflection after buckling/);
+      const st = await stability(col.page);
+      assert.equal(st.analysis.model, "euler-column");
+      assert.ok(st.analysis.figures[0].series[0].pts.every((/** @type {number[]} */ [x, y]) => Math.abs(y - Math.sin(Math.PI * x)) < 1e-6), "mode 1 is sin(πX)");
+    } finally {
+      await col.close();
+    }
+    const ela = await ctx.open("#example=elastica&tool=regime");
+    try {
+      await ela.page.locator("#confirm").click();
+      await ela.page.waitForSelector("#stability-panel #st-elastica-branches svg");
+      const panel = await ela.page.locator("#stability-panel").innerText();
+      assert.match(panel, /supercritical pitchfork/);
+      assert.match(panel, /does not claim that it found all branches/);
+      await ela.page.waitForSelector("#regime-map svg");
+    } finally {
+      await ela.close();
+    }
     const stale = await ctx.open("#example=no-such-model");
     try {
       assert.match(await stale.page.locator("#notice").innerText(), /not a valid value/);

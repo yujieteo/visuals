@@ -21,11 +21,13 @@
   const SCHEMA_VERSION = 1;
   const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "transient-cylinder", "transient-sphere", "volumetric-source", "multilayer-wall",
     "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation", "custom-ignition", "custom-lorenz",
-    "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported"];
+    "euler-column", "beam-deflection", "elastica", "damped-oscillator", "beam-modes", "navier-plate", "cylindrical-shell", "thermal-rod", "thermal-plate",
+    "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported", "fail-plastic"];
   const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Transient cylinder", "Transient sphere", "Volumetric source", "Multilayer wall",
     "Rayleigh–Bénard convection", "Natural convection in an enclosure", "Lumped body with radiation", "Surface radiation", "Convection and radiation", "Custom ODE: ignition", "Custom ODE: Lorenz system",
+    "Euler column", "Beam under a uniform load", "Nonlinear buckling: the elastica", "Damped oscillator", "Beam vibration modes", "Rectangular plate", "Cylindrical shell", "Heated rod", "Heated plate",
     "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors",
-    "Failure: unsupported analysis"];
+    "Failure: unsupported analysis", "Failure: plastic collapse"];
   const MAX_STEP = 60;
 
   /** The view state (§5): every field is in the URL when it differs from its default. */
