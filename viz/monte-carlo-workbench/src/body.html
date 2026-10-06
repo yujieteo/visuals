@@ -45,6 +45,8 @@
 <li><code>minimise name</code> or <code>maximise name</code>, and <code>require name &lt;= 0.05</code></li>
 <li><code>focus X</code>: the focus variable, which the distribution plot shows</li>
 <li><code>censoring: right T by C</code>: the censoring mechanism of the observation</li>
+<li><code>initial: …</code> and <code>dynamics: …</code>: the initial conditions and the dynamics of a model with a process, in words</li>
+<li><code>N ~ poisson(lambda = 3, u = U[1])</code>: a scalar law drawn by the inverse transform of a given uniform, such as a copula component</li>
 <li><code>control C = X</code>: the control variate of the control-variate method, an affine function of variables with known means</li>
 <li><code>law Sev(a) pdf(x) = a*x^(-a - 1) on [1, inf] where a > 1 obs [1.3, 2.2] grid 4096</code>: a custom law, then <code>X ~ Sev(a = 2.5)</code></li>
 </ul>
@@ -53,8 +55,10 @@
 <p class="note">Discrete laws: <code>bernoulli(p), binomial(n, p), categorical(p), multinomial(n, p), uniform(a, b), geometric(p), negbin(r, p), poisson(lambda), hypergeometric(N, K, n), zipf(s, N)</code>.</p>
 <p class="note">Continuous laws: <code>cuniform(a, b), normal(mu, sigma), mvnormal(mu, cov), exponential(rate), gamma(k, theta), erlang(k, rate), beta(a, b), dirichlet(alpha), chisq(nu), student(nu), fisher(d1, d2), logistic(mu, s), laplace(mu, b)</code>. A vector law gives a vector: use <code>X[1]</code>, <code>sum(X)</code> or <code>sum(w*X)</code>.</p>
 <p class="note">Positive, heavy-tailed and extreme-value laws: <code>lognormal(mu, sigma), weibull(k, lambda), invgauss(mu, lambda), gompertz(eta, b), loglogistic(alpha, beta), pareto1(xm, alpha), pareto2(mu, sigma, alpha), burr12(c, k, lambda), frechet(alpha, s, m), cauchy(x0, gamma), levy(mu, c), stable(alpha, beta, gamma, delta), gev(xi, mu, sigma), gpd(xi, sigma, mu), gumbel(mu, beta), revweibull(alpha, mu, sigma)</code>. The stable law uses Nolan's S0 parameterisation.</p>
+<p class="note">Copulas (a vector of d uniforms): <code>gaussiancopula(rho, d), tcopula(rho, nu, d), claytoncopula(theta, d), gumbelcopula(theta, d), frankcopula(theta, d)</code>. One rho holds for every pair; a vector gives the d(d − 1)/2 correlations above the diagonal, row by row.</p>
+<p class="note">Processes (a path of steps + 1 values at the grid times; X[1] is the value at t = 0): <code>brownian(x0, mu, sigma, T, steps), gbm(s0, mu, sigma, T, steps), ou(x0, kappa, theta, sigma, T, steps), poissonprocess(lambda, amp, period, T, steps), compoundprocess(x0, drift, lambda, jump, T, steps), markovchain(P, x0, steps), branching(z0, m, k, steps), hawkes(mu, alpha, beta, T, steps), variancegamma(x0, theta, sigma, nu, T, steps)</code>. The diffusions also take <code>coarsen</code>, and a model with the parameters <code>steps</code> and <code>coarsen</code> runs on multilevel grids.</p>
 <p class="note">Censoring: <code>censoring: right T by C</code> observes <code>T_obs</code> = min(T, C) and <code>T_event</code> = 1 when T ≤ C. The line <code>censoring: left T by C</code> observes max(T, C) and 1 when T ≥ C.</p>
-<p class="note">Functions: <code>abs, sqrt, exp, log, log1p, floor, ceil, round, pow, min, max, pmin, pmax, if, sum, mean, prod, len, count, distinct, maxcount, any, all, normalize, median, quantile(x, p), hill(x, k), km(times, events, t), sin, cos, tan, atan, lgamma</code>. The parser accepts no other name, so an expression cannot run code.</p>
+<p class="note">Functions: <code>abs, sqrt, exp, log, log1p, floor, ceil, round, pow, min, max, pmin, pmax, if, sum, mean, prod, len, count, distinct, maxcount, any, all, normalize, median, quantile(x, p), hill(x, k), km(times, events, t), sin, cos, tan, atan, lgamma, first, last, cumsum</code>. The parser accepts no other name, so an expression cannot run code.</p>
 </details>
 </section>
 <section id="nav-library" aria-label="Library" hidden>
@@ -77,9 +81,9 @@
 <section id="wb-controls" class="card" aria-label="Simulation settings">
 <div class="controls">
 <label>Method
-<select id="method" data-field="method"><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup></select></label>
+<select id="method" data-field="method"><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup><optgroup label="Processes"><option value="euler">Euler time discretisation</option></optgroup></select></label>
 <label>Compare with
-<select id="compare" data-field="compare"><option value="none">No comparison</option><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup></select></label>
+<select id="compare" data-field="compare"><option value="none">No comparison</option><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup><optgroup label="Processes"><option value="euler">Euler time discretisation</option></optgroup></select></label>
 <label>Alternatives use
 <select id="streams" data-field="streams"><option value="common">Common random numbers</option><option value="separate">Separate streams</option></select></label>
 <label>Assumption failure
@@ -136,6 +140,31 @@
 <p id="conv-note" class="note"></p>
 <p class="row exports"><button type="button" id="conv-plot-svg">Save SVG</button> <button type="button" id="conv-plot-png">Save PNG</button> <button type="button" id="save-trace">Save trace CSV</button></p>
 </figure>
+<figure class="card" id="fig-paths" hidden>
+<figcaption class="label">Sample paths, ensemble bands and first passages</figcaption>
+<div id="paths-plot" class="plot"></div>
+<p id="paths-note" class="note"></p>
+<p class="row exports"><button type="button" id="paths-plot-svg">Save SVG</button> <button type="button" id="paths-plot-png">Save PNG</button></p>
+</figure>
+<figure class="card" id="fig-scatter" hidden>
+<figcaption class="label">Dependence of the copula: scatter and tail boxes</figcaption>
+<div id="scatter-plot" class="plot"></div>
+<p id="scatter-note" class="note"></p>
+<p class="row exports"><button type="button" id="scatter-plot-svg">Save SVG</button> <button type="button" id="scatter-plot-png">Save PNG</button></p>
+</figure>
+<section id="wb-mlmc" class="card" aria-labelledby="mlmc-head" hidden>
+<h3 id="mlmc-head">Multilevel Monte Carlo</h3>
+<p class="note">Level l runs the fine grid of n0 · 2^l steps and the coarse grid of half as many on the same Brownian increments, so the correction Y_l = P_l − P_(l−1) has a small variance. The sum of the level means estimates the value on the finest grid. The page keeps its Monte Carlo error apart from the discretisation bias of that grid.</p>
+<div class="controls">
+<label>Target root mean square error ε <input id="mlmc-eps" type="number" data-field="mlmc_eps" min="0.000001" step="any"></label>
+</div>
+<p class="row"><button type="button" id="mlmc-run" class="primary">Run the multilevel estimator</button> <button type="button" id="mlmc-stop">Cancel</button></p>
+<p id="mlmc-status" class="note" role="status" aria-live="polite"></p>
+<div id="mlmc-plot" class="plot"></div>
+<div id="mlmc-table" class="table-scroll"></div>
+<div id="mlmc-result"></div>
+<p class="row exports"><button type="button" id="mlmc-plot-svg">Save SVG</button> <button type="button" id="mlmc-plot-png">Save PNG</button></p>
+</section>
 <section id="wb-results" class="card" aria-labelledby="results-head">
 <h3 id="results-head">Estimates and reference values</h3>
 <div id="results-table" class="table-scroll"></div>
@@ -192,7 +221,7 @@
 </div>
 <section id="panel-theory" aria-label="Theory" hidden>
 <label class="label" for="theory-select">Theory panel</label>
-<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option></select>
+<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option><option value="ergodicity">Ergodicity, mixing, and time and ensemble averages</option><option value="sklar">Sklar's theorem and copulas</option><option value="mlmc">Multilevel Monte Carlo and discretisation bias</option></select>
 <div id="theory-body"></div>
 </section>
 <section id="panel-assumptions" aria-label="Assumptions" hidden></section>

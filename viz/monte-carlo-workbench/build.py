@@ -29,8 +29,8 @@ from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
 DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits"]
-ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "engine", "dsl"]
-PAGE = ["plots", "model", "report", "pool", "view"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl"]
+PAGE = ["plots", "mlmc", "model", "report", "pool", "depview", "view"]
 
 
 def read(path):

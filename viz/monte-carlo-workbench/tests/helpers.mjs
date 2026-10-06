@@ -17,6 +17,12 @@ export const L = require("../src/laws.js");
 export const Cu = require("../src/custom.js");
 /** @type {typeof import("../src/constructed.js")} */
 export const Co = require("../src/constructed.js");
+/** @type {typeof import("../src/copulas.js")} */
+export const Cop = require("../src/copulas.js");
+/** @type {typeof import("../src/processes.js")} */
+export const Pr = require("../src/processes.js");
+/** @type {typeof import("../src/mlmc.js")} */
+export const Ml = require("../src/mlmc.js");
 /** @type {typeof import("../src/engine.js")} */
 export const En = require("../src/engine.js");
 /** @type {typeof import("../src/dsl.js")} */

@@ -16,7 +16,7 @@ const body = readFileSync(new URL("../src/body.html", import.meta.url), "utf8")
   .replace(/<code>[^<]*<\/code>/g, "CODE").replace(/<(script|style)[\s\S]*?<\/\1>/g, "").replace(/@@\w+@@/g, "")
   .replace(/<\/(p|li|h\d|summary|label|button|option|figcaption)>/g, ".\n").replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 section("Page", body.split("\n").map((l) => l.replace(/\s+/g, " ").replace(/\s+\./g, ".").trim()).filter((l) => /[a-z]{3}/.test(l)));
-for (const l of data.laws) section(`Law: ${l.name}`, [l.convention, l.limits, l.moments.existence, l.links.map((/** @type {any} */ x) => x.relation)]);
+for (const l of data.laws) section(`Law: ${l.name}`, [l.convention, l.limits, l.moments.existence, l.links.map((/** @type {any} */ x) => x.relation), l.methods ?? [], Object.values(l.conditions ?? {}), Object.values(l.dependence ?? {})]);
 for (const m of data.models) section(`${m.kind}: ${m.title}`, [m.title, m.observe, m.decision, m.reason, m.inputs, m.dependence, m.method, m.diagnostics, m.interpretation, m.data?.text]);
 for (const m of data.methods) section(`Method: ${m.name}`, [m.estimatorText, m.assumptions, m.settings, m.suitable.text, m.failure.text, m.comparison.text]);
 for (const t of data.theory) section(`Theory: ${t.title}`, [t.assumptions, t.proof, t.counterexample]);

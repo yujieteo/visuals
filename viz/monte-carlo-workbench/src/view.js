@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -30,7 +30,7 @@
     const f = (v) => (Math.abs(v) >= 1e-3 && Math.abs(v) < 1e9 ? String(+v.toPrecision(digits)) : v.toPrecision(Math.min(digits, 6))).replace("-", "−");
     return [f(est), f(lo), f(hi)];
   }
-  const METHOD = /** @type {Record<string, string>} */ ({ independent: "Independent sampling", inverse: "Inverse transform", rejection: "Rejection sampling", stratified: "Stratification", antithetic: "Antithetic variables", control: "Control variates", crn: "Common random numbers", none: "None" });
+  const METHOD = /** @type {Record<string, string>} */ ({ independent: "Independent sampling", inverse: "Inverse transform", rejection: "Rejection sampling", stratified: "Stratification", antithetic: "Antithetic variables", control: "Control variates", crn: "Common random numbers", euler: "Euler time discretisation", none: "None" });
   const TAG = /** @type {Record<string, string>} */ ({ theorem: "Theorem", numerical: "Numerical approximation", observation: "Finite-run observation" });
   /** @param {"theorem" | "numerical" | "observation"} kind */
   const tag = (kind) => `<span class="tag tag-${kind}">${TAG[kind]}</span>`;
@@ -50,7 +50,7 @@
   let expected = null;
 
   function engineSource() {
-    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-tails", "src-laws", "src-custom", "src-constructed", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
+    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-tails", "src-laws", "src-custom", "src-constructed", "src-copulas", "src-processes", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
   }
   function getPool() {
     if (!pool) pool = Pool.createPool({ source: engineSource(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: En });
@@ -71,6 +71,9 @@
     return { key: runKey(s), record, settings, c, d, target: 2 ** s.size / En.BLOCK, accum: En.empty(c), status: "idle", message: "", elapsed: 0, started: 0, handle: null, mode: "" };
   }
 
+  /** The references that block coverage checks: none for a continuous-time reference of a grid quantity, which differs by its discretisation bias. @param {any} d */
+  const coverRefs = (d) => d.references.map((/** @type {any} */ x) => x.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (x.continuous?.[k] ? null : v)));
+
   /** Start or continue the run up to `to` blocks. @param {number} to */
   function go(to) {
     if (!run || run.handle) return;
@@ -80,7 +83,7 @@
     r.started = performance.now();
     r.message = "";
     const p = getPool();
-    r.handle = p.run({ record: r.record, settings: r.settings, opts: { references: r.d.references.map((/** @type {any} */ x) => x.values), window: r.d.focus.window }, from: r.accum.blocks, to }, {
+    r.handle = p.run({ record: r.record, settings: r.settings, opts: { references: coverRefs(r.d), window: r.d.focus.window, band: r.d.dependence?.processes[0]?.band ?? undefined }, from: r.accum.blocks, to }, {
       onBlock(/** @type {any} */ stats) {
         if (run !== r) return;
         r.accum = En.merge(r.accum, stats, r.c);
@@ -142,7 +145,14 @@
     $("example-list").innerHTML = byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
       `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : m.kind === "input" ? `Input${m.fails ? ", fails" : ""}` : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
       : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`;
-    $("law-list").innerHTML = data.laws.map((/** @type {any} */ l) => `<li><button type="button" class="link" data-open="exp-${esc(l.id)}">${esc(l.name)}</button></li>`).join("");
+    // Group 5 adds the dependence library and the process library under their own headings.
+    const heads = /** @type {Record<string, string>} */ ({ conditional: "Dependence", process: "Processes" });
+    let seen = "";
+    $("law-list").innerHTML = data.laws.map((/** @type {any} */ l) => {
+      const h = l.type === "copula" ? "" : heads[l.type] ?? "", head = h && h !== seen ? `<li class="law-head" role="presentation">${h}</li>` : "";
+      if (h) seen = h;
+      return `${head}<li><button type="button" class="link" data-open="exp-${esc(l.id)}">${esc(l.name)}</button></li>`;
+    }).join("");
     $("method-list").innerHTML = data.methods.map((/** @type {any} */ m) => `<li><button type="button" class="link" data-method="${esc(m.id)}">${esc(m.name)}</button></li>`).join("");
     $("theory-list").innerHTML = data.theory.map((/** @type {any} */ t) => `<li><button type="button" class="link" data-theory="${esc(t.id)}">${esc(t.title)}</button></li>`).join("");
   }
@@ -152,7 +162,7 @@
   /** @param {Record<string, any>} s @param {any} d */
   function drawHeader(s, d) {
     const entry = data.models.find((/** @type {any} */ m) => m.id === s.model);
-    $("model-kind").textContent = entry ? (entry.kind === "input" ? "Custom law input · an example of the checks" : `${entry.kind === "experiment" ? "Behaviour experiment" : `Workflow · ${entry.domain}`} · ${data.laws.find((/** @type {any} */ l) => l.id === entry.law)?.name} law`) : "Custom model from the editor";
+    $("model-kind").textContent = entry ? (entry.kind === "input" ? "Custom law input · an example of the checks" : `${entry.kind === "experiment" ? "Behaviour experiment" : `Workflow · ${entry.domain}`} · ${(() => { const l = data.laws.find((/** @type {any} */ x) => x.id === entry.law); return Dv.owns(l) ? l.name : `${l?.name} law`; })()}`) : "Custom model from the editor";
     $("model-title").textContent = d.model.title;
     $("model-problem").textContent = d.model.problem;
     const ds = entry?.data?.kind === "real" ? data.datasets.find((/** @type {any} */ x) => x.id === entry.data.dataset) : null;
@@ -349,7 +359,8 @@ ${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "com
     const parts = entry?.kind === "workflow" ? [["Decision and estimated quantity", entry.decision], ["Reason for the law", entry.reason], ["Parameters, units, data and assumptions", entry.inputs], ["Dependence or process model", entry.dependence], ["Method and estimator", entry.method]] : [];
     $("panel-assumptions").innerHTML = `${parts.map(([h, t]) => `<h4>${esc(h)}</h4><p>${esc(t)}</p>`).join("")}${entry?.kind === "experiment" ? `<h4>What the experiment shows</h4><p>${esc(entry.observe)}</p>` : ""}
 <h4>Assumptions of ${esc(method.name.toLowerCase())}</h4><ul>${method.assumptions.map((/** @type {string} */ a) => `<li>${esc(a)}</li>`).join("")}</ul>
-<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>none</dd><dt>Dynamics</dt><dd>none: no time</dd><dt>Observation</dt><dd>${esc(d.observation ?? "complete")}</dd><dt>Censoring</dt><dd>${d.censoring ? `${esc(d.censoring.text)}: the model observes <span class="mono">${esc(d.censoring.obs)}</span> and the event indicator <span class="mono">${esc(d.censoring.event)}</span>. An estimator that reads only these names sees what a real study sees.` : "none"}</dd><dt>Truncation</dt><dd>${d.samplers?.some((/** @type {any} */ x) => /^truncated_/.test(x.law)) ? "a truncated law: the values outside [lower, upper] do not occur and leave no record" : "none"}</dd><dt>Selection</dt><dd>none in this group</dd></dl>`;
+${Dv.assumptions(d)}
+<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>${esc(d.fields?.initial ?? "none")}</dd><dt>Dynamics</dt><dd>${d.fields?.dynamics && d.fields.dynamics !== "none" ? esc(d.fields.dynamics) : "none: no time"}</dd><dt>Observation</dt><dd>${esc(d.observation ?? "complete")}</dd><dt>Censoring</dt><dd>${d.censoring ? `${esc(d.censoring.text)}: the model observes <span class="mono">${esc(d.censoring.obs)}</span> and the event indicator <span class="mono">${esc(d.censoring.event)}</span>. An estimator that reads only these names sees what a real study sees.` : "none"}</dd><dt>Truncation</dt><dd>${d.samplers?.some((/** @type {any} */ x) => /^truncated_/.test(x.law)) ? "a truncated law: the values outside [lower, upper] do not occur and leave no record" : "none"}</dd><dt>Selection</dt><dd>none in this group</dd></dl>`;
     const m0 = sm?.[0];
     /** @type {string[]} */
     const diag = [];
@@ -418,6 +429,8 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
     if ($("law-card").dataset.key === key) return;
     $("law-card").dataset.key = key;
     const l = data.laws.find((/** @type {any} */ x) => x.id === lawId);
+    // A copula, a process or the conditional models (group 5) has its own card.
+    if (Dv.owns(l)) { $("law-card").innerHTML = Dv.card(l, d, data, METHOD); $("method-card").innerHTML = methodCard(data.methods.find((/** @type {any} */ x) => x.id === s.method)); return; }
     // A law of the catalogue has its code in MCLaws; a constructed law of group 4 names its code parameters through
     // the variable that uses it, because they depend on the family (mixture_poisson has w and lambda).
     const used = d.samplers?.find((/** @type {any} */ x) => x.catalogue === lawId);
@@ -569,6 +582,9 @@ ${parts}`;
     drawRight(s, d, sm);
     drawReplay(sm);
     drawSweep(s, d);
+    Dv.drawPaths(s, d, sm, run, $);
+    Dv.drawScatter(s, d, run, $);
+    Dv.drawMultilevel(s, d, $, METHOD);
   }
 
   /** The progress bar, the status line and the state of the run buttons. */
@@ -894,7 +910,9 @@ ${parts}`;
       app.set({ model: "custom", params: "", sweep: "", stratify: "", quantity: 1, alt: 1 });
     });
     loader("load-run", loadRun);
-    for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"]]) {
+    $("mlmc-run").addEventListener("click", () => Dv.startMultilevel({ state: app.state, derived: app.derived, record: M.modelOf(app.state, data).record, overrides: M.parseParams(app.state.params).overrides, pool: getPool(), redraw: schedule }));
+    $("mlmc-stop").addEventListener("click", () => { Dv.stopMultilevel(); schedule(); });
+    for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"], ["paths-plot", "paths"], ["scatter-plot", "scatter"], ["mlmc-plot", "multilevel"]]) {
       $(`${id}-svg`)?.addEventListener("click", () => saveSvg(id, `${app.state.model}-${name}`));
       $(`${id}-png`)?.addEventListener("click", () => savePng(id, `${app.state.model}-${name}`));
     }
@@ -954,6 +972,8 @@ ${parts}`;
       execute: async (/** @type {any} */ input) => out({ laws: data.laws.map((/** @type {any} */ l) => ({ id: l.id, name: l.name })), models: matches(String(input?.query ?? "")).map((/** @type {any} */ m) => ({ id: m.id, kind: m.kind, law: m.law, title: m.title, domain: m.domain ?? null })), methods: data.methods.map((/** @type {any} */ m) => ({ id: m.id, name: m.name })), theory: data.theory.map((/** @type {any} */ t) => ({ id: t.id, title: t.title })), groups: data.groups }) },
     { name: "get_law", description: "Return the catalogue entry of one law by id: its parameter convention, support, special and limit cases, moments, transforms and links.", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false }, annotations: ro,
       execute: async (/** @type {any} */ input) => out(data.laws.find((/** @type {any} */ l) => l.id === input?.id) ?? { error: `No law has the id "${String(input?.id).slice(0, 40)}".` }) },
+    { name: "get_multilevel", description: "Return the last multilevel Monte Carlo run: its status, target error, seed, method and quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, and the reference.", inputSchema: none, annotations: ro,
+      execute: async () => { Dv.sync(app.state, app.derived); return out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }); } },
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },

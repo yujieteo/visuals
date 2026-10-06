@@ -64,6 +64,16 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - An example of each input kind, and three inputs that fail a check.
 - The done criteria of groups 1 to 3 hold for the whole folder, and their results stay the same.
 
+## Group 5: what done means
+
+- Conditional models, and the Gaussian, Student t, Clayton, Gumbel and Frank copulas, each in its valid parameter and dimension domain: the page refuses a parameter outside the domain, and it names a valid parameter that it cannot sample. Each copula states Kendall's tau and its tail coefficients, and a variable of any scalar law takes its margin through `u = U[j]` (Sklar's theorem).
+- The process library: Brownian motion, geometric Brownian motion, the Ornstein–Uhlenbeck process, the Poisson and compound Poisson processes, finite-state Markov chains, the Galton–Watson branching process, the Hawkes process and the variance-gamma Lévy process. Each states its stationarity, stability, explosion, boundary and discretisation conditions at the parameters in force, with exact samplers where they exist, thinning for the point processes, and the Euler time discretisation as the method `euler`.
+- Each copula, each process and the conditional models have a behaviour experiment and three workflows of their own, in different domains, with at least one quantity with a reference value.
+- Sample paths, the ensemble bands of the whole run (from mergeable counts) and first passages; the copula scatter.
+- Multilevel Monte Carlo with coupled coarse and fine paths (`coarsen`), levels with independent seeds, the sample sizes of Giles's algorithm, and the bias estimate kept apart from the Monte Carlo interval. A continuous-time reference of a grid quantity is marked as such, so its difference from the run reads as a discretisation bias.
+- The ergodicity, mixing and time-versus-ensemble panel, with Sklar's theorem and the multilevel complexity theorem.
+- The measured limits of paths and copulas, and the done criteria of groups 1 to 4 for the whole folder, with their results the same.
+
 # The owner's specification
 
 ## Part 1. The workbench connects probability theory to decisions

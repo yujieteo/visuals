@@ -7,15 +7,16 @@
  * variance-reduction method and the fit of a real dataset. A run's results are not part of the state: the page
  * keeps them beside it, and the run record saves them.
  */
-/** @param {any} root the global object @param {(En: any, D: any, X: any, L: any, S: any, Cu: any, Co: any) => any} factory */
+/** @param {any} root the global object @param {(En: any, D: any, X: any, L: any, S: any, Cu: any, Co: any, Pr: any, Ml: any) => any} factory */
 (function (root, factory) {
   const api = factory(root.MCEngine ?? require("./engine.js"), root.MCDsl ?? require("./dsl.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCSpecial ?? require("./special.js"),
-    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"));
+    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"), root.MCProcesses ?? require("./processes.js"), root.MCMultilevel ?? require("./mlmc.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.Model = api;
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (
   /** @type {typeof import("./engine.js")} */ En, /** @type {typeof import("./dsl.js")} */ D, /** @type {typeof import("./expr.js")} */ X,
-  /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co) {
+  /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co,
+  /** @type {typeof import("./processes.js")} */ Pr, /** @type {typeof import("./mlmc.js")} */ Ml) {
   "use strict";
 
   const SLUG = "monte-carlo-workbench", SCHEMA_VERSION = 1, MAX_SIZE = 22, BINS = 400, CBINS = 100;
@@ -51,7 +52,8 @@
     plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile", "tail"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF; tail: the survival function on log–log axes)" },
     yscale: { type: "enum", values: ["linear", "log"], default: "linear", label: "Vertical axis" },
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
-    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances"], default: "lln", label: "Theory panel" },
+    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc"], default: "lln", label: "Theory panel" },
+    mlmc_eps: { type: "number", min: 1e-6, max: 1e6, default: 0.05, label: "Target root mean square error ε of multilevel Monte Carlo" },
     nav: { type: "enum", values: ["examples", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
@@ -123,6 +125,9 @@ focus N
     return rec.parameters.filter((/** @type {any} */ p) => overrides[p.name] !== undefined).map((/** @type {any} */ p) => `${p.name}=${overrides[p.name]}`).join("; ");
   }
 
+  /** The kinds of the group 5 laws: a copula or a path. */
+  const DEP_KIND = new Set(["copula", "process"]);
+
   /** Plain JSON data: every number that is NaN or ±Infinity becomes null. @param {any} v @returns {any} */
   const plain = (v) => (v === null || v === undefined ? null : JSON.parse(JSON.stringify(v, (_, x) => (typeof x === "number" && !Number.isFinite(x) ? null : x))));
 
@@ -144,7 +149,7 @@ focus N
     // A continuous focus with an exact law (a variable, or a maximum, minimum, sum or affine function of draws): the
     // window from its quantiles, and for a heavy tail 24 thresholds equally spaced on a log scale past the window, to
     // the 1 − 10^-8 quantile, for the survival and tail plots.
-    const exact = node?.type === "var" && node.constant ? [] : c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => En.focusLaw(c, a));
+    const exact = node?.type === "var" && (node.constant || DEP_KIND.has(node.law.kind)) ? [] : c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => En.focusLaw(c, a));
     if (exact.length && exact.every((/** @type {any} */ b) => b && b.continuous)) {
       for (const b of exact) {
         const heavyTail = b.order !== null && b.order !== Infinity, tail = heavyTail ? 0.005 : 1e-4;
@@ -155,7 +160,7 @@ focus N
       const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
       return { lo, width, bins: CBINS, thresholds: logThresholds(lo + CBINS * width, top, heavy), integer: false, heavy, continuous: true };
     }
-    if (node?.type === "var" && node.constant) {
+    if (node?.type === "var" && node.constant && !DEP_KIND.has(node.law.kind)) {
       for (const alt of c.alternatives) {
         const p = En.argsAt(node, alt.values).params, m = marginalLaw(node, p, idx);
         if (!m) continue;
@@ -182,7 +187,7 @@ focus N
         const xs = r.marginal.x.filter((/** @type {number} */ _, /** @type {number} */ i) => r.marginal.p[i] > 1e-12);
         if (xs.length) { lo = Math.min(lo, xs[0]); hi = Math.max(hi, xs[xs.length - 1]); top = Math.max(top, xs[xs.length - 1]); }
       }
-    } else if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && n.law.continuous)) {
+    } else if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && (n.law.continuous || DEP_KIND.has(n.law.kind) || n.u))) {
       // No reference law: a pilot sample of 2,048 replicates of each alternative gives the window.
       /** @type {number[]} */
       let xs = [];
@@ -239,7 +244,7 @@ focus N
 
   /** The law of a variable, or of component idx of a vector variable. @param {any} node @param {any} p @param {number} idx */
   function marginalLaw(node, p, idx) {
-    if (node.law.check(p).length) return null;
+    if (DEP_KIND.has(node.law.kind) || node.law.check(p).length) return null;
     if (node.law.marginal) {
       const m = node.law.marginal(p, idx || 1);
       return { law: L.BY_ID[m.law], params: m.params };
@@ -378,7 +383,7 @@ focus N
         const p = En.argsAt(n, c.alternatives[0].values).params;
         if (!n.law.check(p).length) {
           const s = n.law.support(p), hi = s.hi === Infinity ? "∞" : String(s.hi);
-          support = n.law.continuous ? n.law.supportText(p) : n.law.dim ? `x ∈ {0, …, ${p.n}}^${p.p.length}, sum ${p.n}` : s.lo === s.hi ? `{${s.lo}}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${hi}}`;
+          support = n.law.continuous || DEP_KIND.has(n.law.kind) ? n.law.supportText(p) : n.law.dim ? `x ∈ {0, …, ${p.n}}^${p.p.length}, sum ${p.n}` : s.lo === s.hi ? `{${s.lo}}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${hi}}`;
         }
       }
       return { name: n.name, law: n.law.name, unit: v?.unit ?? "", repeat: n.repeat, support, note: v?.note ?? "" };
@@ -394,10 +399,14 @@ focus N
       if (!n.constant || n.law.check(p).length) { out.push({ variable: n.name, law: n.law.id, name: n.law.name, catalogue: Co.catalogueOf(n.law), code: n.law.params.map((/** @type {any} */ x) => ({ name: x.name, text: x.text })), constant: false, methods: null }); continue; }
       /** @param {any} s */
       const show = (s) => ("unavailable" in s ? { label: "Not available", exactness: s.unavailable, acceptance: null, sampling: "unavailable" } : { label: s.label, exactness: s.exactness, acceptance: safe(s.acceptance), sampling: s.sampling ?? (/^exact/.test(s.exactness) ? "exact" : "approximate") });
+      // A variable with the argument u takes the quantile of its law at u under every method (Sklar's theorem).
+      const given = n.u ? { label: `The inverse transform of the given uniform u = ${n.uSrc}: the quantile of the law at u`, exactness: "exact", acceptance: null, sampling: "exact" } : null;
+      const ref = n.law.reference(p);
       out.push({ variable: n.name, law: n.law.id, name: n.law.name, catalogue: Co.catalogueOf(n.law), code: n.law.params.map((/** @type {any} */ x) => ({ name: x.name, text: x.text })), constant: true, alternate: n.law.alternate ? n.law.alternate(p) : null, methods: {
-        independent: show(n.law.reference(p)),
-        inverse: show(n.law.inverse(p, failure === "table_cut" ? 0.99 : undefined)),
-        rejection: show(n.law.rejection(p, failure === "envelope" ? 0.5 : 1)),
+        independent: given ?? show(ref),
+        inverse: given ?? show(n.law.inverse(p, failure === "table_cut" ? 0.99 : undefined)),
+        rejection: given ?? show(n.law.rejection(p, failure === "envelope" ? 0.5 : 1)),
+        euler: given ?? show(n.law.euler ? n.law.euler(p) : "unavailable" in ref ? ref : { ...ref, label: `${ref.label}. This law has no time, so the method uses this sampler` }),
       } });
     }
     return out;
@@ -579,7 +588,40 @@ focus N
     });
   }
 
-  /** The last 24 reference computations, by record and parameter settings, the most recent last. @type {Map<string, { status: any[], refs: any[], win: any }>} */
+  /**
+   * The group 5 facts of a model: each process variable with its conditions at each alternative's parameters and the
+   * window of its ensemble band (from a pilot of 64 replicates of each alternative), and each copula variable with its
+   * Kendall's tau and tail coefficients.
+   * @param {any} c
+   */
+  function dependenceOf(c) {
+    /** @type {any[]} */
+    const processes = [], copulas = [];
+    for (const n of c.nodes) {
+      if (n.type !== "var" || !n.constant || n.repeat !== 1) continue;
+      const ps = c.alternatives.map((/** @type {any} */ alt) => En.argsAt(n, alt.values).params);
+      if (ps.some((/** @type {any} */ p) => n.law.check(p).length)) continue;
+      if (n.law.kind === "process") {
+        let lo = Infinity, hi = -Infinity, len = 0;
+        try {
+          c.alternatives.forEach((/** @type {any} */ _, /** @type {number} */ a) => {
+            for (const env of En.sample(c, a, 0, 64, "independent")) {
+              const v = env[c.slots.get(n.name)];
+              len = v.length;
+              for (const x of v) if (Number.isFinite(x)) { lo = Math.min(lo, x); hi = Math.max(hi, x); }
+            }
+          });
+        } catch { len = 0; }
+        const pad = (hi - lo) * 0.15 || 1;
+        processes.push({ name: n.name, law: n.law.id, title: n.law.name, family: n.law.family, times: n.law.times(ps[0]), conditions: ps.map((/** @type {any} */ p) => n.law.conditions(p)),
+          band: len ? { name: n.name, ...Pr.bandSpec(len, lo - pad, hi + pad) } : null, level: plain(Pr.passageLevel(c, n, c.alternatives[0].values)),
+          mean: ps.map((/** @type {any} */ p) => n.law.times(p).map((/** @type {number} */ t, /** @type {number} */ k) => n.law.marginal(p, n.law.id === "markovchain" || n.law.id === "branching" ? k : t).mean)) });
+      } else if (n.law.kind === "copula") copulas.push({ name: n.name, law: n.law.id, title: n.law.name, d: ps[0].d, at: ps.map((/** @type {any} */ p) => ({ tau: n.law.tau(p), tails: n.law.tails(p) })) });
+    }
+    return { processes, copulas, given: c.nodes.filter((/** @type {any} */ n) => n.u).map((/** @type {any} */ n) => n.name) };
+  }
+
+  /** The last 24 reference computations, by record and parameter settings, the most recent last. @type {Map<string, { status: any[], refs: any[], win: any, dep: any }>} */
   const memo = new Map();
 
   /**
@@ -604,11 +646,11 @@ focus N
     if (known) memo.delete(key);
     else {
       const status = En.momentStatus(c), refs = En.reference(c, status);
-      known = { status, refs, win: windowOf(c, refs) };
+      known = { status, refs, win: windowOf(c, refs), dep: dependenceOf(c) };
       if (memo.size >= 24) memo.delete(/** @type {string} */ (memo.keys().next().value));
     }
     memo.set(key, known);
-    const { status, refs, win } = known;
+    const { status, refs, win, dep } = known;
     const a = Math.min(state.alt, c.alternatives.length) - 1;
     const q = Math.min(state.quantity, c.quantities.length) - 1;
     const failureNote = noteOf(state);
@@ -617,13 +659,15 @@ focus N
       ok: true, errors: [], ...base,
       alternatives: c.alternatives.map((/** @type {any} */ alt) => alt.label), alt: a + 1,
       quantities: c.quantities.map((/** @type {any} */ qu, /** @type {number} */ k) => ({ name: qu.name, kind: qu.kind, unit: qu.unit, note: record.quantities[k].note ?? "", status: status[k] })), quantity: q + 1,
-      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed, method: r.method, how: r.how ?? null })),
+      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed, method: r.method, how: r.how ?? null, continuous: r.continuous ?? null })),
+      dependence: plain({ ...dep, processes: dep.processes.map((/** @type {any} */ x) => ({ ...x, conditions: x.conditions[a] ?? x.conditions[0], band: x.band })), copulas: dep.copulas.map((/** @type {any} */ x) => ({ ...x, at: x.at[a] ?? x.at[0] })), mlmc: Ml.ready(record) }),
       focus: { name: c.focus, window: { lo: win.lo, width: win.width, bins: win.bins, thresholds: win.thresholds }, heavy: win.heavy, integer: win.integer, continuous: win.continuous, theory: focusTheory(c, refs[a], win, a, state.plot),
         law: focusLabel(c, a) },
       graph: graphOf(c, record), equations: equations(record), samplers: samplersOf(c, state.failure), failureNote,
       design: { streams: state.streams, stratify: c.stratify ? { name: c.stratify.name, K: c.stratify.K } : null,
         scalars: c.nodes.filter((/** @type {any} */ n) => n.type === "var" && n.repeat === 1 && !n.law.dim).map((/** @type {any} */ n) => n.name),
         control: c.control ? { name: c.control.name, expr: c.control.expr, means: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.mean) : null)), sds: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.sd) : null)), why: c.control.exact.map((/** @type {any} */ m) => m?.why ?? "") } : null },
+      fields: { initial: record.initial ?? "none", dynamics: record.dynamics ?? "none" },
       observation: record.observation ?? null,
       censoring: (() => { const n = c.nodes.find((/** @type {any} */ x) => x.censoring); return n ? { text: record.censoring, obs: n.name, event: n.name.replace(/_obs$/, "_event") } : null; })(),
       decision: c.decision, variables: c.nodes.filter((/** @type {any} */ n) => n.type === "var").map((/** @type {any} */ n) => n.name), variableTable: variablesOf(c, record),

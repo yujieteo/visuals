@@ -10,12 +10,14 @@ const DISCRETE = ["bernoulli", "binomial", "categorical", "multinomial", "unifor
 const CONTINUOUS = ["cuniform", "normal", "mvnormal", "exponential", "gamma", "erlang", "beta", "dirichlet", "chisq", "student", "fisher", "logistic", "laplace"];
 const TAILS = ["lognormal", "weibull", "invgauss", "gompertz", "loglogistic", "pareto1", "pareto2", "burr12", "frechet", "cauchy", "levy", "stable", "gev", "gpd", "gumbel", "revweibull"];
 const CONSTRUCTED = ["mixture", "compound", "empirical", "kde", "truncated"];
-const GROUP = [...DISCRETE, ...CONTINUOUS, ...TAILS, "censoring", ...CONSTRUCTED];
+const DEPENDENCE = ["conditional", "gaussiancopula", "tcopula", "claytoncopula", "gumbelcopula", "frankcopula"];
+const PROCESSES = ["brownian", "gbm", "ou", "poissonprocess", "compoundprocess", "markovchain", "branching", "hawkes", "variancegamma"];
+const GROUP = [...DISCRETE, ...CONTINUOUS, ...TAILS, "censoring", ...CONSTRUCTED, ...DEPENDENCE, ...PROCESSES];
 
 test("groups 1 to 3 hold their 10 discrete, 13 continuous and 16 positive, heavy-tailed and extreme-value laws, each with every required part and a sampler in the code", () => {
   assert.deepEqual(data.laws.map((/** @type {any} */ l) => l.id), GROUP);
   for (const l of data.laws) {
-    if (l.type === "observation" || l.type === "constructed") continue;
+    if (["observation", "constructed", "conditional", "copula", "process"].includes(l.type)) continue;
     const continuous = CONTINUOUS.includes(l.id) || TAILS.includes(l.id);
     assert.equal(l.type, continuous ? "continuous" : "discrete", `${l.id}: type`);
     for (const k of ["name", "convention", continuous ? "pdf" : "pmf", "support"]) assert.ok(l[k]?.length > 3, `${l.id}: ${k}`);
@@ -59,7 +61,9 @@ test("each law has one behaviour experiment and at least three workflows of its 
     assert.ok(wfs.length >= 3, `${id}: ${wfs.length} workflows`);
     assert.equal(new Set(wfs.map((/** @type {any} */ w) => w.domain)).size, wfs.length, `${id}: workflows in different domains`);
     // A constructed law counts by its outermost constructor: truncated_mixture_geometric is a truncated law.
-    for (const w of wfs) assert.ok(id === "censoring" ? recordOf(w.id).censoring !== "none" : recordOf(w.id).variables.some((/** @type {any} */ v) => v.law === id || Co.catalogueOf(Co.resolve(v.law)) === id), `${w.id} draws from its own law ${id}`);
+    // A conditional model draws a variable whose argument reads another variable.
+    const conditional = (/** @type {any} */ r) => r.variables.some((/** @type {any} */ v) => Object.values(v.args).some((e) => [...r.variables, ...r.definitions].some((/** @type {any} */ x) => new RegExp(`\\b${x.name}\\b`).test(String(e)))));
+    for (const w of wfs) assert.ok(id === "conditional" ? conditional(recordOf(w.id)) : id === "censoring" ? recordOf(w.id).censoring !== "none" : recordOf(w.id).variables.some((/** @type {any} */ v) => v.law === id || Co.catalogueOf(Co.resolve(v.law)) === id), `${w.id} draws from its own law ${id}`);
   }
   assert.deepEqual([...M.WORKFLOWS, ...M.EXPERIMENTS, ...M.INPUTS].sort(), data.models.map((/** @type {any} */ m) => m.id).sort(), "the state's model ids are the catalogue's");
 });
@@ -83,7 +87,7 @@ test("each workflow has its 7 parts, a data statement, a decision, and a model t
 });
 
 test("each method has its estimator, assumptions, settings, suitable example, failure example and comparison", () => {
-  assert.deepEqual(data.methods.map((/** @type {any} */ m) => m.id), ["independent", "inverse", "rejection", "stratified", "antithetic", "control", "crn"]);
+  assert.deepEqual(data.methods.map((/** @type {any} */ m) => m.id), ["independent", "inverse", "rejection", "stratified", "antithetic", "control", "crn", "euler", "mlmc"]);
   assert.deepEqual(data.methods.filter((/** @type {any} */ m) => m.family === "Variance reduction").map((/** @type {any} */ m) => m.id), ["stratified", "antithetic", "control", "crn"]);
   for (const m of data.methods) {
     for (const k of ["estimator", "estimatorText"]) assert.ok(m[k]?.length > 10, `${m.id}: ${k}`);
@@ -93,13 +97,14 @@ test("each method has its estimator, assumptions, settings, suitable example, fa
       for (const key of Object.keys(m[k].settings ?? {})) assert.notEqual(M.FIELDS[key], undefined, `${m.id}: ${k} sets the state field ${key}`);
     }
     assert.ok(data.methods.some((/** @type {any} */ x) => x.id === m.comparison.with && x.id !== m.id), `${m.id}: compared with another method`);
-    // Every method but common random numbers is a value of the method field; common random numbers is the streams field.
-    assert.ok(m.id === "crn" ? M.FIELDS.streams.values?.includes("common") : M.FIELDS.method.values?.includes(m.id), `${m.id}: the state can select it`);
+    // Every method but common random numbers and multilevel Monte Carlo is a value of the method field; common random
+    // numbers is the streams field, and multilevel Monte Carlo runs from its own panel with the target error field.
+    assert.ok(m.id === "crn" ? M.FIELDS.streams.values?.includes("common") : m.id === "mlmc" ? M.FIELDS.mlmc_eps !== undefined : M.FIELDS.method.values?.includes(m.id), `${m.id}: the state can select it`);
   }
 });
 
 test("each theory panel has a statement, assumptions, a proof sketch, a reference, a counterexample and a linked experiment", () => {
-  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances"]);
+  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc"]);
   assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), M.FIELDS.theory.values, "the state can open every panel");
   for (const t of data.theory) {
     for (const k of ["title", "statement", "proof", "reference", "counterexample"]) assert.ok(t[k]?.length > 20, `${t.id}: ${k}`);
@@ -130,15 +135,15 @@ test("each real dataset states its source, date and licence, and its counts or i
   assert.deepEqual([total("horse-kicks"), total("rutherford-geiger"), total("weldon")], [200, 2608, 26306]);
 });
 
-test("the groups list pieces 1 to 4 here and the 6 groups to come, in merge order", () => {
+test("the groups list pieces 1 to 5 here and the 5 groups to come, in merge order", () => {
   assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.piece), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", "here", "here", ...Array(6).fill("to come")]);
+  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", "here", "here", "here", ...Array(5).fill("to come")]);
 });
 
 test("every technical abbreviation of the reader text has a glossary entry", () => {
   const glossary = new Set(data.glossary.map((/** @type {any} */ g) => g.term));
   const text = JSON.stringify({ laws: data.laws, models: data.models.map((/** @type {any} */ m) => ({ ...m, dsl: "" })), methods: data.methods, theory: data.theory });
-  const found = new Set([...text.matchAll(/\b(PMF|PDF|CDF|PGF|MGF|CF|CLT|LLN|MLE|PERT|GEV|GPD|LOD|i\.i\.d\.)(?![\w])/g)].map((m) => m[1]));
+  const found = new Set([...text.matchAll(/\b(PMF|PDF|CDF|PGF|MGF|CF|CLT|LLN|MLE|PERT|GEV|GPD|LOD|GBM|OU|VG|SDE|MLMC|TV|ETAS|i\.i\.d\.)(?![\w])/g)].map((m) => m[1]));
   assert.ok(found.size >= 5, [...found].join(" "));
   for (const t of found) assert.ok(glossary.has(t), `the glossary defines ${t}`);
   assert.equal(glossary.size, data.glossary.length, "no term is defined twice");

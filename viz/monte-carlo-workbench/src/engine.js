@@ -8,21 +8,27 @@
  * enumeration of a discrete support, or adaptive quadrature over the quantile functions of continuous laws. Every
  * function is pure: the page, its workers and the tests run the same code.
  */
-/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any, T: any, Cu: any, Co: any) => any} factory */
+/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any, T: any, Cu: any, Co: any, Cop: any, Pr: any) => any} factory */
 (function (root, factory) {
   const api = factory(root.MCRng ?? require("./rng.js"), root.MCSpecial ?? require("./special.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCTails ?? require("./tails.js"),
-    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"));
+    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"), root.MCCopulas ?? require("./copulas.js"), root.MCProcesses ?? require("./processes.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MCEngine = api;
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (
   /** @type {typeof import("./rng.js")} */ R, /** @type {typeof import("./special.js")} */ S,
   /** @type {typeof import("./expr.js")} */ E, /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./tails.js")} */ T,
-  /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co) {
+  /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co,
+  /** @type {typeof import("./copulas.js")} */ Cop, /** @type {typeof import("./processes.js")} */ Pr) {
   "use strict";
+
+  /** The dependence and process laws of group 5: the copulas and the path laws. @type {Record<string, any>} */
+  const DEP = { ...Cop.BY_ID, ...Pr.BY_ID };
+  /** The kinds of the group 5 laws: a copula or a path. */
+  const DEP_KIND = new Set(["copula", "process"]);
 
   const FORMAT = "monte-carlo-workbench/model", VERSION = 1;
   const BLOCK = 1024, STREAM = "model", REUSE = 16;
-  const LIMITS = { variables: 16, parameters: 24, quantities: 8, alternatives: 4, repeat: 2000, drawsPerReplicate: 5000, bins: 400, states: 400000 };
+  const LIMITS = { variables: 16, parameters: 24, quantities: 8, alternatives: 4, repeat: 2000, drawsPerReplicate: 5000, pathDraws: 20000, bins: 400, states: 400000 };
   const NAME = /^[A-Za-z][A-Za-z0-9_]{0,23}$/;
   const RESERVED = new Set([...Object.keys(E.FUNCTIONS), ...Object.keys(E.CONSTANTS), "and", "or", "not", "P", "E"]);
   const Z95 = 1.959963984540054;
@@ -34,8 +40,8 @@
    */
   const CENSOR = /^(right|left)\s+([A-Za-z]\w{0,19})\s+by\s+(.+)$/;
   /** Each method of the run: the sampler of every law and the design of the estimator. */
-  const METHODS = /** @type {Record<string, { sampler: "reference" | "inverse" | "rejection", design: "plain" | "stratified" | "antithetic" | "control" }>} */ ({
-    independent: { sampler: "reference", design: "plain" }, inverse: { sampler: "inverse", design: "plain" }, rejection: { sampler: "rejection", design: "plain" },
+  const METHODS = /** @type {Record<string, { sampler: "reference" | "inverse" | "rejection" | "euler", design: "plain" | "stratified" | "antithetic" | "control" }>} */ ({
+    independent: { sampler: "reference", design: "plain" }, inverse: { sampler: "inverse", design: "plain" }, rejection: { sampler: "rejection", design: "plain" }, euler: { sampler: "euler", design: "plain" },
     stratified: { sampler: "inverse", design: "stratified" }, antithetic: { sampler: "inverse", design: "antithetic" }, control: { sampler: "reference", design: "control" },
   });
   /** Stratification uses K = 2^s strata, 1 ≤ s ≤ 6, so each block of 1,024 replicates holds 1024/K ≥ 16 in each stratum. */
@@ -98,7 +104,9 @@
     if (input.version !== undefined && input.version !== VERSION) errors.push(`The record uses model version ${String(input.version).slice(0, 10)}. This page reads version ${VERSION}.`);
     const rec = complete(input);
     const censor = CENSOR.exec(String(rec.censoring ?? "none").trim());
-    for (const k of TEXT_FIELDS) if (k !== "observation" && !(k === "censoring" && censor) && String(rec[/** @type {"initial"} */ (k)]).trim().toLowerCase() !== "none") errors.push(`The ${k} field holds "${String(rec[/** @type {"initial"} */ (k)]).slice(0, 40)}": this group of the workbench has no ${k} mechanism, so the field must be "none".`);
+    // A model with a process variable states its initial conditions and dynamics in words; the law arguments hold them.
+    const process = rec.variables.some((v) => DEP[v.law]?.kind === "process");
+    for (const k of TEXT_FIELDS) if (k !== "observation" && !(k === "censoring" && censor) && !((k === "initial" || k === "dynamics") && process) && String(rec[/** @type {"initial"} */ (k)]).trim().toLowerCase() !== "none") errors.push(`The ${k} field holds "${String(rec[/** @type {"initial"} */ (k)]).slice(0, 40)}": this group of the workbench has no ${k} mechanism, so the field must be "none".`);
     if (rec.parameters.length > LIMITS.parameters) errors.push(`A model has at most ${LIMITS.parameters} parameters.`);
     if (rec.variables.length > LIMITS.variables) errors.push(`A model has at most ${LIMITS.variables} random variables.`);
     if (rec.quantities.length < 1 || rec.quantities.length > LIMITS.quantities) errors.push(`A model has 1 to ${LIMITS.quantities} quantities to estimate.`);
@@ -160,9 +168,9 @@
         const v = varsByName.get(item.name);
         if (!v) { errors.push(`The order lists "${item.name}", which is not a variable.`); continue; }
         const visible = new Map(slots);
-        const law = Co.resolve(v.law, custom.laws);
+        const law = Co.resolve(v.law, custom.laws) ?? DEP[v.law] ?? null;
         if (!declare(v.name, "var", `Variable ${v.name}`)) continue;
-        if (!law) { errors.push(`Variable ${v.name}: "${String(v.law).slice(0, 40)}" is not a law of this page: a law of the catalogue (${L.LAWS.map((l) => l.id).join(", ")}, empirical, kde), mixture_, truncated_ or compound_ before one of them, or a law line of the model.`); continue; }
+        if (!law) { errors.push(`Variable ${v.name}: "${String(v.law).slice(0, 40)}" is not a law of this page: a law of the catalogue (${L.LAWS.map((l) => l.id).join(", ")}, empirical, kde), mixture_, truncated_ or compound_ before one of them, a copula or a process (${Object.keys(DEP).join(", ")}), or a law line of the model.`); continue; }
         const repeat = v.repeat ?? 1;
         if (!Number.isInteger(repeat) || repeat < 1 || repeat > LIMITS.repeat) { errors.push(`Variable ${v.name}: repeat ${repeat} is not an integer in [1, ${LIMITS.repeat}].`); continue; }
         /** @type {Record<string, any>} */
@@ -173,8 +181,10 @@
         /** The arguments that read a random variable or a definition. @type {string[]} */
         const random = [];
         for (const ps of law.params) {
-          if (!(ps.name in (v.args ?? {}))) { errors.push(`Variable ${v.name}: the ${law.name} law needs the argument ${ps.name} (${ps.text}).`); continue; }
-          const b = expr(v.args[ps.name], `Variable ${v.name}, argument ${ps.name}`, visible);
+          // An argument with a default (a group 5 law) may be left out.
+          const src = v.args?.[ps.name] ?? ps.default;
+          if (src === undefined) { errors.push(`Variable ${v.name}: the ${law.name} law needs the argument ${ps.name} (${ps.text}).`); continue; }
+          const b = expr(src, `Variable ${v.name}, argument ${ps.name}`, visible);
           if (!b) continue;
           args[ps.name] = b.fn;
           for (const r of b.reads) {
@@ -182,11 +192,18 @@
             if (kinds.get(r) !== "param") { constant = false; if (!random.includes(ps.name)) random.push(ps.name); }
           }
         }
-        for (const extra of Object.keys(v.args ?? {})) if (!law.params.some((/** @type {any} */ ps) => ps.name === extra)) errors.push(`Variable ${v.name}: the ${law.name} law has no argument ${extra}.`);
-        draws += repeat * (law.dim ? 8 : 1);
+        // u = U[j] draws a scalar law by the inverse transform of a given uniform, such as a copula component (Sklar).
+        let u = null;
+        if (v.args && "u" in v.args) {
+          if (DEP_KIND.has(law.kind) || law.dim) errors.push(`Variable ${v.name}: the ${law.name} law takes no argument u. Only a scalar law takes the uniform u of its inverse transform.`);
+          else if ((u = expr(v.args.u, `Variable ${v.name}, argument u`, visible))) for (const r of u.reads) reads.add(r);
+        }
+        for (const extra of Object.keys(v.args ?? {})) if (extra !== "u" && !law.params.some((/** @type {any} */ ps) => ps.name === extra)) errors.push(`Variable ${v.name}: the ${law.name} law has no argument ${extra}.`);
+        draws += repeat * (law.cost ? 1 : law.dim ? 8 : 1);
         // A custom law tabulates its input once for each parameter value, so its arguments read parameters only.
         if (law.constantArgs && !constant) errors.push(`Variable ${v.name}: the arguments of the custom law ${law.name} read only parameters, because the page tabulates the law once for each parameter value.`);
-        nodes.push({ type: "var", name: v.name, slot: slots.get(v.name), law, args, repeat, constant, reads, random, index: nodes.length, unit: v.unit ?? "" });
+        nodes.push({ type: "var", name: v.name, slot: slots.get(v.name), law, args, repeat, constant, reads, random, index: nodes.length, unit: v.unit ?? "",
+          ...(u ? { u: u.fn, uTree: u.tree, ureads: u.reads, uSrc: String(v.args?.u) } : {}) });
       } else if (item.type === "def") {
         const d = defsByName.get(item.name);
         if (!d) { errors.push(`The order lists "${item.name}", which is not a definition.`); continue; }
@@ -242,9 +259,10 @@
       }
       alternatives.push({ label: String(alt.label ?? `Alternative ${alternatives.length + 1}`), values: env });
     }
-    let compoundDraws = 0;
+    let compoundDraws = 0, pathDraws = 0;
     for (const n of nodes) {
       if (n.type !== "var" || !n.constant) continue;
+      if (n.law.cost) pathDraws += n.repeat * Math.max(0, ...alternatives.map((alt) => { const p = argsAt(n, alt.values); return p.error || n.law.check(p.params).length ? 0 : n.law.cost(p.params); }));
       let most = 0, family = n.law;
       while (family.base && family.catalogue !== "compound") family = family.base;
       for (const alt of alternatives) {
@@ -256,6 +274,7 @@
       }
       compoundDraws += n.repeat * most;
     }
+    if (pathDraws > LIMITS.pathDraws) errors.push(`One replicate draws about ${pathDraws} values for its paths and copulas. The limit is ${LIMITS.pathDraws}: lower steps or coarsen.`);
     if (compoundDraws && draws + compoundDraws > LIMITS.drawsPerReplicate) errors.push(`One replicate draws about ${draws + compoundDraws} values with the terms of its compound Poisson laws. The limit is ${LIMITS.drawsPerReplicate}.`);
     const method = settings.method ?? "independent", compare = settings.compare ?? "none", failure = settings.failure ?? "none";
     const streams = settings.streams ?? "common", strata = settings.strata ?? 4, stratify = settings.stratify ?? "";
@@ -430,7 +449,7 @@
   /**
    * A sampler factory for one sampler kind: it caches samplers by parameter values, so a variable with constant
    * arguments sets up its sampler once.
-   * @param {"reference" | "inverse" | "rejection"} kind @param {string} failure
+   * @param {"reference" | "inverse" | "rejection" | "euler"} kind @param {string} failure
    */
   function samplers(kind, failure) {
     /** @type {Map<string, any>} */
@@ -444,8 +463,9 @@
         if (errs.length) throw new E.ExprError(errs[0]);
         if (kind === "inverse") s = law.inverse(params, failure === "table_cut" ? 0.99 : undefined);
         else if (kind === "rejection") s = law.rejection(params, failure === "envelope" ? 0.5 : 1);
+        else if (kind === "euler") s = law.euler ? law.euler(params) : law.reference(params);
         else s = law.reference(params);
-        if ("unavailable" in s) throw new E.ExprError(`${law.name} law, ${kind === "reference" ? "independent sampling" : kind === "inverse" ? "inverse transform" : "rejection sampling"}: ${s.unavailable}`);
+        if ("unavailable" in s) throw new E.ExprError(`${law.name} law, ${kind === "reference" ? "independent sampling" : kind === "inverse" ? "inverse transform" : kind === "euler" ? "Euler time discretisation" : "rejection sampling"}: ${s.unavailable}`);
         if (cache.size > 512) cache.clear();
         cache.set(key, s);
       }
@@ -504,6 +524,7 @@
       const p = argsAt(node, env);
       if (p.error) throw new E.ExprError(`Variable ${node.name}: ${p.error}`);
       const s = get(node.law, p.params);
+      if (node.u) { env[node.slot] = fromUniform(node, node.u(env), p.params); continue; }
       if (node.repeat === 1) {
         rng.reset(iStream, node.index * 65536, flip);
         if (strat && strat.index === node.index) {
@@ -520,6 +541,41 @@
         env[node.slot] = xs;
       }
     }
+  }
+
+  /**
+   * The value of a variable with the argument u: the quantile of its law at u, for each copy. u is one number, or a
+   * vector with one entry for each copy, each in (0, 1).
+   * @param {any} node @param {Value} u @param {Record<string, any>} params
+   */
+  function fromUniform(node, u, params) {
+    const one = (/** @type {number} */ x) => {
+      if (!(x > 0 && x < 1)) throw new E.ExprError(`Variable ${node.name}: u = ${x} is outside (0, 1).`);
+      return L.quantile(node.law, x, params);
+    };
+    if (node.repeat === 1) {
+      if (typeof u !== "number") throw new E.ExprError(`Variable ${node.name}: u is a vector, so give one entry, such as U[1].`);
+      return one(u);
+    }
+    const us = typeof u === "number" ? null : u;
+    if (!us || us.length !== node.repeat) throw new E.ExprError(`Variable ${node.name}: u needs ${node.repeat} entries, one for each copy.`);
+    return us.map(one);
+  }
+
+  /**
+   * Replicates from..from + count − 1 of alternative a with a method's samplers, as copies of the environment: the
+   * sample paths and the scatter of the page show the same draws as the run (the plain streams of the method).
+   * @param {any} c @param {number} a @param {number} from @param {number} count @param {string} [method]
+   */
+  function sample(c, a, from, count, method) {
+    const cfg = METHODS[method ?? c.settings.method] ?? METHODS.independent, get = samplers(cfg.sampler, c.settings.failure);
+    const rng = a === 0 || c.settings.streams === "common" ? R.stream(c.settings.seed, STREAM, 0, 0) : R.stream(c.settings.seed, `${STREAM}/${a}`, 0, 0);
+    const stats = { proposals: 0, accepts: 0, violations: 0 }, env = c.alternatives[a].values.slice(), out = [];
+    for (let i = from; i < from + count; i++) {
+      simulate(c, env, rng, c.settings.failure === "stream_reuse" ? i % REUSE : i, false, get, stats, null);
+      out.push(env.slice());
+    }
+    return out;
   }
 
   /**
@@ -566,6 +622,8 @@
     // The focus variable's frequencies, for each alternative: bins of the window, values below and above it, and
     // the counts above each threshold, so the survival plot reaches past the window.
     const hists = c.alternatives.map(() => ({ bins: win ? new Array(win.bins).fill(0) : [], under: 0, over: 0, exceed: win ? new Array(win.thresholds.length).fill(0) : [], values: 0, max: -Infinity }));
+    // The ensemble band of a path variable (group 5): pointwise counts in a window, mergeable across blocks.
+    const band = opts.band && c.slots.has(opts.band.name) ? opts.band : null, bands = band ? c.alternatives.map(() => Pr.bandNew(band)) : null;
     const [focusName, focusIdx] = splitFocus(c.focus);
     const vals = new Float64Array(A * Q), dens = new Float64Array(A * Q), ctls = new Float64Array(A);
     // The first member of an antithetic pair, kept until its partner: values and denominators or controls.
@@ -584,6 +642,7 @@
           const env = envs[a];
           simulate(c, env, rngs[a], iStream, second, get, stats, strat);
           if (ctl) ctls[a] = scalar(ctl.fn(env), ctl.name);
+          if (bands && band) Pr.bandAdd(bands[a], band, env[c.slots.get(band.name)]);
           for (let q = 0; q < Q; q++) {
             const qu = c.quantities[q], k = a * Q + q;
             let x, y = 0;
@@ -648,7 +707,7 @@
       return iv.lo === null || iv.hi === null ? null : +(ref >= iv.lo - tol && ref <= iv.hi + tol);
     }));
     for (const h of hists) if (!Number.isFinite(h.max)) h.max = /** @type {any} */ (null);
-    return { error: "", acc, diffs, pairs, hists, rejection: stats, cover };
+    return { error: "", acc, diffs, pairs, hists, rejection: stats, cover, bands };
   }
 
   /** The control mean the estimator of quantity q in alternative a uses, or null when it uses none. @param {any} c @param {string} design @param {number} a @param {number} q */
@@ -701,7 +760,7 @@
     if (blk.error) return { ...accum, error: blk.error };
     const methods = blk.methods.map((/** @type {any} */ m, /** @type {number} */ k) => {
       const prev = accum.methods[k];
-      if (!prev) return { method: m.method, acc: m.acc.map((/** @type {any[]} */ row) => row.map(clone)), diffs: m.diffs.map((/** @type {any[]} */ row) => row.map(clone)), pairs: m.pairs, hists: m.hists.map((/** @type {any} */ h) => ({ ...h, bins: h.bins.slice(), exceed: h.exceed.slice() })), rejection: { ...m.rejection }, ms: m.ms, cover: m.cover.map((/** @type {any[]} */ row) => row.map((x) => (x === null ? null : { hit: x, of: 1 }))) };
+      if (!prev) return { method: m.method, acc: m.acc.map((/** @type {any[]} */ row) => row.map(clone)), diffs: m.diffs.map((/** @type {any[]} */ row) => row.map(clone)), pairs: m.pairs, hists: m.hists.map((/** @type {any} */ h) => ({ ...h, bins: h.bins.slice(), exceed: h.exceed.slice() })), bands: m.bands ?? null, rejection: { ...m.rejection }, ms: m.ms, cover: m.cover.map((/** @type {any[]} */ row) => row.map((x) => (x === null ? null : { hit: x, of: 1 }))) };
       return {
         method: m.method,
         acc: prev.acc.map((/** @type {any[]} */ row, /** @type {number} */ a) => row.map((s, q) => combine(s, m.acc[a][q]))),
@@ -712,6 +771,7 @@
           return { bins: h.bins.map((/** @type {number} */ x, /** @type {number} */ i) => x + g.bins[i]), under: h.under + g.under, over: h.over + g.over,
             exceed: h.exceed.map((/** @type {number} */ x, /** @type {number} */ i) => x + g.exceed[i]), values: h.values + g.values, max: g.max === null ? h.max : h.max === null ? g.max : Math.max(h.max, g.max) };
         }),
+        bands: prev.bands && m.bands ? prev.bands.map((/** @type {any} */ x, /** @type {number} */ a) => Pr.bandMerge(x, m.bands[a])) : null,
         rejection: { proposals: prev.rejection.proposals + m.rejection.proposals, accepts: prev.rejection.accepts + m.rejection.accepts, violations: prev.rejection.violations + m.rejection.violations },
         ms: prev.ms + m.ms,
         cover: prev.cover.map((/** @type {any[]} */ row, /** @type {number} */ a) => row.map((x, q) => { const y = m.cover[a]?.[q]; return x === null || y === null || y === undefined ? null : { hit: x.hit + y, of: x.of + 1 }; })),
@@ -832,7 +892,8 @@
     const tails = new Map();
     for (const n of c.nodes) {
       if (n.type === "def") continue;
-      const parents = [...n.reads].filter((r) => c.kinds.get(r) !== "param");
+      // The uniform u of an inverse transform does not change the law: the variable keeps the law of its parameters.
+      const parents = [...n.reads].filter((r) => c.kinds.get(r) !== "param" && !n.ureads?.has(r));
       let cls = /** @type {"finite" | "bounded" | "light" | "heavy" | "unknown"} */ ("unknown"), order = Infinity;
       const finiteLaw = ["bernoulli", "categorical", "uniform", "hypergeometric", "multinomial", "binomial"].includes(n.law.id);
       const bounded = (/** @type {{ lo: number, hi: number }} */ s) => s.hi < Infinity && s.lo > -Infinity;
@@ -1072,8 +1133,9 @@
       const env = alt.values.slice();
       for (let i = 0; i < n; i++) {
         simulate(c, env, rng, i, false, get, stats, null);
-        const v = env[c.slots.get(name)], x = typeof v === "number" ? v : v[(idx || 1) - 1];
-        if (Number.isFinite(x)) out.push(x);
+        // A vector focus with no index, such as a path, gives every entry, as the run's histogram counts them.
+        const v = env[c.slots.get(name)], xs = typeof v === "number" ? [v] : idx ? [v[idx - 1]] : v;
+        for (const x of xs) if (Number.isFinite(x)) out.push(x);
       }
     }
     return out;
@@ -1090,6 +1152,7 @@
    * @param {any} c a compiled model @param {any[]} status the moment status of each quantity
    */
   function reference(c, status) {
+    if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && (DEP_KIND.has(n.law.kind) || n.u))) return dependenceReference(c, status);
     if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && n.law.continuous)) {
       return c.alternatives.map((/** @type {any} */ alt, /** @type {number} */ a) => {
         // Linearity gives the mean of an affine function of independent variables with known means.
@@ -1111,6 +1174,25 @@
     return enumerate(c, status).map((/** @type {any} */ r, /** @type {number} */ a) => {
       const closed = closedForm(c, a, status).values;
       return { ...r, method: "enumeration", values: r.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (v !== null ? v : closed[k])), closed: closed.map((v) => v !== null) };
+    });
+  }
+
+  /**
+   * Reference values of a model with a copula, a path or a variable drawn from a uniform u (group 5): the box
+   * probabilities of a copula and the path quantities that MCCopulas.closed and MCProcesses.closed recognise. Every
+   * other quantity has none: the page does not integrate over a path or a copula.
+   * @param {any} c @param {any[]} status
+   */
+  function dependenceReference(c, status) {
+    return c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => {
+      const cop = Cop.closed(c, a, argsAt), pro = Pr.closed(c, a, argsAt);
+      const found = c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
+        const r = cop[k] ?? pro[k];
+        return r && !(q.kind === "expectation" && status[k].mean !== "finite") ? r : null;
+      });
+      const values = found.map((/** @type {any} */ r) => (r ? r.value : null));
+      return { values, reason: values.some((/** @type {number | null} */ v) => v === null) ? "The model has a copula, a path or a variable drawn from a copula uniform. The page has reference values only for the box probabilities and the path quantities it recognises, and it does not integrate over a path." : "",
+        neglected: 0, marginal: null, method: "closed", closed: found.map((/** @type {any} */ r) => !!r && r.exact), continuous: found.map((/** @type {any} */ r) => !!r?.continuous), how: found.map((/** @type {any} */ r) => (r ? r.how : "")) };
     });
   }
 
@@ -1552,7 +1634,7 @@
           return { name: q.name, est: iv.est, lo: iv.lo, hi: iv.hi, se: iv.se, crn, how: `paired difference ${c.alternatives[pair[1]].label} − ${c.alternatives[pair[0]].label}, ${c.settings.streams === "common" ? "common random numbers" : "separate streams"}` };
         }),
       }));
-      return { method: m.method, design, alts, diffs, decision: decide(c, alts, diffs), rejection: m.rejection, ms: m.ms, hists: m.hists,
+      return { method: m.method, design, alts, diffs, decision: decide(c, alts, diffs), rejection: m.rejection, ms: m.ms, hists: m.hists, bands: m.bands ?? null,
         strata: design === "stratified" ? { variable: c.stratify.name, K: c.stratify.K } : null, control: design === "control" ? { name: c.control.name, means: c.control.used } : null };
     });
   }
@@ -1609,5 +1691,5 @@
     return { rows, best: best.a, separated, text: "" };
   }
 
-  return { FORMAT, VERSION, BLOCK, STREAM, REUSE, LIMITS, TEXT_FIELDS, METHODS, MAX_STRATA, QUAD, complete, prepare, block, merge, empty, summary, interval, momentStatus, reference, splitFocus, argsAt, sampleFocus, focusLaw };
+  return { FORMAT, VERSION, BLOCK, STREAM, REUSE, LIMITS, TEXT_FIELDS, METHODS, MAX_STRATA, QUAD, DEP, complete, prepare, block, merge, empty, summary, interval, momentStatus, reference, splitFocus, argsAt, sampleFocus, focusLaw, sample };
 });

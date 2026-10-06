@@ -31,6 +31,7 @@
     prod: [1, 1], len: [1, 1], count: [2, 2], distinct: [1, 1], maxcount: [1, 1], any: [1, 1], all: [1, 1], normalize: [1, 1],
     median: [1, 1], quantile: [2, 2], hill: [2, 2], km: [3, 3],
     sin: [1, 1], cos: [1, 1], tan: [1, 1], atan: [1, 1], lgamma: [1, 1],
+    first: [1, 1], last: [1, 1], cumsum: [1, 1],
   });
   const BINARY = /** @type {Record<string, [number, boolean]>} */ ({
     "||": [1, false], "&&": [2, false], "<": [4, false], "<=": [4, false], ">": [4, false], ">=": [4, false], "==": [4, false],
@@ -225,6 +226,10 @@
       }
       case "any": return +vec(v[0]).some((x) => x !== 0);
       case "all": return +vec(v[0]).every((x) => x !== 0);
+      // Paths (group 5): the index of the first entry that is not 0 (0 when none is), the last entry, and the running sums.
+      case "first": { const i = vec(v[0]).findIndex((x) => x !== 0); return i + 1; }
+      case "last": { const a = vec(v[0]); return a[a.length - 1]; }
+      case "cumsum": { let t = 0; return vec(v[0]).map((x) => (t += x)); }
       case "normalize": {
         const a = vec(v[0]), s = a.reduce((t, x) => t + x, 0);
         if (!(s > 0) || a.some((x) => !(x >= 0))) throw new ExprError("normalize() needs weights that are not negative, with a positive sum.");
