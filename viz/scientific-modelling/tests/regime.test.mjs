@@ -23,17 +23,18 @@ const STANDARD = ["lumped-body", "transient-slab", "transient-cylinder", "transi
 
 test("every declaration has the six parts of section 10, the four methods each with a reason, and limitations", () => {
   const list = D.declarations(DATA);
-  assert.equal(list.length, 7);
+  assert.equal(list.length, 11);
   assert.deepEqual(D.PARTS.map((p) => p.id), ["model", "domain", "operations", "methods", "acceptance", "solver"]);
   for (const decl of list) {
     assert.deepEqual(D.problemsOf(decl), [], decl.id);
-    assert.ok(DATA.roadmap.families.some((f) => f.id === decl.family && f.piece === 3), `${decl.id}: its family is a piece-3 family of the roadmap`);
+    assert.ok(DATA.roadmap.families.some((f) => f.id === decl.family && f.piece === decl.piece && f.piece <= DATA.roadmap.current), `${decl.id}: its family is a built family of the roadmap, of its own piece`);
     assert.ok(Model.EXAMPLES.some((e) => e.id === decl.acceptance.example), `${decl.id}: its standard example exists`);
   }
   const fams = new Set(list.map((d) => d.family));
-  assert.deepEqual([...fams].sort(), ["fins-and-extended-surfaces", "lumped-thermal-models", "multilayer-conduction", "transient-conduction"]);
-  // Section 10: all four methods across the catalogue; this piece declares two, each with its reason.
-  for (const d of list) assert.ok(d.methods["dominant-balance"].applies && d.methods.asymptotic.applies && !d.methods.stability.applies && !d.methods.bifurcation.applies);
+  assert.deepEqual([...fams].sort(), ["buoyancy-convection", "fins-and-extended-surfaces", "lumped-thermal-models", "multilayer-conduction", "radiation", "transient-conduction"]);
+  // Section 10: all four methods across the catalogue. Piece 3 declares two, each with its reason; piece 4 adds stability and bifurcation.
+  for (const d of list.filter((x) => x.piece === 3)) assert.ok(d.methods["dominant-balance"].applies && d.methods.asymptotic.applies && !d.methods.stability.applies && !d.methods.bifurcation.applies);
+  for (const m of ["dominant-balance", "asymptotic", "stability", "bifurcation"]) assert.ok(list.some((d) => d.methods[m].applies), `some declaration applies ${m}`);
 });
 
 test("the declaration test: each standard example matches its declared model exactly and passes every acceptance check", () => {

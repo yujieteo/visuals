@@ -3,7 +3,8 @@
  * level, all in the URL. The model record itself (src/record.js) is the researcher's, kept in this browser and in
  * the model JSON; it also holds the scales the researcher chose and the declared model it follows. derive(state,
  * data, record) interprets the record's current version, runs the Finder, the Nondimensionalizer and the regime
- * analyses of its declared model (src/regime.js) on the confirmed version, marks the results that a later edit
+ * analyses of its declared model (src/regime.js) and the stability and bifurcation analyses (src/stability.js) on the
+ * confirmed version, marks the results that a later edit
  * invalidates, and returns plain data that the view, the Markdown report and the beamdswitch deck all read, so the
  * three outputs show the same values and statuses. The map's own view (axes, scales, fixed values, tolerance, point
  * and boundary) and the catalogue's selected declaration are in the URL too.
@@ -11,16 +12,18 @@
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
     module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"), require("./sym.js"),
-      require("./regime.js"));
-  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N, root.SM.S, root.SM.RM);
-})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N, S, RM) {
+      require("./regime.js"), require("./stability.js"));
+  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N, root.SM.S, root.SM.RM, root.SM.ST);
+})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N, S, RM, ST) {
   "use strict";
 
   const SLUG = "scientific-modelling";
   const SCHEMA_VERSION = 1;
   const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "transient-cylinder", "transient-sphere", "volumetric-source", "multilayer-wall",
+    "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation", "custom-ignition", "custom-lorenz",
     "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported"];
   const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Transient cylinder", "Transient sphere", "Volumetric source", "Multilayer wall",
+    "Rayleigh–Bénard convection", "Natural convection in an enclosure", "Lumped body with radiation", "Surface radiation", "Convection and radiation", "Custom ODE: ignition", "Custom ODE: Lorenz system",
     "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors",
     "Failure: unsupported analysis"];
   const MAX_STEP = 60;
@@ -39,7 +42,7 @@
     y_scale: { type: "enum", default: "auto", values: ["auto", "log", "linear"], label: "Regime map: scale of the y-axis" },
     fixed: { type: "string", default: "", label: "Regime map: fixed parameter values, such as Bi=0.5, Fo=0.25 (empty for the record's values)" },
     tolerance: { type: "enum", default: "1e-2", values: ["1e-1", "1e-2", "1e-3"], label: "Regime map: tolerance of the approximation error" },
-    layers: { type: "string", default: "approximation,balance,limits", label: "Regime map: the layers shown (approximation, balance, limits)" },
+    layers: { type: "string", default: "approximation,balance,stability,bifurcation,limits", label: "Regime map: the layers shown (approximation, balance, stability, bifurcation, limits)" },
     shade: { type: "string", default: "", label: "Regime map: the layer whose measure shades the map (empty for the first approximation)" },
     point: { type: "string", default: "", label: "Regime map: the inspected point as x,y (empty for the record's point)" },
     pick: { type: "string", default: "", label: "Regime map: the inspected boundary, as layer:index" },
@@ -181,6 +184,9 @@
       add({ id: "r-rm-unresolved", kind: "regime", title: `Regime map: ${regime.message}${regime.problems?.length ? ` ${regime.problems.slice(0, 3).join(" ")}` : ""}`, status: "unresolved",
         inputs: ["purpose", ...interpBase.equations.map((e) => e.id), ...interpBase.conditions.map((c) => c.id), ...(base.scales ?? []).map((x) => x.id)], next: regime.next, steps: ["s-rm-declaration"], evidence: ["spec-10"] });
     }
+    // Stability and bifurcation (spec section 8, hand calculation 9): the declared model's analysis, or a custom ODE system.
+    const stability = interpBase ? ST.derive(state, data, { interp: interpBase, base, regime }) : null;
+    for (const r of ST.results(stability)) add(r);
     // Calculations the record asks for that this piece cannot run, or that a failed check blocks.
     for (const c of interp.calcs) {
       if (c.ready || (!c.available && !c.intended)) continue;
@@ -205,7 +211,7 @@
     return {
       title: rec.title, origin: rec.origin, version: rec.version, confirmed, confirmedVersion: rec.confirmed ? rec.confirmed.version : null,
       edited: rec.version > 1 || rec.origin !== state.example, tool: state.tool, toolName: TOOLS[state.tool], basis: state.basis, basisName: BASES[state.basis],
-      interp: plainInterp(interp), finder, nondim, regime, catalogue: RM.catalogue(data, state.family || rec.purpose?.declaration || "", state.tool === "catalogue" ? (id) => standard(data, D, id) : null), results, counts, changes, steps, shownStep, zeroNote, basisGroups,
+      interp: plainInterp(interp), finder, nondim, regime, stability, catalogue: RM.catalogue(data, state.family || rec.purpose?.declaration || "", state.tool === "catalogue" ? (id) => standard(data, D, id) : null), results, counts, changes, steps, shownStep, zeroNote, basisGroups,
       reference: ref ? { versions: data.references.versions, rank: ref.rank, groups: ref.groups, det: ref.det_DR } : null,
       history: rec.history, previousVersion: rec.previous ? rec.previous.version : null,
       previousDiff: rec.previous ? R.diff(rec.previous.inputs, current) : null,

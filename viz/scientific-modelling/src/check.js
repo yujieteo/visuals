@@ -21,7 +21,7 @@
     { id: "bifurcation", name: "Bifurcation analysis", piece: 4, equations: true },
   ];
   const EQ_CALCS = CALCS.filter((c) => c.equations).map((c) => c.id);
-  const CURRENT_PIECE = 3;
+  const CURRENT_PIECE = 4;
 
   /** TeX commands a variable's own TeX may use: letters, accents and fonts. Anything else (a link, a style, a
    * package load) is refused, because an imported record must not add behaviour to the page. */
@@ -323,13 +323,14 @@
     else if (!observable.pi) addIssue({ code: "observable-missing", subject: [observable.id], message: `The quantity of interest ${observable.symbol} is not in the Pi set.`, next: `Include ${observable.symbol} in the Pi set.`, blocks: ["pi-groups"] });
     if (piVars.length < 2) addIssue({ code: "pi-set-small", subject: [], message: `The Pi set has ${piVars.length} variable${piVars.length === 1 ? "" : "s"}.`, next: "Include at least 2 physical variables in the Pi set.", blocks: ["pi-groups"] });
     const calc = CALCS.find((c) => c.id === purpose.calculation) ?? CALCS[0];
-    if (calc.piece > CURRENT_PIECE || ((calc.id === "stability" || calc.id === "bifurcation") && model.type === "PDE")) {
-      const customPde = (calc.id === "stability" || calc.id === "bifurcation") && model.type === "PDE";
+    // A declared model brings its own solver: only a custom PDE is outside the supported set for these two analyses.
+    const customPde = (calc.id === "stability" || calc.id === "bifurcation") && model.type === "PDE" && !purpose.declaration;
+    if (calc.piece > CURRENT_PIECE || customPde) {
       if (customPde) {
-        addIssue({ code: "unsupported-analysis", subject: [calc.id], message: `${calc.name} of a custom PDE is outside the supported set, also after the later pieces. Piece 4 adds it for declared model families and for custom finite ODE systems.`,
-          next: "Write the model as a finite ODE system, such as a lumped body. Or use a declared model family, such as buoyancy convection, after piece 4. The Finder result stays valid.", blocks: [calc.id] });
+        addIssue({ code: "unsupported-analysis", subject: [calc.id], message: `${calc.name} of a custom PDE is outside the supported set, also after the later pieces. The page supports it for declared models and for custom finite ODE systems.`,
+          next: "Write the model as a finite ODE system, such as a lumped body. Or use a declared model, such as boussinesq-box for buoyancy convection. The Finder result stays valid.", blocks: [calc.id] });
       } else {
-        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `Piece ${calc.piece} of the build plan adds ${calc.name.toLowerCase()}. This preview runs the Finder, the Nondimensionalizer, and the regime analyses of the declared conduction models.`,
+        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `Piece ${calc.piece} of the build plan adds ${calc.name.toLowerCase()}. This preview runs the Finder, the Nondimensionalizer, the regime analyses and the stability and bifurcation analyses of the declared models.`,
           next: "Use the Finder, the Nondimensionalizer or the Regime Map Builder now. The model keeps the intended calculation for the later piece.", blocks: [calc.id] });
       }
     }

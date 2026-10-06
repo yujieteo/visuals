@@ -1,16 +1,16 @@
 /* Scientific Modelling: the report. report(state, derived, data) turns the derived data of one model version into
  * the plain-data report that the site's beamdswitch template (Beamdswitch.deck) writes as a narrated deck and the
  * kit writes as the Markdown record. It reads the same derived values and statuses as the page, so the three
- * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 8), with
+ * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 9), with
  * every row operation, every substitution and every order of each asymptotic expansion: an exported derivation is
  * never cut short. The regime map is large numerical data, so the report gives its aggregates and the get_regime_map
  * tool gives every point. Narration is plain spoken prose in ASD-STE100, with no symbols; equations stay in the
  * frame bodies.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./record.js"), require("./model.js"));
-  else root.Report = factory(root.SM.R, root.Model);
-})(typeof self !== "undefined" ? self : this, function (R, Model) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./record.js"), require("./model.js"), require("./stabreport.js"));
+  else root.Report = factory(root.SM.R, root.Model, root.StabReport);
+})(typeof self !== "undefined" ? self : this, function (R, Model, StabReport) {
   "use strict";
 
   const TITLE = "Scientific Modelling and Dimensional Analysis";
@@ -276,6 +276,10 @@
       });
     }
 
+    // Hand calculation 9: stability and bifurcation (src/stabreport.js).
+    const stab = StabReport.frames(d);
+    method.push(...stab.method);
+
     /* ---------- results ---------- */
     const results = [];
     if (rgOk) {
@@ -380,6 +384,7 @@
       const values = d.results.find((r) => r.id === "r-values");
       if (values) results.push({ title: "Group values from the entered values", body: [resultLine(values), ...d.results.filter((r) => r.id === "r-values-float").map(resultLine)].join("\n"), narration: "The entered values give a value for each group whose variables all have values. The arithmetic is exact." });
     }
+    results.push(...stab.results);
     const unresolved = d.results.filter((r) => r.status === "unresolved");
     results.push({
       title: unresolved.length ? `${count(unresolved.length, "unresolved result", "unresolved results")}` : "No unresolved result",
@@ -440,7 +445,7 @@
 
     return {
       meta: { title: TITLE, subtitle: `${d.title}: model version ${d.version}${d.confirmed ? "" : " (not confirmed)"}`, voice: "bf_emma" },
-      narration: `This report comes from the Dimensionless Number Finder, the Model Nondimensionalizer and the Regime Map Builder, for model version ${d.version}. The algebra is exact, and each numerical result states its tolerance.`,
+      narration: `This report comes from the Dimensionless Number Finder, the Model Nondimensionalizer, the Regime Map Builder and the stability and bifurcation analysis, for model version ${d.version}. The algebra is exact, and each numerical result states its tolerance.`,
       setup, method, results, checks,
     };
   }

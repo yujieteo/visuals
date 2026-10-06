@@ -3,7 +3,8 @@
 // Besides the shared checks, these drive the main path a researcher takes: confirm the interpretation, step through
 // the row reduction with the keyboard, see the MathJax output in the Fira font, open the Nondimensionalizer, choose
 // another scale as a new version of the model, draw and inspect the regime map of a declared model, browse the
-// model catalogue, and compare the page's results with the Markdown record and the deck, all with no request.
+// model catalogue, read the stability and bifurcation analysis of a declared model and of a custom ODE system, and
+// compare the page's results with the Markdown record and the deck, all with no request.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 
@@ -15,8 +16,10 @@ const choose = (page, id) => page.locator("#example").selectOption(id);
 const nondim = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.nondim);
 /** @param {import("playwright").Page} page */
 const regime = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.regime);
+/** @param {import("playwright").Page} page */
+const stability = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.stability);
 /** The view fields of the regime map and the catalogue, at their defaults. */
-const MAP_DEFAULTS = { map_x: "", map_y: "", x_scale: "auto", y_scale: "auto", fixed: "", tolerance: "1e-2", layers: "approximation,balance,limits", shade: "", point: "", pick: "", family: "" };
+const MAP_DEFAULTS = { map_x: "", map_y: "", x_scale: "auto", y_scale: "auto", fixed: "", tolerance: "1e-2", layers: "approximation,balance,stability,bifurcation,limits", shade: "", point: "", pick: "", family: "" };
 /** @param {import("playwright").Page} page */
 async function confirm(page) {
   await page.locator("#confirm").click();
@@ -65,6 +68,21 @@ await fullSuite("scientific-modelling", {
       assert.equal(await cat.page.locator("#catalogue .declaration h4").count(), 6, "the six parts of section 10");
     } finally {
       await cat.close();
+    }
+    // A custom ODE system from the URL: the regime tab says why it has no map and draws the stability analysis.
+    const ode = await ctx.open("#example=custom-lorenz&tool=regime");
+    try {
+      await ode.page.locator("#regime-gate button[data-confirm]").click();
+      await ode.page.waitForSelector("#stability-panel #st-ode-branches svg");
+      assert.match(await ode.page.locator("#regime-gate").innerText(), /custom ODE system/);
+      const panel = await ode.page.locator("#stability-panel").innerText();
+      assert.match(panel, /Branch point: supercritical pitchfork/);
+      assert.match(panel, /Hopf point: subcritical/);
+      const st = await stability(ode.page);
+      assert.ok(Math.abs(st.analysis.branches.flatMap((/** @type {any} */ b) => b.special).find((/** @type {any} */ x) => x.kind === "hopf").mu - 470 / 19) < 1e-8, "the Hopf point at r = 470/19");
+      await ode.page.waitForFunction(() => document.querySelectorAll("#stability-panel mjx-container").length > 0, null, { timeout: 20_000 });
+    } finally {
+      await ode.close();
     }
     const stale = await ctx.open("#example=no-such-model");
     try {
@@ -194,6 +212,14 @@ await fullSuite("scientific-modelling", {
       assert.ok(doc.regimeMap.layers.find((/** @type {any} */ l) => l.id === "one-mode").curves.length >= 1);
       assert.ok(doc.regimeMap.unresolved.points > 0, "the unresolved corner of the sphere map is in the file");
     });
+    // The model JSON keeps the stability and bifurcation analysis.
+    await using(() => ctx.open("#example=custom-ignition&tool=regime"), async (s) => {
+      await s.page.locator("#regime-gate button[data-confirm]").click();
+      await s.page.waitForSelector("#stability-panel #st-ode-two svg");
+      const doc = JSON.parse((await saved(s.page, () => s.page.locator("#save-model").click())).text);
+      assert.equal(doc.stability.kind, "custom");
+      assert.equal(doc.stability.analysis.hysteresis.length, 1, "the hysteresis interval is in the file");
+    });
   },
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await choose(page, "straight-fin"); await confirm(page); }, "the complete Pi basis", "#save-beamdswitch, #copy-beamdswitch"),
@@ -236,6 +262,23 @@ await fullSuite("scientific-modelling", {
         for (const title of ["Hand calculation 8: dominant balance", "Hand calculation 8: asymptotic analysis", "Regime map of Transient conduction in a slab", "Acceptance checks of the declared model and anchor test 1"]) assert.ok(text.includes(title), title);
         const frame = text.split(/^#{2,3} Results with their statuses and evidence$/m)[1].split(/^#{1,3} /m)[0];
         assert.deepEqual([...frame.matchAll(/^- \*\*(.+?)\*\*: /gm)].map((m) => m[1]), chips, "the regime results agree with the page");
+      }
+    });
+    // The Rayleigh–Bénard anchor: hand calculation 9 in both exports, with the page's statuses and the published values.
+    await using(() => ctx.open("#example=rayleigh-benard&tool=regime"), async (r) => {
+      await r.page.locator("#regime-gate button[data-confirm]").click();
+      await r.page.waitForSelector("#stability-panel #st-branch svg", { timeout: 60_000 });
+      const chips = await r.page.evaluate(() => [...document.querySelectorAll("#trace .result-list > li > .chip")].map((c) => c.textContent));
+      const st = await stability(r.page);
+      assert.ok(st.analysis.branch.compare.every((/** @type {any} */ c) => c.rel < 1e-4), "Nu within 1e-4 of Table 1S");
+      const deck3 = await saved(r.page, () => r.page.locator("#save-beamdswitch").click());
+      assertBeamdswitchDeck(deck3.text);
+      const record3 = await saved(r.page, () => r.page.locator("#save-markdown").click());
+      for (const text of [record3.text, deck3.text]) {
+        for (const title of ["Hand calculation 9: base state and perturbation equations", "Hand calculation 9: eigenvalue problem and onset", "Hand calculation 9: steady roll branch, amplitude equation and classification"]) assert.ok(text.includes(title), title);
+        for (const c of st.analysis.branch.compare) assert.ok(text.includes(c.ref.toFixed(6)), `Table 1S: ${c.ref}`);
+        const frame = text.split(/^#{2,3} Results with their statuses and evidence$/m)[1].split(/^#{1,3} /m)[0];
+        assert.deepEqual([...frame.matchAll(/^- \*\*(.+?)\*\*: /gm)].map((m) => m[1]), chips, "the stability results agree with the page");
       }
     });
   }),
