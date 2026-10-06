@@ -9,8 +9,8 @@
  * boundary with its dimensional reconstruction.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js")]);
-  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD]);
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js")]);
+  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR]);
 })(typeof self !== "undefined" ? self : this, function (Q, E, S, SF, D, IMPLS) {
   "use strict";
 
@@ -167,6 +167,8 @@
     const declList = D.declarations(data).map((d) => ({ id: d.id, title: d.title }));
     if (!declId) return { ready: false, reason: "no-declaration", declarations: declList, message: "The record names no declared model, so the map has no declared equations, solutions or criteria.", next: "Choose a declared model in the purpose of the record (Edit the model), or load a standard example such as the transient slab." };
     const decl = D.find(data, declId);
+    const separate = (data.catalogue?.separate ?? []).find((x) => x.id === declId);
+    if (!decl && separate) return { ready: false, reason: "separate-declaration", declarations: declList, message: `${separate.title} needs ${separate.needs}, which requires a separate declaration (spec section 10). The catalogue does not include it.`, next: separate.next };
     if (!decl) return { ready: false, reason: "unknown-declaration", declarations: declList, message: `The declared model "${String(declId).slice(0, 60)}" is not in the catalogue.`, next: "Choose a declared model of the catalogue." };
     if (calc && !calc.ready) return { ready: false, reason: "blocked", declaration: summaryOf(decl), blockedBy: calc.blockedBy, message: "A failed check blocks the regime map.", next: interp.issues.find((i) => calc.blockedBy.includes(i.id))?.next ?? "" };
     const m = D.match(decl, interp, nd);
@@ -399,7 +401,7 @@
     const temp = decl.model.dimensionless.variables.find((v) => decl.model.roles.find((r) => r.id === v.of)?.quantity === "absolute-temperature");
     const offset = temp ? exact(temp.offset) : null, scale = temp ? exact(temp.scale) : null;
     return {
-      references: data.references, point0,
+      references: data.references, structures: data.structures ?? null, point0,
       role: (id) => (m.roles[id] ? values.get(m.roles[id].symbol) ?? null : null),
       exact: (text) => { const v = exact(text); return v ? { exact: v.exact ? Q.str(v.exact) : null, float: v.float } : null; },
       reconstruct: (paramId, value) => { const r = D.reconstruct(decl, m, interp, nd, paramId, value); return r ? { id: `recon-${paramId}`, tex: r.tex, label: `${r.meaning || r.symbol} that gives ${paramId} = ${num(value)}`, value: num(r.value), unit: r.unit } : null; },

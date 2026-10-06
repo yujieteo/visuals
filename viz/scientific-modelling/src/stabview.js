@@ -138,6 +138,7 @@
     if (an?.family === "buoyancy-convection") box(host, head, exact, an, list);
     else if (an?.model === "lumped-radiation") lumped(host, head, exact, an, list);
     else if (an?.model === "surface-radiation") surface(host, head, an, list);
+    else if (an?.generic) generic(host, head, exact, an, list);
     else host.innerHTML = `${head}${exact}${list}`;
   }
 
@@ -264,6 +265,21 @@
         <tr><td>${ti("q_1^{*}")}</td><td class="num">${esc(an.q1)}</td><td class="num">${fmt(an.q1float)}</td></tr><tr><td>${ti("q_2^{*}")}</td><td class="num">${esc(an.q2)}</td><td class="num">${fmt(-an.q1float)}</td></tr></tbody></table></div>
       <p>${an.q1dim !== null ? `With σ, the floor loses ${ti(`q_1=${fmt(an.q1dim)}\\ \\mathrm{W/m^2}`)}. ` : ""}The temperature of the side walls, which reradiate, is ${fmt(an.sideWallTemperature)} K.</p>
       <h4>Results</h4>${list}`;
+  }
+
+  /** A structures family of piece 5: its figures with legends and tables, the method lines and the results. @param {HTMLElement} host @param {string} head @param {string} exact @param {any} an @param {string} list */
+  function generic(host, head, exact, an, list) {
+    const { esc } = H;
+    const STROKES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--faint)"];
+    host.innerHTML = `${head}${exact}<h4>Method</h4><ul class="plain-list">${an.method.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${an.figures.map((/** @type {any} */ f) => `<figure class="st-figure"><div id="${esc(f.id)}" class="st-plot"></div>${legend(f.series.map((/** @type {any} */ x, /** @type {number} */ i) => ({ cls: `k${i % 5}${x.dash ? " dashed" : ""}`, text: x.label })))}<figcaption class="note">${esc(f.title)}. ${esc(f.caption)}</figcaption></figure>`).join("")}
+      ${an.tables.map((/** @type {any} */ t) => `<div class="scroll"><table class="data"><caption>${esc(t.title)}</caption><thead><tr>${t.columns.map((/** @type {string} */ c) => `<th scope="col">${esc(c)}</th>`).join("")}</tr></thead><tbody>${t.rows.map((/** @type {string[]} */ r) => `<tr>${r.map((c) => `<td class="num">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("")}
+      <h4>Results</h4>${list}`;
+    for (const f of an.figures) {
+      plot(byId(f.id), { aria: `${f.title}: ${f.caption}`, x: f.x, y: f.y,
+        series: f.series.map((/** @type {any} */ x, /** @type {number} */ i) => ({ pts: x.pts, stroke: STROKES[i % 5], dash: x.dash ?? null })),
+        points: (f.points ?? []).map((/** @type {any} */ p) => ({ ...p, fill: p.shape === "square" ? "none" : "var(--fg)" })) });
+    }
   }
 
   /** A custom ODE system. @param {HTMLElement} host @param {any} st @param {string} list */

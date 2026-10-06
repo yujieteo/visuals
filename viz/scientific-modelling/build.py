@@ -2,7 +2,7 @@
 """Build the Scientific Modelling page: one offline index.html and its raw.json.
 
 Reads data/ (examples, quantities, familiar groups, sources, the build roadmap, the declared model catalogue, the
-references of SymPy and mpmath, and the reference data of the stability analyses), src/ (the engine modules, the views, body.html and style.css), beamdswitch.js (the
+references of SymPy and mpmath, the reference data of the stability analyses and of the structures families), src/ (the engine modules, the views, body.html and style.css), beamdswitch.js (the
 site's template, unchanged) and the shared kit of scripts/ (the shell, the state and export runtime, the style tokens
 and the vendored MathJax 4.1.3 with its Fira font), and writes:
 
@@ -11,8 +11,8 @@ and the vendored MathJax 4.1.3 with its Fira font), and writes:
 
 The engine modules are classic scripts that the tests load with require(), in this order: rational, linalg,
 units, expr, sym, record, check, finder, nondim, special, heat, asymptotic, declare, conduction, numerics,
-convection, radiation, ode, regime, stability, model, stabreport, report; then regimeview.js, stabview.js and view.js, which run
-only in the browser.
+convection, radiation, structures-num, structures, ode, regime, stability, model, stabreport, report; then
+regimeview.js, stabview.js and view.js, which run only in the browser.
 
 Usage:
     python3 build.py            # write raw.json and index.html
@@ -30,9 +30,9 @@ sys.path.insert(0, str(HERE.parents[1] / "scripts"))
 import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
-DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references", "stability"]
+DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references", "stability", "structures"]
 MODULES = ["rational", "linalg", "units", "expr", "sym", "record", "check", "finder", "nondim", "special", "heat", "asymptotic", "declare", "conduction",
-           "numerics", "convection", "radiation", "ode", "regime", "stability", "model", "stabreport", "report", "regimeview", "stabview", "view"]
+           "numerics", "convection", "radiation", "structures-num", "structures", "ode", "regime", "stability", "model", "stabreport", "report", "regimeview", "stabview", "view"]
 SUBJECT = "Engineering modelling"
 
 
