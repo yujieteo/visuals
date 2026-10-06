@@ -110,11 +110,12 @@
 
   /** A structures family of piece 5: its method lines and every table it draws. */
   function genericFrames(an) {
-    return [{ title: `Hand calculation 9: ${an.concept.split(":")[0]}`,
+    return [{ title: an.heading ?? `Hand calculation 9: ${an.concept.split(":")[0]}`,
       body: [`Concept: ${cell(an.concept)}.`, "", ...an.method.flatMap((x) => [cell(x), ""]),
+        ...(an.displays ?? []).flatMap((x) => [`${cell(x.title)}:`, "", ...x.tex.map((t) => `$$${t}$$`), ""]),
         ...an.tables.flatMap((t) => [`${cell(t.title)}:`, "", `| ${t.columns.map(cell).join(" | ")} |`, `| ${t.columns.map(() => "---").join(" | ")} |`, ...t.rows.map((r) => `| ${r.map(cell).join(" | ")} |`), ""]),
         ...an.figures.map((f) => `Figure: ${cell(f.title)}. ${cell(f.caption)}`)].join("\n"),
-      narration: an.model === "elastica" ? "The page follows the buckled branch of the column by continuation. The exact series and the symmetry classify the branch point as a supercritical pitchfork. The second variation of the energy gives the stability of each state." : an.model === "euler-column" ? "The smallest eigenvalue of the buckling problem is pi squared. The element solution converges to it. The linear model gives no deflection after buckling." : "The frame states the stability concept, the numerical procedure and every value that the figures draw." }];
+      narration: an.heading ? "The frame gives the declared solution, its derivation step by step, and every value that the figures draw. Each check has its status and its tolerance." : an.model === "elastica" ? "The page follows the buckled branch of the column by continuation. The exact series and the symmetry classify the branch point as a supercritical pitchfork. The second variation of the energy gives the stability of each state." : an.model === "euler-column" ? "The smallest eigenvalue of the buckling problem is pi squared. The element solution converges to it. The linear model gives no deflection after buckling." : "The frame states the stability concept, the numerical procedure and every value that the figures draw." }];
   }
 
   /** The Method frames and the Results frame of hand calculation 9, or empty lists. */
@@ -127,7 +128,7 @@
     }
     const an = st.analysis;
     const method = st.kind === "custom" ? customFrames(an) : [...exactFrame(st), ...(an?.generic ? genericFrames(an) : an?.family === "buoyancy-convection" ? boxFrames(an) : an?.model === "lumped-radiation" ? lumpedFrames(an) : an?.model === "surface-radiation" ? surfaceFrames(an) : [])];
-    const results = [{ title: `Stability and bifurcation: ${res.length} results`, body: res.map(line).join("\n"),
+    const results = [{ title: `${an?.heading ? "Declared solution" : "Stability and bifurcation"}: ${res.length} results`, body: res.map(line).join("\n"),
       narration: `The stability and bifurcation analysis gives ${res.length <= 20 ? NUMBERS[res.length] : "more than twenty"} results. Each one has its status and its tolerance. The unresolved results name what the search did not cover.` }];
     return { method, results };
   }

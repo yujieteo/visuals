@@ -133,7 +133,7 @@
     const list = `<ul class="result-list">${results.map((/** @type {any} */ r) => `<li class="${r.valid ? "" : "stale"}">${chip(r.status)} <span class="title">${esc(r.title)}</span>${r.tolerance ? ` <span class="note">Tolerance: ${esc(r.tolerance)}.</span>` : ""}${r.next ? `<span class="next">Next: ${esc(r.next)}</span>` : ""}</li>`).join("")}</ul>`;
     if (st.kind === "custom") { custom(host, st, list); return; }
     const an = st.analysis;
-    const head = `<h3>Hand calculation 9: stability and bifurcation</h3><p class="note">${esc(st.declaration.title)}. ${an ? `Concept: ${esc(an.concept)}.` : ""} Stability: ${esc(st.methods.stability.reason)} Bifurcation: ${esc(st.methods.bifurcation.reason)}</p>`;
+    const head = `<h3>${esc(an?.heading ?? "Hand calculation 9: stability and bifurcation")}</h3><p class="note">${esc(st.declaration.title)}. ${an ? `Concept: ${esc(an.concept)}.` : ""} Stability: ${esc(st.methods.stability.reason)} Bifurcation: ${esc(st.methods.bifurcation.reason)}</p>`;
     const exact = exactBlock(st.exact);
     if (an?.family === "buoyancy-convection") box(host, head, exact, an, list);
     else if (an?.model === "lumped-radiation") lumped(host, head, exact, an, list);
@@ -267,11 +267,12 @@
       <h4>Results</h4>${list}`;
   }
 
-  /** A structures family of piece 5: its figures with legends and tables, the method lines and the results. @param {HTMLElement} host @param {string} head @param {string} exact @param {any} an @param {string} list */
+  /** A structures family of piece 5 or a flow family of piece 6: its figures with legends and tables, the method lines, the derivation and the results. @param {HTMLElement} host @param {string} head @param {string} exact @param {any} an @param {string} list */
   function generic(host, head, exact, an, list) {
-    const { esc } = H;
+    const { esc, td } = H;
     const STROKES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--faint)"];
     host.innerHTML = `${head}${exact}<h4>Method</h4><ul class="plain-list">${an.method.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${an.displays?.length ? `<details class="step-section" data-section><summary>The derivation step by step</summary>${an.displays.map((/** @type {any} */ x) => `<h5>${esc(x.title)}</h5>${x.tex.map((/** @type {string} */ t) => td(t)).join("")}`).join("")}</details>` : ""}
       ${an.figures.map((/** @type {any} */ f) => `<figure class="st-figure"><div id="${esc(f.id)}" class="st-plot"></div>${legend(f.series.map((/** @type {any} */ x, /** @type {number} */ i) => ({ cls: `k${i % 5}${x.dash ? " dashed" : ""}`, text: x.label })))}<figcaption class="note">${esc(f.title)}. ${esc(f.caption)}</figcaption></figure>`).join("")}
       ${an.tables.map((/** @type {any} */ t) => `<div class="scroll"><table class="data"><caption>${esc(t.title)}</caption><thead><tr>${t.columns.map((/** @type {string} */ c) => `<th scope="col">${esc(c)}</th>`).join("")}</tr></thead><tbody>${t.rows.map((/** @type {string[]} */ r) => `<tr>${r.map((c) => `<td class="num">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("")}
       <h4>Results</h4>${list}`;
