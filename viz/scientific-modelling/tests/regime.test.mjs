@@ -23,16 +23,17 @@ const STANDARD = ["lumped-body", "transient-slab", "transient-cylinder", "transi
 
 test("every declaration has the six parts of section 10, the four methods each with a reason, and limitations", () => {
   const list = D.declarations(DATA);
-  assert.equal(list.length, 26);
+  assert.equal(list.length, 34);
   assert.deepEqual(D.PARTS.map((p) => p.id), ["model", "domain", "operations", "methods", "acceptance", "solver"]);
   for (const decl of list) {
     assert.deepEqual(D.problemsOf(decl), [], decl.id);
-    assert.ok(DATA.roadmap.families.some((f) => f.id === decl.family && f.piece === decl.piece && f.piece <= DATA.roadmap.current), `${decl.id}: its family is a built family of the roadmap, of its own piece`);
+    // A heat-transfer example of piece 7 may extend a family of an earlier piece, such as the tube in internal viscous flow.
+    assert.ok(DATA.roadmap.families.some((f) => f.id === decl.family && f.piece <= decl.piece && f.piece <= DATA.roadmap.current), `${decl.id}: its family is a built family of the roadmap, of its own piece or an earlier one`);
     assert.ok(Model.EXAMPLES.some((e) => e.id === decl.acceptance.example), `${decl.id}: its standard example exists`);
   }
   const fams = new Set(list.map((d) => d.family));
-  assert.deepEqual([...fams].sort(), ["beams-and-columns", "boundary-layers", "buoyancy-convection", "compressible-nozzle-flow", "external-aerodynamic-flow", "fins-and-extended-surfaces", "free-surface-flow", "internal-viscous-flow",
-    "lumped-thermal-models", "multilayer-conduction", "nonlinear-buckling", "plates-and-shells", "radiation", "thermoelasticity", "transient-conduction", "vibration"]);
+  assert.deepEqual([...fams].sort(), ["advection-diffusion", "beams-and-columns", "boundary-layers", "buoyancy-convection", "compressible-nozzle-flow", "conjugate-heat-transfer", "external-aerodynamic-flow", "fins-and-extended-surfaces", "free-surface-flow", "internal-viscous-flow",
+    "lumped-thermal-models", "multilayer-conduction", "nonlinear-buckling", "plates-and-shells", "radiation", "thermocapillary-heat-transport", "thermoelasticity", "transient-conduction", "vibration", "viscous-heat-generation"]);
   // Section 10: all four methods across the catalogue. Piece 3 declares two, each with its reason; piece 4 adds stability and bifurcation.
   for (const d of list.filter((x) => x.piece === 3)) assert.ok(d.methods["dominant-balance"].applies && d.methods.asymptotic.applies && !d.methods.stability.applies && !d.methods.bifurcation.applies);
   for (const m of ["dominant-balance", "asymptotic", "stability", "bifurcation"]) assert.ok(list.some((d) => d.methods[m].applies), `some declaration applies ${m}`);

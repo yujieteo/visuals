@@ -30,9 +30,9 @@ sys.path.insert(0, str(HERE.parents[1] / "scripts"))
 import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
-DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references", "stability", "structures", "flows"]
+DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references", "stability", "structures", "flows", "convective", "heatrefs"]
 MODULES = ["rational", "linalg", "units", "expr", "sym", "record", "check", "finder", "nondim", "special", "heat", "asymptotic", "declare", "conduction",
-           "numerics", "convection", "radiation", "structures-num", "structures", "flows", "ode", "regime", "stability", "model", "stabreport", "report", "regimeview", "stabview", "view"]
+           "numerics", "convection", "radiation", "structures-num", "structures", "flows", "htpoly", "htnum", "empirical", "convective", "ode", "regime", "stability", "model", "stabreport", "report", "regimeview", "stabview", "view"]
 SUBJECT = "Engineering modelling"
 
 
