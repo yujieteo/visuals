@@ -6024,6 +6024,1572 @@
           "v-L"
         ],
         "evidence": []
+      },
+      {
+        "id": "pipe-flow",
+        "label": "Pipe flow",
+        "group": "standard",
+        "title": "Laminar flow in a circular pipe with a uniform wall heat flux",
+        "purpose": {
+          "question": "Which pressure gradient drives a given mean velocity through a pipe, and which heat-transfer coefficient does a uniform wall heat flux give?",
+          "observable": "v-h",
+          "calculation": "regime-map",
+          "declaration": "pipe-poiseuille"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Axial velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_w",
+            "meaning": "Local temperature minus the wall temperature, T − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-r",
+            "symbol": "r",
+            "meaning": "Distance from the axis",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-R",
+            "symbol": "R",
+            "meaning": "Pipe radius",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.005",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-um",
+            "symbol": "u_m",
+            "meaning": "Mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.1",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of water",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "0.001",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of water",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "1000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of water",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.6",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of water",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "4180",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-qw",
+            "symbol": "q_w",
+            "meaning": "Wall heat flux into the water",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "value": "1000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-G",
+            "symbol": "G",
+            "meaning": "Pressure gradient that drives the flow, −dp/dx",
+            "quantity": "pressure-gradient",
+            "unit": "Pa/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-beta",
+            "symbol": "beta",
+            "tex": "\\beta",
+            "meaning": "Rise of the bulk temperature along the pipe, dT_m/dx",
+            "quantity": "temperature-gradient",
+            "unit": "K/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-h",
+            "symbol": "h",
+            "meaning": "Heat-transfer coefficient, q_w/(T_w − T_m)",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "mu*(d(u,r,r) + d(u,r)/r) = -G",
+            "domain": "0 < r < R"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "k*(d(DT,r,r) + d(DT,r)/r) = rho*c_p*beta*u",
+            "domain": "0 < r < R"
+          }
+        ],
+        "geometry": {
+          "domain": "A long straight pipe of radius R, far from its inlet",
+          "coordinates": "r from the axis (r = 0) to the wall (r = R). X along the axis",
+          "lengths": [
+            "v-R"
+          ],
+          "interfaces": "The wall at r = R"
+        },
+        "conditions": [
+          {
+            "id": "c-u-axis",
+            "kind": "boundary",
+            "text": "d(u,r) = 0",
+            "at": "r = 0"
+          },
+          {
+            "id": "c-u-wall",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "r = R"
+          },
+          {
+            "id": "c-T-axis",
+            "kind": "boundary",
+            "text": "d(DT,r) = 0",
+            "at": "r = 0"
+          },
+          {
+            "id": "c-T-flux",
+            "kind": "boundary",
+            "text": "k*d(DT,r) = q_w",
+            "at": "r = R"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-developed",
+            "kind": "physical",
+            "text": "The flow is steady, laminar and fully developed: the velocity does not change along the pipe.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-props",
+            "kind": "physical",
+            "text": "The fluid is Newtonian with constant properties.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-thermal",
+            "kind": "physical",
+            "text": "Under a uniform wall heat flux the temperature profile has its fully developed form, so dT/dx = dT_m/dx at every radius. Viscous heating is small.",
+            "source": "lienhard-flow"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-r",
+            "for": "v-r",
+            "scale": "R",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The radius is the length scale, so X = r/R runs from 0 at the axis to 1 at the wall."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "u_m",
+            "offset": "0",
+            "symbol": "U",
+            "reason": "The mean velocity is the velocity scale, so the mean of U over the section is 1."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "q_w*R/k",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The wall heat flux sets the temperature difference across the radius: k ΔT/R = q_w."
+          }
+        ],
+        "preferred": [
+          "v-R",
+          "v-um",
+          "v-rho",
+          "v-k"
+        ],
+        "evidence": [
+          {
+            "id": "ev-pipe",
+            "source": "lienhard-flow",
+            "claim": "Fully developed laminar pipe flow with a uniform wall heat flux has Nu_D = 48/11."
+          }
+        ]
+      },
+      {
+        "id": "channel-flow",
+        "label": "Channel flow",
+        "group": "standard",
+        "title": "Laminar flow between parallel plates with a uniform heat flux at both walls",
+        "purpose": {
+          "question": "Which pressure gradient drives a given mean velocity between two parallel plates, and which heat-transfer coefficient does a uniform heat flux at both walls give?",
+          "observable": "v-G",
+          "calculation": "regime-map",
+          "declaration": "channel-poiseuille"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Axial velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_w",
+            "meaning": "Local temperature minus the wall temperature, T − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the centre plane",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-b",
+            "symbol": "b",
+            "meaning": "Half of the gap between the plates",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.002",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-um",
+            "symbol": "u_m",
+            "meaning": "Mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.05",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of air",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "1.8e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of air",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "1.2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of air",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.026",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of air",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "1005",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-qw",
+            "symbol": "q_w",
+            "meaning": "Heat flux into the air at each wall",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "value": "200",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-G",
+            "symbol": "G",
+            "meaning": "Pressure gradient that drives the flow, −dp/dx",
+            "quantity": "pressure-gradient",
+            "unit": "Pa/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-beta",
+            "symbol": "beta",
+            "tex": "\\beta",
+            "meaning": "Rise of the bulk temperature along the channel, dT_m/dx",
+            "quantity": "temperature-gradient",
+            "unit": "K/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-h",
+            "symbol": "h",
+            "meaning": "Heat-transfer coefficient, q_w/(T_w − T_m)",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "mu*d(u,y,y) = -G",
+            "domain": "0 < y < b"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "k*d(DT,y,y) = rho*c_p*beta*u",
+            "domain": "0 < y < b"
+          }
+        ],
+        "geometry": {
+          "domain": "Two wide parallel plates at y = −b and y = b, far from the inlet. By symmetry the model uses the half 0 ≤ y ≤ b",
+          "coordinates": "y from the centre plane (y = 0) to the wall (y = b). X along the flow",
+          "lengths": [
+            "v-b"
+          ],
+          "interfaces": "The walls at y = ±b"
+        },
+        "conditions": [
+          {
+            "id": "c-u-centre",
+            "kind": "boundary",
+            "text": "d(u,y) = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-u-wall",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = b"
+          },
+          {
+            "id": "c-T-centre",
+            "kind": "boundary",
+            "text": "d(DT,y) = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-T-flux",
+            "kind": "boundary",
+            "text": "k*d(DT,y) = q_w",
+            "at": "y = b"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-developed",
+            "kind": "physical",
+            "text": "The flow is steady, laminar and fully developed between wide plates.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-props",
+            "kind": "physical",
+            "text": "The fluid is Newtonian with constant properties.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-thermal",
+            "kind": "physical",
+            "text": "Both walls receive the same uniform heat flux, and the temperature profile has its fully developed form. Viscous heating is small.",
+            "source": "lienhard-flow"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "b",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The half-gap is the length scale, so Y = y/b runs from 0 at the centre plane to 1 at the wall."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "u_m",
+            "offset": "0",
+            "symbol": "U",
+            "reason": "The mean velocity is the velocity scale, so the mean of U over the half-gap is 1."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "q_w*b/k",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The wall heat flux sets the temperature difference across the half-gap: kΔT/b = q_w."
+          }
+        ],
+        "preferred": [
+          "v-b",
+          "v-um",
+          "v-rho"
+        ],
+        "evidence": [
+          {
+            "id": "ev-channel",
+            "source": "lienhard-flow",
+            "claim": "Plane Poiseuille flow has a parabolic profile and f·Re = 96 with the hydraulic diameter 4b."
+          }
+        ]
+      },
+      {
+        "id": "nozzle-flow",
+        "label": "Nozzle flow",
+        "group": "standard",
+        "title": "Air in a converging-diverging nozzle: sonic throat and choked mass flow",
+        "purpose": {
+          "question": "Which mass flow passes through a converging-diverging nozzle from a reservoir of air, and when is the throat sonic?",
+          "observable": "v-mdot",
+          "calculation": "regime-map",
+          "declaration": "nozzle-air"
+        },
+        "variables": [
+          {
+            "id": "v-mdot",
+            "symbol": "mdot",
+            "tex": "\\dot m",
+            "meaning": "Mass flow rate",
+            "quantity": "mass-flow-rate",
+            "unit": "kg/s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-p0",
+            "symbol": "p_0",
+            "meaning": "Stagnation pressure of the reservoir",
+            "quantity": "pressure",
+            "unit": "Pa",
+            "value": "1e6",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-T0",
+            "symbol": "T_0",
+            "meaning": "Stagnation temperature of the reservoir",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "value": "300",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Rg",
+            "symbol": "R_g",
+            "meaning": "Specific gas constant of air",
+            "quantity": "specific-gas-constant",
+            "unit": "J/(kg*K)",
+            "value": "287",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-At",
+            "symbol": "A_t",
+            "meaning": "Throat area",
+            "quantity": "area",
+            "unit": "m^2",
+            "value": "0.001",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Ae",
+            "symbol": "A_e",
+            "meaning": "Exit area",
+            "quantity": "area",
+            "unit": "m^2",
+            "value": "0.002",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Ai",
+            "symbol": "A_i",
+            "meaning": "Inlet area",
+            "quantity": "area",
+            "unit": "m^2",
+            "value": "0.003",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-pb",
+            "symbol": "p_b",
+            "meaning": "Back pressure outside the exit",
+            "quantity": "pressure",
+            "unit": "Pa",
+            "value": "8e4",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of air at constant pressure",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "tex": "\\rho",
+            "meaning": "Local density",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Local velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-T",
+            "symbol": "T",
+            "meaning": "Local temperature",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-p",
+            "symbol": "p",
+            "meaning": "Local pressure",
+            "quantity": "pressure",
+            "unit": "Pa",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-A",
+            "symbol": "A",
+            "meaning": "Cross-section area at the station considered",
+            "quantity": "area",
+            "unit": "m^2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-mass",
+            "kind": "governing",
+            "text": "rho*u*A = mdot"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "u^2/2 + c_p*T = c_p*T_0"
+          },
+          {
+            "id": "e-state",
+            "kind": "constitutive",
+            "text": "p = rho*R_g*T"
+          },
+          {
+            "id": "e-isentropic",
+            "kind": "closure",
+            "text": "T = T_0*(p/p_0)^(2/7)"
+          },
+          {
+            "id": "e-cp",
+            "kind": "definition",
+            "text": "c_p = 7*R_g/2"
+          }
+        ],
+        "geometry": {
+          "domain": "A converging-diverging nozzle between a large reservoir and a space at the back pressure. The area falls from A_i to A_t at the throat and rises to A_e at the exit",
+          "coordinates": "x along the axis. The declaration gives the area A(x)",
+          "lengths": [],
+          "interfaces": "The throat and the exit plane"
+        },
+        "conditions": [],
+        "assumptions": [
+          {
+            "id": "a-quasi",
+            "kind": "physical",
+            "text": "Quasi-one-dimensional steady flow: the properties are uniform over each cross-section.",
+            "source": "nasa-choking"
+          },
+          {
+            "id": "a-ideal",
+            "kind": "physical",
+            "text": "Air is an ideal gas with constant specific heats, γ = 7/5 and c_p = 7R_g/2.",
+            "source": "nasa-choking"
+          },
+          {
+            "id": "a-isentropic",
+            "kind": "physical",
+            "text": "The flow is adiabatic, has no friction and no shock: it is isentropic.",
+            "source": "nasa-choking"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-rho",
+            "for": "v-rho",
+            "scale": "p_0/(R_g*T_0)",
+            "offset": "0",
+            "symbol": "Dn",
+            "reason": "The stagnation density ρ₀ = p₀/(R_gT₀)."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "(R_g*T_0)^(1/2)",
+            "offset": "0",
+            "symbol": "V",
+            "reason": "The velocity scale √(R_gT₀) = a₀/√γ, from the reservoir temperature."
+          },
+          {
+            "id": "s-T",
+            "for": "v-T",
+            "scale": "T_0",
+            "offset": "0",
+            "symbol": "Th",
+            "reason": "The stagnation temperature."
+          },
+          {
+            "id": "s-p",
+            "for": "v-p",
+            "scale": "p_0",
+            "offset": "0",
+            "symbol": "Pn",
+            "reason": "The stagnation pressure."
+          }
+        ],
+        "preferred": [
+          "v-p0",
+          "v-T0",
+          "v-Rg",
+          "v-At"
+        ],
+        "evidence": [
+          {
+            "id": "ev-nozzle",
+            "source": "nasa-choking",
+            "claim": "The mass flow is largest when the throat is sonic, M = 1. It then depends on p₀, T₀ and A_t only."
+          }
+        ]
+      },
+      {
+        "id": "hydraulic-jump",
+        "label": "Hydraulic jump",
+        "group": "standard",
+        "title": "Shallow water in a wide flat channel: supercritical inflow and its hydraulic jump",
+        "purpose": {
+          "question": "Which downstream depth makes a hydraulic jump form in a fast, shallow flow, and how much energy does the jump take from the flow?",
+          "observable": "v-h2",
+          "calculation": "regime-map",
+          "declaration": "shallow-water"
+        },
+        "variables": [
+          {
+            "id": "v-h",
+            "symbol": "h",
+            "meaning": "Water depth",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Depth-mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance along the channel",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Length of the reach",
+            "quantity": "length",
+            "unit": "m",
+            "value": "10",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-g",
+            "symbol": "g",
+            "meaning": "Gravitational acceleration",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "value": "9.81",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-q",
+            "symbol": "q",
+            "meaning": "Discharge per unit width",
+            "quantity": "discharge-per-width",
+            "unit": "m^2/s",
+            "value": "0.8",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-h1",
+            "symbol": "h_1",
+            "meaning": "Depth of the inflow",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-h2",
+            "symbol": "h_2",
+            "meaning": "Conjugate depth after the jump",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-mass",
+            "kind": "governing",
+            "text": "u*d(h,x) + h*d(u,x) = 0",
+            "domain": "0 < x < L"
+          },
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "u*d(u,x) + g*d(h,x) = 0",
+            "domain": "0 < x < L"
+          }
+        ],
+        "geometry": {
+          "domain": "A wide rectangular channel with a flat, horizontal bed. The water covers the whole reach",
+          "coordinates": "x along the channel from the inflow (x = 0) to the outflow (x = L)",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The free surface"
+        },
+        "conditions": [
+          {
+            "id": "c-depth",
+            "kind": "boundary",
+            "text": "h = h_1",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-velocity",
+            "kind": "boundary",
+            "text": "u = q/h_1",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-long",
+            "kind": "physical",
+            "text": "Long waves on a thin layer: the pressure is hydrostatic and the velocity is uniform over the depth.",
+            "source": "swashes"
+          },
+          {
+            "id": "a-bed",
+            "kind": "physical",
+            "text": "The bed is flat and horizontal and has no friction. The water covers the whole reach.",
+            "source": "swashes"
+          },
+          {
+            "id": "a-jump",
+            "kind": "physical",
+            "text": "A jump keeps mass and momentum and loses energy.",
+            "source": "apsley-rvf"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The length of the reach."
+          },
+          {
+            "id": "s-h",
+            "for": "v-h",
+            "scale": "h_1",
+            "offset": "0",
+            "symbol": "H",
+            "reason": "The depth of the inflow."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "q/h_1",
+            "offset": "0",
+            "symbol": "W",
+            "reason": "The velocity of the inflow."
+          }
+        ],
+        "preferred": [
+          "v-h1",
+          "v-g"
+        ],
+        "evidence": [
+          {
+            "id": "ev-jump",
+            "source": "apsley-rvf",
+            "claim": "The conjugate depth ratio h₂/h₁ = (√(1 + 8Fr₁²) − 1)/2 and the head loss (h₂ − h₁)³/(4h₁h₂)."
+          }
+        ]
+      },
+      {
+        "id": "blasius-plate",
+        "label": "Flat-plate boundary layer",
+        "group": "standard",
+        "title": "Laminar boundary layer on a flat plate (Blasius)",
+        "purpose": {
+          "question": "Which wall shear stress and layer thickness does a uniform stream of air give on a flat plate? Where is the boundary-layer approximation accurate?",
+          "observable": "v-tau",
+          "calculation": "regime-map",
+          "declaration": "blasius"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the plate",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-v",
+            "symbol": "v",
+            "meaning": "Velocity normal to the plate",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance from the leading edge",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the plate",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "meaning": "Speed of the outer stream",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "10",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-nu",
+            "symbol": "nu",
+            "tex": "\\nu",
+            "meaning": "Kinematic viscosity of air",
+            "quantity": "kinematic-viscosity",
+            "unit": "m^2/s",
+            "value": "1.5e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of air",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "value": "1.2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Distance of the station from the leading edge",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-ye",
+            "symbol": "y_e",
+            "meaning": "Outer edge of the computation, far outside the layer",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.05",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-tau",
+            "symbol": "tau_w",
+            "tex": "\\tau_w",
+            "meaning": "Wall shear stress at the station",
+            "quantity": "stress",
+            "unit": "Pa",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-continuity",
+            "kind": "governing",
+            "text": "d(v,y) + d(u,x) = 0",
+            "domain": "x > 0, 0 < y < y_e"
+          },
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y)",
+            "domain": "x > 0, 0 < y < y_e"
+          }
+        ],
+        "geometry": {
+          "domain": "A thin flat plate parallel to a uniform stream, with a sharp leading edge",
+          "coordinates": "x along the plate from the leading edge. Y normal to the plate",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The plate surface y = 0"
+        },
+        "conditions": [
+          {
+            "id": "c-noslip",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-wall",
+            "kind": "boundary",
+            "text": "v = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-outer",
+            "kind": "boundary",
+            "text": "u = U",
+            "at": "y = y_e"
+          },
+          {
+            "id": "c-edge",
+            "kind": "boundary",
+            "text": "u = U",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "Steady, laminar, two-dimensional flow of a fluid with constant properties.",
+            "source": "mit-16110"
+          },
+          {
+            "id": "a-outer",
+            "kind": "physical",
+            "text": "The outer stream is uniform, so the pressure along the plate is constant.",
+            "source": "mit-16110"
+          },
+          {
+            "id": "a-thin",
+            "kind": "mathematical",
+            "text": "The layer is thin: Re_L = UL/ν is large, and y_e is far outside the layer.",
+            "source": "mit-16110"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The distance of the station from the leading edge."
+          },
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "(nu*L/U)^(1/2)",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The inner scale: the thickness at which viscosity balances inertia."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "U",
+            "offset": "0",
+            "symbol": "Uh",
+            "reason": "The outer speed."
+          },
+          {
+            "id": "s-v",
+            "for": "v-v",
+            "scale": "U*(nu/(U*L))^(1/2)",
+            "offset": "0",
+            "symbol": "Vh",
+            "reason": "The scale V of v, from continuity: V = Uδ/L."
+          }
+        ],
+        "preferred": [
+          "v-rho",
+          "v-U",
+          "v-L"
+        ],
+        "evidence": [
+          {
+            "id": "ev-blasius",
+            "source": "lienhard-flow",
+            "claim": "The Blasius solution gives f''(0) = 0.332 and c_f = 0.664/√Re_x."
+          }
+        ]
+      },
+      {
+        "id": "airfoil-flow",
+        "label": "Airfoil in potential flow",
+        "group": "standard",
+        "title": "A cambered Joukowski airfoil in a uniform stream: surface pressure, lift and thin-airfoil theory",
+        "purpose": {
+          "question": "Which lift does a thin cambered airfoil give at a small angle of attack, and where is thin-airfoil theory accurate?",
+          "observable": "v-Lp",
+          "calculation": "regime-map",
+          "declaration": "joukowski-airfoil"
+        },
+        "variables": [
+          {
+            "id": "v-phi",
+            "symbol": "phi",
+            "tex": "\\phi",
+            "meaning": "Velocity potential",
+            "quantity": "velocity-potential",
+            "unit": "m^2/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance along the stream",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance normal to the stream",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "meaning": "Speed of the stream",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "30",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of air",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "value": "1.225",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-c",
+            "symbol": "c",
+            "meaning": "Chord length",
+            "quantity": "length",
+            "unit": "m",
+            "value": "1",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-alpha",
+            "symbol": "alpha",
+            "tex": "\\alpha",
+            "meaning": "Angle of attack",
+            "quantity": "angle",
+            "unit": "deg",
+            "value": "4",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": true
+          },
+          {
+            "id": "v-m",
+            "symbol": "m",
+            "meaning": "Camber ratio: largest camber over the chord",
+            "quantity": "length-ratio",
+            "unit": "1",
+            "value": "0.02",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true
+          },
+          {
+            "id": "v-eps",
+            "symbol": "epsilon",
+            "tex": "\\varepsilon",
+            "meaning": "Thickness parameter of the Joukowski circle",
+            "quantity": "length-ratio",
+            "unit": "1",
+            "value": "0.08",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true
+          },
+          {
+            "id": "v-Xf",
+            "symbol": "X_f",
+            "meaning": "Distance of the far-field boundary",
+            "quantity": "length",
+            "unit": "m",
+            "value": "50",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Lp",
+            "symbol": "L_p",
+            "tex": "L'",
+            "meaning": "Lift per unit span",
+            "quantity": "line-load",
+            "unit": "N/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-laplace",
+            "kind": "governing",
+            "text": "d(phi,x,x) + d(phi,y,y) = 0",
+            "domain": "outside the airfoil"
+          }
+        ],
+        "geometry": {
+          "domain": "The plane outside a Joukowski airfoil of chord c. The far-field boundary is a square of half-width X_f. The conformal map gives the exact airfoil surface and trailing edge. The surface has a curve, so it is not a line x = constant",
+          "coordinates": "x along the stream, y normal to it. The chord makes the angle α with the stream",
+          "lengths": [
+            "v-c"
+          ],
+          "interfaces": "The airfoil surface"
+        },
+        "conditions": [
+          {
+            "id": "c-left",
+            "kind": "boundary",
+            "text": "d(phi,x) = U",
+            "at": "x = -X_f"
+          },
+          {
+            "id": "c-right",
+            "kind": "boundary",
+            "text": "d(phi,x) = U",
+            "at": "x = X_f"
+          },
+          {
+            "id": "c-bottom",
+            "kind": "boundary",
+            "text": "d(phi,y) = 0",
+            "at": "y = -X_f"
+          },
+          {
+            "id": "c-top",
+            "kind": "boundary",
+            "text": "d(phi,y) = 0",
+            "at": "y = X_f"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-potential",
+            "kind": "physical",
+            "text": "Incompressible, inviscid flow without vorticity outside the airfoil, at high Reynolds number with attached flow.",
+            "source": "mit-1601-f18"
+          },
+          {
+            "id": "a-surface",
+            "kind": "physical",
+            "text": "No flow through the airfoil surface, and the Kutta condition: the flow leaves the sharp trailing edge smoothly.",
+            "source": "mit-18354"
+          },
+          {
+            "id": "a-far",
+            "kind": "mathematical",
+            "text": "The far-field boundary is far from the airfoil: X_f ≫ c.",
+            "source": "mit-1601-f18"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "c",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The chord."
+          },
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "c",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The chord."
+          },
+          {
+            "id": "s-phi",
+            "for": "v-phi",
+            "scale": "U*c",
+            "offset": "0",
+            "symbol": "Ph",
+            "reason": "The stream speed times the chord."
+          }
+        ],
+        "preferred": [
+          "v-rho",
+          "v-U",
+          "v-c"
+        ],
+        "evidence": [
+          {
+            "id": "ev-airfoil",
+            "source": "mit-1601-f04",
+            "claim": "Thin-airfoil theory gives c_l = 2π(α − α_L0)."
+          }
+        ]
+      },
+      {
+        "id": "fail-nozzle-shock",
+        "label": "Failure: shock in the nozzle",
+        "group": "failure",
+        "failure": "A back pressure between the exit-shock ratio and the first critical ratio puts a normal shock in the nozzle. A shock needs a separate declaration.",
+        "title": "Failure: a back pressure in the shock range of the nozzle",
+        "purpose": {
+          "question": "Which flow does the nozzle carry when the back pressure is 0.7 of the reservoir pressure?",
+          "observable": "v-mdot",
+          "calculation": "regime-map",
+          "declaration": "nozzle-air"
+        },
+        "variables": "nozzle-flow",
+        "equations": "nozzle-flow",
+        "geometry": "nozzle-flow",
+        "conditions": "nozzle-flow",
+        "assumptions": "nozzle-flow",
+        "scales": "nozzle-flow",
+        "evidence": "nozzle-flow",
+        "overrides": {
+          "v-pb": {
+            "value": "7e5"
+          }
+        },
+        "preferred": [
+          "v-p0",
+          "v-T0",
+          "v-Rg",
+          "v-At"
+        ]
+      },
+      {
+        "id": "fail-jump-subcritical",
+        "label": "Failure: no jump from a slow flow",
+        "group": "failure",
+        "failure": "A subcritical inflow cannot make a hydraulic jump, and it needs one condition at each end instead of two at the inflow.",
+        "title": "Failure: a hydraulic jump from a subcritical inflow",
+        "purpose": {
+          "question": "Which conjugate depth follows a deep, slow inflow?",
+          "observable": "v-h2",
+          "calculation": "regime-map",
+          "declaration": "shallow-water"
+        },
+        "variables": "hydraulic-jump",
+        "equations": "hydraulic-jump",
+        "geometry": "hydraulic-jump",
+        "conditions": "hydraulic-jump",
+        "assumptions": "hydraulic-jump",
+        "scales": "hydraulic-jump",
+        "evidence": "hydraulic-jump",
+        "overrides": {
+          "v-h1": {
+            "value": "0.8"
+          }
+        },
+        "preferred": [
+          "v-h1",
+          "v-g"
+        ]
+      },
+      {
+        "id": "fail-airfoil-stall",
+        "label": "Failure: airfoil at a large angle",
+        "group": "failure",
+        "failure": "At 20° the thin-airfoil error is above the tolerance, and real airfoils stall: potential flow does not show separation.",
+        "title": "Failure: the airfoil at 20° angle of attack",
+        "purpose": {
+          "question": "Which lift does the cambered airfoil give at 20° angle of attack?",
+          "observable": "v-Lp",
+          "calculation": "regime-map",
+          "declaration": "joukowski-airfoil"
+        },
+        "variables": "airfoil-flow",
+        "equations": "airfoil-flow",
+        "geometry": "airfoil-flow",
+        "conditions": "airfoil-flow",
+        "assumptions": "airfoil-flow",
+        "scales": "airfoil-flow",
+        "evidence": "airfoil-flow",
+        "overrides": {
+          "v-alpha": {
+            "value": "20"
+          }
+        },
+        "preferred": [
+          "v-rho",
+          "v-U",
+          "v-c"
+        ]
+      },
+      {
+        "id": "fail-dry-bed",
+        "label": "Failure: flow over a dry bed",
+        "group": "failure",
+        "failure": "A front that runs over a dry bed has a depth of 0, which needs a separate declaration.",
+        "title": "Failure: a flood front over a dry bed needs a separate declaration",
+        "purpose": {
+          "question": "How fast does the front of the water run over the dry bed after a dam opens?",
+          "observable": "v-h2",
+          "calculation": "regime-map",
+          "declaration": "dry-front"
+        },
+        "variables": "hydraulic-jump",
+        "equations": "hydraulic-jump",
+        "geometry": "hydraulic-jump",
+        "conditions": "hydraulic-jump",
+        "assumptions": "hydraulic-jump",
+        "scales": "hydraulic-jump",
+        "evidence": "hydraulic-jump",
+        "preferred": [
+          "v-h1",
+          "v-g"
+        ]
       }
     ]
   },
@@ -6313,6 +7879,37 @@
         "name": "strain",
         "dim": "1",
         "meaning": "strain"
+      },
+      {
+        "id": "pressure-gradient",
+        "name": "pressure gradient",
+        "dim": "M L^-2 T^-2"
+      },
+      {
+        "id": "temperature-gradient",
+        "name": "temperature gradient",
+        "dim": "Theta L^-1"
+      },
+      {
+        "id": "specific-gas-constant",
+        "name": "specific gas constant",
+        "dim": "L^2 T^-2 Theta^-1"
+      },
+      {
+        "id": "discharge-per-width",
+        "name": "discharge per unit width",
+        "dim": "L^2 T^-1"
+      },
+      {
+        "id": "velocity-potential",
+        "name": "velocity potential",
+        "dim": "L^2 T^-1"
+      },
+      {
+        "id": "length-ratio",
+        "name": "ratio of two lengths",
+        "dim": "1",
+        "meaning": "length ratio"
       }
     ]
   },
@@ -7280,12 +8877,89 @@
         "url": "https://groups.seas.harvard.edu/hutchinson/papers/462-5.pdf",
         "read": "2026-10-06",
         "supports": "Equation 2.4: a film held in its plane (ε = 0) under a temperature change has the equal biaxial stress −EαΔT/(1 − ν)."
+      },
+      {
+        "id": "nasa-choking",
+        "title": "NASA Glenn Research Center: Mass flow choking",
+        "url": "https://www.grc.nasa.gov/www/k-12/BGP/mflchk.html",
+        "read": "2026-10-06",
+        "supports": "The mass flow rate ṁ = (Ap_t/√T_t)√(γ/R) M (1 + (γ − 1)M²/2)^(−(γ+1)/(2(γ−1))) (eq. 10). Its derivative is 0 only at M = 1, the maximum (eqs. 14 to 19). Choking at the throat, the smallest area."
+      },
+      {
+        "id": "nasa-normal-shock",
+        "title": "NASA Glenn Research Center: Normal shock wave equations",
+        "url": "https://www.grc.nasa.gov/www/k-12/airplane/normal.html",
+        "read": "2026-10-06",
+        "supports": "The static pressure ratio across a normal shock, p₁/p₀ = (2γM² − (γ − 1))/(γ + 1), with M the upstream Mach number."
+      },
+      {
+        "id": "lienhard-flow",
+        "title": "Lienhard IV and Lienhard V: A Heat Transfer Textbook, 6th edition, version 6.00 (19 April 2024), chapters 6 and 7",
+        "url": "https://ahtt.mit.edu/",
+        "read": "2026-10-06",
+        "supports": "The Hagen–Poiseuille profile (eqn. 7.14), the laminar friction factor f = 64/Re_D, Nu_D = 48/11 = 4.364 for a uniform wall heat flux (eqn. 7.22), the parallel-plate profile (eqn. 7.62) and Nu_Dh = 8.235 for a fixed flux at both plates (eqn. 7.63). The Blasius solution f''(0) = 0.33206 (Table 6.1) and c_f = 0.664/√Re_x (eqns. 6.32 and 6.33)."
+      },
+      {
+        "id": "apsley-rvf",
+        "title": "Apsley: Hydraulics 3, open-channel flow, rapidly-varied flow (University of Manchester)",
+        "url": "https://personalpages.manchester.ac.uk/staff/david.d.apsley/lectures/hydraulics3/OCFRvf.pdf",
+        "read": "2026-10-06",
+        "supports": "The hydraulic jump: sequent depths h₂/h₁ = (√(1 + 8Fr₁²) − 1)/2 from the momentum principle, the head loss (h₂ − h₁)³/(4h₁h₂), and a jump only from supercritical to subcritical flow. The specific energy E = h + q²/(2gh²), its minimum (3/2)h_c at h_c = (q²/g)^(1/3) where Fr = 1, and the alternate depths."
+      },
+      {
+        "id": "swashes",
+        "title": "Delestre et al.: SWASHES, a compilation of shallow water analytic solutions for hydraulic and environmental studies (arXiv:1110.0288)",
+        "url": "https://arxiv.org/abs/1110.0288",
+        "read": "2026-10-06",
+        "supports": "The one-dimensional shallow-water equations, the characteristic speeds u ± √(gh), and the boundary data: a subcritical flow needs one upstream and one downstream value, a supercritical flow two upstream values."
+      },
+      {
+        "id": "mit-16110",
+        "title": "MIT 16.110: boundary-layer analysis of an aerodynamic flow",
+        "url": "https://web.mit.edu/16.110/www/aero_analysis_problem.html",
+        "read": "2026-10-06",
+        "supports": "Two domains, the viscous shear layer and the outer flow, with the small parameter ε ~ Re^(−1/2). The inner rescaling Y = y/ε and V = v/ε. The viscous terms dropped from the outer flow."
+      },
+      {
+        "id": "mit-1601-f18",
+        "title": "MIT 16.01 Unified Engineering, Fluids lecture notes F18: vortex and lifting flow about a circular cylinder",
+        "url": "https://ocw.mit.edu/courses/16-01-unified-engineering-i-ii-iii-iv-fall-2005-spring-2006/86ee566d63007d3a3efc531ebd687617_f18.pdf",
+        "read": "2026-10-06",
+        "supports": "Uniform flow, doublet and vortex give the lifting flow about a circular cylinder. The surface pressure C_p = 1 − (2 sin θ + Γ/(2πV R))², and the forces from the surface pressure integral."
+      },
+      {
+        "id": "mit-18354",
+        "title": "MIT 18.354 (Spring 2014), lecture 21: classical aerofoil theory",
+        "url": "https://math.mit.edu/~dunkel/Teach/18.354_2014S/lecture_notes/L18_aerofoil.pdf",
+        "read": "2026-10-06",
+        "supports": "The Joukowski transformation of a circle into an aerofoil, the circulation that makes the velocity finite at the trailing edge (the Kutta–Joukowski condition), and the Kutta–Joukowski theorem: lift ρu₀Γ and zero drag."
+      },
+      {
+        "id": "mit-1601-f04",
+        "title": "MIT 16.01 Unified Engineering, Fluids lecture 4: thin airfoil theory, analysis example",
+        "url": "https://ocw.mit.edu/courses/16-01-unified-engineering-i-ii-iii-iv-fall-2005-spring-2006/8d40a37bb73f450ae132d53dc4bc8cf7_f04_sp.pdf",
+        "read": "2026-10-06",
+        "supports": "The parabolic-arc camber line z = 4εx(1 − x/c) with slope 4ε cos θ. A₀ = α, A₁ = 4ε, A₂ = 0. C_l = π(2A₀ + A₁) = 2π(α + 2ε) and c_m,c/4 = (π/4)(A₂ − A₁) = −πε."
+      },
+      {
+        "id": "nasa-foilinc",
+        "title": "NASA Glenn Research Center: Inclination effects on lift",
+        "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/foilinc/",
+        "read": "2026-10-06",
+        "supports": "For thin airfoils the lift is proportional to the angle of attack for small angles (within ±10°). At higher angles the boundary layer separates and the wing stalls."
+      },
+      {
+        "id": "sydney-cylinder",
+        "title": "University of Sydney aerodynamics notes: Flow around a circular cylinder (copy at the University of Cambridge)",
+        "url": "https://www-mdp.eng.cam.ac.uk/web/library/enginfo/aerothermal_dvd_only/aero/fprops/poten/node37.html",
+        "read": "2026-10-06",
+        "supports": "Potential flow gives C_p = 1 − 4 sin²θ and zero drag (d'Alembert's paradox). In a real flow viscosity causes separation behind the cylinder, and the agreement with experiment is lost there."
       }
     ]
   },
   "roadmap": {
     "about": "The agreed build plan (spec.md, Agreed decisions): nine pieces in merge order. The page lists what is still to come until piece 9 removes the preview label.",
-    "current": 5,
+    "current": 6,
     "pieces": [
       {
         "n": 1,
@@ -12775,6 +14449,1758 @@
           "convergence": "Not needed: the solution is exact.",
           "reproducibility": "BigInt rational arithmetic."
         }
+      },
+      {
+        "id": "pipe-poiseuille",
+        "family": "internal-viscous-flow",
+        "title": "Laminar pipe flow with a uniform wall heat flux (Hagen–Poiseuille)",
+        "piece": 6,
+        "model": {
+          "summary": "Steady, fully developed laminar flow of a Newtonian fluid in a circular pipe, driven by a constant pressure gradient. A uniform heat flux enters at the wall, and the temperature profile has its fully developed form.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "axial velocity"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the wall temperature"
+            },
+            {
+              "id": "r",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the axis"
+            },
+            {
+              "id": "R",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "pipe radius"
+            },
+            {
+              "id": "u_m",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "mean velocity"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity"
+            },
+            {
+              "id": "q_w",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "wall heat flux"
+            },
+            {
+              "id": "G",
+              "quantity": "pressure-gradient",
+              "kind": "parameter",
+              "meaning": "driving pressure gradient −dp/dx"
+            },
+            {
+              "id": "beta",
+              "quantity": "temperature-gradient",
+              "kind": "parameter",
+              "meaning": "axial rise of the bulk temperature"
+            },
+            {
+              "id": "h",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "heat-transfer coefficient",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "mu*(d(u,r,r) + d(u,r)/r) = -G",
+              "domain": "0 < r < R"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "k*(d(DT,r,r) + d(DT,r)/r) = rho*c_p*beta*u",
+              "domain": "0 < r < R"
+            }
+          ],
+          "closures": [
+            "Newtonian viscous stress μ du/dr and Fourier conduction k dT/dr. In fully developed flow the axial momentum has no inertia term, and dT/dx = dT_m/dx (Lienhard, A Heat Transfer Textbook, section 7.2, eqns. (7.14) and (7.22))."
+          ],
+          "geometry": "A long straight circular pipe of radius R, far from its inlet. The coordinate r goes from the axis to the wall.",
+          "conditions": [
+            {
+              "id": "u-axis",
+              "kind": "boundary",
+              "text": "d(u,r) = 0",
+              "at": "r = 0",
+              "meaning": "symmetry of the velocity at the axis"
+            },
+            {
+              "id": "u-wall",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "r = R",
+              "meaning": "no slip at the wall"
+            },
+            {
+              "id": "T-axis",
+              "kind": "boundary",
+              "text": "d(DT,r) = 0",
+              "at": "r = 0",
+              "meaning": "symmetry of the temperature at the axis"
+            },
+            {
+              "id": "T-flux",
+              "kind": "boundary",
+              "text": "k*d(DT,r) = q_w",
+              "at": "r = R",
+              "meaning": "the uniform wall heat flux"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "r",
+                "offset": "0",
+                "scale": "R",
+                "tex": "X"
+              },
+              {
+                "symbol": "U",
+                "of": "u",
+                "offset": "0",
+                "scale": "u_m",
+                "tex": "U"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "q_w*R/k",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "P",
+                "tex": "P",
+                "def": "G*R^2/(mu*u_m)",
+                "solve": "G",
+                "meaning": "dimensionless pressure gradient"
+              },
+              {
+                "id": "Sb",
+                "tex": "S",
+                "def": "rho*c_p*beta*u_m*R/q_w",
+                "solve": "beta",
+                "meaning": "dimensionless axial temperature rise"
+              },
+              {
+                "id": "Re",
+                "tex": "Re_D",
+                "def": "2*rho*u_m*R/mu",
+                "solve": "u_m",
+                "meaning": "Reynolds number with the diameter"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "mu*c_p/k",
+                "solve": "c_p",
+                "meaning": "Prandtl number"
+              },
+              {
+                "id": "Br",
+                "tex": "Br",
+                "def": "mu*u_m^2/(2*q_w*R)",
+                "solve": "q_w",
+                "meaning": "Brinkman number with the wall heat flux"
+              },
+              {
+                "id": "Nu",
+                "tex": "Nu_D",
+                "def": "2*h*R/k",
+                "solve": "h",
+                "meaning": "Nusselt number with the diameter"
+              }
+            ],
+            "equations": [
+              {
+                "of": "momentum",
+                "text": "d(U,X,X) + d(U,X)/X = -P"
+              },
+              {
+                "of": "energy",
+                "text": "d(theta,X,X) + d(theta,X)/X = Sb*U"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "u-axis",
+                "text": "d(U,X) = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "u-wall",
+                "text": "U = 0",
+                "at": "X = 1"
+              },
+              {
+                "of": "T-axis",
+                "text": "d(theta,X) = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "T-flux",
+                "text": "d(theta,X) = 1",
+                "at": "X = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Br",
+              "tex": "Br",
+              "label": "Brinkman number μu_m²/(q_w D)",
+              "min": 1e-08,
+              "max": 1,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Re",
+              "tex": "Re_D",
+              "label": "Reynolds number ρu_mD/μ",
+              "min": 1,
+              "max": 10000.0,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar and fully developed flow of a Newtonian fluid with constant properties.",
+              "source": "lienhard-flow"
+            },
+            {
+              "text": "Fully developed temperature profile under a uniform wall heat flux. The model leaves out axial conduction and viscous heating.",
+              "source": "lienhard-flow"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact polynomial solutions U = 2(1 − X²) and θ in rationals, with P = 8 and S = 2 from the mean-velocity condition and the energy balance.",
+            "Exact f·Re_D = 64 and Nu_D = 48/11 in rationals."
+          ],
+          "numerical": [
+            "Finite volumes on 16, 32, 64 and 128 cells with the trapezoid rule for the mean values, and the observed order of convergence."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete in the energy balance: the wall heat and the viscous heating. Their ratio 8Br measures the heating that the declared model leaves out."
+          },
+          "asymptotic": {
+            "applies": false,
+            "reason": "The fully developed solution is exact. The entrance region, where the profile develops, needs an inner region and a separate declaration."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. Pipe flow becomes turbulent through finite disturbances, which a linear analysis cannot show. This needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution for each pressure gradient: it has no branches."
+          }
+        },
+        "limitations": [
+          "Fully developed region only: no entrance length and no developing profile.",
+          "Laminar flow only: the model does not predict transition, and a turbulent flow needs a separate declaration.",
+          "Uniform wall heat flux only. A uniform wall temperature is a different eigenvalue problem (piece 7)."
+        ],
+        "acceptance": {
+          "example": "pipe-flow",
+          "reference": "f·Re_D = 64 and Nu_D = 48/11 ≈ 4.364 (Lienhard, A Heat Transfer Textbook, section 7.2, eqns. (7.14) and (7.22)). SymPy gives the same rationals (tools/flow_references.py).",
+          "tolerance": "Exact for f·Re_D and Nu_D. The finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
+          "checks": [
+            "The polynomials U and θ satisfy both equations and all five conditions exactly.",
+            "f·Re_D = 64 and Nu_D = 48/11 in rationals.",
+            "The finite-volume solution converges to Nu_D at second order."
+          ]
+        },
+        "solver": {
+          "method": "Exact polynomial integration in rationals. Finite volumes with flux balances for the check.",
+          "discretization": "16, 32, 64 and 128 equal cells over 0 ≤ X ≤ 1.",
+          "convergence": "Error of Nu_D below 1e-3 at 128 cells. Observed order within 0.3 of 2.",
+          "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "channel-poiseuille",
+        "family": "internal-viscous-flow",
+        "title": "Laminar flow between parallel plates with a uniform heat flux (plane Poiseuille)",
+        "piece": 6,
+        "model": {
+          "summary": "Steady, fully developed laminar flow of a Newtonian fluid between two wide parallel plates, driven by a constant pressure gradient. The same uniform heat flux enters at both walls.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "axial velocity"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the wall temperature"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the centre plane"
+            },
+            {
+              "id": "b",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "half-gap"
+            },
+            {
+              "id": "u_m",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "mean velocity"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity"
+            },
+            {
+              "id": "q_w",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "wall heat flux"
+            },
+            {
+              "id": "G",
+              "quantity": "pressure-gradient",
+              "kind": "parameter",
+              "meaning": "driving pressure gradient −dp/dx"
+            },
+            {
+              "id": "beta",
+              "quantity": "temperature-gradient",
+              "kind": "parameter",
+              "meaning": "axial rise of the bulk temperature"
+            },
+            {
+              "id": "h",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "heat-transfer coefficient",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "mu*d(u,y,y) = -G",
+              "domain": "0 < y < b"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "k*d(DT,y,y) = rho*c_p*beta*u",
+              "domain": "0 < y < b"
+            }
+          ],
+          "closures": [
+            "Newtonian viscous stress μ du/dy and Fourier conduction k dT/dy. In fully developed flow the axial momentum has no inertia term, and dT/dx = dT_m/dx."
+          ],
+          "geometry": "Two wide parallel plates a distance 2b apart, far from the inlet. The coordinate y goes from the centre plane to one wall. The other half is the mirror image.",
+          "conditions": [
+            {
+              "id": "u-centre",
+              "kind": "boundary",
+              "text": "d(u,y) = 0",
+              "at": "y = 0",
+              "meaning": "symmetry of the velocity"
+            },
+            {
+              "id": "u-wall",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = b",
+              "meaning": "no slip at the wall"
+            },
+            {
+              "id": "T-centre",
+              "kind": "boundary",
+              "text": "d(DT,y) = 0",
+              "at": "y = 0",
+              "meaning": "symmetry of the temperature"
+            },
+            {
+              "id": "T-flux",
+              "kind": "boundary",
+              "text": "k*d(DT,y) = q_w",
+              "at": "y = b",
+              "meaning": "the uniform wall heat flux"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "b",
+                "tex": "Y"
+              },
+              {
+                "symbol": "U",
+                "of": "u",
+                "offset": "0",
+                "scale": "u_m",
+                "tex": "U"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "q_w*b/k",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "P",
+                "tex": "P",
+                "def": "G*b^2/(mu*u_m)",
+                "solve": "G",
+                "meaning": "dimensionless pressure gradient"
+              },
+              {
+                "id": "Sb",
+                "tex": "S",
+                "def": "rho*c_p*beta*u_m*b/q_w",
+                "solve": "beta",
+                "meaning": "dimensionless axial temperature rise"
+              },
+              {
+                "id": "Re",
+                "tex": "Re_{D_h}",
+                "def": "4*rho*u_m*b/mu",
+                "solve": "u_m",
+                "meaning": "Reynolds number with the hydraulic diameter 4b"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "mu*c_p/k",
+                "solve": "c_p",
+                "meaning": "Prandtl number"
+              },
+              {
+                "id": "Br",
+                "tex": "Br",
+                "def": "mu*u_m^2/(4*q_w*b)",
+                "solve": "q_w",
+                "meaning": "Brinkman number with the wall heat flux"
+              },
+              {
+                "id": "Nu",
+                "tex": "Nu_{D_h}",
+                "def": "4*h*b/k",
+                "solve": "h",
+                "meaning": "Nusselt number with the hydraulic diameter"
+              }
+            ],
+            "equations": [
+              {
+                "of": "momentum",
+                "text": "d(U,Y,Y) = -P"
+              },
+              {
+                "of": "energy",
+                "text": "d(theta,Y,Y) = Sb*U"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "u-centre",
+                "text": "d(U,Y) = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "u-wall",
+                "text": "U = 0",
+                "at": "Y = 1"
+              },
+              {
+                "of": "T-centre",
+                "text": "d(theta,Y) = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "T-flux",
+                "text": "d(theta,Y) = 1",
+                "at": "Y = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Br",
+              "tex": "Br",
+              "label": "Brinkman number μu_m²/(q_w D_h)",
+              "min": 1e-08,
+              "max": 1,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Re",
+              "tex": "Re_{D_h}",
+              "label": "Reynolds number ρu_mD_h/μ",
+              "min": 1,
+              "max": 10000.0,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar and fully developed flow of a Newtonian fluid with constant properties between wide plates.",
+              "source": "lienhard-flow"
+            },
+            {
+              "text": "The same uniform heat flux at both walls and a fully developed temperature profile. The model leaves out axial conduction and viscous heating.",
+              "source": "lienhard-flow"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact polynomial solutions U = (3/2)(1 − Y²) and θ in rationals, with P = 3 and S = 1 from the mean-velocity condition and the energy balance.",
+            "Exact f·Re = 96 and Nu = 140/17 with the hydraulic diameter 4b."
+          ],
+          "numerical": [
+            "Finite volumes on 16, 32, 64 and 128 cells with the trapezoid rule for the mean values, and the observed order of convergence."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete in the energy balance: the wall heat and the viscous heating. Their ratio 12Br measures the heating that the declared model leaves out."
+          },
+          "asymptotic": {
+            "applies": false,
+            "reason": "The fully developed solution is exact. The entrance region needs an inner region and a separate declaration."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. The linear stability of plane Poiseuille flow needs the Orr–Sommerfeld eigenproblem, which is a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution for each pressure gradient: it has no branches."
+          }
+        },
+        "limitations": [
+          "Fully developed region only.",
+          "Laminar flow only: the model does not predict transition.",
+          "Equal uniform heat flux at both walls only."
+        ],
+        "acceptance": {
+          "example": "channel-flow",
+          "reference": "f·Re = 96 and Nu = 140/17 ≈ 8.235 with the hydraulic diameter 4b (Lienhard, A Heat Transfer Textbook, section 7.5, eqn. (7.63). F·Re = 96 from the same exact profile, eqn. (7.62)). SymPy gives the same rationals (tools/flow_references.py).",
+          "tolerance": "Exact for f·Re and Nu. The finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
+          "checks": [
+            "The polynomials U and θ satisfy both equations and all four conditions exactly.",
+            "f·Re = 96 and Nu = 140/17 in rationals.",
+            "The finite-volume solution converges to Nu at second order."
+          ]
+        },
+        "solver": {
+          "method": "Exact polynomial integration in rationals. Finite volumes with flux balances for the check.",
+          "discretization": "16, 32, 64 and 128 equal cells over 0 ≤ Y ≤ 1.",
+          "convergence": "Error of Nu below 1e-3 at 128 cells. Observed order within 0.3 of 2.",
+          "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "nozzle-air",
+        "family": "compressible-nozzle-flow",
+        "title": "Isentropic air flow in a converging-diverging nozzle (anchor test 3)",
+        "piece": 6,
+        "model": {
+          "summary": "Steady quasi-one-dimensional flow of air, an ideal gas with γ = 7/5, from a reservoir through a nozzle of given area. Mass, energy and entropy are constant along the axis. The back pressure selects the flow.",
+          "roles": [
+            {
+              "id": "mdot",
+              "quantity": "mass-flow-rate",
+              "kind": "parameter",
+              "meaning": "mass flow rate"
+            },
+            {
+              "id": "p_0",
+              "quantity": "pressure",
+              "kind": "parameter",
+              "meaning": "stagnation pressure"
+            },
+            {
+              "id": "T_0",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "stagnation temperature"
+            },
+            {
+              "id": "R_g",
+              "quantity": "specific-gas-constant",
+              "kind": "parameter",
+              "meaning": "specific gas constant"
+            },
+            {
+              "id": "A_t",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "throat area"
+            },
+            {
+              "id": "A_e",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "exit area"
+            },
+            {
+              "id": "A_i",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "inlet area",
+              "optional": true
+            },
+            {
+              "id": "p_b",
+              "quantity": "pressure",
+              "kind": "parameter",
+              "meaning": "back pressure"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity at constant pressure"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "field",
+              "meaning": "local density"
+            },
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "local velocity"
+            },
+            {
+              "id": "T",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "local temperature"
+            },
+            {
+              "id": "p",
+              "quantity": "pressure",
+              "kind": "field",
+              "meaning": "local pressure"
+            },
+            {
+              "id": "A",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "cross-section area at the station"
+            }
+          ],
+          "equations": [
+            {
+              "id": "mass",
+              "kind": "governing",
+              "text": "rho*u*A = mdot"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "u^2/2 + c_p*T = c_p*T_0"
+            },
+            {
+              "id": "state",
+              "kind": "constitutive",
+              "text": "p = rho*R_g*T"
+            },
+            {
+              "id": "isentropic",
+              "kind": "closure",
+              "text": "T = T_0*(p/p_0)^(2/7)"
+            }
+          ],
+          "closures": [
+            "Ideal gas with constant specific heats and γ = 7/5, so c_p = 7R_g/2 (NASA Glenn Research Center, mass flow choking, equations 10 to 19). For isentropic flow, p/p₀ = (T/T₀)^(γ/(γ−1)) = (T/T₀)^(7/2)."
+          ],
+          "geometry": "A converging-diverging nozzle with the given area A(x). The area is parabolic from A_i at the inlet to A_t at the throat (x/L = 1/2), and parabolic from A_t to A_e at the exit.",
+          "conditions": [],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "Dn",
+                "of": "rho",
+                "offset": "0",
+                "scale": "p_0/(R_g*T_0)",
+                "tex": "\\hat\\rho"
+              },
+              {
+                "symbol": "V",
+                "of": "u",
+                "offset": "0",
+                "scale": "(R_g*T_0)^(1/2)",
+                "tex": "\\hat u"
+              },
+              {
+                "symbol": "Th",
+                "of": "T",
+                "offset": "0",
+                "scale": "T_0",
+                "tex": "\\hat T"
+              },
+              {
+                "symbol": "Pn",
+                "of": "p",
+                "offset": "0",
+                "scale": "p_0",
+                "tex": "\\hat p"
+              }
+            ],
+            "definitions": [
+              {
+                "symbol": "c_p",
+                "def": "7*R_g/2"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "m",
+                "tex": "\\Phi",
+                "def": "mdot*(R_g*T_0)^(1/2)/(p_0*A_t)",
+                "solve": "mdot",
+                "meaning": "mass-flow parameter"
+              },
+              {
+                "id": "eps",
+                "tex": "A_e/A_t",
+                "def": "A_e/A_t",
+                "solve": "A_e",
+                "meaning": "exit area ratio"
+              },
+              {
+                "id": "a",
+                "tex": "A/A_t",
+                "def": "A/A_t",
+                "solve": "A",
+                "meaning": "area ratio at the station"
+              },
+              {
+                "id": "pb",
+                "tex": "p_b/p_0",
+                "def": "p_b/p_0",
+                "solve": "p_b",
+                "meaning": "back-pressure ratio"
+              }
+            ],
+            "equations": [
+              {
+                "of": "mass",
+                "text": "Dn*V = m/a"
+              },
+              {
+                "of": "energy",
+                "text": "Th + V^2/7 = 1"
+              },
+              {
+                "of": "state",
+                "text": "Pn = Dn*Th"
+              },
+              {
+                "of": "isentropic",
+                "text": "Th = Pn^(2/7)"
+              }
+            ],
+            "conditions": []
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "eps",
+              "tex": "A_e/A_t",
+              "label": "exit area ratio A_e/A_t",
+              "min": 1.05,
+              "max": 10,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "pb",
+              "tex": "p_b/p_0",
+              "label": "back-pressure ratio p_b/p₀",
+              "min": 0.01,
+              "max": 0.999,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Quasi-one-dimensional, steady, adiabatic flow without friction.",
+              "source": "nasa-choking"
+            },
+            {
+              "text": "Ideal gas with constant specific heats, γ = 7/5.",
+              "source": "nasa-choking"
+            },
+            {
+              "text": "No normal shock in the nozzle: the back pressure is below the exit-shock ratio or above the first critical ratio.",
+              "source": "nasa-choking"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact derivation in rationals: T₀/T = 1 + M²/5, the exponents of the mass flux, and dF/dM ∝ 1 − M² (the sonic condition).",
+            "Exact critical values T*/T₀ = 5/6 and (ṁ√(R_gT₀)/(p₀A_t))² = 21875/46656 at M = 1."
+          ],
+          "numerical": [
+            "Bisection of the area–Mach relation on the subsonic and the supersonic branch. Mass and energy conservation at 61 stations."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": false,
+            "reason": "The quasi-one-dimensional equations include all terms of the model: inertia, pressure and the change of area are all of order 1 in the nozzle."
+          },
+          "asymptotic": {
+            "applies": false,
+            "reason": "The quasi-one-dimensional model is itself the slender-nozzle limit. The declaration states it as an assumption and computes no correction."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declared steady flow has no time dependence, so the page computes no stability analysis. The stability of a shock position needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": true,
+            "reason": "The area–Mach relation has two branches, subsonic and supersonic, that meet at a fold at M = 1, A/A* = 1. The exact sign of dF/dM proves that each area ratio above 1 has exactly two solutions, so the search is complete."
+          }
+        },
+        "limitations": [
+          "No normal shock in the nozzle: the back-pressure range between the exit-shock ratio and the first critical ratio needs a separate declaration.",
+          "No friction and no heat transfer at the walls.",
+          "Air with γ = 7/5 only. Another gas needs another declaration.",
+          "The model does not describe the jet outside the exit."
+        ],
+        "acceptance": {
+          "example": "nozzle-flow",
+          "reference": "The throat is sonic at choking (NASA Glenn Research Center, mass flow choking, equations 10 to 19). The choked mass flow is ṁ = (A_tp₀/√T₀)√(γ/R)(1 + (γ−1)/2)^(−(γ+1)/(2(γ−1))). mpmath gives the exit Mach numbers and the critical pressure ratios to 30 digits (tools/flow_references.py).",
+          "tolerance": "Exact for the derivation and the critical values. Residual 1e-12 for the area–Mach roots. 1e-10 relative for mass and energy conservation and against the mpmath values.",
+          "checks": [
+            "The energy equation, the mass-flux exponents and dF/dM ∝ 1 − M² hold exactly for γ = 7/5.",
+            "T*/T₀ = 5/6 and the squared choked mass-flow parameter 21875/46656, exactly.",
+            "The exit Mach numbers and the critical pressure ratios agree with mpmath.",
+            "ρuA and the total enthalpy are constant along the nozzle."
+          ]
+        },
+        "solver": {
+          "method": "Exact rational algebra for the derivation. Bisection for the area–Mach relation on each branch.",
+          "discretization": "61 stations along x/L. No mesh, because the model is algebraic at each station.",
+          "convergence": "Bisection to 1e-15 relative width. Area–Mach residual below 1e-12.",
+          "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "shallow-water",
+        "family": "free-surface-flow",
+        "title": "Shallow water on a flat bed: critical flow and the hydraulic jump",
+        "piece": 6,
+        "model": {
+          "summary": "Steady one-dimensional shallow-water flow in a wide channel with a flat, horizontal bed without friction. The water covers the whole reach. A hydraulic jump connects a supercritical depth to its subcritical conjugate depth.",
+          "roles": [
+            {
+              "id": "h",
+              "quantity": "length",
+              "kind": "field",
+              "meaning": "water depth"
+            },
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "depth-mean velocity"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance along the channel"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "length of the reach"
+            },
+            {
+              "id": "g",
+              "quantity": "gravity",
+              "kind": "parameter",
+              "meaning": "gravitational acceleration"
+            },
+            {
+              "id": "q",
+              "quantity": "discharge-per-width",
+              "kind": "parameter",
+              "meaning": "discharge per unit width"
+            },
+            {
+              "id": "h_1",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "depth of the inflow"
+            },
+            {
+              "id": "h_2",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "conjugate depth after the jump",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "mass",
+              "kind": "governing",
+              "text": "u*d(h,x) + h*d(u,x) = 0",
+              "domain": "0 < x < L"
+            },
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "u*d(u,x) + g*d(h,x) = 0",
+              "domain": "0 < x < L"
+            }
+          ],
+          "closures": [
+            "Hydrostatic pressure and a depth-uniform velocity (the long-wave limit). Across a jump, mass and the momentum function q²/(gh) + h²/2 stay the same, but the energy falls."
+          ],
+          "geometry": "A wide rectangular channel with a flat, horizontal bed. The coordinate x goes from the inflow to the outflow.",
+          "conditions": [
+            {
+              "id": "depth",
+              "kind": "boundary",
+              "text": "h = h_1",
+              "at": "x = 0",
+              "meaning": "the depth of the inflow"
+            },
+            {
+              "id": "velocity",
+              "kind": "boundary",
+              "text": "u = q/h_1",
+              "at": "x = 0",
+              "meaning": "the velocity of the inflow"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "H",
+                "of": "h",
+                "offset": "0",
+                "scale": "h_1",
+                "tex": "H"
+              },
+              {
+                "symbol": "W",
+                "of": "u",
+                "offset": "0",
+                "scale": "q/h_1",
+                "tex": "W"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "F",
+                "tex": "Fr_1^{2}",
+                "def": "q^2/(g*h_1^3)",
+                "solve": "q",
+                "meaning": "square of the inflow Froude number"
+              },
+              {
+                "id": "r",
+                "tex": "h_2/h_1",
+                "def": "h_2/h_1",
+                "solve": "h_2",
+                "meaning": "conjugate depth ratio"
+              },
+              {
+                "id": "ell",
+                "tex": "h_1/L",
+                "def": "h_1/L",
+                "solve": "L",
+                "meaning": "depth over the length of the reach"
+              }
+            ],
+            "equations": [
+              {
+                "of": "mass",
+                "text": "W*d(H,X) + H*d(W,X) = 0"
+              },
+              {
+                "of": "momentum",
+                "text": "F*W*d(W,X) + d(H,X) = 0"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "depth",
+                "text": "H = 1",
+                "at": "X = 0"
+              },
+              {
+                "of": "velocity",
+                "text": "W = 1",
+                "at": "X = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "F",
+              "tex": "Fr_1^{2}",
+              "label": "square of the inflow Froude number q²/(gh₁³)",
+              "min": 0.05,
+              "max": 50,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Hydrostatic pressure and a depth-uniform velocity: the depth is small against the length of the waves.",
+              "source": "swashes"
+            },
+            {
+              "text": "A flat, horizontal bed without friction, and water over the whole reach.",
+              "source": "swashes"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact characteristic count from the sign of Fr² − 1 in rationals.",
+            "Exact critical depth identity E(h_c) = (3/2)h_c, and the alternate depth in a quadratic field.",
+            "Exact conjugate depth in the field Q(√(1 + 8Fr₁²)): equal momentum function, the head-loss formula and its sign."
+          ],
+          "numerical": [
+            "Bisection for the alternate depth, checked against the exact value."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": false,
+            "reason": "The declared steady equations include all terms of the long-wave model. The long-wave limit itself is an assumption, not a computed balance."
+          },
+          "asymptotic": {
+            "applies": false,
+            "reason": "The shallow-water equations are the long-wave limit of the free-surface equations. The declaration states this limit as an assumption and computes no correction."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declaration computes no stability analysis. Roll waves need bed friction and slope, which is a separate declaration."
+          },
+          "bifurcation": {
+            "applies": true,
+            "reason": "The specific energy E(h) has its minimum at the critical depth, where Fr = 1. There the subcritical and the supercritical branch of depths meet at a fold. The exact cubic for the depths has exactly two positive roots above the minimum, so the search is complete."
+          }
+        },
+        "limitations": [
+          "Flat, horizontal bed without friction: the model does not fix the position of a jump.",
+          "No dry bed: a depth of 0 (a dry front) needs a separate declaration.",
+          "The model does not describe the internal structure of the jump (turbulence, air). It gives only the conservation across the jump."
+        ],
+        "acceptance": {
+          "example": "hydraulic-jump",
+          "reference": "h₂/h₁ = (√(1 + 8Fr₁²) − 1)/2 and ΔE = (h₂ − h₁)³/(4h₁h₂) (Apsley, Hydraulics 3: rapidly-varied flow, University of Manchester). mpmath gives the conjugate and alternate depths to 30 digits (tools/flow_references.py).",
+          "tolerance": "Exact for the conjugate depth, the momentum balance, the head loss and the critical depth. 1e-12 relative for the alternate depth by bisection.",
+          "checks": [
+            "The inflow characteristics need two conditions at x = 0, and the record gives two.",
+            "M(h₁) = M(h₂) and ΔE = (h₂ − h₁)³/(4h₁h₂) exactly, with ΔE > 0 and Fr₂ < 1.",
+            "The alternate depth by bisection equals the exact value."
+          ]
+        },
+        "solver": {
+          "method": "Exact arithmetic in rationals and in the quadratic field Q(√d). Bisection for the alternate depth.",
+          "discretization": "None: the model solves algebraic equations, not differential equations.",
+          "convergence": "Bisection to 1e-15 relative width.",
+          "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "blasius",
+        "family": "boundary-layers",
+        "title": "Laminar boundary layer on a flat plate (Blasius)",
+        "piece": 6,
+        "model": {
+          "summary": "Steady, laminar, two-dimensional boundary layer of a fluid with constant properties on a flat plate in a uniform stream. The inner scales of the layer reduce the Navier–Stokes equations to the boundary-layer equations, which have a similarity solution.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the plate"
+            },
+            {
+              "id": "v",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity normal to the plate"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the leading edge"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the plate"
+            },
+            {
+              "id": "U",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "outer speed"
+            },
+            {
+              "id": "nu",
+              "quantity": "kinematic-viscosity",
+              "kind": "parameter",
+              "meaning": "kinematic viscosity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density",
+              "optional": true
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "distance of the station"
+            },
+            {
+              "id": "y_e",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "outer edge of the computation"
+            },
+            {
+              "id": "tau_w",
+              "quantity": "stress",
+              "kind": "parameter",
+              "meaning": "wall shear stress",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "continuity",
+              "kind": "governing",
+              "text": "d(v,y) + d(u,x) = 0",
+              "domain": "x > 0, 0 < y < y_e"
+            },
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y)",
+              "domain": "x > 0, 0 < y < y_e"
+            }
+          ],
+          "closures": [
+            "Newtonian fluid with constant properties. The pressure across the layer equals the pressure of the uniform outer stream (MIT 16.110, boundary-layer analysis)."
+          ],
+          "geometry": "A flat plate with a sharp leading edge at x = 0, parallel to the stream. Y normal to the plate.",
+          "conditions": [
+            {
+              "id": "noslip",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = 0",
+              "meaning": "no slip at the plate"
+            },
+            {
+              "id": "wall",
+              "kind": "boundary",
+              "text": "v = 0",
+              "at": "y = 0",
+              "meaning": "no flow through the plate"
+            },
+            {
+              "id": "outer",
+              "kind": "boundary",
+              "text": "u = U",
+              "at": "y = y_e",
+              "meaning": "the outer stream"
+            },
+            {
+              "id": "edge",
+              "kind": "boundary",
+              "text": "u = U",
+              "at": "x = 0",
+              "meaning": "the stream at the leading edge"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "(nu*L/U)^(1/2)",
+                "tex": "Y"
+              },
+              {
+                "symbol": "Uh",
+                "of": "u",
+                "offset": "0",
+                "scale": "U",
+                "tex": "\\hat u"
+              },
+              {
+                "symbol": "Vh",
+                "of": "v",
+                "offset": "0",
+                "scale": "U*(nu/(U*L))^(1/2)",
+                "tex": "\\hat v"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Re",
+                "tex": "Re_L",
+                "def": "U*L/nu",
+                "solve": "U",
+                "meaning": "Reynolds number at the station"
+              },
+              {
+                "id": "Ye",
+                "tex": "Y_e",
+                "def": "y_e*(U/(nu*L))^(1/2)",
+                "solve": "y_e",
+                "meaning": "outer edge in inner units"
+              },
+              {
+                "id": "cf",
+                "tex": "c_f/2",
+                "def": "tau_w/(rho*U^2)",
+                "solve": "tau_w",
+                "meaning": "half the skin-friction coefficient"
+              }
+            ],
+            "equations": [
+              {
+                "of": "continuity",
+                "text": "d(Vh,Y) + d(Uh,X) = 0"
+              },
+              {
+                "of": "momentum",
+                "text": "Uh*d(Uh,X) + Vh*d(Uh,Y) = d(Uh,Y,Y)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "noslip",
+                "text": "Uh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "wall",
+                "text": "Vh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "outer",
+                "text": "Uh = 1",
+                "at": "Y = Ye"
+              },
+              {
+                "of": "edge",
+                "text": "Uh = 1",
+                "at": "X = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Re",
+              "tex": "Re_L",
+              "label": "Reynolds number UL/ν at the station",
+              "min": 10,
+              "max": 10000000.0,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar, two-dimensional flow with constant properties and a uniform outer stream.",
+              "source": "mit-16110"
+            },
+            {
+              "text": "A thin layer: Re_L ≫ 1. The model does not describe the leading edge, where Re is of order 1.",
+              "source": "mit-16110"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact exponents of the inner scales: δ/L = Re^(−1/2), V/U = Re^(−1/2) and neglected terms of relative size Re^(−1).",
+            "Exact equal powers of x in every term under the similarity variable η = y√(U/(νx))."
+          ],
+          "numerical": [
+            "Shooting on f''(0) with the classical Runge–Kutta method, with step and domain convergence and the momentum-integral check."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Near the wall, viscosity must balance inertia. This balance gives the inner thickness δ = L Re^(−1/2) and the boundary-layer equations, with the terms of order Re^(−1) neglected."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The boundary-layer equations are the leading order of the limit Re → ∞ with x fixed. The first correction comes from the displacement of the outer flow, with the relative size δ*/x = 1.72/√Re_x. The page states it as an estimated remainder, not a proved bound."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. The linear stability of the Blasius layer needs the Orr–Sommerfeld eigenproblem, and transition is a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The similarity solution is unique for a flat plate with a uniform outer stream: there are no branches."
+          }
+        },
+        "limitations": [
+          "Laminar layer only: the model does not predict transition, and a turbulent layer needs a separate declaration.",
+          "Zero pressure gradient only: no separation.",
+          "Not valid near the leading edge, where Re_x is of order 1."
+        ],
+        "acceptance": {
+          "example": "blasius-plate",
+          "reference": "f''(0) = 0.332057336215 (mpmath to 30 digits, tools/flow_references.py). F''(0) = 0.33206 and c_f = 0.664/√Re_x (Lienhard, A Heat Transfer Textbook, section 6.2, Table 6.1 and eqns. (6.32) and (6.33)). Δ* and θ from the same mpmath solution.",
+          "tolerance": "f''(0) within 1e-9 of the mpmath value. Step order within 0.3 of 4. Domain change below 1e-9. Momentum integral within 1e-9.",
+          "checks": [
+            "The exponents of the inner scales and of the similarity form are exact.",
+            "f''(0) agrees with the mpmath reference and converges at fourth order in the step.",
+            "The momentum-integral relation ∫f'(1 − f')dη = 2f''(0) holds."
+          ]
+        },
+        "solver": {
+          "method": "Shooting on f''(0) with bisection, and the classical fourth-order Runge–Kutta method for f''' + ff''/2 = 0.",
+          "discretization": "Steps 0.1, 0.05 and 0.025 on 0 ≤ η ≤ 12. Domains η_max = 10, 12 and 14.",
+          "convergence": "Bisection to 1e-15. Observed step order within 0.3 of 4. Change from η_max = 12 to 14 below 1e-9.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "joukowski-airfoil",
+        "family": "external-aerodynamic-flow",
+        "title": "Potential flow past a cylinder and a Joukowski airfoil, with thin-airfoil theory",
+        "piece": 6,
+        "model": {
+          "summary": "Two-dimensional incompressible potential flow past a circular cylinder with circulation and past its conformal image, a Joukowski airfoil. The Kutta condition holds at the trailing edge. Thin-airfoil theory for the parabolic camber line is the small-angle, small-camber limit.",
+          "roles": [
+            {
+              "id": "phi",
+              "quantity": "velocity-potential",
+              "kind": "field",
+              "meaning": "velocity potential"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance along the stream"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance normal to the stream"
+            },
+            {
+              "id": "U",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "stream speed"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density",
+              "optional": true
+            },
+            {
+              "id": "c",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "chord"
+            },
+            {
+              "id": "alpha",
+              "quantity": "angle",
+              "kind": "parameter",
+              "meaning": "angle of attack"
+            },
+            {
+              "id": "m",
+              "quantity": "length-ratio",
+              "kind": "parameter",
+              "meaning": "camber ratio"
+            },
+            {
+              "id": "epsilon",
+              "quantity": "length-ratio",
+              "kind": "parameter",
+              "meaning": "thickness parameter"
+            },
+            {
+              "id": "X_f",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "far-field distance"
+            },
+            {
+              "id": "L_p",
+              "quantity": "line-load",
+              "kind": "parameter",
+              "meaning": "lift per unit span",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "laplace",
+              "kind": "governing",
+              "text": "d(phi,x,x) + d(phi,y,y) = 0",
+              "domain": "outside the airfoil"
+            }
+          ],
+          "closures": [
+            "Irrotational incompressible flow: u = ∇φ and ∇²φ = 0. Bernoulli's equation gives the pressure. The Kutta condition fixes the circulation."
+          ],
+          "geometry": "A Joukowski airfoil z = ζ + b²/ζ, the image of a circle through ζ = b with the centre ζ₀ = b(−ε + i·2m(1 + ε)). Chord about 4b. The far-field boundary is a square of half-width X_f.",
+          "conditions": [
+            {
+              "id": "left",
+              "kind": "boundary",
+              "text": "d(phi,x) = U",
+              "at": "x = -X_f",
+              "meaning": "the stream far upstream"
+            },
+            {
+              "id": "right",
+              "kind": "boundary",
+              "text": "d(phi,x) = U",
+              "at": "x = X_f",
+              "meaning": "the stream far downstream"
+            },
+            {
+              "id": "bottom",
+              "kind": "boundary",
+              "text": "d(phi,y) = 0",
+              "at": "y = -X_f",
+              "meaning": "the stream far below"
+            },
+            {
+              "id": "top",
+              "kind": "boundary",
+              "text": "d(phi,y) = 0",
+              "at": "y = X_f",
+              "meaning": "the stream far above"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "c",
+                "tex": "X"
+              },
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "c",
+                "tex": "Y"
+              },
+              {
+                "symbol": "Ph",
+                "of": "phi",
+                "offset": "0",
+                "scale": "U*c",
+                "tex": "\\hat\\phi"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "alpha",
+                "tex": "\\alpha",
+                "def": "alpha",
+                "solve": "alpha",
+                "meaning": "angle of attack (rad)"
+              },
+              {
+                "id": "m",
+                "tex": "m",
+                "def": "m",
+                "solve": "m",
+                "meaning": "camber ratio"
+              },
+              {
+                "id": "eps",
+                "tex": "\\varepsilon",
+                "def": "epsilon",
+                "solve": "epsilon",
+                "meaning": "thickness parameter"
+              },
+              {
+                "id": "Xf",
+                "tex": "X_f/c",
+                "def": "X_f/c",
+                "solve": "X_f",
+                "meaning": "far-field distance in chords"
+              },
+              {
+                "id": "Cl",
+                "tex": "C_l",
+                "def": "2*L_p/(rho*U^2*c)",
+                "solve": "L_p",
+                "meaning": "lift coefficient"
+              }
+            ],
+            "equations": [
+              {
+                "of": "laplace",
+                "text": "d(Ph,X,X) + d(Ph,Y,Y) = 0"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "left",
+                "text": "d(Ph,X) = 1",
+                "at": "X = -Xf"
+              },
+              {
+                "of": "right",
+                "text": "d(Ph,X) = 1",
+                "at": "X = Xf"
+              },
+              {
+                "of": "bottom",
+                "text": "d(Ph,Y) = 0",
+                "at": "Y = -Xf"
+              },
+              {
+                "of": "top",
+                "text": "d(Ph,Y) = 0",
+                "at": "Y = Xf"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "alpha",
+              "tex": "\\alpha",
+              "label": "angle of attack in radians",
+              "min": -0.1,
+              "max": 0.35,
+              "log": false,
+              "kind": "parameter"
+            },
+            {
+              "id": "m",
+              "tex": "m",
+              "label": "camber ratio",
+              "min": 0,
+              "max": 0.1,
+              "log": false,
+              "kind": "parameter"
+            },
+            {
+              "id": "eps",
+              "tex": "\\varepsilon",
+              "label": "Joukowski thickness parameter",
+              "min": 0,
+              "max": 0.2,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Incompressible, inviscid, irrotational flow with the Kutta condition at the sharp trailing edge.",
+              "source": "mit-1601-f18"
+            },
+            {
+              "text": "Attached flow at high Reynolds number: the boundary layer is thin and does not separate.",
+              "source": "nasa-foilinc"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "Exact cylinder forces as polynomials in the circulation: zero drag and the lift ρUΓ (trigonometric integrals as rational multiples of π).",
+            "Exact Fourier coefficients A₀ = α, A₁ = 4m, A₂ = 0 of the parabolic camber line: c_l = 2πα + 4πm and c_m,c/4 = −πm."
+          ],
+          "numerical": [
+            "Pressure integration around the Joukowski airfoil with the midpoint rule on 16 to 256 points.",
+            "The lumped-vortex method on 16 to 128 panels.",
+            "Thin-airfoil theory against the exact circular arc along a limit path, and the approximation boundary by bisection."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": false,
+            "reason": "Potential flow has one balance: the Laplace equation. Viscosity enters only through the Kutta condition, so there is no competing term to compare."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Thin-airfoil theory is the limit of small angle, camber and thickness. The page checks it against the exact circular-arc solution along a limit path, and it maps the approximation boundary where the error reaches the tolerance."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declaration computes no stability analysis: the steady potential flow has no time dependence, and stall needs a viscous model."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The Kutta condition gives one circulation for each angle: there are no branches."
+          }
+        },
+        "limitations": [
+          "Potential flow gives no drag and does not predict separation or stall.",
+          "Two-dimensional flow only: no tip effects of a finite wing.",
+          "Incompressible flow only: Mach number well below 1."
+        ],
+        "acceptance": {
+          "example": "airfoil-flow",
+          "reference": "Kutta–Joukowski theorem L' = ρUΓ with Γ = 4πUa sin(α + β). Thin-airfoil theory c_l = 2π(α − α_L0) and c_m,c/4 = (π/4)(A₂ − A₁) (MIT 16.01 Fluids lecture notes F18 and 4. MIT 18.354 lecture 21). mpmath gives the Joukowski lift coefficient to 30 digits (tools/flow_references.py).",
+          "tolerance": "Exact for the cylinder forces and the Fourier coefficients. 1e-12 relative for the pressure lift at 256 points. 1e-10 for the flat plate and the lumped-vortex lift. 1e-4 for the moment at 128 panels with order 2 ± 0.3.",
+          "checks": [
+            "Zero drag and L' = ρUΓ on the cylinder, exactly.",
+            "The Fourier coefficients of the camber line, exactly.",
+            "The pressure integral equals the Kutta–Joukowski lift.",
+            "The lumped-vortex method gives the thin-airfoil lift and converges to the moment."
+          ]
+        },
+        "solver": {
+          "method": "Conformal map of the circle flow with the Kutta condition. Midpoint-rule pressure integration. The lumped-vortex method with a dense linear solve.",
+          "discretization": "16, 32, 64, 128 and 256 surface points. 16, 32, 64 and 128 panels.",
+          "convergence": "Pressure lift within 1e-12 at 256 points. Moment order 2 ± 0.3.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
       }
     ],
     "separate": [
@@ -12784,6 +16210,27 @@
         "needs": "plasticity",
         "family": "beams-and-columns",
         "next": "Use the elastic declaration beam-column for the deflection below yield. A collapse load needs a declaration with a yield law and plastic hinges."
+      },
+      {
+        "id": "dry-front",
+        "title": "A flow front over a dry bed",
+        "needs": "a dry front (h = 0)",
+        "family": "free-surface-flow",
+        "next": "Use the model shallow-water when water covers the whole reach. A front over a dry bed needs a declaration with a moving wet–dry boundary."
+      },
+      {
+        "id": "turbulent-boundary-layer",
+        "title": "A turbulent boundary layer",
+        "needs": "turbulence",
+        "family": "boundary-layers",
+        "next": "Use the model blasius for a laminar layer. A turbulent layer needs a declaration with a turbulence closure."
+      },
+      {
+        "id": "airfoil-stall",
+        "title": "An airfoil at stall",
+        "needs": "flow separation and a viscous model",
+        "family": "external-aerodynamic-flow",
+        "next": "Use the model joukowski-airfoil at small angles with attached flow. Stall needs a declaration with a viscous boundary layer and separation."
       }
     ]
   },
@@ -13692,6 +17139,458 @@
           "h_1"
         ],
         "det_DR": null
+      },
+      {
+        "example": "pipe-flow",
+        "symbols": [
+          "R",
+          "u_m",
+          "mu",
+          "rho",
+          "k",
+          "c_p",
+          "h"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T",
+          "Theta"
+        ],
+        "D": [
+          [
+            "0",
+            "0",
+            "1",
+            "1",
+            "1",
+            "0",
+            "1"
+          ],
+          [
+            "1",
+            "1",
+            "-1",
+            "-3",
+            "1",
+            "2",
+            "0"
+          ],
+          [
+            "0",
+            "-1",
+            "-1",
+            "0",
+            "-3",
+            "-2",
+            "-3"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "0",
+            "-1",
+            "-1",
+            "-1"
+          ]
+        ],
+        "rank": 4,
+        "groups": 3,
+        "kernel": [
+          [
+            "1",
+            "1",
+            "-1",
+            "1",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "1",
+            "0",
+            "-1",
+            "1",
+            "0"
+          ],
+          [
+            "1",
+            "0",
+            "0",
+            "0",
+            "-1",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "R",
+          "u_m",
+          "rho",
+          "k"
+        ],
+        "det_DR": "1"
+      },
+      {
+        "example": "channel-flow",
+        "symbols": [
+          "b",
+          "u_m",
+          "mu",
+          "rho",
+          "G"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "0",
+            "0",
+            "1",
+            "1",
+            "1"
+          ],
+          [
+            "1",
+            "1",
+            "-1",
+            "-3",
+            "-2"
+          ],
+          [
+            "0",
+            "-1",
+            "-1",
+            "0",
+            "-2"
+          ]
+        ],
+        "rank": 3,
+        "groups": 2,
+        "kernel": [
+          [
+            "1",
+            "1",
+            "-1",
+            "1",
+            "0"
+          ],
+          [
+            "2",
+            "-1",
+            "-1",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "b",
+          "u_m",
+          "rho"
+        ],
+        "det_DR": "-1"
+      },
+      {
+        "example": "nozzle-flow",
+        "symbols": [
+          "mdot",
+          "p_0",
+          "T_0",
+          "R_g",
+          "A_t",
+          "A_e",
+          "p_b"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T",
+          "Theta"
+        ],
+        "D": [
+          [
+            "1",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ],
+          [
+            "0",
+            "-1",
+            "0",
+            "2",
+            "2",
+            "2",
+            "-1"
+          ],
+          [
+            "-1",
+            "-2",
+            "0",
+            "-2",
+            "0",
+            "0",
+            "-2"
+          ],
+          [
+            "0",
+            "0",
+            "1",
+            "-1",
+            "0",
+            "0",
+            "0"
+          ]
+        ],
+        "rank": 4,
+        "groups": 3,
+        "kernel": [
+          [
+            "-1",
+            "1",
+            "-1/2",
+            "-1/2",
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "-1",
+            "1",
+            "-1/2",
+            "-1/2",
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "0",
+            "-1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "p_0",
+          "T_0",
+          "R_g",
+          "A_t"
+        ],
+        "det_DR": "4"
+      },
+      {
+        "example": "hydraulic-jump",
+        "symbols": [
+          "g",
+          "q",
+          "h_1",
+          "h_2"
+        ],
+        "rows": [
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "1",
+            "2",
+            "1",
+            "1"
+          ],
+          [
+            "-2",
+            "-1",
+            "0",
+            "0"
+          ]
+        ],
+        "rank": 2,
+        "groups": 2,
+        "kernel": [
+          [
+            "1/3",
+            "-2/3",
+            "1",
+            "0"
+          ],
+          [
+            "1/3",
+            "-2/3",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "h_1",
+          "g"
+        ],
+        "det_DR": "-2"
+      },
+      {
+        "example": "blasius-plate",
+        "symbols": [
+          "U",
+          "nu",
+          "rho",
+          "L",
+          "tau_w"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "0",
+            "0",
+            "1",
+            "0",
+            "1"
+          ],
+          [
+            "1",
+            "2",
+            "-3",
+            "1",
+            "-1"
+          ],
+          [
+            "-1",
+            "-1",
+            "0",
+            "0",
+            "-2"
+          ]
+        ],
+        "rank": 3,
+        "groups": 2,
+        "kernel": [
+          [
+            "1",
+            "-1",
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "-2",
+            "0",
+            "-1",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "rho",
+          "U",
+          "L"
+        ],
+        "det_DR": "1"
+      },
+      {
+        "example": "airfoil-flow",
+        "symbols": [
+          "U",
+          "rho",
+          "c",
+          "alpha",
+          "m",
+          "epsilon",
+          "L_p"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "0",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ],
+          [
+            "1",
+            "-3",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "-1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "-2"
+          ]
+        ],
+        "rank": 3,
+        "groups": 4,
+        "kernel": [
+          [
+            "0",
+            "0",
+            "0",
+            "1",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "0",
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "-2",
+            "-1",
+            "-1",
+            "0",
+            "0",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "rho",
+          "U",
+          "c"
+        ],
+        "det_DR": "1"
       },
       {
         "example": "fail-dimensions",
@@ -15795,6 +19694,288 @@
           "L"
         ],
         "det_DR": "1"
+      },
+      {
+        "example": "fail-nozzle-shock",
+        "symbols": [
+          "mdot",
+          "p_0",
+          "T_0",
+          "R_g",
+          "A_t",
+          "A_e",
+          "p_b"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T",
+          "Theta"
+        ],
+        "D": [
+          [
+            "1",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ],
+          [
+            "0",
+            "-1",
+            "0",
+            "2",
+            "2",
+            "2",
+            "-1"
+          ],
+          [
+            "-1",
+            "-2",
+            "0",
+            "-2",
+            "0",
+            "0",
+            "-2"
+          ],
+          [
+            "0",
+            "0",
+            "1",
+            "-1",
+            "0",
+            "0",
+            "0"
+          ]
+        ],
+        "rank": 4,
+        "groups": 3,
+        "kernel": [
+          [
+            "-1",
+            "1",
+            "-1/2",
+            "-1/2",
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "-1",
+            "1",
+            "-1/2",
+            "-1/2",
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "0",
+            "-1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "p_0",
+          "T_0",
+          "R_g",
+          "A_t"
+        ],
+        "det_DR": "4"
+      },
+      {
+        "example": "fail-jump-subcritical",
+        "symbols": [
+          "g",
+          "q",
+          "h_1",
+          "h_2"
+        ],
+        "rows": [
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "1",
+            "2",
+            "1",
+            "1"
+          ],
+          [
+            "-2",
+            "-1",
+            "0",
+            "0"
+          ]
+        ],
+        "rank": 2,
+        "groups": 2,
+        "kernel": [
+          [
+            "1/3",
+            "-2/3",
+            "1",
+            "0"
+          ],
+          [
+            "1/3",
+            "-2/3",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "h_1",
+          "g"
+        ],
+        "det_DR": "-2"
+      },
+      {
+        "example": "fail-airfoil-stall",
+        "symbols": [
+          "U",
+          "rho",
+          "c",
+          "alpha",
+          "m",
+          "epsilon",
+          "L_p"
+        ],
+        "rows": [
+          "M",
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "0",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1"
+          ],
+          [
+            "1",
+            "-3",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "-1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "-2"
+          ]
+        ],
+        "rank": 3,
+        "groups": 4,
+        "kernel": [
+          [
+            "0",
+            "0",
+            "0",
+            "1",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "0",
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "-2",
+            "-1",
+            "-1",
+            "0",
+            "0",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "rho",
+          "U",
+          "c"
+        ],
+        "det_DR": "1"
+      },
+      {
+        "example": "fail-dry-bed",
+        "symbols": [
+          "g",
+          "q",
+          "h_1",
+          "h_2"
+        ],
+        "rows": [
+          "L",
+          "T"
+        ],
+        "D": [
+          [
+            "1",
+            "2",
+            "1",
+            "1"
+          ],
+          [
+            "-2",
+            "-1",
+            "0",
+            "0"
+          ]
+        ],
+        "rank": 2,
+        "groups": 2,
+        "kernel": [
+          [
+            "1/3",
+            "-2/3",
+            "1",
+            "0"
+          ],
+          [
+            "1/3",
+            "-2/3",
+            "0",
+            "1"
+          ]
+        ],
+        "preferred": [
+          "h_1",
+          "g"
+        ],
+        "det_DR": "-2"
       }
     ],
     "nondimensional": [
@@ -17474,6 +21655,80 @@
       "versions": {
         "sympy": "1.14.0"
       }
+    }
+  },
+  "flows": {
+    "about": "Reference values for the flow families of piece 6, independent of the page's engine. Written by tools/flow_references.py; CI compares the engine with this file and never runs the script.",
+    "tool": "tools/flow_references.py",
+    "versions": {
+      "python": "3.12.13",
+      "sympy": "1.14.0",
+      "mpmath": "1.3.0"
+    },
+    "internal": {
+      "pipe": {
+        "P": "8",
+        "S": "2",
+        "fRe": "64",
+        "Nu": "48/11"
+      },
+      "channel": {
+        "P": "3",
+        "S": "1",
+        "fRe": "96",
+        "Nu": "140/17"
+      }
+    },
+    "nozzle": {
+      "gamma": "7/5",
+      "eps": 2.0,
+      "M_sub": 0.3059038341891082,
+      "M_sup": 2.1971981216521863,
+      "p1": 0.9371625024322054,
+      "p3": 0.09393264573284488,
+      "p2": 0.5134007279957163,
+      "phi": 0.6847314563772704,
+      "phi2": "21875/46656"
+    },
+    "jump": {
+      "g": "981/100",
+      "q": "4/5",
+      "h1": "1/5",
+      "Fr1sq": "8000/981",
+      "h2": 0.7138768425141705,
+      "r": 3.5693842125708524,
+      "dE": 0.23760953248521183,
+      "loss_formula": 0.23760953248521183,
+      "h_alt": 0.9816432283874185,
+      "h_c": 0.40256590405865683
+    },
+    "blasius": {
+      "fpp0": {
+        "value": 0.3320573362151963,
+        "digits": "0.33205733621519629973",
+        "eta_max": 14
+      },
+      "eta99": 4.909989513295335,
+      "dstar": 1.7207876575205028,
+      "theta": 0.6641146724303926,
+      "H": 2.5911001954272628
+    },
+    "airfoil": {
+      "cylinder": {
+        "lift_over_pi": "-4*G",
+        "drag": "0"
+      },
+      "thin": {
+        "A0_minus_alpha": "0",
+        "A1": "4*m",
+        "A2": "0"
+      },
+      "alpha_deg": 4,
+      "m": "0.02",
+      "eps": "0.08",
+      "cl_joukowski": 0.7400392034774583,
+      "cl_arc": 0.6890080422522702,
+      "cl_thin": 0.6899764967800438
     }
   }
 }

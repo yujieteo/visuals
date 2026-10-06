@@ -9,8 +9,8 @@
  * boundary with its dimensional reconstruction.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js")]);
-  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR]);
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js"), require("./flows.js")]);
+  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR, root.SM.FL]);
 })(typeof self !== "undefined" ? self : this, function (Q, E, S, SF, D, IMPLS) {
   "use strict";
 
@@ -401,7 +401,7 @@
     const temp = decl.model.dimensionless.variables.find((v) => decl.model.roles.find((r) => r.id === v.of)?.quantity === "absolute-temperature");
     const offset = temp ? exact(temp.offset) : null, scale = temp ? exact(temp.scale) : null;
     return {
-      references: data.references, structures: data.structures ?? null, point0,
+      references: data.references, structures: data.structures ?? null, flows: data.flows ?? null, point0,
       role: (id) => (m.roles[id] ? values.get(m.roles[id].symbol) ?? null : null),
       exact: (text) => { const v = exact(text); return v ? { exact: v.exact ? Q.str(v.exact) : null, float: v.float } : null; },
       reconstruct: (paramId, value) => { const r = D.reconstruct(decl, m, interp, nd, paramId, value); return r ? { id: `recon-${paramId}`, tex: r.tex, label: `${r.meaning || r.symbol} that gives ${paramId} = ${num(value)}`, value: num(r.value), unit: r.unit } : null; },

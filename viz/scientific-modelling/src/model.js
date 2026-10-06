@@ -22,12 +22,14 @@
   const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "transient-cylinder", "transient-sphere", "volumetric-source", "multilayer-wall",
     "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation", "custom-ignition", "custom-lorenz",
     "euler-column", "beam-deflection", "elastica", "damped-oscillator", "beam-modes", "navier-plate", "cylindrical-shell", "thermal-rod", "thermal-plate",
-    "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported", "fail-plastic"];
+    "pipe-flow", "channel-flow", "nozzle-flow", "hydraulic-jump", "blasius-plate", "airfoil-flow",
+    "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported", "fail-plastic", "fail-nozzle-shock", "fail-jump-subcritical", "fail-airfoil-stall", "fail-dry-bed"];
   const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Transient cylinder", "Transient sphere", "Volumetric source", "Multilayer wall",
     "Rayleigh–Bénard convection", "Natural convection in an enclosure", "Lumped body with radiation", "Surface radiation", "Convection and radiation", "Custom ODE: ignition", "Custom ODE: Lorenz system",
     "Euler column", "Beam under a uniform load", "Nonlinear buckling: the elastica", "Damped oscillator", "Beam vibration modes", "Rectangular plate", "Cylindrical shell", "Heated rod", "Heated plate",
+    "Pipe flow", "Channel flow", "Nozzle flow", "Hydraulic jump", "Flat-plate boundary layer", "Airfoil in potential flow",
     "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors",
-    "Failure: unsupported analysis", "Failure: plastic collapse"];
+    "Failure: unsupported analysis", "Failure: plastic collapse", "Failure: shock in the nozzle", "Failure: no jump from a slow flow", "Failure: airfoil at a large angle", "Failure: flow over a dry bed"];
   const MAX_STEP = 60;
 
   /** The view state (§5): every field is in the URL when it differs from its default. */
