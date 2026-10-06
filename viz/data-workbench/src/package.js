@@ -124,6 +124,15 @@
     });
   }
 
+  /** The report's section on derived views and tables: each with its kind, its inputs and the records that made it. */
+  function derivedSection(run) {
+    const derived = run.transforms?.derived ?? [];
+    if (!derived.length) return [];
+    return ["## Derived views and tables", "", "Made with the SQL editor or the visual controls; transforms.json holds each transformation record, with its SQL, its rows in and out and its join diagnostics.", "",
+      "| Name | Kind | Made from | Rows | Records | Analysed |", "| --- | --- | --- | --- | --- | --- |",
+      ...derived.map((d) => `| ${md(d.name)} | ${d.kind} | ${md(d.inputs.join(", "))} | ${n(d.rows)} | ${md(d.lineage.join(", "))} | ${d.analysed ? "yes, as its own table and family" : "no"} |`), ""];
+  }
+
   /** transforms.json: how each table was read and changed, and every chart operation the specifications use. */
   function transformsFile(run) {
     const ops = new Map();
@@ -132,7 +141,7 @@
       tables: run.tables.map((t) => {
         const s = t.snapshot;
         return {
-          table: t.name, source: { file: s.file.name, bytes: s.file.bytes, sha256: s.file.sha256, kind: s.kind, example: s.example ?? null },
+          table: t.name, source: s.derived ? { derived: s.derived } : { file: s.file.name, bytes: s.file.bytes, sha256: s.file.sha256, kind: s.kind, example: s.example ?? null },
           import: { rows: s.rows, columns: s.columns, rowColumn: s.rowColumn, sample: s.sample ?? null, columnsKept: s.columnsKept ?? null, dialect: s.dialect ?? null,
             rejectedLines: s.rejected?.count ?? 0, parquet: s.parquet ?? null },
           readings: s.profiled.map((c) => ({ column: c.name, sourceType: c.sourceType, type: c.type, reading: c.reading, share: c.share, role: c.role, unit: c.unit ?? null, yourChanges: c.yourChanges })),
@@ -141,6 +150,8 @@
         };
       }),
       operations: Object.fromEntries(ops),
+      derived: run.transforms?.derived ?? [],
+      records: run.transforms?.records ?? [],
       log: run.log,
     });
   }
@@ -200,7 +211,8 @@
       "- `manifest.json`: every file's size and SHA-256, the versions, the seeds and the completion status.", "",
       "## Sources", "",
       "| Table | File | Bytes | SHA-256 | Rows used |", "| --- | --- | --- | --- | --- |",
-      ...run.tables.map((t) => `| ${md(t.name)} | ${md(t.snapshot.file.name)} | ${n(t.snapshot.file.bytes)} | \`${t.snapshot.file.sha256 || "not computed"}\` | ${n(t.snapshot.rows)}${t.snapshot.sample ? ` (a seeded sample, seed ${t.snapshot.sample.seed})` : ""} |`), "",
+      ...run.tables.filter((t) => !t.snapshot.derived).map((t) => `| ${md(t.name)} | ${md(t.snapshot.file.name)} | ${n(t.snapshot.file.bytes)} | \`${t.snapshot.file.sha256 || "not computed"}\` | ${n(t.snapshot.rows)}${t.snapshot.sample ? ` (a seeded sample, seed ${t.snapshot.sample.seed})` : ""} |`), "",
+      ...derivedSection(run),
       "## Methods", "",
       ...run.methods.map((m) => `- ${m}`), ""];
     for (const t of run.tables) {
@@ -330,7 +342,7 @@
       narration: `This deck shows the highlighted figures of ${count(tables.length, "table", "tables")}, from an export package of the Universal Data Workbench.`,
       setup: [{
         title: "What was analysed",
-        body: tables.length ? tables.map((t) => `- ${md(t.name)}: ${md(t.snapshot.file.name)}, ${count(t.snapshot.rows, "row", "rows")}${t.snapshot.sample ? `, a seeded sample (seed ${t.snapshot.sample.seed})` : ""}; SHA-256 \`${t.snapshot.file.sha256 || "not computed"}\``).join("\n") : "- No table.",
+        body: tables.length ? tables.map((t) => t.snapshot.derived ? `- ${md(t.name)}: a derived table made by the transformation records ${md(t.snapshot.derived.records.join(", "))}, ${count(t.snapshot.rows, "row", "rows")}` : `- ${md(t.name)}: ${md(t.snapshot.file.name)}, ${count(t.snapshot.rows, "row", "rows")}${t.snapshot.sample ? `, a seeded sample (seed ${t.snapshot.sample.seed})` : ""}; SHA-256 \`${t.snapshot.file.sha256 || "not computed"}\``).join("\n") : "- No table.",
         narration: `${count(tables.length, "table was", "tables were")} imported on one device. The files never left it.`,
       }],
       method: [{
@@ -391,7 +403,7 @@
       publication: run.publication,
       formats: run.formats,
       beamdswitch: run.beamdswitch,
-      sources: run.tables.map((t) => ({ table: t.name, file: t.snapshot.file.name, bytes: t.snapshot.file.bytes, sha256: t.snapshot.file.sha256, example: t.snapshot.example ?? null,
+      sources: run.tables.filter((t) => !t.snapshot.derived).map((t) => ({ table: t.name, file: t.snapshot.file.name, bytes: t.snapshot.file.bytes, sha256: t.snapshot.file.sha256, example: t.snapshot.example ?? null,
         included: run.sources ? sourcePath(t.name, t.snapshot.file.name) : null })),
       seeds: run.seeds,
       transformations: "transforms.json", statisticalMethods: "stats.json",

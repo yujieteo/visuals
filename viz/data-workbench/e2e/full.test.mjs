@@ -6,7 +6,9 @@
 // the charts: every candidate of the planted example, the full-size view, an edit with facets, a refused edit
 // and a page of timeline events, with the time to the first figure; the findings: the family, both lists with
 // their highlights explained, the highlight count, the study details and get_findings; and the publication figures:
-// the Nature preset, and the PDF, PNG and SVG downloads read back with the page's own readers.
+// the Nature preset, and the PDF, PNG and SVG downloads read back with the page's own readers; and SQL and table
+// algebra: a join by the visual controls with its diagnostics, a refused statement, a query's result analysed as its
+// own table with its records cited by its charts, and the package that makes it again in a fresh page.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -365,6 +367,94 @@ if (selected) {
           assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
         } finally {
           await s.close();
+        }
+      });
+
+      test("SQL and table algebra: a join by the controls with its diagnostics, a refused statement, a result analysed as its own table, and a package that makes it again", { timeout: 600_000 }, async () => {
+        const s = await openSession(browser, project, targets.origin(artifact));
+        const zipPath = join(tmp, `${project.name}-sql-package.zip`);
+        const idle = () => s.page.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById("progress")).hidden, null, { timeout: 240_000 });
+        try {
+          await s.page.addInitScript(() => {
+            const tools = /** @type {Record<string, any>} */ ({});
+            Object.defineProperty(document, "modelContext", { value: { registerTool: (/** @type {any} */ t) => { tools[t.name] = t; } }, configurable: true });
+            /** @type {any} */ (window).__tools = tools;
+          });
+          await s.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
+          await settle(s.page, 'html[data-ready="true"]');
+          await s.page.locator("#files").setInputFiles(["orders.csv", "customers.csv"].map((f) => join(folder, "tests", "fixtures", "sql", f)));
+          await s.page.waitForFunction(() => document.querySelectorAll("#queue .ok-text").length === 2, null, { timeout: 120_000 });
+          await s.page.locator("#import").click();
+          await s.page.waitForFunction(() => !!document.getElementById("tab-orders") && !!document.getElementById("tab-customers") && !document.querySelector("#queue li"), null, { timeout: 240_000 });
+          await idle();
+          // The controls: orders LEFT JOIN customers on customer, which customers repeats (c2) and orders lacks once.
+          await s.page.locator("#q-source").selectOption("orders");
+          await s.page.locator("#q-add").selectOption("join");
+          await s.page.locator("#q-1-table").selectOption("customers");
+          await s.page.locator("#q-1-l0").selectOption("customer");
+          await s.page.locator("#q-1-r0").selectOption("customer");
+          await s.page.locator(".step-sql", { hasText: "LEFT JOIN" }).waitFor({ timeout: 60_000 });
+          assert.match(await s.page.locator(".step-sql").innerText(), /FROM "orders" AS l LEFT JOIN "customers" AS r ON l\."customer" = r\."customer"/, "the step shows its SQL");
+          await s.page.locator("#q-run").click();
+          await s.page.locator("[data-result]").waitFor({ timeout: 120_000 });
+          assert.match(await s.page.locator("[data-result]").innerText(), /^8 rows, 11 columns\. In the order of __row, then __row_customers\./);
+          const record = s.page.locator("[data-run-records] details").first();
+          await record.locator("summary").click();
+          const diag = record.locator(".join-diag");
+          assert.equal(await diag.locator("[data-factor]").getAttribute("data-factor"), "1.5", "6 pairs from 4 matched orders: rows repeated");
+          assert.match(await diag.innerText(), /"c9"[\s\S]*"c3"/, "an unmatched key of each side");
+          // The editor refuses a statement that changes an import, and runs nothing.
+          await s.page.locator('[data-mode="sql"]').click();
+          await s.page.locator("#sql-editor").fill("SELECT 1; DELETE FROM orders");
+          await s.page.locator("#sql-run").click();
+          assert.match(await s.page.locator("[data-refusal]").innerText(), /Statement 2: DELETE changes the rows of a table\. Imported tables are read-only/);
+          // A query's result analysed as a table of its own.
+          await s.page.locator("#sql-editor").fill("SELECT o.order_id, o.city, c.name, c.tier\nFROM orders AS o JOIN customers AS c ON o.customer = c.customer");
+          await s.page.locator("#sql-run").click();
+          await s.page.locator("[data-result]", { hasText: "6 rows" }).waitFor({ timeout: 120_000 });
+          await s.page.locator("#q-name").fill("joined");
+          await s.page.locator("#q-analyse").click();
+          await s.page.locator("#tab-joined").waitFor({ timeout: 120_000 });
+          await s.page.waitForFunction(() => !!document.querySelector('#charts-view [data-accounting="complete"]') && document.getElementById("tab-joined")?.getAttribute("aria-selected") === "true", null, { timeout: 240_000 });
+          await idle();
+          const inspect = await view(s.page);
+          assert.match(inspect, /Derived table/);
+          assert.match(inspect, /Made from\s+the result of the SQL, by the transformation records t1, t2/);
+          const call = (/** @type {string} */ name, /** @type {any} */ input) => s.page.evaluate(async ([n, i]) => (await /** @type {any} */ (window).__tools[n].execute(i)).content[0].text, [name, input]);
+          const lineage = JSON.parse(await call("get_transforms", { table: "joined" }));
+          assert.deepEqual(lineage.records.map((/** @type {any} */ r) => [r.id, r.kind]), [["t1", "query"], ["t2", "analyse"]]);
+          assert.equal(lineage.records[0].joins[0].pairs, 6);
+          const candidates = JSON.parse(await call("get_candidates", { table: "joined", outcome: "valid" }));
+          const spec = JSON.parse(await call("get_candidates", { table: "joined", id: candidates.candidates[0].id })).spec;
+          assert.deepEqual(spec.transform[0], { id: "records", op: "records", refs: ["t1", "t2"] }, "a derived table's chart starts from the records that made it");
+          assert.match(await s.page.locator("#findings-view").innerText(), /Family joined, run 1/, "its own hypothesis family");
+          // The package keeps the records and the SQL; a fresh page makes the derived table again and reproduces it.
+          await s.page.locator("#export-sources").check();
+          const [file] = await Promise.all([s.page.waitForEvent("download", { timeout: 300_000 }), s.page.locator("#export-package").click()]);
+          await file.saveAs(zipPath);
+          const zip = await Zip.open(new Blob([readFileSync(zipPath)]));
+          const transforms = JSON.parse(await zip.text("transforms.json"));
+          assert.deepEqual(transforms.records.map((/** @type {any} */ r) => r.id), ["t1", "t2"]);
+          assert.deepEqual(JSON.parse(await zip.text("project.json")).derived.map((/** @type {any} */ d) => [d.name, d.kind, d.analysed]), [["joined", "table", true]]);
+          assert.deepEqual(s.observed.pageErrors, [], "no uncaught errors");
+          assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
+        } finally {
+          await s.close();
+        }
+        const r = await openSession(browser, project, targets.origin(artifact));
+        try {
+          await r.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
+          await settle(r.page, 'html[data-ready="true"]');
+          await r.page.locator("#reopen-file").setInputFiles(zipPath);
+          await r.page.locator("#reopen-go").click();
+          await r.page.locator("[data-reproduced]", { hasText: "joined:" }).waitFor({ timeout: 300_000 });
+          const text = await r.page.locator("#export-view").innerText();
+          assert.match(text, /joined: (\d+) of \1 SVG figures and (\d+) of \2 test results match the saved project\./, text);
+          assert.deepEqual(await r.page.locator("[data-reproduced]").evaluateAll((els) => els.map((e) => e.getAttribute("data-reproduced"))), ["yes", "yes", "yes"], text);
+          assert.match(await r.page.locator("#log").innerText(), /Made the derived table joined again from its SQL\./);
+          assert.deepEqual(r.observed.pageErrors, [], "no uncaught errors");
+        } finally {
+          await r.close();
         }
       });
 

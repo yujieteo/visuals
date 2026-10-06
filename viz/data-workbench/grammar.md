@@ -119,7 +119,8 @@ never the candidate set, so the grammar's version and the fixtures' candidate se
 
 JSON with `version`, `grammar`, `id`, `kind`, `data` (table, rows, a sample), `transform` (the ordered chart
 operations, each with an id: complete, bin, bin2d, box, top, period, aggregate, sample, merge-duplicates,
-order-check, page), `encoding` (a field and its class per channel: x, y, x2, label; or a count), `scale` (linear,
+order-check, page; a derived table's charts begin with records, the ids of the transformation records that made the
+table), `encoding` (a field and its class per channel: x, y, x2, label; or a count), `scale` (linear,
 log10, band, time with its zone, sequential), `layout` (width and height in mm, facet), `annotation` (title, labels,
 units only from the source or the person, caption, notes, findings) and `edits` (each change the person made).
 `ChartSpec.SCHEMA` is its JSON Schema; `ChartSpec.validate` checks it, then the rules above, before every figure is

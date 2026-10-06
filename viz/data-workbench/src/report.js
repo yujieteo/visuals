@@ -22,6 +22,23 @@
   const cell = (text) => String(text ?? "").replace(/\s+/g, " ").replace(/\|/g, "\\|").replace(/^([#:>-])/, "\\$1").slice(0, 120);
   const LABEL = { integer: "integer", decimal: "decimal", boolean: "boolean", date: "date", datetime: "date-time", time: "time", categorical: "categorical", text: "text", empty: "no values", unsupported: "not analysed" };
 
+  /** A frame of the derived views and tables and their transformation records, when there are any. @param {any} x */
+  function transformFrames(x) {
+    if (!x?.records?.length) return [];
+    const rows = (r) => (r.rowsOut === null || r.rowsOut === undefined ? "" : `${r.rowsIn.length ? `${r.rowsIn.map((i) => n(i.rows)).join(" + ")} → ` : ""}${count(r.rowsOut, "row", "rows")}`);
+    return [{
+      title: "Transformations",
+      body: [
+        ...x.derived.map((o) => `- ${cell(o.name)}: a derived ${o.kind} from ${cell(o.inputs.join(", "))}, ${count(o.rows, "row", "rows")}; records ${cell(o.lineage.join(", "))}${o.analysed ? "; analysed as its own table and family" : ""}`),
+        "",
+        "| Record | Kind | Inputs | Rows | Joins |",
+        "| --- | --- | --- | --- | --- |",
+        ...x.records.map((r) => `| ${r.id} | ${cell(r.kind)} | ${cell(r.inputs.join(", "))} | ${rows(r)} | ${r.joins.filter((j) => j.computed && j.kind !== "cross").map((j) => `${cell(j.left)}–${cell(j.right)}: ${n(j.unmatchedLeft.keys)} and ${n(j.unmatchedRight.keys)} unmatched keys, factor ${Number(j.factor.toFixed(3))}${j.flagged ? " (rows repeated)" : ""}`).join("; ") || "–"} |`),
+      ].join("\n"),
+      narration: `${count(x.records.length, "transformation is", "transformations are")} recorded, each with its inputs, its SQL and its rows in and out. Joins list their unmatched and repeated keys.`,
+    }];
+  }
+
   /** @param {any} d the page's snapshot */
   function report(d) {
     const tables = d.tables ?? [];
@@ -34,7 +51,7 @@
       narration: tables.length ? `This deck records ${count(tables.length, "table", "tables")} imported and inspected on one device.` : "This deck records an empty workbench: no table is imported yet.",
       setup: [{
         title: "What was imported",
-        body: tables.length ? tables.map((t) => `- ${cell(t.name)}: ${cell(t.file.name)}, ${count(t.rows, "row", "rows")}, ${count(t.columns, "column", "columns")}; ${t.sample ? `a seeded sample (seed ${t.sample.seed})` : t.columnsKept ? `${t.columnsKept.length} columns kept` : "all rows"}; ${t.status}${t.file.sha256 ? `; SHA-256 ${t.file.sha256}` : ""}`).join("\n") : "- Nothing yet. Choose a CSV or Parquet file, or open an example.",
+        body: tables.length ? tables.map((t) => t.derived ? `- ${cell(t.name)}: a derived table, ${cell(t.derived.from)}, made by the transformation records ${cell(t.derived.records.join(", "))}; ${count(t.rows, "row", "rows")}, ${count(t.columns, "column", "columns")}; ${t.status}` : `- ${cell(t.name)}: ${cell(t.file.name)}, ${count(t.rows, "row", "rows")}, ${count(t.columns, "column", "columns")}; ${t.sample ? `a seeded sample (seed ${t.sample.seed})` : t.columnsKept ? `${t.columnsKept.length} columns kept` : "all rows"}; ${t.status}${t.file.sha256 ? `; SHA-256 ${t.file.sha256}` : ""}`).join("\n") : "- Nothing yet. Choose a CSV or Parquet file, or open an example.",
         narration: tables.length ? `${count(tables.length, "table was", "tables were")} imported, with ${count(rows, "row", "rows")} in all. The files stayed on the device.` : "No file was imported yet.",
       }],
       method: [{
@@ -52,7 +69,7 @@
           ...(d.publication ? [`- Publication figures: the ${cell(d.publication.preset)} preset, ${d.publication.width ? `${n(d.publication.width)} mm wide` : "each chart's own width"}, ${n(d.publication.dpi)} dpi PNG, ${cell(d.publication.font)}; its rules: ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "verified").length)} read in their source, ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "unverified").length)} unverified, ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "workbench").length)} the workbench's own. No compliance is claimed while a check is unverified.`] : []),
         ].join("\n"),
         narration: "A column is read as a type when at least ninety five percent of its values fit that type. Missing values, markers and unusual values are counted, and none is removed or filled.",
-      }],
+      }, ...transformFrames(d.transforms)],
       results: tables.length ? tables.map((t) => ({
         title: `${cell(t.name)}: ${count(t.rows, "row", "rows")}`,
         body: [
@@ -75,7 +92,7 @@
           "",
           `- Still to come: ${(d.pieces ?? []).map((p) => cell(p.title)).join("; ")}.`,
         ].join("\n"),
-        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: the export package, SQL and the phone checks are still to come.`,
+        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: the phone checks and the acceptance tests are still to come.`,
         key: tables.length && tables.every((t) => t.status === "complete") ? "Every value stays as written; each change is approved and logged." : "The inspection is not complete yet.",
       }],
     };

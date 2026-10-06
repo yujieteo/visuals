@@ -75,7 +75,7 @@
    * A field of the table as the SQL reads it.
    * @typedef {{ name: string, cls: string, reading: any, textSource: boolean, type: string, precision: string | null, levels: number,
    *   ordered: boolean, zone: string, logRule: boolean, min: number | null, unit: string, additive: boolean }} TableField
-   * @typedef {{ table: string, rowColumn: string, rows: number, sample: any, fields: Record<string, TableField> }} Context
+   * @typedef {{ table: string, rowColumn: string, rows: number, sample: any, records?: string[], fields: Record<string, TableField> }} Context
    */
 
   const step = (spec, id) => spec.transform.find((/** @type {any} */ t) => t.id === id);
@@ -363,13 +363,13 @@
 
   /**
    * The search of one table: each column's class, the candidates of grammar v1 and the context the rules read.
-   * @param {{ name: string, rowColumn: string, rows: number, sample: any, columns: any[], additive?: Record<string, boolean> }} t
+   * @param {{ name: string, rowColumn: string, rows: number, sample: any, columns: any[], additive?: Record<string, boolean>, records?: string[] }} t
    *   columns: every column's profile in order, a column not profiled as { name, position, notProfiled: true }
    */
   function prepare(t) {
     const classes = Grammar.classifyAll(t.columns);
     const plan = Grammar.enumerate(t.name, classes);
-    const ctx = { table: t.name, rowColumn: t.rowColumn, rows: t.rows, sample: t.sample ?? null, fields: fieldInfo(classes, t.columns.filter((c) => !c.notProfiled), t.additive ?? {}) };
+    const ctx = { table: t.name, rowColumn: t.rowColumn, rows: t.rows, sample: t.sample ?? null, records: t.records ?? [], fields: fieldInfo(classes, t.columns.filter((c) => !c.notProfiled), t.additive ?? {}) };
     return { classes, plan, ctx };
   }
 

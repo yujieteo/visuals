@@ -64,8 +64,8 @@
     additive: /** @type {Record<string, boolean>} */ ({}),
   };
   const budget = () => (store.budgetChoice === "auto" ? device.budget : Number(store.budgetChoice));
-  const used = () => store.tables.reduce((a, t) => a + t.estimate, 0);
-  const taken = () => [...store.tables.map((t) => t.name), ...store.queue.map((q) => q.name)];
+  const used = () => store.tables.reduce((a, t) => a + t.estimate, 0) + (store.derived ?? []).filter((d) => d.kind === "table" && !store.tables.some((t) => t.name === d.name)).reduce((a, d) => a + d.rows * d.columns.length * 16, 0);
+  const taken = () => [...store.tables.map((t) => t.name), ...(store.derived ?? []).map((d) => d.name), ...store.queue.map((q) => q.name)];
   const tableOf = (name) => store.tables.find((t) => t.name === name);
 
   /** Redraw through the kit, so what the tools and exports read (its derived snapshot) is never stale. */
@@ -192,7 +192,7 @@
   }
 
   /** Why a queued file's table name cannot be used, or "". */
-  const nameIssue = (item) => Profile.nameProblem(item.name, [...store.tables.map((t) => t.name), ...store.queue.filter((q) => q !== item).map((q) => q.name)]);
+  const nameIssue = (item) => Profile.nameProblem(item.name, [...store.tables.map((t) => t.name), ...(store.derived ?? []).map((d) => d.name), ...store.queue.filter((q) => q !== item).map((q) => q.name)]);
   /** A queued file is imported once it is checked, has a choice that imports it and a usable name. */
   const importable = (q) => q.status === "ready" && !!q.choice && q.choice !== "skip" && !nameIssue(q);
 
@@ -315,6 +315,18 @@
         await importOne(item);
         if (tableOf(t.name)) { opened.push(t.name); note({ kind: "reopen", table: t.name, text: `Reopened ${t.name} from ${t.source.file}: its source ${c.text}.` }); }
         else refuse(`could not be imported: ${item.problem || "stopped"}`);
+      }
+      // Derived views and tables, in the order they were made, from their defining SQL; the analysed ones again.
+      for (const d of doc.derived ?? []) {
+        if (store.stop) break;
+        progress(`Making ${d.name} again`, 0, 0);
+        try {
+          const entry = await Query.replay(api.query, d);
+          note({ kind: "reopen", table: d.name, text: `Made the derived ${d.kind} ${d.name} again from its SQL.` });
+          if (entry) { await analyseDerived({ ...entry, restore: d.restore }); opened.push(d.name); }
+        } catch (error) {
+          note({ kind: "failed", table: d.name, text: `Not made again: the derived ${d.kind} ${d.name}: ${message(error)}` });
+        }
       }
     });
     return opened;
@@ -473,14 +485,50 @@
 
   const removeTable = (table) => exclusive(() => removeNow(table));
   async function removeNow(table) {
+    // A view reads its tables each time: a table a derived view reads stays until the view is dropped.
+    const readers = Query.dependents(table.name);
+    if (readers.length) {
+      note({ kind: "refused", table: table.name, text: `Not removed: ${table.name} is read by the derived view${readers.length > 1 ? "s" : ""} ${readers.join(", ")}; drop ${readers.length > 1 ? "them" : "it"} first.` });
+      refresh();
+      return;
+    }
     const api = await ensureEngine();
     await api.query(`DROP TABLE ${Sql.ident(table.name)}`);
+    forget(table);
+    if (table.kind === "derived") store.derived = store.derived.filter((d) => d.name !== table.name);
+    note({ kind: "removed", table: table.name, text: table.kind === "derived" ? `Removed the derived table ${table.name} and its analysis.` : `Removed ${table.name} from the workbench; the file itself is unchanged.` });
+    refresh();
+  }
+
+  /** Take a table out of the analysis: its profile, charts and findings (its object in the engine is gone already). */
+  function forget(table) {
     store.tables = store.tables.filter((t) => t !== table);
     Gallery.drop(table.name);
     Findings.drop(table.name);
+    Query.forgetTable(table.name);
     if (store.selected === table.name) store.selected = store.tables[0]?.name ?? "";
-    note({ kind: "removed", table: table.name, text: `Removed ${table.name} from the workbench; the file itself is unchanged.` });
+  }
+
+  /**
+   * Analyse a derived table (src/query.js made it, with its row column): it joins the tables with its own profile,
+   * then its charts, statistics and family follow as for an import. `entry.restore` carries a reopened project's
+   * readings and edits.
+   * @param {{ name: string, rowColumn: string, rows: number, columns: { name: string, type: string }[], lineage: string[], what: string, sql: string, how: string, restore?: any }} entry
+   */
+  async function analyseDerived(entry) {
+    const begun = performance.now();
+    const columns = entry.columns.map((c) => ({ name: c.name, type: c.type, source: c.type }));
+    const table = {
+      name: entry.name, kind: "derived", example: null, file: { name: `derived table ${entry.name}`, bytes: 0, sha256: "" },
+      estimate: entry.rows * columns.length * 16, imported: { table: entry.name, rowColumn: entry.rowColumn, rows: entry.rows, columns, sourceColumns: columns.length - 1, dialect: null, rejected: { count: 0, examples: [] }, parquet: null },
+      sample: null, columnsKept: null, columns: [], status: "profiling", reason: "", overrides: {}, dismissed: [], begun, source: null,
+      lineage: entry.lineage, derived: { what: entry.what, sql: entry.sql, how: entry.how },
+    };
+    if (entry.restore) restoreInto(table, entry.restore);
+    store.tables.push(table);
+    store.selected = table.name;
     refresh();
+    await profileRest(table);
   }
 
   /* ---------- examples ---------- */
@@ -544,6 +592,7 @@
     drawQueue();
     drawTables();
     Gallery.draw();
+    Query.draw();
     Findings.draw();
     Exporter.draw();
     drawExamples();
@@ -631,7 +680,7 @@
     if (!store.tables.some((t) => t.name === store.selected)) store.selected = store.tables[0]?.name ?? "";
     tabs.replaceChildren(...store.tables.map((t) => h("button", { type: "button", role: "tab", id: `tab-${t.name}`, "aria-selected": String(t.name === store.selected), "aria-controls": "table-view",
       onclick: () => { store.selected = t.name; draw(); } },
-      t.name, h("span", { class: "tab-note", text: ` ${fmtInt(t.imported.rows)} × ${t.imported.columns.length - 1}${t.status === "complete" ? "" : t.status === "profiling" ? ", profiling" : ", incomplete"}` }))));
+      t.name, h("span", { class: "tab-note", text: ` ${t.kind === "derived" ? "derived, " : ""}${fmtInt(t.imported.rows)} × ${t.imported.columns.length - 1}${t.status === "complete" ? "" : t.status === "profiling" ? ", profiling" : ", incomplete"}` }))));
     const t = tableOf(store.selected);
     view.replaceChildren(...(t ? tableView(t) : []));
     if (t) view.setAttribute("aria-labelledby", `tab-${t.name}`);
@@ -644,8 +693,15 @@
     const status = t.status === "complete" ? h("span", { class: "badge ok", text: "Complete" })
       : t.status === "profiling" ? h("span", { class: "badge", text: "Profiling…" })
       : h("span", { class: "badge warn", text: `Incomplete: ${t.reason}` });
-    out.push(h("div", { class: "table-head" }, h("h3", { text: t.name }), scope, status));
-    const facts = [
+    out.push(h("div", { class: "table-head" }, h("h3", { text: t.name }), t.kind === "derived" ? h("span", { class: "badge", text: "Derived table" }) : null, scope, status));
+    const facts = t.kind === "derived" ? [
+      ["Made from", `${t.derived.what}, by the transformation records ${t.lineage.join(", ")} (Query and transform lists each)`],
+      ["SQL", t.derived.sql],
+      ["Rows", fmtInt(t.imported.rows)],
+      ["Columns", `${fmtInt(t.imported.columns.length - 1)} (plus ${t.derived.how})`],
+      ["Analysed as", "a selected query result: its own profile, chart set and hypothesis family"],
+      ["Every result uses", `all ${fmtInt(t.imported.rows)} rows`],
+    ] : [
       ["Source", `${t.file.name}, ${Preflight.bytes(t.file.bytes)}${t.example ? " (built-in example)" : ""}`],
       ["SHA-256", t.file.sha256 || (t.status === "profiling" ? "computing…" : "not computed (cancelled)")],
       ["Rows", `${fmtInt(t.imported.rows)}${t.sample ? ` (a seeded sample, seed ${t.sample.seed})` : ""}`],
@@ -654,7 +710,7 @@
         : ["Read as", `Parquet with its own types; ${fmtInt(t.imported.parquet?.rowGroups)} row groups, ${Preflight.bytes(t.imported.parquet?.uncompressed)} before compression`],
       ["Every result uses", t.sample ? `the ${fmtInt(t.imported.rows)} sampled rows, not the whole file` : `all ${fmtInt(t.imported.rows)} rows`],
     ];
-    out.push(h("dl", { class: "facts" }, facts.map(([k, v]) => [h("dt", { text: k }), h("dd", { class: k === "SHA-256" ? "mono wrap" : "", text: v })])));
+    out.push(h("dl", { class: "facts" }, facts.map(([k, v]) => [h("dt", { text: k }), h("dd", { class: k === "SHA-256" || k === "SQL" ? "mono wrap" : "", text: v })])));
     const actions = h("p", { class: "actions" });
     if (t.status === "incomplete") actions.append(h("button", { type: "button", disabled: !!store.busy, onclick: () => busy("Profiling", () => profileRest(t)), text: "Profile the remaining columns" }));
     actions.append(h("button", { type: "button", class: "small", disabled: !!store.busy, onclick: () => removeTable(t), text: "Remove this table" }));
@@ -863,7 +919,9 @@
         notProfiled: t.imported.columns.filter((c) => c.name !== t.imported.rowColumn && !t.columns.some((p) => p.name === c.name)).map((c) => c.name),
         charts: Gallery.summary(t.name),
         findings: Findings.summary(t.name),
+        derived: t.kind === "derived" ? { from: t.derived.what, sql: t.derived.sql, records: t.lineage, family: "a selected query result, analysed as its own table" } : null,
       })),
+      transforms: Query.summary(),
       publication: Publish.summary(),
       log: store.log.map((e) => e.text),
     };
@@ -897,6 +955,14 @@
     cancelled: Engine.cancelled, gallery: Gallery, findings: Findings, publish: Publish, data: DATA,
     highlights: () => kit?.state.highlights ?? 6,
     setHighlights: (n) => kit?.set({ highlights: n }, "replace"),
+  });
+
+  /* ---------- query and transform ---------- */
+
+  // The SQL editor and the visual controls, the derived views and tables, and the transformation records.
+  const Query = window.DWQuery.mount({
+    store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
+    analyse: (entry) => analyseDerived(entry), forget: (table) => forget(table),
   });
 
   /* ---------- start ---------- */
@@ -958,6 +1024,18 @@
           const text = out ? JSON.stringify(out, null, 2) : !tableOf(input?.table) ? `No table named ${JSON.stringify(input?.table)}; get_tables lists them.` : input?.id ? `No candidate ${JSON.stringify(input.id)} in ${input.table}.` : `The charts of ${input.table} are not generated yet.`;
           return { content: [{ type: "text", text }] };
         } },
+      { name: "get_transforms", description: "Return the transformation records and the derived views and tables: each record's id, kind, inputs, parameters, SQL, output schema, rows in and out, order, values a TRY_CAST could not convert, COUNT(*) beside COUNT(column) for aggregates, and for joins the unmatched keys of each side (a count and up to 20 example keys), the duplicate keys and the row multiplication factor. Never returns rows; key examples are values.",
+        inputSchema: { type: "object", properties: { id: { type: "string", description: "One record's id, such as t3" }, table: { type: "string", description: "Only the records that made this derived view or table" } }, additionalProperties: false }, annotations: { readOnlyHint: true },
+        execute: async (/** @type {any} */ input) => {
+          const all = Query.summary();
+          let out = all;
+          if (input?.id) out = all.records.find((r) => r.id === input.id) ?? null;
+          else if (input?.table) {
+            const d = all.derived.find((x) => x.name === input.table);
+            out = d ? { ...d, records: all.records.filter((r) => d.lineage.includes(r.id)) } : null;
+          }
+          return { content: [{ type: "text", text: out ? JSON.stringify(out, null, 2) : input?.id ? `No record ${JSON.stringify(input.id)}.` : `No derived view or table named ${JSON.stringify(input?.table)}.` }] };
+        } },
       { name: "get_findings", description: "Return one table's findings: its hypothesis family (definition, members tested and not tested with reasons, m, Benjamini–Yekutieli adjusted p-values, study details and independence checks) and its two lists, unusual patterns and statistically supported patterns, with each distinct highlight explained (observed numbers apart from the rule scores, statistical status, cautions). With list, 1,000 entries of that list from offset, or with list=family the hypotheses; with id, one chart's finding. Never returns rows.",
         inputSchema: { type: "object", properties: {
           table: { type: "string", description: "The table name, as get_tables lists it" },
@@ -976,6 +1054,7 @@
       { label: "Choose files to import", run: () => byId("files").click() },
       { label: "Go to the findings: unusual and statistically supported patterns", run: () => byId("findings-title")?.scrollIntoView({ block: "start" }) },
       { label: "Download the export package", run: () => Exporter.exportPackage() },
+      { label: "Go to Query and transform: the SQL editor and the visual controls", run: () => byId("query-title")?.scrollIntoView({ block: "start" }) },
     ],
   });
 })();

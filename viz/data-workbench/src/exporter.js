@@ -19,6 +19,7 @@
 
   /** What each chart operation of a specification does, for transforms.json (grammar.md has every rule). */
   const OPERATIONS = {
+    records: "A derived table's charts start from the transformation records that made the table, by id (transforms.json lists each record).",
     complete: "Keep the rows with a value present in every encoded field (a timeline: a label and at least one end); nothing is filled, and the rows left out are counted on the figure.",
     bin: "Equal-width bins: the Freedman–Diaconis rule clamped to 5 to 100 bins, or the number you set.",
     bin2d: "A grid of equal-width cells on both axes, 40 by 40.",
@@ -178,6 +179,13 @@
       results: Object.fromEntries(t.hypotheses.filter((x) => x.p !== undefined).map((x) => [x.id, [x.p ?? null, x.adjusted ?? null]])),
     });
 
+    /** What a reopened analysed derived table restores and compares: as for an import, without a source file. */
+    const analysedRecord = (t, figures) => {
+      if (!t) return null;
+      const { source: _source, import: _import, ...rest } = projectTable(t, figures);
+      return rest;
+    };
+
     function exportPackage() {
       if (!store.tables.length || store.busy) return Promise.resolve();
       view.error = "";
@@ -190,6 +198,7 @@
           const svgs = new Map();
           const written = await writeFigures(tables, formats, (job, file) => { if (job.page === 1 && highlighted.has(`${job.table}\u0000${job.id}`)) svgs.set(`${job.table}\u0000${job.id}`, file.text); });
           const publication = app.publish.summary();
+          const transforms = app.snapshot().transforms;
           const run = {
             saved: saved.toISOString(), build: app.data.build, browser: navigator.userAgent, engine: app.snapshot().engine,
             versions: { grammar: Grammar.VERSION, specification: ChartSpec.SPEC_VERSION, catalogue: Family.CATALOGUE, package: Package.VERSION, project: Project.VERSION },
@@ -197,13 +206,16 @@
             highlights: app.highlights(), methods: methodsOf(publication), operations: OPERATIONS, describe: (x, spec) => Rank.transformText(x, spec),
             tables, figures: written.figures, failures: written.failures, seeds: seedsOf(tables), log: store.log.map((e) => e.text),
             project: Project.make({ saved: saved.toISOString(), build: app.data.build.page_sha256, versions: { grammar: Grammar.VERSION, catalogue: Family.CATALOGUE },
-              highlights: app.highlights(), publication: app.publish.settings(), formats, sources: view.sources, tables: tables.map((t) => projectTable(t, written.figures)) }),
+              highlights: app.highlights(), publication: app.publish.settings(), formats, sources: view.sources, tables: tables.filter((t) => t.table.kind !== "derived").map((t) => projectTable(t, written.figures)),
+              derived: transforms.derived.map((d) => ({ name: d.name, kind: d.kind, sql: d.sql, origin: d.origin, inputs: d.inputs, analysed: d.analysed, pipeline: d.pipeline, rowColumn: d.rowColumn, how: d.how, what: d.what,
+                restore: d.analysed ? analysedRecord(tables.find((t) => t.name === d.name), written.figures) : null })) }),
+            transforms,
           };
           app.progress("Writing the report, the deck and the manifest", 0, 0);
           const { done, files } = Package.files(run, svgs, window.Beamdswitch);
           const entries = [...files.map((f) => ({ path: f.path, data: new TextEncoder().encode(f.data) })), ...written.entries];
           if (view.sources) {
-            for (const t of tables) {
+            for (const t of tables.filter((x) => x.table.kind !== "derived")) {
               const src = sourceOf(t.table);
               if (src) entries.push({ path: Package.sourcePath(t.name, t.table.file.name), data: src });
             }
@@ -279,7 +291,7 @@
         let written;
         try { written = await writeFigures(tables, ["svg"]); } catch { r.results.push({ table: "", text: "The check of the reopened figures was cancelled.", ok: false }); return; }
         for (const t of tables) {
-          const saved = doc.tables.find((x) => x.name === t.name);
+          const saved = doc.tables.find((x) => x.name === t.name) ?? (doc.derived ?? []).find((x) => x.name === t.name)?.restore;
           const figures = Object.fromEntries(written.figures.filter((f) => f.table === t.name).map((f) => [f.path, f.sha256]));
           const results = Object.fromEntries(t.hypotheses.filter((x) => x.p !== undefined).map((x) => [x.id, [x.p ?? null, x.adjusted ?? null]]));
           const c = Project.compare(saved, figures, results);
