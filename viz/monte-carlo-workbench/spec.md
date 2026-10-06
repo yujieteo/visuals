@@ -2,7 +2,7 @@
 
 # Monte Carlo Probability Workbench: specification
 
-Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below.
+Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 and 2 are on the page.
 
 ## Agreed decisions
 
@@ -35,6 +35,14 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - A coverage test reads the catalogue: each law has its parts, a behaviour experiment and three workflows of its own; each workflow has its 7 parts; each method has its 6 parts; each theory panel has its 6 parts.
 - Each sampler meets an independent analytical reference in a test with 3 or more fixed seeds and a stated false-failure bound.
 - The same seed and settings give the same run record; 1 and 4 workers give the same results; a cancelled run reports no partial result as complete.
+
+## Group 2: what done means
+
+- The 13 continuous laws (uniform, normal, multivariate normal, exponential, gamma, Erlang, beta, Dirichlet, chi-square, Student's t, F, logistic and Laplace), each with its convention, support, limiting cases, moment conditions, transforms, sampling methods and two-way links, a behaviour experiment and three workflows of its own in different domains.
+- Stratification, antithetic variables, control variates and common random numbers, each with its estimator, assumptions, settings, a suitable example, a failure example and a comparison with independent sampling. The page measures the variance ratio of each method against independent sampling with the same number of evaluations, and of common random numbers against separate streams.
+- Reference values: closed forms, linearity of expectation, and adaptive quadrature over the quantile functions of at most 2 continuous variables within a fixed work budget. A model outside these has no reference, and the page says why.
+- The results of group 1 stay the same: the same estimates, intervals, references and decisions for the same seed.
+- The done criteria of group 1 hold for the whole folder: the builder, the checks, the browser checks at 390, 768 and 1440 px in both themes, the catalogue coverage test, the sampler tests with 3 or more seeds and stated false-failure bounds, and the determinism tests, with 1 and 4 workers, of each method.
 
 # The owner's specification
 

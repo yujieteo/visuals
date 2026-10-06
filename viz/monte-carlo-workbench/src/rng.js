@@ -69,9 +69,9 @@
     const key = [seed >>> 0, hashName(name)];
     const ctr = [0, i >>> 0, v >>> 0, 0];
     const buf = new Uint32Array(4);
-    let pos = 4, calls = 0;
+    let pos = 4, calls = 0, flip = false;
     const s = {
-      /** The next unsigned 32-bit integer. */
+      /** The next unsigned 32-bit integer; its complement 2^32 − 1 − x for an antithetic draw. */
       u32() {
         if (pos === 4) {
           philox(ctr, key, buf);
@@ -79,7 +79,7 @@
           calls++;
           pos = 0;
         }
-        return buf[pos++];
+        return flip ? ~buf[pos++] >>> 0 : buf[pos++];
       },
       /** The next double in the open interval (0, 1): 53 random bits plus one half of the last place. */
       uniform() {
@@ -100,12 +100,17 @@
         const u = s.uniform(), w = s.uniform();
         return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * w);
       },
-      /** Move to replicate i and variable v, at draw 0, without a new object. @param {number} i2 @param {number} v2 */
-      reset(i2, v2) {
+      /**
+       * Move to replicate i and variable v, at draw 0, without a new object. With `antithetic` every 32-bit output is
+       * complemented, so uniform() gives exactly 1 − U for the U of the plain draw: the antithetic partner.
+       * @param {number} i2 @param {number} v2 @param {boolean} [antithetic]
+       */
+      reset(i2, v2, antithetic = false) {
         ctr[0] = 0;
         ctr[1] = i2 >>> 0;
         ctr[2] = v2 >>> 0;
         pos = 4;
+        flip = antithetic;
       },
       /** The number of Philox blocks this stream used. */
       get calls() { return calls; },

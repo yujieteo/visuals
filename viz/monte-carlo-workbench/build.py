@@ -9,7 +9,7 @@ layout, the style guide's tokens, the site's theme script and the vendored MathJ
   raw.json     the catalogue, published beside the page as data.json
   index.html   every script, style, datum, font and licence inlined; no runtime request
 
-The engine modules (rng, special, expr, laws, engine) are inlined once; the page starts its workers from their
+The engine modules (rng, special, expr, continuous, laws, engine) are inlined once; the page starts its workers from their
 text and src/worker.js through a Blob URL.
 
     python3 build.py            # write index.html and raw.json
@@ -29,7 +29,7 @@ from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
 DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits"]
-ENGINE = ["rng", "special", "expr", "laws", "engine", "dsl"]
+ENGINE = ["rng", "special", "expr", "continuous", "laws", "engine", "dsl"]
 PAGE = ["plots", "model", "report", "pool", "view"]
 
 

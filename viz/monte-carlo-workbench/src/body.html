@@ -11,7 +11,7 @@
 </ol>
 </nav>
 <details class="groups">
-<summary>This page holds group 1 of 10: the core and the discrete laws. Groups 2 to 10 are not yet available.</summary>
+<summary>This page holds groups 1 and 2 of 10: the core, the discrete and continuous laws, and variance reduction. Groups 3 to 10 are not yet available.</summary>
 @@GROUPS@@
 </details>
 <div class="wb" id="workbench">
@@ -44,8 +44,10 @@
 <li><code>alt "Label": c = 4; rate = 2</code>: a decision alternative</li>
 <li><code>minimise name</code> or <code>maximise name</code>, and <code>require name &lt;= 0.05</code></li>
 <li><code>focus X</code>: the focus variable, which the distribution plot shows</li>
+<li><code>control C = X</code>: the control variate of the control-variate method, an affine function of variables with known means</li>
 </ul>
-<p class="note">Laws: <code>bernoulli(p), binomial(n, p), categorical(p), multinomial(n, p), uniform(a, b), geometric(p), negbin(r, p), poisson(lambda), hypergeometric(N, K, n), zipf(s, N)</code>.</p>
+<p class="note">Discrete laws: <code>bernoulli(p), binomial(n, p), categorical(p), multinomial(n, p), uniform(a, b), geometric(p), negbin(r, p), poisson(lambda), hypergeometric(N, K, n), zipf(s, N)</code>.</p>
+<p class="note">Continuous laws: <code>cuniform(a, b), normal(mu, sigma), mvnormal(mu, cov), exponential(rate), gamma(k, theta), erlang(k, rate), beta(a, b), dirichlet(alpha), chisq(nu), student(nu), fisher(d1, d2), logistic(mu, s), laplace(mu, b)</code>. A vector law gives a vector: use <code>X[1]</code>, <code>sum(X)</code> or <code>sum(w*X)</code>.</p>
 <p class="note">Functions: <code>abs, sqrt, exp, log, log1p, floor, ceil, round, pow, min, max, pmin, pmax, if, sum, mean, prod, len, count, distinct, maxcount, any, all, normalize</code>. The parser accepts no other name, so an expression cannot run code.</p>
 </details>
 </section>
@@ -69,17 +71,25 @@
 <section id="wb-controls" class="card" aria-label="Simulation settings">
 <div class="controls">
 <label>Method
-<select id="method" data-field="method"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></select></label>
+<select id="method" data-field="method"><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup></select></label>
 <label>Compare with
-<select id="compare" data-field="compare"><option value="none">No comparison</option><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></select></label>
+<select id="compare" data-field="compare"><option value="none">No comparison</option><optgroup label="Direct simulation"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></optgroup><optgroup label="Variance reduction"><option value="stratified">Stratification</option><option value="antithetic">Antithetic variables</option><option value="control">Control variates</option></optgroup></select></label>
+<label>Alternatives use
+<select id="streams" data-field="streams"><option value="common">Common random numbers</option><option value="separate">Separate streams</option></select></label>
 <label>Assumption failure
-<select id="failure" data-field="failure"><option value="none">None</option><option value="envelope">Envelope too small (rejection)</option><option value="stream_reuse">Reused streams (dependent draws)</option><option value="table_cut">Table cut at the 0.99 quantile (inverse)</option></select></label>
+<select id="failure" data-field="failure"><option value="none">None</option><option value="envelope">Envelope too small (rejection)</option><option value="stream_reuse">Reused streams (dependent draws)</option><option value="table_cut">Table cut at the 0.99 quantile (inverse)</option><option value="control_mean">Wrong control mean (control variates)</option></select></label>
 <label>Seed
 <input id="seed" type="number" data-field="seed" min="0" max="4294967295" step="1"></label>
 </div>
 <div class="field">
 <label for="size">Number of replicates n for each alternative: <output id="size-out" for="size"></output></label>
 <input id="size" type="range" data-field="size" min="10" max="22" step="1">
+</div>
+<div class="field" id="strata-field" hidden>
+<label for="strata">Number of equal strata: <output id="strata-out" for="strata"></output></label>
+<input id="strata" type="range" data-field="strata" min="1" max="6" step="1">
+<label for="stratify">Stratified variable</label>
+<select id="stratify"></select>
 </div>
 <p id="failure-note" class="note"></p>
 <div class="run-row" role="group" aria-label="Run controls">
@@ -101,7 +111,7 @@
 <figcaption class="label">Law of the focus variable</figcaption>
 <div class="row">
 <div class="seg" role="group" aria-label="Distribution plot">
-<button type="button" data-field="plot" value="pmf">PMF</button><button type="button" data-field="plot" value="cdf">CDF</button><button type="button" data-field="plot" value="survival">Survival</button><button type="button" data-field="plot" value="quantile">Quantile</button>
+<button type="button" data-field="plot" value="pmf" id="plot-pmf">PMF</button><button type="button" data-field="plot" value="cdf">CDF</button><button type="button" data-field="plot" value="survival">Survival</button><button type="button" data-field="plot" value="quantile">Quantile</button>
 </div>
 <div class="seg" role="group" aria-label="Vertical axis">
 <button type="button" data-field="yscale" value="linear">Linear</button><button type="button" data-field="yscale" value="log">Log</button>
@@ -175,7 +185,7 @@
 </div>
 <section id="panel-theory" aria-label="Theory" hidden>
 <label class="label" for="theory-select">Theory panel</label>
-<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option></select>
+<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option></select>
 <div id="theory-body"></div>
 </section>
 <section id="panel-assumptions" aria-label="Assumptions" hidden></section>
@@ -185,6 +195,7 @@
 </div>
 <section id="law-card" class="card" aria-label="Law"></section>
 <section id="method-card" class="card" aria-label="Method"></section>
+<section id="crn-card" class="card" aria-label="Common random numbers"></section>
 <section id="glossary-card" class="card" aria-labelledby="glossary-head">
 <h2 id="glossary-head">Glossary</h2>
 @@GLOSSARY@@

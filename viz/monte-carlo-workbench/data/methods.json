@@ -98,5 +98,143 @@
    "model": "exp-poisson",
    "text": "Both methods are exact. Rejection costs about 2M uniforms for each value, against 1 for the inverse transform. Compare the time for each replicate in the comparison table."
   }
+ },
+ {
+  "id": "stratified",
+  "name": "Stratification",
+  "family": "Variance reduction",
+  "estimator": "\\hat\\theta_{\\mathrm{st}} = \\sum_{k=1}^{K} w_k \\bar Y_k, \\quad w_k = \\frac{1}{K}, \\qquad \\widehat{\\operatorname{Var}}\\,\\hat\\theta_{\\mathrm{st}} = \\sum_{k=1}^{K} \\frac{w_k^2 s_k^2}{n_k}",
+  "estimatorText": "The page divides the first uniform of one variable into K equal intervals, the strata, and draws n/K replicates in each stratum. Each stratum has the probability 1/K, so the mean of the stratum means is unbiased. The variance uses only the spread inside each stratum, so the part of the variance that the strata explain disappears.",
+  "assumptions": [
+   "The stratum probabilities are exact: each stratum is an interval of length 1/K of the uniform, so its probability is 1/K.",
+   "The stratified variable uses the inverse transform, so a stratum of U is an interval between two quantiles of the variable.",
+   "Each stratum holds at least 2 replicates, for its variance. Each block of 1,024 replicates holds 1024/K ≥ 16 in each stratum.",
+   "With this proportional allocation the variance is never larger than the variance of independent sampling: (1/n) Σ w_k σ_k² ≤ σ²/n."
+  ],
+  "settings": [
+   "The number of strata K = 2^s, with s from 1 to 6.",
+   "The stratified variable: the focus variable, or a scalar variable that the reader selects.",
+   "Every variable uses the inverse transform and the common streams."
+  ],
+  "suitable": {
+   "model": "exp-cuniform",
+   "settings": {},
+   "text": "The height √(1 − U²), whose mean is the area, is a smooth and monotone function of the one uniform U. With 16 strata the variance ratio against independent sampling is about 75: one stratified replicate gives the precision of about 75 independent ones."
+  },
+  "failure": {
+   "model": "normal-tolerance-stack",
+   "settings": {
+    "stratify": "A"
+   },
+   "text": "The stack has 3 lengths, and length A gives only about 6 % of the variance of the stack. Thus 16 strata of A give a variance ratio of about 1.01 for the misfit probability. Stratification removes only the variance that the stratified input explains. Select C, which gives 89 % of the variance, to see a ratio of about 7.6 for the mean slack."
+  },
+  "comparison": {
+   "with": "independent",
+   "model": "exp-cuniform",
+   "settings": {},
+   "text": "Both methods use n replicates. Independent sampling gives the variance σ²/n. Stratification gives (1/n) Σ w_k σ_k², with σ_k² the variance inside stratum k. The comparison table shows both variances and their ratio."
+  }
+ },
+ {
+  "id": "antithetic",
+  "name": "Antithetic variables",
+  "family": "Variance reduction",
+  "estimator": "\\hat\\theta_{\\mathrm{av}} = \\frac{1}{m} \\sum_{j=1}^{m} \\frac{g(X_j) + g(X_j')}{2}, \\quad X_j = F^{-1}(U_j), \\ X_j' = F^{-1}(1 - U_j), \\quad m = \\frac{n}{2}",
+  "estimatorText": "Each pair of replicates uses the uniforms U and 1 − U for every draw, through the inverse transform. The estimator is the mean of the m = n/2 pair means. The interval uses the variance of the pair means, because the pairs are independent of each other.",
+  "assumptions": [
+   "Each draw uses the inverse transform, a non-decreasing function of its uniform.",
+   "The variance of the estimate is (σ²/n)(1 + ρ), with ρ the correlation inside a pair. It is smaller than with independent sampling only when ρ < 0.",
+   "If g is monotone in each uniform, then ρ ≤ 0 by the association inequality of independent variables. For one uniform it is Chebyshev's inequality. An even function of a symmetric input gives ρ = 1."
+  ],
+  "settings": [
+   "The pairs are the replicates 2j and 2j + 1 of each block.",
+   "Every variable uses the inverse transform. The second member of a pair takes the complement of every 32-bit random number, so its uniform is exactly 1 − U."
+  ],
+  "suitable": {
+   "model": "gamma-insurance-payout",
+   "settings": {},
+   "text": "The payout min(max(L − d, 0), cap) increases with the claim size L. So a large claim and its antithetic small claim pull the pair mean towards the mean. The variance ratio of the mean payout is about 14 for the contract with deductible 500. It is about 5 and 3 for the other two contracts."
+  },
+  "failure": {
+   "model": "exp-normal",
+   "settings": {},
+   "text": "The event |X − μ| > 2σ and the squared deviation (X − μ)² are even functions of X − μ. The antithetic partner of X is 2μ − X, which gives the same value. Thus ρ = 1, and the variance ratio is 0.5: a pair costs 2 evaluations for the information of 1. The one-sided event X > μ + σ still gains, with a ratio of about 1.23."
+  },
+  "comparison": {
+   "with": "independent",
+   "model": "gamma-insurance-payout",
+   "settings": {},
+   "text": "Both methods evaluate the model n times. The comparison table shows the variance of each estimate. The ratio of the two variances is 1/(1 + ρ)."
+  }
+ },
+ {
+  "id": "control",
+  "name": "Control variates",
+  "family": "Variance reduction",
+  "estimator": "\\hat\\theta_{\\mathrm{cv}} = \\bar Y - \\hat\\beta\\,(\\bar C - \\mu_C), \\quad \\hat\\beta = \\frac{\\sum_i (Y_i - \\bar Y)(C_i - \\bar C)}{\\sum_i (C_i - \\bar C)^2}",
+  "estimatorText": "C is a control: an expression of the model with a mean μ_C that the page knows exactly. The estimator corrects the sample mean of the quantity by β̂ times the error of the sample mean of C. The interval uses the residual variance of the regression of Y on C.",
+  "assumptions": [
+   "μ_C is exact. The page computes it by linearity of expectation from the laws of the variables in C.",
+   "Var C is finite and positive, and Var Y is finite.",
+   "The variance of the estimate is about (σ²/n)(1 − ρ²), with ρ the correlation of Y and C. Thus the gain is about 1/(1 − ρ²).",
+   "β̂ comes from the same replicates. This gives a bias of order 1/n, which is very small at the sample sizes of this page."
+  ],
+  "settings": [
+   "The control is a line of the model text: control C = expression.",
+   "The expression is an affine function of its terms. Each term is a variable with constant parameters, a component of a vector law, or sum() or mean() of a repeated variable.",
+   "Every variable uses its reference sampler."
+  ],
+  "suitable": {
+   "model": "normal-newsvendor",
+   "settings": {},
+   "text": "The profit of a bakery is a function of the demand D, and the page knows E[D] = 400 exactly. With the control C = D, the variance ratio of the mean profit is about 4 for 400 loaves and 17 for 480 loaves. These gains occur because the profit and D have a high correlation."
+  },
+  "failure": {
+   "model": "normal-newsvendor",
+   "settings": {
+    "failure": "control_mean"
+   },
+   "text": "The estimator uses the control mean 408 instead of 400: 0.1 standard deviation too high. Each estimate of the profit then moves 12 to 20 currency units above its reference, more than 40 standard errors at 65,536 replicates. More replicates make the interval narrower, but they do not correct the estimate."
+  },
+  "comparison": {
+   "with": "independent",
+   "model": "normal-newsvendor",
+   "settings": {},
+   "text": "Both methods use the same replicates. The comparison table shows the variance of each estimate. Their ratio is about 1/(1 − ρ²)."
+  }
+ },
+ {
+  "id": "crn",
+  "name": "Common random numbers",
+  "family": "Variance reduction",
+  "estimator": "\\hat\\Delta = \\frac{1}{n}\\sum_{i=1}^{n}\\left(Y_i^{(b)} - Y_i^{(a)}\\right), \\qquad \\operatorname{Var}\\hat\\Delta = \\frac{\\sigma_a^2 + \\sigma_b^2 - 2\\operatorname{Cov}\\left(Y^{(a)}, Y^{(b)}\\right)}{n}",
+  "estimatorText": "Each alternative uses the same streams for the same variable in the same replicate. The estimate of a difference between two alternatives is the mean of the paired differences. Its variance is smaller than with separate streams when the outputs of the two alternatives have a positive covariance.",
+  "assumptions": [
+   "The page synchronises the streams: one stream for each replicate and each variable, the same in each alternative.",
+   "The two outputs have a positive covariance. Outputs that move in the same direction with the inputs give it. With the inverse transform, each value is a monotone function of its uniform.",
+   "With separate streams the alternatives are independent, and the variance is (σ_a² + σ_b²)/n."
+  ],
+  "settings": [
+   "Alternatives use: common random numbers (the default for every method) or separate streams.",
+   "The decision report shows each paired difference with the variance ratio (se_a² + se_b²)/se_d²."
+  ],
+  "suitable": {
+   "model": "cuniform-transit-line",
+   "settings": {},
+   "text": "The wait at each line is the headway times the same uniform U. So a rider who waits long for one line also waits long for the others. The paired differences of the mean time then have variance ratios of 2.2 to 8.5 against independent alternatives."
+  },
+  "failure": {
+   "model": "normal-festival-stall",
+   "settings": {},
+   "text": "The profit of the cold-drinks stall increases with the temperature T, and the profit of the hot-drinks stall decreases. With the same T for both stalls their covariance is negative. The paired difference then has a larger variance than with separate streams: the variance ratio is about 0.51, a loss."
+  },
+  "comparison": {
+   "with": "independent",
+   "model": "cuniform-transit-line",
+   "settings": {
+    "streams": "separate"
+   },
+   "text": "Independent sampling with separate streams draws each alternative from its own streams. The paired differences then have the variance (σ_a² + σ_b²)/n, and the ratio in the decision report is near 1."
+  }
  }
 ]

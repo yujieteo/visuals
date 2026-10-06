@@ -6,6 +6,7 @@
  *   bumped := max(X - seats, 0) {passengers}   prob pbump = bumped >= 1        mean profit = fare*tickets - comp*bumped
  *   ratio ppv = E[D*T] / E[T]                  alt "Sell 180": tickets = 180; comp = 500
  *   maximise profit                            require pbump <= 0.05           # a comment
+ *   control C = D "a control variate"
  *
  * parse() reads the text into a record and lists each problem with its line; print() writes a record as text, and
  * parse(print(r)) gives r back.
@@ -76,6 +77,10 @@
       let m;
       if ((m = /^([a-z]+):\s*(.*)$/.exec(line)) && TEXT.includes(m[1])) rec[m[1]] = m[2];
       else if ((m = /^focus\s+([A-Za-z][\w]*(?:\[\d+\])?)$/.exec(line))) rec.focus = m[1];
+      else if ((m = /^control\s+([A-Za-z]\w*)\s*=\s*(.+)$/.exec(line))) {
+        const t = tail(m[2]);
+        rec.control = { name: m[1], expr: t.rest, ...(t.note ? { note: t.note } : {}) };
+      }
       else if ((m = /^param\s+([A-Za-z]\w*)\s*=\s*(.+)$/.exec(line))) {
         const t = tail(m[2]);
         rec.parameters.push({ name: m[1], expr: t.rest, unit: t.unit, note: t.note });
@@ -154,6 +159,7 @@
     if (rec.decision?.objective) out.push(`${rec.decision.objective.direction} ${rec.decision.objective.quantity}`);
     for (const c of rec.decision?.constraints ?? []) out.push(`require ${c.quantity} ${c.op} ${c.value}`);
     if (rec.focus) out.push(`focus ${rec.focus}`);
+    if (rec.control) out.push(`control ${rec.control.name} = ${rec.control.expr}${end(rec.control)}`);
     for (const k of TEXT.slice(2)) if (rec[k] !== undefined) out.push(`${k}: ${rec[k]}`);
     return `${out.join("\n")}\n`;
   }

@@ -1,10 +1,11 @@
 /* Monte Carlo Probability Workbench: the view state and what the page derives from it. FIELDS is the kit's
- * versioned state: the model, the parameter settings, the method and its comparison, the sample size, the seed,
- * the assumption failure, the sweep and the open panels. derive() reads the catalogue (raw.json, published as
- * data.json), compiles the model with the engine, and returns plain data: the record, its parameters, the
- * moment status and reference values of each quantity, the focus variable's reference law for the plots, the
- * dependency graph, the equations, the samplers and the fit of a real dataset. A run's results are not part of
- * the state: the page keeps them beside it, and the run record saves them.
+ * versioned state: the model, the parameter settings, the method and its comparison, the streams across the
+ * alternatives, the number of strata, the sample size, the seed, the assumption failure, the sweep and the open
+ * panels. derive() reads the catalogue (raw.json, published as data.json), compiles the model with the engine, and
+ * returns plain data: the record, its parameters, the moment status and reference values of each quantity, the
+ * focus variable's reference law for the plots, the dependency graph, the equations, the samplers, the design of a
+ * variance-reduction method and the fit of a real dataset. A run's results are not part of the state: the page
+ * keeps them beside it, and the run record saves them.
  */
 /** @param {any} root the global object @param {(En: any, D: any, X: any, L: any, S: any) => any} factory */
 (function (root, factory) {
@@ -16,30 +17,38 @@
   /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./special.js")} */ S) {
   "use strict";
 
-  const SLUG = "monte-carlo-workbench", SCHEMA_VERSION = 1, MAX_SIZE = 22, BINS = 400;
-  const EXPERIMENTS = ["exp-bernoulli", "exp-binomial", "exp-categorical", "exp-multinomial", "exp-uniform", "exp-geometric", "exp-negbin", "exp-poisson", "exp-hypergeometric", "exp-zipf"];
-  const WORKFLOWS = ["bernoulli-common-cause", "bernoulli-screening", "bernoulli-sensor-vote", "binomial-overbooking", "binomial-acceptance", "binomial-weldon",
-    "categorical-triage", "categorical-returns", "categorical-camera-trap", "multinomial-size-stock", "multinomial-poll", "multinomial-hardy-weinberg",
-    "uniform-randomised-response", "uniform-birthday-ids", "uniform-board-game", "geometric-retries", "geometric-relay-replacement", "geometric-survey-visits",
-    "negbin-claims", "negbin-hospital-beds", "negbin-parasites", "poisson-horse-kicks", "poisson-rutherford-geiger", "poisson-spare-parts",
-    "hypergeometric-capture-recapture", "hypergeometric-ballot-audit", "hypergeometric-card-deck", "zipf-cache", "zipf-dictionary", "zipf-cascade"];
+  const SLUG = "monte-carlo-workbench", SCHEMA_VERSION = 1, MAX_SIZE = 22, BINS = 400, CBINS = 100;
+
+  /** The catalogue: the page's own dataset block, or raw.json in Node. */
+  const DATA = typeof document !== "undefined" && document.getElementById("dataset")
+    ? JSON.parse(/** @type {HTMLElement} */ (document.getElementById("dataset")).textContent ?? "{}")
+    : require("../raw.json");
+
+  /** @type {string[]} */
+  const EXPERIMENTS = DATA.models.filter((/** @type {any} */ m) => m.kind === "experiment").map((/** @type {any} */ m) => m.id);
+  /** @type {string[]} */
+  const WORKFLOWS = DATA.models.filter((/** @type {any} */ m) => m.kind === "workflow").map((/** @type {any} */ m) => m.id);
   const MODEL_IDS = [...WORKFLOWS, ...EXPERIMENTS, "custom"];
+  const METHOD_IDS = Object.keys(En.METHODS);
 
   /** @type {Record<string, KitField>} */
   const FIELDS = {
     model: { type: "enum", values: MODEL_IDS, default: "binomial-overbooking", label: "Model" },
     params: { type: "string", default: "", label: "Parameter settings" },
-    method: { type: "enum", values: ["independent", "inverse", "rejection"], default: "independent", label: "Method" },
-    compare: { type: "enum", values: ["none", "independent", "inverse", "rejection"], default: "none", label: "Comparison method" },
+    method: { type: "enum", values: METHOD_IDS, default: "independent", label: "Method" },
+    compare: { type: "enum", values: ["none", ...METHOD_IDS], default: "none", label: "Comparison method" },
+    streams: { type: "enum", values: ["common", "separate"], default: "common", label: "Random numbers across the alternatives" },
+    strata: { type: "integer", min: 1, max: En.MAX_STRATA, default: 4, label: "Number of strata, log2 K" },
+    stratify: { type: "string", default: "", label: "Stratified variable (empty: the focus variable)" },
     size: { type: "integer", min: 10, max: MAX_SIZE, default: 16, label: "Number of replicates, log2 n" },
     seed: { type: "integer", min: 0, max: 4294967295, default: 2026, label: "Seed" },
-    failure: { type: "enum", values: ["none", "envelope", "stream_reuse", "table_cut"], default: "none", label: "Assumption failure" },
+    failure: { type: "enum", values: ["none", "envelope", "stream_reuse", "table_cut", "control_mean"], default: "none", label: "Assumption failure" },
     quantity: { type: "integer", min: 1, max: 8, default: 1, label: "Quantity in the plots" },
     alt: { type: "integer", min: 1, max: 4, default: 1, label: "Alternative in the plots" },
-    plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile"], default: "pmf", label: "Distribution plot" },
+    plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF)" },
     yscale: { type: "enum", values: ["linear", "log"], default: "linear", label: "Vertical axis" },
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
-    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance"], default: "lln", label: "Theory panel" },
+    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction"], default: "lln", label: "Theory panel" },
     nav: { type: "enum", values: ["examples", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
@@ -47,11 +56,6 @@
     sweep_to: { type: "number", min: -1e9, max: 1e9, default: 1, label: "Sweep to" },
     sweep_points: { type: "integer", min: 3, max: 21, default: 9, label: "Sweep points" },
   };
-
-  /** The catalogue: the page's own dataset block, or raw.json in Node. */
-  const DATA = typeof document !== "undefined" && document.getElementById("dataset")
-    ? JSON.parse(/** @type {HTMLElement} */ (document.getElementById("dataset")).textContent ?? "{}")
-    : require("../raw.json");
 
   /** The state an example opens: its model and the settings its catalogue entry names. @param {any} m */
   function exampleState(m) {
@@ -120,32 +124,59 @@ focus N
   const safe = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
   /**
-   * The histogram window of the focus variable over all alternatives: unit bins when the range has at most 400
-   * points, wider bins otherwise, and thresholds at powers of 10 up to the largest support point, so the survival
-   * plot can show a heavy tail past the window.
+   * The histogram window of the focus variable over all alternatives. A discrete focus: unit bins when the range has
+   * at most 400 points, wider bins otherwise, and thresholds at powers of 10 up to the largest support point, so the
+   * survival plot can show a heavy tail past the window. A continuous focus: 100 bins between the 10^-4 and
+   * 1 − 10^-4 quantiles (0.005 and 0.995 for a heavy tail), with thresholds past the window for a heavy tail. A focus
+   * with no reference law takes its window from a pilot sample.
    * @param {any} c @param {any[]} refs
    */
   function windowOf(c, refs) {
     const [name, idx] = En.splitFocus(c.focus);
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
-    let lo = Infinity, hi = -Infinity, top = 0, heavy = false;
+    let lo = Infinity, hi = -Infinity, top = 0, heavy = false, continuous = false;
     if (node?.type === "var" && node.constant) {
       for (const alt of c.alternatives) {
         const p = En.argsAt(node, alt.values).params, m = marginalLaw(node, p, idx);
         if (!m) continue;
-        const s = m.law.support(m.params);
+        const s = m.law.support(m.params), order = m.law.moments(m.params).order;
+        if (m.law.continuous) {
+          const tail = order < Infinity ? 0.005 : 1e-4;
+          continuous = true;
+          lo = Math.min(lo, Math.max(s.lo, m.law.quantile(tail, m.params)));
+          hi = Math.max(hi, Math.min(s.hi, m.law.isf(tail, m.params)));
+          if (order < Infinity) { heavy = true; top = 1e6; }
+          continue;
+        }
         // The window holds the support less a mass of about 10^-9 on the left and 10^-6 on the right.
         lo = Math.min(lo, Math.max(s.lo, L.quantile(m.law.id, 1e-9, m.params)));
         hi = Math.max(hi, Math.min(s.hi, L.quantile(m.law.id, 1 - 1e-6, m.params)));
         top = Math.max(top, s.hi === Infinity ? 1e15 : s.hi);
-        if (m.law.moments(m.params).order < Infinity) heavy = true;
+        if (order < Infinity) heavy = true;
       }
-    } else {
+    } else if (refs.some((/** @type {any} */ r) => r.marginal)) {
       for (const r of refs) {
         if (!r.marginal) continue;
         const xs = r.marginal.x.filter((/** @type {number} */ _, /** @type {number} */ i) => r.marginal.p[i] > 1e-12);
         if (xs.length) { lo = Math.min(lo, xs[0]); hi = Math.max(hi, xs[xs.length - 1]); top = Math.max(top, xs[xs.length - 1]); }
       }
+    } else if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && n.law.continuous)) {
+      // No reference law: a pilot sample of 2,048 replicates of each alternative gives the window.
+      /** @type {number[]} */
+      let xs = [];
+      try { xs = En.sampleFocus(c, 2048).sort((/** @type {number} */ x, /** @type {number} */ y) => x - y); } catch { xs = []; }
+      if (xs.length) {
+        continuous = !xs.every((/** @type {number} */ x) => Number.isInteger(x));
+        lo = continuous ? xs[Math.floor(xs.length * 0.001)] : xs[0];
+        hi = continuous ? xs[Math.ceil(xs.length * 0.999) - 1] : xs[xs.length - 1];
+        top = continuous ? 0 : hi;
+      }
+    }
+    if (continuous && hi >= lo) {
+      const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
+      const thresholds = [];
+      for (let t = 10; heavy && t <= top; t *= 10) if (t > lo + CBINS * width) thresholds.push(t);
+      return { lo, width, bins: CBINS, thresholds, integer: false, heavy, continuous: true };
     }
     if (!(hi >= lo)) {
       lo = 0;
@@ -159,7 +190,7 @@ focus N
     const bins = Math.max(1, Math.ceil(span / width) + (integer ? 0 : 1));
     const thresholds = [];
     for (let t = 10; t <= Math.min(top, 1e15); t *= 10) if (t > lo + bins * width - 1) thresholds.push(t);
-    return { lo, width, bins, thresholds, integer, heavy };
+    return { lo, width, bins, thresholds, integer, heavy, continuous: false };
   }
 
   /** The law of a variable, or of component idx of a vector variable. @param {any} node @param {any} p @param {number} idx */
@@ -185,6 +216,13 @@ focus N
       const m = marginalLaw(node, En.argsAt(node, c.alternatives[a].values).params, idx);
       if (!m) return null;
       if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(L.quantile(m.law.id, u, m.params)) ?? 0) };
+      if (m.law.continuous) {
+        // The density at the bin centres; the CDF and the survival function at the right edges, as the run's bins.
+        const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
+        if (kind === "survival") for (const t of win.thresholds) xs.push(t);
+        const f = kind === "pmf" ? m.law.pdf : kind === "cdf" ? m.law.cdf : m.law.sf;
+        return { x: xs, y: xs.map((x) => safe(f(x, m.params)) ?? 0) };
+      }
       const xs = [];
       for (let k = 0; k < win.bins && xs.length < BINS; k++) xs.push(win.lo + k * win.width);
       if (kind === "survival") for (const t of win.thresholds) xs.push(t);
@@ -230,7 +268,7 @@ focus N
     for (const item of order) {
       if (item.type === "var") {
         const v = rec.variables.find((/** @type {any} */ x) => x.name === item.name), law = L.BY_ID[v.law];
-        const args = Object.entries(v.args).map(([k, e]) => `${X.texName(k === "lambda" ? "lambda" : k).replace("\\mathrm{lambda}", "\\lambda")} = ${t(/** @type {string} */ (e))}`).join(",\\ ");
+        const args = Object.entries(v.args).map(([k, e]) => `${GREEK[k] ?? X.texName(k)} = ${t(/** @type {string} */ (e))}`).join(",\\ ");
         lines.push(`${X.texName(v.name)}${(v.repeat ?? 1) > 1 ? `_{1..${v.repeat}} \\overset{\\text{i.i.d.}}{\\sim}` : " \\sim"} \\operatorname{${law ? law.name.replace(/ /g, "\\ ") : v.law}}\\left(${args}\\right)`);
       } else {
         const d = rec.definitions.find((/** @type {any} */ x) => x.name === item.name);
@@ -241,8 +279,12 @@ focus N
       const body = q.kind === "probability" ? `\\mathbb{P}\\left(${t(q.expr)}\\right)` : q.kind === "expectation" ? `\\mathbb{E}\\left[${t(q.expr)}\\right]` : `\\frac{\\mathbb{E}\\left[${t(q.num)}\\right]}{\\mathbb{E}\\left[${t(q.den)}\\right]}`;
       lines.push(`\\theta_{\\mathrm{${q.name.replace(/_/g, "\\_")}}} = ${body}`);
     }
+    if (rec.control) lines.push(`${X.texName(rec.control.name)} := ${t(rec.control.expr)} \\quad \\text{(control variate)}`);
     return lines;
   }
+
+  /** The TeX of the Greek parameter names of the laws. */
+  const GREEK = /** @type {Record<string, string>} */ ({ lambda: "\\lambda", mu: "\\mu", sigma: "\\sigma", theta: "\\theta", nu: "\\nu", alpha: "\\alpha", cov: "\\Sigma" });
 
   /**
    * Each random variable with its law, unit, number of copies and support at the first alternative's parameters, or
@@ -257,7 +299,7 @@ focus N
         const p = En.argsAt(n, c.alternatives[0].values).params;
         if (!n.law.check(p).length) {
           const s = n.law.support(p), hi = s.hi === Infinity ? "∞" : String(s.hi);
-          support = n.law.dim ? `x ∈ {0, …, ${p.n}}^${p.p.length}, sum ${p.n}` : s.lo === s.hi ? `{${s.lo}}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${hi}}`;
+          support = n.law.continuous ? n.law.supportText(p) : n.law.dim ? `x ∈ {0, …, ${p.n}}^${p.p.length}, sum ${p.n}` : s.lo === s.hi ? `{${s.lo}}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${hi}}`;
         }
       }
       return { name: n.name, law: n.law.name, unit: v?.unit ?? "", repeat: n.repeat, support, note: v?.note ?? "" };
@@ -317,8 +359,22 @@ focus N
     return { n, mean, fitted, estimate: ds.law === "poisson" ? mean : mean / ds.trials, fittedTest: test(fitted, 1), expected, alternatives };
   }
 
-  /** The last reference computation. @type {{ key: string, status: any[], refs: any[], win: any }} */
-  let memo = { key: "", status: [], refs: [], win: null };
+  /**
+   * What the chosen assumption failure does to the chosen method and comparison, or which method it needs.
+   * @param {Record<string, any>} state
+   */
+  function noteOf(state) {
+    const f = state.failure;
+    if (f === "none") return "";
+    if (f === "stream_reuse") return "Replicate i reuses the streams of replicate i mod 16, so the draws repeat.";
+    const used = [state.method, state.compare].filter((m) => En.METHODS[m]).map((m) => En.METHODS[m]);
+    if (f === "envelope") return used.some((u) => u.sampler === "rejection") ? "The rejection method uses half its envelope constant, so the envelope does not cover the target." : "This failure acts on the rejection method only. Choose that method to see it.";
+    if (f === "table_cut") return used.some((u) => u.sampler === "inverse") ? "The inverse transform cuts its table at the 0.99 quantile: no value passes that quantile. Stratification and antithetic pairs use the same inverse transform." : "This failure acts on the inverse-transform method only. Choose that method to see it.";
+    return used.some((u) => u.design === "control") ? "The control-variate estimator uses a control mean 0.1 standard deviation above the true mean, so its estimate has a bias of 0.1 β σ_C." : "This failure acts on the control-variate method only. Choose that method to see it.";
+  }
+
+  /** The last 24 reference computations, by record and parameter settings, the most recent last. @type {Map<string, { status: any[], refs: any[], win: any }>} */
+  const memo = new Map();
 
   /**
    * Everything the page shows that follows from the state alone. Plain data: no NaN or Infinity.
@@ -327,7 +383,7 @@ focus N
   function derive(state, data = DATA) {
     const { entry, record, errors: textErrors } = modelOf(state, data);
     const { overrides, errors: paramErrors } = parseParams(state.params);
-    const settings = { seed: state.seed, method: state.method, compare: state.compare, failure: state.failure, overrides };
+    const settings = { seed: state.seed, method: state.method, compare: state.compare, failure: state.failure, overrides, streams: state.streams, strata: state.strata, stratify: state.stratify };
     const base = {
       model: { id: state.model, title: record.title, kind: entry?.kind ?? "custom", law: entry?.law ?? null, domain: entry?.domain ?? "Custom model", problem: record.problem },
       text: D.print(record), n: 2 ** state.size, settings: { ...settings, size: state.size },
@@ -338,30 +394,33 @@ focus N
     if (textErrors.length || paramErrors.length || !c.ok) return { ok: false, errors: [...textErrors, ...paramErrors.map((e) => `Parameter settings: ${e}`), ...(c.ok ? [] : c.errors)], ...base };
     // The reference values cost most; they depend on the record and the parameter settings only.
     const key = JSON.stringify([record, overrides]);
-    if (memo.key !== key) {
+    let known = memo.get(key);
+    if (known) memo.delete(key);
+    else {
       const status = En.momentStatus(c), refs = En.reference(c, status);
-      memo = { key, status, refs, win: windowOf(c, refs) };
+      known = { status, refs, win: windowOf(c, refs) };
+      if (memo.size >= 24) memo.delete(/** @type {string} */ (memo.keys().next().value));
     }
-    const { status, refs, win } = memo;
+    memo.set(key, known);
+    const { status, refs, win } = known;
     const a = Math.min(state.alt, c.alternatives.length) - 1;
     const q = Math.min(state.quantity, c.quantities.length) - 1;
-    const kinds = { envelope: "rejection", table_cut: "inverse" };
-    const failureNote = state.failure === "none" ? "" : state.failure === "stream_reuse" ? "Replicate i reuses the streams of replicate i mod 16, so the draws repeat."
-      : kinds[/** @type {"envelope"} */ (state.failure)] === state.method || kinds[/** @type {"envelope"} */ (state.failure)] === state.compare
-        ? state.failure === "envelope" ? "The rejection method uses half its envelope constant, so the envelope does not cover the target." : "The inverse transform cuts its table at the 0.99 quantile."
-        : `This failure acts on the ${kinds[/** @type {"envelope"} */ (state.failure)] === "rejection" ? "rejection" : "inverse-transform"} method only. Choose that method to see it.`;
+    const failureNote = noteOf(state);
     const dataset = entry?.data?.kind === "real" ? data.datasets.find((/** @type {any} */ d) => d.id === entry.data.dataset) : null;
     return {
       ok: true, errors: [], ...base,
       alternatives: c.alternatives.map((/** @type {any} */ alt) => alt.label), alt: a + 1,
       quantities: c.quantities.map((/** @type {any} */ qu, /** @type {number} */ k) => ({ name: qu.name, kind: qu.kind, unit: qu.unit, note: record.quantities[k].note ?? "", status: status[k] })), quantity: q + 1,
-      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed })),
-      focus: { name: c.focus, window: { lo: win.lo, width: win.width, bins: win.bins, thresholds: win.thresholds }, heavy: win.heavy, integer: win.integer, theory: focusTheory(c, refs[a], win, a, state.plot) },
+      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed, method: r.method })),
+      focus: { name: c.focus, window: { lo: win.lo, width: win.width, bins: win.bins, thresholds: win.thresholds }, heavy: win.heavy, integer: win.integer, continuous: win.continuous, theory: focusTheory(c, refs[a], win, a, state.plot) },
       graph: graphOf(c, record), equations: equations(record), samplers: samplersOf(c, state.failure), failureNote,
+      design: { streams: state.streams, stratify: c.stratify ? { name: c.stratify.name, K: c.stratify.K } : null,
+        scalars: c.nodes.filter((/** @type {any} */ n) => n.type === "var" && n.repeat === 1 && !n.law.dim).map((/** @type {any} */ n) => n.name),
+        control: c.control ? { name: c.control.name, expr: c.control.expr, means: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.mean) : null)), sds: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.sd) : null)), why: c.control.exact.map((/** @type {any} */ m) => m?.why ?? "") } : null },
       decision: c.decision, variables: c.nodes.filter((/** @type {any} */ n) => n.type === "var").map((/** @type {any} */ n) => n.name), variableTable: variablesOf(c, record),
       dataset: dataset ? { id: dataset.id, fit: fitOf(dataset, c) } : null,
     };
   }
 
-  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, DATA, CUSTOM_TEXT, exampleState, derive, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
+  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
 });

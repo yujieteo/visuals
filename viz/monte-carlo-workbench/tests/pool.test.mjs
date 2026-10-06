@@ -4,7 +4,7 @@
 // pool whose workers cannot start must run the same blocks on the main thread.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { En, Pool, recordOf } from "./helpers.mjs";
+import { D, En, Pool, recordOf } from "./helpers.mjs";
 
 /** A stand-in worker: it runs the engine as src/worker.js does and answers after a delay from a fixed sequence. @param {number[]} delays */
 function fakeWorkers(delays) {
@@ -97,4 +97,21 @@ test("an error in a block ends the job with its message", async () => {
   const r = /** @type {any} */ (await new Promise((resolve) => pool.run(bad, { onBlock() {}, onEnd: (/** @type {string} */ status, /** @type {string} */ message) => resolve({ status, message }) })));
   assert.equal(r.status, "error");
   assert.match(r.message, /lambda/);
+});
+
+test("the variance-reduction designs give the same statistics with one and four workers: strata, antithetic pairs, control sums and separate streams", async () => {
+  const text = "param q = 110\nD ~ normal(mu = 100, sigma = 20)\nG ~ gamma(k = 2, theta = 5)\nmean profit = 3*min(D, q) - 2*q + G\nprob short = D > q\ncontrol C = D\nalt \"q = 110\": q = 110\nalt \"q = 130\": q = 130\n";
+  const rec = D.parse(text).record;
+  for (const [method, compare, streams] of [["stratified", "antithetic", "separate"], ["control", "stratified", "common"]]) {
+    const set = { seed: 9, method, compare, failure: "none", overrides: {}, streams, strata: 3 };
+    const cc = En.prepare(rec, set), j = { record: rec, settings: set, opts: {}, from: 0, to: 8 };
+    let seq = En.empty(cc);
+    for (let b = 0; b < 8; b++) seq = En.merge(seq, En.block(cc, b, {}), cc);
+    for (const size of [1, 4]) {
+      const pool = Pool.createPool({ source: "", size, engine: En, makeWorker: fakeWorkers([7, 0, 3, 5, 1]) });
+      const r = /** @type {any} */ (await runPool(pool, j, cc, En.empty(cc)));
+      assert.equal(r.status, "done");
+      assert.deepEqual(strip(r.acc), strip(seq), `${method} with ${compare}, ${streams} streams, ${size} workers`);
+    }
+  }
 });

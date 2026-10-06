@@ -15,12 +15,18 @@ test("every catalogue model: each estimate is within 5.5 standard errors of its 
   for (const m of data.models) {
     const rec = recordOf(m.id);
     const blocks = ["uniform-birthday-ids", "uniform-randomised-response", "zipf-dictionary"].includes(m.id) ? 4 : 16;
+    // The references and the exact variances depend on the model only, so the 3 seeds share them.
+    const c0 = En.prepare(rec, { seed: 1, method: "independent", overrides: {} }), status = En.momentStatus(c0), refs = En.reference(c0, status);
+    /** @type {Map<number, (number | null)[]>} */
+    const variances = new Map();
     for (const seed of SEEDS) {
-      const r = runModel(rec, { seed }, blocks);
+      const r = runModel(rec, { seed }, blocks, { status, refs });
       r.summary[0].alts.forEach((/** @type {any} */ alt, /** @type {number} */ a) => alt.quantities.forEach((/** @type {any} */ q, /** @type {number} */ k) => {
         const ref = r.refs[a].values[k];
         if (ref === null || r.status[k].variance !== "finite") return;
-        const se = q.kind === "probability" ? Math.sqrt(ref * (1 - ref) / q.n) : q.kind === "expectation" ? trueSe(rec, a, k, q.n) ?? q.se : q.se;
+        if (q.kind === "expectation" && !variances.has(k)) variances.set(k, trueVariances(rec, k));
+        const v = variances.get(k)?.[a] ?? null;
+        const se = q.kind === "probability" ? Math.sqrt(ref * (1 - ref) / q.n) : q.kind === "expectation" && v !== null ? Math.sqrt(v / q.n) : q.se;
         const tol = 5.5 * se + 1e-9 * Math.max(1, Math.abs(ref));
         assert.ok(Math.abs(q.est - ref) <= tol, `${m.id} seed ${seed} ${alt.label} ${q.name}: ${q.est} against ${ref} (tolerance ${tol})`);
       }));
@@ -164,17 +170,15 @@ test("prepare refuses invalid records with a message for each problem", () => {
 });
 
 /**
- * The exact standard error of the sample mean of expectation k in alternative a, from the enumerated E[g^2], or null
- * when the model has no enumeration.
- * @param {any} rec @param {number} a @param {number} k @param {number} n
+ * The exact variance of expectation k in each alternative, from the reference values of E[g] and E[g²], or null
+ * where the model has no such reference.
+ * @param {any} rec @param {number} k @returns {(number | null)[]}
  */
-function trueSe(rec, a, k, n) {
+function trueVariances(rec, k) {
   const q = rec.quantities[k];
   const extended = { ...rec, quantities: [q, { name: "square_of_quantity", kind: "expectation", expr: `(${q.expr})^2` }] };
   const c = En.prepare(extended, { seed: 1, method: "independent", overrides: {} });
-  const st = En.momentStatus(c), r = En.reference(c, st)[a];
-  if (r.values[0] === null || r.values[1] === null || r.neglected > 1e-12) return null;
-  return Math.sqrt(Math.max(0, r.values[1] - r.values[0] ** 2) / n);
+  return En.reference(c, En.momentStatus(c)).map((/** @type {any} */ r) => (r.values[0] === null || r.values[1] === null || r.neglected > 1e-12 ? null : Math.max(0, r.values[1] - r.values[0] ** 2)));
 }
 
 /** The statistics without the measured times, which differ between runs. @param {any} acc */
