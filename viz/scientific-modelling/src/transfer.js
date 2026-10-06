@@ -101,7 +101,7 @@
     const cold = [Q.mul(sgn, Q.div(p.U, p.Cc)), Q.neg(Q.mul(sgn, Q.div(p.U, p.Cc)))];
     const sum = hot.map((h, i) => Q.add(Q.mul(p.Ch, h), Q.mul(Q.mul(sgn, p.Cc), cold[i])));
     checks.push(check("hx-conservation", `Energy conservation of the two equations: d/da (C_hT_h ${par ? "+" : "−"} C_cT_c) = 0 identically. The coefficients of T_h and T_c in the sum are ${sum.map(Q.str).join(" and ")}.`, "exact",
-      { passed: sum.every(Q.isZero), detail: par ? "Both streams flow toward a = A, so the heat that the hot stream loses over any length is the heat that the cold stream gains." : "The cold stream flows toward a = 0, so C_hT_h − C_cT_c is the same at every a.", evidence: ["lienhard-2024"] }));
+      { passed: sum.every(Q.isZero), detail: par ? "Both streams flow toward a = A. Thus over any length, the hot stream loses the same heat that the cold stream gains." : "The flow of the cold stream is toward a = 0, so C_hT_h − C_cT_c is the same at every a.", evidence: ["lienhard-2024"] }));
     // Effectiveness: exact where rational arithmetic gives it.
     const exact = !par && Q.eq(Cr, Q.ONE) ? Q.div(NTU, Q.add(Q.ONE, NTU)) : null;
     const eps = exact ? qn(exact) : effectiveness(arr, n, cr);
@@ -122,13 +122,13 @@
     const errs = runs.map((r) => Math.abs(r.epsH - eps));
     const fine = runs[3];
     const balance = rel(fine.epsH, fine.epsC);
-    checks.push(check("hx-balance", `Equal heat loss and gain in the Runge–Kutta solution: the hot stream loses ${f(fine.epsH * qn(Qmax))} W and the cold stream gains ${f(fine.epsC * qn(Qmax))} W, a relative difference of ${balance.toExponential(1)}.`, "numerical",
-      { passed: balance <= 1e-12, tolerance: "relative 1e-12", detail: "Runge–Kutta methods keep a linear invariant to rounding, so the two streams balance at every step size.", evidence: ["lienhard-2024"] }));
+    checks.push(check("hx-balance", `Equal heat loss and gain in the Runge–Kutta solution: the hot stream loses ${f(fine.epsH * qn(Qmax))} W and the cold stream gains ${f(fine.epsC * qn(Qmax))} W. The relative difference is ${balance.toExponential(1)}.`, "numerical",
+      { passed: balance <= 1e-12, tolerance: "relative 1e-12", detail: "Runge–Kutta methods keep a linear invariant to round-off, so the two streams balance at every step size.", evidence: ["lienhard-2024"] }));
     const linear = errs.every((e) => e < 1e-13);
     const study = linear ? null : N.meshStudy(runs[1].epsH, runs[2].epsH, runs[3].epsH, 2);
-    checks.push(check("hx-rk4", linear ? `With C_r = 1 the profiles are straight lines, so Runge–Kutta gives ε = ${f(fine.epsH, 10)} on every mesh: the error is at rounding (${Math.max(...errs).toExponential(1)}).`
+    checks.push(check("hx-rk4", linear ? `With C_r = 1 the profiles are straight lines, so Runge–Kutta gives ε = ${f(fine.epsH, 10)} on every mesh: the error is at the round-off level (${Math.max(...errs).toExponential(1)}).`
       : `Runge–Kutta on 25, 50, 100 and 200 steps gives ε = ${f(fine.epsH, 10)} against the closed form ${f(eps, 10)}: errors ${errs.map((e) => e.toExponential(1)).join(", ")}, observed order ${f(study.p, 3)}.`, "numerical",
-      { passed: errs[3] <= 1e-10 * eps && (linear || Math.abs(study.p - 4) < 0.5), tolerance: "relative 1e-10 at 200 steps; observed order 4 ± 0.5", evidence: ["spec-14"] }));
+      { passed: errs[3] <= 1e-10 * eps && (linear || Math.abs(study.p - 4) < 0.5), tolerance: "relative 1e-10 at 200 steps, and observed order 4 ± 0.5", evidence: ["spec-14"] }));
     const ys = hxProfiles(arr, Nh, Nc, 200);
     const gap = Math.min(...ys.map((y) => y[0] - y[1]));
     const epsMax = par ? 1 / (1 + cr) : 1;
@@ -149,7 +149,7 @@
       checks.push(check("hx-limit", `The general relation tends to the balanced limit: at C_r = 1 − 10⁻⁴ it gives ${f(general, 12)}, and the exact series gives ${f(viaSeries, 12)}.`, "numerical",
         { passed: rel(general, viaSeries) <= 1e-12, tolerance: "relative 1e-12 (the series error is of order r⁴ = 10⁻¹⁶)", evidence: ["lienhard-2024"] }));
       const naive = effectivenessNaive(n, 1 - 1e-12), stable = effectiveness("counterflow", n, 1 - 1e-12);
-      checks.push(check("hx-cancel", `Eq. (3.21) as printed is 0/0 at C_r = 1 and loses digits near it: at C_r = 1 − 10⁻¹² it gives ${f(naive, 10)}, and the form with expm1 gives ${f(stable, 10)}. The page uses the second form and, at C_r = 1, the exact limit.`, "numerical",
+      checks.push(check("hx-cancel", `Eq. (3.21) as printed is 0/0 at C_r = 1 and loses digits near it. At C_r = 1 − 10⁻¹² it gives ${f(naive, 10)}, and the form with expm1 gives ${f(stable, 10)}. The page uses the second form and, at C_r = 1, the exact limit.`, "numerical",
         { passed: rel(stable, qn(c0)) <= 1e-11, tolerance: "relative 1e-11 for the stable form", evidence: ["lienhard-2024"] }));
     }
     if (lit && par) {
@@ -157,14 +157,14 @@
       const nL = (L.U * L.A) / L.Ch, crL = L.Ch / L.Cc, eL = effectiveness("parallel", nL, crL);
       const QL = eL * L.Ch * (L.Thin - L.Tcin);
       const ok = rel(eL, L.eps) <= L.tolerance && rel(QL, L.Q) <= L.tolerance && Math.abs(L.Thin - QL / L.Ch - L.Thout) <= L.tolerance * (L.Thin - L.Tcin) && Math.abs(L.Tcin + QL / L.Cc - L.Tcout) <= L.tolerance * (L.Thin - L.Tcin);
-      checks.push(check("hx-reference", `Reference: with the inputs of Lienhard and Lienhard, ${L.where}, the page gives NTU = ${f(nL)}, C_r = ${f(crL)}, ε = ${f(eL, 6)}, Q = ${f(QL / 1000, 5)} kW, T_h,out = ${f(L.Thin - QL / L.Ch, 5)} °C and T_c,out = ${f(L.Tcin + QL / L.Cc, 5)} °C. The book gives ε = ${L.eps}, ${L.Q / 1000} kW, ${L.Thout} °C and ${L.Tcout} °C.`, "numerical",
+      checks.push(check("hx-reference", `Reference: with the inputs of Lienhard and Lienhard, ${L.where}, the page gives NTU = ${f(nL)}, C_r = ${f(crL)}, ε = ${f(eL, 6)} and Q = ${f(QL / 1000, 5)} kW. It gives T_h,out = ${f(L.Thin - QL / L.Ch, 5)} °C and T_c,out = ${f(L.Tcin + QL / L.Cc, 5)} °C. The book gives ε = ${L.eps}, ${L.Q / 1000} kW, ${L.Thout} °C and ${L.Tcout} °C.`, "numerical",
         { passed: ok, tolerance: `relative ${L.tolerance} (${L.note})`, evidence: [L.source] }));
     }
     steps.push(step(6, "Scales", "The total area A scales the coordinate. The inlet difference ΔT_in = T_h,in − T_c,in, from the cold inlet, scales both temperatures, so θ_h − θ_c is the local difference over ΔT_in.",
       ["\\xi=\\frac aA,\\qquad \\theta=\\frac{T-T_{c,in}}{T_{h,in}-T_{c,in}},\\qquad NTU=\\frac{U_{HX}A}{C_{\\min}},\\qquad C_r=\\frac{C_{\\min}}{C_{\\max}},\\qquad \\varepsilon=\\frac{\\dot Q}{C_{\\min}(T_{h,in}-T_{c,in})}"], ["bannerman-hx", "lienhard-2024"]));
     steps.push(step(7, "Dimensionless equations and conditions", "Division of each equation by C ΔT_in/A gives two linear equations with the parameters NTU and NTU·C_r.",
       [par ? "\\theta_h'=-NTU(\\theta_h-\\theta_c),\\quad \\theta_c'=NTU\\,C_r(\\theta_h-\\theta_c),\\quad \\theta_h(0)=1,\\ \\theta_c(0)=0" : "\\theta_h'=-NTU(\\theta_h-\\theta_c),\\quad \\theta_c'=-NTU\\,C_r(\\theta_h-\\theta_c),\\quad \\theta_h(0)=1,\\ \\theta_c(1)=0"]));
-    steps.push(step(8, "Solution", par ? "The difference θ_h − θ_c decays as e^(−(1 + C_r)NTU ξ). Integration gives the effectiveness." : "The difference decays as e^(−(1 − C_r)NTU ξ); with C_r = 1 it is constant, and ε = NTU/(1 + NTU).",
+    steps.push(step(8, "Solution", par ? "The difference θ_h − θ_c decays as e^(−(1 + C_r)NTU ξ). Integration gives the effectiveness." : "The difference decays as e^(−(1 − C_r)NTU ξ). With C_r = 1 it is constant, and ε = NTU/(1 + NTU).",
       [par ? "\\varepsilon=\\frac{1-e^{-(1+C_r)NTU}}{1+C_r}" : "\\varepsilon=\\frac{1-e^{-(1-C_r)NTU}}{1-C_re^{-(1-C_r)NTU}},\\qquad \\lim_{C_r\\to1}\\varepsilon=\\frac{NTU}{1+NTU}"], ["lienhard-2024"]));
     steps.push(step(10, "Checks", "The groups, the conservation identity and the balanced limit are exact. The Runge–Kutta profiles check the closed form and the heat balance with stated tolerances.",
       [`\\frac{\\mathrm d}{\\mathrm d\\xi}\\left(C_h\\theta_h${par ? "+" : "-"}C_c\\theta_c\\right)=0`]));
@@ -294,11 +294,11 @@
     const lam = lambda(sl, ss, nu), lam1 = lambda(sl, 0, 1);
     const resid = Math.abs(neumannF(lam, sl, ss, nu)) / (lam * SQRT_PI);
     const ref = refs?.stefan && refs.stefan.SteL === Q.str(SteL) && refs.stefan.SteS === Q.str(SteS) && refs.stefan.kappa === Q.str(kappa) ? refs.stefan : null;
-    checks.push(check("st-root", `λ = ${f(lam, 12)} is the root of the transcendental equation: the residual is ${resid.toExponential(1)}.${ref ? ` mpmath ${refs.versions.mpmath} gives ${f(Number(ref.lambda), 12)} with 30 digits.` : " No mpmath reference covers these values; the residual still applies."}`, "numerical",
+    checks.push(check("st-root", `λ = ${f(lam, 12)} is the root of the transcendental equation: the residual is ${resid.toExponential(1)}.${ref ? ` mpmath ${refs.versions.mpmath} gives ${f(Number(ref.lambda), 12)} with 30 digits.` : " No mpmath reference covers these values. The residual still applies."}`, "numerical",
       { passed: resid <= 1e-12 && (!ref || rel(lam, Number(ref.lambda)) <= 1e-12), tolerance: "relative 1e-12", tex: "\\frac{Ste_l}{e^{\\lambda^2}\\operatorname{erf}\\lambda}-\\frac{Ste_s}{\\nu e^{\\nu^2\\lambda^2}\\operatorname{erfc}(\\nu\\lambda)}=\\lambda\\sqrt\\pi", evidence: ["roscani-tarzia"] }));
     const font = (1 / sl) * SQRT_PI * lam1 * SF.erf(lam1) * Math.exp(lam1 * lam1);
-    checks.push(check("st-font", `One-phase model (T_i = T_m): λ₁ = ${f(lam1, 10)}. Font writes the Stefan number as β = ℓ/(c_l(T_w − T_m)) = 1/Ste_l = ${f(1 / sl, 6)}; his eq. (8), βπ^(1/2)λ erf(λ)e^(λ²) = 1, gives ${f(font, 15)} at λ₁. The subcooled solid slows the front by ${f(100 * (1 - lam / lam1), 3)} %.`, "numerical",
-      { passed: Math.abs(font - 1) <= 1e-12, tolerance: "absolute 1e-12", detail: "Font's β and this page's Ste are reciprocals: the page records both conventions.", evidence: ["font-stefan"] }));
+    checks.push(check("st-font", `One-phase model (T_i = T_m): λ₁ = ${f(lam1, 10)}. Font writes the Stefan number as β = ℓ/(c_l(T_w − T_m)) = 1/Ste_l = ${f(1 / sl, 6)}. His eq. (8), βπ^(1/2)λ erf(λ)e^(λ²) = 1, gives ${f(font, 15)} at λ₁. The subcooled solid slows the front by ${f(100 * (1 - lam / lam1), 3)} %.`, "numerical",
+      { passed: Math.abs(font - 1) <= 1e-12, tolerance: "absolute 1e-12", detail: "Font's β and this page's Ste are reciprocals: the page writes both conventions into the record.", evidence: ["font-stefan"] }));
     // The similarity profiles satisfy the heat equation and the front conditions.
     const thL = (e) => 1 - SF.erf(e) / SF.erf(lam), psS = (e) => -1 + erfc(nu * e) / erfc(nu * lam);
     // In η = x/(2√(α_l t)), each phase satisfies θ'' + 2c²ηθ' = 0 with c = 1 (liquid) and c = ν (solid).
@@ -311,18 +311,18 @@
       worst = Math.max(worst, Math.abs(r1), Math.abs(r2));
     }
     const frontOk = Math.abs(thL(lam)) < 1e-14 && Math.abs(psS(lam)) < 1e-14 && Math.abs(thL(0) - 1) < 1e-15;
-    checks.push(check("st-similarity", `The similarity profiles θ_l = 1 − erf η/erf λ and θ_s = −1 + erfc(νη)/erfc(νλ) satisfy θ'' + 2c²ηθ' = 0 in each phase (largest finite-difference residual ${worst.toExponential(1)}), θ_l = 1 at the wall, and θ = 0 on both sides of the front.`, "numerical",
+    checks.push(check("st-similarity", `The similarity profiles θ_l = 1 − erf η/erf λ and θ_s = −1 + erfc(νη)/erfc(νλ) satisfy θ'' + 2c²ηθ' = 0 in each phase. The largest finite-difference residual is ${worst.toExponential(1)}. The profiles give θ_l = 1 at the wall and θ = 0 on both sides of the front.`, "numerical",
       { passed: worst <= 1e-6 && frontOk, tolerance: "absolute 1e-6 (central differences with step 1e-4)", evidence: ["roscani-tarzia"] }));
     const eb = energyBalance(lam, sl, ss, nu);
-    checks.push(check("st-energy", `Latent-energy balance: the energy that enters through the wall, ${f(eb.input, 8)}, equals the latent heat ${f(eb.latent, 6)} plus the sensible heat of the liquid ${f(eb.liquid, 6)}, of the melted solid ${f(eb.melted, 6)} and of the solid ${f(eb.solid, 6)} (units of ρℓ·2(α_lt)^(1/2) per unit area). The relative difference is ${eb.residual.toExponential(1)}.`, "numerical",
+    checks.push(check("st-energy", `Latent-energy balance, in units of ρℓ·2(α_lt)^(1/2) per unit area. The energy that enters through the wall, ${f(eb.input, 8)}, equals the latent heat ${f(eb.latent, 6)} plus the sensible heat. The sensible heat is ${f(eb.liquid, 6)} in the liquid, ${f(eb.melted, 6)} in the melted solid and ${f(eb.solid, 6)} in the solid. The relative difference is ${eb.residual.toExponential(1)}.`, "numerical",
       { passed: eb.residual <= 1e-9, tolerance: "relative 1e-9 (Simpson's rule on 400 and 2000 intervals)", detail: `The solid term by quadrature also equals its closed form (Ste_s/ν)·ierfc(νλ)/erfc(νλ) = ${f(eb.closedSolid, 10)}.`, evidence: ["roscani-tarzia"] }));
     // Interface motion: an independent transient solution on three meshes.
     const meshes = [[20, 40, 2000], [40, 80, 4000], [80, 160, 8000]];
     const tr = meshes.map(([a, b, c]) => transient(sl, ss, ka, a, b, c));
     const errs = tr.map((r) => r.s / lam - 1);
     const order = Math.log2(Math.abs(errs[1] / errs[2]));
-    checks.push(check("st-transient", `Interface motion: a front-fixing finite-difference solution, started from a profile that is not the similarity profile, moves the front to ${tr.map((r) => f(r.s, 7)).join(", ")} on three meshes, against λ = ${f(lam, 7)} (relative errors ${errs.map((e) => e.toExponential(1)).join(", ")}, observed order ${f(order, 3)}).`, "numerical",
-      { passed: Math.abs(errs[2]) <= 1e-3 && order > 1.5, tolerance: "relative 1e-3 on the finest mesh; observed order above 1.5", detail: "Liquid 20, 40 and 80 intervals, solid twice as many, with 2 000, 4 000 and 8 000 backward-Euler steps geometric in time. The start is a linear liquid profile and an undisturbed solid at τ = 2.5 × 10⁻⁵.", evidence: ["font-stefan", "spec-14"] }));
+    checks.push(check("st-transient", `Interface motion: a front-fixing finite-difference solution starts from a profile that is not the similarity profile. On three meshes it moves the front to ${tr.map((r) => f(r.s, 7)).join(", ")}, against λ = ${f(lam, 7)} (relative errors ${errs.map((e) => e.toExponential(1)).join(", ")}, observed order ${f(order, 3)}).`, "numerical",
+      { passed: Math.abs(errs[2]) <= 1e-3 && order > 1.5, tolerance: "relative 1e-3 on the finest mesh, and observed order above 1.5", detail: "Liquid 20, 40 and 80 intervals, solid twice as many, with 2 000, 4 000 and 8 000 backward-Euler steps geometric in time. The start is a linear liquid profile and an undisturbed solid at τ = 2.5 × 10⁻⁵.", evidence: ["font-stefan", "spec-14"] }));
     const small = Math.abs(lam1 * lam1 - (sl / 2 - (sl * sl) / 6));
     checks.push(check("st-small", `Small-Stefan limit of the one-phase model: λ² = Ste/2 − Ste²/6 + O(Ste³) gives ${f(sl / 2 - (sl * sl) / 6, 8)}, against λ₁² = ${f(lam1 * lam1, 8)}. The difference ${small.toExponential(1)} is below Ste³ = ${(sl ** 3).toExponential(1)}. The first term is the quasi-steady front s² = 2Ste α_l t.`, "numerical",
       { passed: small <= sl ** 3, tolerance: "the next order, Ste³", evidence: ["font-stefan"] }));
@@ -330,11 +330,11 @@
     const alphaL = qn(p.kl) / (qn(p.rho) * qn(p.cl)), alphaS = qn(p.ks) / (qn(p.rho) * qn(p.cs)), tr0 = qn(p.tr);
     const front = 2 * lam * Math.sqrt(alphaL * tr0);
     const melted = qn(p.rho) * front;
-    steps.push(step(6, "Scales", "The diffusion length (α_l t_r)^(1/2) of the liquid at the time of the question scales x and s; the wall superheat and the subcooling scale the two temperatures.",
+    steps.push(step(6, "Scales", "The diffusion length (α_l t_r)^(1/2) of the liquid at the time of the question scales x and s. The wall superheat and the subcooling scale the two temperatures.",
       ["X=\\frac{x}{\\sqrt{\\alpha_lt_r}},\\quad \\tau=\\frac{t}{t_r},\\quad \\theta_l=\\frac{T_l-T_m}{T_w-T_m},\\quad \\theta_s=\\frac{T_s-T_m}{T_m-T_i},\\quad Ste_l=\\frac{c_l(T_w-T_m)}{\\ell},\\quad Ste_s=\\frac{c_s(T_m-T_i)}{\\ell},\\quad \\kappa=\\frac{\\alpha_s}{\\alpha_l}"], ["spec-10"]));
     steps.push(step(7, "Dimensionless equations and conditions", "The Stefan condition, divided by k_l(T_w − T_m)/(α_lt_r)^(1/2), keeps Ste_l as the ratio of sensible to latent heat.",
       ["\\theta_{l,\\tau}=\\theta_{l,XX},\\quad \\theta_{s,\\tau}=\\kappa\\theta_{s,XX},\\quad \\dot S=Ste_s\\kappa\\,\\theta_{s,X}-Ste_l\\,\\theta_{l,X}\\ \\text{at } X=S,\\quad \\theta_l(0)=1,\\ \\theta_l(S)=\\theta_s(S)=0,\\ \\theta_s(\\infty)=-1"], ["roscani-tarzia"]));
-    steps.push(step(8, "Similarity solution", "With η = x/(2(α_lt)^(1/2)) both heat equations become ordinary equations. Their erf solutions meet the front conditions when s = 2λ(α_lt)^(1/2), and the Stefan condition gives the equation for λ.",
+    steps.push(step(8, "Similarity solution", "With η = x/(2(α_lt)^(1/2)), the heat equation of each phase becomes an ordinary equation. Their erf solutions meet the front conditions when s = 2λ(α_lt)^(1/2), and the Stefan condition gives the equation for λ.",
       ["\\theta_l=1-\\frac{\\operatorname{erf}\\eta}{\\operatorname{erf}\\lambda},\\qquad \\theta_s=-1+\\frac{\\operatorname{erfc}(\\nu\\eta)}{\\operatorname{erfc}(\\nu\\lambda)},\\qquad \\nu=\\sqrt{\\alpha_l/\\alpha_s},\\qquad s=2\\lambda\\sqrt{\\alpha_lt}"], ["roscani-tarzia", "font-stefan"]));
     steps.push(step(10, "Checks", "The groups are exact. The root, the profiles, the latent-energy balance and the transient front are numerical checks with stated tolerances.",
       ["\\frac{Ste_l}{\\sqrt\\pi\\operatorname{erf}\\lambda}=\\lambda+Ste_l\\!\\int_0^\\lambda\\!\\theta_l\\,\\mathrm d\\eta+Ste_s\\lambda+\\frac{Ste_s}{\\nu}\\frac{\\operatorname{ierfc}(\\nu\\lambda)}{\\operatorname{erfc}(\\nu\\lambda)}"]));
@@ -378,19 +378,19 @@
     const Ja = Q.div(Q.mul(p.cp, p.DT), p.hfg);
     const Pi4 = Q.div(Q.mul(Q.mul(Q.mul(p.g, p.Drho), p.hfgc), Q.pow(p.L, 3)), Q.mul(Q.mul(p.nu, p.k), p.DT));
     const Ga = Q.div(Q.mul(Q.mul(p.g, p.Drho), Q.pow(p.L, 3)), Q.mul(p.rhoF, Q.pow(p.nu, 2)));
-    checks.push(check("fc-groups", `Π₄ = g(ρ_f − ρ_g)h′_fg L³/(νkΔT) = ${f(qn(Pi4), 6)}, Ja = c_pΔT/h_fg = ${exactText(Ja)}, Pr = νρ_fc_p/k = ${f(qn(Pr), 6)} and Ga = g(ρ_f − ρ_g)L³/(ρ_fν²) = ${f(qn(Ga), 6)}, exact fractions of the record's values.`, "exact", { passed: true, evidence: ["lienhard-2024"] }));
+    checks.push(check("fc-groups", `Π₄ = g(ρ_f − ρ_g)h′_fg L³/(νkΔT) = ${f(qn(Pi4), 6)} and Ja = c_pΔT/h_fg = ${exactText(Ja)}. Pr = νρ_fc_p/k = ${f(qn(Pr), 6)} and Ga = g(ρ_f − ρ_g)L³/(ρ_fν²) = ${f(qn(Ga), 6)}. All are exact fractions of the record's values.`, "exact", { passed: true, evidence: ["lienhard-2024"] }));
     // Sadasivan and Lienhard's correction against the record's h′_fg.
     const C1 = Q.parse(T.correction?.C1 ?? "0.683"), C2 = Q.parse(T.correction?.C2 ?? "0.228");
     const corr = Q.mul(p.hfg, Q.add(Q.ONE, Q.mul(Q.sub(C1, Q.div(C2, Pr)), Ja)));
     const dCorr = rel(qn(p.hfgc), qn(corr));
     const prOk = Q.cmp(Pr, Q.parse(T.correction?.prandtlMin ?? "0.6")) >= 0;
-    checks.push(check("fc-correction", `Eq. (8.61) gives h′_fg = h_fg[1 + (0.683 − 0.228/Pr)Ja] = ${f(qn(corr) / 1000, 6)} kJ/kg; the record uses ${f(qn(p.hfgc) / 1000, 6)} kJ/kg, a difference of ${f(100 * dCorr, 3)} %. ${prOk ? "Pr ≥ 0.6, inside the range of the correction." : "Pr < 0.6 is outside the range of the correction."}`, "numerical",
+    checks.push(check("fc-correction", `Eq. (8.61) gives h′_fg = h_fg[1 + (0.683 − 0.228/Pr)Ja] = ${f(qn(corr) / 1000, 6)} kJ/kg. The record uses ${f(qn(p.hfgc) / 1000, 6)} kJ/kg, a difference of ${f(100 * dCorr, 3)} %. ${prOk ? "Pr ≥ 0.6, inside the range of the correction." : "Pr < 0.6 is outside the range of the correction."}`, "numerical",
       { passed: dCorr <= 5e-4 && prOk, tolerance: "relative 5e-4 (the book rounds h′_fg to four digits)", evidence: ["lienhard-2024"] }));
     const d4 = Q.div(Q.mul(Q.mul(q(4), p.nu), Q.mul(Q.mul(p.k, p.DT), p.L)), Q.mul(Q.mul(p.g, p.Drho), p.hfgc));
     const dL = qn(d4) ** 0.25;
     // Exact latent-energy balance: Q_w/(h′_fg ṁ(L)) = 4kΔTLν/(h′_fg g Δρ δ⁴) = 1.
     const ratio = Q.div(Q.mul(Q.mul(q(4), Q.mul(p.k, p.DT)), Q.mul(p.L, p.nu)), Q.mul(Q.mul(p.hfgc, Q.mul(p.g, p.Drho)), d4));
-    checks.push(check("fc-balance", "Latent-energy balance at the bottom of the wall: the heat through the wall, (4/3)kΔT L/δ(L), equals h′_fg times the condensate flow g(ρ_f − ρ_g)δ(L)³/(3ν). With δ(L)⁴ as an exact fraction, their ratio 4kΔTLν/(h′_fg g(ρ_f − ρ_g)δ(L)⁴) is 1 exactly.", "exact",
+    checks.push(check("fc-balance", "Latent-energy balance at the bottom of the wall. The heat through the wall, (4/3)kΔT L/δ(L), equals h′_fg times the condensate flow g(ρ_f − ρ_g)δ(L)³/(3ν). With δ(L)⁴ as an exact fraction, their ratio 4kΔTLν/(h′_fg g(ρ_f − ρ_g)δ(L)⁴) is 1 exactly.", "exact",
       { passed: Q.eq(ratio, Q.ONE), tex: `\\delta(L)^4=\\frac{4\\nu k\\Delta T L}{g(\\rho_f-\\rho_g)h'_{fg}}=${f(qn(d4), 6)}\\ \\mathrm{m^4}`, evidence: ["lienhard-2024"] }));
     // The constant of Nu_L: (4/3)·4^(−1/4) = 2√2/3, checked through fourth powers.
     const lhs = Q.mul(Q.pow(q(4, 3), 4), q(1, 4)), rhs = q(64, 81);
@@ -406,14 +406,14 @@
       const d4l = (4 * lit.nu * lit.k * lit.dT * lit.L) / (lit.g * (lit.rhoF - lit.rhoG) * lit.hfgc);
       const dl = d4l ** 0.25, nul = (4 * lit.L) / (3 * dl), ql = (nul * lit.k * lit.dT) / lit.L, Ql = ql * lit.L, ml = Ql / lit.hfgc;
       const ok = rel(dl, lit.delta) <= lit.tolerance && rel(nul, lit.Nu) <= lit.tolerance && rel(ql, lit.q) <= lit.tolerance && rel(Ql, lit.Qw) <= lit.tolerance && rel(ml, lit.mdot) <= lit.tolerance;
-      checks.push(check("fc-reference", `Reference film and heat flux: with the inputs of Lienhard and Lienhard, ${lit.where}, the page gives δ(L) = ${f(dl * 1000, 4)} mm, Nu_L = ${f(nul, 5)}, q = ${f(ql, 4)} W/m², Q = ${f(Ql / 1000, 4)} kW/m and ṁ = ${f(ml, 4)} kg/(m·s). The book gives ${lit.delta * 1000} mm, ${lit.Nu}, ${lit.q} W/m², ${lit.Qw / 1000} kW/m and ${lit.mdot} kg/(m·s).`, "numerical",
+      checks.push(check("fc-reference", `Reference film and heat flux, with the inputs of Lienhard and Lienhard, ${lit.where}. The page gives δ(L) = ${f(dl * 1000, 4)} mm, Nu_L = ${f(nul, 5)} and q = ${f(ql, 4)} W/m². It also gives Q = ${f(Ql / 1000, 4)} kW/m and ṁ = ${f(ml, 4)} kg/(m·s). The book gives ${lit.delta * 1000} mm, ${lit.Nu}, ${lit.q} W/m², ${lit.Qw / 1000} kW/m and ${lit.mdot} kg/(m·s).`, "numerical",
         { passed: ok, tolerance: `relative ${lit.tolerance} (${lit.note})`, evidence: [lit.source] }));
     }
     const set = T.boundaries?.state;
     const region = set ? EM.regionOf(set, Rec) : null;
     if (region) checks.push(check("fc-state", `Film Reynolds number Re_c = Γ_c/μ = ${f(Rec, 4)} at the bottom: ${region.label.charAt(0).toLowerCase()}${region.label.slice(1)} (${set.where}).${region.id === "turbulent" ? " The page refuses the laminar result." : ""}`, region.status,
       { passed: region.status !== "unresolved", evidence: [set.source], detail: set.data, next: region.status === "unresolved" ? "Use a turbulent-film correlation in a separate declaration, or a shorter wall." : "" }));
-    checks.push(check("fc-jakob", `Ja = ${f(qn(Ja), 4)}: the sensible heat of the film is ${f(100 * qn(Ja), 3)} % of the latent heat, so the linear temperature profile across the film is sound (Lienhard and Lienhard, section 8.5: Ja ≈ 0.02 is about as large as laminar condensation gives).`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
+    checks.push(check("fc-jakob", `Ja = ${f(qn(Ja), 4)}: the sensible heat of the film is ${f(100 * qn(Ja), 3)} % of the latent heat. Thus a linear profile of temperature across the film is sound. Lienhard and Lienhard, section 8.5: Ja ≈ 0.02 is about as large as laminar condensation gives.`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
     steps.push(step(6, "Scales", "The height L scales x. The balance of conduction across the film and condensation along it scales δ, so the film equation has no parameter.",
       ["X=\\frac xL,\\qquad D=\\frac{\\delta}{\\delta_r},\\qquad \\delta_r=\\left(\\frac{\\nu k\\Delta T L}{g(\\rho_f-\\rho_g)h'_{fg}}\\right)^{1/4},\\qquad \\Pi_4=\\frac{g(\\rho_f-\\rho_g)h'_{fg}L^3}{\\nu k\\Delta T},\\qquad Ja=\\frac{c_p\\Delta T}{h_{fg}}"], ["lienhard-2024"]));
     steps.push(step(7, "Dimensionless equation and condition", "Mass flow ṁ = g(ρ_f − ρ_g)δ³/(3ν) and the latent-energy balance kΔT/δ = h′_fg dṁ/dx combine into one equation.", ["D^3\\frac{\\mathrm dD}{\\mathrm dX}=1,\\qquad D(0)=0"], ["lienhard-2024"]));
@@ -450,7 +450,7 @@
     const qs = qn(p.mu) * qn(p.hfg) * Math.sqrt((qn(p.g) * qn(p.Drho)) / qn(p.sigma));
     const Mb = Math.sqrt(qn(p.rhoG)) * qn(p.sigma) ** 0.75 / (qn(p.mu) * (qn(p.g) * qn(p.Drho)) ** 0.25);
     const C = Number(B.peak?.C ?? 0.149);
-    checks.push(check("bo-groups", `X_b = c_pΔT_e/(h_fg Pr) = kΔT_e/(μh_fg) = ${exactText(Xb)} and C_sf = ${Q.str(p.Csf)}, exact; the peak-flux group M_b = ${f(Mb, 6)}.${p.cp ? ` With Pr = μc_p/k, c_pΔT_e/(h_fg Pr) equals kΔT_e/(μh_fg) exactly for s = 1, so c_p cancels.` : ""}`, "exact",
+    checks.push(check("bo-groups", `X_b = c_pΔT_e/(h_fg Pr) = kΔT_e/(μh_fg) = ${exactText(Xb)} and C_sf = ${Q.str(p.Csf)}, exact. The peak-flux group M_b = ${f(Mb, 6)}.${p.cp ? ` With Pr = μc_p/k, c_pΔT_e/(h_fg Pr) equals kΔT_e/(μh_fg) exactly for s = 1, so c_p cancels.` : ""}`, "exact",
       { passed: p.cp ? Q.eq(Q.div(Q.mul(p.cp, p.DTe), Q.mul(p.hfg, Q.div(Q.mul(p.mu, p.cp), p.k))), Xb) : true, evidence: ["lienhard-2024"] }));
     // Strict domain: fluid, surface, pressure, orientation and heater, data range, regime.
     const refused = [];
@@ -498,15 +498,15 @@
       { passed: true, tex: B.correlation?.tex ?? null, detail: `${B.correlation?.where}. ${B.correlation?.data}`, evidence: ["lienhard-2024"] })
       : check("bo-q", `The page refuses Rohsenow's correlation here: ${refused.join(", ")} ${refused.length > 1 ? "are" : "is"} outside its declared domain. It gives no heat flux and does not extrapolate.`, "unresolved",
         { passed: false, evidence: ["lienhard-2024"], next: "Bring the point inside the declared fluid, surface, pressure, data range and regime, or use another declaration." }));
-    checks.push(check("bo-zuber", `The Zuber–Kutateladze constant 0.131 gives ${f((0.131 / C) * qmax / 1e6, 4)} MW/m²; eqn. (9.11) is ${f(100 * (C / 0.131 - 1), 3)} % higher. ${B.peak?.zuber?.text ?? ""}`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
+    checks.push(check("bo-zuber", `The Zuber–Kutateladze constant 0.131 gives ${f((0.131 / C) * qmax / 1e6, 4)} MW/m². Eqn. (9.11) is ${f(100 * (C / 0.131 - 1), 3)} % higher. ${B.peak?.zuber?.text ?? ""}`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
     const lit2 = data?.literature?.ex92, lit5 = data?.literature?.ex95;
     if (lit2 && lit5) {
       const grp = (lit2.mu * lit2.cp ** 3 * Math.sqrt((lit2.g * lit2.drho) / lit2.sigma)) / (lit2.hfg ** 2 * lit2.Pr ** 3);
       const qm5 = C * Math.sqrt(lit5.rhoG) * lit5.hfg * (lit5.g * (lit5.rhoF - lit5.rhoG4) * lit5.sigma) ** 0.25;
-      checks.push(check("bo-reference", `Reference data: with the inputs of ${lit2.where}, the page gives μc_p³[g(ρ_f − ρ_g)/σ]^(1/2)/(h_fg²Pr³) = ${f(grp * 1e4, 4)} × 10⁻⁷ kW/(m²·K³) (book: 3.10); with those of ${lit5.where}, q_max = ${f(qm5 / 1e6, 5)} MW/m² (book: 1.260).`, "numerical",
+      checks.push(check("bo-reference", `Reference data: with the inputs of ${lit2.where}, the page gives μc_p³[g(ρ_f − ρ_g)/σ]^(1/2)/(h_fg²Pr³) = ${f(grp * 1e4, 4)} × 10⁻⁷ kW/(m²·K³) (book: 3.10). With the inputs of ${lit5.where}, the page gives q_max = ${f(qm5 / 1e6, 5)} MW/m² (book: 1.260).`, "numerical",
         { passed: rel(grp, lit2.group) <= lit2.tolerance && rel(qm5, lit5.qmax) <= lit5.tolerance, tolerance: `relative ${lit2.tolerance} and ${lit5.tolerance}`, detail: `${lit2.note} ${lit5.note}`, evidence: [lit2.source] }));
     }
-    steps.push(step(6, "Scales", "Rohsenow's heat-flux scale is the latent heat that viscous bubble flow carries over the capillary length; the superheat enters through X_b. The empirical constants C_sf, s = 1 and 0.149 keep their source and are not Pi variables.",
+    steps.push(step(6, "Scales", "Rohsenow's heat-flux scale is the latent heat that viscous bubble flow carries over the capillary length. The superheat enters through X_b. The empirical constants C_sf, s = 1 and 0.149 keep their source and are not Pi variables.",
       ["\\phi=\\frac{q}{\\mu h_{fg}\\sqrt{g(\\rho_f-\\rho_g)/\\sigma}},\\qquad X_b=\\frac{c_p\\Delta T_e}{h_{fg}Pr}=\\frac{k\\Delta T_e}{\\mu h_{fg}},\\qquad M_b=\\frac{\\rho_g^{1/2}\\sigma^{3/4}}{\\mu\\,[g(\\rho_f-\\rho_g)]^{1/4}}"], ["lienhard-2024"]));
     steps.push(step(7, "The named correlations", "The declared result type is a named correlation of measured data.", [B.correlation?.tex ?? "", "\\phi=\\left(\\frac{X_b}{C_{sf}}\\right)^3,\\qquad \\phi_{max}=0.149\\,M_b"], ["lienhard-2024"]));
     steps.push(step(8, "Domain and the empirical boundaries", `${B.correlation?.data ?? ""} ${B.peak?.conditions ?? ""}`, ["0.006\\le X_b\\le0.06,\\qquad 1\\ \\mathrm{atm}\\le p\\le167.7\\ \\mathrm{atm},\\qquad q<q_{max},\\qquad W\\ge3\\lambda_{d1}"], ["lienhard-2024"]));
@@ -592,7 +592,7 @@
       return E1 - 2 * inc;
     };
     const qs = [1, 2, 4].map(qQuad);
-    checks.push(check("sl-quadrature", `The net flux into the gas at wall 1 from 20-point Gauss–Legendre quadrature of the exact ray solutions on 1, 2 and 4 panels is ${qs.map((x) => f(x, 10)).join(", ")} W/m²; the closed form σT_1⁴ − ε_sσT_g⁴ − 2E₃(τ_L)σT_2⁴ gives ${f(q1, 10)} W/m².`, "numerical",
+    checks.push(check("sl-quadrature", `The page integrates the exact ray solutions by 20-point Gauss–Legendre quadrature on 1, 2 and 4 panels. The net flux into the gas at wall 1 is ${qs.map((x) => f(x, 10)).join(", ")} W/m². The closed form σT_1⁴ − ε_sσT_g⁴ − 2E₃(τ_L)σT_2⁴ gives ${f(q1, 10)} W/m².`, "numerical",
       { passed: rel(qs[2], q1) <= 1e-10, tolerance: "relative 1e-10 on 4 panels", evidence: ["beach-1971"] }));
     // Energy: the power that the gas absorbs equals the sum of the net fluxes into it at both walls.
     // G − 4σT_g⁴ = 2(σT_1⁴ − σT_g⁴)E_2(τx) + 2(σT_2⁴ − σT_g⁴)E_2(τ(1 − x)), by quadrature in μ; E_2 has a z ln z term at
@@ -600,7 +600,7 @@
     const G = (x) => 2 * SF.gauss((mu) => (E1 - Eg) * Math.exp(-(tau * x) / mu) + (E2 - Eg) * Math.exp(-(tau * (1 - x)) / mu), 1e-300, 1, 4);
     const half = (side) => SF.gauss((t) => G(side ? 1 - (t * t) / 2 : (t * t) / 2) * t, 0, 1, 4);
     const absorbed = tau * (half(0) + half(1));
-    checks.push(check("sl-energy", `Energy balance of the gas: ∫κ_a(G − 4σT_g⁴)dx = ${f(absorbed, 8)} W/m² by quadrature, and the net fluxes into the gas at the two walls add to ${f(q1 + q2, 8)} W/m² = ε_s(σT_1⁴ + σT_2⁴ − 2σT_g⁴). ${q1 + q2 < 0 ? "The gas loses this power: the prescribed temperature needs a heat source of the same size." : "The gas gains this power."}`, "numerical",
+    checks.push(check("sl-energy", `Energy balance of the gas: ∫κ_a(G − 4σT_g⁴)dx = ${f(absorbed, 8)} W/m² by quadrature. The net fluxes into the gas at the two walls add to ${f(q1 + q2, 8)} W/m² = ε_s(σT_1⁴ + σT_2⁴ − 2σT_g⁴). ${q1 + q2 < 0 ? "The gas loses this power: the prescribed temperature needs a heat source of the same size." : "The gas gains this power."}`, "numerical",
       { passed: rel(absorbed, q1 + q2) <= 1e-9, tolerance: "relative 1e-9 (20-point Gauss–Legendre on 4 panels in μ, and in t with x = t²/2 from each wall)", evidence: ["beach-1971"] }));
     const er = slabErrors(tau);
     const bnd = refs?.slab?.boundaries?.["1e-2"] ?? null;
@@ -613,7 +613,7 @@
     steps.push(step(7, "Dimensionless equations and conditions", "Each ray loses intensity by absorption and gains it by emission of the gas.", ["\\mu\\frac{\\mathrm dj_+}{\\mathrm dX}=\\tau_L(1-j_+),\\quad -\\mu\\frac{\\mathrm dj_-}{\\mathrm dX}=\\tau_L(1-j_-),\\quad j_+(0)=r_1^4,\\quad j_-(1)=r_2^4"], ["beach-1971"]));
     steps.push(step(8, "Solution and the optical-thickness limits", "The ray solutions decay as e^(−τ/μ). Their angular integrals give E₃, so the gas emits ε_s = 1 − 2E₃(τ_L) and transmits 2E₃(τ_L) of the wall radiation.",
       ["j_+=1+(r_1^4-1)e^{-\\tau_LX/\\mu},\\qquad \\frac{q(X)}{\\sigma T_g^4}=2(r_1^4-1)E_3(\\tau_LX)-2(r_2^4-1)E_3(\\tau_L(1-X))", "\\varepsilon_s=1-2E_3(\\tau_L)\\ \\to\\ 2\\tau_L\\ (\\tau_L\\to0),\\qquad \\to1\\ (\\tau_L\\to\\infty)"], ["beach-1971", "comsol-rosseland"]));
-    steps.push(step(10, "Checks", "The groups are exact. The E_n values, the table of Beach, Özişik and Siewert, the quadrature of the ray solutions and the energy balance are numerical checks with stated tolerances.", ["q_1+q_2=\\int_0^L\\kappa_a\\left(G-4\\sigma T_g^4\\right)\\mathrm dx"]));
+    steps.push(step(10, "Checks", "The groups are exact. The E_n values and the table of Beach, Özişik and Siewert are numerical checks with stated tolerances. The quadrature of the ray solutions and the energy balance are also numerical checks.", ["q_1+q_2=\\int_0^L\\kappa_a\\left(G-4\\sigma T_g^4\\right)\\mathrm dx"]));
     const taus = Array.from({ length: 61 }, (_, i) => 10 ** (-3 + (5 * i) / 60));
     const xs = Array.from({ length: 51 }, (_, i) => i / 50);
     const qx = (x) => (2 * (E1 - Eg) * En(3, tau * x) - 2 * (E2 - Eg) * En(3, tau * (1 - x))) / Eg;
@@ -625,7 +625,7 @@
         { id: "sl-emissivity", title: "Slab emissivity against optical thickness, with the thin and opaque limits", x: { label: "τ_L = κ_aL", log: true }, y: { label: "ε_s = 1 − 2E₃(τ_L)", log: true },
           series: [{ label: "Exact 1 − 2E₃(τ_L)", points: taus.map((t) => [t, slabEm(t)]) }, { label: "Thin limit 2τ_L", dashed: true, points: taus.filter((t) => t <= 0.5).map((t) => [t, 2 * t]) }, { label: "Opaque limit 1", dashed: true, points: [[0.3, 1], [100, 1]] }],
           marks: [{ x: tau, y: em, label: "this slab" }] },
-        { id: "sl-flux", title: "Net radiative flux across the slab; Rosseland diffusion gives 0 inside a uniform medium", x: { label: "X = x/L" }, y: { label: "q/(σT_g⁴)" },
+        { id: "sl-flux", title: "Net radiative flux across the slab: Rosseland diffusion gives 0 inside a uniform medium", x: { label: "X = x/L" }, y: { label: "q/(σT_g⁴)" },
           series: [{ label: "Exact, from the ray solutions", points: xs.map((x) => [x, qx(x)]) }, { label: "Rosseland: 0", dashed: true, points: [[0, 0], [1, 0]] }] },
       ],
     };
@@ -706,12 +706,12 @@
       layers: [approxLayer("single", "Single-stream form", "single", "The relative error |1 − e^(−NTU) − ε|/ε, from the closed forms, at most the tolerance", "single"),
         approxLayer("small", "Small-NTU form", "small", "The relative error |NTU − ε|/ε, at most the tolerance", "small"),
         ...(par ? [] : [approxLayer("balanced", "Balanced form", "balanced", "The relative error |NTU/(1 + NTU) − ε|/ε, at most the tolerance", "balanced")]),
-        balanceLayer("ntu", "Heat exchanged against stream heating", "NTU", "NTU compares the exchanger's conductance U_HX A with the capacity rate C_min", "The streams change their temperature little", "The temperature difference decays along the exchanger")],
+        balanceLayer("ntu", "Heat exchanged against the change of stream temperature", "NTU", "NTU compares the exchanger's conductance U_HX A with the capacity rate C_min", "The streams change their temperature little", "The temperature difference decays along the exchanger")],
       evaluate: (p) => (p.NTU > 0 && p.Cr >= 0 && p.Cr <= 1 ? { ok: true, values: { ...err(p), NTU: p.NTU } } : { ok: false, reason: "NTU must be positive and 0 ≤ C_r ≤ 1." }),
       limits: () => [{ id: "cr0", label: "C_r → 0: single stream", coupled: false, note: "A regular limit, the same for every arrangement.", points: [{ Cr: 0 }] }, { id: "ntuinf", label: `NTU → ∞: ε → ${par ? "1/(1 + C_r)" : "1"}`, coupled: false, note: par ? "Parallel flow cannot reach the cold inlet temperature." : "Counterflow can approach complete exchange.", points: [{ NTU: 10 }] }],
       inspect: (p) => ({ ok: true, values: [{ id: "eps", tex: "\\varepsilon", label: "effectiveness", value: num(effectiveness(arr, p.NTU, p.Cr)) }, { id: "max", tex: "\\varepsilon_{\\infty}", label: "limit for NTU → ∞", value: num(par ? 1 / (1 + p.Cr) : 1) }], checks: [], reconstruction: [] }),
       derived: (p) => [{ id: "eps", tex: "\\varepsilon", label: "effectiveness at the point", value: num(effectiveness(arr, p.NTU ?? 1, p.Cr ?? 0.5)) }],
-      analysis: () => ({ note: "The closed-form effectiveness gives every value on the map exactly up to rounding.",
+      analysis: () => ({ note: "The closed-form effectiveness gives every value on the map exactly up to round-off.",
         balance: { intro: "Two terms compete in each stream's equation.", terms: [{ tex: "\\theta'", label: "change of the stream temperature", scale: "1", why: "θ changes by at most 1 over ξ = 1." }, { tex: "NTU(\\theta_h-\\theta_c)", label: "heat exchanged with the other stream", scale: "NTU", why: "The local difference is of order 1 at the inlet." }],
           balances: [{ title: "Small exchanger", when: "NTU\\ll1", derivation: "The local difference stays near its inlet value 1, so ε ≈ NTU.", reduced: "\\theta_h\\approx1-NTU\\,\\xi", neglected: "the change of the local difference", assumptions: ["NTU small."], residual: { tex: "NTU^2", order: "second order in NTU", status: "exact", note: "ε = NTU − (1 + C_r)NTU²/2 + … for parallel flow." } }],
           crossovers: [{ criterion: "NTU=1", status: "proposed", text: "The exchanger's conductance equals the capacity rate C_min." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
@@ -729,14 +729,14 @@
         approxLayer("one", "One-phase model", "one", "The relative error of the one-phase λ against the two-phase root, at most the tolerance", "one"),
         balanceLayer("latent", "Sensible heat against latent heat", "ratio", "Ste_l compares the sensible heat c_l(T_w − T_m) of the liquid with the latent heat ℓ", "The latent heat controls", "The sensible heat controls")],
       evaluate: (p) => (p.Ste_l > 0 && p.Ste_s >= 0 && p.kappa > 0 ? { ok: true, values: errs(p) } : { ok: false, reason: "Ste_l and κ must be positive and Ste_s ≥ 0." }),
-      limits: () => [{ id: "ste0", label: "Ste_l → 0: quasi-steady front", coupled: true, note: "Ste_s must go to 0 as well for the one-phase form; the limit couples the two parameters.", points: [{ Ste_l: 0.001, Ste_s: 0 }] }],
+      limits: () => [{ id: "ste0", label: "Ste_l → 0: quasi-steady front", coupled: true, note: "Ste_s must go to 0 as well for the one-phase form. The limit couples the two parameters.", points: [{ Ste_l: 0.001, Ste_s: 0 }] }],
       inspect: (p) => { const e = errs(p); return { ok: true, values: [{ id: "lambda", tex: "\\lambda", label: "front coefficient, s = 2λ(α_lt)^(1/2)", value: num(e.lambda) }, { id: "lambda1", tex: "\\lambda_1", label: "one-phase coefficient", value: num(lambda(p.Ste_l, 0, 1)) }], checks: [], reconstruction: [] }; },
       derived: (p) => [{ id: "lambda", tex: "\\lambda", label: "front coefficient at the point", value: num(lambda(p.Ste_l ?? 0.1, p.Ste_s ?? 0, 1 / Math.sqrt(p.kappa ?? 1))) }],
       analysis: () => ({ note: "Each point of the map solves the transcendental equation for λ (Brent, 1e-16).",
         balance: { intro: "The Stefan condition balances the latent heat of the moving front against the heat conducted in each phase.", terms: [{ tex: "\\dot S/Ste_l", label: "latent heat of the front", scale: "1/Ste_l", why: "S grows like τ^(1/2)." }, { tex: "\\theta_{l,X}", label: "conduction in the liquid", scale: "1", why: "θ_l falls by 1 across the liquid layer." }],
           balances: [{ title: "Latent heat controls", when: "Ste_l\\ll1", derivation: "The liquid profile is quasi-steady and linear, θ_l = 1 − X/S, so S Ṡ = Ste_l.", reduced: "s^2=2Ste_l\\alpha_lt", neglected: "the sensible heat of the liquid and the heat taken by the solid", assumptions: ["Ste_l small.", "Ste_s small."], residual: { tex: "Ste_l^2", order: "the next order of λ²", status: "numerical", note: "λ² = Ste/2 − Ste²/6 + … for the one-phase model." } }],
           crossovers: [{ criterion: "Ste_l=1", status: "proposed", text: "The sensible heat of the liquid equals the latent heat." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
-        asymptotic: { limits: [], overlap: "The quasi-steady front holds for small Ste_l and Ste_s; the one-phase model holds for small Ste_s at any Ste_l.", gaps: "For large Ste_s only the two-phase root meets a small tolerance." } }),
+        asymptotic: { limits: [], overlap: "The quasi-steady front holds for small Ste_l and Ste_s. The one-phase model holds for small Ste_s at any Ste_l.", gaps: "For large Ste_s only the two-phase root meets a small tolerance." } }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "the two-phase Neumann solution of melting, with the latent-energy balance and an independent transient solution", point: { Ste_l: num(p.Ste_l), Ste_s: num(p.Ste_s), kappa: num(p.kappa) } })) });
   }
 
@@ -749,9 +749,9 @@
       evaluate: (p) => (p.Pi4 > 0 && p.Ga > 0 ? { ok: true, values: { Rec: rec(p) } } : { ok: false, reason: "Π₄ and Ga must be positive." }),
       inspect: (p) => ({ ok: true, values: [{ id: "Nu", tex: "\\overline{Nu}_L", label: "mean Nusselt number (2√2/3)Π₄^(1/4)", value: num(((2 * Math.SQRT2) / 3) * p.Pi4 ** 0.25) }, { id: "Rec", tex: "Re_c", label: "film Reynolds number Γ_c/μ at the bottom", value: num(rec(p)) }], checks: [], reconstruction: [] }),
       derived: (p) => [{ id: "Rec", tex: "Re_c", label: "film Reynolds number at the bottom", value: num(rec({ Pi4: p.Pi4 ?? 1e12, Ga: p.Ga ?? 1e10 })) }],
-      analysis: () => ({ note: "The film has an exact solution; the map shows where the cited data support Nusselt's laminar result.",
+      analysis: () => ({ note: "The film has an exact solution. The map shows where the cited data support Nusselt's laminar result.",
         balance: { intro: "In the film, gravity balances viscosity, and conduction across the film carries the latent heat of condensation.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
-        asymptotic: noAsymptotic("Nusselt's film is the leading order for Ja → 0; the correction h′_fg carries the first order in Ja.") }),
+        asymptotic: noAsymptotic("Nusselt's film is the leading order for Ja → 0. The correction h′_fg carries the first order in Ja.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "Nusselt's laminar film on a vertical wall, with an exact latent-energy balance and the cited film states", point: { Pi4: num(p.Pi4), Ga: num(p.Ga) } })) });
   }
 
@@ -766,7 +766,7 @@
       inspect: (p) => { const ratio = (p.Xb / p.Cs) ** 3 / (0.149 * p.Mb); const inside = p.Xb >= 0.006 && p.Xb <= 0.06 && ratio < 1;
         return { ok: true, values: [{ id: "phi", tex: "\\phi", label: inside ? "dimensionless heat flux (X_b/C_sf)³" : "refused: outside the data or beyond the peak flux", value: inside ? num((p.Xb / p.Cs) ** 3) : null }, { id: "ratio", tex: "q/q_{max}", label: "fraction of the peak heat flux", value: num(ratio) }], checks: [], reconstruction: [] }; },
       analysis: () => ({ note: "The map shows where the correlation's data and the nucleate regime hold. Outside them the page gives no heat flux.",
-        balance: { intro: "The correlation is a fit of measured data; the page does not derive a balance of terms.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
+        balance: { intro: "The correlation is a fit of measured data. The page does not derive a balance of terms.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
         asymptotic: noAsymptotic("A correlation has no declared small parameter.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "named boiling correlations with a strict domain: fluid, surface, pressure, data range, heater and phase regime", point: { Xb: num(p.Xb), Cs: num(p.Cs) } })) });
   }
