@@ -205,7 +205,7 @@
     const lines = x.family === "sandpile" ? Ph.dynamics(run.job) : (() => {
       const L = Ph.LANDSCAPES[s.ph_land], land = Ph.landscape(s.ph_land), [tx, ty] = Ph.coords(land, land.trapNode), [gx, gy] = Ph.coords(land, land.globalNode);
       return [`${L.title}. ${L.text}`, x.assumptions,
-        `Exact analysis of the grid: ${land.minima.length} local minima. The global minimum is at (${gx.toFixed(2)}, ${gy.toFixed(2)}), V = ${land.V[land.globalNode].toFixed(3)}. The trap, the minimum with the largest stability level, is at (${tx.toFixed(2)}, ${ty.toFixed(2)}), V = ${land.V[land.trapNode].toFixed(3)}; its stability level is V_m = d* = ${land.dstar.toFixed(3)}.`];
+        `Exact analysis of the grid: ${land.minima.length} local minima. The global minimum is at (${gx.toFixed(2)}, ${gy.toFixed(2)}), V = ${land.V[land.globalNode].toFixed(3)}. The trap, the minimum with the largest stability level, is at (${tx.toFixed(2)}, ${ty.toFixed(2)}), V = ${land.V[land.trapNode].toFixed(3)}. Its stability level is V_m = d* = ${land.dstar.toFixed(3)}.`];
     })();
     const k = JSON.stringify([s.ph_example, s.ph_land, lines]);
     if ($("phys-dynamics").dataset.key !== k) {
@@ -424,10 +424,10 @@
       return { svg: PP.chart({ title: "Mean exit time against 1/T, log axis", xlabel: "1/T", ylabel: "Mean exit time E[τ] (steps, log axis)", ylog: true,
         series: [{ label: "run, 95 % interval", x: t.map((/** @type {any} */ x) => 1 / x.T), y: t.map((/** @type {any} */ x) => x.est), lo: t.map((/** @type {any} */ x) => x.lo), hi: t.map((/** @type {any} */ x) => x.hi), mark: "dots" },
           { label: "exact (linear solve)", x: ref.map((/** @type {any} */ x) => 1 / x.T), y: ref.map((/** @type {any} */ x) => x.reference), cls: "s2" }], guides }),
-      note: `The dashed line has the slope V_m of the theorem through the exact value at the lowest temperature. The slope from the run is ${fmt(sm.fit?.slope)} and from the exact values ${fmt(sm.exactFit?.slope)}: at these temperatures both are below V_m, because the limit is T → 0.` };
+      note: `The dashed line has the slope V_m of the theorem through the exact value at the lowest temperature. The slope from the run is ${fmt(sm.fit?.slope)}, and the slope from the exact values is ${fmt(sm.exactFit?.slope)}. ${sm.exactFit && sm.exactFit.slope < sm.level ? "At these temperatures the exact slope is below V_m, because the theorem gives V_m only as the limit T → 0." : "The theorem gives V_m only as the limit T → 0."}` };
     }
     if (plot === "exits") {
-      const series = sm.temps.filter((/** @type {any} */ x) => x.n && x.est > 0).map((/** @type {any} */ x) => {
+      const series = sm.temps.filter((/** @type {any} */ x) => x.n && x.est > 0 && !x.censored).map((/** @type {any} */ x) => {
         const xs = [], ys = [];
         let below = 0;
         for (let k = 0; k < Ph.BINS; k++) { below += x.hist[k]; if (!x.hist[k]) continue; const [, hi] = Ph.binRange(k); const sv = 1 - below / x.n; if (sv > 0) { xs.push(hi / x.est); ys.push(sv); } }
@@ -436,12 +436,12 @@
       const grid = Array.from({ length: 40 }, (_, i) => 0.01 + (i * 6) / 39);
       series.push({ label: "exp(−x)", x: grid, y: grid.map((v) => Math.exp(-v)), cls: "hl", dash: true });
       return { svg: PP.chart({ title: "Survival function of the exit time scaled by its mean", xlabel: "τ / mean τ", ylabel: "P(τ > x · mean τ), log axis", ylog: true, x: [0, 6], y: [1e-3, 1], series }),
-        note: "As T → 0 the scaled exit time tends to the exponential law, a straight line on this log axis. The points are a finite-run observation; the grid of log bins makes them steps." };
+        note: "As T → 0 the scaled exit time tends to the exponential law, a straight line on this log axis. The points are a finite-run observation, and the log bins make them steps. A temperature with censored replicates is not drawn." };
     }
     if (plot === "schedules" || plot === "energy") {
       const xs = sm.checkpoints.map((/** @type {number} */ k) => k + 1);
       const series = sm.schedules.map((/** @type {any} */ x, /** @type {number} */ i) => ({ label: SCHED[x.kind], x: xs, y: plot === "schedules" ? sm.temps[i] : x.trace }));
-      if (plot === "schedules") return { svg: PP.chart({ title: "Temperature of each schedule against the step", xlabel: "Step k + 1 (log axis)", ylabel: "Temperature T_k", xlog: true, series }), note: `The logarithmic schedule c/log(k + 2) with c = ${fmt(sm.logC)} drops fast at first and then slowly; at the last step it is ${fmt(sm.schedules[0].final)}. Hajek's condition needs c ≥ d* = ${fmt(sm.dstar)}.` };
+      if (plot === "schedules") return { svg: PP.chart({ title: "Temperature of each schedule against the step", xlabel: "Step k + 1 (log axis)", ylabel: "Temperature T_k", xlog: true, series }), note: `The logarithmic schedule c/log(k + 2) with c = ${fmt(sm.logC)} decreases quickly at the start and slowly after that. At the last step it is ${fmt(sm.schedules[0].final)}. Hajek's condition needs c ≥ d* = ${fmt(sm.dstar)}.` };
       const land = Ph.landscape(s.ph_land), vg = land.V[land.globalNode];
       return { svg: PP.chart({ title: "Mean energy of the replicates against the step", xlabel: "Step k + 1 (log axis)", ylabel: "Mean energy", xlog: true, series, guides: [{ x0: xs[0], y0: vg, x1: xs.at(-1), y1: vg, label: "global minimum" }] }),
         note: "The mean over the replicates at 64 checkpoints, a finite-run observation. A curve that stays above the global minimum shows replicates that end in other wells." };
@@ -459,7 +459,7 @@
     if (plot === "swaps") {
       const xs = sm.swaps.map((/** @type {any} */ _, /** @type {number} */ r) => (sm.temps[r] + sm.temps[r + 1]) / 2);
       return { svg: PP.chart({ title: "Swap acceptance rate of each pair of neighbouring temperatures", xlabel: "Mean temperature of the pair (log axis)", ylabel: "Swap acceptance rate", xlog: true, y: [0, 1], series: [{ label: "swap rate", x: xs, y: sm.swaps, mark: "both" }] }),
-        note: `A rate near 0 cuts the ladder in two. Each replica made ${fmt(sm.trips)} round trips from T_min to T_max and back, on average over the chains: a finite-run observation.` };
+        note: `A rate near 0 stops the movement of replicas between the two parts of the ladder. Each replica made ${fmt(sm.trips)} round trips from T_min to T_max and back, on average over the chains: a finite-run observation.` };
     }
     if (plot === "ladder") {
       const tr = sm.trace;
@@ -478,7 +478,7 @@
     if (plot === "heights") {
       const x = sm.sizes[0], ex = x.heights.exact;
       const rows = x.heights.freq.map((/** @type {number} */ f, /** @type {number} */ h) => ({ label: `height ${h}`, est: f, lo: null, hi: null, reference: ex ? ex[h] : null }));
-      return { svg: P.comparison({ rows, ylabel: "Frequency at the central sites" }), note: ex ? "Dashed: the exact probabilities on the infinite lattice (Priezzhev 1994). The central sites of a finite lattice differ from them by a small amount that falls with L." : "No exact reference: the stationary law of this setting is not uniform on the recurrent configurations." };
+      return { svg: P.comparison({ rows, ylabel: "Frequency at the central sites" }), note: ex ? "Dashed: the exact probabilities on the infinite lattice (Priezzhev 1994). The central sites of a finite lattice differ from them by a small amount that falls with L." : "No exact height probabilities are known for this setting." };
     }
     if (plot === "collapse") {
       const curves = Ph.collapse(sm.sizes.filter((/** @type {any} */ x) => x.chains), s.ph_tau, s.ph_d);
@@ -499,7 +499,7 @@
       return { svg: PP.chart({ title: "Mean avalanche size against L", xlabel: "L (log axis)", ylabel: "⟨s⟩ for each drive (log axis)", xlog: true, ylog: true,
         series: [{ label: "run, 95 % interval", x: ok.map((/** @type {any} */ x) => x.L), y: ok.map((/** @type {any} */ x) => x.meanS.est), lo: ok.map((/** @type {any} */ x) => x.meanS.lo), hi: ok.map((/** @type {any} */ x) => x.meanS.hi), mark: "dots" },
           { label: "exact (Dhar)", x: ok.map((/** @type {any} */ x) => x.L), y: ok.map((/** @type {any} */ x) => x.reference), cls: "s2" }] }),
-      note: "The exact mean follows from Δ E[n] = E[added]. With an open boundary and no dissipation it grows like L². With bulk dissipation ε it stays near 1/(4ε) at every L: the dissipation sets the scale." };
+      note: "The exact mean follows from Δ E[n] = E[added]. With an open boundary and no dissipation, ⟨s⟩ / L² tends to a constant. For the BTW rule on a periodic lattice with ε > 0, it equals 1/(4ε) at every L: the dissipation sets the scale." };
     }
     const x = sm.sizes[0];
     const bs = x.scales;
@@ -539,7 +539,7 @@
       out.push(`<li>Swap rates from T_min up: ${sm.swaps.map((/** @type {number | null} */ v) => fmt(v)).join(", ")}. ${tag("observation")}</li>`);
       out.push(`<li>Round trips of each replica from T_min to T_max and back: ${fmt(sm.trips)} on average over the chains. ${tag("observation")}</li>`);
       out.push(`<li>Exact mean energy at T_min: ${fmt(sm.exactEnergy)}. ${tag("theorem")}</li>`);
-      out.push("<li>The t interval measures the spread between chains, not a bias that every chain shares. The chains of one chain at T_min agree with each other and still miss the exact value when they all start in one well.</li>");
+      out.push("<li>The t interval measures the spread between chains, not a bias that every chain shares. The single chains at T_min can agree with each other and still miss the exact value. This occurs when they all start in one well.</li>");
     } else {
       for (const z of sm.sizes.filter((/** @type {any} */ y) => y.chains)) {
         const b = z.balance;

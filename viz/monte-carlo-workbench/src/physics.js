@@ -505,7 +505,8 @@
           let mu = 0, m2 = 0;
           for (let v = 0; v < m.length; v++) { const x = m[v] / (b * b); mu += x; m2 += x * x; }
           mu /= m.length;
-          blockVar[i] += m2 / m.length - mu * mu;
+          // The variance between blocks with the divisor m − 1, so a few large blocks give no bias.
+          blockVar[i] += m.length > 1 ? ((m2 / m.length - mu * mu) * m.length) / (m.length - 1) : 0;
         }
         nVar++;
       }
@@ -770,8 +771,8 @@
   function proportion(k, n) {
     if (!n) return { est: null, lo: null, hi: null, se: null, how: "no replicates" };
     const est = k / n;
-    if (k === 0) return { est, lo: 0, hi: S.zeroHitBound(n, 0.05), se: 0, how: "zero hits: exact one-sided 95 % bound" };
-    if (k === n) return { est, lo: 1 - S.zeroHitBound(n, 0.05), hi: 1, se: 0, how: "all hits: exact one-sided 95 % bound" };
+    if (k === 0) return { est, lo: 0, hi: S.zeroHitBound(n, 0.025), se: 0, how: "zero hits: exact one-sided 97.5 % bound, the end of a two-sided 95 % interval" };
+    if (k === n) return { est, lo: 1 - S.zeroHitBound(n, 0.025), hi: 1, se: 0, how: "all hits: exact one-sided 97.5 % bound, the end of a two-sided 95 % interval" };
     const [lo, hi] = S.wilson(k, n, 1.959963984540054);
     return { est, lo, hi, se: Math.sqrt((est * (1 - est)) / n), how: "Wilson score interval, 95 %" };
   }
@@ -831,7 +832,8 @@
     });
     const usable = temps.filter((/** @type {any} */ x) => x.est > 0 && !x.censored);
     const fit = usable.length >= 2 ? fitLine(usable.map((/** @type {any} */ x) => 1 / x.T), usable.map((/** @type {any} */ x) => Math.log(x.est)), usable.map((/** @type {any} */ x) => (x.se ? x.se / x.est : null))) : null;
-    const refs = temps.filter((/** @type {any} */ x) => x.reference > 0);
+    // The exact slope uses the same temperatures as the slope of the run, so the two compare.
+    const refs = usable.filter((/** @type {any} */ x) => x.reference > 0);
     const exactFit = refs.length >= 2 ? fitLine(refs.map((/** @type {any} */ x) => 1 / x.T), refs.map((/** @type {any} */ x) => Math.log(x.reference))) : null;
     const rows = temps.map((/** @type {any} */ x) => ({
       label: `Mean exit time at T = ${x.T}`, unit: "steps", est: x.est, lo: x.lo, hi: x.hi, how: x.how, n: x.n,
@@ -840,7 +842,7 @@
     rows.push({ label: "Slope of log E[τ] against 1/T, from the run", unit: "energy", est: fit?.slope ?? null, lo: fit?.lo ?? null, hi: fit?.hi ?? null, how: fit ? "least squares of the log means; the 95 % interval holds their Monte Carlo error only" : "needs 2 temperatures with no censored replicate", n: usable.length,
       reference: land.dstar, refHow: "the stability level V_m of the trap: the limit of T log E[τ] as T → 0", tags: ["observation", "theorem"] });
     rows.push({ label: "Slope of log E[τ] against 1/T, from the exact values", unit: "energy", est: exactFit?.slope ?? null, lo: null, hi: null, how: "least squares of the exact log means: at a finite T the slope is not yet V_m", n: refs.length,
-      reference: land.dstar, refHow: "the stability level V_m of the trap", tags: ["numerical", "theorem"] });
+      reference: land.dstar, refHow: "the stability level V_m of the trap: the limit of T log E[τ] as T → 0, not the slope at these temperatures", tags: ["numerical", "theorem"] });
     return { rows, temps, fit, exactFit, level: land.dstar };
   }
 
@@ -862,13 +864,16 @@
     const pairs = [];
     const allPairs = acc.parts.length ? acc.parts[0].pairs.map((/** @type {any} */ p, /** @type {number} */ i) => ({ a: p.a, b: p.b, n10: acc.parts.reduce((/** @type {number} */ t, /** @type {any} */ q) => t + q.pairs[i].n10, 0), n01: acc.parts.reduce((/** @type {number} */ t, /** @type {any} */ q) => t + q.pairs[i].n01, 0) })) : [];
     const n = sched[0].n;
+    // The paired difference (n10 − n01)/n has an exact interval given the m = n10 + n01 discordant replicates: n10 is
+    // binomial(m, π) with the Clopper-Pearson interval for π, and the difference is (2π − 1) m / n.
     for (const p of allPairs) {
-      const d = n ? (p.n10 - p.n01) / n : null, se = n ? Math.sqrt(Math.max(0, p.n10 + p.n01 - (p.n10 - p.n01) ** 2 / n)) / n : null;
-      pairs.push({ a: SCHEDULES[p.a], b: SCHEDULES[p.b], est: d, lo: d === null || se === null ? null : d - 1.959963984540054 * se, hi: d === null || se === null ? null : d + 1.959963984540054 * se, n10: p.n10, n01: p.n01 });
+      const m = p.n10 + p.n01, d = n ? (p.n10 - p.n01) / n : null;
+      const cp = m ? S.clopperPearson(p.n10, m, 0.05) : null;
+      pairs.push({ a: SCHEDULES[p.a], b: SCHEDULES[p.b], est: d, lo: cp ? ((2 * cp[0] - 1) * m) / n : null, hi: cp ? ((2 * cp[1] - 1) * m) / n : null, n10: p.n10, n01: p.n01 });
     }
     const rows = sched.map((s) => ({
       label: `P(final state in the global basin), ${s.kind} schedule`, unit: "", est: s.success.est, lo: s.success.lo, hi: s.success.hi, how: s.success.how, n: s.n,
-      reference: s.equilibrium, refHow: `the Boltzmann probability at the final temperature ${+s.final.toPrecision(3)}: the value at equilibrium, not this estimand`, tags: ["observation", "theorem"],
+      reference: s.equilibrium, refHow: `the Boltzmann probability at the final temperature ${+s.final.toPrecision(3)}: the value at equilibrium, not this estimand`, tags: ["observation", "numerical"],
     }));
     sched.forEach((s) => rows.push({ label: `Mean final energy, ${s.kind} schedule`, unit: "energy", est: s.energy.est, lo: s.energy.lo, hi: s.energy.hi, how: s.energy.how, n: s.n, reference: land.V[land.globalNode], refHow: "the global minimum of V", tags: ["observation", "numerical"] }));
     const curves = Array.from({ length: CHECKPOINTS }, (_, k) => Math.max(0, Math.floor(((k + 1) * job.steps) / CHECKPOINTS) - 1));
@@ -946,7 +951,8 @@
       return {
         L, chains: parts.length, drives, zero: drives - nonzero, meanS, reference: ref?.value ?? null, residual: ref?.residual ?? null,
         size: dens("sHist"), area: dens("aHist"), duration: dens("tHist"), moments, maxS: Math.max(...parts.map((/** @type {any} */ p) => p.maxS)),
-        heights: { freq: hcount.map((/** @type {number} */ v) => (htotal ? v / htotal : null)), mean: heights, exact: btwExact ? BTW_HEIGHTS : null },
+        heights: { freq: hcount.map((/** @type {number} */ v) => (htotal ? v / htotal : null)), mean: heights, exact: btwExact ? BTW_HEIGHTS : null,
+          chains: hcount.map((/** @type {number} */ _, /** @type {number} */ h) => noRandom(between(parts.map((/** @type {any} */ p) => p.heights[h] / Math.max(1, p.heights.reduce((/** @type {number} */ a, /** @type {number} */ v) => a + v, 0))), true))) },
         density: [between(parts.map((/** @type {any} */ p) => p.density[0])), between(parts.map((/** @type {any} */ p) => p.density[1]))],
         balance: { added, lostEdge, lostBulk, massChange, exact: added === lostEdge + lostBulk + massChange },
         recurrent: parts[0].recurrent === null ? null : parts.filter((/** @type {any} */ p) => p.recurrent).length, burn: parts[0].burn,
@@ -968,15 +974,15 @@
     for (const s of done) {
       rows.push({ label: `Mean avalanche size ⟨s⟩ for each drive, L = ${s.L}`, unit: "topplings", ...s.meanS, n: s.chains, reference: s.reference,
         refHow: `exact: ⟨s⟩ = ${job.rule === "manna" ? "2 " : ""}${job.grains > 1 ? `${job.grains} ` : ""}${job.drive === "centre" ? "(Δ⁻¹·1) at the centre" : "mean of Δ⁻¹·1"} (Dhar 1990), by conjugate gradients to a relative residual below 10⁻¹²`, tags: ["observation", "theorem"] });
-      if (s.heights.exact) s.heights.freq.forEach((/** @type {number | null} */ f, /** @type {number} */ h) => rows.push({ label: `P(height ${h}) at the central sites, L = ${s.L}`, unit: "", est: f, lo: null, hi: null, how: "frequency over the recorded drives: the drives are dependent, so no interval", n: s.chains,
-        reference: BTW_HEIGHTS[h], refHow: "exact on the infinite lattice (Priezzhev 1994): a finite lattice differs near its boundary", tags: ["observation", "theorem"] }));
+      if (s.heights.exact) s.heights.chains.forEach((/** @type {any} */ iv, /** @type {number} */ h) => rows.push({ label: `P(height ${h}) at the central sites, L = ${s.L}`, unit: "", ...iv, n: s.chains,
+        reference: BTW_HEIGHTS[h], refHow: "exact on the infinite lattice (Priezzhev 1994; closed forms proved by Poghosyan, Priezzhev and Ruelle 2011, and by Kenyon and Wilson): a finite lattice differs near its boundary", tags: ["observation", "theorem"] }));
     }
     if (done.length >= 2) {
-      const open = job.boundary === "open" && job.eps === 0;
+      const open = job.boundary === "open" && job.eps === 0, exact1 = exactFit !== null;
       sigma.forEach((x) => rows.push({ label: `Slope σ(${x.q}) of log ⟨s^${x.q}⟩ against log L`, unit: "", est: x.fit?.slope ?? null, lo: x.fit?.lo ?? null, hi: x.fit?.hi ?? null, how: x.fit ? `least squares over L = ${done.map((/** @type {any} */ s) => s.L).join(", ")}; the 95 % interval holds the Monte Carlo error only` : "needs 2 sizes", n: done.length,
-        reference: x.q === 1 && open ? exactFit?.slope ?? null : null,
-        refHow: x.q === 1 && open ? `the same fit of the exact values of ⟨s⟩. Their slope is ${exactSigma ? exactSigma.slope.toFixed(3) : "–"} between the two largest sizes and tends to 2 as L → ∞, because ⟨s⟩ ∝ L² (Dhar 1990)` : "no theorem: under simple finite-size scaling σ(q) = D(q + 1 − τ), which is a hypothesis",
-        tags: x.q === 1 && open ? ["observation", "numerical"] : ["observation"] }));
+        reference: x.q === 1 && exact1 ? /** @type {any} */ (exactFit).slope : null,
+        refHow: x.q === 1 && exact1 ? `the same fit of the exact values of ⟨s⟩ (Dhar 1990). Their slope is ${exactSigma ? exactSigma.slope.toFixed(3) : "–"} between the two largest sizes${open ? "; ⟨s⟩ / L² tends to a constant as L → ∞, so the slope tends to 2" : ""}` : "no theorem: under simple finite-size scaling σ(q) = D(q + 1 − τ), which is a hypothesis",
+        tags: x.q === 1 && exact1 ? ["observation", "numerical"] : ["observation"] }));
     }
     return { rows, sizes, sigma, exactFit, exactSigma, dFit, orders: ORDERS, btwExact, fixed };
   }

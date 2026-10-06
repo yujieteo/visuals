@@ -78,7 +78,7 @@ test("the theory panels of group 9 have their 6 parts and open lab examples", ()
     assert.ok(x, `${t.id} → ${t.experiment.physics}`);
     runsOneBlock(stateOf(x, t.experiment.settings));
   }
-  assert.match(data.theory.find((/** @type {any} */ t) => t.id === "soc").counterexample, /interpretation, not a general theorem/);
+  assert.match(data.theory.find((/** @type {any} */ t) => t.id === "soc").counterexample, /interpretations, not general theorems/);
 });
 
 test("the page states that a finite lattice does not establish a universality class, in the lab and in its report", () => {
