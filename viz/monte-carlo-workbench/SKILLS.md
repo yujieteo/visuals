@@ -45,7 +45,7 @@ All read-only.
 | `get_run` | none | The run record: generator, seed, settings, model, status, and each estimate with its interval and reference |
 | `list_catalogue` | `query` (optional) | The laws, the experiments and workflows (filtered by the query), the methods, the theory panels and the 10 groups |
 | `get_law` | `id` (required) | One law's catalogue entry, also of a copula, a process or the conditional models |
-| `get_multilevel` | none | The last multilevel run: status, target error, seed, method, quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, and the reference |
+| `get_multilevel` | none | The last multilevel run of the current model, parameters, method, seed, alternative, quantity and `mlmc_eps` (a change to one of them cancels the run and clears it): status, target error, seed, method, quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, the reference on the level-0 grid, and `gridFree` (true when the reference does not change with the grid) |
 
 ## Exports
 
