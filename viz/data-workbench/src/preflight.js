@@ -1,7 +1,8 @@
 /* Universal Data Workbench: the resource policy, checked before a file is imported.
  *
- * The engine's memory budget depends on the device: 2 GiB on a desktop, 512 MiB on a phone until piece 7 measures
- * phones (provisional), 1 GiB on any other device; where the browser reports its memory (navigator.deviceMemory),
+ * The engine's memory budget depends on the device: 2 GiB on a desktop, 512 MiB on a phone (step 7 measured
+ * emulated phones, which cannot show a real phone's memory; a real phone's measurement may change it), 1 GiB on any
+ * other device; where the browser reports its memory (navigator.deviceMemory),
  * at most a quarter of it. The person can choose a smaller budget before the engine starts.
  *
  * A file's estimate is what DuckDB was measured to hold for it (tests/engine.test.mjs, "memory estimate"): a CSV,
@@ -34,7 +35,7 @@
   function device(d) {
     const kind = !d.coarsePointer ? "desktop" : d.screenMax < 1100 ? "phone" : "other";
     let budget = BUDGETS[kind];
-    const basis = [kind === "desktop" ? "a desktop" : kind === "phone" ? "a phone, provisional until phones are measured" : "a device of unknown class"];
+    const basis = [kind === "desktop" ? "a desktop" : kind === "phone" ? "a phone, until a real phone is measured" : "a device of unknown class"];
     if (d.deviceMemoryGiB && d.deviceMemoryGiB > 0 && d.deviceMemoryGiB * GiB / 4 < budget) {
       budget = d.deviceMemoryGiB * GiB / 4;
       basis.push(`a quarter of the ${d.deviceMemoryGiB} GiB this browser reports`);

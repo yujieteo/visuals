@@ -8,7 +8,8 @@
 // their highlights explained, the highlight count, the study details and get_findings; and the publication figures:
 // the Nature preset, and the PDF, PNG and SVG downloads read back with the page's own readers; and SQL and table
 // algebra: a join by the visual controls with its diagnostics, a refused statement, a query's result analysed as its
-// own table with its records cited by its charts, and the package that makes it again in a fresh page.
+// own table with its records cited by its charts, and the package that makes it again in a fresh page; and step 7
+// (e2e/step7.mjs): the whole workflow by touch on the phones, Measure this device, and Cancel while charts are drawn.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -34,6 +35,7 @@ const { openSession, selectedProjects, settle } = await import("../../../e2e/lib
 const { loadTargets } = await import("../../../e2e/lib/targets.js");
 const { serveArtifacts } = await import("../../../e2e/lib/server.js");
 const { parseDeck } = await import("../../../scripts/templates/beamdswitch/deck.mjs");
+const { step7 } = await import("./step7.mjs");
 
 /** @param {import("playwright").Page} page */
 const kitState = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.state);
@@ -541,6 +543,9 @@ if (selected) {
           await r.close();
         }
       });
+
+      // Step 7: the whole workflow by touch, Measure this device, and Cancel while the charts are drawn (e2e/step7.mjs).
+      step7({ project, browser: () => browser, targets, artifact, tmp, ready, view, Zip, openSession, settle });
     });
   }
 }

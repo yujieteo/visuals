@@ -228,6 +228,8 @@
   async function importOne(item) {
     const begun = performance.now();
     const api = await ensureEngine();
+    // The typed copies of earlier tables give their room back to the import; their charts read the tables meanwhile.
+    await Gallery.release(api);
     progress(`Reading ${item.fileName}`, 0, 0);
     const sample = item.choice === "sample" ? item.decision.sample : null;
     const columns = item.choice === "columns" ? item.keep : null;
@@ -349,6 +351,9 @@
         if (col.reading.kind !== "text" && col.reading.kind !== "source" && col.textSource) {
           note({ kind: "reading", table: table.name, column: col.name, text: `${table.name}.${col.name}: read as ${Infer.TYPE_LABEL[col.type]} (${readingText(col.reading)}); ${fmtPct(col.share)} of ${fmtInt(col.valued)} values read, ${plural(col.failures.count, "value does", "values do")} not.` });
         }
+        // The first figures: this column's own charts, drawn while the other columns are profiled (step 7).
+        table.columns.sort((x, y) => x.position - y.position);
+        await Gallery.early(table, col);
       } catch (error) {
         if (Engine.cancelled(error) || store.stop) break;
         if (Engine.outOfMemory(error)) { table.reason = `the engine reached its ${Preflight.bytes(budget())} memory budget at column ${c.name}`; break; }
@@ -595,6 +600,7 @@
     Query.draw();
     Findings.draw();
     Exporter.draw();
+    Limits.draw();
     drawExamples();
     drawLog();
   }
@@ -612,7 +618,7 @@
       select.disabled = e.status !== "idle" && e.status !== "failed";
     }
     const parts = [`Memory budget: ${Preflight.bytes(budget())}${store.budgetChoice === "auto" ? `, for ${device.basis}` : ", chosen by you"}.`];
-    if (store.tables.length) parts.push(`Estimated in use: ${Preflight.bytes(used())}.`);
+    if (store.tables.length) parts.push(`Estimated in use: ${Preflight.bytes(used())} of tables${Gallery.staged() ? `, and ${Preflight.bytes(Gallery.staged())} of typed copies that the charts read` : ""}.`);
     parts.push(e.status === "idle" ? "The engine starts with the first import." : e.status === "starting" ? "The engine is starting." : e.status === "ready" ? `Engine: DuckDB ${e.version}, ready; the budget is fixed until the page reloads.` : `The engine could not start: ${e.error}`);
     byId("budget-note").textContent = parts.join(" ");
     const status = byId("progress");
@@ -934,7 +940,10 @@
 
   const Gallery = window.DWGallery.mount({
     store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
-    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory, publish: Publish,
+    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory, publish: Publish, bytes: Preflight.bytes,
+    // A table's typed copy may use what the tables leave of three quarters of the budget; the last quarter is the
+    // queries' working room.
+    room: () => 0.75 * budget() - used(),
     // Once a table's charts are drawn, its statistics run and its charts are ranked.
     charted: (table) => Findings.analyse(table),
   });
@@ -963,6 +972,14 @@
   const Query = window.DWQuery.mount({
     store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
     analyse: (entry) => analyseDerived(entry), forget: (table) => forget(table),
+  });
+
+  /* ---------- limits ---------- */
+
+  // The published limits and "Measure this device".
+  const Limits = window.DWLimits.mount({
+    store, h, byId, busy, progress, refresh, ensureEngine, note, message, device, budget, data: DATA,
+    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory,
   });
 
   /* ---------- start ---------- */

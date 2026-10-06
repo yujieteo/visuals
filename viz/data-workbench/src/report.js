@@ -89,10 +89,9 @@
         title: "Conversions and what comes next",
         body: [
           ...(d.log?.length ? d.log.map((line, i) => `${i + 1}. ${cell(line)}`) : ["- No conversion yet."]),
-          "",
-          `- Still to come: ${(d.pieces ?? []).map((p) => cell(p.title)).join("; ")}.`,
+          ...(d.pieces?.length ? ["", `- Still to come: ${d.pieces.map((p) => cell(p.title)).join("; ")}.`] : []),
         ].join("\n"),
-        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: the phone checks and the acceptance tests are still to come.`,
+        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}.${d.pieces?.length ? " This is a preview; more steps are still to come." : ""}`,
         key: tables.length && tables.every((t) => t.status === "complete") ? "Every value stays as written; each change is approved and logged." : "The inspection is not complete yet.",
       }],
     };

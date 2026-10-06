@@ -44,7 +44,8 @@
 
     async function analyseNow(table, subset) {
       const charts = app.gallery.state(table.name);
-      if (!store.tables.includes(table) || !charts?.ctx) return;
+      // The first figures drawn while profiling are not the table's charts yet: the statistics wait for the whole run.
+      if (!store.tables.includes(table) || !charts?.ctx || charts.status === "early") return;
       const st = ensure(table.name);
       const api = await app.ensureEngine();
       const name = subset ? `${table.name} where ${subset.field} = ${subset.level}` : table.name;
@@ -132,7 +133,7 @@
       const out = [head];
       if (!st || st.status === "none") {
         out.push(h("p", { class: "note", "data-family": "none", text: charts?.status === "complete" || charts?.status === "incomplete" ? "The statistics run once the charts are drawn." : "The statistics run once the table's charts are drawn." }));
-        if (charts?.ctx && !store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics" })));
+        if (charts?.ctx && charts.status !== "early" && !store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics" })));
         view.replaceChildren(...out);
         return;
       }
