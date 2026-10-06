@@ -25,6 +25,25 @@
   /** The term ratios of a balance: below 1/10 one term controls, above 10 the other, between them the crossover region. */
   const BAND = 10;
 
+  /** "Bi·Fo" for the slab, "2Bi·Fo" for the cylinder, "3Bi·Fo" for the sphere: the slow time T = (j + 1)Bi·Fo. */
+  const jBiFo = (j) => `${j ? j + 1 : ""}Bi·Fo`;
+  const jTex = (j) => (j ? `${j + 1}\\,` : "");
+  const SUPERS = { 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸" };
+  /** A power series as text from rational coefficients: "1 + Bi/6 − 7Bi²/120 + …". `pow(k)` is the power of term k. */
+  function seriesText(coeffs, v, pow = (k) => k) {
+    const parts = [];
+    coeffs.forEach((c, k) => {
+      const q = Q.parse(c);
+      if (!q || Q.isZero(q)) return;
+      const n = pow(k), a = Q.abs(q);
+      const vp = n === 0 ? "" : n === 1 ? v : `${v}${SUPERS[n] ?? `^${n}`}`;
+      const num0 = a.n === 1n && vp ? "" : String(a.n);
+      const body = !vp ? Q.str(a) : a.d === 1n ? `${num0}${vp}` : `${num0}${vp}/${a.d}`;
+      parts.push({ neg: Q.sign(q) < 0, body });
+    });
+    return parts.map((t, i) => (i ? `${t.neg ? " − " : " + "}${t.body}` : `${t.neg ? "−" : ""}${t.body}`)).join("") + " + …";
+  }
+
   const balanceRegions = (low, high) => [
     { id: "low", label: low, lo: 0, hi: 1 / BAND },
     { id: "band", label: "Comparable terms: the balance crossover region", lo: 1 / BAND, hi: BAND },
@@ -55,9 +74,9 @@
     return [
       { id: "one-mode", label: "One mode", tex: `\\theta\\approx C_1 ${GEOM_TEX[geom].f.replace(/\\lambda/g, "\\lambda_1")}\\,e^{-\\lambda_1^{2}Fo}`, limit: "Fo → ∞ at fixed Bi",
         why: "The first mode decays slowest, so the others become small at late times.", error: geom === "cylinder" ? "measured against the series; no proved bound here" : "proved bound from the series tail (see the asymptotic analysis)" },
-      { id: "lumped", label: "Lumped", tex: `\\theta\\approx e^{-${j + 1}\\,Bi\\,Fo}`, limit: "Bi → 0 at fixed Bi·Fo",
+      { id: "lumped", label: "Lumped", tex: `\\theta\\approx e^{-${jTex(j)}Bi\\,Fo}`, limit: "Bi → 0 at fixed Bi·Fo",
         why: "Order 0 of the outer expansion: the temperature is uniform and decays at the rate of the surface exchange.", error: "formal expansion; the order-1 term estimates the remainder" },
-      { id: "outer", label: "Outer, order 1", tex: `\\theta\\approx e^{-T}\\left[1+Bi\\left(${Q.tex(c)}+${Q.tex(r)}\\,T-\\frac{X^{2}}{2}\\right)\\right],\\quad T=${j + 1}\\,Bi\\,Fo`, limit: "Bi → 0 at fixed Bi·Fo",
+      { id: "outer", label: "Outer, order 1", tex: `\\theta\\approx e^{-T}\\left[1+Bi\\left(${Q.tex(c)}+${Q.tex(r)}\\,T-\\frac{X^{2}}{2}\\right)\\right],\\quad T=${jTex(j)}Bi\\,Fo`, limit: "Bi → 0 at fixed Bi·Fo",
         why: "Orders 0 and 1 of the outer expansion. It does not hold in the initial layer, at Fo of order 1 or less.", error: "formal expansion; the order-2 term estimates the remainder" },
       { id: "surface-temperature", label: "Surface temperature", tex: `\\theta(1,Fo)=0:\\ \\lambda_n=${geom === "slab" ? "(n-\\tfrac{1}{2})\\pi" : geom === "cylinder" ? "j_{0,n}" : "n\\pi"}`, limit: "Bi → ∞ at fixed Fo",
         why: "The surface condition becomes a prescribed temperature: λ_n = λ_n^∞(1 − 1/Bi) + O(Bi⁻²).", error: "regular expansion in 1/Bi; measured against the series" },
@@ -90,19 +109,19 @@
     const steps = ["s-rm-balance", "s-rm-asymptotic", "s-rm-map"];
     const layers = [
       ...approx.map((a) => approxLayer(a.id, a.label, `err-${a.id}`, `max over X of |θ_approx − θ| ÷ max over X of θ, against the series at 21 points, ≤ the tolerance`, steps, a.id === "outer" ? "lumped" : a.id)),
-      balanceLayer("surface", "Surface balance", "bal-surface", "internal drop ÷ surface excess ≈ Bi·min(1, 2√Fo). The surface condition −θ_X(1) = Bi θ(1) gives it, with the gradient length min(1, 2√Fo)",
-        "Surface exchange controls: the internal drop is small (lumped)", "Internal conduction controls: the surface is near the fluid temperature", steps),
-      balanceLayer("penetration", "Penetration balance", "bal-penetration", "(2√Fo ÷ 1)² = 4Fo: the penetration depth over the size, squared. It compares storage with diffusion over the whole size",
-        "Short time: the change has not reached the centre (inner region)", "Whole body: every mode has started (outer region)", steps),
+      balanceLayer("surface", "Surface balance", "bal-surface", "internal drop ÷ surface excess ≈ Bi·min(1, 2√Fo), an estimate. The surface condition −θ_X(1) = Bi θ(1) gives it, with the gradient length min(1, 2√Fo)",
+        "Surface exchange controls: the internal drop is small (lumped)", "Internal conduction controls: the surface is near the fluid temperature", steps, "proposed"),
+      balanceLayer("penetration", "Penetration balance", "bal-penetration", "(2√Fo ÷ 1)² = 4Fo, an estimate: the penetration depth over the size, squared. It compares storage with diffusion over the whole size",
+        "Short time: the change has not reached the centre (inner region)", "Whole body: the change has reached the centre (outer region)", steps, "proposed"),
     ];
     function limits(p) {
       const T = (j + 1) * p.Bi * p.Fo, beta = p.Bi * Math.sqrt(p.Fo);
       const along = (from, to, f) => Array.from({ length: 25 }, (_, i) => { const x = from * (to / from) ** (i / 24); return f(x); });
       return [
-        { id: "lumped-limit", label: `Bi → 0 with ${j + 1}Bi·Fo = ${num(T)} fixed`, coupled: true, approx: "lumped",
+        { id: "lumped-limit", label: `Bi → 0 with ${jBiFo(j)} = ${num(T)} fixed`, coupled: true, approx: "lumped",
           note: "The lumped limit needs a coupled change: Fo grows like 1/Bi. Along this path the outer expansion holds.", points: along(p.Bi, dom.Bi.min, (b) => ({ Bi: b, Fo: T / ((j + 1) * b) })) },
         { id: "fixed-fo", label: `Bi → 0 at Fo = ${num(p.Fo)}`, coupled: false, approx: null,
-          note: "θ → 1 everywhere: the solid does not cool. The lumped model is not the useful limit on this path.", points: along(p.Bi, dom.Bi.min, (b) => ({ Bi: b, Fo: p.Fo })) },
+          note: "θ → 1 everywhere: the solid does not cool. The lumped model also tends to 1 on this path, so this limit tells nothing about the cooling.", points: along(p.Bi, dom.Bi.min, (b) => ({ Bi: b, Fo: p.Fo })) },
         { id: "surface-limit", label: `Bi → ∞ at Fo = ${num(p.Fo)}`, coupled: false, approx: "surface-temperature",
           note: "The surface takes the fluid temperature. The reduced model keeps the number of modes and of conditions.", points: along(p.Bi, dom.Bi.max, (b) => ({ Bi: b, Fo: p.Fo })) },
         { id: "short-limit", label: `Fo → 0 with Bi√Fo = ${num(beta)} fixed`, coupled: true, approx: "short-time",
@@ -139,7 +158,7 @@
           { id: "surface", tex: "\\theta(1,Fo)", label: "θ at the surface", value: num(theta1) },
           { id: "mean", tex: "\\bar\\theta", label: "mean θ, the fraction of the initial excess energy that remains", value: num(ref.mean) },
           { id: "ratio", tex: "\\frac{\\theta(0)-\\theta(1)}{\\theta(1)}", label: "internal drop ÷ surface excess, from the series", value: num((theta0 - theta1) / theta1) },
-          { id: "T", tex: "T", label: "slow time (j + 1)Bi·Fo", value: num((j + 1) * Bi * Fo) },
+          { id: "T", tex: "T", label: `slow time ${jBiFo(j)}`, value: num((j + 1) * Bi * Fo) },
         ],
         checks: [{ id: "energy", title: "Energy balance d(mean θ)/dFo = −(j + 1) Bi θ(1, Fo)", passed: energyErr < 1e-9, status: "numerical", tolerance: "1e-9", detail: `The two sides are ${num(dmean)} and ${num(flux)}. Their relative difference is ${energyErr.toExponential(2)}.` }],
         reconstruction: [...recon, ...temps],
@@ -147,8 +166,8 @@
     }
     return { id: decl.id, geom, params: decl.domain.parameters, axes: { x: "Bi", y: "Fo" }, approximations: approx, layers, evaluate, limits, inspect,
       derived: (p) => [
-        { id: "T", tex: "T=(j+1)\\,Bi\\,Fo", label: "slow time of the lumped limit", value: num((j + 1) * p.Bi * p.Fo) },
-        { id: "Bi_c", tex: "Bi_c=\\frac{Bi}{j+1}", label: `Biot number with L_c = V/A_s (${decl.acceptance.lumpedLength})`, value: num(p.Bi / (j + 1)) },
+        { id: "T", tex: `T=${jTex(j)}Bi\\,Fo`, label: "slow time of the lumped limit", value: num((j + 1) * p.Bi * p.Fo) },
+        { id: "Bi_c", tex: j ? `Bi_c=\\frac{Bi}{${j + 1}}` : "Bi_c=Bi", label: `Biot number with ${decl.acceptance.lumpedLength}`, value: num(p.Bi / (j + 1)) },
         { id: "beta", tex: "Bi\\sqrt{Fo}", label: "the parameter of the short-time inner region", value: num(p.Bi * Math.sqrt(p.Fo)) },
       ],
       constraints: (p) => [...(p.Bi > 0 ? [] : ["Bi must be positive."]), ...(p.Fo > 0 ? [] : ["Fo must be positive."])],
@@ -160,12 +179,13 @@
     const j = H.J[geom];
     const g = GEOM_TEX[geom];
     const sb = A.smallBi(j, 2);
-    const tauOf = "T=" + (j + 1) + "\\,Bi\\,Fo";
+    const tauOf = `T = ${jBiFo(j)}`;
     const proved = geom === "slab" ? "|θ − θ₁| ≤ Σ_{m≥1} 4/(2mπ − 1) e^{−m²π²Fo}. The reason: λ_n ≥ (n − 1)π and |C_n| ≤ 4/(2λ_n − 1). The bound holds for every Bi."
       : geom === "sphere" ? "|θ − θ₁| ≤ Σ_{m≥1} 4(1 + λ)/(2λ − 1) e^{−λ²Fo} with λ = mπ. The reason: λ_n ≥ (n − 1)π, |f_n| ≤ 1 and |C_n| ≤ 4(1 + λ_n)/(2λ_n − 1). The bound holds for every Bi."
         : null;
     return {
       balance: {
+        estimated: true, intro: "Each balance compares complete terms with their estimated field and derivative scales, not coefficients alone.",
         terms: [
           { id: "conduction", tex: "-\\left.\\frac{\\partial\\theta}{\\partial X}\\right|_{X=1}", label: "conduction to the surface", scale: "\\frac{\\Delta_i}{\\ell}", why: "Δ_i is the internal drop θ(0) − θ(1). ℓ = min(1, 2√Fo) is the length over which the temperature changes." },
           { id: "exchange", tex: "Bi\\,\\theta(1)", label: "exchange at the surface", scale: "Bi\\,\\theta_s", why: "θ_s is the surface excess θ(1)." },
@@ -175,31 +195,31 @@
         balances: [
           { id: "surface-controls", region: "surface:low", title: "Surface exchange controls", when: "Bi\\,\\min(1,2\\sqrt{Fo})\\ll 1",
             derivation: "The surface condition makes the two terms equal: Δ_i/ℓ ~ Bi θ_s, so Δ_i/θ_s ~ Bi ℓ. When Bi ℓ ≪ 1 the internal drop is small, so θ is nearly uniform.",
-            reduced: `\\frac{d\\bar\\theta}{dFo}=-${j + 1}\\,Bi\\,\\bar\\theta`, neglected: "the internal drop Δ_i against θ_s", assumptions: ["The temperature is uniform at leading order."],
-            residual: { tex: `${j + 1}\\,Bi\\,\\partial_T\\theta_0-\\mathcal{L}\\theta_0=-${j + 1}\\,Bi\\,e^{-T}`, order: "O(Bi)", status: "exact",
-              note: `Put θ₀ = e^{−T} in the full equation (j + 1)Bi ∂_Tθ = 𝓛θ, with ${tauOf}. The residual is −(j + 1)Bi e^{−T}, of order Bi. The order-1 solution reduces it to order Bi².` } },
+            reduced: `\\frac{d\\bar\\theta}{dFo}=-${jTex(j)}Bi\\,\\bar\\theta`, neglected: "the internal drop Δ_i against θ_s", assumptions: ["The temperature is uniform at leading order."],
+            residual: { tex: `${jTex(j)}Bi\\,\\partial_T\\theta_0-\\mathcal{L}\\theta_0=-${jTex(j)}Bi\\,e^{-T}`, order: "O(Bi)", status: "exact",
+              note: `Put θ₀ = e^{−T} in the full equation ${j ? j + 1 : ""}Bi ∂_Tθ = 𝓛θ, with ${tauOf}. The residual is −${j ? j + 1 : ""}Bi e^{−T}, of order Bi. The order-1 solution reduces it to order Bi².` } },
           { id: "conduction-controls", region: "surface:high", title: "Internal conduction controls", when: "Bi\\,\\min(1,2\\sqrt{Fo})\\gg 1",
             derivation: "Then θ_s ≪ Δ_i: the surface is near the fluid temperature, and conduction inside sets the rate.",
             reduced: "\\theta(1,Fo)=0", neglected: "the surface excess θ_s against Δ_i", assumptions: ["The surface condition becomes a prescribed temperature."],
             residual: { tex: "\\frac{1}{Bi}\\left(-\\frac{\\partial\\theta}{\\partial X}\\right)-\\theta=-\\frac{1}{Bi}\\frac{\\partial\\theta}{\\partial X}\\ \\text{at}\\ X=1", order: "O(1/Bi)", status: "exact",
               note: "Write the surface condition as (1/Bi)(−θ_X) = θ. The reduced solution has θ(1) = 0, so the residual is −(1/Bi)θ_X(1), of order 1/Bi." } },
           { id: "short-time", region: "penetration:low", title: "Short time: an inner region at the surface", when: "4\\,Fo\\ll 1",
-            derivation: "Storage Δ/Fo and diffusion Δ/ℓ² balance when ℓ = 2√Fo. When 2√Fo ≪ 1 the change stays in a thin layer, and the centre condition is not active.",
+            derivation: "Storage Δ/Fo and diffusion Δ/ℓ² balance when ℓ ~ √Fo. The page uses ℓ = 2√Fo, the length in η. When 2√Fo ≪ 1 the change stays in a thin layer, and the centre condition is not active.",
             reduced: "\\frac{\\partial\\theta}{\\partial Fo}=\\frac{\\partial^{2}\\theta}{\\partial s^{2}},\\ s=1-X,\\quad \\theta\\to 1\\ (s\\to\\infty)", neglected: geom === "slab" ? "the centre condition" : "the centre condition and the curvature terms", assumptions: ["The solid is semi-infinite as seen from the surface."],
-            residual: { tex: geom === "slab" ? "O\\left(e^{-1/(4Fo)}\\right)" : `\\frac{${j}}{X}\\frac{\\partial\\theta}{\\partial X}\\Big/\\frac{\\partial^{2}\\theta}{\\partial X^{2}}\\sim 2\\sqrt{Fo}`, order: geom === "slab" ? "exponentially small" : "O(√Fo) relative", status: geom === "slab" ? "exact" : "numerical",
-              note: geom === "slab" ? "The semi-infinite solution satisfies the equation and the surface condition exactly. It misses only the reflection from the centre, which is of order e^{−1/(4Fo)}." : "The curvature term (j/X)θ_X is of order 1/ℓ relative to θ_XX, which is of order 1/ℓ², so its relative size is ℓ ~ √Fo." } },
+            residual: { tex: geom === "slab" ? "O\\left(e^{-1/(4Fo)}\\right)" : `\\frac{${j}}{X}\\frac{\\partial\\theta}{\\partial X}\\Big/\\frac{\\partial^{2}\\theta}{\\partial X^{2}}\\sim 2\\sqrt{Fo}`, order: geom === "slab" ? "exponentially small" : "O(√Fo) relative", status: geom === "slab" ? "exact" : "proposed",
+              note: geom === "slab" ? "The semi-infinite solution satisfies the equation and the surface condition exactly. It misses only the reflection from the centre, which is of order e^{−1/(4Fo)}." : "Near X = 1, (j/X)θ_X is of order Δ/ℓ and θ_XX is of order Δ/ℓ². Their ratio is of order ℓ ~ √Fo." } },
         ],
         crossovers: [
-          { id: "surface", criterion: "Bi\\,\\min(1,2\\sqrt{Fo})=1", text: "Bi = 1 for Fo ≥ 1/4, and Bi = 1/(2√Fo) for Fo < 1/4. The region 0.1 < Bi·min(1, 2√Fo) < 10 has comparable terms.", status: "exact" },
-          { id: "penetration", criterion: "4\\,Fo=1", text: "Fo = 1/4. The region 0.025 < Fo < 2.5 has comparable terms.", status: "exact" },
+          { id: "surface", criterion: "Bi\\,\\min(1,2\\sqrt{Fo})=1", text: "Bi = 1 for Fo ≥ 1/4, and Bi = 1/(2√Fo) for Fo < 1/4. The region 0.1 < Bi·min(1, 2√Fo) < 10 has comparable terms. The terms are estimates.", status: "proposed" },
+          { id: "penetration", criterion: "4\\,Fo=1", text: "Fo = 1/4. The region 0.025 < Fo < 2.5 has comparable terms. The terms are estimates.", status: "proposed" },
         ],
         note: "These are balance crossovers: they mark where the estimated terms are equal. They are not transitions: the solution changes smoothly across them.",
       },
       asymptotic: {
         limits: [
           {
-            id: "small-bi", parameter: "Bi\\to 0", path: `Bi → 0 with the slow time ${tauOf.replace(/\\,/g, " ")} fixed`, fixed: "T = (j + 1) Bi Fo and X", coupled: true, kind: "regular outer expansion with an initial layer",
-            setup: `${j + 1}\\,Bi\\,\\frac{\\partial\\theta}{\\partial T}=${g.L},\\quad \\frac{\\partial\\theta}{\\partial X}(0,T)=0,\\quad -\\frac{\\partial\\theta}{\\partial X}(1,T)=Bi\\,\\theta(1,T),\\quad \\theta=\\sum_{n}Bi^{n}\\theta_n(X,T)`,
+            id: "small-bi", parameter: "Bi\\to 0", path: `Bi → 0 with the slow time ${tauOf} fixed`, fixed: `${tauOf} and X`, coupled: true, kind: "An outer expansion in powers of Bi, with an initial layer (a singular perturbation in time)",
+            setup: `${jTex(j)}Bi\\,\\frac{\\partial\\theta}{\\partial T}=${g.L},\\quad \\frac{\\partial\\theta}{\\partial X}(0,T)=0,\\quad -\\frac{\\partial\\theta}{\\partial X}(1,T)=Bi\\,\\theta(1,T),\\quad \\theta=\\sum_{n}Bi^{n}\\theta_n(X,T)`,
             orders: sb.orders.map((o) => ({
               n: o.n,
               equation: o.n === 0 ? "\\mathcal{L}\\theta_0=0" : `\\mathcal{L}\\theta_{${o.n}}=${j + 1}\\,\\partial_T\\theta_{${o.n - 1}}=${o.rhsTex}`,
@@ -219,13 +239,13 @@
               matching: `\\int_0^1 X^{${j}}\\,\\theta(X,0)\\left[\\theta(X,0)-1\\right]dX=0\\ \\text{at each order}`,
               why: "The initial layer keeps the projection of the initial data θ = 1 on the slow mode. At order 1 this is the energy balance of the inner problem. It gives c₁ = (j + 1)/(2(j + 3)).",
             },
-            residual: { tex: `\\text{equation: }${j + 1}\\,Bi^{3}\\,\\partial_T\\theta_2=Bi^{3}\\,${A.tex(sb.residual.equation)};\\quad \\text{surface: }-Bi^{3}\\,\\theta_2(1,T)`, order: "O(Bi³)", status: "exact" },
-            crossCheck: { C1: sb.C1, decay: sb.decay, text: `The constants c_n are the coefficients of C₁ in Bi, and the T-terms give λ₁²/(${j + 1}Bi) = 1 − ${sb.decay.map((m, k) => `(${m})Bi^${k + 1}`).join(" − ")} + …` },
+            residual: { tex: `\\text{equation: }${jTex(j)}Bi^{3}\\,\\partial_T\\theta_2=Bi^{3}\\,${A.tex(sb.residual.equation)};\\quad \\text{surface: }-Bi^{3}\\,\\theta_2(1,T)`, order: "O(Bi³)", status: "exact" },
+            crossCheck: { C1: sb.C1, decay: sb.decay, text: `The constants c_n are the coefficients of C₁ = ${seriesText(sb.C1, "Bi")}. The T-terms give λ₁²/${j ? `(${j + 1}Bi)` : "Bi"} = ${seriesText(["1", ...sb.decay.map((m) => Q.str(Q.neg(Q.parse(m))))], "Bi")}.` },
             error: { formal: "The outer expansion is formal: each order satisfies its equations exactly, but the series in Bi has no proved remainder here.", estimated: "The next order estimates the remainder: the order-1 term for the lumped model, and the order-2 term for the order-1 model.", proved: null },
-            validity: "Bi ≪ 1 and Fo ≫ 1 (outside the initial layer). The T-polynomials grow, so the relative error also grows like Bi·T at late times: the map shows where.",
+            validity: "Bi ≪ 1. Order 0 holds for all Fo, with an error of order Bi. Order 1 and higher hold only outside the initial layer, when Fo is of order 1 or more. The T-polynomials grow, so the relative error also grows like Bi·T at late times: the map shows where.",
           },
           {
-            id: "large-bi", parameter: "Bi\\to\\infty", path: "Bi → ∞ at fixed Fo", fixed: "Fo, X", coupled: false, kind: "regular expansion in 1/Bi",
+            id: "large-bi", parameter: "Bi\\to\\infty", path: "Bi → ∞ at fixed Fo", fixed: "Fo and X", coupled: false, kind: "A regular expansion in 1/Bi",
             setup: "\\frac{1}{Bi}\\left(-\\frac{\\partial\\theta}{\\partial X}(1,Fo)\\right)=\\theta(1,Fo)",
             orders: [
               { n: 0, equation: "\\theta(1,Fo)=0", conditions: [], result: `\\lambda_n^{\\infty}=${geom === "slab" ? "(n-\\tfrac{1}{2})\\pi" : geom === "cylinder" ? "j_{0,n}" : "n\\pi"}`, checks: null },
@@ -235,10 +255,10 @@
             orderLoss: "The reduced problem keeps the differential order and the number of conditions. Only the type of the surface condition changes, from Robin to Dirichlet. At Fo = 0 the surface value 0 and the initial value 1 disagree, so a short-time inner region forms at the surface.",
             inner: null,
             error: { formal: "The eigenvalues have a regular expansion in 1/Bi.", estimated: "The first neglected term is of order λ_n^∞/Bi². The map measures the error against the series.", proved: null },
-            validity: "Bi ≫ 1 and Bi√Fo ≫ 1, so that the inner region at the surface is thin.",
+            validity: "Bi ≫ 1 and Bi√Fo ≫ 1. Then the surface excess, about 1/(Bi√(πFo)), is small. The eigenvalue expansion holds for each mode with λ_n^∞ ≪ Bi.",
           },
           {
-            id: "short-fo", parameter: "Fo\\to 0", path: "Fo → 0 with β = Bi√Fo fixed", fixed: "β = Bi√Fo and the similarity variable η = (1 − X)/(2√Fo)", coupled: true, kind: "inner region (boundary layer in time)",
+            id: "short-fo", parameter: "Fo\\to 0", path: "Fo → 0 with β = Bi√Fo fixed", fixed: "β = Bi√Fo and the similarity variable η = (1 − X)/(2√Fo)", coupled: true, kind: "An inner region: a thin layer at the surface at short times",
             setup: "\\theta=\\Theta(\\eta,\\beta),\\quad \\eta=\\frac{1-X}{2\\sqrt{Fo}},\\quad \\beta=Bi\\sqrt{Fo}",
             orders: [{ n: 0, equation: "\\Theta_{\\eta\\eta}+2\\eta\\Theta_{\\eta}=2\\beta\\frac{\\partial\\Theta}{\\partial\\beta}", conditions: ["\\Theta_{\\eta}(0,\\beta)=2\\beta\\,\\Theta(0,\\beta)", "\\Theta\\to 1\\ (\\eta\\to\\infty)"],
               result: "\\Theta=\\operatorname{erf}\\eta+e^{-\\eta^{2}}\\operatorname{erfcx}(\\eta+\\beta)", checks: null }],
@@ -248,7 +268,7 @@
             validity: "Fo ≪ 1/4: the penetration depth 2√Fo is small compared with the size.",
           },
           {
-            id: "large-fo", parameter: "Fo\\to\\infty", path: "Fo → ∞ at fixed Bi", fixed: "Bi", coupled: false, kind: "late-time mode expansion",
+            id: "large-fo", parameter: "Fo\\to\\infty", path: "Fo → ∞ at fixed Bi", fixed: "Bi", coupled: false, kind: "A mode expansion at late times",
             setup: `\\theta=\\sum_{n\\ge1}C_n f_n(\\lambda_nX)\\,e^{-\\lambda_n^{2}Fo},\\quad ${decl.acceptance.modes}`,
             orders: [{ n: 1, equation: "\\theta\\approx C_1 f_1(\\lambda_1 X)e^{-\\lambda_1^{2}Fo}", conditions: [], result: "\\text{relative error}\\sim\\frac{|C_2|}{C_1}e^{-(\\lambda_2^{2}-\\lambda_1^{2})Fo}", checks: null }],
             orderLoss: "The reduction keeps the order and both conditions: the one-mode solution satisfies the equation and both conditions exactly. It does not satisfy the initial condition.",
@@ -288,7 +308,7 @@
       const sb = A.smallBi(H.J[geom], 3);
       const same = series.C1.every((c, k) => c === sb.C1[k]) && series.mu.every((c, k) => c === sb.decay[k]);
       out.push({ id: "series", title: "The small-Bi expansion gives C₁ and λ₁² as SymPy's series of the eigenvalue equation", passed: same, status: "exact",
-        detail: `C₁ = ${sb.C1.map((c, k) => `(${c})Bi^${k}`).join(" + ")}. And λ₁²/(${H.J[geom] + 1}Bi) = 1 − ${sb.decay.map((m, k) => `(${m})Bi^${k + 1}`).join(" − ")}.` });
+        detail: `C₁ = ${seriesText(sb.C1, "Bi")}. And λ₁²/${H.J[geom] ? `(${H.J[geom] + 1}Bi)` : "Bi"} = ${seriesText(["1", ...sb.decay.map((m) => Q.str(Q.neg(Q.parse(m))))], "Bi")}.` });
     }
     return out;
   }
@@ -319,18 +339,27 @@
       if (ex.hi < EXCESS_FLOOR) return { ok: false, reason: "The temperature excess is below 10⁻¹² of its initial value, so the page cannot resolve the relative error." };
       const lump = Math.exp(-p.Bi_c * p.Fo_c);
       const outer = XS.map((X) => H.outerFirstValue(shape.geom, Bi, Fo, X));
-      const oex = extremes(outer);
       // Every θ between the extremes occurs somewhere in the solid, so the largest error is at an extreme.
       const errL = Math.max(Math.abs(lump - ex.lo), Math.abs(lump - ex.hi)) / ex.hi;
-      const errO = shape.n === 1 ? outer.reduce((m, v, i) => Math.max(m, Math.abs(v - ref.values[i])), 0) / ex.hi : Math.max(Math.abs(oex.lo - ex.lo), Math.abs(oex.hi - ex.hi)) / ex.hi;
+      let errO = 0;
+      if (shape.n === 1) errO = outer.reduce((m, v, i) => Math.max(m, Math.abs(v - ref.values[i])), 0) / ex.hi;
+      else {
+        // The cube: the products of three slab values at every point of the 21 × 21 × 21 grid.
+        const o = outer, sv = ref.values;
+        for (let i = 0; i < o.length; i++) for (let k = 0; k < o.length; k++) {
+          const a = o[i] * o[k], b = sv[i] * sv[k];
+          for (let l = 0; l < o.length; l++) errO = Math.max(errO, Math.abs(a * o[l] - b * sv[l]));
+        }
+        errO /= ex.hi;
+      }
       return { ok: true, values: { "err-lumped": errL, "err-outer": errO, "bal-surface": Bi * Math.min(1, 2 * Math.sqrt(Fo)) } };
     }
     const steps = ["s-rm-balance", "s-rm-asymptotic", "s-rm-map"];
     const layers = [
       approxLayer("lumped", "Lumped", "err-lumped", `the largest |e^{−Bi_c·Fo_c} − θ| in the solid ÷ the largest θ, ≤ the tolerance. The solid is a ${shape.label}`, steps),
       approxLayer("outer", "Outer, order 1", "err-outer", "the same measure for the order-1 outer expansion, ≤ the tolerance", steps, "lumped"),
-      balanceLayer("surface", "Surface balance", "bal-surface", "internal drop ÷ surface excess ≈ Bi·min(1, 2√Fo) of the spatial model",
-        "Surface exchange controls: the internal drop is small (lumped)", "Internal conduction controls: the lumped assumption fails", steps),
+      balanceLayer("surface", "Surface balance", "bal-surface", "internal drop ÷ surface excess ≈ Bi·min(1, 2√Fo) of the spatial model, an estimate",
+        "Surface exchange controls: the internal drop is small (lumped)", "Internal conduction controls: the lumped assumption fails", steps, "proposed"),
     ];
     const approximations = [
       { id: "lumped", label: "Lumped", tex: "\\theta\\approx e^{-Bi_c\\,Fo_c}=e^{-t/\\tau_c}", limit: "Bi_c → 0 at fixed Bi_c·Fo_c", why: "The declared model itself.", error: "formal; the order-1 term estimates it" },
@@ -341,7 +370,7 @@
       limits: (p) => {
         const tau = p.Bi_c * p.Fo_c;
         const lo = decl.domain.parameters.find((x) => x.id === "Bi_c").min;
-        return [{ id: "lumped-limit", label: `Bi_c → 0 with Bi_c·Fo_c = t/τ_c = ${num(tau)} fixed`, coupled: true, approx: "lumped", note: "The lumped model is the limit of the spatial model only along this coupled path.",
+        return [{ id: "lumped-limit", label: `Bi_c → 0 with Bi_c·Fo_c = t/τ_c = ${num(tau)} fixed`, coupled: true, approx: "lumped", note: "Along this coupled path the spatial model tends to the lumped model while the body still cools. At fixed Fo_c both tend to θ = 1.",
           points: Array.from({ length: 25 }, (_, i) => { const b = p.Bi_c * (lo / p.Bi_c) ** (i / 24); return { Bi_c: b, Fo_c: tau / b }; }) }];
       },
       inspect: (p, ctx) => {
@@ -353,12 +382,18 @@
         const recon = ctx.reconstruct ? [ctx.reconstruct("Bi_c", p.Bi_c), ctx.reconstruct("Fo_c", p.Fo_c)].filter(Boolean) : [];
         return {
           ok: true,
-          profile: { xs: XP, curves: { exact: ref.values.map((v) => num(v ** shape.n)), lumped: XP.map(() => num(lump)), outer: XP.map((X) => num(H.outerFirstValue(shape.geom, Bi, Fo, X) ** shape.n)) }, note: shape.n === 3 ? "Along the line from the centre of the cube to the centre of a face, the product of three slab profiles with two of them at the centre." : "" },
+          profile: (() => {
+            // The cube: along the line from its centre to the centre of a face, θ = θ_s(X) θ_s(0)².
+            const along = (vals) => (shape.n === 3 ? vals.map((v) => v * vals[0] * vals[0]) : vals);
+            const outer = XP.map((X) => H.outerFirstValue(shape.geom, Bi, Fo, X));
+            return { xs: XP, curves: { exact: along(ref.values).map(num), lumped: XP.map(() => num(lump)), outer: along(outer).map(num) },
+              note: shape.n === 3 ? "The profile runs from the centre of the cube to the centre of a face. On that line θ is the slab profile times the square of its centre value." : "" };
+          })(),
           values: [
             { id: "tau", tex: "t/\\tau_c=Bi_c\\,Fo_c", label: "time in decay times", value: num(tau) },
             { id: "lumped", tex: "e^{-t/\\tau_c}", label: "θ of the lumped model", value: num(lump) },
             { id: "centre", tex: "\\theta_{\\text{spatial}}(0)", label: `θ at the centre of the ${shape.label}`, value: num(ref.values[0] ** shape.n) },
-            { id: "Bi", tex: "Bi", label: "Biot number of the spatial model", value: num(Bi) },
+            { id: "Bi", tex: "Bi", label: shape.n === 3 ? "Biot number hL/k of each slab, with L the half-side" : "Biot number of the spatial model, with its half-thickness or radius", value: num(Bi) },
           ],
           checks: [],
           reconstruction: [...recon, ...(ctx.temperature ? [{ id: "T-lumped", tex: "T(t)", label: "temperature of the lumped model", value: ctx.temperature(lump), unit: "K" }] : [])],
@@ -366,8 +401,8 @@
       },
       derived: (p) => [
         { id: "tau", tex: "t/\\tau_c=Bi_c\\,Fo_c", label: "time in decay times", value: num(p.Bi_c * p.Fo_c) },
-        { id: "Bi", tex: "Bi", label: `Biot number of the ${shape.label}`, value: num(spatial(p).Bi) },
-        { id: "Fo", tex: "Fo", label: `Fourier number of the ${shape.label}`, value: num(spatial(p).Fo) },
+        { id: "Bi", tex: "Bi", label: shape.n === 3 ? "Biot number hL/k of each slab, with L the half-side" : `Biot number of the ${shape.geom === "slab" ? "slab, with its half-thickness" : `${shape.geom === "cylinder" ? "long cylinder" : "sphere"}, with its radius`}`, value: num(spatial(p).Bi) },
+        { id: "Fo", tex: "Fo", label: shape.n === 3 ? "Fourier number αt/L² of each slab" : "Fourier number of the spatial model", value: num(spatial(p).Fo) },
       ],
       constraints: (p) => [...(p.Bi_c > 0 ? [] : ["Bi_c must be positive."]), ...(p.Fo_c > 0 ? [] : ["Fo_c must be positive."])],
       analysis: () => {
@@ -381,7 +416,9 @@
     const out = [];
     const tc = ctx.exact?.("C*V/(h*A_s)");
     if (tc) out.push({ id: "decay-time", title: "The decay time ρc_pV/(hA_s) from the record's values", passed: Boolean(tc.exact), status: tc.exact ? "exact" : "numerical", detail: `τ_c = ${tc.exact ?? num(tc.float)} s.` });
-    out.push({ id: "decay", title: "θ(τ = 1) = e^{−1} for θ_τ = −θ, θ(0) = 1", passed: Math.abs(Math.exp(-1) - 0.36787944117144233) < 1e-15, status: "exact", detail: "The exact solution is θ = e^{−τ}." });
+    // θ = e^{−τ} solves θ_τ = −θ with θ(0) = 1: ∂_τ e^{−τ} + e^{−τ} = 0, in the canonical forms of src/asymptotic.js.
+    const one = A.poly([[0, 0, Q.ONE]]);
+    out.push({ id: "decay", title: "θ = e^{−τ} solves θ_τ = −θ with θ(0) = 1", passed: A.add(A.dT(one), one).size === 0, status: "exact", detail: "∂_τ e^{−τ} + e^{−τ} = 0 in canonical form, and e^{0} = 1." });
     const errs = [0.01, 0.001, 0.0001].map((b) => {
       const s = H.series("slab", b, 1 / b, XS);
       return Math.max(...s.values.map((v) => Math.abs(v - Math.exp(-1)))) / Math.max(...s.values);
@@ -408,7 +445,7 @@
     return {
       id: decl.id, params: decl.domain.parameters, axes: { x: "Bi", y: null }, approximations, layers, evaluate,
       limits: (p) => [
-        { id: "small-bi", label: "Bi → 0 at fixed Γ", coupled: false, approx: "uniform", note: "θ_max ≈ Γ/Bi grows without bound: the uniform temperature holds, but the plate may leave its allowance.", points: [p, { ...p, Bi: decl.domain.parameters[0].min }] },
+        { id: "small-bi", label: "Bi → 0 at fixed Γ", coupled: false, approx: "uniform", note: "θ_max ≈ Γ/Bi grows without bound: the uniform temperature holds, and θ_max can become more than 1, the allowed rise.", points: [p, { ...p, Bi: decl.domain.parameters[0].min }] },
         { id: "large-bi", label: "Bi → ∞ at fixed Γ", coupled: false, approx: "surface-temperature", note: "θ_max → Γ/2.", points: [p, { ...p, Bi: decl.domain.parameters[0].max }] },
       ],
       inspect: (p, ctx) => {
@@ -441,6 +478,7 @@
   function sourceAnalysis() {
     return {
       balance: {
+        estimated: false, intro: "The balance compares two exact terms: the internal drop and the surface excess.",
         terms: [
           { id: "drop", tex: "\\theta(0)-\\theta(1)=\\frac{\\Gamma}{2}", label: "internal drop", scale: "\\frac{\\Gamma}{2}", why: "Integrate θ_XX = −Γ twice with θ_X(0) = 0: exact." },
           { id: "excess", tex: "\\theta(1)=\\frac{\\Gamma}{Bi}", label: "surface excess", scale: "\\frac{\\Gamma}{Bi}", why: "The surface condition with −θ_X(1) = Γ: exact." },
@@ -456,14 +494,14 @@
       },
       asymptotic: {
         limits: [
-          { id: "small-bi", parameter: "Bi\\to 0", path: "Bi → 0 at fixed Γ", fixed: "Γ", coupled: false, kind: "regular, and it stops after two terms",
+          { id: "small-bi", parameter: "Bi\\to 0", path: "Bi → 0 at fixed Γ", fixed: "Γ", coupled: false, kind: "A regular expansion that stops after two terms",
             setup: "\\theta=\\frac{\\Gamma}{Bi}\\vartheta,\\quad \\vartheta''=-Bi,\\quad -\\vartheta'(1)=Bi\\,\\vartheta(1)",
             orders: [{ n: 0, equation: "\\vartheta_0''=0", conditions: ["\\vartheta_0'(0)=0", "-\\vartheta_0'(1)=0"], result: "\\vartheta_0=1", checks: null },
               { n: 1, equation: "\\vartheta_1''=-1", conditions: ["\\vartheta_1'(0)=0", "-\\vartheta_1'(1)=\\vartheta_0(1)=1"], result: "\\vartheta_1=\\frac{1-X^{2}}{2}", checks: null }],
             orderLoss: "The reduction keeps the order of the equation and both conditions.", inner: null,
             error: { formal: "The expansion stops after order 1.", estimated: "None needed.", proved: "θ = Γ/Bi + Γ(1 − X²)/2 exactly, so the uniform model's relative error is Bi/(Bi + 2) at the centre." },
             validity: "Every Bi > 0: the two-term result is exact." },
-          { id: "large-bi", parameter: "Bi\\to\\infty", path: "Bi → ∞ at fixed Γ", fixed: "Γ", coupled: false, kind: "regular, and it stops after two terms",
+          { id: "large-bi", parameter: "Bi\\to\\infty", path: "Bi → ∞ at fixed Γ", fixed: "Γ", coupled: false, kind: "A regular expansion that stops after two terms",
             setup: "\\frac{1}{Bi}(-\\theta'(1))=\\theta(1)",
             orders: [{ n: 0, equation: "\\theta_0''=-\\Gamma", conditions: ["\\theta_0'(0)=0", "\\theta_0(1)=0"], result: "\\theta_0=\\frac{\\Gamma}{2}(1-X^{2})", checks: null },
               { n: 1, equation: "\\theta_1''=0", conditions: ["\\theta_1'(0)=0", "\\theta_1(1)=-\\theta_0'(1)=\\Gamma"], result: "\\theta_1=\\Gamma", checks: null }],
@@ -566,14 +604,15 @@
   function multilayerAnalysis() {
     return {
       balance: {
+        estimated: false, intro: "The balance compares the exact temperature drops across the five elements of the wall.",
         terms: [
           { id: "drops", tex: "\\Delta\\theta_i=q^{*}R^{*}_i", label: "temperature drop across element i", scale: "R^{*}_i/R^{*}", why: "Each element carries the same heat flux, so its share of the temperature difference is its share of the resistance: exact." },
         ],
         balances: [
           { id: "contact-controls", region: "contact:high", title: "The contact controls", when: "r_c\\gg\\max(1/Bi_1,1,\\ell/\\kappa,1/Bi_2)", derivation: "The largest drop is across the contact.", reduced: "q^{*}\\approx\\frac{1}{r_c}", neglected: "every other resistance", assumptions: [],
-            residual: { tex: "\\frac{q^{*}_{\\text{red}}-q^{*}}{q^{*}}=\\frac{R^{*}-r_c}{r_c}", order: "O(1/r_c)", status: "exact", note: "Exact." } },
+            residual: { tex: "\\frac{q^{*}_{\\text{red}}-q^{*}}{q^{*}}=\\frac{R^{*}-r_c}{r_c}", order: "O(1/r_c)", status: "exact", note: "The relative error is (R* − r_c)/r_c exactly." } },
           { id: "others-control", region: "contact:low", title: "Another resistance controls", when: "r_c\\ll\\max(1/Bi_1,1,\\ell/\\kappa,1/Bi_2)", derivation: "The contact drop is small.", reduced: "q^{*}\\approx\\frac{1}{R^{*}-r_c}", neglected: "the contact resistance", assumptions: ["Perfect contact: T_1 = T_2 at the interface."],
-            residual: { tex: "\\frac{q^{*}_{\\text{red}}-q^{*}}{q^{*}}=\\frac{r_c}{R^{*}-r_c}", order: "O(r_c)", status: "exact", note: "Exact." } },
+            residual: { tex: "\\frac{q^{*}_{\\text{red}}-q^{*}}{q^{*}}=\\frac{r_c}{R^{*}-r_c}", order: "O(r_c)", status: "exact", note: "The relative error is r_c/(R* − r_c) exactly." } },
         ],
         crossovers: [
           { id: "contact", criterion: "r_c=\\max(1/Bi_1,1,\\ell/\\kappa,1/Bi_2)", text: "The contact equals the largest other resistance. Each resistance ratio is exact.", status: "exact" },
@@ -583,16 +622,16 @@
       },
       asymptotic: {
         limits: [
-          { id: "small-rc", parameter: "r_c\\to 0", path: "r_c → 0 at fixed κ, ℓ, Bi₁, Bi₂", fixed: "κ, ℓ, Bi₁, Bi₂", coupled: false, kind: "convergent series for r_c < R* − r_c",
+          { id: "small-rc", parameter: "r_c\\to 0", path: "r_c → 0 at fixed κ, ℓ, Bi₁, Bi₂", fixed: "κ, ℓ, Bi₁ and Bi₂", coupled: false, kind: "A convergent series in r_c/R₀, with R₀ = R* − r_c",
             setup: "q^{*}=\\frac{1}{R_0+r_c},\\quad R_0=R^{*}-r_c", orders: [{ n: 0, equation: "q^{*}_0=\\frac{1}{R_0}", conditions: [], result: "q^{*}=\\frac{1}{R_0}\\sum_{n\\ge0}\\left(-\\frac{r_c}{R_0}\\right)^{n}", checks: null }],
             orderLoss: "The interface condition θ₁ − θ₂ = r_c q* becomes continuity of temperature. The reduction keeps the order of each equation.", inner: null,
             error: { formal: "A geometric series.", estimated: "The first neglected term.", proved: "|q*_0 − q*|/q* = r_c/R₀ exactly." }, validity: "The series converges for r_c < R₀. The exact formula holds for every r_c." },
-          { id: "large-rc", parameter: "r_c\\to\\infty", path: "r_c → ∞ at fixed κ, ℓ, Bi₁, Bi₂", fixed: "κ, ℓ, Bi₁, Bi₂", coupled: false, kind: "convergent series for R₀ < r_c",
+          { id: "large-rc", parameter: "r_c\\to\\infty", path: "r_c → ∞ at fixed κ, ℓ, Bi₁, Bi₂", fixed: "κ, ℓ, Bi₁ and Bi₂", coupled: false, kind: "A convergent series in R₀/r_c",
             setup: "q^{*}=\\frac{1}{r_c}\\frac{1}{1+R_0/r_c}", orders: [{ n: 0, equation: "q^{*}_0=\\frac{1}{r_c}", conditions: [], result: "q^{*}=\\frac{1}{r_c}\\sum_{n\\ge0}\\left(-\\frac{R_0}{r_c}\\right)^{n}", checks: null }],
-            orderLoss: "The interface stops the heat flow: θ₁ and θ₂ take the fluid temperatures. The reduction keeps the order of each equation.", inner: null,
+            orderLoss: "The contact takes all of the temperature difference. Layer 1 takes the temperature of fluid 1 and layer 2 that of fluid 2, and q* = 1/r_c. The reduction keeps the order of each equation.", inner: null,
             error: { formal: "A geometric series.", estimated: "The first neglected term.", proved: "|q*_0 − q*|/q* = R₀/r_c exactly." }, validity: "Any r_c > 0 for the exact formula." },
         ],
-        overlap: "Perfect contact and contact only cannot both meet a tolerance below 1/2.",
+        overlap: "Perfect contact and contact only cannot both meet a tolerance below 1: the product of their errors is 1.",
         gaps: "Where no approximation meets the tolerance, use the full resistance sum: it is exact everywhere.",
       },
     };
@@ -632,8 +671,8 @@
       approxLayer("short", "Short fin", "err-short", "|Q*(θ = 1) − Q*| ÷ Q*: the whole fin at the base temperature, ≤ the tolerance", steps),
       approxLayer("long", "Long fin", "err-long", "|λ − Q*| ÷ Q*: a fin of infinite length, ≤ the tolerance", steps),
       ...(convective ? [approxLayer("insulated", "Insulated tip", "err-insulated", "|Q*(β = 0) − Q*| ÷ Q*, ≤ the tolerance", steps)] : []),
-      balanceLayer("axial", "Axial balance", "bal-axial", "surface loss ÷ axial conduction = λ² = hPL²/(kA_c): the loss term λ²θ against θ_XX over the fin length", "Axial conduction controls: the fin is nearly at the base temperature", "Loss and conduction balance in a layer of length 1/λ at the base", steps),
-      { id: "transverse", kind: "balance", boundary: "balance-crossover", title: "Transverse balance", measure: "bal-transverse", scale: "log", status: "exact", steps, evidence: ["spec-8", "spec-10"],
+      balanceLayer("axial", "Axial balance", "bal-axial", "surface loss ÷ axial conduction ≈ λ² = hPL²/(kA_c), an estimate: the loss term λ²θ against θ_XX over the fin length", "Axial conduction controls: the fin is nearly at the base temperature", "Loss and conduction balance in a layer of length 1/λ at the base", steps, "proposed"),
+      { id: "transverse", kind: "balance", boundary: "balance-crossover", title: "Transverse balance", measure: "bal-transverse", scale: "log", status: "proposed", steps, evidence: ["spec-8", "spec-10"],
         criterion: "Bi_⊥/2 with Bi_⊥ = hA_c/(kP) = (λ/(PL/A_c))²: the temperature drop across the fin over its surface excess, for a plate fin",
         thresholds: (tol) => ({ curves: [{ value: tol, label: `transverse estimate = ${tol}` }, { value: 1, label: "transverse drop = surface excess" }],
           regions: [{ id: "low", label: "The 1D model holds within the tolerance (estimate)", lo: 0, hi: tol }, { id: "band", label: "The transverse drop is not negligible", lo: tol, hi: 1 }, { id: "high", label: "Transverse conduction controls: the 1D model fails", lo: 1, hi: null }] }) },
@@ -647,8 +686,8 @@
       id: decl.id, tip, params: decl.domain.parameters, axes: { x: "lambda", y: null }, approximations, layers, evaluate,
       limits: (p) => [
         { id: "short", label: `λ → 0 at PL/A_c = ${num(p.aspect)}`, coupled: false, approx: "short", note: "A regular limit: the fin efficiency tends to 1.", points: [p, { ...p, lambda: decl.domain.parameters[0].min }] },
-        { id: "long", label: `λ → ∞ at PL/A_c = ${num(p.aspect)}`, coupled: true, approx: "long",
-          note: "The transverse estimate (λ/(PL/A_c))²/2 grows like λ², so at fixed geometry the long-fin limit leaves the 1D model. The long fin within the 1D model needs PL/A_c to grow faster than λ: a coupled change.",
+        { id: "long", label: `λ → ∞ at PL/A_c = ${num(p.aspect)}`, coupled: false, approx: "long",
+          note: "The transverse estimate (λ/(PL/A_c))²/2 grows like λ², so at fixed geometry the long-fin limit leaves the 1D model. The 1D model holds only while PL/A_c ≥ λ/√(2 × tolerance), a validity condition that couples λ and PL/A_c.",
           points: [p, { ...p, lambda: decl.domain.parameters[0].max }] },
       ],
       inspect: (p, ctx) => {
@@ -686,28 +725,29 @@
     const fs = A.finSmall(4);
     return {
       balance: {
+        estimated: true, intro: "Each balance compares complete terms with their estimated field and derivative scales, not coefficients alone.",
         terms: [
           { id: "conduction", tex: "\\frac{d^{2}\\theta}{dX^{2}}", label: "axial conduction", scale: "\\frac{\\Delta\\theta}{\\ell^{2}}", why: "θ changes by Δθ over the length ℓ." },
           { id: "loss", tex: "\\lambda^{2}\\theta", label: "loss through the surface", scale: "\\lambda^{2}\\theta_b", why: "θ is of order its base value 1." },
-          { id: "transverse", tex: "Bi_{\\perp}=\\frac{hA_c}{kP}", label: "transverse drop ÷ surface excess (×2 for a plate)", scale: "\\frac{h\\,t}{2k}", why: "For a plate fin of thickness t, A_c/P ≈ t/2. Across the half-thickness, the drop over the surface excess is about Bi_⊥/2, as for the steady slab with a source." },
+          { id: "transverse", tex: "Bi_{\\perp}=\\frac{hA_c}{kP}", label: "twice the transverse drop ÷ surface excess, for a plate fin", scale: "\\frac{h\\,t}{2k}", why: "For a plate fin of thickness t, A_c/P ≈ t/2. Across the half-thickness, the drop over the surface excess is about Bi_⊥/2, as for the steady slab with a source." },
         ],
         balances: [
-          { id: "short", region: "axial:low", title: "Axial conduction controls", when: "\\lambda^{2}\\ll 1", derivation: "With ℓ = 1, the loss term is λ² times the conduction term, so θ stays near 1.", reduced: "\\frac{d^{2}\\theta}{dX^{2}}=0\\Rightarrow\\theta=1", neglected: "the loss term λ²θ in the profile", assumptions: [],
+          { id: "short", region: "axial:low", title: "Axial conduction controls", when: "\\lambda^{2}\\ll 1", derivation: "With ℓ = 1, the conduction term Δθ balances the loss term λ². So Δθ ~ λ² ≪ 1, and θ stays near 1.", reduced: "\\frac{d^{2}\\theta}{dX^{2}}=0\\Rightarrow\\theta=1", neglected: "the loss term λ²θ in the profile", assumptions: [],
             residual: { tex: "\\theta_{XX}-\\lambda^{2}\\theta=-\\lambda^{2}", order: "O(λ²)", status: "exact", note: "θ = 1 leaves the residual −λ² in the equation." } },
           { id: "long", region: "axial:high", title: "Loss and conduction balance near the base", when: "\\lambda^{2}\\gg 1", derivation: "The terms balance when ℓ = 1/λ, so the temperature falls to the fluid value in a layer of length 1/λ.", reduced: "\\theta=e^{-\\lambda X}", neglected: "the tip condition", assumptions: [],
             residual: { tex: "\\theta_X(1)=-\\lambda e^{-\\lambda}", order: "O(λe^{−λ})", status: "exact", note: "e^{−λX} satisfies the equation and the base condition exactly. It misses only the tip condition, by λe^{−λ}." } },
           { id: "one-d", region: "transverse:low", title: "The 1D assumption", when: "\\frac{Bi_{\\perp}}{2}\\ll 1", derivation: "A separate balance, across the fin: the 1D solution itself does not establish it.", reduced: "T=T(x)", neglected: "the temperature change across the section", assumptions: ["A plate fin of thickness t with A_c/P ≈ t/2."],
-            residual: { tex: "\\frac{\\Delta T_{\\perp}}{T_s-T_\\infty}\\approx\\frac{Bi_{\\perp}}{2}", order: "O(Bi_⊥)", status: "exact", note: "From the steady slab with a uniform loss: the drop over the excess is Bi/2 exactly for that slab." } },
+            residual: { tex: "\\frac{\\Delta T_{\\perp}}{T_s-T_\\infty}\\approx\\frac{Bi_{\\perp}}{2}", order: "O(Bi_⊥)", status: "proposed", note: "An estimate: for the steady slab with a uniform source the drop over the excess is Bi/2 exactly, and the axial conduction acts on the section like such a source." } },
         ],
         crossovers: [
-          { id: "axial", criterion: "\\lambda^{2}=1", text: "λ = 1. The region 0.32 < λ < 3.2 has comparable terms.", status: "exact" },
-          { id: "transverse", criterion: "\\frac{Bi_{\\perp}}{2}=1", text: "PL/A_c = λ/√2. The 1D model needs Bi_⊥/2 below the tolerance.", status: "exact" },
+          { id: "axial", criterion: "\\lambda^{2}=1", text: "λ = 1. The region 0.32 < λ < 3.2 has comparable terms. The terms are estimates.", status: "proposed" },
+          { id: "transverse", criterion: "\\frac{Bi_{\\perp}}{2}=1", text: "PL/A_c = λ/√2. The 1D model needs Bi_⊥/2 below the tolerance. The terms are estimates.", status: "proposed" },
         ],
         note: "These are balance crossovers. The transverse one bounds the validity of the declared 1D model.",
       },
       asymptotic: {
         limits: [
-          { id: "small-lambda", parameter: "\\lambda\\to 0", path: "λ → 0 at fixed PL/A_c", fixed: "X", coupled: false, kind: "regular expansion in λ²",
+          { id: "small-lambda", parameter: "\\lambda\\to 0", path: "λ → 0 at fixed PL/A_c", fixed: "PL/A_c and X", coupled: false, kind: "A regular expansion in λ²",
             setup: "\\theta=\\sum_{n}\\lambda^{2n}\\varphi_n(X),\\quad \\varphi_n''=\\varphi_{n-1},\\ \\varphi_n(0)=0,\\ \\varphi_n'(1)=0",
             orders: fs.orders.map((o, k) => ({ n: o.n, equation: o.n === 0 ? "\\varphi_0''=0,\\ \\varphi_0(0)=1" : `\\varphi_{${o.n}}''=\\varphi_{${o.n - 1}}`, conditions: o.n === 0 ? ["\\varphi_0'(1)=0"] : [`\\varphi_{${o.n}}(0)=0`, `\\varphi_{${o.n}}'(1)=0`],
               result: `\\varphi_{${o.n}}=${o.tex}`, checks: k ? { equation: fs.checks[k - 1].equation, surface: fs.checks[k - 1].base && fs.checks[k - 1].tip, solvability: true } : null })),
@@ -715,15 +755,15 @@
             heatFlow: `Q^{*}=${fs.QstarTex.map((c, n) => (n === 0 ? "" : `${n > 1 && !c.startsWith("-") ? "+" : ""}${c === "1" ? "" : c === "-1" ? "-" : `${c}\\,`}\\lambda^{${2 * n}}`)).join("")}+\\dots`,
             error: { formal: "A convergent series for λ < π/2.", estimated: "The first neglected term.", proved: "λ² − λ⁴/3 ≤ λ tanh λ ≤ λ² for λ ≥ 0, because tanh x ≤ x and d/dx(tanh x − x + x³/3) = x² − tanh² x ≥ 0." },
             validity: "The series converges for λ < π/2. The proved bound holds for all λ." },
-          { id: "large-lambda", parameter: "\\lambda\\to\\infty", path: "λ → ∞ at fixed PL/A_c", fixed: "ξ = λX in the inner region", coupled: true, kind: "singular: a boundary layer at the base",
+          { id: "large-lambda", parameter: "\\lambda\\to\\infty", path: "λ → ∞ at fixed PL/A_c", fixed: "PL/A_c, with ξ = λX in the inner region", coupled: false, kind: "A singular expansion: a boundary layer at the base",
             setup: "\\frac{1}{\\lambda^{2}}\\theta''-\\theta=0",
             orders: [{ n: 0, equation: "\\theta_{\\text{outer}}=0", conditions: ["\\text{the base condition }\\theta(0)=1\\text{ is lost}"], result: "\\theta_{\\text{outer}}=0", checks: null }],
             orderLoss: "The outer problem drops the second derivative, so it loses its differential order and both conditions. The tip condition θ'(1) = 0 holds for θ = 0 by itself. The base condition needs an inner region.",
             inner: { variable: "\\xi=\\lambda X", equation: "\\Theta''-\\Theta=0,\\quad \\Theta(0)=1", solution: "\\Theta=e^{-\\xi}", matching: "\\Theta(\\xi\\to\\infty)=0=\\theta_{\\text{outer}}(0)", why: "The inner solution decays to the outer value." },
             error: { formal: "Composite θ ≈ e^{−λX}, Q* ≈ λ.", estimated: "The error is exponentially small, beyond all orders in 1/λ.", proved: "|λ tanh λ − λ| = 2λ/(e^{2λ} + 1) ≤ 2λe^{−2λ}." },
-            validity: "λ ≫ 1. At fixed PL/A_c the transverse estimate grows like λ², so the 1D model fails at large λ unless PL/A_c grows too: a coupled limit." },
+            validity: "λ ≫ 1. At fixed PL/A_c the transverse estimate grows like λ², so the 1D model holds only while PL/A_c ≥ λ/√(2 × tolerance)." },
         ],
-        overlap: "The short-fin and long-fin approximations both meet a tolerance only in a narrow band near λ = 1, and only for a large tolerance.",
+        overlap: "The short-fin and long-fin approximations both meet a tolerance only near λ = 1, and only when the tolerance is more than coth 1 − 1 ≈ 0.31.",
         gaps: "Near λ = 1, where conduction and loss balance over the whole length, only the exact solution λ tanh λ is accurate.",
       },
     };
@@ -737,7 +777,7 @@
       const e3 = Math.max(...ref.profile.map(([X, v]) => Math.abs(f.at(X) - v)));
       out.push({ id: "mpmath", title: `Heat flow, efficiency and profile at λ = ${Number(ref.lambda.toPrecision(6))} against mpmath`, passed: e1 < 1e-12 && e2 < 1e-12 && e3 < 1e-12, status: "numerical", tolerance: "1e-12", detail: `Relative differences ${e1.toExponential(2)} and ${e2.toExponential(2)}. Largest profile difference ${e3.toExponential(2)}.` });
       const fs = A.finSmall(4);
-      out.push({ id: "series", title: "The small-λ expansion gives the Taylor coefficients of λ tanh λ", passed: ref.series.every((c, k) => c === fs.Qstar[k]), status: "exact", detail: `Q* = ${fs.Qstar.slice(1).map((c, k) => `(${c})λ^${2 * (k + 1)}`).join(" + ")} + …` });
+      out.push({ id: "series", title: "The small-λ expansion gives the Taylor coefficients of λ tanh λ", passed: ref.series.every((c, k) => c === fs.Qstar[k]), status: "exact", detail: `Q* = ${seriesText(fs.Qstar, "λ", (k) => 2 * k)}` });
       const loss = SF.gauss((X) => ref.lambda * ref.lambda * f.at(X), 0, 1);
       out.push({ id: "heat-balance", title: "The base heat flow equals the total surface loss", passed: Math.abs(loss - f.Q) / f.Q < 1e-12, status: "numerical", tolerance: "1e-12", detail: `${num(f.Q)} and ${num(loss)}.` });
     }

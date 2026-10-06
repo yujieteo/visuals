@@ -269,7 +269,7 @@
     const kinds = shownKinds(state);
     const hue = hues(rg.layers);
     const shown = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind));
-    const box = { l: W < 480 ? 48 : 60, r: 18, t: 12, w: 0, h: Math.round(Math.min(300, Math.max(200, W * 0.42))) };
+    const box = { l: W < 480 ? 54 : 72, r: 18, t: 12, w: 0, h: Math.round(Math.min(300, Math.max(200, W * 0.42))) };
     box.w = W - box.l - box.r;
     const strip = 30, stripTop = box.t + box.h + 66;
     const rows = [...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation"), { id: "gap", title: "No approximation meets the tolerance" }, ...(rg.unresolved.count ? [{ id: "unresolved", title: "Unresolved" }] : [])];
@@ -453,14 +453,14 @@
       ? `${uniLabel(rg.axes.x.tex)} across and ${uniLabel(rg.axes.y.tex)} up, ${rg.grid.xs.length} × ${rg.grid.ys.length} points. The grey shades show ${shadeL ? (shadeL.kind === "approximation" ? `the error of ${shadeL.title.toLowerCase()}. The plain background meets the tolerance ${rg.tolerance}. Three deeper shades are more than 1, 10 and 100 times it` : `the regions of the ${shadeL.title.toLowerCase()}: blue where the first term controls, grey where the terms are comparable, orange where the other term controls`) : "nothing"}. Coloured lines are approximation boundaries, and dashed lines are balance crossovers. Grey arrows are limit paths and diamonds are intersections. The red dot is the record's point, and the ring is the inspected point.`
       : `${uniLabel(rg.axes.x.tex)} across, ${rg.grid.xs.length} points. Coloured lines are the error of each approximation and dashed lines the term ratio of each balance, on a log scale. Values below 10⁻⁶ sit on the bottom edge. The strips show where each approximation meets the tolerance ${rg.tolerance}.`;
     const legendItems = [
-      ...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation" && drawn.kinds.includes("approximation")).map((/** @type {any} */ l) => `<li><span class="key key-line" style="--key:${drawn.hue[l.id]};--w:${secondary(rg.layers, l) ? 1.5 : 2.5}px"></span>${esc(l.title)}: approximation boundary (error = tolerance)</li>`),
+      ...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation" && drawn.kinds.includes("approximation")).map((/** @type {any} */ l) => `<li><span class="key key-line" style="--key:${drawn.hue[l.id]};--w:${secondary(rg.layers, l) ? 1.5 : 2.5}px"></span>${esc(l.title)}</li>`),
       ...(drawn.kinds.includes("balance") ? [`<li><span class="key key-ref"></span>Balance crossover (terms equal): ${esc(rg.layers.filter((/** @type {any} */ l) => l.kind === "balance").map((/** @type {any} */ l) => l.title).join(", "))}</li>`] : []),
       `<li><span class="key key-hatch"></span>Unresolved (${rg.unresolved.count} points)</li>`,
       rg.axes.y ? `<li><span class="key key-shade"></span>Shades: ${esc(shadeL?.title ?? "")}</li>` : `<li><span class="key key-gap"></span>No approximation meets the tolerance (${rg.gap.count} points)</li>`,
       `<li><span class="key key-dot"></span>The record's point</li>`, `<li><span class="key key-ring"></span>The inspected point</li>`,
       ...(rg.axes.y ? [`<li><span class="key key-diamond"></span>Intersection of two boundaries (${rg.intersections.length})</li>`, ...(drawn.kinds.includes("limits") ? [`<li><span class="key key-arrow"></span>Limit path</li>`] : [])] : []),
     ];
-    byId("regime-legend").innerHTML = `<ul class="map-legend">${legendItems.join("")}</ul>
+    byId("regime-legend").innerHTML = `<p class="label">Legend: a coloured line is an approximation boundary, where the error equals the tolerance</p><ul class="map-legend">${legendItems.join("")}</ul>
       <div class="scroll"><table class="data"><caption>The boundary types of section 9</caption><thead><tr><th scope="col">Boundary type</th><th scope="col">Required criterion</th><th scope="col">On this map</th></tr></thead><tbody>${rg.boundaryTypes.map((/** @type {any} */ b) => {
         const ls = rg.layers.filter((/** @type {any} */ l) => l.boundary === b.id);
         /** @type {Map<string, string[]>} */
@@ -472,7 +472,7 @@
     // Beside the map: the fixed parameters, the derived parameters, assumptions, geometry and conditions.
     const declAssumptions = H.data.catalogue.declarations.find((/** @type {any} */ x) => x.id === rg.declaration.id)?.domain.assumptions ?? [];
     byId("regime-beside").innerHTML = `<div class="beside-grid">
-      <div><h4>Fixed parameters</h4>${rg.fixed.length ? `<ul class="plain-list">${rg.fixed.map((/** @type {any} */ f) => `<li>${ti(f.tex)} = ${esc(fmt(f.value))} <span class="note">${esc(f.label)}. From ${f.source === "you" ? "your fixed values" : f.source === "record" ? "the record" : f.source === "condition" ? "a condition of the record" : "the middle of the domain"}</span></li>`).join("")}</ul>` : "<p class=\"muted\">None: both parameters are on the axes.</p>"}
+      <div><h4>Fixed parameters</h4>${rg.fixed.length ? `<ul class="plain-list">${rg.fixed.map((/** @type {any} */ f) => `<li>${ti(f.tex)} = ${esc(fmt(f.value))} <span class="note">${esc(f.label)}${f.source === "condition" ? "" : `. From ${f.source === "you" ? "your fixed values" : f.source === "record" ? "the record" : "the middle of the domain"}`}</span></li>`).join("")}</ul>` : "<p class=\"muted\">None: both parameters are on the axes.</p>"}
         <h4>Derived parameters at the inspected point</h4><ul class="plain-list">${rg.derived.map((/** @type {any} */ x) => `<li>${ti(x.tex)} = ${esc(fmt(x.value))} <span class="note">${esc(x.label)}</span></li>`).join("")}</ul>
         ${rg.constraints.length ? `<p class="sev-error">${esc(rg.constraints.join(" "))}</p>` : ""}</div>
       <div><h4>Assumptions</h4><ul class="plain-list">${declAssumptions.map((/** @type {any} */ a) => `<li>${esc(a.text)}</li>`).join("")}${d.interp.assumptions.map((/** @type {any} */ a) => `<li>${esc(a.text)} <span class="ids">${esc(a.id)}</span></li>`).join("")}</ul>
@@ -502,13 +502,13 @@
 
     // Hand calculation 8: dominant balance and asymptotic analysis.
     const an = rg.analysis;
-    byId("regime-balance").innerHTML = `<p>Each balance compares complete terms with their estimated field and derivative scales, not coefficients alone.</p>
+    byId("regime-balance").innerHTML = `<p>${esc(an.balance.intro)}</p>
       <div class="scroll"><table class="data"><caption>Terms and their scale estimates</caption><thead><tr><th scope="col">Term</th><th scope="col">Meaning</th><th scope="col">Estimate</th><th scope="col">Why</th></tr></thead><tbody>${an.balance.terms.map((/** @type {any} */ t) => `<tr><td>${ti(t.tex)}</td><td>${esc(t.label)}</td><td>${ti(t.scale)}</td><td>${esc(t.why)}</td></tr>`).join("")}</tbody></table></div>
       ${an.balance.balances.map((/** @type {any} */ x) => `<div class="group-card"><p><strong>${esc(x.title)}</strong> when ${ti(x.when)}</p><p class="note">${esc(x.derivation)}</p>
         <p>Reduced model: ${ti(x.reduced)}. Neglected: ${esc(x.neglected)}.${x.assumptions.length ? ` Assumes: ${esc(x.assumptions.join(" "))}` : ""}</p>
         <p>${chip(x.residual.status)} Residual in the full equations: ${ti(x.residual.tex)}, ${esc(x.residual.order)}. <span class="note">${esc(x.residual.note ?? "")}</span></p></div>`).join("")}
       <h4>Balance crossovers</h4><ul class="plain-list">${an.balance.crossovers.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${ti(c.criterion)}: ${esc(c.text)}</li>`).join("")}</ul><p class="note">${esc(an.balance.note)}</p>`;
-    byId("regime-asymptotic").innerHTML = `${an.note ? `<p>${esc(an.note)}</p>` : ""}${an.asymptotic.limits.map((/** @type {any} */ L) => `<div class="group-card"><p><strong>${ti(L.parameter)}</strong>: ${esc(L.path)}. ${L.coupled ? "<strong>A coupled limit.</strong> " : ""}<span class="note">${esc(L.kind)}. Fixed: ${esc(L.fixed)}.</span></p>
+    byId("regime-asymptotic").innerHTML = `${an.note ? `<p>${esc(an.note)}</p>` : ""}${an.asymptotic.limits.map((/** @type {any} */ L) => `<div class="group-card"><p><strong>${ti(L.parameter)}</strong>: ${esc(L.path)}. ${L.coupled ? "<strong>A coupled limit.</strong> " : ""}<span class="note">Kind: ${esc(L.kind.charAt(0).toLowerCase() + L.kind.slice(1))}. Fixed: ${esc(L.fixed)}.</span></p>
         ${td(L.setup)}
         <ol class="step-list">${L.orders.map((/** @type {any} */ o) => `<li>Order ${o.n}: ${ti(o.equation)}${o.conditions.length ? `, ${o.conditions.map(ti).join(", ")}` : ""}${o.particular && o.particular !== "0" ? `<br>Particular part: ${ti(o.particular)}` : ""}${o.solvability ? `<br>Solvability: ${ti(o.solvability)} <span class="note">${esc(o.solvabilityWhy)}</span>` : ""}${o.matching ? `<br>Matching: ${ti(o.matching)}` : ""}${o.why ? ` <span class="note">${esc(o.why)}</span>` : ""}<br>${ti(o.result)}${o.checks ? ` ${chip(o.checks.equation && o.checks.surface && o.checks.solvability ? "exact" : "unresolved")} <span class="note">The result satisfies the equation, the conditions and the solvability condition of its order exactly.</span>` : ""}</li>`).join("")}</ol>
         ${L.heatFlow ? `<p>Base heat flow: ${ti(L.heatFlow)}</p>` : ""}
@@ -524,7 +524,7 @@
     // The table view of the boundaries, intersections and unresolved points.
     byId("regime-table").innerHTML = [
       ...rg.layers.map((/** @type {any} */ l) => `<h4>${esc(l.title)}</h4><p class="note">${chip(l.status)} ${esc(l.criterion)}</p>
-        ${l.curves.length ? l.curves.map((/** @type {any} */ c) => `<details><summary>${esc(c.label)}: ${c.points.length} points</summary><div class="scroll"><table class="data"><thead><tr><th scope="col">${esc(uniLabel(rg.axes.x.tex))}</th>${rg.axes.y ? `<th scope="col">${esc(uniLabel(rg.axes.y.tex))}</th>` : ""}</tr></thead><tbody>${c.points.map((/** @type {any[]} */ p) => `<tr><td class="num">${esc(fmt(p[0]))}</td>${rg.axes.y ? `<td class="num">${esc(fmt(p[1]))}</td>` : ""}</tr>`).join("")}</tbody></table></div></details>`).join("") : "<p class=\"muted\">No boundary of this layer crosses the map.</p>"}
+        ${l.curves.length ? l.curves.map((/** @type {any} */ c) => `<details><summary>${esc(c.label)}: ${c.points.length} point${c.points.length === 1 ? "" : "s"}</summary><div class="scroll"><table class="data"><thead><tr><th scope="col">${esc(uniLabel(rg.axes.x.tex))}</th>${rg.axes.y ? `<th scope="col">${esc(uniLabel(rg.axes.y.tex))}</th>` : ""}</tr></thead><tbody>${c.points.map((/** @type {any[]} */ p) => `<tr><td class="num">${esc(fmt(p[0]))}</td>${rg.axes.y ? `<td class="num">${esc(fmt(p[1]))}</td>` : ""}</tr>`).join("")}</tbody></table></div></details>`).join("") : "<p class=\"muted\">No boundary of this layer crosses the map.</p>"}
         <p class="note">${l.regions.map((/** @type {any} */ r) => `${esc(r.label)}: ${r.intervals ? r.intervals.map((/** @type {number[]} */ iv) => `${fmt(iv[0])} to ${fmt(iv[1])}`).join(", ") || "none" : `${r.count} points`}`).join(". ")}.</p>`),
       `<h4>Intersections</h4>${rg.intersections.length ? `<ul class="plain-list">${rg.intersections.map((/** @type {any} */ x) => `<li>${esc(x.aLabel)} and ${esc(x.bLabel)} at ${esc(uniLabel(rg.axes.x.tex))} = ${esc(fmt(x.x))}, ${esc(uniLabel(rg.axes.y.tex))} = ${esc(fmt(x.y))}</li>`).join("")}</ul>` : "<p class=\"muted\">None on this map.</p>"}`,
       `<h4>Unresolved points</h4>${rg.unresolved.count ? `<ul class="plain-list">${rg.unresolved.reasons.map((/** @type {any} */ r) => `<li>${r.count} points: ${esc(r.reason)}</li>`).join("")}</ul><p class="note">No boundary crosses an unresolved point: the map does not interpolate across them.</p>` : "<p class=\"muted\">None.</p>"}`,
@@ -566,7 +566,7 @@
     const pieces = [...new Set(later.map((/** @type {any} */ f) => f.piece))];
     const roleTex = (/** @type {string} */ text) => { const r = SM.E.read(text); return r.error ? text : SM.E.tex(r.ast); };
     const acc = cat.acceptance;
-    byId("catalogue").innerHTML = `<p>The catalogue of section 10. ${built.length} of the ${cat.families.length} families have declared models now. Each declaration has the six required parts. A record follows a declared model when its purpose names it and its dimensionless model equals the declared one.</p>
+    byId("catalogue").innerHTML = `<p>The catalogue of section 10. ${["None", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][built.length] ?? built.length} of the ${cat.families.length} families have declared models now. Each declaration has the six required parts. A record follows a declared model when its purpose names it and its dimensionless model equals the declared one.</p>
       <div class="catalogue-list">${built.map((/** @type {any} */ f) => `<div><h4>${esc(f.name)}</h4><ul class="plain-list">${f.declarations.map((/** @type {string} */ id) => { const x = cat.declarations.find((/** @type {any} */ y) => y.id === id); return `<li><button type="button" data-catalogue="${esc(id)}" aria-pressed="${id === cat.selected}">${esc(x.title)}</button></li>`; }).join("")}</ul></div>`).join("")}</div>
       ${decl ? `<section class="declaration" aria-labelledby="decl-title"><h3 id="decl-title">${esc(decl.title)}</h3><p class="ids">${esc(decl.id)}, family ${esc(decl.family)}, piece ${decl.piece}</p>
         <p>${esc(decl.model.summary)}</p>

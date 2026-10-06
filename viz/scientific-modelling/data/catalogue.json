@@ -195,7 +195,7 @@
       "operations": {
         "symbolic": [
           "Exact check that the Nondimensionalizer gives θ_τ = −θ and θ(0) = 1 with τ = t/(ρc_pV/(hA_s)).",
-          "The exact solution θ = e^{−τ} and the exact energy balance ρc_pV(T_i − T) = ∫ hA_s(T − T_∞) dt.",
+          "The exact solution θ = e^{−τ}, checked in canonical form: ∂_τ e^{−τ} + e^{−τ} = 0.",
           "The lumped model as the leading order of the small-Bi expansion of the spatial model (src/asymptotic.js)."
         ],
         "numerical": [
@@ -227,17 +227,17 @@
       ],
       "acceptance": {
         "example": "lumped-body",
-        "reference": "θ = e^{−τ} (exact), the decay time ρc_pV/(hA_s) from the record's values (exact), and the lumped error against the mpmath slab series at Bi = 0.1.",
-        "tolerance": "Exact for the decay time. 1e-9 for the comparison with the series.",
+        "reference": "θ = e^{−τ} (exact) and the decay time ρc_pV/(hA_s) from the record's values (exact). Also the lumped error against the page's slab series at Bi = 0.01, 0.001 and 0.0001 with Bi·Fo = 1.",
+        "tolerance": "Exact for the decay time and the solution. The lumped error must fall with Bi and be below 1e-3 at Bi = 10⁻⁴.",
         "checks": [
           "The Nondimensionalizer's equation and condition equal the declared dimensionless model (exact).",
-          "The decay time from the record's values is exact, and θ(τ = 1) = e^{−1}.",
+          "The decay time from the record's values is exact, and θ = e^{−τ} solves θ_τ = −θ with θ(0) = 1 (exact).",
           "The lumped error against the spatial model goes to 0 as Bi_c goes to 0 at a fixed Bi_c·Fo_c."
         ]
       },
       "solver": {
         "method": "Closed form θ = e^{−τ}. The spatial comparison uses the series of the declared shape (transient conduction declarations).",
-        "discretization": "None for the lumped model. The comparison uses 21 points in X for the slab, the cylinder and the sphere, and 21 × 21 × 21 points for the cube's symmetric octant.",
+        "discretization": "None for the lumped model. The comparison uses 21 points in X for the slab, the cylinder and the sphere, and 21 × 21 × 21 points in an octant of the cube.",
         "convergence": "The same mode count rule as the transient conduction declarations: λ_n²τ ≤ 50.",
         "reproducibility": "Plain JavaScript in double precision. Exact rationals for the decay time."
       }
@@ -331,7 +331,7 @@
           }
         ],
         "closures": [
-          "Fourier's law with constant k is inside the equation: q = −k ∂T/∂x."
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂x."
         ],
         "geometry": "A slab of half-thickness L, symmetric about its centre plane x = 0. Both faces see the same fluid.",
         "conditions": [
@@ -476,7 +476,7 @@
       "operations": {
         "symbolic": [
           "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
-          "The small-Bi outer expansion to order 3 in exact rationals, with the solvability condition and the matching constant of each order.",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
           "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
         ],
         "numerical": [
@@ -488,11 +488,11 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi), and the equation compares the penetration depth with the size of the solid (Fo)."
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of a regular outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
         },
         "stability": {
           "applies": false,
@@ -510,7 +510,7 @@
       ],
       "acceptance": {
         "example": "transient-slab",
-        "reference": "The first eigenvalues and coefficients, and θ at the centre and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10, from mpmath with 30 digits (tools/references.py).",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
         "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
         "checks": [
           "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
@@ -618,9 +618,9 @@
           }
         ],
         "closures": [
-          "Fourier's law with constant k is inside the equation: q = −k ∂T/∂r."
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂r."
         ],
-        "geometry": "A long solid cylinder of radius R. The temperature depends on r and t only, so the ends have no effect.",
+        "geometry": "A long solid cylinder of radius R. The cylinder is long, so the ends have no effect. The temperature depends on r and t only.",
         "conditions": [
           {
             "id": "centre",
@@ -763,7 +763,7 @@
       "operations": {
         "symbolic": [
           "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
-          "The small-Bi outer expansion to order 3 in exact rationals, with the solvability condition and the matching constant of each order.",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
           "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
         ],
         "numerical": [
@@ -775,11 +775,11 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi), and the equation compares the penetration depth with the size of the solid (Fo)."
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of a regular outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
         },
         "stability": {
           "applies": false,
@@ -797,7 +797,7 @@
       ],
       "acceptance": {
         "example": "transient-cylinder",
-        "reference": "The first eigenvalues and coefficients, and θ at the centre and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10, from mpmath with 30 digits (tools/references.py).",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
         "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
         "checks": [
           "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
@@ -905,7 +905,7 @@
           }
         ],
         "closures": [
-          "Fourier's law with constant k is inside the equation: q = −k ∂T/∂r."
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂r."
         ],
         "geometry": "A solid sphere of radius R. The temperature depends on r and t only.",
         "conditions": [
@@ -1050,7 +1050,7 @@
       "operations": {
         "symbolic": [
           "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
-          "The small-Bi outer expansion to order 3 in exact rationals, with the solvability condition and the matching constant of each order.",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
           "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
         ],
         "numerical": [
@@ -1062,11 +1062,11 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi), and the equation compares the penetration depth with the size of the solid (Fo)."
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of a regular outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
         },
         "stability": {
           "applies": false,
@@ -1084,7 +1084,7 @@
       ],
       "acceptance": {
         "example": "transient-sphere",
-        "reference": "The first eigenvalues and coefficients, and θ at the centre and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10, from mpmath with 30 digits (tools/references.py).",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
         "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
         "checks": [
           "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
@@ -1628,7 +1628,7 @@
           "Exact check that the Nondimensionalizer gives the declared equations and the four conditions.",
           "The exact solution in rationals: the series resistances, the heat flux, every interface temperature and the jump across the contact.",
           "Exact checks: the heat flux is the same in each layer and through the contact, and the temperatures close at fluid 2.",
-          "The resistance limits r_c → 0 (perfect contact) and r_c → ∞ (no heat flow), with exact error formulas."
+          "The resistance limits r_c → 0 (perfect contact) and r_c → ∞ (the contact takes all of the temperature difference), with exact error formulas."
         ],
         "numerical": [
           "The map evaluates the exact formulas in double precision."
@@ -1641,7 +1641,7 @@
         },
         "asymptotic": {
           "applies": true,
-          "reason": "r_c → 0 and r_c → ∞ are regular limits of the exact solution, with a convergent series in r_c divided by the other resistances."
+          "reason": "r_c → 0 and r_c → ∞ are regular limits of the exact solution. Each has a convergent series, in r_c/R₀ or in R₀/r_c."
         },
         "stability": {
           "applies": false,
@@ -1653,7 +1653,7 @@
         }
       },
       "limitations": [
-        "Two layers in the record match. The resistance network works for more layers, but the record match covers two.",
+        "The record match accepts two layers only. The resistance sum also applies to more layers.",
         "Mechanical contact (pressure, roughness) needs a separate structural declaration. R_c is an input here."
       ],
       "acceptance": {

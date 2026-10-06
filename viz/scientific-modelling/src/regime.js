@@ -214,7 +214,14 @@
       fixedList.push({ id: p.id, tex: p.tex, label: p.label, value: num(v), source });
     }
     for (const k of Object.keys(fixedIn.values)) if (!byId[k]) notices.push(`${k} is not a parameter of this model.`);
-    for (const [k, v] of Object.entries(m.sets ?? {})) { fixed[k] = v; if (!fixedList.some((f) => f.id === k)) fixedList.push({ id: k, tex: k, label: `fixed by the record's condition`, value: num(v), source: "condition" }); }
+    for (const [k, v] of Object.entries(m.sets ?? {})) {
+      fixed[k] = v;
+      if (fixedList.some((f) => f.id === k)) continue;
+      // The declared parameter that a condition fixes, such as the tip Biot number 0 of an insulated tip.
+      const dp = decl.model.dimensionless.parameters.find((x) => x.id === k);
+      const by = m.conditions.find((c) => decl.model.conditions.find((x) => x.id === c.of)?.sets?.[k] !== undefined && c.alternative === 0);
+      fixedList.push({ id: k, tex: dp?.tex ?? k, label: `${dp?.meaning ?? k}, set by the condition ${by ? `${by.record} (${decl.model.conditions.find((x) => x.id === by.of)?.meaning ?? by.of})` : "of the record"}`, value: num(v), source: "condition" });
+    }
 
     /* ---------- the grid ---------- */
     const tol = TOLERANCES[state.tolerance] ?? 0.01;
