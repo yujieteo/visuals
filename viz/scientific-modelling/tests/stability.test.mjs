@@ -190,6 +190,7 @@ test("custom ODE: the ignition folds, the hysteresis interval and the cusp agree
   assert.ok(Math.abs(cusp.mu2 - 0.25) < 1e-5 && rel(cusp.mu, REF.ignition.cusp.Da) < 1e-5 && Math.abs(cusp.x[0] - 4) < 1e-3, JSON.stringify(cusp));
   assert.ok(an.two.grid.counts.includes(2), "the map has a region with two stable equilibria");
   assert.equal(result(d, "r-st-ode-coverage").status, "unresolved");
+  assert.equal(new Set(d.results.map((r) => r.id)).size, d.results.length);
 });
 
 test("custom ODE: the Lorenz equations give a supercritical pitchfork at r = 1 and a subcritical Hopf point at r = 470/19", () => {
@@ -218,6 +219,12 @@ test("failure cases: a second-order ODE, a missing control parameter and a custo
   const d1 = Model.derive(state("custom-ignition"), DATA, noControl);
   const u = result(d1, "r-st-unresolved");
   assert.ok(u && u.status === "unresolved" && /control parameter/.test(u.title) && /Da, eps/.test(u.next), JSON.stringify(u));
+  const noRange2 = R.confirm(R.edit(rec, (inp) => { const { range2, ...analysis } = inp.purpose.analysis; inp.purpose = { ...inp.purpose, analysis }; }, "No second range."));
+  const u2 = result(Model.derive(state("custom-ignition"), DATA, noRange2), "r-st-unresolved");
+  assert.ok(u2 && /second control parameter eps/.test(u2.title) && /second range/.test(u2.next), JSON.stringify(u2));
+  const narrow = R.confirm(R.edit(confirmed("rayleigh-benard"), (inp) => { inp.variables.find((v) => v.id === "v-L").value = "0.006"; }, "Γ = 0.3."));
+  const b = result(Model.derive(state("rayleigh-benard"), DATA, narrow), "r-st-branch");
+  assert.ok(b && b.status === "unresolved" && /above the branch limit/.test(b.title), JSON.stringify(b));
   const d2 = derive("fail-unsupported");
   assert.ok(d2.interp.issues.some((i) => i.code === "unsupported-analysis"));
   assert.ok(!d2.stability.ready && /custom PDE/.test(d2.stability.message));

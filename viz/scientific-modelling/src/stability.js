@@ -155,7 +155,12 @@
     }
     if (interp.model.type === "ODE" && wanted) {
       const key = JSON.stringify([interp.equations.map((e) => [e.id, e.kind, e.plain]), interp.variables.map((v) => [v.symbol, v.kind, v.value?.text ?? null]), base.purpose?.analysis ?? null]);
-      if (!odeCache.has(key)) { if (odeCache.size > 30) odeCache.clear(); odeCache.set(key, ODE.analyse(interp, base.purpose?.analysis ?? {})); }
+      if (!odeCache.has(key)) {
+        if (odeCache.size > 30) odeCache.clear();
+        let result;
+        try { result = ODE.analyse(interp, base.purpose?.analysis ?? {}); } catch (e) { result = { ok: false, reason: `The analysis stopped with an error: ${e instanceof Error ? e.message : String(e)}`, next: "Check the equations, the parameter values and the ranges." }; }
+        odeCache.set(key, result);
+      }
       const an = odeCache.get(key);
       if (!an.ok) return { ready: false, reason: "custom-unsupported", message: `Custom ODE system: ${an.reason}`, next: an.next ?? "" };
       return { ready: true, kind: "custom", wanted, analysis: an, steps: ["s-st-ode"], inputs: ["purpose", ...interp.equations.map((e) => e.id), ...interp.variables.map((v) => v.id)] };
@@ -241,7 +246,7 @@
     sp.forEach((s, i) => add({ id: `r-st-ode-sp-${i + 1}`, kind: "bifurcation", title: `${s.label} at ${an.control} = ${short(s.mu)}, (${s.x.map(short).join(", ")}). ${s.text}`, status: s.classified ? "numerical" : "unresolved", tolerance: s.kind === "hopf" ? "Brent 1e-14 on Re λ" : "Newton 1e-12", steps: ["s-st-ode"], evidence: ["spec-8"],
       next: s.classified ? "" : "Supply the normal form or a symmetry, or refine the continuation near the point." }));
     for (const [a, b] of an.multistable) add({ id: `r-st-ode-multi-${a}`, kind: "bifurcation", title: `Two or more stable equilibria exist together for ${an.control} in the open interval (${short(a)}, ${short(b)})${an.hysteresis.some((h) => h[0] === a && h[1] === b) ? ", bounded by two folds: hysteresis" : ""}.`, status: "numerical", steps: ["s-st-ode"], evidence: ["spec-8"] });
-    if (an.two) for (const c of an.two.curves) for (const k of c.cusps) add({ id: `r-st-ode-cusp-${c.id}`, kind: "bifurcation", title: `The two branches of the fold curve meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}. The coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] });
+    if (an.two) for (const c of an.two.curves) c.cusps.forEach((k, j) => add({ id: `r-st-ode-cusp-${c.id}-${j + 1}`, kind: "bifurcation", title: `The two branches of the fold curve meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}. The coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] }));
     add({ id: "r-st-ode-coverage", kind: "bifurcation", title: an.coverage, status: "unresolved", steps: ["s-st-ode"], evidence: ["farrell-2016"], next: "Widen the box or the seeds, or add a completeness argument, before you claim that no other branch exists." });
   }
 

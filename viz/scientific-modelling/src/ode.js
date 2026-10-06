@@ -189,8 +189,9 @@
     let fa = f(xs[0]);
     for (let i = 1; i < xs.length; i++) {
       const fb = f(xs[i]);
-      if (Number.isFinite(fa) && Number.isFinite(fb) && (fa === 0 || fa * fb < 0)) {
-        const x = fa === 0 ? xs[i - 1] : SF.brent(f, xs[i - 1], xs[i], 1e-15);
+      const end = i === xs.length - 1 && fb === 0;
+      if (Number.isFinite(fa) && Number.isFinite(fb) && (fa === 0 || end || fa * fb < 0)) {
+        const x = fa === 0 ? xs[i - 1] : end ? xs[i] : SF.brent(f, xs[i - 1], xs[i], 1e-15);
         if (x !== null && !found.some((e) => Math.abs(e.x[0] - x) <= 1e-9 * (1 + Math.abs(x)))) {
           const ev = N.eig(M.J([x], p)) ?? [];
           found.push({ x: [x], residual: Math.abs(f(x)), eigenvalues: ev, ...classify(ev) });
@@ -519,6 +520,8 @@
     const range = readRange(analysis.range), range2 = mu2 ? readRange(analysis.range2) : null;
     if (!mu || !sys.params.includes(mu)) return { ok: false, reason: "The record names no control parameter of the system for the continuation.", next: `Choose a control parameter in the purpose: one of ${sys.params.join(", ")}.`, states: sys.states, params: sys.params };
     if (!range) return { ok: false, reason: `The range of the control parameter ${mu} is missing or not of the form lo..hi.`, next: "Enter the range, such as 0.05..0.6." };
+    if (analysis.control2 && (!mu2 || !sys.params.includes(mu2) || mu2 === mu)) return { ok: false, reason: "The second control parameter is not a parameter of the system, or it is the same as the first.", next: `Choose a second control parameter in the purpose: one of ${sys.params.filter((s) => s !== mu).join(", ")}.`, states: sys.states, params: sys.params };
+    if (mu2 && !range2) return { ok: false, reason: `The range of the second control parameter ${mu2} is missing or not of the form lo..hi.`, next: "Enter the second range, such as 0.05..0.6." };
     const missing = sys.missing.filter((s) => s !== mu && s !== mu2);
     if (missing.length) return { ok: false, reason: `The parameter${missing.length > 1 ? "s" : ""} ${missing.join(", ")} ${missing.length > 1 ? "have" : "has"} no value.`, next: "Give each parameter a single value." };
     const p = { ...sys.values };

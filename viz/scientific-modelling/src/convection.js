@@ -638,7 +638,7 @@
       const k = bm.a;
       const rows = Math.abs(k - Math.PI) < 1e-12 && p.Pr === 1 ? wgdRows(refs) : [];
       const want = [...new Set([...rows.map((r) => r.Ra), ...(p.Ra > bm.Ra && p.Ra <= RA_BRANCH_MAX ? [p.Ra] : [])])].sort((a, b) => a - b);
-      const br = branchAt(k, p.Pr, want);
+      const br = bm.Ra < RA_BRANCH_MAX ? branchAt(k, p.Pr, want) : { ok: false, reason: `The onset Ra_c = ${num(bm.Ra)} of mode ${bm.n} is above the branch limit Ra = ${RA_BRANCH_MAX}.` };
       let branch = null;
       if (br.ok) {
         const ae = amplitudeEquation(br.sys);

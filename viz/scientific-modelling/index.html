@@ -8017,7 +8017,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       const k = bm.a;
       const rows = Math.abs(k - Math.PI) < 1e-12 && p.Pr === 1 ? wgdRows(refs) : [];
       const want = [...new Set([...rows.map((r) => r.Ra), ...(p.Ra > bm.Ra && p.Ra <= RA_BRANCH_MAX ? [p.Ra] : [])])].sort((a, b) => a - b);
-      const br = branchAt(k, p.Pr, want);
+      const br = bm.Ra < RA_BRANCH_MAX ? branchAt(k, p.Pr, want) : { ok: false, reason: `The onset Ra_c = ${num(bm.Ra)} of mode ${bm.n} is above the branch limit Ra = ${RA_BRANCH_MAX}.` };
       let branch = null;
       if (br.ok) {
         const ae = amplitudeEquation(br.sys);
@@ -8660,8 +8660,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     let fa = f(xs[0]);
     for (let i = 1; i < xs.length; i++) {
       const fb = f(xs[i]);
-      if (Number.isFinite(fa) && Number.isFinite(fb) && (fa === 0 || fa * fb < 0)) {
-        const x = fa === 0 ? xs[i - 1] : SF.brent(f, xs[i - 1], xs[i], 1e-15);
+      const end = i === xs.length - 1 && fb === 0;
+      if (Number.isFinite(fa) && Number.isFinite(fb) && (fa === 0 || end || fa * fb < 0)) {
+        const x = fa === 0 ? xs[i - 1] : end ? xs[i] : SF.brent(f, xs[i - 1], xs[i], 1e-15);
         if (x !== null && !found.some((e) => Math.abs(e.x[0] - x) <= 1e-9 * (1 + Math.abs(x)))) {
           const ev = N.eig(M.J([x], p)) ?? [];
           found.push({ x: [x], residual: Math.abs(f(x)), eigenvalues: ev, ...classify(ev) });
@@ -8990,6 +8991,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const range = readRange(analysis.range), range2 = mu2 ? readRange(analysis.range2) : null;
     if (!mu || !sys.params.includes(mu)) return { ok: false, reason: "The record names no control parameter of the system for the continuation.", next: `Choose a control parameter in the purpose: one of ${sys.params.join(", ")}.`, states: sys.states, params: sys.params };
     if (!range) return { ok: false, reason: `The range of the control parameter ${mu} is missing or not of the form lo..hi.`, next: "Enter the range, such as 0.05..0.6." };
+    if (analysis.control2 && (!mu2 || !sys.params.includes(mu2) || mu2 === mu)) return { ok: false, reason: "The second control parameter is not a parameter of the system, or it is the same as the first.", next: `Choose a second control parameter in the purpose: one of ${sys.params.filter((s) => s !== mu).join(", ")}.`, states: sys.states, params: sys.params };
+    if (mu2 && !range2) return { ok: false, reason: `The range of the second control parameter ${mu2} is missing or not of the form lo..hi.`, next: "Enter the second range, such as 0.05..0.6." };
     const missing = sys.missing.filter((s) => s !== mu && s !== mu2);
     if (missing.length) return { ok: false, reason: `The parameter${missing.length > 1 ? "s" : ""} ${missing.join(", ")} ${missing.length > 1 ? "have" : "has"} no value.`, next: "Give each parameter a single value." };
     const p = { ...sys.values };
@@ -9733,7 +9736,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     }
     if (interp.model.type === "ODE" && wanted) {
       const key = JSON.stringify([interp.equations.map((e) => [e.id, e.kind, e.plain]), interp.variables.map((v) => [v.symbol, v.kind, v.value?.text ?? null]), base.purpose?.analysis ?? null]);
-      if (!odeCache.has(key)) { if (odeCache.size > 30) odeCache.clear(); odeCache.set(key, ODE.analyse(interp, base.purpose?.analysis ?? {})); }
+      if (!odeCache.has(key)) {
+        if (odeCache.size > 30) odeCache.clear();
+        let result;
+        try { result = ODE.analyse(interp, base.purpose?.analysis ?? {}); } catch (e) { result = { ok: false, reason: `The analysis stopped with an error: ${e instanceof Error ? e.message : String(e)}`, next: "Check the equations, the parameter values and the ranges." }; }
+        odeCache.set(key, result);
+      }
       const an = odeCache.get(key);
       if (!an.ok) return { ready: false, reason: "custom-unsupported", message: `Custom ODE system: ${an.reason}`, next: an.next ?? "" };
       return { ready: true, kind: "custom", wanted, analysis: an, steps: ["s-st-ode"], inputs: ["purpose", ...interp.equations.map((e) => e.id), ...interp.variables.map((v) => v.id)] };
@@ -9819,7 +9827,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     sp.forEach((s, i) => add({ id: `r-st-ode-sp-${i + 1}`, kind: "bifurcation", title: `${s.label} at ${an.control} = ${short(s.mu)}, (${s.x.map(short).join(", ")}). ${s.text}`, status: s.classified ? "numerical" : "unresolved", tolerance: s.kind === "hopf" ? "Brent 1e-14 on Re λ" : "Newton 1e-12", steps: ["s-st-ode"], evidence: ["spec-8"],
       next: s.classified ? "" : "Supply the normal form or a symmetry, or refine the continuation near the point." }));
     for (const [a, b] of an.multistable) add({ id: `r-st-ode-multi-${a}`, kind: "bifurcation", title: `Two or more stable equilibria exist together for ${an.control} in the open interval (${short(a)}, ${short(b)})${an.hysteresis.some((h) => h[0] === a && h[1] === b) ? ", bounded by two folds: hysteresis" : ""}.`, status: "numerical", steps: ["s-st-ode"], evidence: ["spec-8"] });
-    if (an.two) for (const c of an.two.curves) for (const k of c.cusps) add({ id: `r-st-ode-cusp-${c.id}`, kind: "bifurcation", title: `The two branches of the fold curve meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}. The coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] });
+    if (an.two) for (const c of an.two.curves) c.cusps.forEach((k, j) => add({ id: `r-st-ode-cusp-${c.id}-${j + 1}`, kind: "bifurcation", title: `The two branches of the fold curve meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}. The coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] }));
     add({ id: "r-st-ode-coverage", kind: "bifurcation", title: an.coverage, status: "unresolved", steps: ["s-st-ode"], evidence: ["farrell-2016"], next: "Widen the box or the seeds, or add a completeness argument, before you claim that no other branch exists." });
   }
 
