@@ -5269,7 +5269,7 @@
       "title": "Laminar pipe flow with a uniform wall heat flux (Hagen–Poiseuille)",
       "piece": 6,
       "model": {
-        "summary": "Steady, fully developed laminar flow of a Newtonian fluid in a circular pipe, driven by a constant pressure gradient. A uniform heat flux enters at the wall, and the temperature profile is fully developed.",
+        "summary": "Steady, fully developed laminar flow of a Newtonian fluid in a circular pipe, driven by a constant pressure gradient. A uniform heat flux enters at the wall, and the temperature profile has its fully developed form.",
         "roles": [
           {
             "id": "u",
@@ -5366,7 +5366,7 @@
           }
         ],
         "closures": [
-          "Newtonian viscous stress μ du/dr; Fourier conduction k dT/dr; fully developed flow, so the axial momentum has no inertia term and dT/dx = dT_m/dx (Lienhard, A Heat Transfer Textbook, section 7.4)."
+          "Newtonian viscous stress μ du/dr and Fourier conduction k dT/dr. In fully developed flow the axial momentum has no inertia term, and dT/dx = dT_m/dx (Lienhard, A Heat Transfer Textbook, section 7.2, eqns. (7.14) and (7.22))."
         ],
         "geometry": "A long straight circular pipe of radius R, far from its inlet. The coordinate r goes from the axis to the wall.",
         "conditions": [
@@ -5525,11 +5525,11 @@
         "assumptions": [
           {
             "text": "Steady, laminar and fully developed flow of a Newtonian fluid with constant properties.",
-            "source": "poiseuille"
+            "source": "lienhard-flow"
           },
           {
-            "text": "Fully developed temperature profile under a uniform wall heat flux; axial conduction and viscous heating are left out.",
-            "source": "lienhard"
+            "text": "Fully developed temperature profile under a uniform wall heat flux. The model leaves out axial conduction and viscous heating.",
+            "source": "lienhard-flow"
           }
         ]
       },
@@ -5553,7 +5553,7 @@
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. Pipe flow becomes turbulent through finite disturbances, which a linear analysis cannot show; this needs a separate declaration."
+          "reason": "This declaration computes no stability analysis. Pipe flow becomes turbulent through finite disturbances, which a linear analysis cannot show. This needs a separate declaration."
         },
         "bifurcation": {
           "applies": false,
@@ -5563,12 +5563,12 @@
       "limitations": [
         "Fully developed region only: no entrance length and no developing profile.",
         "Laminar flow only: the model does not predict transition, and a turbulent flow needs a separate declaration.",
-        "Uniform wall heat flux only; a uniform wall temperature is a different eigenvalue problem (piece 7)."
+        "Uniform wall heat flux only. A uniform wall temperature is a different eigenvalue problem (piece 7)."
       ],
       "acceptance": {
         "example": "pipe-flow",
-        "reference": "f·Re_D = 64 and Nu_D = 48/11 ≈ 4.364 (Lienhard, A Heat Transfer Textbook, section 7.4). SymPy gives the same rationals (tools/flow_references.py).",
-        "tolerance": "Exact for f·Re_D and Nu_D; the finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
+        "reference": "f·Re_D = 64 and Nu_D = 48/11 ≈ 4.364 (Lienhard, A Heat Transfer Textbook, section 7.2, eqns. (7.14) and (7.22)). SymPy gives the same rationals (tools/flow_references.py).",
+        "tolerance": "Exact for f·Re_D and Nu_D. The finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
         "checks": [
           "The polynomials U and θ satisfy both equations and all five conditions exactly.",
           "f·Re_D = 64 and Nu_D = 48/11 in rationals.",
@@ -5576,10 +5576,10 @@
         ]
       },
       "solver": {
-        "method": "Exact polynomial integration in rationals; finite volumes with flux balances for the check.",
+        "method": "Exact polynomial integration in rationals. Finite volumes with flux balances for the check.",
         "discretization": "16, 32, 64 and 128 equal cells over 0 ≤ X ≤ 1.",
-        "convergence": "Error of Nu_D below 1e-3 at 128 cells; observed order within 0.3 of 2.",
-        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles; no random numbers."
+        "convergence": "Error of Nu_D below 1e-3 at 128 cells. Observed order within 0.3 of 2.",
+        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
       }
     },
     {
@@ -5685,9 +5685,9 @@
           }
         ],
         "closures": [
-          "Newtonian viscous stress μ du/dy; Fourier conduction k dT/dy; fully developed flow, so the axial momentum has no inertia term and dT/dx = dT_m/dx."
+          "Newtonian viscous stress μ du/dy and Fourier conduction k dT/dy. In fully developed flow the axial momentum has no inertia term, and dT/dx = dT_m/dx."
         ],
-        "geometry": "Two wide parallel plates a distance 2b apart, far from the inlet. The coordinate y goes from the centre plane to one wall; the other half is the mirror image.",
+        "geometry": "Two wide parallel plates a distance 2b apart, far from the inlet. The coordinate y goes from the centre plane to one wall. The other half is the mirror image.",
         "conditions": [
           {
             "id": "u-centre",
@@ -5844,11 +5844,11 @@
         "assumptions": [
           {
             "text": "Steady, laminar and fully developed flow of a Newtonian fluid with constant properties between wide plates.",
-            "source": "poiseuille"
+            "source": "lienhard-flow"
           },
           {
-            "text": "The same uniform heat flux at both walls and a fully developed temperature profile; axial conduction and viscous heating are left out.",
-            "source": "lienhard"
+            "text": "The same uniform heat flux at both walls and a fully developed temperature profile. The model leaves out axial conduction and viscous heating.",
+            "source": "lienhard-flow"
           }
         ]
       },
@@ -5886,8 +5886,8 @@
       ],
       "acceptance": {
         "example": "channel-flow",
-        "reference": "f·Re = 96 and Nu = 140/17 ≈ 8.235 with the hydraulic diameter 4b (Lienhard, A Heat Transfer Textbook, section 7.5). SymPy gives the same rationals (tools/flow_references.py).",
-        "tolerance": "Exact for f·Re and Nu; the finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
+        "reference": "f·Re = 96 and Nu = 140/17 ≈ 8.235 with the hydraulic diameter 4b (Lienhard, A Heat Transfer Textbook, section 7.5, eqn. (7.63). F·Re = 96 from the same exact profile, eqn. (7.62)). SymPy gives the same rationals (tools/flow_references.py).",
+        "tolerance": "Exact for f·Re and Nu. The finite-volume Nu within 1e-3 at 128 cells with an observed order within 0.3 of 2.",
         "checks": [
           "The polynomials U and θ satisfy both equations and all four conditions exactly.",
           "f·Re = 96 and Nu = 140/17 in rationals.",
@@ -5895,10 +5895,10 @@
         ]
       },
       "solver": {
-        "method": "Exact polynomial integration in rationals; finite volumes with flux balances for the check.",
+        "method": "Exact polynomial integration in rationals. Finite volumes with flux balances for the check.",
         "discretization": "16, 32, 64 and 128 equal cells over 0 ≤ Y ≤ 1.",
-        "convergence": "Error of Nu below 1e-3 at 128 cells; observed order within 0.3 of 2.",
-        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles; no random numbers."
+        "convergence": "Error of Nu below 1e-3 at 128 cells. Observed order within 0.3 of 2.",
+        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
       }
     },
     {
@@ -5907,7 +5907,7 @@
       "title": "Isentropic air flow in a converging-diverging nozzle (anchor test 3)",
       "piece": 6,
       "model": {
-        "summary": "Steady quasi-one-dimensional flow of air, an ideal gas with γ = 7/5, from a reservoir through a nozzle of given area. Mass, energy and entropy are constant along the axis; the back pressure selects the flow.",
+        "summary": "Steady quasi-one-dimensional flow of air, an ideal gas with γ = 7/5, from a reservoir through a nozzle of given area. Mass, energy and entropy are constant along the axis. The back pressure selects the flow.",
         "roles": [
           {
             "id": "mdot",
@@ -6018,9 +6018,9 @@
           }
         ],
         "closures": [
-          "Ideal gas with constant specific heats, γ = 7/5, so c_p = 7R_g/2 and p/p₀ = (T/T₀)^(γ/(γ−1)) = (T/T₀)^(7/2) for isentropic flow (NASA Glenn Research Center, mass flow choking)."
+          "Ideal gas with constant specific heats and γ = 7/5, so c_p = 7R_g/2 (NASA Glenn Research Center, mass flow choking, equations 10 to 19). For isentropic flow, p/p₀ = (T/T₀)^(γ/(γ−1)) = (T/T₀)^(7/2)."
         ],
-        "geometry": "A converging-diverging nozzle with the given area A(x): parabolic from A_i at the inlet to A_t at the throat (x/L = 1/2), and parabolic from A_t to A_e at the exit.",
+        "geometry": "A converging-diverging nozzle with the given area A(x). The area is parabolic from A_i at the inlet to A_t at the throat (x/L = 1/2), and parabolic from A_t to A_e at the exit.",
         "conditions": [],
         "dimensionless": {
           "variables": [
@@ -6152,13 +6152,13 @@
           "Exact critical values T*/T₀ = 5/6 and (ṁ√(R_gT₀)/(p₀A_t))² = 21875/46656 at M = 1."
         ],
         "numerical": [
-          "Bisection of the area–Mach relation on the subsonic and the supersonic branch; mass and energy conservation at 61 stations."
+          "Bisection of the area–Mach relation on the subsonic and the supersonic branch. Mass and energy conservation at 61 stations."
         ]
       },
       "methods": {
         "dominant-balance": {
           "applies": false,
-          "reason": "Every term of the quasi-one-dimensional equations is kept: inertia, pressure and the change of area are all of order 1 in the nozzle."
+          "reason": "The quasi-one-dimensional equations keep every term: inertia, pressure and the change of area are all of order 1 in the nozzle."
         },
         "asymptotic": {
           "applies": false,
@@ -6176,13 +6176,13 @@
       "limitations": [
         "No shocks: the back-pressure range between the design ratio and the first critical ratio needs a separate declaration.",
         "No friction and no heat transfer at the walls.",
-        "Air with γ = 7/5 only; another gas needs another declaration.",
-        "The jet outside the exit is not modelled."
+        "Air with γ = 7/5 only. Another gas needs another declaration.",
+        "The model does not describe the jet outside the exit."
       ],
       "acceptance": {
         "example": "nozzle-flow",
-        "reference": "The sonic throat and the choked mass flow ṁ = (A_tp₀/√T₀)√(γ/R)(1 + (γ−1)/2)^(−(γ+1)/(2(γ−1))) (NASA Glenn Research Center, mass flow choking). mpmath gives the exit Mach numbers and the critical pressure ratios to 30 digits (tools/flow_references.py).",
-        "tolerance": "Exact for the derivation and the critical values; residual 1e-12 for the area–Mach roots; 1e-10 relative for mass and energy conservation and against the mpmath values.",
+        "reference": "The throat is sonic at choking (NASA Glenn Research Center, mass flow choking, equations 10 to 19). The choked mass flow is ṁ = (A_tp₀/√T₀)√(γ/R)(1 + (γ−1)/2)^(−(γ+1)/(2(γ−1))). mpmath gives the exit Mach numbers and the critical pressure ratios to 30 digits (tools/flow_references.py).",
+        "tolerance": "Exact for the derivation and the critical values. Residual 1e-12 for the area–Mach roots. 1e-10 relative for mass and energy conservation and against the mpmath values.",
         "checks": [
           "The energy equation, the mass-flux exponents and dF/dM ∝ 1 − M² hold exactly for γ = 7/5.",
           "T*/T₀ = 5/6 and the squared choked mass-flow parameter 21875/46656, exactly.",
@@ -6191,10 +6191,10 @@
         ]
       },
       "solver": {
-        "method": "Exact rational algebra for the derivation; bisection for the area–Mach relation on each branch.",
-        "discretization": "61 stations along x/L; no mesh, because the model is algebraic at each station.",
-        "convergence": "Bisection to 1e-15 relative width; area–Mach residual below 1e-12.",
-        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles; no random numbers."
+        "method": "Exact rational algebra for the derivation. Bisection for the area–Mach relation on each branch.",
+        "discretization": "61 stations along x/L. No mesh, because the model is algebraic at each station.",
+        "convergence": "Bisection to 1e-15 relative width. Area–Mach residual below 1e-12.",
+        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
       }
     },
     {
@@ -6270,7 +6270,7 @@
           }
         ],
         "closures": [
-          "Hydrostatic pressure and a depth-uniform velocity (the long-wave limit). Across a jump: mass and the momentum function q²/(gh) + h²/2 are conserved, energy is not."
+          "Hydrostatic pressure and a depth-uniform velocity (the long-wave limit). Across a jump, mass and the momentum function q²/(gh) + h²/2 stay the same, but the energy falls."
         ],
         "geometry": "A wide rectangular channel with a flat, horizontal bed. The coordinate x goes from the inflow to the outflow.",
         "conditions": [
@@ -6375,11 +6375,11 @@
         "assumptions": [
           {
             "text": "Hydrostatic pressure and a depth-uniform velocity: the depth is small against the length of the waves.",
-            "source": "swe"
+            "source": "swashes"
           },
           {
             "text": "A flat, horizontal bed without friction, and water over the whole reach.",
-            "source": "swe"
+            "source": "swashes"
           }
         ]
       },
@@ -6396,7 +6396,7 @@
       "methods": {
         "dominant-balance": {
           "applies": false,
-          "reason": "The declared steady equations keep every term of the long-wave model; the long-wave limit itself is an assumption, not a computed balance."
+          "reason": "The declared steady equations keep every term of the long-wave model. The long-wave limit itself is an assumption, not a computed balance."
         },
         "asymptotic": {
           "applies": false,
@@ -6414,12 +6414,12 @@
       "limitations": [
         "Flat, horizontal bed without friction: the model does not fix the position of a jump.",
         "No dry bed: a depth of 0 (a dry front) needs a separate declaration.",
-        "The internal structure of the jump (turbulence, air) is not modelled; only the conservation across it."
+        "The model does not describe the internal structure of the jump (turbulence, air). It gives only the conservation across the jump."
       ],
       "acceptance": {
         "example": "hydraulic-jump",
-        "reference": "h₂/h₁ = (√(1 + 8Fr₁²) − 1)/2 and ΔE = (h₂ − h₁)³/(4h₁h₂) (Bélanger; open-channel hydraulics notes). mpmath gives the conjugate and alternate depths to 30 digits (tools/flow_references.py).",
-        "tolerance": "Exact for the conjugate depth, the momentum balance, the head loss and the critical depth; 1e-12 relative for the alternate depth by bisection.",
+        "reference": "h₂/h₁ = (√(1 + 8Fr₁²) − 1)/2 and ΔE = (h₂ − h₁)³/(4h₁h₂) (Apsley, Hydraulics 3: rapidly-varied flow, University of Manchester). mpmath gives the conjugate and alternate depths to 30 digits (tools/flow_references.py).",
+        "tolerance": "Exact for the conjugate depth, the momentum balance, the head loss and the critical depth. 1e-12 relative for the alternate depth by bisection.",
         "checks": [
           "The inflow characteristics need two conditions at x = 0, and the record gives two.",
           "M(h₁) = M(h₂) and ΔE = (h₂ − h₁)³/(4h₁h₂) exactly, with ΔE > 0 and Fr₂ < 1.",
@@ -6427,10 +6427,10 @@
         ]
       },
       "solver": {
-        "method": "Exact arithmetic in rationals and in the quadratic field Q(√d); bisection for the alternate depth.",
+        "method": "Exact arithmetic in rationals and in the quadratic field Q(√d). Bisection for the alternate depth.",
         "discretization": "None: the steady model is algebraic between the conservation laws.",
         "convergence": "Bisection to 1e-15 relative width.",
-        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles; no random numbers."
+        "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
       }
     },
     {
@@ -6519,9 +6519,9 @@
           }
         ],
         "closures": [
-          "Newtonian fluid with constant properties; the pressure across the layer equals the pressure of the uniform outer stream (MIT 16.110, boundary-layer analysis)."
+          "Newtonian fluid with constant properties. The pressure across the layer equals the pressure of the uniform outer stream (MIT 16.110, boundary-layer analysis)."
         ],
-        "geometry": "A flat plate with a sharp leading edge at x = 0, parallel to the stream; y normal to the plate.",
+        "geometry": "A flat plate with a sharp leading edge at x = 0, parallel to the stream. Y normal to the plate.",
         "conditions": [
           {
             "id": "noslip",
@@ -6655,11 +6655,11 @@
         "assumptions": [
           {
             "text": "Steady, laminar, two-dimensional flow with constant properties and a uniform outer stream.",
-            "source": "mit-bl"
+            "source": "mit-16110"
           },
           {
             "text": "A thin layer: Re_L ≫ 1. The model does not describe the leading edge, where Re is of order 1.",
-            "source": "mit-bl"
+            "source": "mit-16110"
           }
         ]
       },
@@ -6679,7 +6679,7 @@
         },
         "asymptotic": {
           "applies": true,
-          "reason": "The boundary-layer equations are the leading order of the limit Re → ∞ with x fixed. The first correction, the displacement of the outer flow, has the relative size δ*/x = 1.72/√Re_x: the page states it as an estimated remainder, not a proved bound."
+          "reason": "The boundary-layer equations are the leading order of the limit Re → ∞ with x fixed. The first correction comes from the displacement of the outer flow, with the relative size δ*/x = 1.72/√Re_x. The page states it as an estimated remainder, not a proved bound."
         },
         "stability": {
           "applies": false,
@@ -6697,8 +6697,8 @@
       ],
       "acceptance": {
         "example": "blasius-plate",
-        "reference": "f''(0) = 0.332057336215 (mpmath to 30 digits, tools/flow_references.py); c_f = 0.664/√Re_x, δ* = 1.7208x/√Re_x and θ = 0.664x/√Re_x (Blasius solution, open lecture notes).",
-        "tolerance": "f''(0) within 1e-9 of the mpmath value; step order within 0.3 of 4; domain change below 1e-9; momentum integral within 1e-9.",
+        "reference": "f''(0) = 0.332057336215 (mpmath to 30 digits, tools/flow_references.py). F''(0) = 0.33206 and c_f = 0.664/√Re_x (Lienhard, A Heat Transfer Textbook, section 6.2, Table 6.1 and eqns. (6.32) and (6.33)). Δ* and θ from the same mpmath solution.",
+        "tolerance": "f''(0) within 1e-9 of the mpmath value. Step order within 0.3 of 4. Domain change below 1e-9. Momentum integral within 1e-9.",
         "checks": [
           "The exponents of the inner scales and of the similarity form are exact.",
           "f''(0) agrees with the mpmath reference and converges at fourth order in the step.",
@@ -6707,9 +6707,9 @@
       },
       "solver": {
         "method": "Shooting on f''(0) with bisection, and the classical fourth-order Runge–Kutta method for f''' + ff''/2 = 0.",
-        "discretization": "Steps 0.1, 0.05 and 0.025 on 0 ≤ η ≤ 12; domains η_max = 10, 12 and 14.",
-        "convergence": "Bisection to 1e-15; observed step order within 0.3 of 4; change from η_max = 12 to 14 below 1e-9.",
-        "reproducibility": "Plain JavaScript doubles; no random numbers."
+        "discretization": "Steps 0.1, 0.05 and 0.025 on 0 ≤ η ≤ 12. Domains η_max = 10, 12 and 14.",
+        "convergence": "Bisection to 1e-15. Observed step order within 0.3 of 4. Change from η_max = 12 to 14 below 1e-9.",
+        "reproducibility": "Plain JavaScript doubles. No random numbers."
       }
     },
     {
@@ -6718,7 +6718,7 @@
       "title": "Potential flow past a cylinder and a Joukowski airfoil, with thin-airfoil theory",
       "piece": 6,
       "model": {
-        "summary": "Two-dimensional incompressible potential flow past a circular cylinder with circulation and past a Joukowski airfoil, its conformal image, with the Kutta condition at the trailing edge. Thin-airfoil theory for the parabolic camber line is the small-angle, small-camber limit.",
+        "summary": "Two-dimensional incompressible potential flow past a circular cylinder with circulation and past its conformal image, a Joukowski airfoil. The Kutta condition holds at the trailing edge. Thin-airfoil theory for the parabolic camber line is the small-angle, small-camber limit.",
         "roles": [
           {
             "id": "phi",
@@ -6798,9 +6798,9 @@
           }
         ],
         "closures": [
-          "Irrotational incompressible flow: u = ∇φ and ∇²φ = 0; Bernoulli's equation gives the pressure; the Kutta condition fixes the circulation."
+          "Irrotational incompressible flow: u = ∇φ and ∇²φ = 0. Bernoulli's equation gives the pressure. The Kutta condition fixes the circulation."
         ],
-        "geometry": "A Joukowski airfoil z = ζ + b²/ζ, the image of a circle through ζ = b with the centre ζ₀ = b(−ε + i·2m(1 + ε)); chord about 4b. The far-field boundary is a square of half-width X_f.",
+        "geometry": "A Joukowski airfoil z = ζ + b²/ζ, the image of a circle through ζ = b with the centre ζ₀ = b(−ε + i·2m(1 + ε)). Chord about 4b. The far-field boundary is a square of half-width X_f.",
         "conditions": [
           {
             "id": "left",
@@ -6955,11 +6955,11 @@
         "assumptions": [
           {
             "text": "Incompressible, inviscid, irrotational flow with the Kutta condition at the sharp trailing edge.",
-            "source": "potential"
+            "source": "mit-1601-f18"
           },
           {
             "text": "Attached flow at high Reynolds number: the boundary layer is thin and does not separate.",
-            "source": "viscous-limits"
+            "source": "nasa-foilinc"
           }
         ]
       },
@@ -6999,8 +6999,8 @@
       ],
       "acceptance": {
         "example": "airfoil-flow",
-        "reference": "Kutta–Joukowski theorem L' = ρUΓ with Γ = 4πUa sin(α + β); thin-airfoil theory c_l = 2π(α − α_L0) and c_m,c/4 = (π/4)(A₂ − A₁) (open lecture notes on potential flow and thin airfoils). mpmath gives the Joukowski lift coefficient to 30 digits (tools/flow_references.py).",
-        "tolerance": "Exact for the cylinder forces and the Fourier coefficients; 1e-12 relative for the pressure lift at 256 points; 1e-10 for the flat plate and the lumped-vortex lift; 1e-4 for the moment at 128 panels with order 2 ± 0.3.",
+        "reference": "Kutta–Joukowski theorem L' = ρUΓ with Γ = 4πUa sin(α + β). Thin-airfoil theory c_l = 2π(α − α_L0) and c_m,c/4 = (π/4)(A₂ − A₁) (MIT 16.01 Fluids lecture notes F18 and 4. MIT 18.354 lecture 21). mpmath gives the Joukowski lift coefficient to 30 digits (tools/flow_references.py).",
+        "tolerance": "Exact for the cylinder forces and the Fourier coefficients. 1e-12 relative for the pressure lift at 256 points. 1e-10 for the flat plate and the lumped-vortex lift. 1e-4 for the moment at 128 panels with order 2 ± 0.3.",
         "checks": [
           "Zero drag and L' = ρUΓ on the cylinder, exactly.",
           "The Fourier coefficients of the camber line, exactly.",
@@ -7009,10 +7009,10 @@
         ]
       },
       "solver": {
-        "method": "Conformal map of the circle flow with the Kutta condition; midpoint-rule pressure integration; the lumped-vortex method with a dense linear solve.",
-        "discretization": "16, 32, 64, 128 and 256 surface points; 16, 32, 64 and 128 panels.",
-        "convergence": "Pressure lift within 1e-12 at 256 points; moment order 2 ± 0.3.",
-        "reproducibility": "Plain JavaScript doubles; no random numbers."
+        "method": "Conformal map of the circle flow with the Kutta condition. Midpoint-rule pressure integration. The lumped-vortex method with a dense linear solve.",
+        "discretization": "16, 32, 64, 128 and 256 surface points. 16, 32, 64 and 128 panels.",
+        "convergence": "Pressure lift within 1e-12 at 256 points. Moment order 2 ± 0.3.",
+        "reproducibility": "Plain JavaScript doubles. No random numbers."
       }
     }
   ],

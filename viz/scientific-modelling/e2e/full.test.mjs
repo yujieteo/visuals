@@ -111,6 +111,30 @@ await fullSuite("scientific-modelling", {
     } finally {
       await ela.close();
     }
+    // Piece 6, the nozzle from the URL (anchor test 3): the sonic throat, the choked mass flow and the shock range
+    // as an unresolved region; then the pipe flow with its exact Nusselt number.
+    const noz = await ctx.open("#example=nozzle-flow&tool=regime");
+    try {
+      await noz.page.locator("#confirm").click();
+      await noz.page.waitForSelector("#stability-panel #st-fl-nozzle-air-flux svg");
+      const panel = await noz.page.locator("#stability-panel").innerText();
+      assert.match(panel, /area–Mach relation and the sonic throat/);
+      assert.match(panel, /choked value ṁ = 2\.33356 kg\/s/);
+      const trace = await noz.page.locator("#trace").innerText();
+      assert.match(trace, /dF\/dM is exactly 1 − M²/, "the sonic condition is an exact result");
+      assert.match(trace, /points of the map are unresolved: Shock range/);
+      await noz.page.waitForSelector("#regime-map svg");
+    } finally {
+      await noz.close();
+    }
+    const pipe = await ctx.open("#example=pipe-flow&tool=regime");
+    try {
+      await pipe.page.locator("#confirm").click();
+      await pipe.page.waitForSelector("#stability-panel #st-fl-pipe-poiseuille-profile svg");
+      assert.match(await pipe.page.locator("#trace").innerText(), /Nu = 48\/11 = 4\.36364 exactly/);
+    } finally {
+      await pipe.close();
+    }
     const stale = await ctx.open("#example=no-such-model");
     try {
       assert.match(await stale.page.locator("#notice").innerText(), /not a valid value/);

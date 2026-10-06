@@ -327,32 +327,32 @@
       { id: "s-fam-momentum", item: 7, title: "The velocity profile and the pressure gradient",
         reason: "The axial momentum equation of a fully developed Newtonian flow has no inertia term. With no slip at the wall and symmetry at the centre, the profile is a parabola. The mean velocity is the scale, so the mean of U is 1, and this fixes P.",
         tex: [`${lap("U")}=-P,\\qquad U'(0)=0,\\qquad U(1)=0,\\qquad ${j + 1}\\int_0^1 U\\,${dA}=1`,
-          `U=${P.tex(Ud, rv)},\\qquad P=\\frac{G${Ls}^{2}}{\\mu u_m}=${Q.tex(Pd)},\\qquad \\left|U'(1)\\right|=${Q.tex(tauHat)}`], evidence: ["poiseuille"] },
+          `U=${P.tex(Ud, rv)},\\qquad P=\\frac{G${Ls}^{2}}{\\mu u_m}=${Q.tex(Pd)},\\qquad \\left|U'(1)\\right|=${Q.tex(tauHat)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-friction", item: 8, title: "Friction factor and Reynolds number",
         reason: "The Darcy friction factor and the Reynolds number use the hydraulic diameter and the mean velocity. Their product does not depend on the flow rate.",
         tex: [`D_h=${pipe ? "2R" : "4b"},\\qquad f=\\frac{8\\tau_w}{\\rho u_m^{2}},\\qquad \\tau_w=\\frac{\\mu u_m}{${Ls}}\\left|U'(1)\\right|,\\qquad Re=\\frac{\\rho u_m D_h}{\\mu}`,
-          `f\\,Re=8\\left|U'(1)\\right|\\frac{D_h}{${Ls}}=${Q.tex(fRe)}`], evidence: ["poiseuille"] },
+          `f\\,Re=8\\left|U'(1)\\right|\\frac{D_h}{${Ls}}=${Q.tex(fRe)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-energy", item: 7, title: "The temperature profile under a uniform wall heat flux",
         reason: "With a uniform wall heat flux, the temperature rises linearly along the flow at every point of the section. Axial conduction is then zero. The heat that enters at the wall must leave with the flow, and this energy balance fixes S.",
         tex: [`${lap("\\theta")}=S\\,U,\\qquad \\theta'(0)=0,\\qquad \\theta'(1)=1,\\qquad \\frac{\\partial^{2}T}{\\partial x^{2}}=0`,
-          `S=\\frac{\\rho c_p\\beta u_m${Ls}}{q_w}=\\left(\\int_0^1 U\\,${dA}\\right)^{-1}=${Q.tex(Sd)},\\qquad \\theta=${P.tex(Theta, rv)}+\\text{const}`], evidence: ["lienhard"] },
+          `S=\\frac{\\rho c_p\\beta u_m${Ls}}{q_w}=\\left(\\int_0^1 U\\,${dA}\\right)^{-1}=${Q.tex(Sd)},\\qquad \\theta=${P.tex(Theta, rv)}+\\text{const}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-nusselt", item: 8, title: "Nusselt number of the fully developed flow",
         reason: "The heat-transfer coefficient uses the wall-to-bulk temperature difference. The bulk temperature weights the profile with the velocity, so the constant in θ cancels.",
         tex: [`\\theta_m=\\frac{\\int_0^1 U\\,\\theta\\,${dA}}{\\int_0^1 U\\,${dA}},\\qquad \\theta(1)-\\theta_m=${Q.tex(Q.sub(thetaW, thetaM))}`,
-          `Nu=\\frac{hD_h}{k}=\\frac{D_h/${Ls}}{\\theta(1)-\\theta_m}=${Q.tex(Nu)}`], evidence: ["lienhard"] },
+          `Nu=\\frac{hD_h}{k}=\\frac{D_h/${Ls}}{\\theta(1)-\\theta_m}=${Q.tex(Nu)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-fv", item: 10, title: "Numerical procedure: finite volumes",
         reason: "A finite-volume solution of the same two equations checks the exact algebra. It uses N cells, flux balances on each cell and the trapezoid rule for the mean values.",
         tex: [`N=${grid.map((g) => g.n).join(",\\,")},\\qquad \\left|Nu_N-Nu\\right|=${grid.map((g) => texNum(g.errNu, 3)).join(",\\,")}`], evidence: [] },
     ];
     const checks = [
       { id: "ode", status: P.isZero(odeResidual) && Q.isZero(wall) && Q.isZero(centre) && Q.eq(mean, Q.ONE) ? "exact" : "unresolved", passed: P.isZero(odeResidual) && Q.isZero(wall) && Q.isZero(centre) && Q.eq(mean, Q.ONE),
-        title: `The velocity U = ${pipe ? "2(1 − X²)" : "(3/2)(1 − Y²)"} satisfies the momentum equation with P = ${Q.str(Pd)}, both conditions and the unit mean, exactly.`, tex: `U=${P.tex(Ud, rv)}`, evidence: ["poiseuille"], steps: ["s-fam-momentum"] },
+        title: `The velocity U = ${pipe ? "2(1 − X²)" : "(3/2)(1 − Y²)"} satisfies the momentum equation with P = ${Q.str(Pd)}, both conditions and the unit mean, exactly.`, tex: `U=${P.tex(Ud, rv)}`, evidence: ["lienhard-flow"], steps: ["s-fam-momentum"] },
       { id: "fre", status: Q.eq(fRe, reference.fRe) ? "exact" : "unresolved", passed: Q.eq(fRe, reference.fRe),
-        title: `f·Re = ${Q.str(fRe)} exactly for the laminar ${name}, which is the reference value ${Q.str(reference.fRe)}.`, tex: `f\\,Re=${Q.tex(fRe)}`, evidence: ["poiseuille"], steps: ["s-fam-friction"] },
+        title: `f·Re = ${Q.str(fRe)} exactly for the laminar ${name}, which is the reference value ${Q.str(reference.fRe)}.`, tex: `f\\,Re=${Q.tex(fRe)}`, evidence: ["lienhard-flow"], steps: ["s-fam-friction"] },
       { id: "theta", status: P.isZero(thetaResidual) && Q.eq(flux, Q.ONE) && Q.eq(Sd, reference.S) ? "exact" : "unresolved", passed: P.isZero(thetaResidual) && Q.eq(flux, Q.ONE) && Q.eq(Sd, reference.S),
-        title: `Energy balance: with S = ${Q.str(Sd)}, the temperature profile satisfies the energy equation, θ'(0) = 0 and θ'(1) = 1 exactly. The heat that enters at the wall leaves with the flow.`, tex: `\\theta=${P.tex(Theta, rv)}`, evidence: ["lienhard"], steps: ["s-fam-energy"] },
+        title: `Energy balance: with S = ${Q.str(Sd)}, the temperature profile satisfies the energy equation, θ'(0) = 0 and θ'(1) = 1 exactly. The heat that enters at the wall leaves with the flow.`, tex: `\\theta=${P.tex(Theta, rv)}`, evidence: ["lienhard-flow"], steps: ["s-fam-energy"] },
       { id: "nusselt", status: Q.eq(Nu, reference.Nu) ? "exact" : "unresolved", passed: Q.eq(Nu, reference.Nu),
-        title: `Nu = ${qText(Nu)} exactly for the ${name} with a uniform wall heat flux, which is the reference value.`, tex: `Nu=${Q.tex(Nu)}`, evidence: ["lienhard"], steps: ["s-fam-nusselt"] },
+        title: `Nu = ${qText(Nu)} exactly for the ${name} with a uniform wall heat flux, which is the reference value.`, tex: `Nu=${Q.tex(Nu)}`, evidence: ["lienhard-flow"], steps: ["s-fam-nusselt"] },
       { id: "fv", status: "numerical", passed: grid[3].errNu <= tol.fv && Math.abs(ord - 2) <= tol.order && grid[3].errP <= tol.fv,
         title: `The finite-volume solution converges to the exact Nu at order ${fmt(ord, 3)} (expected 2). At N = 128 the error of Nu is ${fmt(grid[3].errNu, 3)}, and the error of P is ${fmt(grid[3].errP, 3)}.`,
         tolerance: `error ≤ ${tol.fv} at N = 128, |order − 2| ≤ ${tol.order}`, evidence: [], steps: ["s-fam-fv"] },
@@ -363,7 +363,7 @@
         tolerance: `G u_m D_h/(4 q_w) ≤ ${tol.dissipation}`, evidence: [], steps: ["s-fam-energy"], next: dissipation <= tol.dissipation ? "" : "Use the viscous heat-generation family (piece 7 of the build plan), or reduce the velocity." });
     }
     checks.push({ id: "laminar", status: "evidence", passed: true,
-      title: `Re = ${fmt(Re)}. The model assumes laminar flow and does not predict transition. A turbulent flow needs a separate declaration.`, evidence: ["poiseuille"], steps: ["s-fam-friction"] });
+      title: `Re = ${fmt(Re)}. The model assumes laminar flow and does not predict transition. A turbulent flow needs a separate declaration.`, evidence: ["lienhard-flow"], steps: ["s-fam-friction"] });
 
     const outputs = [
       { id: "Re", label: "Reynolds number", tex: "Re", value: Re, unit: "" },
@@ -446,7 +446,7 @@
     const tStar = 2 / (g + 1), pStar = Math.pow(tStar, g / (g - 1)), rhoStar = Math.pow(tStar, 1 / (g - 1));
     const phi = Math.sqrt(g) * Math.pow(tStar, nf);
     const mdotMax = v.p0 * v.At * phi / Math.sqrt(v.R * v.T0);
-    const eps = v.Ae / v.At, epsIn = v.Ai / v.At;
+    const eps = v.Ae / v.At;
     const sub = gs.mach(eps, "sub"), sup = gs.mach(eps, "sup");
     const p1 = gs.pRatio(sub.x), p3 = gs.pRatio(sup.x);
     const pb = v.pb / v.p0;
@@ -635,46 +635,46 @@
     steps.push(
       { id: "s-fam-swe", item: 7, title: "Shallow-water equations on a flat bed",
         reason: "Long waves on a thin layer: the pressure is hydrostatic, and the velocity is uniform over the depth. The bed is flat and has no friction, and the water covers the whole reach.",
-        tex: ["\\frac{\\partial h}{\\partial t}+\\frac{\\partial (hu)}{\\partial x}=0,\\qquad \\frac{\\partial (hu)}{\\partial t}+\\frac{\\partial}{\\partial x}\\left(hu^{2}+\\tfrac12gh^{2}\\right)=0,\\qquad h>0"], evidence: ["swe"] },
+        tex: ["\\frac{\\partial h}{\\partial t}+\\frac{\\partial (hu)}{\\partial x}=0,\\qquad \\frac{\\partial (hu)}{\\partial t}+\\frac{\\partial}{\\partial x}\\left(hu^{2}+\\tfrac12gh^{2}\\right)=0,\\qquad h>0"], evidence: ["swashes"] },
       { id: "s-fam-characteristics", item: 8, title: "Characteristics and admissible boundary data",
         reason: "The flux Jacobian has the eigenvalues u ± √(gh). Each characteristic that enters the reach needs one condition. Fr < 1 gives one condition at each end. Fr > 1 gives two at the inflow and none at the outflow.",
         tex: ["\\lambda_{\\pm}=u\\pm\\sqrt{gh},\\qquad Fr^{2}=\\frac{u^{2}}{gh}=\\frac{q^{2}}{gh^{3}}",
-          `Fr_1^{2}=${texNum(Fr1sq)}\\ (\\text{inflow}),\\qquad Fr_2^{2}=${texNum(Fr2sq)}\\ (\\text{outflow})`], evidence: ["swe"] },
+          `Fr_1^{2}=${texNum(Fr1sq)}\\ (\\text{inflow}),\\qquad Fr_2^{2}=${texNum(Fr2sq)}\\ (\\text{outflow})`], evidence: ["swashes"] },
       { id: "s-fam-energy", item: 8, title: "Specific energy and critical depth",
         reason: "Steady flow keeps q = hu and the specific energy E. E has its minimum where Fr = 1, at the critical depth. Each E above the minimum has one subcritical and one supercritical depth.",
         tex: ["E=h+\\frac{q^{2}}{2gh^{2}},\\qquad \\frac{\\mathrm dE}{\\mathrm dh}=1-Fr^{2},\\qquad h_c=\\left(\\frac{q^{2}}{g}\\right)^{1/3},\\qquad E_{\\min}=\\tfrac32h_c",
-          `h_c=${texNum(hc)}\\ \\mathrm m,\\qquad E_1=${texNum(E1)}\\ \\mathrm m,\\qquad h_{\\mathrm{alt}}=${texNum(altF ? altF.x : NaN)}\\ \\mathrm m`], evidence: ["open-channel"] },
+          `h_c=${texNum(hc)}\\ \\mathrm m,\\qquad E_1=${texNum(E1)}\\ \\mathrm m,\\qquad h_{\\mathrm{alt}}=${texNum(altF ? altF.x : NaN)}\\ \\mathrm m`], evidence: ["apsley-rvf"] },
       { id: "s-fam-jump", item: 8, title: "Hydraulic jump: conjugate depths",
         reason: "Across a jump the flow keeps its mass and its momentum, but it loses energy. The momentum function is equal on both sides, and this gives the conjugate depth.",
         tex: ["\\frac{q^{2}}{gh_1}+\\frac{h_1^{2}}{2}=\\frac{q^{2}}{gh_2}+\\frac{h_2^{2}}{2}\\;\\Rightarrow\\; r^{2}+r-2Fr_1^{2}=0,\\qquad r=\\frac{h_2}{h_1}=\\frac{\\sqrt{1+8Fr_1^{2}}-1}{2}",
           "\\Delta E=E_1-E_2=\\frac{(h_2-h_1)^{3}}{4h_1h_2}",
-          exactOut ? `\\frac{h_2}{h_1}=${QS.tex(exactOut.r)}=${texNum(r)}` : `\\frac{h_2}{h_1}=${texNum(r)}`], evidence: ["jump"] },
+          exactOut ? `\\frac{h_2}{h_1}=${QS.tex(exactOut.r)}=${texNum(r)}` : `\\frac{h_2}{h_1}=${texNum(r)}`], evidence: ["apsley-rvf"] },
     );
     if (exactOut) {
       const inOk = Boolean(up && given.inflow === up.inflow && given.outflow === up.outflow);
       checks.push({ id: "characteristics", status: inOk ? "exact" : "unresolved", passed: inOk,
-        title: `Boundary data: the inflow is ${exactOut.sup ? "supercritical" : "subcritical"} (Fr₁² = ${qText(exactOut.fr2)}, exact sign of Fr₁² − 1), so the flow needs ${up ? up.inflow : "?"} condition${up && up.inflow === 1 ? "" : "s"} at x = 0 and ${up ? up.outflow : "?"} at x = L. The model gives ${given.inflow} and ${given.outflow}.${jumpOk && down ? ` A jump forms only when the outflow holds the subcritical conjugate depth h₂: that adds ${down.outflow} condition at x = L.` : ""}`,
-        evidence: ["swe"], steps: ["s-fam-characteristics"], next: inOk ? "" : "Give one condition for each characteristic that enters the reach." });
-      checks.push({ id: "critical", status: P.isZero(exactOut.crit) ? "exact" : "unresolved", passed: P.isZero(exactOut.crit), title: "With q²/g = h_c³, E(h_c) = h_c + h_c/2 = (3/2) h_c exactly, and dE/dh = 1 − Fr² is 0 there.", tex: "E(h_c)=h_c+\\frac{h_c^{3}}{2h_c^{2}}=\\tfrac32h_c", evidence: ["open-channel"], steps: ["s-fam-energy"] });
+        title: `Boundary data: the inflow is ${exactOut.sup ? "supercritical" : "subcritical"}, because Fr₁² = ${qText(exactOut.fr2)} (exact sign of Fr₁² − 1). Thus the flow needs ${up ? up.inflow : "?"} condition${up && up.inflow === 1 ? "" : "s"} at x = 0 and ${up ? up.outflow : "?"} at x = L. The model gives ${given.inflow} and ${given.outflow}.${jumpOk && down ? ` A jump forms only when the outflow holds the subcritical conjugate depth h₂: that adds ${down.outflow} condition at x = L.` : ""}`,
+        evidence: ["swashes"], steps: ["s-fam-characteristics"], next: inOk ? "" : "Give one condition for each characteristic that enters the reach." });
+      checks.push({ id: "critical", status: P.isZero(exactOut.crit) ? "exact" : "unresolved", passed: P.isZero(exactOut.crit), title: "With q²/g = h_c³, E(h_c) = h_c + h_c/2 = (3/2) h_c exactly, and dE/dh = 1 − Fr² is 0 there.", tex: "E(h_c)=h_c+\\frac{h_c^{3}}{2h_c^{2}}=\\tfrac32h_c", evidence: ["apsley-rvf"], steps: ["s-fam-energy"] });
       checks.push({ id: "alternate", status: QS.isZero(exactOut.altE) && Q.isZero(exactOut.cubicRem) ? "exact" : "unresolved", passed: QS.isZero(exactOut.altE),
-        title: `The alternate depth with the same specific energy is h = ${fmt(hAltExact, 8)} m, exact in the field with √${Q.str(exactOut.hAlt.d)}. E(h) − E₁ = 0 exactly.`, tex: `h_{\\mathrm{alt}}=${QS.tex(exactOut.hAlt)}`, evidence: ["open-channel"], steps: ["s-fam-energy"] });
+        title: `The alternate depth with the same specific energy is h = ${fmt(hAltExact, 8)} m, exact in the field with √${Q.str(exactOut.hAlt.d)}. E(h) − E₁ = 0 exactly.`, tex: `h_{\\mathrm{alt}}=${QS.tex(exactOut.hAlt)}`, evidence: ["apsley-rvf"], steps: ["s-fam-energy"] });
       if (altF) checks.push({ id: "alternate-float", status: "numerical", passed: Math.abs(altF.x - hAltExact) <= tol.root * hAltExact,
         title: `Bisection gives the alternate depth ${fmt(altF.x, 10)} m, which agrees with the exact value within ${fmt(Math.abs(altF.x - hAltExact) / hAltExact, 2)} (relative).`, tolerance: `relative difference ≤ ${tol.root}`, evidence: [], steps: ["s-fam-energy"] });
       checks.push({ id: "momentum", status: QS.isZero(exactOut.momentum) && QS.isZero(exactOut.rPoly) ? "exact" : "unresolved", passed: QS.isZero(exactOut.momentum),
-        title: `The conjugate depth h₂ = ${fmt(h2, 8)} m keeps the momentum function exactly: M(h₁) − M(h₂) = 0 in the field with √${Q.str(exactOut.disc)}.`, tex: `h_2=${QS.tex(exactOut.h2)}`, evidence: ["jump"], steps: ["s-fam-jump"] });
-      checks.push({ id: "loss", status: exactOut.lossOk ? "exact" : "unresolved", passed: exactOut.lossOk, title: `The energy loss E₁ − E₂ equals (h₂ − h₁)³/(4h₁h₂) exactly: ΔE = ${fmt(dE, 6)} m.`, tex: `\\Delta E=${QS.tex(exactOut.dE)}`, evidence: ["jump"], steps: ["s-fam-jump"] });
+        title: `The conjugate depth h₂ = ${fmt(h2, 8)} m keeps the momentum function exactly: M(h₁) − M(h₂) = 0 in the field with √${Q.str(exactOut.disc)}.`, tex: `h_2=${QS.tex(exactOut.h2)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
+      checks.push({ id: "loss", status: exactOut.lossOk ? "exact" : "unresolved", passed: exactOut.lossOk, title: `The energy loss E₁ − E₂ equals (h₂ − h₁)³/(4h₁h₂) exactly: ΔE = ${fmt(dE, 6)} m.`, tex: `\\Delta E=${QS.tex(exactOut.dE)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
       if (jumpOk) {
         checks.push({ id: "admissible", status: QS.sign(exactOut.dE) > 0 && exactOut.sub2 ? "exact" : "unresolved", passed: QS.sign(exactOut.dE) > 0 && exactOut.sub2,
-          title: `The jump is admissible: it loses energy (ΔE > 0, exact sign), and it goes from supercritical to subcritical flow (Fr₂² = ${fmt(Fr2sq, 6)} < 1, exact sign).`, evidence: ["jump"], steps: ["s-fam-jump"] });
+          title: `The jump is admissible: it loses energy (ΔE > 0, exact sign), and it goes from supercritical to subcritical flow (Fr₂² = ${fmt(Fr2sq, 6)} < 1, exact sign).`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
       } else {
         checks.push({ id: "admissible", status: "unresolved", passed: false,
           title: `No jump is possible: the inflow is subcritical (Fr₁² = ${fmt(Fr1sq, 6)} < 1). The momentum balance gives h₂ = ${fmt(h2, 6)} m < h₁ with an energy gain of ${fmt(-dE, 4)} m, which no real flow can supply.`,
-          evidence: ["jump"], steps: ["s-fam-jump"], next: "A hydraulic jump needs supercritical inflow. Increase q or decrease h₁ so that Fr₁ > 1." });
+          evidence: ["apsley-rvf"], steps: ["s-fam-jump"], next: "A hydraulic jump needs supercritical inflow. Increase q or decrease h₁ so that Fr₁ > 1." });
       }
     } else {
       checks.push({ id: "exact-inputs", status: "unresolved", passed: false, title: "g, q or h₁ has no exact value, so the page cannot check the jump exactly.", next: "Enter g, q and h₁ as decimals or fractions.", evidence: [], steps: ["s-fam-jump"] });
     }
-    if (jumpOk) checks.push({ id: "position", status: "unresolved", passed: null, limitation: true, title: "This model does not fix the position of the jump: on a flat bed with no friction, every position conserves mass and momentum.", evidence: ["jump"], steps: ["s-fam-jump"], next: "Bed friction or a bed slope fixes the position. That needs a separate declaration." });
+    if (jumpOk) checks.push({ id: "position", status: "unresolved", passed: null, limitation: true, title: "This model does not fix the position of the jump: on a flat bed with no friction, every position conserves mass and momentum.", evidence: ["apsley-rvf"], steps: ["s-fam-jump"], next: "Bed friction or a bed slope fixes the position. That needs a separate declaration." });
 
     const outputs = [
       { id: "Fr1", label: "Upstream Froude number", tex: "Fr_1", value: Math.sqrt(Fr1sq), unit: "" },
@@ -758,36 +758,36 @@
       { id: "s-fam-scales", item: 6, title: "Inner and outer scales",
         reason: "The outer flow has the length L and the speed U. Near the wall, viscosity must balance inertia, so the wall layer has its own thickness δ and its own normal velocity V.",
         tex: ["u\\frac{\\partial u}{\\partial x}\\sim\\frac{U^{2}}{L},\\qquad \\nu\\frac{\\partial^{2}u}{\\partial y^{2}}\\sim\\frac{\\nu U}{\\delta^{2}}\\;\\Rightarrow\\;\\frac{\\delta}{L}=Re_L^{-1/2},\\qquad \\frac{V}{U}=\\frac{\\delta}{L}=Re_L^{-1/2}",
-          "\\frac{\\nu\\,\\partial^{2}u/\\partial x^{2}}{\\nu\\,\\partial^{2}u/\\partial y^{2}}\\sim\\left(\\frac{\\delta}{L}\\right)^{2}=Re_L^{-1}"], evidence: ["mit-bl"] },
+          "\\frac{\\nu\\,\\partial^{2}u/\\partial x^{2}}{\\nu\\,\\partial^{2}u/\\partial y^{2}}\\sim\\left(\\frac{\\delta}{L}\\right)^{2}=Re_L^{-1}"], evidence: ["mit-16110"] },
       { id: "s-fam-equations", item: 7, title: "Boundary-layer equations",
         reason: "The terms of order 1/Re drop out. The normal momentum equation then says that the pressure across the layer is the pressure of the outer flow. On a flat plate the outer pressure is constant.",
         tex: ["\\frac{\\partial u}{\\partial x}+\\frac{\\partial v}{\\partial y}=0,\\qquad u\\frac{\\partial u}{\\partial x}+v\\frac{\\partial u}{\\partial y}=\\nu\\frac{\\partial^{2}u}{\\partial y^{2}}",
-          "u(x,0)=v(x,0)=0,\\qquad u(x,\\infty)=U,\\qquad u(0,y)=U"], evidence: ["mit-bl"] },
+          "u(x,0)=v(x,0)=0,\\qquad u(x,\\infty)=U,\\qquad u(0,y)=U"], evidence: ["mit-16110"] },
       { id: "s-fam-similarity", item: 7, title: "Similarity variable",
         reason: "The plate has no length of its own, so the solution depends on one combined variable. Every term of the momentum equation then has the same power of x, and the equation becomes an ordinary differential equation.",
         tex: ["\\eta=y\\sqrt{\\frac{U}{\\nu x}},\\qquad \\psi=\\sqrt{\\nu U x}\\,f(\\eta),\\qquad u=Uf',\\qquad v=\\frac12\\sqrt{\\frac{\\nu U}{x}}\\left(\\eta f'-f\\right)",
-          "f'''+\\tfrac12ff''=0,\\qquad f(0)=f'(0)=0,\\qquad f'(\\infty)=1"], evidence: ["blasius"] },
+          "f'''+\\tfrac12ff''=0,\\qquad f(0)=f'(0)=0,\\qquad f'(\\infty)=1"], evidence: ["lienhard-flow"] },
       { id: "s-fam-shooting", item: 10, title: "Numerical procedure: shooting",
-        reason: "The page guesses f''(0), integrates with the classical Runge–Kutta method, and adjusts the guess by bisection until f' = 1 at the end of the domain. Then it repeats with smaller steps and longer domains.",
+        reason: "The page guesses f''(0) and integrates with the classical Runge–Kutta method. Bisection adjusts the guess until f' = 1 at the end of the domain. Then the page repeats with smaller steps and longer domains.",
         tex: [`f''(0)=${s.toFixed(10)}\\quad(h=0.025,\\ \\eta_{\\max}=12)`,
-          `\\delta_{99}=${fmt(at99, 5)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\delta^{*}=${fmt(dstar, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\theta=${fmt(theta, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad H=${fmt(H, 5)}`], evidence: ["blasius"] },
+          `\\delta_{99}=${fmt(at99, 5)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\delta^{*}=${fmt(dstar, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\theta=${fmt(theta, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad H=${fmt(H, 5)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-validity", item: 8, title: "Validity: the estimated remainder",
         reason: "The first correction to the boundary-layer solution comes from the displacement of the outer flow. Its relative size is about δ*/x. This is an estimate of the remainder, not a proved error bound.",
-        tex: [`Re_x=\\frac{Ux}{\\nu}=${texNum(Re)},\\qquad \\frac{\\delta^{*}}{x}=\\frac{${fmt(dstar, 5)}}{\\sqrt{Re_x}}=${texNum(remainder, 3)}`], evidence: ["mit-bl"] },
+        tex: [`Re_x=\\frac{Ux}{\\nu}=${texNum(Re)},\\qquad \\frac{\\delta^{*}}{x}=\\frac{${fmt(dstar, 5)}}{\\sqrt{Re_x}}=${texNum(remainder, 3)}`], evidence: ["mit-16110"] },
     ];
     const checks = [
-      { id: "scales", status: scalesOk ? "exact" : "unresolved", passed: scalesOk, title: "The exponents of the inner scales are exact: δ/L = Re^(−1/2) and V/U = Re^(−1/2). The neglected terms have the relative size Re^(−1).", tex: "\\frac{\\delta}{L}=Re^{-1/2},\\quad \\frac{V}{U}=Re^{-1/2},\\quad \\text{neglected}\\sim Re^{-1}", evidence: ["mit-bl"], steps: ["s-fam-scales"] },
-      { id: "similarity", status: simOk ? "exact" : "unresolved", passed: simOk, title: "With η = y√(U/(νx)), every term of the momentum equation has the power x^(−1). Thus the similarity form is exact.", tex: "u\\,u_x\\sim v\\,u_y\\sim \\nu\\,u_{yy}\\sim x^{-1}", evidence: ["blasius"], steps: ["s-fam-similarity"] },
+      { id: "scales", status: scalesOk ? "exact" : "unresolved", passed: scalesOk, title: "The exponents of the inner scales are exact: δ/L = Re^(−1/2) and V/U = Re^(−1/2). The neglected terms have the relative size Re^(−1).", tex: "\\frac{\\delta}{L}=Re^{-1/2},\\quad \\frac{V}{U}=Re^{-1/2},\\quad \\text{neglected}\\sim Re^{-1}", evidence: ["mit-16110"], steps: ["s-fam-scales"] },
+      { id: "similarity", status: simOk ? "exact" : "unresolved", passed: simOk, title: "With η = y√(U/(νx)), every term of the momentum equation has the power x^(−1). Thus the similarity form is exact.", tex: "u\\,u_x\\sim v\\,u_y\\sim \\nu\\,u_{yy}\\sim x^{-1}", evidence: ["lienhard-flow"], steps: ["s-fam-similarity"] },
     ];
     if (ref) checks.push({ id: "reference", status: "numerical", passed: Math.abs(s - ref.value) <= tol.reference, title: `f''(0) = ${s.toFixed(10)} agrees with the mpmath reference ${ref.value.toFixed(12)} within ${fmt(Math.abs(s - ref.value), 2)}.`, tolerance: `|difference| ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
     checks.push({ id: "step", status: "numerical", passed: Math.abs(ord - 4) <= tol.order && Math.abs(conv[1].s - conv[2].s) <= tol.reference,
       title: `Step convergence: halving the step from 0.1 to 0.025 changes f''(0) at order ${fmt(ord, 3)} (Runge–Kutta: 4). The last change is ${fmt(Math.abs(conv[1].s - conv[2].s), 2)}.`, tolerance: `|order − 4| ≤ ${tol.order}, last change ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
     checks.push({ id: "domain", status: "numerical", passed: Math.abs(dom[2].s - dom[1].s) <= tol.reference, title: `Domain convergence: η_max = 10, 12 and 14 give f''(0) values that differ by ${fmt(Math.abs(dom[0].s - dom[1].s), 2)} and ${fmt(Math.abs(dom[2].s - dom[1].s), 2)}.`, tolerance: `change from 12 to 14 ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
-    checks.push({ id: "momentum-integral", status: "numerical", passed: Math.abs(theta - 2 * s) <= tol.integral, title: `Momentum integral: with dp/dx = 0, dθ/dx = c_f/2 needs ∫f'(1 − f')dη = 2f''(0). The two sides are ${fmt(theta, 9)} and ${fmt(2 * s, 9)}.`, tolerance: `|difference| ≤ ${tol.integral}`, evidence: ["blasius"], steps: ["s-fam-shooting"] });
+    checks.push({ id: "momentum-integral", status: "numerical", passed: Math.abs(theta - 2 * s) <= tol.integral, title: `Momentum integral: with dp/dx = 0, dθ/dx = c_f/2 needs ∫f'(1 − f')dη = 2f''(0). The two sides are ${fmt(theta, 9)} and ${fmt(2 * s, 9)}.`, tolerance: `|difference| ≤ ${tol.integral}`, evidence: ["lienhard-flow"], steps: ["s-fam-shooting"] });
     checks.push(remainder <= tol.remainder
-      ? { id: "remainder", status: "numerical", passed: true, title: `The estimated remainder δ*/x = ${fmt(remainder, 3)} is below the declared tolerance ${tol.remainder} at Re_x = ${fmt(Re)}. This is an estimate, not a proved bound.`, tolerance: `δ*/x ≤ ${tol.remainder}`, evidence: ["mit-bl"], steps: ["s-fam-validity"] }
-      : { id: "remainder", status: "unresolved", passed: false, title: `The estimated remainder δ*/x = ${fmt(remainder, 3)} is above the declared tolerance ${tol.remainder} at Re_x = ${fmt(Re)}. The boundary-layer approximation does not meet the tolerance here.`, evidence: ["mit-bl"], steps: ["s-fam-validity"], next: "Move the station downstream or increase U so that Re_x is larger. Near the leading edge the full Navier–Stokes equations apply." });
-    checks.push({ id: "laminar", status: "evidence", passed: true, title: `The model assumes a laminar layer and does not predict transition. A turbulent layer needs a separate declaration.`, evidence: ["mit-bl"], steps: ["s-fam-validity"] });
+      ? { id: "remainder", status: "numerical", passed: true, title: `The estimated remainder δ*/x = ${fmt(remainder, 3)} is below the declared tolerance ${tol.remainder} at Re_x = ${fmt(Re)}. This is an estimate, not a proved bound.`, tolerance: `δ*/x ≤ ${tol.remainder}`, evidence: ["mit-16110"], steps: ["s-fam-validity"] }
+      : { id: "remainder", status: "unresolved", passed: false, title: `The estimated remainder δ*/x = ${fmt(remainder, 3)} is above the declared tolerance ${tol.remainder} at Re_x = ${fmt(Re)}. The boundary-layer approximation does not meet the tolerance here.`, evidence: ["mit-16110"], steps: ["s-fam-validity"], next: "Move the station downstream or increase U so that Re_x is larger. Near the leading edge the full Navier–Stokes equations apply." });
+    checks.push({ id: "laminar", status: "evidence", passed: true, title: `The model assumes a laminar layer and does not predict transition. A turbulent layer needs a separate declaration.`, evidence: ["mit-16110"], steps: ["s-fam-validity"] });
     const outputs = [
       { id: "Re", label: "Local Reynolds number", tex: "Re_x", value: Re, unit: "" },
       { id: "fpp", label: "Wall shear parameter", tex: "f''(0)", value: s, unit: "" },
@@ -951,42 +951,42 @@
     const steps = [
       { id: "s-fam-potential", item: 7, title: "Potential flow and its conditions",
         reason: "Away from the thin boundary layer the flow is inviscid and has no vorticity. A velocity potential then exists, and mass conservation makes it harmonic. Bernoulli's equation gives the pressure.",
-        tex: ["\\nabla^{2}\\phi=0,\\qquad \\frac{\\partial\\phi}{\\partial n}=0\\ \\text{on the surface},\\qquad \\nabla\\phi\\to U(\\cos\\alpha,\\sin\\alpha)\\ \\text{far away}", "C_p=\\frac{p-p_\\infty}{\\tfrac12\\rho U^{2}}=1-\\frac{|\\nabla\\phi|^{2}}{U^{2}}"], evidence: ["potential"] },
+        tex: ["\\nabla^{2}\\phi=0,\\qquad \\frac{\\partial\\phi}{\\partial n}=0\\ \\text{on the surface},\\qquad \\nabla\\phi\\to U(\\cos\\alpha,\\sin\\alpha)\\ \\text{far away}", "C_p=\\frac{p-p_\\infty}{\\tfrac12\\rho U^{2}}=1-\\frac{|\\nabla\\phi|^{2}}{U^{2}}"], evidence: ["mit-1601-f18"] },
       { id: "s-fam-cylinder", item: 8, title: "Circular cylinder with circulation",
         reason: "The circle flow is the base solution. Its surface speed gives C_p. The integrals of C_p around the circle give zero drag and the lift ρUΓ for every circulation.",
         tex: ["\\frac{|V|}{U}=\\left|2\\sin\\psi+G\\right|,\\qquad G=\\frac{\\Gamma}{2\\pi aU},\\qquad C_p=1-\\left(2\\sin\\psi+G\\right)^{2}",
-          `\\frac{1}{\\pi}\\oint C_p\\cos\\psi\\,\\mathrm d\\psi=0,\\qquad \\frac{1}{\\pi}\\oint C_p\\sin\\psi\\,\\mathrm d\\psi=${Q.tex(liftG[1])}G\\;\\Rightarrow\\;L'=\\rho U\\Gamma`], evidence: ["potential"] },
+          `\\frac{1}{\\pi}\\oint C_p\\cos\\psi\\,\\mathrm d\\psi=0,\\qquad \\frac{1}{\\pi}\\oint C_p\\sin\\psi\\,\\mathrm d\\psi=${Q.tex(liftG[1])}G\\;\\Rightarrow\\;L'=\\rho U\\Gamma`], evidence: ["mit-1601-f18"] },
       { id: "s-fam-joukowski", item: 8, title: "Joukowski airfoil and the Kutta condition",
         reason: "The Joukowski map turns a circle through ζ = b into an airfoil with a sharp trailing edge. The Kutta condition puts a stagnation point at that edge, and this fixes the circulation.",
         tex: ["z=\\zeta+\\frac{b^{2}}{\\zeta},\\qquad \\zeta_0=b\\left(-\\varepsilon+\\mathrm i\\,2m(1+\\varepsilon)\\right),\\qquad \\Gamma=4\\pi Ua\\sin(\\alpha+\\beta)",
-          `\\beta=${texNum(deg(J.beta), 4)}^{\\circ},\\qquad \\frac{t}{c}=${texNum(tc, 4)},\\qquad C_l=\\frac{2\\Gamma}{Uc}=${texNum(clJ)}`], evidence: ["joukowski"] },
+          `\\beta=${texNum(deg(J.beta), 4)}^{\\circ},\\qquad \\frac{t}{c}=${texNum(tc, 4)},\\qquad C_l=\\frac{2\\Gamma}{Uc}=${texNum(clJ)}`], evidence: ["mit-18354"] },
       { id: "s-fam-thin", item: 8, title: "Thin-airfoil theory",
         reason: "For a thin airfoil at a small angle, a vortex sheet on the chord line represents the airfoil. The Fourier coefficients of the camber-line slope give the lift and the moment.",
         tex: ["\\frac{\\mathrm dz_c}{\\mathrm dx}=4m(1-2x)=4m\\cos\\theta,\\qquad x=\\tfrac12(1-\\cos\\theta)",
           "A_0=\\alpha-\\frac1\\pi\\int_0^\\pi\\frac{\\mathrm dz_c}{\\mathrm dx}\\mathrm d\\theta=\\alpha,\\qquad A_1=\\frac2\\pi\\int_0^\\pi\\frac{\\mathrm dz_c}{\\mathrm dx}\\cos\\theta\\,\\mathrm d\\theta=4m,\\qquad A_2=0",
-          `C_l=\\pi(2A_0+A_1)=2\\pi(\\alpha+2m)=${texNum(clThin)},\\qquad \\alpha_{L0}=-2m,\\qquad C_{m,c/4}=\\frac\\pi4(A_2-A_1)=-\\pi m`], evidence: ["thin-airfoil"] },
+          `C_l=\\pi(2A_0+A_1)=2\\pi(\\alpha+2m)=${texNum(clThin)},\\qquad \\alpha_{L0}=-2m,\\qquad C_{m,c/4}=\\frac\\pi4(A_2-A_1)=-\\pi m`], evidence: ["mit-1601-f04"] },
       { id: "s-fam-panels", item: 10, title: "Numerical procedure: pressure integration and vortex panels",
         reason: "The page integrates the surface pressure of the Joukowski airfoil with the midpoint rule. It also solves the lumped-vortex method on the camber line, with a vortex at 1/4 and a collocation point at 3/4 of each panel.",
         tex: [`N=${Ns.join(",\\,")}:\\qquad \\frac{|L'_p-\\rho U\\Gamma|}{\\rho U\\Gamma}=${relP.map((r) => texNum(r.err, 2)).join(",\\,")}`,
-          `\\text{panels }${pan.map((p) => p.n).join(",\\,")}:\\qquad \\left|C_{m,N}-C_{m,c/4}\\right|=${panErr.map((p) => texNum(p.cm, 2)).join(",\\,")}`], evidence: ["vortex-panel"] },
+          `\\text{panels }${pan.map((p) => p.n).join(",\\,")}:\\qquad \\left|C_{m,N}-C_{m,c/4}\\right|=${panErr.map((p) => texNum(p.cm, 2)).join(",\\,")}`], evidence: ["mit-1601-f04"] },
       { id: "s-fam-limits", item: 8, title: "Approximation boundary and viscous limits",
         reason: "The exact circular-arc solution and thin-airfoil theory overlap at small angles and small camber. Their difference measures the error of the linearization. Viscous effects set further limits that potential flow cannot show.",
-        tex: [`\\frac{|C_{l,\\mathrm{thin}}-C_{l,\\mathrm{arc}}|}{C_{l,\\mathrm{arc}}}=${texNum(thinErr, 3)},\\qquad \\text{tolerance } ${tol.approximation}${aBound ? `\\ \\text{reached at } \\alpha=${texNum(deg(aBound.x), 4)}^{\\circ}` : ""}`], evidence: ["viscous-limits"] },
+        tex: [`\\frac{|C_{l,\\mathrm{thin}}-C_{l,\\mathrm{arc}}|}{C_{l,\\mathrm{arc}}}=${texNum(thinErr, 3)},\\qquad \\text{tolerance } ${tol.approximation}${aBound ? `\\ \\text{reached at } \\alpha=${texNum(deg(aBound.x), 4)}^{\\circ}` : ""}`], evidence: ["nasa-foilinc"] },
     ];
     const checks = [
-      { id: "dalembert", status: dragOk ? "exact" : "unresolved", passed: dragOk, title: "The pressure on the cylinder gives zero drag exactly, for every circulation (d'Alembert's paradox).", tex: "\\oint C_p\\cos\\psi\\,\\mathrm d\\psi=0", evidence: ["potential"], steps: ["s-fam-cylinder"] },
-      { id: "kutta-joukowski", status: kjOk ? "exact" : "unresolved", passed: kjOk, title: "The pressure on the cylinder gives the lift L' = ρUΓ exactly, for every circulation (Kutta–Joukowski theorem).", tex: "-\\tfrac12\\rho U^{2}a\\oint C_p\\sin\\psi\\,\\mathrm d\\psi=2\\pi\\rho U^{2}aG=\\rho U\\Gamma", evidence: ["potential"], steps: ["s-fam-cylinder"] },
-      { id: "thin", status: thinOk ? "exact" : "unresolved", passed: thinOk, title: `The Fourier coefficients of the parabolic camber line are exact: A₀ = α, A₁ = 4m and A₂ = 0. Thus C_l = 2πα + ${Q.str(clCoefM)}πm and C_m,c/4 = ${Q.eq(cmCoefM, q(-1)) ? "−" : Q.str(cmCoefM)}πm.`, tex: "C_l=2\\pi\\alpha+4\\pi m,\\qquad C_{m,c/4}=-\\pi m", evidence: ["thin-airfoil"], steps: ["s-fam-thin"] },
-      { id: "kutta", status: "numerical", passed: J.kuttaResidual <= tol.root, title: `The Kutta condition holds: the velocity on the circle at the trailing-edge point is ${fmt(J.kuttaResidual, 2)} of U.`, tolerance: `≤ ${tol.root}`, evidence: ["joukowski"], steps: ["s-fam-joukowski"] },
-      { id: "pressure", status: "numerical", passed: relP[relP.length - 1].err <= tol.pressure && falling, title: `The surface pressure of the Joukowski airfoil integrates to the Kutta–Joukowski lift. The relative difference falls from ${fmt(relP[0].err, 2)} at N = ${Ns[0]} to ${fmt(relP[relP.length - 1].err, 2)} at N = ${Ns[Ns.length - 1]}: the midpoint rule on a smooth periodic integrand converges faster than any power of N.`, tolerance: `relative difference ≤ ${tol.pressure} at N = ${Ns[Ns.length - 1]}`, evidence: [], steps: ["s-fam-panels"] },
-      { id: "flat-plate", status: "numerical", passed: Math.max(...flat) <= 1e-10, title: `The lumped-vortex method gives the flat-plate lift 2πα for 8 and for 32 panels, with differences ${flat.map((e) => fmt(e, 2)).join(" and ")}.`, tolerance: "≤ 1e-10", evidence: ["vortex-panel"], steps: ["s-fam-panels"] },
-      { id: "panels-lift", status: "numerical", passed: Math.max(...panErr.map((p) => p.cl)) <= 1e-10, title: `With the parabolic camber line, the lumped-vortex lift agrees with thin-airfoil theory for 16 to 128 panels: the largest relative difference is ${fmt(Math.max(...panErr.map((p) => p.cl)), 2)}.`, tolerance: "relative difference ≤ 1e-10", evidence: ["vortex-panel"], steps: ["s-fam-panels"] },
-      { id: "panels-moment", status: "numerical", passed: panErr[3].cm <= tol.panel && Math.abs(ordPan - 2) <= tol.order, title: `The lumped-vortex moment about the quarter chord converges to −πm at order ${fmt(ordPan, 3)} (expected 2). At 128 panels the difference is ${fmt(panErr[3].cm, 2)}.`, tolerance: `difference ≤ ${tol.panel} at 128 panels, |order − 2| ≤ ${tol.order}`, evidence: ["vortex-panel"], steps: ["s-fam-panels"] },
+      { id: "dalembert", status: dragOk ? "exact" : "unresolved", passed: dragOk, title: "The pressure on the cylinder gives zero drag exactly, for every circulation (d'Alembert's paradox).", tex: "\\oint C_p\\cos\\psi\\,\\mathrm d\\psi=0", evidence: ["mit-1601-f18"], steps: ["s-fam-cylinder"] },
+      { id: "kutta-joukowski", status: kjOk ? "exact" : "unresolved", passed: kjOk, title: "The pressure on the cylinder gives the lift L' = ρUΓ exactly, for every circulation (Kutta–Joukowski theorem).", tex: "-\\tfrac12\\rho U^{2}a\\oint C_p\\sin\\psi\\,\\mathrm d\\psi=2\\pi\\rho U^{2}aG=\\rho U\\Gamma", evidence: ["mit-1601-f18"], steps: ["s-fam-cylinder"] },
+      { id: "thin", status: thinOk ? "exact" : "unresolved", passed: thinOk, title: `The Fourier coefficients of the parabolic camber line are exact: A₀ = α, A₁ = 4m and A₂ = 0. Thus C_l = 2πα + ${Q.str(clCoefM)}πm and C_m,c/4 = ${Q.eq(cmCoefM, q(-1)) ? "−" : Q.str(cmCoefM)}πm.`, tex: "C_l=2\\pi\\alpha+4\\pi m,\\qquad C_{m,c/4}=-\\pi m", evidence: ["mit-1601-f04"], steps: ["s-fam-thin"] },
+      { id: "kutta", status: "numerical", passed: J.kuttaResidual <= tol.root, title: `The Kutta condition holds: the velocity on the circle at the trailing-edge point is ${fmt(J.kuttaResidual, 2)} of U.`, tolerance: `≤ ${tol.root}`, evidence: ["mit-18354"], steps: ["s-fam-joukowski"] },
+      { id: "pressure", status: "numerical", passed: relP[relP.length - 1].err <= tol.pressure && falling, title: `The surface pressure of the Joukowski airfoil integrates to the Kutta–Joukowski lift. The relative difference falls from ${fmt(relP[0].err, 2)} at N = ${Ns[0]} to ${fmt(relP[relP.length - 1].err, 2)} at N = ${Ns[Ns.length - 1]}. On a smooth periodic integrand the midpoint rule converges faster than any power of N.`, tolerance: `relative difference ≤ ${tol.pressure} at N = ${Ns[Ns.length - 1]}`, evidence: [], steps: ["s-fam-panels"] },
+      { id: "flat-plate", status: "numerical", passed: Math.max(...flat) <= 1e-10, title: `The lumped-vortex method gives the flat-plate lift 2πα for 8 and for 32 panels, with differences ${flat.map((e) => fmt(e, 2)).join(" and ")}.`, tolerance: "≤ 1e-10", evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
+      { id: "panels-lift", status: "numerical", passed: Math.max(...panErr.map((p) => p.cl)) <= 1e-10, title: `With the parabolic camber line, the lumped-vortex lift agrees with thin-airfoil theory for 16 to 128 panels. The largest relative difference is ${fmt(Math.max(...panErr.map((p) => p.cl)), 2)}.`, tolerance: "relative difference ≤ 1e-10", evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
+      { id: "panels-moment", status: "numerical", passed: panErr[3].cm <= tol.panel && Math.abs(ordPan - 2) <= tol.order, title: `The lumped-vortex moment about the quarter chord converges to −πm at order ${fmt(ordPan, 3)} (expected 2). At 128 panels the difference is ${fmt(panErr[3].cm, 2)}.`, tolerance: `difference ≤ ${tol.panel} at 128 panels, |order − 2| ≤ ${tol.order}`, evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
       { id: "overlap", status: "numerical", passed: Math.abs(ordPath - 2) <= tol.order, title: `Overlapping approximations: along (α, m) = s(α₀, m₀), the difference between thin-airfoil theory and the exact circular arc falls at order ${fmt(ordPath, 3)} in s (expected 2).`, tolerance: `|order − 2| ≤ ${tol.order}`, evidence: [], steps: ["s-fam-limits"] },
       thinErr <= tol.approximation
-        ? { id: "approximation", status: "numerical", passed: true, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is inside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The tolerance is reached at α = ${fmt(deg(aBound.x), 4)}° for this camber.` : ""}`, tolerance: `relative difference ≤ ${tol.approximation}`, evidence: [], steps: ["s-fam-limits"] }
+        ? { id: "approximation", status: "numerical", passed: true, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is inside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The error reaches the tolerance at α = ${fmt(deg(aBound.x), 4)}° for this camber.` : ""}`, tolerance: `relative difference ≤ ${tol.approximation}`, evidence: [], steps: ["s-fam-limits"] }
         : { id: "approximation", status: "unresolved", passed: false, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is outside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The approximation boundary for this camber is at α = ${fmt(deg(aBound.x), 4)}°.` : ""}`, evidence: [], steps: ["s-fam-limits"], next: "Use a smaller angle of attack, or use the exact Joukowski result. Large angles also bring flow separation, which this model cannot show." },
-      { id: "viscous", status: "evidence", passed: true, title: "Viscous limits: potential flow gives no drag and does not predict separation or stall. The Kutta condition stands for the effect of viscosity at the sharp trailing edge. The results apply to attached flow at high Reynolds number.", evidence: ["viscous-limits"], steps: ["s-fam-limits"] },
+      { id: "viscous", status: "evidence", passed: true, title: "Viscous limits: potential flow gives no drag and does not predict separation or stall. The Kutta condition stands for the effect of viscosity at the sharp trailing edge. The results apply to attached flow at high Reynolds number.", evidence: ["nasa-foilinc", "sydney-cylinder"], steps: ["s-fam-limits"] },
     ];
     const outputs = [
       { id: "Lp", label: "Lift per unit span", tex: "L'", value: 0.5 * v.rho * v.U * v.U * v.c * clJ, unit: "N/m", role: "Lp" },
@@ -1003,7 +1003,7 @@
     const xs = surf.map((p) => p.z[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
     const curve = (fn) => Array.from({ length: 41 }, (_, i) => { const a = (-4 + i * 0.4) * Math.PI / 180; return [deg(a), fn(a)]; });
     const figures = [
-      { id: "shape", title: "The Joukowski airfoil", caption: `Thickness ratio ${fmt(tc, 3)}, camber ratio ${fmt(m, 3)}, chord along x.`, kind: "shape", aspect: 0.3,
+      { id: "shape", title: "The Joukowski airfoil", caption: `Thickness ratio ${fmt(tc, 3)}, camber ratio ${fmt(m, 3)}, chord along x. The figure enlarges the vertical scale.`, kind: "shape", aspect: 0.3,
         series: [{ label: "surface", points: surf.map((p) => [(p.z[0] - x0) / (x1 - x0), p.z[1] / (x1 - x0)]), closed: true }] },
       { id: "cp", title: "Surface pressure coefficient", caption: "−C_p against x/c. The upper surface has the larger suction. At the trailing edge both surfaces meet: the Kutta condition.",
         x: { label: "x/c", min: 0, max: 1 }, y: { label: "−C_p" },
@@ -1054,27 +1054,31 @@
   /** An acceptance check from a solver check: exact and numerical ones only; claims and limits go to the panel. */
   const acceptOf = (c) => ({ id: c.id, title: c.title.replace(/\.$/, ""), passed: Boolean(c.passed), status: c.status === "unresolved" ? "exact" : c.status, tolerance: c.tolerance ?? null, detail: c.tolerance ? `Tolerance: ${c.tolerance}.` : "Exact arithmetic." });
   const isCheck = (c) => (c.status === "exact" || c.status === "numerical") && c.limitation !== true;
+  const GREEK = { alpha: "α", beta: "β", Gamma: "Γ", Delta: "Δ", delta: "δ", rho: "ρ", tau: "τ", theta: "θ" };
+  /** Readable text of the short TeX of an output symbol: Greek letters, ṁ, √(…), subscripts as _x. */
+  const plainTex = (t) => String(t).replace(/\\,/g, " ").replace(/\\dot m/g, "ṁ").replace(/\\sqrt\{([^}]*)\}/g, "√($1)").replace(/\\mathrm\{([^}]*)\}|\\max/g, (m, a) => a ?? "max")
+    .replace(/\\([A-Za-z]+)/g, (m, a) => GREEK[a] ?? "").replace(/\^\{\*\}/g, "*").replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
   /** The generic panel (src/stabview.js) of a family solver's output. */
   function panel(decl, out, opts) {
     const figures = (out.figures ?? []).filter((f) => f.series && f.kind !== "bands" && f.kind !== "table").map((f) => {
       const all = f.series.flatMap((s) => s.points);
       const xs = all.map((p) => p[0]).filter(Number.isFinite), ys = all.map((p) => p[1]).filter(Number.isFinite);
-      const pad = (lo, hi) => { const d = (hi - lo) || 1; return [lo - 0.04 * d, hi + 0.04 * d]; };
-      const [x0, x1] = f.x?.min !== undefined && f.x?.max !== undefined ? [f.x.min, f.x.max] : pad(Math.min(...xs), Math.max(...xs));
-      const [y0, y1] = f.y?.min !== undefined && f.y?.max !== undefined ? [f.y.min, f.y.max] : pad(f.y?.min ?? Math.min(...ys), Math.max(...ys));
+      const pad = (lo, hi, log) => { if (log) return [lo / 2, hi * 2]; const d = (hi - lo) || 1; return [lo - 0.04 * d, hi + 0.04 * d]; };
+      const [x0, x1] = f.x?.min !== undefined && f.x?.max !== undefined ? [f.x.min, f.x.max] : pad(Math.min(...xs), Math.max(...xs), f.x?.log);
+      const [y0, y1] = f.y?.min !== undefined && f.y?.max !== undefined ? [f.y.min, f.y.max] : pad(f.y?.log ? Math.min(...ys) : f.y?.min ?? Math.min(...ys), Math.max(...ys), f.y?.log);
       return { id: `st-fl-${decl.id}-${f.id}`, title: f.title, caption: f.caption,
         x: { min: x0, max: x1, label: f.x?.label ?? "x", log: Boolean(f.x?.log) }, y: { min: y0, max: y1, label: f.y?.label ?? "y", log: Boolean(f.y?.log) },
         series: f.series.map((s) => ({ label: s.label, pts: s.points.map(([a, b]) => [num(a), num(b)]), dash: s.dash ? "6 4" : null })),
         points: (f.marks ?? []).filter((m) => Number.isFinite(m.x) && Number.isFinite(m.y)).map((m) => ({ x: num(m.x), y: num(m.y), shape: "circle", r: 4, label: m.label })) };
     });
     const tables = [];
-    if (out.outputs?.length) tables.push({ title: "Results at the record's values", columns: ["Quantity", "Symbol", "Value", "Unit"], rows: out.outputs.map((o) => [o.label, o.tex.replace(/\\[a-z]+\{?|[{}]/g, "").replace(/_/g, ""), o.exact ? `${o.exact} = ${fmt(o.value)}` : fmt(o.value), o.unit || "–"]) });
+    if (out.outputs?.length) tables.push({ title: "Results at the record's values", columns: ["Quantity", "Symbol", "Value", "Unit"], rows: out.outputs.map((o) => [o.label, plainTex(o.tex), o.exact ? `${o.exact} = ${fmt(o.value)}` : fmt(o.value), o.unit || "–"]) });
     if (out.table?.length) tables.push({ title: opts.tableTitle, columns: Object.keys(out.table[0]), rows: out.table.map((r) => Object.values(r).map(String)) });
     if (out.domain?.length) tables.push({ title: "Domain convergence", columns: Object.keys(out.domain[0]), rows: out.domain.map((r) => Object.values(r).map(String)) });
     const results = out.checks.filter((c) => !isCheck(c)).map((c) => ({ id: `r-st-fl-${c.id}`, kind: opts.kind, title: c.title, status: c.status, tolerance: c.tolerance ?? null, next: c.next ?? "",
       steps: [opts.step], evidence: c.evidence?.length ? c.evidence : ["spec-10"] }));
     return { family: decl.family, model: decl.id, generic: true, heading: opts.heading, point: opts.point ?? {}, concept: opts.concept,
-      results, figures, tables, method: out.steps.map((s) => `${s.title}: ${s.reason}`), displays: out.steps.map((s) => ({ title: `Hand calculation ${s.item}: ${s.title}`, tex: s.tex })) };
+      results, figures, tables, method: out.steps.map((s) => `${s.title}. ${s.reason}`), displays: out.steps.map((s) => ({ title: `Hand calculation ${s.item}: ${s.title}`, tex: s.tex })) };
   }
 
   /* ---------- internal viscous flow ---------- */
@@ -1173,7 +1177,7 @@
       return solve("free-surface-flow", { v, x, conditions });
     };
     const layers = [{ id: "critical", kind: "bifurcation", boundary: "bifurcation", title: "Critical inflow", measure: "F", scale: "log", status: "exact", hue: "critical",
-      criterion: "Fr₁² = 1: the subcritical and the supercritical depth of one specific energy meet at the critical depth (the fold of E(h)); a jump needs Fr₁² > 1", steps: ["s-st-fold"], evidence: ["jump"],
+      criterion: "Fr₁² = 1: the subcritical and the supercritical depth of one specific energy meet at the critical depth (the fold of E(h)); a jump needs Fr₁² > 1", steps: ["s-st-fold"], evidence: ["apsley-rvf"],
       thresholds: () => ({ curves: [{ value: 1, label: "Fr₁ = 1: critical flow" }], regions: [{ id: "sub", label: "Subcritical inflow: no jump", lo: 0, hi: 1 }, { id: "super", label: "Supercritical inflow: a jump to the conjugate depth", lo: 1, hi: null }] }) }];
     return { id: decl.id, params, axes: { x: "F", y: null }, approximations: [], layers,
       evaluate: (p) => (p.F > 0 ? { ok: true, values: { F: p.F, r: ratio(p.F) } } : { ok: false, reason: "Fr₁² must be positive." }),
@@ -1206,7 +1210,7 @@
       return solve("boundary-layer", { v: { U: v.U, rho, mu: v.nu * rho, x: v.L }, refs: ctx?.flows ?? refs ?? null });
     };
     const layers = [{ id: "bl", kind: "approximation", boundary: "approximation", title: "Boundary-layer approximation", measure: "rem", scale: "log", status: "numerical", hue: "bl",
-      criterion: "The estimated remainder δ*/x = 1.7208/√Re, the relative size of the displacement correction, at most the tolerance (an estimate, not a proved bound)", steps: ["s-rm-asymptotic"], evidence: ["mit-bl"],
+      criterion: "The estimated remainder δ*/x = 1.7208/√Re, the relative size of the displacement correction, at most the tolerance (an estimate, not a proved bound)", steps: ["s-rm-asymptotic"], evidence: ["mit-16110"],
       thresholds: (tol) => ({ curves: [{ value: tol, label: `δ*/x = ${tol}` }], regions: [{ id: "meets", label: "The boundary-layer approximation meets the tolerance", lo: 0, hi: tol }] }) }];
     const approximations = [{ id: "bl", label: "Boundary-layer equations", tex: "Re\\to\\infty", limit: "Re → ∞ with x fixed", why: "The inner scale δ = L Re^(−1/2) makes the neglected terms of relative size Re^(−1); the displacement correction is of size Re^(−1/2).", error: "δ*/x = 1.7208/√Re (estimated remainder)" }];
     return { id: decl.id, params, axes: { x: "Re", y: null }, approximations, layers,
@@ -1247,7 +1251,7 @@
       return solve("external-potential-flow", { v: { U: v.U, rho: Number.isFinite(v.rho) ? v.rho : 1.225, c: v.c, alpha: v.alpha, m: v.m, eps: Number.isFinite(v.eps) ? v.eps : 0 } });
     };
     const layers = [{ id: "thin", kind: "approximation", boundary: "approximation", title: "Thin-airfoil theory", measure: "err", scale: "log", status: "numerical", hue: "thin",
-      criterion: "|c_l,thin − c_l,arc| / |c_l,arc|: thin-airfoil theory against the exact circular-arc solution of the same camber, at most the tolerance", steps: ["s-rm-asymptotic"], evidence: ["thin-airfoil"],
+      criterion: "|c_l,thin − c_l,arc| / |c_l,arc|: thin-airfoil theory against the exact circular-arc solution of the same camber, at most the tolerance", steps: ["s-rm-asymptotic"], evidence: ["mit-1601-f04"],
       thresholds: (tol) => ({ curves: [{ value: tol, label: `Thin-airfoil error = ${tol}` }], regions: [{ id: "meets", label: "Thin-airfoil theory meets the tolerance", lo: 0, hi: tol }] }) }];
     const approximations = [{ id: "thin", label: "Thin-airfoil theory", tex: "c_l=2\\pi(\\alpha+2m)", limit: "α, m, ε → 0", why: "A vortex sheet on the chord line replaces the airfoil; the error is of second order in α and m.", error: "relative difference from the exact circular arc" }];
     return { id: decl.id, params, axes: { x: "alpha", y: "m" }, approximations, layers,
