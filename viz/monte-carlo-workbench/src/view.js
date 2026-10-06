@@ -973,7 +973,7 @@ ${parts}`;
     { name: "get_law", description: "Return the catalogue entry of one law by id: its parameter convention, support, special and limit cases, moments, transforms and links.", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false }, annotations: ro,
       execute: async (/** @type {any} */ input) => out(data.laws.find((/** @type {any} */ l) => l.id === input?.id) ?? { error: `No law has the id "${String(input?.id).slice(0, 40)}".` }) },
     { name: "get_multilevel", description: "Return the last multilevel Monte Carlo run: its status, target error, seed, method and quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, and the reference.", inputSchema: none, annotations: ro,
-      execute: async () => out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }) },
+      execute: async () => { Dv.sync(app.state, app.derived); return out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }); } },
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },

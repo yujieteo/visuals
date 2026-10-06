@@ -135,8 +135,32 @@ ${dep.given.length ? `<p>${dep.given.map((/** @type {string} */ n) => `<span cla
   /** The multilevel run of the page. @type {any} */
   let ml = null;
 
+  /** The state that a multilevel run belongs to. @param {any} s @param {any} d */
+  const runKey = (s, d) => JSON.stringify([s.model, d.text, s.params, s.method, s.seed, d.alt, d.quantity, s.mlmc_eps]);
+
+  /** Cancel and drop the multilevel run when the state is no longer the state of the run. @param {any} s @param {any} d */
+  function sync(s, d) {
+    if (!ml || ml.key === runKey(s, d)) return;
+    stopMultilevel();
+    ml = null;
+  }
+
   /** The last multilevel result, for the tool and the report. */
-  const result = () => (ml ? { status: ml.status, message: ml.message, eps: ml.st.eps, seed: ml.seed, method: ml.method, quantity: ml.quantity, summary: Ml.summary(ml.st), reference: ml.reference } : null);
+  const result = () => (ml ? { status: ml.status, message: ml.message, eps: ml.st.eps, seed: ml.seed, method: ml.method, quantity: ml.quantity, summary: Ml.summary(ml.st), reference: ml.reference, gridFree: ml.gridFree } : null);
+
+  /**
+   * The reference of quantity k on the level-0 grid, and whether it is the same with twice the steps.
+   * @param {any} record @param {any} settings @param {number} n0 @param {number} alt @param {number} k
+   */
+  function gridReference(record, settings, n0, alt, k) {
+    const at = (/** @type {number} */ n) => {
+      const c = En.prepare(Ml.levelRecord(record, 0, n, alt), settings);
+      return c.ok ? En.reference(c, En.momentStatus(c))[0]?.values[k] ?? null : null;
+    };
+    const r0 = at(n0), r1 = Number.isFinite(r0) ? at(2 * n0) : null;
+    if (!Number.isFinite(r0)) return { reference: null, gridFree: false };
+    return { reference: r0, gridFree: Number.isFinite(r1) && Math.abs(r1 - r0) <= 1e-12 * Math.max(Math.abs(r0), Math.abs(r1)) };
+  }
 
   /**
    * Start a multilevel run of the current model for the quantity in the plots: levels 0, 1 and 2 with 2 blocks
@@ -152,7 +176,8 @@ ${dep.given.length ? `<p>${dep.given.map((/** @type {string} */ n) => `<span cla
     delete overrides.coarsen;
     const n0 = Number.isInteger(steps) && steps >= 1 ? steps : 4;
     const st = Ml.start({ eps: s.mlmc_eps, maxLevel: Math.min(8, Math.floor(Math.log2(Pr.MAX_STEPS / n0))), initial: 2, n0 });
-    const run = { st, status: "running", message: "", seed: s.seed, method: s.method, quantity: d.quantities[k].name, reference: d.references[d.alt - 1]?.values[k] ?? null, accum: /** @type {any[]} */ ([]), handle: /** @type {any} */ (null), redraw: ctx.redraw };
+    const { reference, gridFree } = gridReference(ctx.record, { seed: s.seed, method: s.method, compare: "none", failure: "none", overrides, streams: "common" }, n0, d.alt - 1, k);
+    const run = { key: runKey(s, d), st, status: "running", message: "", seed: s.seed, method: s.method, quantity: d.quantities[k].name, reference, gridFree, n0, accum: /** @type {any[]} */ ([]), handle: /** @type {any} */ (null), redraw: ctx.redraw };
     ml = run;
     const next = () => {
       if (ml !== run) return;
@@ -193,6 +218,7 @@ ${dep.given.length ? `<p>${dep.given.map((/** @type {string} */ n) => `<span cla
    * @param {any} s @param {any} d @param {(id: string) => any} $ @param {Record<string, string>} methods
    */
   function drawMultilevel(s, d, $, methods) {
+    sync(s, d);
     const box = $("wb-mlmc");
     box.hidden = !d.ok || !d.dependence?.mlmc;
     if (box.hidden) return;
@@ -209,8 +235,8 @@ ${dep.given.length ? `<p>${dep.given.map((/** @type {string} */ n) => `<span cla
 <dt>Discretisation bias</dt><dd>${sum.bias === null ? "no estimate yet" : `about ${fmt(sum.bias)}: max(|Y_(L−1)|/2^α, |Y_L|)/(2^α − 1) with α = ${fmt(sum.alpha)} from the levels. It is an estimate from the finest levels, not a bound, and the interval above does not include it.`} ${tag("numerical")}</dd>
 <dt>Rates</dt><dd>α = ${fmt(sum.alpha)} (decay of |E Y_l|), β = ${fmt(sum.beta)} (decay of V_l). Giles's theorem gives a cost of order ε^−2 when β > 1, and ε^−2 (log ε)^2 when β = 1.</dd>
 <dt>Cost</dt><dd>${count(Math.round(sum.work))} path steps. Plain Monte Carlo on level ${sum.L} with the same Monte Carlo variance: about ${sum.plainWork === null ? "–" : count(Math.round(sum.plainWork))} steps${sum.ratio ? `, ${fmt(sum.ratio)} times as many` : ""}. ${tag("observation")}</dd>
-<dt>Reference</dt><dd>${ref === null ? "none for this quantity" : `${fmt(ref)} in the continuous-time limit; the estimate differs by ${fmt(sum.est - ref)}, which is the sum of the remaining bias and the Monte Carlo error`}</dd></dl>`;
+<dt>Reference</dt><dd>${ref === null ? "none for this quantity" : r.gridFree ? `${fmt(ref)}, the value of the exact process, independent of the grid; the estimate differs by ${fmt(sum.est - ref)}, which is the sum of the remaining bias and the Monte Carlo error` : `${fmt(ref)}, the reference of the grid with steps = ${count(ml.n0)}. It is different from the finest grid of the run, so the difference from the estimate is not the bias and the Monte Carlo error`}</dd></dl>`;
   }
 
-  g.MCDepView = { owns, card, assumptions, drawPaths, drawScatter, drawMultilevel, startMultilevel, stopMultilevel, result, kendall };
+  g.MCDepView = { owns, card, assumptions, drawPaths, drawScatter, drawMultilevel, startMultilevel, stopMultilevel, sync, result, kendall };
 })();
