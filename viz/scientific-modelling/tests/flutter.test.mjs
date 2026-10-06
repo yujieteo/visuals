@@ -85,7 +85,7 @@ test("the Georgia Tech section: flutter at V_F = 1.8738 (Theodorsen) and 1.8614 
   assert.equal(A.state.onset.kind, "flutter");
   assert.equal(A.params.exact.VD2, "16/3");
   assert.equal(A.first.theodorsen.kind, "flutter");
-  assert.ok(A.state.onset.slope > 0, "a transversal crossing: a candidate Hopf point");
+  assert.ok(A.state.onset.slope > 0, "a transversal crossing: the eigenvalue conditions of a Hopf bifurcation");
   assert.equal(A.response.kind, "decays", "below the onset the response decays");
   assert.equal(FSI.analyse(GT, { speed: 2 }).response.kind, "grows", "above the onset the linear response grows");
   // A section with the elastic axis ahead of the quarter chord has no divergence speed.

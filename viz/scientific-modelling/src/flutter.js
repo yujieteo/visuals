@@ -842,9 +842,9 @@
     if (bes.max !== null) add({ id: "bessel", title: `Theodorsen's function from the Bessel functions agrees with mpmath at ${bes.rows.length} reduced frequencies. The largest difference is ${fe(bes.max)}`, status: "numerical", tolerance: ft(T.besselRef), passed: bes.max <= T.besselRef, evidence: ["gt-maple"] });
     const k1 = A.theodorsen.k, pk = A.theodorsen.pk, ss = A.state.onset, kj = A.jonesFrequency.k;
     if (k1) add({ id: "k", title: `Method 1, Theodorsen (k method): flutter at V_F = ${fx(k1.V)}, with Ω_F = ${fx(k1.Omega)} and k_F = ${fx(k1.k)}. The relative residual of the determinant is ${fe(k1.residual)}`, status: "numerical", tolerance: ft(T.residual), passed: k1.residual <= T.residual, evidence: ["gt-flutter", "gt-maple"] });
-    else add({ id: "k", title: "Method 1, Theodorsen (k method): no branch has zero damping for k from 4 to 0.02", status: "unresolved", passed: false, next: "Change the parameters. A larger range of k needs a later version of the declaration." });
+    else add({ id: "k", title: "Method 1, Theodorsen (k method): no branch has g = 0 for k from 4 to 0.02", status: "unresolved", passed: false, next: "Change the parameters. A larger range of k needs a later version of the declaration." });
     if (k1 && pk) { const d = Math.abs(pk.V - k1.V) / k1.V; add({ id: "pk", title: `The p–k method gives the same onset, V_F = ${fx(pk.V)}. The relative difference from the k method is ${fe(d)}`, status: "numerical", tolerance: ft(T.samePoint), passed: d <= T.samePoint, evidence: ["gt-flutter"] }); }
-    if (ss) add({ id: "ss", title: `Method 2, R. T. Jones state space: ${ss.kind} at V = ${fx(ss.V)}${ss.kind === "flutter" ? `, with Ω_F = ${fx(ss.Omega)}` : ""}. The relative residual of the eigenvector is ${fe(ss.residual)}`, status: "numerical", tolerance: ft(T.residual), passed: ss.residual <= T.residual, evidence: ["byu-wagner"] });
+    if (ss) add({ id: "ss", title: `Method 2, R. T. Jones state space: ${ss.kind === "flutter" ? `flutter at V_F = ${fx(ss.V)}, with Ω_F = ${fx(ss.Omega)}` : `divergence at V_D = ${fx(ss.V)}`}. The relative residual of the eigenvector is ${fe(ss.residual)}`, status: "numerical", tolerance: ft(T.residual), passed: ss.residual <= T.residual, evidence: ["byu-wagner"] });
     if (ss && kj && ss.kind === "flutter") { const d = Math.abs(kj.V - ss.V) / ss.V; add({ id: "consistency", title: `The k method with the Jones C(k) gives V_F = ${fx(kj.V)}. The relative difference from the state-space onset is ${fe(d)}, so the two forms of the Jones aerodynamics agree`, status: "numerical", tolerance: ft(T.consistency), passed: d <= T.consistency, evidence: ["byu-wagner"] }); }
     if (k1 && ss && ss.kind === "flutter") {
       const dV = Math.abs(ss.V - k1.V) / k1.V, dO = Math.abs(ss.Omega - k1.Omega) / k1.Omega;
@@ -857,14 +857,14 @@
       add({ id: "reference", title: `mpmath ${refs.versions.mpmath} and SciPy ${refs.versions.scipy} give the same onsets for both methods. The largest relative difference is ${fe(worst)}`, status: "numerical", tolerance: ft(T.reference), passed: worst <= T.reference, evidence: [] });
     }
     if (A.first.theodorsen) add({ id: "first", title: A.first.theodorsen.kind === "flutter" ? `Flutter comes first: V_F = ${fx(k1.V, 4)}${A.divergence.exists ? ` is below V_D = ${fx(A.divergence.V, 4)}` : ", and the model has no divergence"}` : `Divergence comes first: V_D = ${fx(A.divergence.V, 4)}${k1 ? ` is below V_F = ${fx(k1.V, 4)}` : ""}`, status: "numerical", tolerance: "each onset to 1e-13", passed: true });
-    if (ss && ss.kind === "flutter") add({ id: "hopf", title: `At the onset, one complex pair crosses Re p = 0 at Ω = ${fx(ss.Omega, 4)} with d(Re p)/dV = ${fx(ss.slope, 3)}, which is more than 0. This is a candidate Hopf point of the linear model`, status: "numerical", tolerance: "central difference, step 1e-6 V", passed: ss.slope > 0 });
+    if (ss && ss.kind === "flutter") add({ id: "hopf", title: `At the onset, one complex pair crosses Re p = 0 at Ω_F = ${fx(ss.Omega, 4)} with d(Re p)/dV = ${fx(ss.slope, 3)}, which is more than 0. The linearization meets the eigenvalue conditions of a Hopf bifurcation. The nonlinear terms decide its type`, status: "numerical", tolerance: "central difference, step 1e-6 V", passed: ss.slope > 0 });
     if (A.convergence) {
       const last = A.convergence.rows.at(-1);
       add({ id: "convergence", title: `RK4 at the onset converges to exp(τA)x₀ with order ${fx(last.order, 3)}. The relative error is ${fx(last.error, 2)} at ${last.perPeriod} steps per period`, status: "numerical", tolerance: `${ft(T.convergence)}, order ${T.order[0]} to ${T.order[1]}`,
         passed: last.error <= T.convergence && last.order >= T.order[0] && last.order <= T.order[1] });
     }
     const pkPoints = A.theodorsen.pkModes.reduce((s, m) => s + m.length, 0);
-    add({ id: "pkiter", title: `The p–k iteration converged at all ${pkPoints} points within ${A.theodorsen.pkIterations} iterations`, status: "numerical", tolerance: "1e-12 in k", passed: A.theodorsen.pkConverged });
+    add({ id: "pkiter", title: `The p–k iteration converged at all ${pkPoints} points in ${A.theodorsen.pkIterations} iterations or fewer`, status: "numerical", tolerance: "1e-12 in k", passed: A.theodorsen.pkConverged });
     add({ id: "jones", title: "R. T. Jones approximated the Wagner function as φ(s) = 1 − 0.165e^(−0.0455s) − 0.335e^(−0.3s), with s = Ut/b", status: "evidence", passed: true, evidence: ["byu-wagner"] });
     for (const u of declared.unsupported) add({ id: u.id, title: u.title.replace(/\.$/, ""), status: "unresolved", passed: false, next: u.next });
     return { A, checks };
@@ -892,16 +892,16 @@
     const marks = [k1 ? { x: num(k1.V), y: 0, shape: "circle", r: 4, label: `V_F = ${fx(k1.V, 5)}, Theodorsen` } : null, ss ? { x: num(ss.V), y: 0, shape: "circle", r: 4, label: `V_F = ${fx(ss.V, 5)}, R. T. Jones` } : null].filter(Boolean);
     const [z0, z1] = bounds(zs), [o0, o1] = bounds(om);
     const figures = [
-      { id: "st-fsi-damping", title: "Modal damping ratio ζ against the speed V", caption: "Solid lines: Theodorsen's function by the p–k method. Dashed lines: the R. T. Jones state space. Flutter is the speed where the damping of a mode is 0.",
+      { id: "st-fsi-damping", title: "Modal damping ratio ζ against the speed V", caption: "Solid lines: Theodorsen's function by the p–k method. Dashed lines: the R. T. Jones state space. The flutter speed is the lowest speed where the damping of a mode changes from positive to negative. Away from the onset, the p–k damping is an approximation.",
         x: { min: 0, max: num(top), label: "V = U/(bω_θ)", log: false }, y: { min: num(z0), max: num(z1), label: "ζ = −Re p/|p|", log: false }, series: zs, points: marks },
-      { id: "st-fsi-frequency", title: "Modal frequency Ω against the speed V", caption: "The two frequencies move together as V increases. At the onset, the flutter mode oscillates at Ω_F.",
+      { id: "st-fsi-frequency", title: "Modal frequency Ω against the speed V", caption: "The two frequencies come nearer as V increases. At the onset, the flutter mode oscillates at Ω_F.",
         x: { min: 0, max: num(top), label: "V = U/(bω_θ)", log: false }, y: { min: num(Math.max(0, o0)), max: num(o1), label: "Ω = ω/ω_θ", log: false }, series: om,
         points: [k1 ? { x: num(k1.V), y: num(k1.Omega), shape: "circle", r: 4, label: `Ω_F = ${fx(k1.Omega, 4)}` } : null].filter(Boolean) },
     ];
     if (A.response) {
       const th = A.response.theta;
       const amp = Math.max(...th.map(Math.abs));
-      figures.push({ id: "st-fsi-response", title: `Pitch response θ/θ₀ at V = ${fx(A.response.V, 3)}`, caption: `The response to the initial pitch disturbance ${A.response.kind === "grows" ? "grows. The linear model gives no amplitude above the onset" : A.response.kind === "decays" ? "decays: every mode has positive damping" : "neither grows nor decays"}. From exp(ΔτA)x₀.`,
+      figures.push({ id: "st-fsi-response", title: `Pitch response θ/θ₀ at V = ${fx(A.response.V, 3)}`, caption: `The response to the initial pitch disturbance ${A.response.kind === "grows" ? "grows. The linear model gives no amplitude above the onset" : A.response.kind === "decays" ? "decays: every eigenvalue of A(V) has a negative real part" : "neither grows nor decays"}. The page calculates the response with exp(ΔτA) in steps of Δτ.`,
         x: { min: 0, max: num(A.response.tau.at(-1)), label: "τ = ω_θ t", log: false }, y: { min: num(-1.05 * amp), max: num(1.05 * amp), label: "θ/θ₀", log: false },
         series: [{ label: "θ/θ₀", pts: A.response.tau.map((t, i) => [num(t), num(th[i])]), dash: null }], points: [] });
     }
@@ -923,7 +923,7 @@
     return { family: decl.family, model: decl.id, generic: true, heading: "Hand calculation 9: flutter onset by two methods, modal damping and convergence", point: { V: num(Vrec) },
       concept: "linear temporal stability of the equilibrium h = θ = 0 of the typical section: Theodorsen's frequency domain (k and p–k methods) and the R. T. Jones state space",
       results, figures, tables,
-      method: ["The k method solves the flutter determinant for X = (ω_θ/ω)²(1 + ig) at each reduced frequency k. The onset is where g = 0.",
+      method: ["The k method solves the flutter determinant for X = (ω_θ/ω)²(1 + ig) at each reduced frequency k. g is an artificial structural damping that makes harmonic motion possible. The onset is the lowest speed where g changes from negative to positive.",
         "The p–k method solves det(p²M_s + K_s − V²k²A(k)) = 0 at each speed with k = Im p/V. It repeats until k stays the same.",
         "The state space x' = A(V)x of the R. T. Jones model has six states. Its eigenvalues give ζ and Ω. The onset is where the largest real part is 0.",
         "Brent's method refines each onset. At the onset, the page compares RK4 with exp(τA)x₀."],
@@ -943,7 +943,8 @@
     const P = pointParams(p);
     if (!P) return { ok: false, reason: "The point needs V, μ, r², σ, a and x_θ." };
     const detM = (P.mu + 1) * (P.mu * P.r2 + 1 / 8 + P.a * P.a) - (P.mu * P.xt - P.a) ** 2;
-    if (!(P.mu > 0 && P.r2 > P.xt * P.xt && P.sigma > 0 && detM > 0 && p.V >= 0)) return { ok: false, reason: "Outside the declared domain: μ > 0, σ > 0, r² > x_θ² and det M > 0." };
+    const e = P.a + P.xt;
+    if (!(P.mu > 0 && P.r2 > P.xt * P.xt && P.sigma > 0 && detM > 0 && p.V >= 0 && Math.abs(P.a) < 1 && Math.abs(e) < 1)) return { ok: false, reason: "Outside the declared domain: μ > 0, σ > 0, −1 < a < 1, −1 < e < 1, r² > x_θ² and det M > 0." };
     const ps = eigenvalues(stateMatrix(P, p.V));
     const lead = ps.reduce((b, x) => (x.re > b.re ? x : b), ps[0]);
     const modes = ps.filter((x) => x.im > 1e-9);
@@ -959,7 +960,7 @@
       return once(JSON.stringify([Object.entries(r.p).map(([k, v]) => [k, Q.str(v)]), r.V]), () => ({ ...solve(r.p, r.V, refs, DECLARED), V: r.V }));
     };
     const layers = [{ id: "flutter", kind: "stability", boundary: "stability", title: "Flutter and divergence", measure: "growth", scale: "linear", status: "numerical", steps: ["s-st-eigen"], evidence: ["spec-8", "gt-flutter", "byu-wagner"],
-      criterion: "Linear temporal stability of h = θ = 0 in the R. T. Jones state space. Neutral condition: the largest real part of the eigenvalues of A(V) is 0. A complex pair there is flutter; a real eigenvalue is divergence",
+      criterion: "Linear temporal stability of h = θ = 0 in the R. T. Jones state space. Neutral condition: the largest real part of the eigenvalues of A(V) is 0. If a complex pair crosses, the onset is flutter. If a real eigenvalue crosses, the onset is divergence",
       thresholds: () => ({ curves: [{ value: 0, label: "Neutral curve: the onset of flutter (or of divergence)" }], regions: [{ id: "stable", label: "Every mode is damped: the section is linearly stable", lo: -1e9, hi: 0 }, { id: "unstable", label: "A mode grows: flutter or divergence", lo: 0, hi: null }] }) }];
     return { id: decl.id, params: decl.domain.parameters, axes: { x: "V", y: "mu" }, approximations: [], layers,
       evaluate: evaluatePoint, limits: () => [], constraints: () => [],
@@ -972,7 +973,7 @@
           checks: [], reconstruction: sc && Number.isFinite(sc.float) ? [{ id: "U", tex: "U", label: "free-stream speed at the point", value: num(p.V * sc.float), unit: "m/s" }] : [] };
       },
       analysis: () => ({ note: "Each point of the map takes the eigenvalues of the 6 × 6 state matrix of the R. T. Jones model.",
-        balance: { intro: "Inertia, elastic stiffness and aerodynamic forces have the same order near the onset. That coupling is the flutter mechanism.", terms: [
+        balance: { intro: "Near the onset, the inertial, elastic and aerodynamic terms have the same order. The aerodynamic forces couple the pitch and plunge modes. This coupling causes flutter.", terms: [
           { tex: "(\\mu+1)\\xi''", label: "inertia with the apparent mass", scale: "\\mu", why: "The mass ratio sets the inertia." },
           { tex: "\\mu\\sigma^2\\xi", label: "plunge stiffness", scale: "\\mu\\sigma^2", why: "The plunge spring." },
           { tex: "2Vq_e", label: "circulatory lift", scale: "V^2", why: "The lift grows with the square of the speed." }], balances: [], crossovers: [], note: "No term is small near the onset, so the page gives no reduced balance." },

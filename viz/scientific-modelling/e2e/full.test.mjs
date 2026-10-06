@@ -205,7 +205,7 @@ await fullSuite("scientific-modelling", {
       await fl.page.waitForSelector("#stability-panel #st-fsi-response svg");
       const trace = await fl.page.locator("#trace").innerText();
       assert.match(trace, /Method 1, Theodorsen \(k method\): flutter at V_F = 1\.87376/);
-      assert.match(trace, /Method 2, R\. T\. Jones state space: flutter at V = 1\.86142/);
+      assert.match(trace, /Method 2, R\. T\. Jones state space: flutter at V_F = 1\.86142/);
       assert.match(trace, /V_D² = μr²\/\(1 \+ 2a\) = 16\/3 exactly/);
       assert.match(trace, /The page gives no oscillation amplitude above the onset/);
       await fl.page.waitForSelector("#regime-map svg");
