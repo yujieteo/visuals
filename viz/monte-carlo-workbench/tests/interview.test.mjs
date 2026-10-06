@@ -81,6 +81,7 @@ test("insufficient evidence: no support fact, an unknown tail for a tail decisio
   assert.equal(ev("k=siz;gs=mul;t=mid;q=tl").status, "candidates", "the same with the tail known");
   assert.ok(ev("k=cnt;g=evt;o=sel").insufficient.some((/** @type {any} */ x) => x.rule === "o3"), "selection that depends on the value");
   assert.deepEqual(ev("k=cnt").insufficient.map((/** @type {any} */ x) => x.rule), ["wk"], "a count with no mechanism has only weak support");
+  assert.deepEqual(ev("k=ext;ge=?;t=?;x=yes").insufficient.map((/** @type {any} */ x) => x.rule), ["i5"], "an extreme value with an unknown mechanism and an unknown tail");
   const losses = ev(spec.examples.find((/** @type {any} */ x) => x.id === "losses").iv);
   assert.equal(losses.status, "insufficient");
   assert.ok(losses.assumptions.length >= 2, "the interview lists the unresolved assumptions");
@@ -128,7 +129,8 @@ test("moment matching: the law of the record has the mean and the variance of th
     ["lognormal", "k=siz;gs=mul;m=2;sd=1", 2, 1], ["exponential", "k=tim;gt=mem;m=4", 4, 16], ["invgauss", "k=tim;gt=fpt;dr=yes;m=2;sd=1", 2, 1],
     ["beta", "k=pro;gp=unc;m=0.3;sd=0.1", 0.3, 0.01], ["logistic", "k=mea;gm=lgs;m=1;sd=2", 1, 4], ["laplace", "k=mea;gm=dif;m=1;sd=2", 1, 4],
     ["cuniform", "k=pro;gp=lim;m=0.5;sd=0.1", 0.5, 0.01], ["gumbel", "k=ext;ge=max;t=lgt;m=90;sd=25", 90, 625], ["weibull", "k=tim;gt=age;h=inc;m=5", 5, null],
-    ["pareto2", "k=siz;gs=pow;pm=zero;m=2", 2, null], ["gpd", "k=ext;ge=exc;m=3", 3, null]];
+    ["pareto2", "k=siz;gs=pow;pm=zero;m=2", 2, null], ["gpd", "k=ext;ge=exc;m=3", 3, null], ["uniform", "k=cnt;g=eqv;m=7;lim=10", 7, 4],
+    ["pareto2", "k=siz;gs=pow;pm=zero;m=2;sd=3", 2, 9], ["pareto1", "k=siz;gs=pow;pm=min;m=2;sd=3", 2, 9], ["gpd", "k=ext;ge=exc;m=95;sd=30", 95, 900]];
   for (const [id, iv, mean, variance] of cases) {
     const b = Iv.build(data, ev(/** @type {string} */ (iv)), /** @type {string} */ (id));
     assert.ok(b.ok, `${id}: ${b.errors?.join(" ")}`);
@@ -138,6 +140,12 @@ test("moment matching: the law of the record has the mean and the variance of th
   const nofit = Iv.build(data, ev("k=cnt;g=het;m=4;sd=1.5"), "negbin");
   assert.equal(nofit.ok, false);
   assert.match(nofit.errors[0], /variance sd² must be larger than the mean/);
+  const below = Iv.build(data, ev("k=cnt;g=eqv;m=4;lim=10"), "uniform");
+  assert.equal(below.ok, false, "a mean below half the limit needs a lower limit below 0");
+  assert.match(below.errors[0], /whole or half number with 0 ≤ 2m − n ≤ n/);
+  const light = Iv.build(data, ev("k=siz;gs=pow;pm=zero;m=2;sd=1"), "pareto2");
+  assert.equal(light.ok, false);
+  assert.match(light.errors[0], /needs sd larger than m/);
 });
 
 test("a run of an interview record meets its evidence mean, for 3 seeds", () => {

@@ -1132,10 +1132,16 @@
      "lim": "max(1, round(2*m))"
     },
     "args": {
-     "a": "0",
+     "a": "2*m - lim",
      "b": "lim"
     },
-    "c": "ceil(0.9*lim)"
+    "c": "ceil(0.9*lim)",
+    "requires": [
+     {
+      "expr": "round(2*m) == 2*m and 2*m - lim >= 0 and 2*m - lim <= lim",
+      "text": "The mean m must be a whole or half number with 0 ≤ 2m − n ≤ n."
+     }
+    ]
    }
   },
   {
@@ -2361,16 +2367,18 @@
    "path": "k=siz;gs=pow;pm=min",
    "template": {
     "uses": [
-     "m"
+     "m",
+     "sd"
     ],
     "defaults": {
-     "m": "1"
+     "m": "1",
+     "sd": "sqrt(0.8)*m"
     },
     "extra": [
      [
       "alpha",
-      "2.5",
-      "tail index: an illustrative value"
+      "1 + sqrt(1 + m^2/sd^2)",
+      "tail index, from the mean and the standard deviation"
      ]
     ],
     "args": {
@@ -2417,16 +2425,18 @@
    "path": "k=siz;gs=pow;pm=zero",
    "template": {
     "uses": [
-     "m"
+     "m",
+     "sd"
     ],
     "defaults": {
-     "m": "1"
+     "m": "1",
+     "sd": "sqrt(5)*m"
     },
     "extra": [
      [
       "alpha",
-      "2.5",
-      "tail index: an illustrative value"
+      "2*sd^2/(sd^2 - m^2)",
+      "tail index, from the mean and the standard deviation"
      ]
     ],
     "args": {
@@ -2439,6 +2449,10 @@
      {
       "expr": "m > 0",
       "text": "The mean m must be larger than 0."
+     },
+     {
+      "expr": "sd > m",
+      "text": "A Pareto II law with a finite variance needs sd larger than m."
      }
     ]
    }
@@ -2787,16 +2801,18 @@
    "path": "k=ext;ge=exc",
    "template": {
     "uses": [
-     "m"
+     "m",
+     "sd"
     ],
     "defaults": {
-     "m": "1"
+     "m": "1",
+     "sd": "m/sqrt(0.6)"
     },
     "extra": [
      [
       "xi",
-      "0.2",
-      "shape: an illustrative value"
+      "(1 - m^2/sd^2)/2",
+      "shape, from the mean and the standard deviation"
      ]
     ],
     "args": {
@@ -6280,6 +6296,21 @@
    "basis": "theorem",
    "source": "Identification",
    "reason": "The interview knows neither the mechanism nor the tail of the measurement. Support and moments alone do not identify a law."
+  },
+  {
+   "id": "i5",
+   "when": {
+    "ge": [
+     "?"
+    ],
+    "t": [
+     "?"
+    ]
+   },
+   "effect": "insufficient",
+   "basis": "theorem",
+   "source": "Identification",
+   "reason": "The interview knows neither the mechanism nor the tail of the extreme value. Support and moments alone do not identify a law."
   },
   {
    "id": "wk",
