@@ -7021,7 +7021,7 @@
       "title": "Steady advection and diffusion along a channel segment",
       "piece": 7,
       "model": {
-        "summary": "Steady one-dimensional transport of heat by a prescribed uniform velocity and by conduction along a channel segment, with fixed temperatures at the inlet and the outlet.",
+        "summary": "Steady one-dimensional heat transport along a channel segment, by a prescribed uniform velocity and by conduction. The inlet and the outlet have fixed temperatures.",
         "roles": [
           {
             "id": "DT",
@@ -7057,7 +7057,7 @@
             "id": "DT_in",
             "quantity": "temperature-difference",
             "kind": "parameter",
-            "meaning": "inlet temperature minus outlet temperature"
+            "meaning": "the inlet temperature minus the outlet temperature"
           },
           {
             "id": "C_v",
@@ -7070,7 +7070,7 @@
             "id": "q",
             "quantity": "heat-flux",
             "kind": "parameter",
-            "meaning": "total heat flux along the channel",
+            "meaning": "total heat flux through each section of the channel",
             "optional": true
           }
         ],
@@ -7192,7 +7192,7 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "Two terms compete: advection Pe θ_X and conduction θ_XX. For Pe ≪ 1 conduction controls and θ ≈ 1 − X; for Pe ≫ 1 advection controls except in a layer of thickness 1/Pe at the outlet."
+          "reason": "Two terms compete: advection Pe θ_X and conduction θ_XX. For Pe ≪ 1, conduction controls and θ ≈ 1 − X. For Pe ≫ 1, advection controls, except in a layer of thickness 1/Pe at the outlet."
         },
         "asymptotic": {
           "applies": true,
@@ -7214,16 +7214,16 @@
       ],
       "acceptance": {
         "example": "advection-channel",
-        "reference": "θ(X) = (1 − e^(−Pe(1−X)))/(1 − e^(−Pe)) and J = Pe/(1 − e^(−Pe)); mpmath gives the same values (tools/convective_references.py).",
-        "tolerance": "Exact conservation of both discrete schemes. Finite-volume flux within relative 1e-3 of J; observed orders within 0.1 of 2 (central) and 0.15 of 1 (upwind).",
+        "reference": "θ(X) = (1 − e^(−Pe(1−X)))/(1 − e^(−Pe)) and J = Pe/(1 − e^(−Pe)). The mpmath library gives the same values (tools/convective_references.py).",
+        "tolerance": "Exact conservation of both discrete schemes. Finite-volume flux within relative 1e-3 of J. Observed orders within 0.1 of 2 (central) and 0.15 of 1 (upwind).",
         "checks": [
           "Both schemes carry the same flux through every face, exactly.",
-          "The central scheme oscillates above cell Péclet 2, and the upwind scheme does not.",
+          "Above a cell Péclet number of 2, the central scheme oscillates and the upwind scheme does not.",
           "The observed orders are 2 and 1."
         ]
       },
       "solver": {
-        "method": "The exact solution in floating point (expm1), and finite volumes solved with the Thomas algorithm in exact rationals.",
+        "method": "The exact solution in double precision (expm1), and finite volumes solved with the Thomas algorithm in exact rationals.",
         "discretization": "Equal intervals: N₀ with cell Péclet number at most 1, then 2N₀, 4N₀ and 8N₀.",
         "convergence": "Observed order from the two finest meshes.",
         "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
@@ -7315,7 +7315,7 @@
           }
         ],
         "closures": [
-          "Newtonian viscous stress μ du/dy and Fourier conduction k dT/dy. The dissipation function of a parallel shear flow is μ(du/dy)² (the page's derivation; the Brinkman number μU²/(kΔT) is the ratio of viscous heating to transverse conduction, MIT 2.810 Quiz 1 solutions, 2016, problem 4)."
+          "Newtonian viscous stress μ du/dy and Fourier conduction k dT/dy. The dissipation function of a parallel shear flow is μ(du/dy)² (the page's derivation). The Brinkman number μU²/(kΔT) is the ratio of viscous heating to transverse conduction (MIT 2.810 Quiz 1 solutions, 2016, problem 4)."
         ],
         "geometry": "A plane layer between a fixed wall at y = 0 and a parallel wall at y = H that moves with speed U. The layer is long in the direction of motion.",
         "conditions": [
@@ -7441,16 +7441,16 @@
       "operations": {
         "symbolic": [
           "The exact velocity V = η and temperature θ = η + (Br/2)η(1 − η) in rationals.",
-          "The exact wall heat fluxes θ'(0) = 1 + Br/2 and θ'(1) = 1 − Br/2, the energy balance θ'(0) − θ'(1) = Br, the zero-dissipation limit θ = η, and the interior maximum at η* = 1/2 + 1/Br for |Br| > 2."
+          "The exact heat fluxes at the walls, θ'(0) = 1 + Br/2 and θ'(1) = 1 − Br/2, and the energy balance θ'(0) − θ'(1) = Br. The zero-dissipation limit θ = η and the interior temperature maximum at η* = 1/2 + 1/Br for |Br| > 2."
         ],
         "numerical": [
-          "None is needed: the solution is exact. Floating-point values are for the figures only."
+          "Not applicable: the solution is exact. Floating-point values are for the figures only."
         ]
       },
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "Two terms compete in the energy equation: conduction across the gap and viscous dissipation. The exact heat flux at the moving wall changes sign at Br = 2, where the dissipation sends heat out through both walls."
+          "reason": "Two terms compete in the energy equation: conduction across the gap and viscous dissipation. The exact heat flux at the moving wall changes sign at Br = 2. Above Br = 2, the dissipation sends heat out through both walls."
         },
         "asymptotic": {
           "applies": true,
@@ -7458,7 +7458,7 @@
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. The velocity is prescribed by the walls, and the temperature problem is linear. With a viscosity that falls with temperature, the problem can have more than one solution (thermal runaway); that needs a separate declaration."
+          "reason": "This declaration computes no stability analysis. The walls prescribe the velocity, and the temperature problem is linear. If the viscosity falls with temperature, the problem can have more than one solution (thermal runaway). That case needs a separate declaration."
         },
         "bifurcation": {
           "applies": false,
@@ -7493,7 +7493,7 @@
       "title": "Thermocapillary flow in a liquid layer with a declared temperature gradient",
       "piece": 7,
       "model": {
-        "summary": "A long horizontal liquid layer with a flat free surface. A declared temperature gradient along the layer changes the surface tension, and the tangential stress at the surface drives a flow with a return flow below it. The flow carries heat along the layer.",
+        "summary": "A long horizontal liquid layer with a flat free surface. A declared temperature gradient along the layer changes the surface tension. The tangential stress at the surface drives a flow, with a return flow below it. The flow then carries heat along the layer.",
         "roles": [
           {
             "id": "u",
@@ -7591,7 +7591,7 @@
           }
         ],
         "closures": [
-          "Newtonian stress and Fourier conduction. At the free surface the tangential stress is τ = (∂σ/∂T)(∂T/∂s), and the liquid flows toward higher surface tension (COMSOL, Marangoni effect). The zero net flow through each section fixes the pressure gradient G."
+          "Newtonian stress and Fourier conduction. At the free surface, the tangential stress is τ = (∂σ/∂T)(∂T/∂s). The liquid moves to the side with the higher surface tension (COMSOL, Marangoni effect). The zero net flow through each section fixes the pressure gradient G."
         ],
         "geometry": "A horizontal liquid layer of depth h_l on a rigid bottom, with a flat free surface, far from its closed ends.",
         "conditions": [
@@ -7730,11 +7730,11 @@
       },
       "operations": {
         "symbolic": [
-          "The exact velocity W = (3Z² − 2Z)/4 with Π_G = 3/2 from the zero net flow, and the temperature Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120), in rationals.",
+          "The exact velocity W = (3Z² − 2Z)/4 in rationals, with Π_G = 3/2 from the zero net flow. The exact temperature Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120) in rationals.",
           "The exact transport factor k_eff/k = 1 + Ma_d²/1680 and the balance crossover Ma_d² = 1680."
         ],
         "numerical": [
-          "None is needed: the solution is exact. Floating-point values are for the figures only."
+          "Not applicable: the solution is exact. Floating-point values are for the figures only."
         ]
       },
       "methods": {
@@ -7748,7 +7748,7 @@
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. The return flow can become unstable to hydrothermal waves; that needs a separate declaration."
+          "reason": "This declaration computes no stability analysis. The return flow can become unstable to hydrothermal waves. That case needs a separate declaration."
         },
         "bifurcation": {
           "applies": false,
@@ -7762,10 +7762,10 @@
       ],
       "acceptance": {
         "example": "thermocapillary-flow",
-        "reference": "W = (3Z² − 2Z)/4, Π_G = 3/2, ∫W dZ = 0, Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120) and the transport factor 1 + Ma_d²/1680 (the page's exact derivation; COMSOL, Marangoni effect, for the stress condition and the flow direction). SymPy gives the same polynomials (tools/convective_references.py).",
+        "reference": "The page's exact derivation gives W = (3Z² − 2Z)/4, Π_G = 3/2 and ∫W dZ = 0. It also gives Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120) and the transport factor 1 + Ma_d²/1680. The stress condition and the flow direction come from COMSOL, Marangoni effect. SymPy gives the same polynomials (tools/convective_references.py).",
         "tolerance": "Exact for the profiles, the conditions, the zero net flow and the transport factor.",
         "checks": [
-          "The surface stress condition holds exactly, and the surface moves toward higher surface tension.",
+          "The stress condition at the surface holds exactly. The surface moves to the side with the higher surface tension.",
           "The net flow is zero and the return flow starts at Z = 2/3.",
           "The transport factor is 1 + Ma_d²/1680 exactly."
         ]
@@ -7783,7 +7783,7 @@
       "title": "Conjugate heat transfer in a fluid–solid channel",
       "piece": 7,
       "model": {
-        "summary": "Steady laminar flow between two parallel walls of finite thickness. A uniform heat flux enters the outer surfaces, the heat conducts through the walls into the fluid, and the fluid carries it away. The interface keeps one temperature and one heat flux.",
+        "summary": "Steady laminar flow between two parallel walls of finite thickness. Heat enters the outer surfaces with a uniform flux. It goes through the walls by conduction, and the fluid carries it away. The interface keeps one temperature and one heat flux.",
         "roles": [
           {
             "id": "DT_f",
@@ -7861,7 +7861,7 @@
             "id": "c_p",
             "quantity": "specific-heat",
             "kind": "parameter",
-            "meaning": "fluid specific heat capacity"
+            "meaning": "specific heat capacity of the fluid"
           },
           {
             "id": "q",
@@ -7900,7 +7900,7 @@
         "closures": [
           "The fully developed parabolic velocity between parallel plates, Fourier conduction in both media, and continuity of temperature and heat flux at the interface. Far downstream the fluid has Nu_Dh = 8.235 for a fixed flux at its walls (Lienhard, eqn. (7.63))."
         ],
-        "geometry": "A plane channel of half-width H between walls of thickness H_o − H, heated over the length L on both outer surfaces; symmetric about the mid-plane.",
+        "geometry": "A plane channel of half-width H between walls of thickness H_o − H. Heat goes into both outer surfaces over the length L. The channel is symmetric about the mid-plane.",
         "conditions": [
           {
             "id": "sym",
@@ -8017,7 +8017,7 @@
               "tex": "H_o/H",
               "def": "H_o/H",
               "solve": "H_o",
-              "meaning": "position of the outer surface; the wall thickness is (H_o/H − 1)H"
+              "meaning": "position of the outer surface, with the wall thickness (H_o/H − 1)H"
             },
             {
               "id": "Lr",
@@ -8131,8 +8131,8 @@
           "The fully developed solution in rationals: θ_w − θ_m = 17/35, Nu_f = 140/17 and θ_o − θ_w = (H_o/H − 1)/K, so Nu_o = 4/(17/35 + (H_o/H − 1)/K)."
         ],
         "numerical": [
-          "Finite volumes on three meshes (refinement ratio 2), central advection below cell Péclet 2, a harmonic interface conductance and a banded LU solve.",
-          "The observed order, the Richardson value and the grid convergence index of the outer-wall temperature; interface flux continuity from one-sided second-order fluxes; the interface and global heat balances."
+          "Finite volumes on three meshes (refinement ratio 2) with central advection, a harmonic interface conductance and a banded LU solve. The cell Péclet number stays below 2.",
+          "The observed order, the Richardson value and the grid convergence index of the outer-wall temperature. The continuity of the interface flux, from one-sided second-order fluxes. The interface and global heat balances."
         ]
       },
       "methods": {
@@ -8142,7 +8142,7 @@
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Far from the inlet the solution tends to the exact fully developed state. Near the inlet a thermal entry region of length of order Pe·H develops; the page measures where Nu_f comes within 1 % of 140/17."
+          "reason": "Far from the inlet the solution tends to the exact fully developed state. Near the inlet, a thermal entry region of length of order Pe·H develops. The page measures where Nu_f comes within 1 % of 140/17."
         },
         "stability": {
           "applies": false,
@@ -8154,14 +8154,14 @@
         }
       },
       "limitations": [
-        "Laminar, fully developed velocity; constant properties in each medium.",
+        "Laminar, fully developed velocity. Constant properties in each medium.",
         "No contact resistance at the interface: a contact resistance needs a separate declaration (piece 3 has one for walls).",
         "The page limits the finest mesh to 150 000 cells."
       ],
       "acceptance": {
         "example": "conjugate-channel",
-        "reference": "θ_w − θ_m = 17/35 (Nu_Dh = 140/17 = 8.235, Lienhard eqn. (7.63)) and θ_o − θ_w = (H_o/H − 1)/K in rationals; SymPy gives the same rationals (tools/convective_references.py).",
-        "tolerance": "Exact for the fully developed solution. Finite volumes: observed order between 1.6 and 2.4; the fully developed values within relative 1e-3 in the middle of the channel; heat balances within relative 1e-9.",
+        "reference": "θ_w − θ_m = 17/35 (Nu_Dh = 140/17 = 8.235, Lienhard eqn. (7.63)) and θ_o − θ_w = (H_o/H − 1)/K in rationals. SymPy gives the same rationals (tools/convective_references.py).",
+        "tolerance": "Exact for the fully developed solution. Finite volumes: observed order between 1.6 and 2.4. Fully developed values within relative 1e-3 in the middle of the channel. Heat balances within relative 1e-9.",
         "checks": [
           "The fully developed solution is exact.",
           "The finite-volume solution converges at second order and meets the fully developed values.",
@@ -8169,7 +8169,7 @@
         ]
       },
       "solver": {
-        "method": "Finite volumes with flux balances, solved by banded LU without pivoting.",
+        "method": "Finite volumes with flux balances, solved by banded LU without row exchanges.",
         "discretization": "Δx = min(0.25, 1.2/Pe_H) H, 6 + ⌈6(H_o/H − 1)⌉ cells across, then twice and four times finer.",
         "convergence": "Observed order and grid convergence index (safety factor 1.25) from three meshes.",
         "reproducibility": "Plain JavaScript doubles. No random numbers."
@@ -8247,7 +8247,7 @@
             "id": "DT_e",
             "quantity": "temperature-difference",
             "kind": "parameter",
-            "meaning": "outer-stream temperature minus wall temperature"
+            "meaning": "the outer-stream temperature minus the wall temperature"
           },
           {
             "id": "x_s",
@@ -8533,11 +8533,11 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "Inside the layer, advection along the plate balances conduction across it; with the inner scale this gives Nu_x ∝ Re_x^(1/2). The outer stream sets Re_x."
+          "reason": "Inside the layer, advection along the plate and conduction across the layer are in balance. With the inner scale, this gives Nu_x ∝ Re_x^(1/2). The outer stream sets Re_x."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "The boundary-layer equations are the leading order of the expansion in Re^(−1/2); the correlation fits the similarity solution of that order within 2 % for Pr ≥ 0.6."
+          "reason": "The boundary-layer equations are the first term of the expansion in Re^(−1/2). The correlation fits the similarity solution of that order within 2 % for Pr ≥ 0.6."
         },
         "stability": {
           "applies": false,
@@ -8549,24 +8549,24 @@
         }
       },
       "limitations": [
-        "The page refuses each correlation outside its stated range: Pr ≥ 0.6 for the laminar law, gases (0.6 ≤ Pr ≤ 1 on this page) for the turbulent law.",
+        "The page refuses each correlation outside its stated range. The laminar law needs Pr ≥ 0.6. The turbulent law is for gases (0.6 ≤ Pr ≤ 1 on this page).",
         "In the transition range 2 × 10⁵ < Re_x < 4 × 10⁶ no correlation applies to a local value: the layer can be laminar or turbulent.",
         "A uniform wall temperature only."
       ],
       "acceptance": {
         "example": "plate-convection",
-        "reference": "Nu_x = 0.332 Re_x^(1/2) Pr^(1/3), within 2 % of Pohlhausen's exact solution for Pr ≥ 0.6 and within 1 % for 0.6 ≤ Pr ≤ 2 (Lienhard, eqn. (6.58)); f''(0) = 0.33206 (Lienhard, Table 6.1).",
+        "reference": "Nu_x = 0.332 Re_x^(1/2) Pr^(1/3), within 2 % of Pohlhausen's exact solution for Pr ≥ 0.6 and within 1 % for 0.6 ≤ Pr ≤ 2 (Lienhard, eqn. (6.58)). The Blasius value is f''(0) = 0.33206 (Lienhard, Table 6.1).",
         "tolerance": "Exact for the mean-from-local factors. The page's θ'(0) within the stated 1 % or 2 % of the correlation, and f''(0) within 1e-6 of 0.33206.",
         "checks": [
           "The mean-from-local factors are exact.",
           "The page's similarity solution agrees with the correlation within the stated tolerance.",
-          "Each correlation is refused outside its range."
+          "The page refuses each correlation outside its range."
         ]
       },
       "solver": {
         "method": "RK4 shooting for f''(0) with a bracketed root search, then Simpson's rule for Pohlhausen's integral.",
         "discretization": "3000 equal steps over 0 ≤ η ≤ 15.",
-        "convergence": "f'(η_max) = 1 within 1e-12; the integrand decays below 1e-10 at η = 15 for Pr ≥ 0.5.",
+        "convergence": "f'(η_max) = 1 within 1e-12. The integrand decays below 1e-10 at η = 15 for Pr ≥ 0.5.",
         "reproducibility": "Plain JavaScript doubles. No random numbers."
       }
     },
@@ -8600,7 +8600,7 @@
             "id": "x",
             "quantity": "length",
             "kind": "coordinate",
-            "meaning": "distance from the start of heating"
+            "meaning": "distance from the start of the heated section"
           },
           {
             "id": "R",
@@ -8648,7 +8648,7 @@
             "id": "DT_i",
             "quantity": "temperature-difference",
             "kind": "parameter",
-            "meaning": "inlet temperature minus wall temperature"
+            "meaning": "the inlet temperature minus the wall temperature"
           },
           {
             "id": "h",
@@ -8673,9 +8673,9 @@
           }
         ],
         "closures": [
-          "The fully developed Hagen–Poiseuille velocity and Fourier conduction across the radius; axial conduction is negligible. Far from the start of heating Nu_D = 3.657 (Lienhard, eqn. (7.23)); a uniform wall heat flux gives 48/11 instead (eqn. (7.22))."
+          "The fully developed Hagen–Poiseuille velocity and Fourier conduction across the radius. Axial conduction is negligible. Far from the start of the heated section, Nu_D = 3.657 (Lienhard, eqn. (7.23)). A uniform heat flux at the wall gives 48/11 instead (eqn. (7.22))."
         ],
-        "geometry": "A long straight tube of radius R. The velocity profile is fully developed before the heating starts at x = 0.",
+        "geometry": "A long straight tube of radius R. The velocity profile has its fully developed shape before the heated section starts at x = 0.",
         "conditions": [
           {
             "id": "axis",
@@ -8843,15 +8843,15 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "Axial advection and radial conduction balance over the length R·Pe_R; that sets the scale of Z and of the thermal entry length."
+          "reason": "Axial advection and radial conduction balance over the length R·Pe_R. This length sets the scale of Z and of the thermal entry length."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Far downstream (large Z) one eigenmode remains and Nu_D tends to λ₀²/2 = 3.657; the page uses this limit only beyond Lienhard's entry length, where Nu is within 5 % of it."
+          "reason": "Far downstream (large Z), one eigenmode remains and Nu_D tends to λ₀²/2 = 3.657. The page uses this limit only beyond Lienhard's entry length, where Nu is within 5 % of it."
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. Transition to turbulence near Re_D ≈ 2300 is an empirical boundary, not a result of a linear analysis."
+          "reason": "This declaration computes no stability analysis. Transition to turbulence above Re_D ≈ 2100 is an empirical boundary, not a result of a linear analysis."
         },
         "bifurcation": {
           "applies": false,
@@ -8865,8 +8865,8 @@
       ],
       "acceptance": {
         "example": "tube-convection",
-        "reference": "λ₀ = 2.70436442… from mpmath (the Kummer-function form of the Graetz eigenfunction, tools/convective_references.py), so Nu_D = 3.6568; Lienhard gives Nu_D = 3.657 (eqn. (7.23)) and 48/11 for a uniform flux (eqn. (7.22)).",
-        "tolerance": "λ₀ within 1e-7 of the reference with an observed order within 0.3 of 4; Nu_D within 0.001 of 3.657; 48/11 exact.",
+        "reference": "λ₀ = 2.70436442… from mpmath (the Kummer-function form of the Graetz eigenfunction, tools/convective_references.py), so Nu_D = 3.6568. Lienhard gives Nu_D = 3.657 (eqn. (7.23)) and 48/11 for a uniform flux (eqn. (7.22)).",
+        "tolerance": "λ₀ within 1e-7 of the reference, with an observed order within 0.3 of 4. Nu_D within 0.001 of 3.657. The value 48/11 is exact.",
         "checks": [
           "The uniform-flux value 48/11 is exact.",
           "The shooting eigenvalue converges at fourth order to the reference.",
@@ -8876,7 +8876,7 @@
       "solver": {
         "method": "RK4 shooting on λ with a series start at ρ = 0.02 and a bracketed root search on ψ(1) = 0.",
         "discretization": "40, 80 and 160 equal steps over 0.02 ≤ ρ ≤ 1.",
-        "convergence": "Observed order within 0.3 of 4; root tolerance 1e-14.",
+        "convergence": "Observed order within 0.3 of 4. Root tolerance 1e-14.",
         "reproducibility": "Plain JavaScript doubles. No random numbers."
       }
     },
@@ -8940,7 +8940,7 @@
             "id": "DT_w",
             "quantity": "temperature-difference",
             "kind": "parameter",
-            "meaning": "wall temperature minus ambient temperature"
+            "meaning": "the wall temperature minus the ambient temperature"
           },
           {
             "id": "nu",
@@ -8996,7 +8996,7 @@
           }
         ],
         "closures": [
-          "Boussinesq buoyancy gβ(T − T_∞). Churchill and Chu: Nu_L = 0.68 + 0.670 Ra_L^(1/4)[1 + (0.492/Pr)^(9/16)]^(−4/9) for Ra_L < 10⁹ (Lienhard, eqn. (8.13a)), and Nu_L = {0.825 + 0.387 Ra_L^(1/6)/[1 + (0.492/Pr)^(9/16)]^(8/27)}² for all Ra_L (eqn. (8.13b)); both for a uniform wall temperature or heat flux."
+          "Boussinesq buoyancy gβ(T − T_∞). Churchill and Chu: Nu_L = 0.68 + 0.670 Ra_L^(1/4)[1 + (0.492/Pr)^(9/16)]^(−4/9) for Ra_L < 10⁹ (Lienhard, eqn. (8.13a)), and Nu_L = {0.825 + 0.387 Ra_L^(1/6)/[1 + (0.492/Pr)^(9/16)]^(8/27)}² for all Ra_L (eqn. (8.13b)). Both hold for a uniform temperature or a uniform heat flux at the wall."
         ],
         "geometry": "A vertical isothermal wall of height L in a large volume of still fluid.",
         "conditions": [
@@ -9212,7 +9212,7 @@
       },
       "operations": {
         "symbolic": [
-          "The exact buoyancy scaling: the velocity scale √(gβΔT L), the thickness L·Gr^(−1/4), Ra = Gr·Pr, and the exponents h ∝ L^(−1/4) of the laminar law and h ∝ L⁰ of the Ra^(1/3) limit, in rationals."
+          "The exact buoyancy scales in rationals: the velocity scale √(gβΔT L), the thickness L·Gr^(−1/4) and Ra = Gr·Pr. The exact exponents h ∝ L^(−1/4) of the laminar law and h ∝ L⁰ of the Ra^(1/3) limit."
         ],
         "numerical": [
           "Churchill and Chu's equations (8.13a) and (8.13b), each inside its range, and their difference in the laminar range."
@@ -9221,15 +9221,15 @@
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "In the laminar layer, buoyancy balances inertia and viscosity, and conduction across the layer balances advection; this gives δ/L ∝ Ra^(−1/4) and Nu_L ∝ Ra^(1/4)."
+          "reason": "In the laminar layer, buoyancy balances inertia and viscosity, and conduction across the layer balances advection. This gives δ/L ∝ Ra^(−1/4) and Nu_L ∝ Ra^(1/4)."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "For large Ra_L, eqn. (8.13a) tends to 0.670 Ra^(1/4)[…]^(−4/9) and eqn. (8.13b) to 0.150 Ra^(1/3)[…]^(−16/27); the exponents give h ∝ L^(−1/4) and h independent of L."
+          "reason": "For large Ra_L, eqn. (8.13a) tends to 0.670 Ra^(1/4)[…]^(−4/9) and eqn. (8.13b) to 0.150 Ra^(1/3)[…]^(−16/27). These exponents give h ∝ L^(−1/4) and an h that does not depend on L."
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. The laminar layer becomes turbulent near Ra_L ≈ 10⁹; the page shows this as an empirical boundary."
+          "reason": "This declaration computes no stability analysis. Near Ra_L ≈ 10⁹, the layer changes from laminar to turbulent. The page shows this change as an empirical boundary."
         },
         "bifurcation": {
           "applies": false,
@@ -9238,17 +9238,17 @@
       },
       "limitations": [
         "Vertical or slightly inclined walls only: horizontal plates need other correlations (Lienhard, section 8.4).",
-        "Eqn. (8.13a) is refused above Ra_L = 10⁹; above it only eqn. (8.13b) applies.",
+        "The page refuses eqn. (8.13a) above Ra_L = 10⁹. Above this value, only eqn. (8.13b) applies.",
         "Measured data scatter above Ra_L/[1 + (0.492/Pr)^(9/16)]^(16/9) ≈ 10⁸ (Lienhard, section 8.3)."
       ],
       "acceptance": {
         "example": "natural-wall",
         "reference": "Lienhard, Example 8.1: air at T_f = 308 K, L = 0.30 m, ΔT = 30 K gives Ra_L = 6.78 × 10⁷ and Nu_L = 47.33 from eqn. (8.13a).",
-        "tolerance": "The page's Nu_L for Example 8.1 within 0.05 of 47.33; exact exponents.",
+        "tolerance": "The page's Nu_L for Example 8.1 within 0.05 of 47.33. Exact exponents.",
         "checks": [
-          "The buoyancy scaling and its exponents are exact.",
+          "The buoyancy scales and the exponents are exact.",
           "The page reproduces Example 8.1.",
-          "Each correlation is refused outside its range."
+          "The page refuses each correlation outside its range."
         ]
       },
       "solver": {
@@ -9264,7 +9264,7 @@
       "title": "Fully developed mixed convection in a vertical channel",
       "piece": 7,
       "model": {
-        "summary": "Steady, fully developed laminar flow between two vertical walls at different temperatures. The forced mean flow and the buoyancy of the Boussinesq fluid act together (assisting flow) or against each other (opposing flow).",
+        "summary": "Steady, fully developed laminar flow between two vertical walls at different temperatures. Buoyancy acts with the forced mean flow near one wall and against it near the other wall. Lienhard calls these two cases assisting flow and opposing flow.",
         "roles": [
           {
             "id": "u",
@@ -9355,7 +9355,7 @@
           }
         ],
         "closures": [
-          "Boussinesq buoyancy: the density changes only in the body force, ρ = ρ₀(1 − β(T − T₀)). Gr/Re² compares the natural and the forced flow, and the flow is assisting or opposing by the direction of gravity (Lienhard, eqn. (8.45))."
+          "Boussinesq buoyancy: the density changes only in the body force, ρ = ρ₀(1 − β(T − T₀)). Gr/Re² compares the natural and the forced flow (Lienhard, eqn. (8.45)). The direction of gravity sets the wall at which buoyancy helps the mean flow."
         ],
         "geometry": "A vertical channel between two parallel walls a distance D apart, far from the inlet. The mean flow is along x.",
         "conditions": [
@@ -9439,7 +9439,7 @@
               "tex": "Gr",
               "def": "-rho^2*g_x*beta*DT_w*D^3/mu^2",
               "solve": "beta",
-              "meaning": "Grashof number with the width, for assisting flow (g_x < 0)"
+              "meaning": "Grashof number with the width (g_x < 0: gravity against the mean flow)"
             }
           ],
           "equations": [
@@ -9514,21 +9514,21 @@
           "The forced limit B → 0, the buoyancy limit with the buoyancy speed, and the exact reversal boundary |B| = 72."
         ],
         "numerical": [
-          "None is needed: the solution is exact. Floating-point values are for the figures only."
+          "Not applicable: the solution is exact. Floating-point values are for the figures only."
         ]
       },
       "methods": {
         "dominant-balance": {
           "applies": true,
-          "reason": "In the momentum equation the pressure gradient (scale 12) competes with the buoyancy force (scale |B|/2). The wall shear at one wall changes sign at |B| = Gr/Re = 72 exactly; the bulk Richardson number Gr/Re² alone does not fix this boundary."
+          "reason": "In the momentum equation the pressure gradient (scale 12) competes with the buoyancy force (scale |B|/2). The wall shear at one wall changes sign at |B| = Gr/Re = 72 exactly. The bulk Richardson number Gr/Re² alone does not set this boundary."
         },
         "asymptotic": {
           "applies": true,
-          "reason": "Both limits are exact: W is linear in B, so the expansion in B ends at the first order, and the expansion in 1/B of u over the buoyancy speed also ends at the first order."
+          "reason": "Both limits are exact. W is linear in B, so the expansion in B ends at the first order. The expansion in 1/B of u over the buoyancy speed also ends at the first order."
         },
         "stability": {
           "applies": false,
-          "reason": "This declaration computes no stability analysis. The reversed flow near a wall can become unstable; that needs a separate declaration."
+          "reason": "This declaration computes no stability analysis. The reversed flow near a wall can become unstable. That case needs a separate declaration."
         },
         "bifurcation": {
           "applies": false,
@@ -9536,13 +9536,13 @@
         }
       },
       "limitations": [
-        "Fully developed region only: the developing region needs a separate declaration.",
+        "Fully developed region only: the entrance region needs a separate declaration.",
         "Uniform wall temperatures: the fully developed temperature is the conduction profile, so Nu = 1.",
         "Laminar flow and constant properties except the Boussinesq buoyancy."
       ],
       "acceptance": {
         "example": "mixed-convection",
-        "reference": "W = 6η(1 − η) − B·η(1 − η)(1 − 2η)/12, ∫W dη = 1 and the reversal boundary |B| = 72 (the page's exact derivation; Lienhard, eqn. (8.45), for Gr/Re² and the assisting and opposing cases). SymPy gives the same polynomials (tools/convective_references.py).",
+        "reference": "W = 6η(1 − η) − B·η(1 − η)(1 − 2η)/12, ∫W dη = 1 and the reversal boundary |B| = 72 come from the page's exact derivation. Gr/Re² and the two cases of flow direction come from Lienhard, eqn. (8.45). SymPy gives the same polynomials (tools/convective_references.py).",
         "tolerance": "Exact for the profile, the conditions, the mean flow, the limits and the reversal boundary.",
         "checks": [
           "The profile satisfies the momentum equation, both walls and the mean flow exactly.",

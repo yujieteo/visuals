@@ -38,7 +38,7 @@
     const out = [];
     for (const [k, [lo, hi]] of Object.entries(corr.range ?? {})) {
       const v = groups[k];
-      if (!Number.isFinite(v)) out.push(`${k} is not known`);
+      if (!Number.isFinite(v)) out.push(`${k} has no value`);
       else if ((lo !== null && v < lo) || (hi !== null && v > hi)) out.push(`${k} = ${fmt(v)} is outside ${lo === null ? "" : `${fmt(lo)} ≤ `}${k}${hi === null ? "" : ` ≤ ${fmt(hi)}`}`);
     }
     return out;
@@ -49,7 +49,7 @@
    * @returns {{ ok: boolean, value: number | null, refused: string[], corr: any }}
    */
   function evaluate(corr, groups) {
-    if (!corr || !FORMS[corr.form]) return { ok: false, value: null, refused: ["the correlation is not known"], corr };
+    if (!corr || !FORMS[corr.form]) return { ok: false, value: null, refused: ["the page does not know the correlation"], corr };
     const bad = violations(corr, groups);
     if (bad.length) return { ok: false, value: null, refused: bad, corr };
     return { ok: true, value: FORMS[corr.form](groups, corr.constants), refused: [], corr };

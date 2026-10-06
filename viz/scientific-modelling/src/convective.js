@@ -202,7 +202,7 @@
     const out0 = P.at(d1, 0), out1 = Q.neg(P.at(d1, 1));
     const balance = Q.add(out0, out1);
     checks.push(check("cou-energy", `Total energy balance: the heat that leaves through the two walls equals the heat that viscosity generates, ${set === "isothermal" ? "θ'(0) − θ'(1) = Br" : "−θ'(1) = 1"}.`, "exact", {
-      passed: Q.eq(balance, Br), detail: `Dissipation Φ = μ(U/H)² = ${f(qn(Phi))} W/m³, uniform. Heat out per unit wall area: ${f(qn(Q.mul(Q.mul(p.k, Q.div(scale, p.H)), out0)))} W/m² at y = 0 and ${f(qn(Q.mul(Q.mul(p.k, Q.div(scale, p.H)), out1)))} W/m² at y = H. Their sum is μU²/H = ${f(qn(Q.div(Q.mul(p.mu, Q.pow(p.U, 2)), p.H)))} W/m².`,
+      passed: Q.eq(balance, Br), detail: `Dissipation Φ = μ(U/H)² = ${f(qn(Phi))} W/m³, uniform. Heat out through each square metre of wall: ${f(qn(Q.mul(Q.mul(p.k, Q.div(scale, p.H)), out0)))} W/m² at y = 0 and ${f(qn(Q.mul(Q.mul(p.k, Q.div(scale, p.H)), out1)))} W/m² at y = H. Their sum is μU²/H = ${f(qn(Q.div(Q.mul(p.mu, Q.pow(p.U, 2)), p.H)))} W/m².`,
       inputs: ["mu", "U", "H", "k", "T0", "T1"] }));
     if (set === "isothermal") {
       const limit = P.add(eta, P.ZERO);
@@ -213,7 +213,7 @@
       const brn = qn(Br);
       const inside = Q.cmp(Q.abs(Br), q(2)) > 0;
       const etaStar = inside ? Q.add(q(1, 2), Q.inv(Br)) : null;
-      checks.push(check("cou-maximum", inside ? `Br = ${f(brn, 4)} has |Br| > 2, so the temperature has an interior extreme at η* = 1/2 + 1/Br = ${Q.str(etaStar).length < 12 ? Q.str(etaStar) : f(qn(etaStar), 6)}, and heat leaves through both walls.` : `Br = ${f(brn, 4)} has |Br| ≤ 2, so the temperature is monotone and the wall at y = 0 does not receive heat from the fluid.`,
+      checks.push(check("cou-maximum", inside ? `Br = ${f(brn, 4)} has |Br| > 2, so the temperature has an interior extreme at η* = 1/2 + 1/Br = ${Q.str(etaStar).length < 12 ? Q.str(etaStar) : f(qn(etaStar), 6)}, and heat leaves through both walls.` : `Br = ${f(brn, 4)} has |Br| ≤ 2, so the temperature is monotone and the hotter wall does not receive heat from the fluid.`,
         "exact", { passed: inside ? Q.isZero(P.at(d1, etaStar)) : true, detail: "The heat flux at the hotter wall changes sign at |Br| = 2 exactly, because θ'(0) = 1 + Br/2 and θ'(1) = 1 − Br/2.", inputs: ["mu", "U", "k", "T0", "T1"] }));
       if (Pr && Ec) checks.push(check("cou-identity", `Br = Pr·Ec holds exactly for these values: ${f(qn(Pr), 6)} × ${f(qn(Ec), 6)} = ${f(qn(Br), 6)}.`, "exact",
         { passed: Q.eq(Q.mul(Pr, Ec), Br), detail: "Pr and Ec use the same μ, c_p, k and ΔT as Br, so the page gives no separate control for Br.", inputs: ["mu", "U", "k", "cp", "T0", "T1"] }));
@@ -266,7 +266,7 @@
         detail: `τ = (${f(qn(p.gammaT))} N/(m·K)) × (${f(qn(b))} K/m) = ${f(qn(tau))} Pa. No slip at z = 0: F(0) = 0.`, inputs: ["gammaT", "b", "mu", "d"], evidence: ["comsol-marangoni"] }));
     checks.push(check("tc-sign", `Sign: dγ/dT is ${signWord(Q.sign(p.gammaT))} and the gradient ∂T/∂x is ${signWord(Q.sign(b))}, so τ is ${signWord(s)}. The surface moves toward ${s < 0 ? "−x" : "+x"}, the ${(s < 0) === (Q.sign(b) > 0) ? "colder" : "hotter"} side, where the surface tension is higher.`,
       "exact", { passed: Q.sign(us) === s && s !== 0, detail: `Surface speed u_s = τh_l/(4μ) = ${f(qn(us))} m/s.${MaT ? ` Ma_T = ${f(qn(MaT), 5)} is a positive magnitude.` : ""} The page keeps the sign s = ${s > 0 ? "+1" : "−1"} apart from it.`, inputs: ["gammaT", "b"], evidence: ["comsol-marangoni", "spec-10"] }));
-    checks.push(check("tc-return", "Closed ends far away: the net flow through each section is zero, ∫F dZ = 0. The return flow fills the lower third: u changes sign at Z = 2/3.", "exact",
+    checks.push(check("tc-return", "Closed ends far away: the net flow through each section is zero, ∫F dZ = 0. The return flow fills the lower two thirds: u changes sign at Z = 2/3.", "exact",
       { passed: Q.isZero(P.definite(F, 0, 1)) && Q.isZero(P.at(F, q(2, 3))), detail: `Pressure gradient dp/dx = μu_zz = (3/2)τ/h_l = ${f(qn(Q.div(Q.mul(q(3, 2), tau), p.d)))} Pa/m, uniform, because F'' = 3/2.`, inputs: ["gammaT", "DT", "L", "d"] }));
     // Temperature T = T0 + b x + b d Theta(zeta), Theta'' = s Ma_d F, adiabatic at both faces, zero mean.
     const G = P.integ(P.integ(F));
@@ -279,7 +279,7 @@
       { passed: P.isZero(resid) && Q.isZero(P.at(P.deriv(Theta), 0)) && Q.isZero(P.at(P.deriv(Theta), 1)), tex: `\\Theta=s\\,Ma_d\\left(${P.tex(G0, "Z")}\\right)`, inputs: ["gammaT", "DT", "L", "d", "mu", "k", "rho", "cp"] }));
     const fg = P.definite(P.mul(F, G0), 0, 1);       // = -1/1680
     const enh = Q.sub(Q.ONE, Q.mul(fg, Q.pow(Mad, 2)));
-    checks.push(check("tc-transport", `The flow increases the heat transport along the layer by the exact factor 1 + Ma_d²/1680 = ${f(qn(enh), 6)}. The factor is even in s: reversing the sign of dγ/dT reverses the flow, but not this increase.`, "exact",
+    checks.push(check("tc-transport", `The flow increases the heat transport along the layer by the exact factor 1 + Ma_d²/1680 = ${f(qn(enh), 6)}. The factor is even in s: if dγ/dT changes sign, the flow reverses, but this increase stays the same.`, "exact",
       { passed: Q.eq(fg, q(-1, 1680)), detail: `∫₀¹ F G dZ = ${Q.str(fg)}. Conduction alone carries −k b h_l per unit width. The total is that value times 1 + Ma_d²/1680.`, inputs: ["gammaT", "DT", "L", "d", "mu", "k", "rho", "cp"] }));
     if (MaT) checks.push(check("tc-magnitude", `Ma_T = |dγ/dT||ΔT|L/(μα_f) = ${f(qn(MaT), 6)} with ΔT = bL, and Ma_d = Ma_T (h_l/L)² = ${f(qn(Mad), 6)} exactly. Both are positive magnitudes.`, "exact",
       { passed: Q.eq(Mad, Q.mul(MaT, Q.pow(Q.div(p.d, p.L), 2))) && Q.sign(MaT) > 0, inputs: ["gammaT", "b", "L", "d", "mu", "k", "rho", "cp"], evidence: ["spec-10"] }));
@@ -288,9 +288,9 @@
       ["Z=\\frac{z}{h_l},\\qquad u=\\frac{\\tau h_l}{\\mu}F(Z),\\qquad T=T_0+\\frac{\\Delta T}{L}\\left(x+h_l\\,\\Theta(Z)\\right)", "Ma_T=\\frac{|\\mathrm d\\gamma/\\mathrm dT|\\,|\\Delta T|L}{\\mu\\alpha_f},\\qquad Ma_d=Ma_T\\left(\\frac{h_l}{L}\\right)^2,\\qquad s=\\operatorname{sign}\\left(\\frac{\\mathrm d\\gamma}{\\mathrm dT}\\Delta T\\right)"], ["spec-10"]));
     steps.push(step(7, "Dimensionless equations and conditions", "Parallel flow far from the ends: the momentum equation keeps the viscous term and a uniform pressure gradient. The energy equation keeps advection by u of the declared gradient and vertical conduction.",
       ["F''=\\text{const},\\quad F(0)=0,\\quad F'(1)=1,\\quad \\int_0^1F\\,\\mathrm dZ=0", "\\Theta''=s\\,Ma_d\\,F,\\qquad \\Theta'(0)=\\Theta'(1)=0,\\qquad \\int_0^1\\Theta\\,\\mathrm dZ=0"], ["comsol-marangoni"]));
-    steps.push(step(8, "Solution, transport and the balance crossover", `Advection and conduction carry equal heat along the layer when Ma_d² = 1680, so Ma_d ≈ ${f(crossover, 4)}. This is a balance crossover, not a transition.`,
+    steps.push(step(8, "Solution, transport and the balance crossover", `At Ma_d² = 1680 (Ma_d ≈ ${f(crossover, 4)}), advection and conduction carry the same heat along the layer. This is a balance crossover, not a transition.`,
       [`F=${P.tex(F, "Z")},\\qquad G=${P.tex(G0, "Z")}`, "\\frac{k_{eff}}{k}=1-Ma_d^2\\int_0^1F\\,G\\,\\mathrm dZ=1+\\frac{Ma_d^2}{1680}"]));
-    steps.push(step(10, "Limits of the declaration", "The page does not check these assumptions. They stay as unresolved claims: buoyancy is neglected, the surface stays flat, the ends are far away and the flow is steady. A heat loss at the surface makes T depend on x in a different way, so it needs a separate declaration. The stability of this flow (hydrothermal waves) is not part of the declaration."));
+    steps.push(step(10, "Limits of the declaration", "The page does not check these assumptions. They stay as unresolved claims: the model neglects buoyancy, the surface stays flat, the ends are far away and the flow is steady. A heat loss at the surface makes T depend on x in a different way, so it needs a separate declaration. The stability of this flow (hydrothermal waves) is not part of the declaration."));
     const zs = Array.from({ length: 101 }, (_, i) => i / 100);
     return {
       groups: [...(MaT ? [{ id: "Ma_T", label: "Ma_T", tex: "Ma_T=\\frac{|\\mathrm d\\gamma/\\mathrm dT|\\,|\\Delta T|L}{\\mu\\alpha_f}", value: qn(MaT), exact: Q.str(MaT) }] : []),
@@ -337,7 +337,7 @@
     const phiM = Q.div(P.definite(P.mul(wgt, phi), 0, 1), P.definite(wgt, 0, 1));
     const phiW = P.at(phi, 1);
     const NuQ = Q.div(q(2), Q.sub(phiW, phiM));
-    checks.push(check("tube-flux", `Uniform wall heat flux: Nu_D = hD/k = ${Q.str(NuQ)} = ${f(qn(NuQ), 6)} exactly.`, "exact",
+    checks.push(check("tube-flux", `Uniform heat flux at the wall: Nu_D = hD/k = ${Q.str(NuQ)} = ${f(qn(NuQ), 6)} exactly.`, "exact",
       { passed: Q.eq(NuQ, q(48, 11)) && P.eq(lhs, P.poly([4, 0, -4])) && Q.eq(P.at(P.deriv(phi), 1), Q.ONE),
         detail: `φ = ${P.text(phi, "ρ")} satisfies φ'' + φ'/ρ = 4(1 − ρ²) and φ'(1) = 1. φ_w = ${Q.str(phiW)} and φ_m = ${Q.str(phiM)}, weighted by the velocity 2U_m(1 − ρ²).`, inputs: ["D", "k"], evidence: ["open-tube"] }));
     // Wall temperature: the first Graetz eigenvalue by shooting on three meshes.
@@ -348,7 +348,7 @@
     const NuT = lam * lam / 2;
     const ref = opts.references?.graetz;
     checks.push(check("tube-temperature", `Uniform wall temperature: the first Graetz eigenvalue is λ₀ = ${f(lam, 9)}, so Nu_D = λ₀²/2 = ${f(NuT, 6)}.`, "numerical",
-      { passed: Number.isFinite(st.p) && Math.abs(st.p - 4) < 0.3 && (!ref || Math.abs(lam - ref.lambda0) < 1e-7), tolerance: "|λ₀ − λ_ref| < 1e-7; observed order within 0.3 of 4",
+      { passed: Number.isFinite(st.p) && Math.abs(st.p - 4) < 0.3 && (!ref || Math.abs(lam - ref.lambda0) < 1e-7), tolerance: "|λ₀ − λ_ref| < 1e-7, and observed order within 0.3 of 4",
         detail: `RK4 shooting from ρ = 0.02 (series start) with ${ns.join(", ")} steps: λ₀ = ${lams.map((x) => f(x, 10)).join(", ")}; observed order ${f(st.p, 3)}.${ref ? ` Reference: λ₀ = ${ref.lambda0} from ${ref.method}.` : ""}`, inputs: [], evidence: [] }));
     const lit = opts.literature?.tubeT;
     if (lit) checks.push(check("tube-literature", `The computed value ${f(NuT, 4)} agrees with the published value Nu_D = ${lit.value} for a uniform wall temperature, within ${lit.tolerance}.`, "evidence",
@@ -357,7 +357,7 @@
       { passed: Math.abs(qn(NuQ) - NuT) > 0.5, detail: `This model declares ${set === "flux" ? "a uniform wall heat flux" : "a uniform wall temperature"}.`, inputs: [] }));
     const active = set === "flux" ? qn(NuQ) : NuT;
     const h = active * qn(p.k) / qn(p.D);
-    steps.push(step(6, "Scales", "The diameter D and the mean speed U_m are the scales of the declared tube. The wall heat flux q_w (or the wall-to-bulk difference) is the temperature scale.",
+    steps.push(step(6, "Scales", "The diameter D and the mean speed U_m are the scales of the declared tube. The temperature scale is q_wD/k for a uniform heat flux and the inlet-to-wall difference for a uniform wall temperature.",
       ["\\rho_r=\\frac rR,\\qquad u=2U_m(1-\\rho_r^2),\\qquad Re=\\frac{\\rho U_mD}{\\mu},\\qquad Pe=Re\\,Pr", "\\frac{x}{D\\,Re\\,Pr}\\ \\text{(thermal entrance)},\\qquad \\frac{x}{D\\,Re}\\ \\text{(hydrodynamic entrance)}"], ["spec-10"]));
     steps.push(step(7, "Fully developed equations", "Far from the entrance, the shape of the temperature profile does not change along the tube. Axial conduction is negligible against advection for Pe ≫ 1.",
       ["\\text{flux: }\\ \\frac1{\\rho_r}(\\rho_r\\varphi')'=4(1-\\rho_r^2),\\quad \\varphi'(1)=1", "\\text{temperature: }\\ \\frac1{\\rho_r}(\\rho_r\\psi')'+\\lambda^2(1-\\rho_r^2)\\psi=0,\\quad \\psi(1)=0,\\quad Nu_D=\\tfrac{\\lambda_0^2}2"]));
@@ -398,10 +398,10 @@
     const fprof = P.add(poise, P.scale(buoy, Q.mul(q(s), GrRe)));
     const G = P.at(P.deriv(P.deriv(fprof)), q(1, 2));
     const resid = P.sub(P.deriv(P.deriv(fprof)), P.add(P.poly([G]), P.scale(P.poly([q(1, 2), -1]), Q.neg(Q.mul(q(s), GrRe)))));
-    checks.push(check("mix-equation", "The profile f = u/U_m satisfies the momentum equation f'' = Ĝ − s(Gr/Re)(1/2 − η), no slip at both walls and the mean flow ∫f dη = 1, exactly.", "exact",
+    checks.push(check("mix-equation", "The profile f = u/U_m satisfies the momentum equation f'' = Ĝ − s(Gr/Re)(1/2 − η) exactly. It also meets no slip at both walls and the mean flow ∫f dη = 1 exactly.", "exact",
       { passed: P.isZero(resid) && Q.isZero(P.at(fprof, 0)) && Q.isZero(P.at(fprof, 1)) && Q.eq(P.definite(fprof, 0, 1), Q.ONE), tex: `f=${P.tex(fprof, "\\eta")}`, inputs: ["D", "U", "g", "beta", "Th", "Tc", "rho", "mu"] }));
     const limitF = P.eq(P.add(poise, P.scale(buoy, q(0))), poise);
-    checks.push(check("mix-limits", "Forced limit: Gr/Re → 0 gives the Poiseuille profile 6η(1 − η). Buoyancy limit: with the buoyancy speed W = gβ|ΔT|D²/ν, u/W = (Re/Gr)·6η(1 − η) + s·η(1 − η)(1 − 2η)/12, and Re/Gr → 0 leaves the natural-convection profile with zero net flow.", "exact",
+    checks.push(check("mix-limits", "Forced limit: Gr/Re → 0 gives the Poiseuille profile 6η(1 − η). Buoyancy limit: with the buoyancy speed W = gβ|ΔT|D²/ν, u/W = (Re/Gr)·6η(1 − η) + s·η(1 − η)(1 − 2η)/12. The limit Re/Gr → 0 leaves the natural-convection profile with zero net flow.", "exact",
       { passed: limitF && Q.isZero(P.definite(buoy, 0, 1)), inputs: ["D", "U", "g", "beta", "Th", "Tc", "rho", "mu"] }));
     // Reversal: f'(1) > 0 (assisting, at the cold wall) or f'(0) < 0 (opposing, at the hot wall) when |Gr/Re| > 72.
     const reversed = Q.cmp(GrRe, q(72)) > 0;
@@ -410,15 +410,15 @@
       { passed: (reversed === (s > 0 ? Q.sign(slopeCold) > 0 : Q.sign(slopeHot) < 0)), detail: `f'(0) = ${f(qn(slopeHot), 6)} and f'(1) = ${f(qn(slopeCold), 6)}. The boundary is a line Gr = 72 Re in the (Re, Gr) plane, not a constant Richardson number.`, inputs: ["D", "U", "g", "beta", "Th", "Tc", "rho", "mu"] }));
     const assisting = Q.sign(p.g) < 0;
     const hot = Q.sign(dT) > 0 ? "y = 0" : "y = D";
-    checks.push(check("mix-direction", `Gravity direction: the gravity component along the mean flow is ${signWord(Q.sign(p.g))}, so buoyancy ${assisting ? "assists" : "opposes"} the flow at the hotter wall (${hot}). Gr uses |g| and |ΔT|. The page keeps the sign in s = ${s > 0 ? "+1" : "−1"}, and reversal can start at the ${assisting ? "colder" : "hotter"} wall.`, "exact",
+    checks.push(check("mix-direction", `Gravity direction: the gravity component along the mean flow is ${signWord(Q.sign(p.g))}, so buoyancy ${assisting ? "helps" : "acts against"} the flow at the hotter wall (${hot}). Gr uses |g| and |ΔT|. The page keeps the sign in s = ${s > 0 ? "+1" : "−1"}, and reversal can start at the ${assisting ? "colder" : "hotter"} wall.`, "exact",
       { passed: s !== 0, inputs: ["g", "Th", "Tc"] }));
-    checks.push(check("mix-ri", `Bulk Richardson number Ri = Gr/Re² = gβ|ΔT|D/U_m² = ${f(qn(Ri), 5)}, with one D, one ν and one ΔT in Gr and Re. The gradient Richardson number N²/(∂u/∂z)² is a different quantity. Here it is not defined, because the temperature gradient and the shear are both horizontal.`, "exact",
+    checks.push(check("mix-ri", `Bulk Richardson number Ri = Gr/Re² = gβ|ΔT|D/U_m² = ${f(qn(Ri), 5)}, with one D, one ν and one ΔT in Gr and Re. The gradient Richardson number N²/(∂u/∂z)² is a different quantity. Here it has no value: the temperature gradient and the shear are both horizontal, so N² = 0 and ∂u/∂z = 0.`, "exact",
       { passed: Q.eq(Ri, Q.div(Q.mul(Q.mul(g, p.beta), Q.mul(Q.abs(dT), p.D)), Q.pow(p.U, 2))), inputs: ["D", "U", "g", "beta", "Th", "Tc"], evidence: ["spec-10"] }));
-    checks.push(check("mix-heat", "Heat transfer: the fully developed temperature is linear across the channel, so Nu_D = qD/(kΔT) = 1 exactly. Buoyancy changes the velocity, not this heat flux. The developing region needs a separate declaration.", "exact",
+    checks.push(check("mix-heat", "Heat transfer: the fully developed temperature is linear across the channel, so Nu_D = qD/(kΔT) = 1 exactly. Buoyancy changes the velocity, not this heat flux. The entrance region needs a separate declaration.", "exact",
       { passed: true, inputs: ["Th", "Tc"] }));
     steps.push(step(6, "Scales", "The width D, the mean speed U_m and the wall difference ΔT = T_h − T_c are the scales. The Boussinesq reference temperature is the mean wall temperature.",
       ["\\eta=\\frac yD,\\qquad f=\\frac u{U_m},\\qquad Gr=\\frac{g\\beta|\\Delta T|D^3}{\\nu^2},\\qquad Re=\\frac{U_mD}{\\nu},\\qquad Ri=\\frac{Gr}{Re^2}"], ["spec-10"]));
-    steps.push(step(7, "Dimensionless equations", "Fully developed flow: the temperature is the conduction profile, and the buoyancy force enters the momentum equation with the sign s of the gravity direction.",
+    steps.push(step(7, "Dimensionless equations", "Fully developed flow: the temperature is the conduction profile. The buoyancy force enters the momentum equation with the sign s of the gravity direction.",
       ["\\frac{T-T_0}{\\Delta T}=\\tfrac12-\\eta,\\qquad f''=\\hat G-s\\,\\frac{Gr}{Re}\\left(\\tfrac12-\\eta\\right),\\qquad f(0)=f(1)=0,\\quad\\int_0^1f\\,\\mathrm d\\eta=1"]));
     steps.push(step(8, "Solution and the exact regime boundary", "The buoyancy part is odd about the centre line, so it carries no net flow. The slope at the wall changes sign at |Gr/Re| = 72.",
       [`f=6\\eta(1-\\eta)+s\\,\\frac{Gr}{Re}\\,\\frac{\\eta(1-\\eta)(1-2\\eta)}{12}`, "f'(0)=6+\\frac{s}{12}\\frac{Gr}{Re},\\qquad f'(1)=-6+\\frac{s}{12}\\frac{Gr}{Re}\\ \\Rightarrow\\ \\text{reversal for }\\frac{Gr}{Re}>72"]));
@@ -523,7 +523,7 @@
     const ex = conjugateExact(Tr, K);
     const PeH = qn(Pe) / 4, k = qn(K), T = qn(Tr), Lx = qn(Lr);
     checks.push(check("cj-exact", `Fully developed solution: θ_w − θ_m = ${Q.str(ex.wm)} and θ_o − θ_w = (t/H)/K = ${Q.str(ex.ow).length < 14 ? Q.str(ex.ow) : f(qn(ex.ow))}, so Nu_f = ${Q.str(ex.Nuf)} ≈ ${f(qn(ex.Nuf), 5)} and Nu_o = ${f(qn(ex.Nuo), 5)} (both with D_h = 4H).`, "exact",
-      { passed: Q.eq(ex.wm, q(17, 35)) && Q.eq(ex.flux, Q.ONE), detail: "The interface carries the whole outer heat flux, and the solid profile is linear. The interface temperature is continuous by construction of the two profiles.", inputs: ["U", "H", "t", "kf", "ks", "rho", "cp"], evidence: ["open-plates"] }));
+      { passed: Q.eq(ex.wm, q(17, 35)) && Q.eq(ex.flux, Q.ONE), detail: "All the heat from the outer surface crosses the interface, and the solid profile is linear. The interface temperature is continuous by construction of the two profiles.", inputs: ["U", "H", "t", "kf", "ks", "rho", "cp"], evidence: ["open-plates"] }));
     // Mesh: central advection needs cell Peclet below 2.
     const dx0 = Math.min(0.25, 1.8 / (1.5 * Math.max(PeH, 1e-9)));
     const nx0 = Math.max(8, Math.ceil(Lx / dx0));
@@ -555,11 +555,11 @@
     // Interface: one-sided second-order fluxes from each side, away from the inlet.
     const mism = meshes.map((m) => { let e = 0; m.cols.forEach((c, i) => { const X = (i + 0.5) * m.dx; if (X > 0.2 * Lx && X < 0.8 * Lx) e = Math.max(e, Math.abs(c.qf - c.qs)); }); return e; });
     const pI = N.order(mism[1], mism[2]);
-    checks.push(check("cj-interface", `Interface heat-flux continuity: one-sided second-order fluxes from the fluid and from the solid differ by at most ${mism.map((v) => f(v, 3)).join(", ")} on the three meshes, between 20 % and 80 % of the length (observed order ${f(pI, 3)}). The finite-volume face itself uses one temperature and one flux.`, "numerical",
+    checks.push(check("cj-interface", `Interface heat-flux continuity: on the three meshes, the one-sided fluxes from the fluid and the solid differ by at most ${mism.map((v) => f(v, 3)).join(", ")}. These fluxes are second-order, and the page compares them between 20 % and 80 % of the length (observed order ${f(pI, 3)}). The finite-volume face itself uses one temperature and one flux.`, "numerical",
       { passed: mism[2] < mism[1] && mism[1] < mism[0] && pI > 1.5, tolerance: "the mismatch decreases with order above 1.5", inputs: ["kf", "ks", "t", "H"] }));
     const bal = Math.abs(fine.interfaceTotal - Lx) / Lx;
     const bal2 = Math.abs(fine.advOut - Lx) / Lx;
-    checks.push(check("cj-energy", `Interface balance: the heat that crosses the interface, ${f(fine.interfaceTotal, 10)}, equals the heat into the outer wall, L/H = ${f(Lx, 10)}, and the fluid carries the same heat out at the outlet, ${f(fine.advOut, 10)}.`, "numerical",
+    checks.push(check("cj-energy", `Interface balance: the heat that crosses the interface, ${f(fine.interfaceTotal, 10)}, equals the heat into the outer wall, L/H = ${f(Lx, 10)}. The fluid carries the same heat out at the outlet, ${f(fine.advOut, 10)}.`, "numerical",
       { passed: bal < 1e-9 && bal2 < 1e-9, tolerance: "relative 1e-9", detail: `Relative errors ${f(bal, 2)} and ${f(bal2, 2)} (round-off). Units: qH per unit depth. The wall ends are adiabatic, and the inlet admits heat only by advection.`, inputs: ["U", "H", "t", "Lh", "kf", "ks", "rho", "cp"] }));
     // Entrance length: where the local Nu_f comes within 1 % of 140/17.
     const NuF = qn(ex.Nuf);
@@ -574,13 +574,13 @@
         { id: "tH", label: "t/H", tex: "t/H", value: T, exact: Q.str(Tr) }, { id: "LH", label: "L/H", tex: "L/H", value: Lx, exact: Q.str(Lr) }];
     }
     function hand() {
-      return [step(6, "Scales", "The half-width H, the mean speed U_m and the outer heat flux q are the scales. The temperature scale is qH/k_f.",
+      return [step(6, "Scales", "The half-width H, the mean speed U_m and the heat flux q at the outer surface are the scales. The temperature scale is qH/k_f.",
         ["X=\\frac xH,\\quad Y=\\frac yH,\\quad \\theta=\\frac{(T-T_{in})k_f}{qH},\\quad Pe_H=\\frac{U_mH}{\\alpha_f}=\\frac{Pe}{4},\\quad K=\\frac{k_s}{k_f}"]),
-      step(7, "Dimensionless equations and interface conditions", "Fluid: steady advection and conduction. Solid: conduction. The interface keeps one temperature and one heat flux. The fluid brings T_in by advection; the declaration neglects conduction across the inlet plane. The two ends of the wall are adiabatic.",
+      step(7, "Dimensionless equations and interface conditions", "Fluid: steady advection and conduction. Solid: conduction. The interface keeps one temperature and one heat flux. The fluid brings T_in by advection. The declaration does not include conduction across the inlet plane. The two ends of the wall are adiabatic.",
         ["Pe_H\\,\\tfrac32(1-Y^2)\\,\\theta_X=\\theta_{XX}+\\theta_{YY}\\ (0<Y<1),\\qquad K\\nabla^2\\theta=0\\ (1<Y<1+t/H)", "\\theta_f=\\theta_s,\\quad \\partial_Y\\theta_f=K\\,\\partial_Y\\theta_s\\ \\text{at } Y=1;\\qquad K\\partial_Y\\theta=1\\ \\text{at } Y=1+t/H;\\qquad \\partial_Y\\theta=0\\ \\text{at } Y=0"]),
-      step(8, "Fully developed solution", "Far from the inlet, the fluid temperature rises linearly along X with slope 1/Pe_H, and the profile shape is fixed.",
+      step(8, "Fully developed solution", "Far from the inlet, the fluid temperature rises linearly along X with slope 1/Pe_H, and the shape of the profile does not change.",
         [`\\theta-\\theta_c=${P.tex(ex.profile, "Y")},\\qquad \\theta_w-\\theta_m=\\tfrac{17}{35},\\qquad Nu_f=\\tfrac{140}{17}`, "\\theta_o-\\theta_w=\\frac{t/H}{K},\\qquad Nu_o=\\frac{4}{17/35+(t/H)/K}"], ["open-plates"]),
-      step(10, "Numerical procedure", "Finite volumes on three meshes (refinement ratio 2), central advection with cell Péclet number below 2, a harmonic interface conductance and a banded LU solve. The page reports the observed order, the Richardson value and the grid convergence index (Roache, safety factor 1.25).")];
+      step(10, "Numerical procedure", "The page uses finite volumes on three meshes (refinement ratio 2) and central advection with a cell Péclet number below 2. It uses a harmonic interface conductance and a banded LU solve. The page reports the observed order, the Richardson value and the grid convergence index (Roache, safety factor 1.25).")];
     }
     const Xs2 = fine.cols.map((c, i) => (i + 0.5) * fine.dx);
     const stride = Math.max(1, Math.floor(fine.cols.length / 150));
@@ -639,8 +639,8 @@
     const aLam = Q.sub(Q.parse(lamL.constants.a), Q.ONE), aTurb = Q.sub(Q.parse(turb.constants.a), Q.ONE);
     const okLam = Q.eq(Q.mul(Q.parse(lamL.constants.C), fac(aLam)), Q.parse(lamM.constants.C));
     const meanTurb = Q.mul(Q.parse(turb.constants.C), fac(aTurb));
-    checks.push(check("pl-mean", `Local and mean values stay apart: h_x ∝ x^(−1/2) gives h̄ = 2h(L), so 0.664 = 2 × 0.332 exactly; h_x ∝ x^(−1/5) gives h̄ = (5/4)h(L), so 0.0296 × 5/4 = ${Q.str(meanTurb) === "37/1000" ? "0.037" : Q.str(meanTurb)} exactly.`, "exact",
-      { passed: okLam && Q.eq(meanTurb, q(37, 1000)), detail: "The mean over 0 < x < L of x^a is L^a/(1 + a). Nu_x uses x and the local h; Nu_L uses L and the mean h̄.", evidence: [lamM.source] }));
+    checks.push(check("pl-mean", `Local and mean values stay apart. For h_x ∝ x^(−1/2), h̄ = 2h(L), so 0.664 = 2 × 0.332 exactly. For h_x ∝ x^(−1/5), h̄ = (5/4)h(L), so 0.0296 × 5/4 = ${Q.str(meanTurb) === "37/1000" ? "0.037" : Q.str(meanTurb)} exactly.`, "exact",
+      { passed: okLam && Q.eq(meanTurb, q(37, 1000)), detail: "The mean over 0 < x < L of x^a is L^a/(1 + a). Nu_x uses x and the local h. Nu_L uses L and the mean h̄.", evidence: [lamM.source] }));
     const region = EM.regionOf(C.boundaries.plate, qn(Rex));
     checks.push(check("pl-region", `Re_x = ${f(qn(Rex), 5)} at the station: ${region.label.charAt(0).toLowerCase()}${region.label.slice(1)} (${C.boundaries.plate.where}).`, region.status, { passed: region.status !== "unresolved", evidence: [C.boundaries.plate.source], detail: C.boundaries.plate.data, next: region.status === "unresolved" ? "Fix the state of the layer by measurement, or move the station out of the transition range." : "" }));
     const local = corrCheck("pl-local", region.id === "turbulent" ? turb : lamL, g, "Nu_x", "W/(m²·K)", p.k ? { label: "h_x", k: qn(p.k) / qn(p.xs) } : null);
@@ -650,12 +650,12 @@
     // The governing model behind the laminar law: Blasius and Pohlhausen by shooting.
     const bl = blasius();
     const lit = C.literature?.blasius;
-    checks.push(check("pl-blasius", `The page's Blasius solution gives f''(0) = ${f(bl.s, 9)}; Lienhard gives 0.33206 (${lit?.where ?? "Table 6.1"}).`, "numerical", { passed: Math.abs(bl.s - 0.33206) <= (lit?.tolerance ?? 1e-5), tolerance: `absolute ${lit?.tolerance ?? 1e-5}`, evidence: [lit?.source ?? "lienhard-2024"] }));
+    checks.push(check("pl-blasius", `The page's Blasius solution gives f''(0) = ${f(bl.s, 9)}. Lienhard gives 0.33206 (${lit?.where ?? "Table 6.1"}).`, "numerical", { passed: Math.abs(bl.s - 0.33206) <= (lit?.tolerance ?? 1e-5), tolerance: `absolute ${lit?.tolerance ?? 1e-5}`, evidence: [lit?.source ?? "lienhard-2024"] }));
     const prv = qn(Pr);
     if (prv >= 0.5) {
       const th = pohlhausen(bl, prv), cor = 0.332 * Math.cbrt(prv);
       const tol = prv <= 2 ? 0.01 : 0.02;
-      checks.push(check("pl-pohlhausen", `At Pr = ${f(prv, 4)} the page's similarity solution gives Nu_x/Re_x^(1/2) = θ'(0) = ${f(th, 6)}; the correlation gives 0.332 Pr^(1/3) = ${f(cor, 6)}, a difference of ${f(100 * (cor - th) / th, 3)} %.`, "numerical",
+      checks.push(check("pl-pohlhausen", `At Pr = ${f(prv, 4)} the page's similarity solution gives Nu_x/Re_x^(1/2) = θ'(0) = ${f(th, 6)}. The correlation gives 0.332 Pr^(1/3) = ${f(cor, 6)}, a difference of ${f(100 * (cor - th) / th, 3)} %.`, "numerical",
         { passed: Math.abs(cor - th) / th <= tol, tolerance: `relative ${tol} (the stated accuracy of the correlation for ${prv <= 2 ? "0.6 ≤ Pr ≤ 2" : "Pr ≥ 0.6"})`, evidence: [lamL.source], detail: "θ'(0) = 1/∫₀^∞ (f''/f''(0))^Pr dη by Simpson's rule on 3000 steps to η = 15." }));
     }
     steps.push(step(6, "Scales", "The plate length L, the outer speed U and the inner scale (νL/U)^(1/2) are the scales. The outer-to-wall difference is the temperature scale.",
@@ -683,10 +683,10 @@
     checks.push(check("nw-ra", `Ra_L = Gr_L·Pr exactly: ${f(qn(Ra), 6)} = ${f(qn(Gr), 6)} × ${f(qn(Pr), 6)}. Both use the same ν, so the page gives no separate control for Ra.`, "exact", { passed: Q.eq(Ra, Q.mul(Gr, Pr)), evidence: ["spec-10"] }));
     // Buoyancy scaling: velocity sqrt(g beta dT L), thickness L Gr^(-1/4), Gr = (U_b L/nu)^2.
     const Ub2L2 = Q.div(Q.mul(Q.mul(Q.mul(p.g, p.beta), p.DT), Q.pow(p.L, 3)), Q.pow(p.nu, 2));
-    checks.push(check("nw-scaling", "Buoyancy scaling: with the buoyancy speed U_b = (gβΔT L)^(1/2), Gr_L = (U_b L/ν)² exactly, and the laminar layer has the thickness L·Gr^(−1/4) of the declared scale of y.", "exact", { passed: Q.eq(Ub2L2, Gr), evidence: ["lienhard-2024"] }));
+    checks.push(check("nw-scaling", "Buoyancy scales: with the buoyancy speed U_b = (gβΔT L)^(1/2), Gr_L = (U_b L/ν)² exactly. The laminar layer has the thickness L·Gr^(−1/4), which is the declared scale of y.", "exact", { passed: Q.eq(Ub2L2, Gr), evidence: ["lienhard-2024"] }));
     const e1 = q(1, 4), e2 = Q.mul(q(2), q(1, 6));
     const hExp = (e) => Q.sub(Q.mul(q(3), e), Q.ONE);
-    checks.push(check("nw-exponents", `Exponents: Nu ∝ Ra^(1/4) gives h ∝ L^(${Q.str(hExp(e1))}), and the turbulent limit (Ra^(1/6))² = Ra^(${Q.str(e2)}) gives h ∝ L^${Q.str(hExp(e2))}: h does not depend on the height.`, "exact", { passed: Q.eq(hExp(e1), q(-1, 4)) && Q.isZero(hExp(e2)), evidence: ["lienhard-2024"], detail: "Ra_L ∝ L³ and h = Nu_L k/L." }));
+    checks.push(check("nw-exponents", `Exponents: Nu ∝ Ra^(1/4) gives h ∝ L^(${Q.str(hExp(e1))}). The turbulent limit (Ra^(1/6))² = Ra^(${Q.str(e2)}) gives h ∝ L^${Q.str(hExp(e2))}, so h does not depend on the height.`, "exact", { passed: Q.eq(hExp(e1), q(-1, 4)) && Q.isZero(hExp(e2)), evidence: ["lienhard-2024"], detail: "Ra_L ∝ L³ and h = Nu_L k/L." }));
     const region = EM.regionOf(C.boundaries.wall, qn(Ra));
     checks.push(check("nw-region", `Ra_L = ${f(qn(Ra), 5)}: ${region.label.charAt(0).toLowerCase()}${region.label.slice(1)} (${C.boundaries.wall.where}).`, region.status, { passed: true, evidence: [C.boundaries.wall.source], detail: C.boundaries.wall.data }));
     const g = { Ra: qn(Ra), Pr: qn(Pr) };
@@ -699,11 +699,11 @@
     if (ex) {
       const ra = (ex.g * ex.beta * ex.dT * ex.L ** 3) / (ex.nu * ex.alpha);
       const nu81 = EM.formValue(EM.find(data, "wall-cc-laminar"), { Ra: ra, Pr: ex.Pr });
-      checks.push(check("nw-example", `Reference: with the inputs of Lienhard's ${ex.where}, the page gives Ra_L = ${f(ra, 4)} and Nu_L = ${f(nu81, 5)}; the book gives ${f(ex.Ra, 3)} and ${ex.Nu}.`, "numerical",
-        { passed: Math.abs(nu81 - ex.Nu) <= ex.tolerance && Math.abs(ra - ex.Ra) / ex.Ra < 0.005, tolerance: `absolute ${ex.tolerance} for Nu_L; relative 0.005 for Ra_L (the book rounds to 3 digits)`, evidence: [ex.source] }));
+      checks.push(check("nw-example", `Reference: with the inputs of Lienhard's ${ex.where}, the page gives Ra_L = ${f(ra, 4)} and Nu_L = ${f(nu81, 5)}. The book gives ${f(ex.Ra, 3)} and ${ex.Nu}.`, "numerical",
+        { passed: Math.abs(nu81 - ex.Nu) <= ex.tolerance && Math.abs(ra - ex.Ra) / ex.Ra < 0.005, tolerance: `absolute ${ex.tolerance} for Nu_L, and relative 0.005 for Ra_L (the book rounds to 3 digits)`, evidence: [ex.source] }));
     }
-    checks.push(check("nw-tilt", "Orientation: the record is a vertical wall. An inclined wall uses g cos θ only for θ ≤ 45° and 10⁵ ≤ Ra_L ≤ 10⁹; a horizontal plate needs other correlations, so the page refuses it for this declaration.", "evidence", { passed: true, evidence: ["lienhard-2024"] }));
-    steps.push(step(6, "Scales", "Buoyancy sets the speed (gβΔT L)^(1/2); viscosity sets the thickness L·Gr^(−1/4) of the laminar layer.",
+    checks.push(check("nw-tilt", "Orientation: the record is a vertical wall. For the unstable side of an inclined wall, eqn. (8.13a) uses g cos θ only for θ < 45° and 10⁵ ≤ Ra_L ≤ 10⁹ (section 8.4). For the stable side, the limits are θ < 88° and 10⁵ ≤ Ra_L ≤ 10¹¹. A horizontal plate needs other correlations, so the page refuses it for this declaration.", "evidence", { passed: true, evidence: ["lienhard-2024"] }));
+    steps.push(step(6, "Scales", "Buoyancy sets the speed (gβΔT L)^(1/2). Viscosity sets the thickness L·Gr^(−1/4) of the laminar layer.",
       ["Gr_L=\\frac{g\\beta\\Delta T L^3}{\\nu^2},\\qquad Ra_L=Gr_L\\,Pr=\\frac{g\\beta\\Delta T L^3}{\\nu\\alpha},\\qquad \\overline{Nu}_L=\\frac{\\bar hL}{k}"], ["spec-10"]));
     steps.push(step(7, "The named correlations", "The declared result type is a named correlation of measured data.", [EM.find(data, "wall-cc-laminar").tex, EM.find(data, "wall-cc-all").tex], ["lienhard-2024"]));
     steps.push(step(8, "Validity and the empirical boundary", C.boundaries.wall.data, ["\\overline{Nu}_L\\propto Ra_L^{1/4}\\Rightarrow \\bar h\\propto L^{-1/4},\\qquad \\overline{Nu}_L\\propto Ra_L^{1/3}\\Rightarrow \\bar h\\propto L^{0}"], ["lienhard-2024"]));
@@ -800,9 +800,9 @@
       limits: () => [{ id: "pe0", label: "Pe → 0: the diffusion form", coupled: false, note: "A regular limit.", points: [{ Pe: 1e-3 }] }, { id: "peinf", label: "Pe → ∞: the outlet layer", coupled: false, note: "A singular limit with an inner region at X = 1.", points: [{ Pe: 1e3 }] }],
       inspect: (p) => ({ ok: true, values: [{ id: "J", tex: "J", label: "total flux in units of kΔT/L", value: num(adExact(p.Pe).J) }, { id: "delta", tex: "1/Pe", label: "thickness of the outlet layer over L", value: num(1 / p.Pe) }], checks: [], reconstruction: [] }),
       derived: (p) => [{ id: "J", tex: "J", label: "total heat flux in units of kΔT/L", value: num(adExact(p.Pe ?? 1).J) }],
-      analysis: () => ({ note: "The exact solution gives every error on the map; the finite-volume checks run at the record's point.",
+      analysis: () => ({ note: "The exact solution gives every error on the map. The finite-volume checks run at the record's point.",
         balance: { intro: "Two terms compete in the energy equation.", terms: [{ tex: "Pe\\,\\theta_X", label: "advection", scale: "Pe", why: "θ changes by 1 over X = 1." }, { tex: "\\theta_{XX}", label: "conduction", scale: "1", why: "The same change over the same length." }],
-          balances: [{ title: "Advection only, with an outlet layer", when: "Pe\\gg1", derivation: "The outer equation θ_X = 0 gives θ = 1; it cannot meet θ(1) = 0, so an inner layer ξ = Pe(1 − X) restores the condition.", reduced: "\\theta_\\xi+\\theta_{\\xi\\xi}=0", neglected: "conduction outside the layer", assumptions: ["Pe large."],
+          balances: [{ title: "Advection only, with an outlet layer", when: "Pe\\gg1", derivation: "The outer equation θ_X = 0 gives θ = 1. This solution cannot meet θ(1) = 0, so an inner layer ξ = Pe(1 − X) restores the condition.", reduced: "\\theta_\\xi+\\theta_{\\xi\\xi}=0", neglected: "conduction outside the layer", assumptions: ["Pe large."],
             residual: { tex: "e^{-Pe}", order: "exponentially small", status: "exact", note: "The composite form equals (1 − e^(−Pe))θ exactly." } }],
           crossovers: [{ criterion: "Pe=1", status: "proposed", text: "The two term scales are equal." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
         asymptotic: { limits: [], overlap: "The two forms overlap nowhere at tolerance 0.01: between Pe ≈ 0.08 and Pe ≈ 4.6 only the full solution meets it.", gaps: "The page marks that range as a gap of the approximations." } }),
@@ -821,7 +821,7 @@
       derived: (p) => [{ id: "max", tex: "\\theta_{\\max}-1", label: "largest rise above the hotter wall (0 for Br ≤ 2)", value: num(p.Br > 2 ? (1 / 2 + 1 / p.Br) + (p.Br / 2) * (1 / 2 + 1 / p.Br) * (1 / 2 - 1 / p.Br) - 1 : 0) }],
       analysis: () => ({ note: "The solution is an exact polynomial: every value on the map is exact.",
         balance: { intro: "Two terms compete in the energy equation.", terms: [{ tex: "\\theta''", label: "conduction across the gap", scale: "1", why: "θ changes by 1 across the gap." }, { tex: "Br\\,(V')^2", label: "viscous dissipation", scale: "Br", why: "V' = 1 exactly." }],
-          balances: [{ title: "Conduction only", when: "Br\\ll1", derivation: "θ = η + (Br/2)η(1 − η) exactly; the dissipation term adds Br/8 at most.", reduced: "\\theta''=0", neglected: "viscous dissipation", assumptions: ["Br small."], residual: { tex: "Br/8", order: "first order in Br", status: "exact", note: "The expansion in Br ends at the first order." } }],
+          balances: [{ title: "Conduction only", when: "Br\\ll1", derivation: "θ = η + (Br/2)η(1 − η) exactly. The dissipation term adds Br/8 at most.", reduced: "\\theta''=0", neglected: "viscous dissipation", assumptions: ["Br small."], residual: { tex: "Br/8", order: "first order in Br", status: "exact", note: "The expansion in Br ends at the first order." } }],
           crossovers: [{ criterion: "Br=2", status: "exact", text: "The heat flux at the hotter wall changes sign." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
         asymptotic: noAsymptotic("The solution is exact and linear in Br.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "plane Couette flow with viscous heat generation, exact in rationals", point: { Br: num(p.Br) } })) });
@@ -837,7 +837,7 @@
       exactBoundaries: () => [{ layer: "transport", text: "|Ma_d| = √1680 ≈ 40.99 exactly: the two transports are equal." }],
       inspect: (p) => ({ ok: true, values: [{ id: "keff", tex: "k_{eff}/k", label: "transport factor along the layer", value: num(1 + p.Ms ** 2 / 1680) }, { id: "dir", tex: "s", label: "sign of the surface stress and of the surface velocity", value: Math.sign(p.Ms) }], checks: [], reconstruction: [] }),
       derived: (p) => [{ id: "keff", tex: "1+Ma_d^2/1680", label: "transport factor along the layer", value: num(1 + (p.Ms ?? 0) ** 2 / 1680) }],
-      analysis: () => ({ note: "The parallel flow is exact: the map shows the exact transport ratio. The sign of Ms is the direction of the surface flow; the transport depends on Ms² only.",
+      analysis: () => ({ note: "The parallel flow is exact: the map shows the exact transport ratio. The sign of Ms is the direction of the surface flow. The transport depends on Ms² only.",
         balance: { intro: "Along the layer, heat moves by conduction and by advection in the thermocapillary flow.", terms: [{ tex: "-k\\,b\\,h_l", label: "conduction along the layer", scale: "1", why: "The declared gradient b over the depth." }, { tex: "\\rho c_p\\int u\\,T\\,\\mathrm dz", label: "advection by the flow", scale: "Ma_d^2/1680", why: "The exact integral of W·Θ." }],
           balances: [{ title: "Conduction only", when: "Ma_d^2\\ll1680", derivation: "k_eff/k = 1 + Ma_d²/1680 exactly.", reduced: "q_x=-k\\,b\\,h_l", neglected: "advection along the layer", assumptions: ["Ma_d small."], residual: { tex: "Ma_d^2/1680", order: "second order in Ma_d", status: "exact", note: "The expansion ends at this order." } }],
           crossovers: [{ criterion: "Ma_d^2=1680", status: "exact", text: "The two transports are equal." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
@@ -848,10 +848,10 @@
   function mixedImpl(decl) {
     const run = (ctx) => { const v = values(ctx, { D: "D", U: "u_m", g: "g_x", beta: "beta", Th: "DT_w", rho: "rho", mu: "mu" }); const lack = lacking(v, ["D", "U", "g", "beta", "Th", "rho", "mu"]); return lack.length ? { lack } : once(keyOf(decl.id, v), () => mixedChannel({ ...v, Tc: Q.ZERO })); };
     return baseImpl(decl, { axes: { x: "Re", y: "Gr" },
-      layers: [balanceLayer("reversal", "Flow reversal", "rev", "Gr/(72 Re): the exact wall shear at the colder wall (assisting flow) is 0 when Gr/Re = 72", "No reversal: the velocity is positive across the channel", "Reversal near a wall"),
+      layers: [balanceLayer("reversal", "Flow reversal", "rev", "Gr/(72 Re): the exact wall shear at one wall is 0 when Gr/Re = 72. When buoyancy helps the flow at the hotter wall, this wall is the colder wall.", "No reversal: the velocity is positive across the channel", "Reversal near a wall"),
         balanceLayer("richardson", "Natural against forced convection (bulk Ri)", "Ri", "Gr/Re² against 1 (Lienhard, eqn. (8.45)): a comparison of the strengths of the two flows, not a boundary of this model", "Forced convection controls", "Natural convection controls", "evidence", ["lienhard-2024"])],
       evaluate: (p) => (p.Re > 0 && p.Gr > 0 ? { ok: true, values: { rev: p.Gr / (72 * p.Re), Ri: p.Gr / p.Re ** 2 } } : { ok: false, reason: "Re and Gr must be positive." }),
-      exactBoundaries: () => [{ layer: "reversal", text: "Gr = 72 Re exactly, a straight line of slope 1 on the log axes; the lines of constant Ri have slope 2, so no constant Ri gives this boundary." }],
+      exactBoundaries: () => [{ layer: "reversal", text: "Gr = 72 Re exactly, a straight line of slope 1 on the log axes. The lines of constant Ri have slope 2, so no constant Ri gives this boundary." }],
       inspect: (p) => ({ ok: true, values: [{ id: "B", tex: "Gr/Re", label: "buoyancy parameter", value: num(p.Gr / p.Re) }, { id: "Ri", tex: "Ri", label: "bulk Richardson number Gr/Re²", value: num(p.Gr / p.Re ** 2) }], checks: [], reconstruction: [] }),
       derived: (p) => [{ id: "Ri", tex: "Ri=Gr/Re^2", label: "bulk Richardson number", value: num(p.Gr / p.Re ** 2) }, { id: "B", tex: "Gr/Re", label: "the parameter of the profile", value: num(p.Gr / p.Re) }],
       constraints: (p) => (p.Re > 2000 ? [`Re = ${fmt(p.Re)}: the declared model assumes laminar flow.`] : []),
@@ -869,11 +869,11 @@
       return once(keyOf(decl.id, v), () => { const out = tube({ ...v, D: Q.mul(q(2), v.R) }, "temperature", { references: refs, literature: lit });
         const Re = out.values.Re, Pr = out.values.Pr;
         const reg = EM.regionOf(data.convective.boundaries.tube, Re);
-        out.checks.push(check("tube-regime", `Re_D = ${f(Re, 5)}: ${reg.label.charAt(0).toLowerCase()}${reg.label.slice(1)} (${data.convective.boundaries.tube.where}).`, reg.status, { passed: reg.id === "laminar", evidence: [data.convective.boundaries.tube.source], detail: data.convective.boundaries.tube.data, next: reg.id === "laminar" ? "" : "The declared laminar model does not apply; the empirical layer gives the turbulent correlation." }));
+        out.checks.push(check("tube-regime", `Re_D = ${f(Re, 5)}: ${reg.label.charAt(0).toLowerCase()}${reg.label.slice(1)} (${data.convective.boundaries.tube.where}).`, reg.status, { passed: reg.id === "laminar", evidence: [data.convective.boundaries.tube.source], detail: data.convective.boundaries.tube.data, next: reg.id === "laminar" ? "" : "The declared laminar model does not apply. The empirical layer gives the turbulent correlation." }));
         if (out.values.xth !== null) {
           const r = out.values.xth / 0.034;
           out.checks.push(check("tube-entry", r >= 1 ? `x/(D Re_D Pr) = ${f(out.values.xth, 4)} ≥ 0.034: the station is past the thermal entry length, so Nu_D is within 5 % of 3.657 (${data.convective.boundaries.entry.where}).` : `x/(D Re_D Pr) = ${f(out.values.xth, 4)} < 0.034: the station is in the thermal entry region, where the local Nu_D is more than 5 % above 3.657.`, r >= 1 ? "evidence" : "unresolved",
-            { passed: r >= 1, evidence: [data.convective.boundaries.entry.source], next: r >= 1 ? "" : "Move the station downstream, or declare the developing (Graetz) solution." }));
+            { passed: r >= 1, evidence: [data.convective.boundaries.entry.source], next: r >= 1 ? "" : "Move the station downstream, or declare the solution of the entrance region (the Graetz series)." }));
         }
         const gn = EM.evaluate(EM.find(data, "tube-gnielinski"), { Re, Pr });
         out.checks.push(gn.ok ? check("tube-gnielinski", `Turbulent alternative at this Re_D: Gnielinski gives Nu_D = ${f(gn.value, 5)}.`, "evidence", { passed: true, evidence: ["lienhard-flow"], tex: gn.corr.tex }) : check("tube-gnielinski", `Gnielinski's correlation (eqn. (7.41)) is refused here: ${gn.refused.join("; ")}.`, "evidence", { passed: true, evidence: ["lienhard-flow"] }));
@@ -883,10 +883,10 @@
       layers: [empiricalLayer("flow", "Laminar, transitional or turbulent flow", "Re", set.tube, "Re_D against the cited limits."), empiricalLayer("entry", "Thermal entry length", "entry", set.entry, "x/D against 0.034 Re_D Pr.")],
       evaluate: (p) => (p.Re > 0 && p.xD > 0 && p.Pr > 0 ? { ok: true, values: { Re: p.Re, entry: p.xD / (0.034 * p.Re * p.Pr) } } : { ok: false, reason: "Re, Pr and x/D must be positive." }),
       inspect: (p) => { const gn = EM.evaluate(EM.find(data, "tube-gnielinski"), { Re: p.Re, Pr: p.Pr }); return { ok: true, values: [{ id: "Nu", tex: "Nu_D", label: p.Re < 2100 ? "laminar, fully developed, uniform wall temperature" : gn.ok ? "Gnielinski, turbulent" : "no declared result", value: p.Re < 2100 ? 3.65679 : gn.ok ? num(gn.value) : null }, { id: "Gz", tex: "Gz", label: "Graetz number Re Pr D/x", value: num(p.Re * p.Pr / p.xD) }], checks: [], reconstruction: [] }; },
-      derived: (p) => [{ id: "NuT", tex: "Nu_D", label: "fully developed, uniform wall temperature", value: 3.65679 }, { id: "NuQ", tex: "Nu_D", label: "fully developed, uniform wall heat flux (pipe-poiseuille)", value: num(48 / 11) }],
+      derived: (p) => [{ id: "NuT", tex: "Nu_D", label: "fully developed, uniform wall temperature", value: 3.65679 }, { id: "NuQ", tex: "Nu_D", label: "fully developed, uniform heat flux at the wall (pipe-poiseuille)", value: num(48 / 11) }],
       analysis: () => ({ note: "The map carries two empirical layers: the state of the flow by Re_D and the thermal entry length by x/(D Re_D Pr). The declared laminar model holds only where both say so.",
         balance: { intro: "Axial advection balances radial conduction over the length R·Pe_R.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
-        asymptotic: noAsymptotic("Far downstream one eigenmode remains; the page uses its Nu_D past the entry length only.") }),
+        asymptotic: noAsymptotic("Far downstream, one eigenmode remains. The page uses its Nu_D past the entry length only.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "the Graetz eigenproblem with both wall conditions kept apart, and the empirical limits of the laminar model", point: { Re: num(p.Re) } })) });
   }
 
@@ -904,7 +904,7 @@
       analysis: () => ({ note: "The map uses the exact fully developed solution. The finite-volume solution with its mesh study runs at the record's point.",
         balance: { intro: "Two thermal resistances in series carry the heat from the outer surface to the fluid.", terms: [{ tex: "(H_o/H-1)/K", label: "conduction across the wall", scale: "(H_o/H − 1)/K", why: "A linear wall profile with the unit flux." }, { tex: "17/35", label: "convection into the fluid", scale: "17/35", why: "The exact θ_w − θ_m." }],
           balances: [], crossovers: [{ criterion: "(H_o/H-1)/K=17/35", status: "exact", text: "The two resistances are equal." }], note: "A balance crossover is a comparison of terms. It is not a transition." },
-        asymptotic: noAsymptotic("The map uses the exact fully developed state; the entry region is in the solution panel.") }),
+        asymptotic: noAsymptotic("The map uses the exact fully developed state. The solution panel shows the entry region.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "conjugate heat transfer: an exact fully developed solution and a finite-volume solution on three meshes", point: { K: num(p.K), Yo: num(p.Yo) } })) });
   }
 
@@ -916,13 +916,13 @@
     const set = data?.convective?.boundaries?.plate;
     return baseImpl(decl, { axes: { x: "Re", y: "Pr" },
       layers: [empiricalLayer("state", "State of the layer", "Re", set, "Re_x against the measured limits of transition."),
-        { ...empiricalLayer("prandtl", "Range of the correlations in Pr", "Pr", { source: "lienhard-2024", data: "Eqn. (6.58) holds for Pr ≥ 0.6; eqn. (6.112) for gases.", regions: [{ id: "low", lo: null, hi: 0.6, label: "Below the range of eqn. (6.58)", status: "unresolved" }, { id: "gas", lo: 0.6, hi: 1, label: "Laminar and turbulent laws both hold (gases)", status: "evidence" }, { id: "liquid", lo: 1, hi: null, label: "Laminar law only: eqn. (6.112) is for gases", status: "evidence" }] }, "Pr against the stated ranges."), hue: "prandtl" }],
+        { ...empiricalLayer("prandtl", "Range of the correlations in Pr", "Pr", { source: "lienhard-2024", data: "Eqn. (6.58) holds for Pr ≥ 0.6. Eqn. (6.112) holds for gases.", regions: [{ id: "low", lo: null, hi: 0.6, label: "Below the range of eqn. (6.58)", status: "unresolved" }, { id: "gas", lo: 0.6, hi: 1, label: "Gases: the laminar law and the turbulent law hold", status: "evidence" }, { id: "liquid", lo: 1, hi: null, label: "Laminar law only: eqn. (6.112) is for gases", status: "evidence" }] }, "Pr against the stated ranges."), hue: "prandtl" }],
       evaluate: (p) => (p.Re > 0 && p.Pr > 0 ? { ok: true, values: { Re: p.Re, Pr: p.Pr } } : { ok: false, reason: "Re and Pr must be positive." }),
       inspect: (p) => { const lam = EM.evaluate(EM.find(data, "plate-laminar-local"), { Re: p.Re, Pr: p.Pr }), tur = EM.evaluate(EM.find(data, "plate-turbulent-local"), { Re: p.Re, Pr: p.Pr });
         return { ok: true, values: [{ id: "lam", tex: "Nu_x", label: lam.ok ? "laminar, eqn. (6.58)" : `laminar law refused: ${lam.refused.join("; ")}`, value: lam.ok ? num(lam.value) : null }, { id: "tur", tex: "Nu_x", label: tur.ok ? "turbulent, eqn. (6.112)" : `turbulent law refused: ${tur.refused.join("; ")}`, value: tur.ok ? num(tur.value) : null }], checks: [], reconstruction: [] }; },
       analysis: () => ({ note: "The map shows where each named correlation holds. In the transition range no correlation gives a local value: the page leaves it unresolved and does not interpolate.",
-        balance: { intro: "Inside the layer, advection along the plate balances conduction across it.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
-        asymptotic: noAsymptotic("The correlations are fits; the similarity solution in the panel is their reference.") }),
+        balance: { intro: "Inside the layer, advection along the plate and conduction across the layer are in balance.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
+        asymptotic: noAsymptotic("The correlations are fits. The similarity solution in the panel is their reference.") }),
       acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "named correlations with validity ranges, against the page's similarity solution and imported numerical results", point: { Re: num(p.Re), Pr: num(p.Pr) } })) });
   }
 
@@ -935,9 +935,9 @@
       inspect: (p) => { const a = EM.evaluate(EM.find(data, "wall-cc-laminar"), { Ra: p.Ra, Pr: p.Pr }), b = EM.evaluate(EM.find(data, "wall-cc-all"), { Ra: p.Ra, Pr: p.Pr });
         return { ok: true, values: [{ id: "a", tex: "\\overline{Nu}_L", label: a.ok ? "eqn. (8.13a)" : "eqn. (8.13a) refused: Ra_L ≥ 10⁹", value: a.ok ? num(a.value) : null }, { id: "b", tex: "\\overline{Nu}_L", label: "eqn. (8.13b)", value: b.ok ? num(b.value) : null }], checks: [], reconstruction: [] }; },
       analysis: () => ({ note: "The map shows where each Churchill–Chu equation holds.",
-        balance: { intro: "In the laminar layer buoyancy balances inertia and viscosity.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
+        balance: { intro: "In the laminar layer, buoyancy balances inertia and viscosity.", terms: [], balances: [], crossovers: [], note: "A balance crossover is a comparison of terms. It is not a transition." },
         asymptotic: noAsymptotic("The correlations are fits of measured data.") }),
-      acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "the Churchill–Chu correlations with their ranges and the exact buoyancy scaling", point: { Ra: num(p.Ra), Pr: num(p.Pr) } })) });
+      acceptance: acceptance(run), stability: solution(decl, run, (p) => ({ concept: "the Churchill–Chu correlations with their ranges and the exact buoyancy scales", point: { Ra: num(p.Ra), Pr: num(p.Pr) } })) });
   }
 
   /** The imported numerical results of the record (evidence items of kind numerical-results), checked and compared. */
@@ -946,7 +946,7 @@
     const items = (ctx?.evidence ?? []).filter((e) => e.kind === "numerical-results");
     for (const it of items) {
       const v = EM.validateImport(it.results, spec);
-      if (!v.ok) { out.checks.push(check(`import-${it.id}`, `Imported results ${it.id} are refused: ${v.errors.join(" ")}`, "unresolved", { passed: false, next: "Load a file with its provenance and the page's group definitions." })); continue; }
+      if (!v.ok) { out.checks.push(check(`import-${it.id}`, `The page refuses the imported results ${it.id}: ${v.errors.join(" ")}`, "unresolved", { passed: false, next: "Load a file with its provenance and the page's group definitions." })); continue; }
       const cmp = EM.compare(v.doc, { ...spec, fixed: { Re: 1 } }, EM.find(data, spec.correlation), spec.tolerance);
       const pv = v.doc.provenance;
       out.checks.push(check(`import-${it.id}`, `Imported numerical results (${pv.source}; ${pv.method}; ${pv.software}; ${pv.date}): ${cmp.compared} of ${cmp.rows.length} points are inside the range of the correlation, and the largest deviation is ${f(100 * cmp.worst, 3)} %.${cmp.outside ? ` The page does not compare ${cmp.outside} point${cmp.outside > 1 ? "s" : ""} outside the range.` : ""}`,
