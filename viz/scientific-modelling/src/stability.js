@@ -168,7 +168,7 @@
       if (!an.ok) return { ready: false, reason: "custom-unsupported", message: `Custom ODE system: ${an.reason}`, next: an.next ?? "" };
       return { ready: true, kind: "custom", wanted, analysis: an, steps: ["s-st-ode"], inputs: ["purpose", ...interp.equations.map((e) => e.id), ...interp.variables.map((v) => v.id)] };
     }
-    if (wanted) return { ready: false, reason: "custom-pde", message: "The record names no declared model, and it is not a finite ODE system. Stability and bifurcation of a custom PDE are outside the supported set.", next: "Choose a declared model of piece 4, such as boussinesq-box, or write the model as a finite ODE system." };
+    if (wanted) return { ready: false, reason: "custom-pde", message: "The record names no declared model, and it is not a finite ODE system. Stability and bifurcation of a custom PDE are outside the supported set.", next: "Choose a declared model of piece 4 or 5, such as boussinesq-box or euler-column, or write the model as a finite ODE system." };
     return { ready: false, reason: "none", message: "The record does not ask for a stability or bifurcation analysis, and its declared model has none.", next: "" };
   }
   const stepsFor = (id) => (id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
