@@ -83,6 +83,9 @@ test("refused statements, each with its reason", () => {
   refused("DROP VIEW totals", /DROP TABLE totals/);
   refused("DROP VIEW nothing", /no derived view/);
   refused("DROP VIEW lima CASCADE", /CASCADE/);
+  refused("DROP TABLE IF EXISTS \"ORDERS\"", /cannot name a derived object/);
+  refused("DROP TABLE IF EXISTS \"TOTALS\"", /cannot name a derived object/);
+  refused("DROP TABLE IF EXISTS __dw_result", /cannot name a derived object/);
   refused("DROP SCHEMA main", /not in the whitelist/);
   refused("SELECT 1; DELETE FROM orders", /Statement 2 is refused/);
 });
@@ -124,6 +127,8 @@ test("what a record reads from a statement: tables, WITH names, order, clauses, 
   assert.equal(q.joins[0].diagnostics, false, "key pairs that mix = and IS NOT DISTINCT FROM are not followed");
   const [u] = accepted("SELECT * FROM orders JOIN customers USING (customer)");
   assert.deepEqual(u.query.joins.map((/** @type {any} */ j) => [j.kind, j.left.name, j.right.name, j.keys, j.diagnostics]), [["inner", "orders", "customers", [{ left: "customer", right: "customer" }], true]]);
+  const [chain] = accepted("SELECT * FROM orders o JOIN customers c ON o.customer = c.customer JOIN totals t ON c.city = t.city");
+  assert.deepEqual(chain.query.joins.map((/** @type {any} */ j) => [j.left?.name ?? null, j.diagnostics]), [["orders", true], [null, false]], "the left side of a later join is the earlier joins, not one table");
   const [x] = accepted("SELECT * FROM orders CROSS JOIN customers");
   assert.deepEqual([x.query.joins[0].kind, x.query.joins[0].diagnostics], ["cross", false]);
   const [set] = accepted("SELECT city FROM orders UNION SELECT name FROM customers");

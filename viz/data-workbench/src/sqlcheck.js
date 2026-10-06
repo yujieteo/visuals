@@ -303,6 +303,7 @@
       if (rest !== "restrict" || t.length > k + 2) return { ...base, reason: "DROP takes one name: drop each object in a statement of its own." };
     }
     if (catalog.imported.includes(name)) return { ...base, reason: `${name} is an imported table, which is read-only. "Remove this table" in Inspect removes it from the workbench.` };
+    if (!NAME.test(name)) return { ...base, reason: `${JSON.stringify(name)} cannot name a derived object: DROP takes the name of a derived view or table as it was made.` };
     const existing = catalog.derived[name];
     if (!existing && !ifExists) return { ...base, reason: `There is no derived ${kind} named ${name}.` };
     if (existing && existing !== kind) return { ...base, reason: `${name} is a derived ${existing}: write DROP ${existing.toUpperCase()} ${name}.` };
@@ -592,7 +593,8 @@
           else if (i < end) { ok = false; break; }
         }
         k = end;
-        if (ok && leftItem?.name) join.left = leftItem;
+        if (ok && leftItem?.name && sides.length === 1) join.left = leftItem;
+        else if (ok && leftItem?.name) join.why = join.why || "ON after more than one table: the left side is not one named table";
         else join.why = join.why || "the condition is not key equalities between two named tables";
       }
       if (!join.why && join.left?.name && join.right?.name && join.keys.length) join.diagnostics = true;

@@ -165,7 +165,8 @@
     }
 
     function register(entry) {
-      store.derived = [...store.derived.filter((d) => d.name !== entry.name), entry];
+      const at = store.derived.findIndex((d) => d.name === entry.name);
+      store.derived = at < 0 ? [...store.derived, entry] : store.derived.map((d, i) => (i === at ? entry : d));
     }
 
     /** Save the result as a derived view or table, or analyse it. */
