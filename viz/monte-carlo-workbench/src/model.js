@@ -147,10 +147,10 @@ focus N
     const exact = node?.type === "var" && node.constant ? [] : c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => En.focusLaw(c, a));
     if (exact.length && exact.every((/** @type {any} */ b) => b && b.continuous)) {
       for (const b of exact) {
-        const tail = b.order === Infinity ? 1e-4 : 0.005;
+        const heavyTail = b.order !== null && b.order !== Infinity, tail = heavyTail ? 0.005 : 1e-4;
         lo = Math.min(lo, Math.max(b.support.lo, b.quantile(tail, 1 - tail)));
         hi = Math.max(hi, Math.min(b.support.hi, b.quantile(1 - tail, tail)));
-        if (b.order !== Infinity) { heavy = true; top = Math.max(top, Math.min(b.support.hi, b.quantile(1 - 1e-8, 1e-8))); }
+        if (heavyTail) { heavy = true; top = Math.max(top, Math.min(b.support.hi, b.quantile(1 - 1e-8, 1e-8))); }
       }
       const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
       return { lo, width, bins: CBINS, thresholds: logThresholds(lo + CBINS * width, top, heavy), integer: false, heavy, continuous: true };
@@ -161,11 +161,11 @@ focus N
         if (!m) continue;
         const s = m.law.support(m.params), order = m.law.moments(m.params).order;
         if (m.law.continuous) {
-          const tail = order < Infinity ? 0.005 : 1e-4;
+          const tail = order !== null && order < Infinity ? 0.005 : 1e-4;
           continuous = true;
           lo = Math.min(lo, Math.max(s.lo, m.law.quantile(tail, m.params)));
           hi = Math.max(hi, Math.min(s.hi, m.law.isf(tail, m.params)));
-          if (order < Infinity) { heavy = true; top = Math.max(top, Math.min(s.hi, m.law.isf(1e-8, m.params))); }
+          if (order !== null && order < Infinity) { heavy = true; top = Math.max(top, Math.min(s.hi, m.law.isf(1e-8, m.params))); }
           continue;
         }
         // The window holds the support less a mass of about 10^-9 on the left and 10^-6 on the right.
@@ -174,7 +174,7 @@ focus N
         // A table or an empirical law with values that are not integers takes bins of real width.
         if (m.law.isInteger && !m.law.isInteger(m.params)) realAtoms = true;
         top = Math.max(top, s.hi === Infinity ? 1e15 : s.hi);
-        if (order < Infinity) heavy = true;
+        if (order !== null && order < Infinity) heavy = true;
       }
     } else if (refs.some((/** @type {any} */ r) => r.marginal)) {
       for (const r of refs) {
@@ -265,11 +265,13 @@ focus N
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
     const grid = Array.from({ length: 199 }, (_, i) => (i + 1) / 200);
     const exact = node?.type === "var" && node.constant ? null : En.focusLaw(c, a);
+    /** The atom of a mixed law at 0 as a density over the bin that holds 0. @param {number} x a bin centre @param {number} z the atom */
+    const spike = (x, z) => (x - win.width / 2 <= 0 && 0 < x + win.width / 2 ? z / win.width : 0);
     if (exact && exact.continuous && win.continuous) {
       if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(exact.quantile(u, 1 - u)) ?? 0) };
       const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
       if (kind === "survival") for (const t of win.thresholds) xs.push(t);
-      const f = kind === "pmf" ? exact.mass : kind === "cdf" ? exact.cdf : exact.sf;
+      const f = kind === "pmf" ? (exact.mixed ? (/** @type {number} */ x) => exact.mass(x) + spike(x, exact.cdf(0)) : exact.mass) : kind === "cdf" ? exact.cdf : exact.sf;
       return { x: xs, y: xs.map((x) => safe(f(x)) ?? 0) };
     }
     if (node?.type === "var" && node.constant) {
@@ -280,7 +282,7 @@ focus N
         // The density at the bin centres; the CDF and the survival function at the right edges, as the run's bins.
         const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
         if (kind === "survival") for (const t of win.thresholds) xs.push(t);
-        const f = kind === "pmf" ? m.law.pdf : kind === "cdf" ? m.law.cdf : m.law.sf;
+        const f = kind === "pmf" ? (m.law.mixed ? (/** @type {number} */ x, /** @type {any} */ q) => m.law.pdf(x, q) + spike(x, m.law.cdf(0, q)) : m.law.pdf) : kind === "cdf" ? m.law.cdf : m.law.sf;
         return { x: xs, y: xs.map((x) => safe(f(x, m.params)) ?? 0) };
       }
       const xs = [];
@@ -560,9 +562,13 @@ focus N
         (c.alternatives ?? []).forEach((/** @type {any} */ alt, /** @type {number} */ a) => {
           const pr = En.argsAt(n, alt.values);
           if (pr.error) return;
-          // The family of a constructed law takes the parameters of its own names; a mixture's first component stands for the others.
-          const q = Object.fromEntries(law.params.map((/** @type {any} */ x) => [x.name, Array.isArray(pr.params[x.name]) ? pr.params[x.name][0] : pr.params[x.name]]));
-          out.uses.push({ variable: n.name, via, alt: a, label: alt.label, values: q, report: law.report(q) });
+          // The family of a constructed law takes the parameters of its own names; a mixture shows each component with a positive weight.
+          const w = pr.params.w, k = Array.isArray(w) && law.params.some((/** @type {any} */ x) => Array.isArray(pr.params[x.name])) ? w.length : 1;
+          for (let j = 0; j < k; j++) {
+            if (k > 1 && !(w[j] > 0)) continue;
+            const q = Object.fromEntries(law.params.map((/** @type {any} */ x) => [x.name, Array.isArray(pr.params[x.name]) ? pr.params[x.name][j] : pr.params[x.name]]));
+            out.uses.push({ variable: n.name, via, component: k > 1 ? j + 1 : 0, alt: a, label: alt.label, values: q, report: law.report(q) });
+          }
         });
       }
       if (!out.uses.length) {

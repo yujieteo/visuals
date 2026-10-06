@@ -3748,6 +3748,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    * @typedef {object} Bound a law with its parameters bound
    * @property {string} label @property {boolean} continuous @property {boolean} numeric the CDF is a numerical approximation
    * @property {boolean} [atoms] a law of finitely many values that need not be integers (group 4)
+   * @property {boolean} [mixed] a continuous law on [0, ∞) with an atom P(X = 0) = F(0), such as a compound Poisson law (group 4)
    * @property {{ lo: number, hi: number }} support
    * @property {(x: number) => number} cdf @property {(x: number) => number} sf @property {(x: number) => number} mass the PDF, or the PMF of a discrete law
    * @property {(u: number, w: number) => number} quantile the x with F(x) = u, given u and w = 1 − u
@@ -3762,7 +3763,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const continuous = !!law.continuous;
     return {
       label: `${law.name}(${law.params.map((/** @type {any} */ x) => `${x.name} = ${Array.isArray(p[x.name]) ? "[…]" : +Number(p[x.name]).toPrecision(6)}`).join(", ")})`,
-      continuous, numeric: !!law.numeric, support: law.support(p), atoms: !!law.atoms,
+      continuous, mixed: !!law.mixed, numeric: !!law.numeric, support: law.support(p), atoms: !!law.atoms,
       cdf: (x) => law.cdf(x, p), sf: (x) => law.sf(x, p), mass: (x) => (continuous ? law.pdf(x, p) : law.pmf(x, p)),
       quantile: continuous ? (u, w) => (u <= 0.5 ? law.quantile(u, p) : law.isf(w, p)) : (u) => /** @type {any} */ (dq)(law.quantile ? law : law.id, u, p),
       mean: m.mean, exactMean: m.mean !== null && !law.numeric, order: m.order, side: m.side ?? "", tailIndex: law.tailIndex ? law.tailIndex(p) : m.order < Infinity ? m.order : null,
@@ -3774,7 +3775,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   function maxOf(b, n) {
     const powF = (/** @type {number} */ x) => { const F = b.cdf(x); return F >= 1 ? 1 : Math.exp(n * Math.log1p(-b.sf(x))); };
     return {
-      label: `the maximum of ${n} draws of ${b.label}`, continuous: b.continuous, numeric: b.numeric, support: b.support,
+      label: `the maximum of ${n} draws of ${b.label}`, continuous: b.continuous, mixed: b.mixed, numeric: b.numeric, support: b.support,
       cdf: powF, sf: (x) => (b.sf(x) <= 0 ? 0 : -Math.expm1(n * Math.log1p(-b.sf(x)))),
       mass: b.continuous ? (x) => { const d = b.mass(x); return d === 0 ? 0 : n * Math.exp((n - 1) * Math.log1p(-b.sf(x))) * d; } : (x) => powF(x) - powF(x - 1),
       // F_M(x) ≥ u ⟺ F(x) ≥ u^{1/n}; 1 − u^{1/n} = −expm1(log(u)/n), with log u from the more precise of u and w.
@@ -3788,7 +3789,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   function minOf(b, n) {
     const powS = (/** @type {number} */ x) => { const s = b.sf(x); return s <= 0 ? 0 : Math.exp(n * Math.log1p(-b.cdf(x))); };
     return {
-      label: `the minimum of ${n} draws of ${b.label}`, continuous: b.continuous, numeric: b.numeric, support: b.support,
+      label: `the minimum of ${n} draws of ${b.label}`, continuous: b.continuous, mixed: b.mixed, numeric: b.numeric, support: b.support,
       cdf: (x) => 1 - powS(x), sf: powS,
       mass: b.continuous ? (x) => { const d = b.mass(x); return d === 0 ? 0 : n * Math.exp((n - 1) * Math.log1p(-b.cdf(x))) * d; } : (x) => powS(x - 1) - powS(x),
       quantile: (u, w) => { const lw = w <= 0.5 ? Math.log(w) : Math.log1p(-u), cv = Math.exp(lw / n), v = -Math.expm1(lw / n); return b.quantile(v, cv); },
@@ -3799,7 +3800,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
 
   /** a·Y + c for a continuous law of Y. @param {Bound} b @param {number} a @param {number} c @returns {Bound | null} */
   function affineOf(b, a, c) {
-    if (!b.continuous || !(a !== 0) || !Number.isFinite(a) || !Number.isFinite(c)) return null;
+    if (!b.continuous || b.mixed || !(a !== 0) || !Number.isFinite(a) || !Number.isFinite(c)) return null;
     if (a === 1 && c === 0) return b;
     const pos = a > 0, map = (/** @type {number} */ y) => (y - c) / a;
     const lo = a * (pos ? b.support.lo : b.support.hi) + c, hi = a * (pos ? b.support.hi : b.support.lo) + c;
@@ -5604,11 +5605,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const integer = !b.continuous && b.integer !== false;
     return {
       integer, continuous: !!b.continuous,
-      mass: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? 0 : b.pmf(x, p)),
+      mass: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? (b.mixed && x === 0 ? b.cdf(0, p) : 0) : b.pmf(x, p)),
       density: (/** @type {number} */ x, /** @type {Params} */ p) => (b.pdf ? b.pdf(x, p) : NaN),
       cdf: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p),
       sf: (/** @type {number} */ x, /** @type {Params} */ p) => b.sf(x, p),
-      below: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p) - (b.continuous ? 0 : b.pmf(x, p)),
+      below: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p) - (b.continuous ? (b.mixed && x === 0 ? b.cdf(0, p) : 0) : b.pmf(x, p)),
       quantile: (/** @type {number} */ u, /** @type {Params} */ p) => L.quantile(b, u, p),
       isf: (/** @type {number} */ v, /** @type {Params} */ p) => (b.isf ? b.isf(v, p) : L.quantile(b, 1 - v, p)),
     };
@@ -5721,7 +5722,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     /** @param {Params} p @param {(x: number, q: Params) => number} f @param {number} x */
     const sum = (p, f, x) => { let t = 0; for (const j of live(p)) t += p.w[j] * f(x, comp(p, j)); return t; };
     const law = {
-      id: `mixture_${b.id}`, name: `Mixture of ${b.name} laws`, catalogue: "mixture", base: b, generic: true, continuous: !!b.continuous, integer: v.integer ? undefined : false,
+      id: `mixture_${b.id}`, name: `Mixture of ${b.name} laws`, catalogue: "mixture", base: b, generic: true, continuous: !!b.continuous, mixed: !!b.mixed, integer: v.integer ? undefined : false,
       numeric: !!b.numeric, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check, support,
       supportText: (/** @type {Params} */ p) => { const s = support(p); return b.continuous ? `${s.lo === -Infinity ? "(−∞" : `[${show(s.lo)}`}, ${s.hi === Infinity ? "∞)" : `${show(s.hi)}]`}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${s.hi}}`; },
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? 0 : sum(p, v.mass, x)),
@@ -5873,7 +5874,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       return { integer: v.integer, cdf: (/** @type {number} */ x) => cdf(x, p), sf: (/** @type {number} */ x) => sf(x, p), pdf: (/** @type {number} */ x) => (b.pdf && x >= p.lower && x <= p.upper ? b.pdf(x, q) / m.Z : NaN), lo: s.lo, hi: s.hi, guess };
     };
     const law = {
-      id: `truncated_${b.id}`, name: `Truncated ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} law`, catalogue: "truncated", base: b, generic: true, continuous: !!b.continuous, integer: v.integer ? undefined : false,
+      id: `truncated_${b.id}`, name: `Truncated ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} law`, catalogue: "truncated", base: b, generic: true, continuous: !!b.continuous, mixed: !!b.mixed, integer: v.integer ? undefined : false,
       numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check, support,
       supportText: (/** @type {Params} */ p) => { const s = support(p); return b.continuous ? `${s.lo === -Infinity ? "(−∞" : `[${show(s.lo)}`}, ${s.hi === Infinity ? "∞)" : `${show(s.hi)}]`}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${s.hi}}`; },
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous || x < p.lower || x > p.upper ? 0 : v.mass(x, base(p)) / mass(p).Z),
@@ -5926,7 +5927,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
    */
   function truncatedMoments(b, v, p, s, law) {
     const q = Object.fromEntries(b.params.map((/** @type {any} */ ps) => [ps.name, p[ps.name]]));
-    const bm = b.moments(q);
+    const bm = b.moments(q), bs = b.support(q);
+    // No end cuts the support: the law is F itself.
+    if (p.lower <= bs.lo && p.upper >= bs.hi) return { ...bm, side: bm.side ?? "" };
     const bounded = s.lo > -Infinity && s.hi < Infinity;
     const side = /** @type {"" | "left" | "right" | "both"} */ (bounded ? "" : bm.side === "both" ? (s.lo > -Infinity ? "right" : s.hi < Infinity ? "left" : "both") : bm.side === "right" && s.hi < Infinity ? "" : bm.side === "left" && s.lo > -Infinity ? "" : bm.side ?? "");
     const order = bounded || side === "" ? (bm.order === null ? (bounded ? Infinity : null) : side === "" && !bounded && bm.side ? Infinity : bounded ? Infinity : bm.order) : bm.order;
@@ -5967,7 +5970,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     }
     if (v.integer && s.lo > -Infinity && bm.mean !== null && bm.variance !== null) {
       // E[X·1{X ≥ lower}] = E[X] − Σ_{k < lower} k p(k), and the same for X², over the finite lower part.
-      const bs = b.support(q);
       let m1 = bm.mean, m2 = bm.variance + bm.mean * bm.mean, cut = 0;
       for (let k = bs.lo; k < s.lo && k - bs.lo < TABLE_MAX; k++) { const w = v.mass(k, q); m1 -= w * k; m2 -= w * k * k; cut += w; }
       let up1 = 0, up2 = 0;
@@ -6052,7 +6054,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     };
     const law = {
       id: `compound_${b.id}`, name: `Compound Poisson law with ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} terms`, catalogue: "compound", base: b, generic: true,
-      continuous: !v.integer, integer: v.integer ? undefined : false, numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check,
+      continuous: !v.integer, mixed: !v.integer, integer: v.integer ? undefined : false, numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check,
       support: (/** @type {Params} */ p) => { const s = b.support(sev(p)); return { lo: Math.min(0, s.lo), hi: p.freq > 0 && s.hi > 0 ? Infinity : 0 }; },
       supportText: (/** @type {Params} */ p) => (v.integer ? "{0, 1, 2, …}" : "[0, ∞), with an atom at 0"),
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => {
@@ -6069,8 +6071,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         return t.integer ? k : k * t.h;
       },
       isf: (/** @type {number} */ q, /** @type {Params} */ p) => law.quantile(1 - q, p),
-      /** The atom P(S = 0) = exp(−freq·(1 − P(Y = 0))) for a severity on [0, ∞). @param {Params} p */
-      zero: (p) => Math.exp(-p.freq * (1 - (v.integer || !b.continuous ? v.mass(0, sev(p)) : 0))),
       table,
       moments: (/** @type {Params} */ p) => {
         const m = b.moments(sev(p));
@@ -6545,13 +6545,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     let compoundDraws = 0;
     for (const n of nodes) {
       if (n.type !== "var" || !n.constant) continue;
-      let most = 0;
+      let most = 0, family = n.law;
+      while (family.base && family.catalogue !== "compound") family = family.base;
       for (const alt of alternatives) {
         const p = argsAt(n, alt.values);
         const bad = p.error ? [p.error] : n.law.check(p.params);
         for (const msg of bad) errors.push(`Variable ${n.name} in "${alt.label}": ${msg}`);
-        // A compound Poisson draw sums about freq terms: count them in the draws of one replicate.
-        if (!bad.length && n.law.catalogue === "compound") most = Math.max(most, Math.ceil(p.params.freq));
+        // A compound Poisson draw (also inside a mixture or a truncated law) sums about freq terms: count them in the draws of one replicate.
+        if (!bad.length && family.catalogue === "compound") most = Math.max(most, Math.ceil(Math.max(.../** @type {number[]} */ ([p.params.freq].flat()))));
       }
       compoundDraws += n.repeat * most;
     }
@@ -7641,6 +7642,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       const v = E.compile(side, c.slots)(env);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
       if (m.numeric) numeric[k] = true;
+      // A continuous law with an atom at 0: P(X = 0) = F(0), and every other point has probability 0.
+      if (m.mixed) { const z = v === 0 ? m.cdf(0) : 0; return op === "<" ? m.cdf(v) - z : op === "<=" ? m.cdf(v) : op === ">" ? m.sf(v) : op === ">=" ? m.sf(v) + z : op === "==" ? z : 1 - z; }
       // A continuous law gives every single point probability 0, so P(X < v) = P(X ≤ v) = F(v).
       if (m.continuous) return op === "<" || op === "<=" ? m.cdf(v) : op === ">" || op === ">=" ? m.sf(v) : op === "==" ? 0 : 1;
       // A law of finitely many values that need not be integers: P(X < v) = F(v) − P(X = v), and so on.
@@ -8658,10 +8661,10 @@ focus N
     const exact = node?.type === "var" && node.constant ? [] : c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => En.focusLaw(c, a));
     if (exact.length && exact.every((/** @type {any} */ b) => b && b.continuous)) {
       for (const b of exact) {
-        const tail = b.order === Infinity ? 1e-4 : 0.005;
+        const heavyTail = b.order !== null && b.order !== Infinity, tail = heavyTail ? 0.005 : 1e-4;
         lo = Math.min(lo, Math.max(b.support.lo, b.quantile(tail, 1 - tail)));
         hi = Math.max(hi, Math.min(b.support.hi, b.quantile(1 - tail, tail)));
-        if (b.order !== Infinity) { heavy = true; top = Math.max(top, Math.min(b.support.hi, b.quantile(1 - 1e-8, 1e-8))); }
+        if (heavyTail) { heavy = true; top = Math.max(top, Math.min(b.support.hi, b.quantile(1 - 1e-8, 1e-8))); }
       }
       const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
       return { lo, width, bins: CBINS, thresholds: logThresholds(lo + CBINS * width, top, heavy), integer: false, heavy, continuous: true };
@@ -8672,11 +8675,11 @@ focus N
         if (!m) continue;
         const s = m.law.support(m.params), order = m.law.moments(m.params).order;
         if (m.law.continuous) {
-          const tail = order < Infinity ? 0.005 : 1e-4;
+          const tail = order !== null && order < Infinity ? 0.005 : 1e-4;
           continuous = true;
           lo = Math.min(lo, Math.max(s.lo, m.law.quantile(tail, m.params)));
           hi = Math.max(hi, Math.min(s.hi, m.law.isf(tail, m.params)));
-          if (order < Infinity) { heavy = true; top = Math.max(top, Math.min(s.hi, m.law.isf(1e-8, m.params))); }
+          if (order !== null && order < Infinity) { heavy = true; top = Math.max(top, Math.min(s.hi, m.law.isf(1e-8, m.params))); }
           continue;
         }
         // The window holds the support less a mass of about 10^-9 on the left and 10^-6 on the right.
@@ -8685,7 +8688,7 @@ focus N
         // A table or an empirical law with values that are not integers takes bins of real width.
         if (m.law.isInteger && !m.law.isInteger(m.params)) realAtoms = true;
         top = Math.max(top, s.hi === Infinity ? 1e15 : s.hi);
-        if (order < Infinity) heavy = true;
+        if (order !== null && order < Infinity) heavy = true;
       }
     } else if (refs.some((/** @type {any} */ r) => r.marginal)) {
       for (const r of refs) {
@@ -8776,11 +8779,13 @@ focus N
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
     const grid = Array.from({ length: 199 }, (_, i) => (i + 1) / 200);
     const exact = node?.type === "var" && node.constant ? null : En.focusLaw(c, a);
+    /** The atom of a mixed law at 0 as a density over the bin that holds 0. @param {number} x a bin centre @param {number} z the atom */
+    const spike = (x, z) => (x - win.width / 2 <= 0 && 0 < x + win.width / 2 ? z / win.width : 0);
     if (exact && exact.continuous && win.continuous) {
       if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(exact.quantile(u, 1 - u)) ?? 0) };
       const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
       if (kind === "survival") for (const t of win.thresholds) xs.push(t);
-      const f = kind === "pmf" ? exact.mass : kind === "cdf" ? exact.cdf : exact.sf;
+      const f = kind === "pmf" ? (exact.mixed ? (/** @type {number} */ x) => exact.mass(x) + spike(x, exact.cdf(0)) : exact.mass) : kind === "cdf" ? exact.cdf : exact.sf;
       return { x: xs, y: xs.map((x) => safe(f(x)) ?? 0) };
     }
     if (node?.type === "var" && node.constant) {
@@ -8791,7 +8796,7 @@ focus N
         // The density at the bin centres; the CDF and the survival function at the right edges, as the run's bins.
         const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
         if (kind === "survival") for (const t of win.thresholds) xs.push(t);
-        const f = kind === "pmf" ? m.law.pdf : kind === "cdf" ? m.law.cdf : m.law.sf;
+        const f = kind === "pmf" ? (m.law.mixed ? (/** @type {number} */ x, /** @type {any} */ q) => m.law.pdf(x, q) + spike(x, m.law.cdf(0, q)) : m.law.pdf) : kind === "cdf" ? m.law.cdf : m.law.sf;
         return { x: xs, y: xs.map((x) => safe(f(x, m.params)) ?? 0) };
       }
       const xs = [];
@@ -9071,9 +9076,13 @@ focus N
         (c.alternatives ?? []).forEach((/** @type {any} */ alt, /** @type {number} */ a) => {
           const pr = En.argsAt(n, alt.values);
           if (pr.error) return;
-          // The family of a constructed law takes the parameters of its own names; a mixture's first component stands for the others.
-          const q = Object.fromEntries(law.params.map((/** @type {any} */ x) => [x.name, Array.isArray(pr.params[x.name]) ? pr.params[x.name][0] : pr.params[x.name]]));
-          out.uses.push({ variable: n.name, via, alt: a, label: alt.label, values: q, report: law.report(q) });
+          // The family of a constructed law takes the parameters of its own names; a mixture shows each component with a positive weight.
+          const w = pr.params.w, k = Array.isArray(w) && law.params.some((/** @type {any} */ x) => Array.isArray(pr.params[x.name])) ? w.length : 1;
+          for (let j = 0; j < k; j++) {
+            if (k > 1 && !(w[j] > 0)) continue;
+            const q = Object.fromEntries(law.params.map((/** @type {any} */ x) => [x.name, Array.isArray(pr.params[x.name]) ? pr.params[x.name][j] : pr.params[x.name]]));
+            out.uses.push({ variable: n.name, via, component: k > 1 ? j + 1 : 0, alt: a, label: alt.label, values: q, report: law.report(q) });
+          }
         });
       }
       if (!out.uses.length) {
@@ -9882,14 +9891,14 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 ${law.note ? `<p class="note">${esc(law.note)}</p>` : ""}${shown.map((/** @type {any} */ u) => {
         const r = u.report, values = Object.entries(u.values ?? {}).map(([k, v]) => `${k} = ${fmt(/** @type {number} */ (v))}`).join(", ");
         const obs = r.observations;
-        return `<p class="note">${u.variable ? `For <span class="mono">${esc(u.variable)}</span>${u.via ? ` (the family of ${esc(u.via)})` : ""}${u.label && (d.alternatives?.length ?? 1) > 1 ? ` in ${esc(u.label)}` : ""}${values ? `, with ${esc(values)}` : ""}.` : "No variable uses this law; it has no parameters, so the page checks it as it stands."}</p>
+        return `<p class="note">${u.variable ? `For <span class="mono">${esc(u.variable)}</span>${u.via ? ` (the family of ${esc(u.via)})` : ""}${u.component ? `, component ${u.component}` : ""}${u.label && (d.alternatives?.length ?? 1) > 1 ? ` in ${esc(u.label)}` : ""}${values ? `, with ${esc(values)}` : ""}.` : "No variable uses this law; it has no parameters, so the page checks it as it stands."}</p>
 <div class="table-scroll"><table class="checks"><caption>Checks of the input</caption><thead><tr><th scope="col">Condition</th><th scope="col">Status</th><th scope="col">How the page tested it</th></tr></thead><tbody>
 ${r.checks.map((/** @type {any} */ c) => `<tr><th scope="row">${esc(c.label)}</th><td><span class="status status-${esc(c.status)}">${esc(STATUS[c.status] ?? c.status)}</span></td><td>${esc(c.how)}</td></tr>`).join("")}</tbody></table></div>
 ${r.errors.length ? `<p class="bad-text">The page does not sample this law: ${esc(r.errors[0])}</p>` : ""}
 <dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${sampling(r.sampling[m])}</dd>`).join("")}</dl>
 ${r.controls.length ? `<h4>Approximation controls</h4><ul>${r.controls.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
 ${r.sources.length ? `<h4>Numerical error sources</h4><ul>${r.sources.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-${r.numeric && !r.numeric.bounded && r.numeric.mean !== null ? `<p>The table of the law has the mean ${fmt(r.numeric.mean)} and the variance ${fmt(r.numeric.variance)}. ${tag("numerical")} The support is not bounded, so these finite numbers do not show that E[X] or Var X exists.</p>` : ""}
+${r.numeric && !r.numeric.bounded ? `<p>The support is not bounded, so the page does not show a mean or a variance for this law: a finite numerical integral does not prove that a moment exists.</p>` : ""}
 ${obs && obs.D !== null ? `<p>Observations: ${count(obs.n)} values, Kolmogorov–Smirnov distance D = ${fmt(obs.D)} to the law, asymptotic p = ${fmt(obs.p)}. ${tag("observation")} A p-value measures the fit of these values to this law. It does not prove the law${law.kind === "pmf" || law.kind === "table" ? ", and for a discrete law this p-value is conservative" : ""}.</p>` : ""}`;
       }).join("")}${transform ? `<p class="note">${law.kind === "mgf" ? "This input is an MGF. The page uses it through φ(t) = M(it), which needs M finite on an interval around 0." : "A CF exists for every law. The MGF of this law need not exist."}</p>` : ""}`;
     }).join("");

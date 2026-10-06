@@ -7,7 +7,7 @@
 // together fail with a probability below 1e-3 for correct samplers.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Co, L, Rng, S, data, gofPValue } from "./helpers.mjs";
+import { Co, D, En, L, M, Rng, S, data, gofPValue } from "./helpers.mjs";
 
 const SEEDS = [11, 2026, 4294967295], N = 20000, KS = 2.6;
 /** @param {number} a @param {number} b @param {number} tol */
@@ -197,4 +197,50 @@ test("the assumption failures: a mixture envelope that is too small shows violat
   assert.ok(d.stats.violations > 0, "proposals above the envelope are counted");
   const cut = /** @type {any} */ (law.inverse(p, 0.99)), top = law.quantile(0.99, p);
   assert.ok(draws(cut, 7).xs.every((x) => x <= top), "no draw passes the 0.99 quantile");
+});
+
+test("a compound Poisson law with continuous terms has its atom P(S = 0) in the references and in the density plot", () => {
+  const text = "title: t\nS ~ compound_exponential(freq = 2, rate = 1)\nprob none = S == 0\nprob below = S < 0\nprob some = S > 0\nprob all = S >= 0\nfocus S\n";
+  const c = En.prepare(D.parse(text).record, { seed: 1, method: "independent", overrides: {} });
+  assert.ok(c.ok, c.errors?.join(" "));
+  const z = Math.exp(-2), v = En.reference(c, En.momentStatus(c))[0].values;
+  assert.ok(Math.abs(v[0] - z) < 1e-12 && Math.abs(v[1]) < 1e-12 && Math.abs(v[2] - (1 - z)) < 1e-12 && Math.abs(v[3] - 1) < 1e-12, `references ${v.join(", ")}`);
+  const mix = "title: t\nX ~ mixture_compound_exponential(w = [0.5, 0.5], freq = [1, 3], rate = 1)\nprob none = X == 0\nfocus X\n";
+  const cm = En.prepare(D.parse(mix).record, { seed: 1, method: "independent", overrides: {} });
+  assert.ok(Math.abs(En.reference(cm, En.momentStatus(cm))[0].values[0] - 0.5 * (Math.exp(-1) + Math.exp(-3))) < 1e-12, "the atom of a mixture");
+  M.setCustom(D.parse(text).record);
+  try {
+    const state = { ...Object.fromEntries(Object.entries(M.FIELDS).map(([k, f]) => [k, f.default])), model: "custom", plot: "pmf" };
+    const d = M.derive(state), w = d.focus.window;
+    assert.ok(d.ok && d.focus.continuous && w.lo === 0, "a density plot from 0");
+    assert.ok(d.focus.theory.y[0] * w.width >= z && d.focus.theory.y[0] * w.width < z + 0.3 * w.width, `the first bin holds the atom: ${d.focus.theory.y[0] * w.width}`);
+  } finally { M.setCustom(null); }
+});
+
+test("a truncated law with no end inside the support has the moments of its family", () => {
+  const m = Co.resolve("truncated_normal").moments({ mu: 1, sigma: 2, lower: -Infinity, upper: Infinity });
+  assert.ok(Math.abs(/** @type {number} */ (m.mean) - 1) < 1e-12 && Math.abs(/** @type {number} */ (m.variance) - 4) < 1e-12 && m.order === Infinity, JSON.stringify(m));
+});
+
+test("the checks card shows each mixture component of a custom family, and the draw limit counts compound terms inside other laws", () => {
+  M.setCustom(D.parse("title: t\nlaw Sev(a) pdf(x) = a*x^(-a - 1) on [1, inf] where a > 1\nX ~ mixture_Sev(w = [0.5, 0, 0.5], a = [2.5, 3, 0.8])\nprob big = X > 2\nfocus X\n").record);
+  try {
+    const d = M.derive({ ...Object.fromEntries(Object.entries(M.FIELDS).map(([k, f]) => [k, f.default])), model: "custom" });
+    assert.equal(d.ok, false);
+    const uses = d.custom[0].uses;
+    assert.deepEqual(uses.map((/** @type {any} */ u) => [u.component, u.values.a]), [[1, 2.5], [3, 0.8]]);
+    assert.ok(uses[1].report.checks.some((/** @type {any} */ c) => c.status === "failed") && !uses[0].report.checks.some((/** @type {any} */ c) => c.status === "failed"));
+  } finally { M.setCustom(null); }
+  for (const law of ["truncated_compound_poisson(freq = 1000, lambda = 1, lower = 0, upper = inf)", "mixture_compound_poisson(w = [0.5, 0.5], freq = [1, 1000], lambda = 1)"]) {
+    const c = En.prepare(D.parse(`title: t\nX ~ ${law} repeat 6\nmean m = sum(X)\n`).record, { seed: 1, method: "independent", overrides: {} });
+    assert.match(c.errors?.join(" ") ?? "", /compound Poisson laws/, law);
+  }
+});
+
+test("a discrete custom law with unknown moments keeps its whole window, not the window of a heavy tail", () => {
+  M.setCustom(D.parse("title: t\nlaw G pmf(k) = 0.001*0.999^k on [0, inf]\nK ~ G()\nprob big = K > 1000\nfocus K\n").record);
+  try {
+    const d = M.derive({ ...Object.fromEntries(Object.entries(M.FIELDS).map(([k, f]) => [k, f.default])), model: "custom" }), w = d.focus.window;
+    assert.ok(d.ok && !d.focus.heavy && w.lo + w.bins * w.width > 5000, JSON.stringify(w));
+  } finally { M.setCustom(null); }
 });

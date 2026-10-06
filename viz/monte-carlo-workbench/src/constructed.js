@@ -50,11 +50,11 @@
     const integer = !b.continuous && b.integer !== false;
     return {
       integer, continuous: !!b.continuous,
-      mass: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? 0 : b.pmf(x, p)),
+      mass: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? (b.mixed && x === 0 ? b.cdf(0, p) : 0) : b.pmf(x, p)),
       density: (/** @type {number} */ x, /** @type {Params} */ p) => (b.pdf ? b.pdf(x, p) : NaN),
       cdf: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p),
       sf: (/** @type {number} */ x, /** @type {Params} */ p) => b.sf(x, p),
-      below: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p) - (b.continuous ? 0 : b.pmf(x, p)),
+      below: (/** @type {number} */ x, /** @type {Params} */ p) => b.cdf(x, p) - (b.continuous ? (b.mixed && x === 0 ? b.cdf(0, p) : 0) : b.pmf(x, p)),
       quantile: (/** @type {number} */ u, /** @type {Params} */ p) => L.quantile(b, u, p),
       isf: (/** @type {number} */ v, /** @type {Params} */ p) => (b.isf ? b.isf(v, p) : L.quantile(b, 1 - v, p)),
     };
@@ -167,7 +167,7 @@
     /** @param {Params} p @param {(x: number, q: Params) => number} f @param {number} x */
     const sum = (p, f, x) => { let t = 0; for (const j of live(p)) t += p.w[j] * f(x, comp(p, j)); return t; };
     const law = {
-      id: `mixture_${b.id}`, name: `Mixture of ${b.name} laws`, catalogue: "mixture", base: b, generic: true, continuous: !!b.continuous, integer: v.integer ? undefined : false,
+      id: `mixture_${b.id}`, name: `Mixture of ${b.name} laws`, catalogue: "mixture", base: b, generic: true, continuous: !!b.continuous, mixed: !!b.mixed, integer: v.integer ? undefined : false,
       numeric: !!b.numeric, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check, support,
       supportText: (/** @type {Params} */ p) => { const s = support(p); return b.continuous ? `${s.lo === -Infinity ? "(−∞" : `[${show(s.lo)}`}, ${s.hi === Infinity ? "∞)" : `${show(s.hi)}]`}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${s.hi}}`; },
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous ? 0 : sum(p, v.mass, x)),
@@ -319,7 +319,7 @@
       return { integer: v.integer, cdf: (/** @type {number} */ x) => cdf(x, p), sf: (/** @type {number} */ x) => sf(x, p), pdf: (/** @type {number} */ x) => (b.pdf && x >= p.lower && x <= p.upper ? b.pdf(x, q) / m.Z : NaN), lo: s.lo, hi: s.hi, guess };
     };
     const law = {
-      id: `truncated_${b.id}`, name: `Truncated ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} law`, catalogue: "truncated", base: b, generic: true, continuous: !!b.continuous, integer: v.integer ? undefined : false,
+      id: `truncated_${b.id}`, name: `Truncated ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} law`, catalogue: "truncated", base: b, generic: true, continuous: !!b.continuous, mixed: !!b.mixed, integer: v.integer ? undefined : false,
       numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check, support,
       supportText: (/** @type {Params} */ p) => { const s = support(p); return b.continuous ? `${s.lo === -Infinity ? "(−∞" : `[${show(s.lo)}`}, ${s.hi === Infinity ? "∞)" : `${show(s.hi)}]`}` : s.hi === Infinity ? `{${s.lo}, ${s.lo + 1}, …}` : `{${s.lo}, …, ${s.hi}}`; },
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => (b.continuous || x < p.lower || x > p.upper ? 0 : v.mass(x, base(p)) / mass(p).Z),
@@ -372,7 +372,9 @@
    */
   function truncatedMoments(b, v, p, s, law) {
     const q = Object.fromEntries(b.params.map((/** @type {any} */ ps) => [ps.name, p[ps.name]]));
-    const bm = b.moments(q);
+    const bm = b.moments(q), bs = b.support(q);
+    // No end cuts the support: the law is F itself.
+    if (p.lower <= bs.lo && p.upper >= bs.hi) return { ...bm, side: bm.side ?? "" };
     const bounded = s.lo > -Infinity && s.hi < Infinity;
     const side = /** @type {"" | "left" | "right" | "both"} */ (bounded ? "" : bm.side === "both" ? (s.lo > -Infinity ? "right" : s.hi < Infinity ? "left" : "both") : bm.side === "right" && s.hi < Infinity ? "" : bm.side === "left" && s.lo > -Infinity ? "" : bm.side ?? "");
     const order = bounded || side === "" ? (bm.order === null ? (bounded ? Infinity : null) : side === "" && !bounded && bm.side ? Infinity : bounded ? Infinity : bm.order) : bm.order;
@@ -413,7 +415,6 @@
     }
     if (v.integer && s.lo > -Infinity && bm.mean !== null && bm.variance !== null) {
       // E[X·1{X ≥ lower}] = E[X] − Σ_{k < lower} k p(k), and the same for X², over the finite lower part.
-      const bs = b.support(q);
       let m1 = bm.mean, m2 = bm.variance + bm.mean * bm.mean, cut = 0;
       for (let k = bs.lo; k < s.lo && k - bs.lo < TABLE_MAX; k++) { const w = v.mass(k, q); m1 -= w * k; m2 -= w * k * k; cut += w; }
       let up1 = 0, up2 = 0;
@@ -498,7 +499,7 @@
     };
     const law = {
       id: `compound_${b.id}`, name: `Compound Poisson law with ${b.name.replace(/^[A-Z](?![A-Z])/, (/** @type {string} */ c) => c.toLowerCase())} terms`, catalogue: "compound", base: b, generic: true,
-      continuous: !v.integer, integer: v.integer ? undefined : false, numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check,
+      continuous: !v.integer, mixed: !v.integer, integer: v.integer ? undefined : false, numeric: true, custom: !!b.custom, constantArgs: !!b.constantArgs, params, check,
       support: (/** @type {Params} */ p) => { const s = b.support(sev(p)); return { lo: Math.min(0, s.lo), hi: p.freq > 0 && s.hi > 0 ? Infinity : 0 }; },
       supportText: (/** @type {Params} */ p) => (v.integer ? "{0, 1, 2, …}" : "[0, ∞), with an atom at 0"),
       pmf: (/** @type {number} */ x, /** @type {Params} */ p) => {
@@ -515,8 +516,6 @@
         return t.integer ? k : k * t.h;
       },
       isf: (/** @type {number} */ q, /** @type {Params} */ p) => law.quantile(1 - q, p),
-      /** The atom P(S = 0) = exp(−freq·(1 − P(Y = 0))) for a severity on [0, ∞). @param {Params} p */
-      zero: (p) => Math.exp(-p.freq * (1 - (v.integer || !b.continuous ? v.mass(0, sev(p)) : 0))),
       table,
       moments: (/** @type {Params} */ p) => {
         const m = b.moments(sev(p));

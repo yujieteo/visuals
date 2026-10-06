@@ -245,13 +245,14 @@
     let compoundDraws = 0;
     for (const n of nodes) {
       if (n.type !== "var" || !n.constant) continue;
-      let most = 0;
+      let most = 0, family = n.law;
+      while (family.base && family.catalogue !== "compound") family = family.base;
       for (const alt of alternatives) {
         const p = argsAt(n, alt.values);
         const bad = p.error ? [p.error] : n.law.check(p.params);
         for (const msg of bad) errors.push(`Variable ${n.name} in "${alt.label}": ${msg}`);
-        // A compound Poisson draw sums about freq terms: count them in the draws of one replicate.
-        if (!bad.length && n.law.catalogue === "compound") most = Math.max(most, Math.ceil(p.params.freq));
+        // A compound Poisson draw (also inside a mixture or a truncated law) sums about freq terms: count them in the draws of one replicate.
+        if (!bad.length && family.catalogue === "compound") most = Math.max(most, Math.ceil(Math.max(.../** @type {number[]} */ ([p.params.freq].flat()))));
       }
       compoundDraws += n.repeat * most;
     }
@@ -1341,6 +1342,8 @@
       const v = E.compile(side, c.slots)(env);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
       if (m.numeric) numeric[k] = true;
+      // A continuous law with an atom at 0: P(X = 0) = F(0), and every other point has probability 0.
+      if (m.mixed) { const z = v === 0 ? m.cdf(0) : 0; return op === "<" ? m.cdf(v) - z : op === "<=" ? m.cdf(v) : op === ">" ? m.sf(v) : op === ">=" ? m.sf(v) + z : op === "==" ? z : 1 - z; }
       // A continuous law gives every single point probability 0, so P(X < v) = P(X ≤ v) = F(v).
       if (m.continuous) return op === "<" || op === "<=" ? m.cdf(v) : op === ">" || op === ">=" ? m.sf(v) : op === "==" ? 0 : 1;
       // A law of finitely many values that need not be integers: P(X < v) = F(v) − P(X = v), and so on.

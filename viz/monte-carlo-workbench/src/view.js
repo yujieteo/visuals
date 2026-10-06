@@ -483,14 +483,14 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 ${law.note ? `<p class="note">${esc(law.note)}</p>` : ""}${shown.map((/** @type {any} */ u) => {
         const r = u.report, values = Object.entries(u.values ?? {}).map(([k, v]) => `${k} = ${fmt(/** @type {number} */ (v))}`).join(", ");
         const obs = r.observations;
-        return `<p class="note">${u.variable ? `For <span class="mono">${esc(u.variable)}</span>${u.via ? ` (the family of ${esc(u.via)})` : ""}${u.label && (d.alternatives?.length ?? 1) > 1 ? ` in ${esc(u.label)}` : ""}${values ? `, with ${esc(values)}` : ""}.` : "No variable uses this law; it has no parameters, so the page checks it as it stands."}</p>
+        return `<p class="note">${u.variable ? `For <span class="mono">${esc(u.variable)}</span>${u.via ? ` (the family of ${esc(u.via)})` : ""}${u.component ? `, component ${u.component}` : ""}${u.label && (d.alternatives?.length ?? 1) > 1 ? ` in ${esc(u.label)}` : ""}${values ? `, with ${esc(values)}` : ""}.` : "No variable uses this law; it has no parameters, so the page checks it as it stands."}</p>
 <div class="table-scroll"><table class="checks"><caption>Checks of the input</caption><thead><tr><th scope="col">Condition</th><th scope="col">Status</th><th scope="col">How the page tested it</th></tr></thead><tbody>
 ${r.checks.map((/** @type {any} */ c) => `<tr><th scope="row">${esc(c.label)}</th><td><span class="status status-${esc(c.status)}">${esc(STATUS[c.status] ?? c.status)}</span></td><td>${esc(c.how)}</td></tr>`).join("")}</tbody></table></div>
 ${r.errors.length ? `<p class="bad-text">The page does not sample this law: ${esc(r.errors[0])}</p>` : ""}
 <dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${sampling(r.sampling[m])}</dd>`).join("")}</dl>
 ${r.controls.length ? `<h4>Approximation controls</h4><ul>${r.controls.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
 ${r.sources.length ? `<h4>Numerical error sources</h4><ul>${r.sources.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-${r.numeric && !r.numeric.bounded && r.numeric.mean !== null ? `<p>The table of the law has the mean ${fmt(r.numeric.mean)} and the variance ${fmt(r.numeric.variance)}. ${tag("numerical")} The support is not bounded, so these finite numbers do not show that E[X] or Var X exists.</p>` : ""}
+${r.numeric && !r.numeric.bounded ? `<p>The support is not bounded, so the page does not show a mean or a variance for this law: a finite numerical integral does not prove that a moment exists.</p>` : ""}
 ${obs && obs.D !== null ? `<p>Observations: ${count(obs.n)} values, Kolmogorov–Smirnov distance D = ${fmt(obs.D)} to the law, asymptotic p = ${fmt(obs.p)}. ${tag("observation")} A p-value measures the fit of these values to this law. It does not prove the law${law.kind === "pmf" || law.kind === "table" ? ", and for a discrete law this p-value is conservative" : ""}.</p>` : ""}`;
       }).join("")}${transform ? `<p class="note">${law.kind === "mgf" ? "This input is an MGF. The page uses it through φ(t) = M(it), which needs M finite on an interval around 0." : "A CF exists for every law. The MGF of this law need not exist."}</p>` : ""}`;
     }).join("");
