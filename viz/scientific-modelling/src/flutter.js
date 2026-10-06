@@ -591,7 +591,7 @@
     return { v, residual: res / (Anorm * norm(v)) };
   }
 
-  /** Is an eigenvalue an aerodynamic lag mode (real) rather than a structural mode (complex pair)? */
+  /** Is an eigenvalue a structural mode (complex pair) rather than a real mode (aerodynamic lag, or divergence above V_D)? */
   const isStructural = (p) => p.im > 1e-9;
 
   /** The structural modes (Im p > 0) over a speed grid, tracked by continuity, with damping ratio ζ = −Re p/|p|. */
