@@ -152,6 +152,10 @@ test("radiation: the lumped body's closed form, equilibrium and eigenvalue, and 
   assert.ok(rel(e.theta, ref.lumped.theta_eq) < 1e-9 && rel(e.eigenvalue, -4 * ref.lumped.theta_eq ** 3) < 1e-9);
   assert.equal(result(d, "r-st-jacobian").status, "exact");
   assert.ok(d.stability.exact.jacobian.ok && d.stability.exact.base.ok);
+  // The late-time limit path runs along τ_r from the selected point to the edge of the map at fixed θ_i.
+  const late = derive("lumped-radiation").regime.limits.find((L) => L.id === "late");
+  assert.ok(late.onSlice && late.points.length === 21);
+  assert.deepEqual([late.points[0], late.points.at(-1)], [[0.1, 3], [10, 3]]);
   // The duct: every check exact, and the net flux the SymPy value.
   const s = derive("surface-radiation");
   const an = s.stability.analysis;

@@ -426,7 +426,7 @@
     const Bqqb = Bc(qv, qb);
     const s1 = solveC(A, N.zeros(n), Bqqb); // A⁻¹ B(q, q̄)
     const Bqq = Bc(qv, qv);
-    const Re2 = A.map((r, i) => Float64Array.from(r, (v, j) => (i === j ? -v : -v)));
+    const Re2 = A.map((r) => Float64Array.from(r, (v) => -v));
     const Im2 = Array.from({ length: n }, (_, i) => Float64Array.from({ length: n }, (_, j) => (i === j ? 2 * omega : 0)));
     const s2 = solveC(Re2, Im2, Bqq); // (2iωI − A)⁻¹ B(q, q)
     const t1 = inner(pv, Cc(qv, qv, qb)), t2 = inner(pv, Bc(qv, s1)), t3 = inner(pv, Bc(qb, s2));

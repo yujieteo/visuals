@@ -85,7 +85,7 @@
       const a = equilibrium(p.q);
       const tmax = params.find((x) => x.id === "tau_r").max;
       return [{ id: "late", label: `τ → ∞ at θ_i = ${num(p.theta_i)}: θ → θ* = ${num(a)}`, coupled: false, approx: "linear", note: "The linearized decay holds on this path once the departure from θ* is small.",
-        points: Array.from({ length: 21 }, (_, i) => ({ ...p, tau: p.tau_r * (tmax / p.tau_r) ** (i / 20) })) }];
+        points: Array.from({ length: 21 }, (_, i) => ({ ...p, tau_r: p.tau_r * (tmax / p.tau_r) ** (i / 20) })) }];
     };
     const inspect = (p, ctx) => {
       const a = equilibrium(p.q);
