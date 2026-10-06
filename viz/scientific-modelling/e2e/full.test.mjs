@@ -19,7 +19,7 @@ const regime = (page) => page.evaluate(() => /** @type {any} */ (window).VisualK
 /** @param {import("playwright").Page} page */
 const stability = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.stability);
 /** The view fields of the regime map and the catalogue, at their defaults. */
-const MAP_DEFAULTS = { map_x: "", map_y: "", x_scale: "auto", y_scale: "auto", fixed: "", tolerance: "1e-2", layers: "approximation,balance,stability,bifurcation,limits", shade: "", point: "", pick: "", family: "" };
+const MAP_DEFAULTS = { map_x: "", map_y: "", x_scale: "auto", y_scale: "auto", fixed: "", tolerance: "1e-2", layers: "approximation,balance,stability,bifurcation,empirical,limits", shade: "", point: "", pick: "", family: "" };
 /** @param {import("playwright").Page} page */
 async function confirm(page) {
   await page.locator("#confirm").click();
@@ -134,6 +134,34 @@ await fullSuite("scientific-modelling", {
       assert.match(await pipe.page.locator("#trace").innerText(), /Nu = 48\/11 = 4\.36364 exactly/);
     } finally {
       await pipe.close();
+    }
+    // Piece 7, the plate: a file without provenance is refused; the sample results with their provenance are compared
+    // with the named correlation inside its range only, and the map draws the empirical boundaries.
+    const plate = await ctx.open("#example=plate-convection&tool=regime");
+    try {
+      await plate.page.locator("#load-results").setInputFiles({ name: "bare.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ schema: "scientific-modelling/numerical-results", schemaVersion: 1, example: "plate-convection", points: [{ Pr: 1, NuRe: 0.332 }] })) });
+      await settlesTo(() => plate.page.locator("#model-status").innerText().then((t) => /bare\.json was not loaded.*no provenance/s.test(t)), true, "a file without provenance is refused");
+      await plate.page.locator("#sample-results").click();
+      await settlesTo(() => plate.page.locator("#model-status").innerText().then((t) => /Imported 8 numerical results/.test(t)), true, "the sample file is imported as a new version");
+      await plate.page.locator("#confirm").click();
+      await plate.page.waitForSelector("#stability-panel #st-cv-plate-correlation-pl-pr svg");
+      const trace = await plate.page.locator("#trace").innerText();
+      assert.match(trace, /7 of 8 points are inside the range of the correlation/);
+      assert.match(trace, /Nu_x = 82\.924/, "the laminar correlation at the record's station");
+      await plate.page.waitForSelector("#regime-map svg");
+      assert.match(await plate.page.locator("#regime-legend").innerText(), /Empirical boundary \(cited data\): State of the layer/);
+    } finally {
+      await plate.close();
+    }
+    const tc = await ctx.open("#example=thermocapillary-flow&tool=regime");
+    try {
+      await tc.page.locator("#confirm").click();
+      await tc.page.waitForSelector("#stability-panel #st-cv-thermocapillary-layer-tc-profiles svg");
+      const trace = await tc.page.locator("#trace").innerText();
+      assert.match(trace, /The surface moves toward −x, the colder side, where the surface tension is higher/);
+      assert.match(trace, /1 \+ Ma_d²\/1680 = 1\.19525/);
+    } finally {
+      await tc.close();
     }
     const stale = await ctx.open("#example=no-such-model");
     try {

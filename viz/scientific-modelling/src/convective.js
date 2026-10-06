@@ -31,7 +31,6 @@
   const check = (id, title, status, extra = {}) => ({ id, title, status, passed: true, detail: "", tolerance: null, inputs: [], evidence: [], tex: null, ...extra });
   /** A hand-calculation step (spec section 12). */
   const step = (item, title, reason, tex = [], evidence = []) => ({ item, title, reason, tex, evidence });
-  const qt = (x) => Q.tex(x);
   const qn = (x) => Q.toNumber(x);
   /** The sign of a value as a word. */
   const signWord = (s) => (s > 0 ? "positive" : s < 0 ? "negative" : "zero");
@@ -258,10 +257,9 @@
     const MaT = p.L ? Q.div(Q.mul(Q.mul(Q.abs(p.gammaT), Q.abs(p.DT)), p.L), Q.mul(p.mu, alpha)) : null;
     const Mad = Q.div(Q.mul(Q.mul(Q.abs(p.gammaT), Q.abs(b)), Q.pow(p.d, 2)), Q.mul(p.mu, alpha));
     const Pr = Q.div(Q.mul(p.mu, p.cp), p.k);
-    const z = P.X;
     // Velocity u = (tau d/mu) F(zeta), F = (3 zeta^2 - 2 zeta)/4.
     const F = P.poly([0, q(-1, 2), q(3, 4)]);
-    const Fz = P.deriv(F), Fzz = P.deriv(Fz);
+    const Fz = P.deriv(F);
     const us = Q.div(Q.mul(tau, p.d), Q.mul(q(4), p.mu));
     checks.push(check("tc-stress", "The surface condition μ ∂u/∂z = dγ/dx = (dγ/dT)(∂T/∂x) holds exactly: F'(1) = 1, so μu_z(d) = τ.", "exact",
       { passed: Q.eq(P.at(Fz, 1), Q.ONE) && Q.isZero(P.at(F, 0)), tex: "u=\\frac{\\tau h_l}{\\mu}\\,\\frac{3Z^2-2Z}{4},\\qquad \\tau=\\frac{\\mathrm d\\gamma}{\\mathrm dT}\\frac{\\Delta T}{L}",
@@ -395,7 +393,6 @@
     const GrRe = Q.div(Gr, Re);
     // s = +1 when buoyancy at the hot wall acts along the mean flow (gravity points against the flow).
     const s = -Q.sign(p.g) * Q.sign(dT);
-    const eta = P.X;
     const poise = P.poly([0, 6, -6]);                                      // 6 eta (1 - eta)
     const buoy = P.scale(P.poly([0, 1, -3, 2]), q(1, 12));                 // eta(1-eta)(1-2eta)/12
     const fprof = P.add(poise, P.scale(buoy, Q.mul(q(s), GrRe)));
@@ -519,7 +516,7 @@
   const atFace = (fv, X, key) => { const i = Math.round(X / fv.dx); return (fv.cols[i - 1][key] + fv.cols[i][key]) / 2; };
 
   function conjugate(p, opts = {}) {
-    const checks = [], steps = [];
+    const checks = [];
     const alpha = Q.div(p.kf, Q.mul(p.rho, p.cp));
     const Pe = Q.div(Q.mul(p.U, Q.mul(q(4), p.H)), alpha);             // based on D_h = 4H
     const K = Q.div(p.ks, p.kf), Tr = Q.div(p.t, p.H), Lr = Q.div(p.Lh, p.H);
@@ -751,8 +748,6 @@
   const isCheck = (c) => c.status === "exact" || c.status === "numerical";
   const acceptOf = (c) => ({ id: c.id, title: c.title.replace(/\.$/, ""), passed: Boolean(c.passed), status: c.status, tolerance: c.tolerance ?? null, detail: c.tolerance ? `Tolerance: ${c.tolerance}.` : "Exact arithmetic." });
   const noAsymptotic = (why) => ({ limits: [], overlap: why, gaps: "None: the page uses the declared solution at every point." });
-  const GREEK = { alpha: "α", beta: "β", theta: "θ", eta: "η", mu: "μ", rho: "ρ", tau: "τ", Theta: "Θ" };
-  const plainTex = (t) => String(t).replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, "$1/$2").replace(/\\([A-Za-z]+)/g, (m, a) => GREEK[a] ?? "").replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
 
   /** The generic solution panel (src/stabview.js) of a solver's output. */
   function panel(decl, out, opts) {

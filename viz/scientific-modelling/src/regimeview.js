@@ -12,10 +12,10 @@
   const SVG = "http://www.w3.org/2000/svg";
   /** The hue of each group of approximations, in fixed order; a fifth group and later ones are muted, with labels. */
   const HUES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
-  const LAYER_KINDS = ["approximation", "balance", "stability", "bifurcation", "limits"];
-  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", stability: "Stability", bifurcation: "Bifurcations", limits: "Limit paths" };
-  /** The line of a boundary: a stability boundary is solid, a bifurcation boundary dashed, both in the text colour. @param {any} l */
-  const lineStyle = (l) => (l.kind === "stability" ? { stroke: "var(--fg)", dash: null } : l.kind === "bifurcation" ? { stroke: "var(--fg)", dash: "6 4" } : null);
+  const LAYER_KINDS = ["approximation", "balance", "stability", "bifurcation", "empirical", "limits"];
+  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", stability: "Stability", bifurcation: "Bifurcations", empirical: "Empirical boundaries", limits: "Limit paths" };
+  /** The line of a boundary: a stability boundary is solid, a bifurcation boundary dashed and an empirical boundary dotted, all in the text colour. @param {any} l */
+  const lineStyle = (l) => (l.kind === "stability" ? { stroke: "var(--fg)", dash: null } : l.kind === "bifurcation" ? { stroke: "var(--fg)", dash: "6 4" } : l.kind === "empirical" ? { stroke: "var(--fg)", dash: "2 4" } : null);
   /** @type {any} */
   let H = null;
   /** @type {any} */
@@ -273,7 +273,7 @@
     const hue = hues(rg.layers);
     // Errors and term ratios share the logarithmic axis; stability and bifurcation layers are strips of their regions.
     const shown = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "approximation" || l.kind === "balance"));
-    const regionRows = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "stability" || l.kind === "bifurcation"));
+    const regionRows = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "stability" || l.kind === "bifurcation" || l.kind === "empirical"));
     const box = { l: W < 480 ? 54 : 72, r: 18, t: 12, w: 0, h: Math.round(Math.min(300, Math.max(200, W * 0.42))) };
     box.w = W - box.l - box.r;
     const strip = 30, stripTop = box.t + box.h + 66;
@@ -478,10 +478,11 @@
     const drawn = rg.axes.y ? slice(rg, state, host) : diagram(rg, state, host);
     const shadeL = rg.layers.find((/** @type {any} */ l) => l.id === rg.shade);
     byId("regime-caption").textContent = rg.axes.y
-      ? `${uniLabel(rg.axes.x.tex)} across and ${uniLabel(rg.axes.y.tex)} up, ${rg.grid.xs.length} × ${rg.grid.ys.length} points. The grey shades show ${shadeL ? (shadeL.kind === "approximation" ? `the error of ${shadeL.title.toLowerCase()}. The plain background meets the tolerance ${rg.tolerance}. Three deeper shades are more than 1, 10 and 100 times it` : shadeL.kind === "balance" ? `the regions of the ${shadeL.title.toLowerCase()}: blue where the first term controls, grey where the terms are comparable, orange where the other term controls` : `the regions of the ${shadeL.title.toLowerCase()}: ${shadeL.regions.map((/** @type {any} */ r, /** @type {number} */ k) => `${k === 0 ? "blue" : k === shadeL.regions.length - 1 ? "orange" : "grey"} for ${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}`).join(", ")}`) : "nothing"}. Coloured lines are approximation boundaries, and dashed lines are balance crossovers. Grey arrows are limit paths and diamonds are intersections. The red dot is the record's point, and the ring is the inspected point.`
+      ? `${uniLabel(rg.axes.x.tex)} across and ${uniLabel(rg.axes.y.tex)} up, ${rg.grid.xs.length} × ${rg.grid.ys.length} points. The grey shades show ${shadeL ? (shadeL.kind === "approximation" ? `the error of ${shadeL.title.toLowerCase()}. The plain background meets the tolerance ${rg.tolerance}. Three deeper shades are more than 1, 10 and 100 times it` : shadeL.kind === "balance" ? `the regions of the ${shadeL.title.toLowerCase()}: blue where the first term controls, grey where the terms are comparable, orange where the other term controls` : `the regions of the ${shadeL.title.toLowerCase()}: ${shadeL.regions.map((/** @type {any} */ r, /** @type {number} */ k) => `${k === 0 ? "blue" : k === shadeL.regions.length - 1 ? "orange" : "grey"} for ${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}`).join(", ")}`) : "nothing"}. Coloured lines are approximation boundaries, dashed lines are balance crossovers, and dotted lines are empirical boundaries of cited correlations. Grey arrows are limit paths and diamonds are intersections. The red dot is the record's point, and the ring is the inspected point.`
       : `${uniLabel(rg.axes.x.tex)} across, ${rg.grid.xs.length} points. Coloured lines are the error of each approximation and dashed lines the term ratio of each balance, on a log scale. Values below 10⁻⁶ sit on the bottom edge. The strips show where each approximation meets the tolerance ${rg.tolerance}.`;
     const legendItems = [
       ...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation" && drawn.kinds.includes("approximation")).map((/** @type {any} */ l) => `<li><span class="key key-line" style="--key:${drawn.hue[l.id]};--w:${secondary(rg.layers, l) ? 1.5 : 2.5}px"></span>${esc(l.title)}</li>`),
+      ...(drawn.kinds.includes("empirical") && rg.layers.some((/** @type {any} */ l) => l.kind === "empirical") ? [`<li><span class="key key-emp"></span>Empirical boundary (cited data): ${esc(rg.layers.filter((/** @type {any} */ l) => l.kind === "empirical").map((/** @type {any} */ l) => l.title).join(", "))}</li>`] : []),
       ...(drawn.kinds.includes("balance") ? [`<li><span class="key key-ref"></span>Balance crossover (terms equal): ${esc(rg.layers.filter((/** @type {any} */ l) => l.kind === "balance").map((/** @type {any} */ l) => l.title).join(", "))}</li>`] : []),
       `<li><span class="key key-hatch"></span>Unresolved (${rg.unresolved.count} points)</li>`,
       rg.axes.y ? `<li><span class="key key-shade"></span>Shades: ${esc(shadeL?.title ?? "")}</li>` : `<li><span class="key key-gap"></span>No approximation meets the tolerance (${rg.gap.count} points)</li>`,
@@ -494,7 +495,7 @@
         /** @type {Map<string, string[]>} */
         const by = new Map();
         for (const l of ls) by.set(l.criterion, [...(by.get(l.criterion) ?? []), l.title]);
-        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">${b.piece > 4 ? `piece ${b.piece} adds it` : "none for this model"}</span>`}</td></tr>`;
+        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">none for this model</span>`}</td></tr>`;
       }).join("")}</tbody></table></div>`;
 
     // Beside the map: the fixed parameters, the derived parameters, assumptions, geometry and conditions.

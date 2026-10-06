@@ -432,6 +432,7 @@ mjx-container { max-width: 100%; }
 .key { display: inline-block; flex: none; width: 1.4rem; height: 0.8rem; }
 .key-line { height: 0; border-top: var(--w, 2px) solid var(--key); }
 .key-ref { height: 0; border-top: 1.5px dashed var(--muted); }
+.key-emp { height: 0; border-top: 2px dotted var(--fg); }
 .key-hatch { background: repeating-linear-gradient(45deg, var(--surface) 0 3px, var(--faint) 3px 5px); }
 .key-shade { background: linear-gradient(90deg, var(--bg), color-mix(in srgb, var(--fg) 36%, var(--bg))); border: 1px solid var(--border); }
 .key-gap { background: color-mix(in srgb, var(--fg) 18%, var(--bg)); }
@@ -587,6 +588,14 @@ mjx-container { max-width: 100%; }
 <button type="button" id="save-model">Save model JSON</button>
 <label class="btn" for="load-model">Load model JSON</label>
 <input type="file" id="load-model" class="visually-hidden" accept="application/json,.json">
+</div>
+<div id="imports" class="imports" hidden>
+<p id="imports-note" class="note"></p>
+<div class="buttons">
+<label class="btn" for="load-results">Load numerical results</label>
+<input type="file" id="load-results" class="visually-hidden" accept="application/json,.json">
+<button type="button" id="sample-results">Load the sample results</button>
+</div>
 </div>
 <p id="model-status" class="note" role="status" aria-live="polite"></p>
 <details id="editor" class="editor">
@@ -11505,7 +11514,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const check = (id, title, status, extra = {}) => ({ id, title, status, passed: true, detail: "", tolerance: null, inputs: [], evidence: [], tex: null, ...extra });
   /** A hand-calculation step (spec section 12). */
   const step = (item, title, reason, tex = [], evidence = []) => ({ item, title, reason, tex, evidence });
-  const qt = (x) => Q.tex(x);
   const qn = (x) => Q.toNumber(x);
   /** The sign of a value as a word. */
   const signWord = (s) => (s > 0 ? "positive" : s < 0 ? "negative" : "zero");
@@ -11732,10 +11740,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const MaT = p.L ? Q.div(Q.mul(Q.mul(Q.abs(p.gammaT), Q.abs(p.DT)), p.L), Q.mul(p.mu, alpha)) : null;
     const Mad = Q.div(Q.mul(Q.mul(Q.abs(p.gammaT), Q.abs(b)), Q.pow(p.d, 2)), Q.mul(p.mu, alpha));
     const Pr = Q.div(Q.mul(p.mu, p.cp), p.k);
-    const z = P.X;
     // Velocity u = (tau d/mu) F(zeta), F = (3 zeta^2 - 2 zeta)/4.
     const F = P.poly([0, q(-1, 2), q(3, 4)]);
-    const Fz = P.deriv(F), Fzz = P.deriv(Fz);
+    const Fz = P.deriv(F);
     const us = Q.div(Q.mul(tau, p.d), Q.mul(q(4), p.mu));
     checks.push(check("tc-stress", "The surface condition μ ∂u/∂z = dγ/dx = (dγ/dT)(∂T/∂x) holds exactly: F'(1) = 1, so μu_z(d) = τ.", "exact",
       { passed: Q.eq(P.at(Fz, 1), Q.ONE) && Q.isZero(P.at(F, 0)), tex: "u=\\frac{\\tau h_l}{\\mu}\\,\\frac{3Z^2-2Z}{4},\\qquad \\tau=\\frac{\\mathrm d\\gamma}{\\mathrm dT}\\frac{\\Delta T}{L}",
@@ -11869,7 +11876,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const GrRe = Q.div(Gr, Re);
     // s = +1 when buoyancy at the hot wall acts along the mean flow (gravity points against the flow).
     const s = -Q.sign(p.g) * Q.sign(dT);
-    const eta = P.X;
     const poise = P.poly([0, 6, -6]);                                      // 6 eta (1 - eta)
     const buoy = P.scale(P.poly([0, 1, -3, 2]), q(1, 12));                 // eta(1-eta)(1-2eta)/12
     const fprof = P.add(poise, P.scale(buoy, Q.mul(q(s), GrRe)));
@@ -11993,7 +11999,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const atFace = (fv, X, key) => { const i = Math.round(X / fv.dx); return (fv.cols[i - 1][key] + fv.cols[i][key]) / 2; };
 
   function conjugate(p, opts = {}) {
-    const checks = [], steps = [];
+    const checks = [];
     const alpha = Q.div(p.kf, Q.mul(p.rho, p.cp));
     const Pe = Q.div(Q.mul(p.U, Q.mul(q(4), p.H)), alpha);             // based on D_h = 4H
     const K = Q.div(p.ks, p.kf), Tr = Q.div(p.t, p.H), Lr = Q.div(p.Lh, p.H);
@@ -12225,8 +12231,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const isCheck = (c) => c.status === "exact" || c.status === "numerical";
   const acceptOf = (c) => ({ id: c.id, title: c.title.replace(/\.$/, ""), passed: Boolean(c.passed), status: c.status, tolerance: c.tolerance ?? null, detail: c.tolerance ? `Tolerance: ${c.tolerance}.` : "Exact arithmetic." });
   const noAsymptotic = (why) => ({ limits: [], overlap: why, gaps: "None: the page uses the declared solution at every point." });
-  const GREEK = { alpha: "α", beta: "β", theta: "θ", eta: "η", mu: "μ", rho: "ρ", tau: "τ", Theta: "Θ" };
-  const plainTex = (t) => String(t).replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, "$1/$2").replace(/\\([A-Za-z]+)/g, (m, a) => GREEK[a] ?? "").replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
 
   /** The generic solution panel (src/stabview.js) of a solver's output. */
   function panel(decl, out, opts) {
@@ -13879,7 +13883,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     y_scale: { type: "enum", default: "auto", values: ["auto", "log", "linear"], label: "Regime map: scale of the y-axis" },
     fixed: { type: "string", default: "", label: "Regime map: fixed parameter values, such as Bi=0.5, Fo=0.25 (empty for the record's values)" },
     tolerance: { type: "enum", default: "1e-2", values: ["1e-1", "1e-2", "1e-3"], label: "Regime map: tolerance of the approximation error" },
-    layers: { type: "string", default: "approximation,balance,stability,bifurcation,limits", label: "Regime map: the layers shown (approximation, balance, stability, bifurcation, limits)" },
+    layers: { type: "string", default: "approximation,balance,stability,bifurcation,empirical,limits", label: "Regime map: the layers shown (approximation, balance, stability, bifurcation, empirical, limits)" },
     shade: { type: "string", default: "", label: "Regime map: the layer whose measure shades the map (empty for the first approximation)" },
     point: { type: "string", default: "", label: "Regime map: the inspected point as x,y (empty for the record's point)" },
     pick: { type: "string", default: "", label: "Regime map: the inspected boundary, as layer:index" },
@@ -14762,10 +14766,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const SVG = "http://www.w3.org/2000/svg";
   /** The hue of each group of approximations, in fixed order; a fifth group and later ones are muted, with labels. */
   const HUES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
-  const LAYER_KINDS = ["approximation", "balance", "stability", "bifurcation", "limits"];
-  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", stability: "Stability", bifurcation: "Bifurcations", limits: "Limit paths" };
-  /** The line of a boundary: a stability boundary is solid, a bifurcation boundary dashed, both in the text colour. @param {any} l */
-  const lineStyle = (l) => (l.kind === "stability" ? { stroke: "var(--fg)", dash: null } : l.kind === "bifurcation" ? { stroke: "var(--fg)", dash: "6 4" } : null);
+  const LAYER_KINDS = ["approximation", "balance", "stability", "bifurcation", "empirical", "limits"];
+  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", stability: "Stability", bifurcation: "Bifurcations", empirical: "Empirical boundaries", limits: "Limit paths" };
+  /** The line of a boundary: a stability boundary is solid, a bifurcation boundary dashed and an empirical boundary dotted, all in the text colour. @param {any} l */
+  const lineStyle = (l) => (l.kind === "stability" ? { stroke: "var(--fg)", dash: null } : l.kind === "bifurcation" ? { stroke: "var(--fg)", dash: "6 4" } : l.kind === "empirical" ? { stroke: "var(--fg)", dash: "2 4" } : null);
   /** @type {any} */
   let H = null;
   /** @type {any} */
@@ -15023,7 +15027,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const hue = hues(rg.layers);
     // Errors and term ratios share the logarithmic axis; stability and bifurcation layers are strips of their regions.
     const shown = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "approximation" || l.kind === "balance"));
-    const regionRows = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "stability" || l.kind === "bifurcation"));
+    const regionRows = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "stability" || l.kind === "bifurcation" || l.kind === "empirical"));
     const box = { l: W < 480 ? 54 : 72, r: 18, t: 12, w: 0, h: Math.round(Math.min(300, Math.max(200, W * 0.42))) };
     box.w = W - box.l - box.r;
     const strip = 30, stripTop = box.t + box.h + 66;
@@ -15228,10 +15232,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const drawn = rg.axes.y ? slice(rg, state, host) : diagram(rg, state, host);
     const shadeL = rg.layers.find((/** @type {any} */ l) => l.id === rg.shade);
     byId("regime-caption").textContent = rg.axes.y
-      ? `${uniLabel(rg.axes.x.tex)} across and ${uniLabel(rg.axes.y.tex)} up, ${rg.grid.xs.length} × ${rg.grid.ys.length} points. The grey shades show ${shadeL ? (shadeL.kind === "approximation" ? `the error of ${shadeL.title.toLowerCase()}. The plain background meets the tolerance ${rg.tolerance}. Three deeper shades are more than 1, 10 and 100 times it` : shadeL.kind === "balance" ? `the regions of the ${shadeL.title.toLowerCase()}: blue where the first term controls, grey where the terms are comparable, orange where the other term controls` : `the regions of the ${shadeL.title.toLowerCase()}: ${shadeL.regions.map((/** @type {any} */ r, /** @type {number} */ k) => `${k === 0 ? "blue" : k === shadeL.regions.length - 1 ? "orange" : "grey"} for ${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}`).join(", ")}`) : "nothing"}. Coloured lines are approximation boundaries, and dashed lines are balance crossovers. Grey arrows are limit paths and diamonds are intersections. The red dot is the record's point, and the ring is the inspected point.`
+      ? `${uniLabel(rg.axes.x.tex)} across and ${uniLabel(rg.axes.y.tex)} up, ${rg.grid.xs.length} × ${rg.grid.ys.length} points. The grey shades show ${shadeL ? (shadeL.kind === "approximation" ? `the error of ${shadeL.title.toLowerCase()}. The plain background meets the tolerance ${rg.tolerance}. Three deeper shades are more than 1, 10 and 100 times it` : shadeL.kind === "balance" ? `the regions of the ${shadeL.title.toLowerCase()}: blue where the first term controls, grey where the terms are comparable, orange where the other term controls` : `the regions of the ${shadeL.title.toLowerCase()}: ${shadeL.regions.map((/** @type {any} */ r, /** @type {number} */ k) => `${k === 0 ? "blue" : k === shadeL.regions.length - 1 ? "orange" : "grey"} for ${r.label.charAt(0).toLowerCase()}${r.label.slice(1)}`).join(", ")}`) : "nothing"}. Coloured lines are approximation boundaries, dashed lines are balance crossovers, and dotted lines are empirical boundaries of cited correlations. Grey arrows are limit paths and diamonds are intersections. The red dot is the record's point, and the ring is the inspected point.`
       : `${uniLabel(rg.axes.x.tex)} across, ${rg.grid.xs.length} points. Coloured lines are the error of each approximation and dashed lines the term ratio of each balance, on a log scale. Values below 10⁻⁶ sit on the bottom edge. The strips show where each approximation meets the tolerance ${rg.tolerance}.`;
     const legendItems = [
       ...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation" && drawn.kinds.includes("approximation")).map((/** @type {any} */ l) => `<li><span class="key key-line" style="--key:${drawn.hue[l.id]};--w:${secondary(rg.layers, l) ? 1.5 : 2.5}px"></span>${esc(l.title)}</li>`),
+      ...(drawn.kinds.includes("empirical") && rg.layers.some((/** @type {any} */ l) => l.kind === "empirical") ? [`<li><span class="key key-emp"></span>Empirical boundary (cited data): ${esc(rg.layers.filter((/** @type {any} */ l) => l.kind === "empirical").map((/** @type {any} */ l) => l.title).join(", "))}</li>`] : []),
       ...(drawn.kinds.includes("balance") ? [`<li><span class="key key-ref"></span>Balance crossover (terms equal): ${esc(rg.layers.filter((/** @type {any} */ l) => l.kind === "balance").map((/** @type {any} */ l) => l.title).join(", "))}</li>`] : []),
       `<li><span class="key key-hatch"></span>Unresolved (${rg.unresolved.count} points)</li>`,
       rg.axes.y ? `<li><span class="key key-shade"></span>Shades: ${esc(shadeL?.title ?? "")}</li>` : `<li><span class="key key-gap"></span>No approximation meets the tolerance (${rg.gap.count} points)</li>`,
@@ -15244,7 +15249,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         /** @type {Map<string, string[]>} */
         const by = new Map();
         for (const l of ls) by.set(l.criterion, [...(by.get(l.criterion) ?? []), l.title]);
-        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">${b.piece > 4 ? `piece ${b.piece} adds it` : "none for this model"}</span>`}</td></tr>`;
+        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">none for this model</span>`}</td></tr>`;
       }).join("")}</tbody></table></div>`;
 
     // Beside the map: the fixed parameters, the derived parameters, assumptions, geometry and conditions.
@@ -16151,8 +16156,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
 
   let lastDetail = "";
   /** @param {Record<string, any>} state @param {any} d */
+  /** The import of numerical results: shown for an example that accepts them (data/convective.json, imports). @param {any} rec */
+  function renderImports(rec) {
+    const spec = DATA.convective?.imports?.[rec.origin];
+    $("imports").hidden = !spec;
+    if (!spec) return;
+    const n = (rec.evidence ?? []).filter((/** @type {any} */ e) => e.kind === "numerical-results").length;
+    $("imports-note").textContent = `${spec.describe} The file must state its provenance (${SM.EM.PROVENANCE.join(", ")}) and define ${Object.entries(spec.definitions).map(([k, v]) => `${k} as "${v}"`).join(" and ")}. ${n ? `The record holds ${n} imported file${n > 1 ? "s" : ""}.` : "The record holds no imported file."}`;
+  }
+  /** Add checked numerical results to the record's evidence, as a new version. @param {any} doc @param {string} name */
+  function importResults(doc, name) {
+    const rec = active(app.state.example);
+    const spec = DATA.convective?.imports?.[rec.origin];
+    const v = SM.EM.validateImport(doc, spec);
+    if (!v.ok) { tellModel(`${name} was not loaded, and the record stays as it is: ${v.errors.slice(0, 3).join(" ")}`); return; }
+    commit((/** @type {any} */ inp) => {
+      let k = 1;
+      while (inp.evidence.some((/** @type {any} */ e) => e.id === `ev-import-${k}`)) k++;
+      inp.evidence.push({ id: `ev-import-${k}`, kind: "numerical-results", source: "import", claim: `Imported numerical results: ${v.doc.provenance.source}; ${v.doc.provenance.method}.`, results: v.doc });
+    }, `Imported ${v.doc.points.length} numerical results from ${name}. Confirm the interpretation to compare them.`);
+  }
+
   function render(state, d) {
     renderEditor(active(state.example));
+    renderImports(active(state.example));
     renderStatus(d);
     renderInterpretation(d);
     renderIssues(d);
@@ -16382,6 +16409,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       }
       file.value = "";
     });
+    const results = $("load-results");
+    results.addEventListener("change", async () => {
+      const chosen = results.files?.[0];
+      if (!chosen) return;
+      let doc = null;
+      try { doc = JSON.parse(await chosen.text()); } catch { doc = null; }
+      if (!doc) tellModel(`${chosen.name} is not JSON, and the record stays as it is.`);
+      else importResults(doc, chosen.name);
+      results.value = "";
+    });
+    $("sample-results").addEventListener("click", () => importResults(DATA.heatrefs?.sample, "the sample file"));
     $("repeating-auto").addEventListener("click", () => app.set({ repeating: "" }));
     $("tool-nondim").addEventListener("click", (/** @type {Event} */ e) => {
       const t = /** @type {HTMLElement} */ (e.target);

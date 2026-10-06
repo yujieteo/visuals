@@ -48,7 +48,7 @@
     y_scale: { type: "enum", default: "auto", values: ["auto", "log", "linear"], label: "Regime map: scale of the y-axis" },
     fixed: { type: "string", default: "", label: "Regime map: fixed parameter values, such as Bi=0.5, Fo=0.25 (empty for the record's values)" },
     tolerance: { type: "enum", default: "1e-2", values: ["1e-1", "1e-2", "1e-3"], label: "Regime map: tolerance of the approximation error" },
-    layers: { type: "string", default: "approximation,balance,stability,bifurcation,limits", label: "Regime map: the layers shown (approximation, balance, stability, bifurcation, limits)" },
+    layers: { type: "string", default: "approximation,balance,stability,bifurcation,empirical,limits", label: "Regime map: the layers shown (approximation, balance, stability, bifurcation, empirical, limits)" },
     shade: { type: "string", default: "", label: "Regime map: the layer whose measure shades the map (empty for the first approximation)" },
     point: { type: "string", default: "", label: "Regime map: the inspected point as x,y (empty for the record's point)" },
     pick: { type: "string", default: "", label: "Regime map: the inspected boundary, as layer:index" },
