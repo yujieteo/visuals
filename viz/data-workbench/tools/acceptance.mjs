@@ -40,7 +40,9 @@ async function results(files, concurrency) {
     waiting[d.nesting + 1] = [];
     const project = PROJECT.exec(d.name)?.[0] ?? null;
     for (const c of children) if (!c.project) c.project = project;
-    const item = { file: relative(folder, d.file ?? ""), name: d.name, ok: event.type === "test:pass", skipped: !!(d.skip || d.todo), project: null, suite: d.details?.type === "suite" };
+    // A test registered by a module the file imports (e2e/step7.mjs, the harness's lib/full.js) belongs to the file run.
+    const file = files.length === 1 ? files[0] : d.file ?? "";
+    const item = { file: relative(folder, file), name: d.name, ok: event.type === "test:pass", skipped: !!(d.skip || d.todo), project: null, suite: d.details?.type === "suite" };
     (waiting[d.nesting] ??= []).push(item, ...children);
   }
   for (const level of waiting) for (const r of level ?? []) if (!r.suite) done.push(r);

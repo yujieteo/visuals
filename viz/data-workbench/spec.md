@@ -841,7 +841,10 @@ Where the plan left a choice or changed:
   (`preview: null`) no longer call the page a preview.
 - Acceptance: `acceptance.json` names, for each row of section 13, the tests that are its evidence; `node
   tools/acceptance.mjs` runs each file once, the browser checks in each browser project, and passes a row only when
-  every piece of evidence passed (browser evidence in every project it names) and none failed.
+  every piece of evidence passed (browser evidence in every project it names) and none failed. Run on 2026-10-06 on
+  the reference device: 16 of 16 rows pass, with the browser checks in chromium-desktop, webkit-desktop,
+  chromium-mobile and webkit-mobile (7 min). Firefox would not start on that machine ("Could not find profile
+  folder"); CI's firefox-desktop job runs the same browser checks.
 
 ### Verification fixtures (step 1 part)
 
