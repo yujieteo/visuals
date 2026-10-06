@@ -28,9 +28,9 @@ import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
-DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview", "rare", "chains"]
-ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl", "rare", "chains"]
-PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "rareview", "chainview", "view"]
+DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview", "rare", "chains", "physics"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl", "rare", "chains", "physics"]
+PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "rareview", "chainview", "physics-plots", "physview", "view"]
 
 
 def read(path):
@@ -77,6 +77,10 @@ def static_parts(cat):
     if lab:
         limits += (f"<p>Markov chain, sequential and quasi-Monte Carlo lab: at most {lab['runs']} independent runs of 2^{lab['chain']} draws after the warm-up, "
                    f"2^{lab['particles']} particles or 2^{lab['points']} points, and {lab['seconds']} s for one run. {e(lab['how'])}</p>")
+    phys = cat["limits"].get("physics")
+    if phys:
+        limits += (f"<p>Statistical-physics lab: lattices up to L = {phys['maxL']}, at most {phys['maxChains']} chains of 2^{phys['maxDrives']} recorded drives, "
+                   f"and {phys['seconds']} s for one run. {e(phys['how'])}</p>")
     here = [g for g in cat["groups"] if g["status"] == "here"]
     # A title that starts with a proper name, such as Markov, keeps its capital letter inside the sentence.
     titles = [g["title"] if g["title"].split()[0] in ("Markov",) else g["title"][0].lower() + g["title"][1:] for g in here]
@@ -85,7 +89,7 @@ def static_parts(cat):
     summary = (f"This page holds group{'s' if len(here) > 1 else ''} {span(here)} of {len(cat['groups'])}: "
                f"{', '.join(titles[:-1]) + ', and ' + titles[-1] if len(titles) > 1 else titles[0]}."
                + (f" Group{'s' if len(later) > 1 else ''} {span(later)} {'are' if len(later) > 1 else 'is'} not yet available." if later else ""))
-    return {"GROUPS_SUMMARY": e(summary), "GROUPS": groups, "GLOSSARY": glossary, "CATALOGUE": listing, "DATASETS": datasets, "LIMITS": limits}
+    return {"PHYSICS_STATEMENT": e(cat["physics"]["statement"].split(". ", 1)[1]), "GROUPS_SUMMARY": e(summary), "GROUPS": groups, "GLOSSARY": glossary, "CATALOGUE": listing, "DATASETS": datasets, "LIMITS": limits}
 
 
 def build():
@@ -103,6 +107,7 @@ def build():
     blocks.append(script("src-worker", read(HERE / "src" / "worker.js"), "text/plain"))
     blocks.append(script("src-rare-worker", read(HERE / "src" / "rare-worker.js"), "text/plain"))
     blocks.append(script("src-chains-worker", read(HERE / "src" / "chains-worker.js"), "text/plain"))
+    blocks.append(script("src-physics-worker", read(HERE / "src" / "physics-worker.js"), "text/plain"))
     blocks += [script(f"src-{m}", read(HERE / "src" / f"{m}.js")) for m in PAGE]
     blocks.append(script("mathjax", kit.mathjax_bundle(), vendor=kit.MATHJAX))
     parts = {

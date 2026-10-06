@@ -90,6 +90,16 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - Theory panels for large deviations and rate functions, the change of measure, Cramér–Lundberg ruin, Pollaczek–Khinchine and subexponential ruin, dependence in extremes, and tail sensitivity related to Taleb. The tail sensitivity is an explicit model, and its interpretation is not presented as a theorem.
 - The done criteria of groups 1 to 6 hold for the whole folder, and their results stay the same.
 
+## Group 9: what done means
+
+- The statistical-physics lab is its own tab ("Physics"), with the pattern of the labs of groups 7 and 8. Its examples and methods are data (`data/physics.json`), its engine is `src/physics.js` on its own workers, and its blocks merge in block order, so 1 and 4 workers give the same result.
+- An energy landscape on a 61 × 61 grid with an exact analysis (local minima, basins, the stability level of each minimum and Hajek's depth d*), a 3D view on a 2D canvas that turns by slider, drag or arrow keys, Metropolis exit times against an exact linear solve, and the Arrhenius slope against the stability level, which the theorem gives only as T → 0.
+- Four annealing schedules (logarithmic, geometric, linear, quench) on the same streams, and parallel tempering against one chain at T_min with the same cost, against the exact Boltzmann probabilities.
+- The BTW and Manna sandpiles with the dynamics stated on the page: the toppling rule, the open, closed or periodic boundary, the random or centre drive with g grains, and the bulk dissipation ε. A setting where no grain can leave is refused. The exact mean avalanche size comes from Dhar's identity, the exact central heights from Priezzhev's values, and the burning test checks recurrence.
+- Avalanche size, area and duration laws, finite-size effects on L = 8 to 128, a data collapse with τ and D, moment analysis, coarse-graining by b × b blocks and box counting. The page states that a finite lattice does not establish a universality class, and it keeps the observed scaling apart from the established theorems.
+- Theory panels for metastability, annealing, scale transformations and the reading of Sornette and his co-authors, tied to the explicit sandpile and presented as an interpretation.
+- The done criteria of groups 1 to 8 hold for the whole folder, and their results stay the same.
+
 # The owner's specification
 
 ## Part 1. The workbench connects probability theory to decisions

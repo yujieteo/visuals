@@ -21,6 +21,7 @@
 <button type="button" data-field="nav" value="interview">Interview</button>
 <button type="button" data-field="nav" value="rare">Rare events</button>
 <button type="button" data-field="nav" value="chains">Chains</button>
+<button type="button" data-field="nav" value="physics">Physics</button>
 <button type="button" data-field="nav" value="editor">Editor</button>
 <button type="button" data-field="nav" value="library">Library</button>
 </div>
@@ -47,6 +48,12 @@
 <label class="label" for="chain-search">Search by decision, phenomenon, law or method</label>
 <input id="chain-search" type="search" placeholder="for example: funnel, filter, Sobol" autocomplete="off">
 <div id="chain-list"></div>
+</section>
+<section id="nav-physics" aria-label="Statistical-physics test" hidden>
+<p class="note">The lab runs energy landscapes, simulated annealing, parallel tempering and sandpiles, each with its stated dynamics. The lab is in the centre panel.</p>
+<label class="label" for="phys-search">Search by phenomenon or method</label>
+<input id="phys-search" type="search" placeholder="for example: avalanche, annealing" autocomplete="off">
+<div id="phys-list"></div>
 </section>
 <section id="nav-editor" aria-label="Expert editor" hidden>
 <label class="label" for="editor-text">Model text</label>
@@ -92,6 +99,8 @@
 <ul id="rare-method-list" class="plain"></ul>
 <h3>Markov chain, sequential and quasi-Monte Carlo methods</h3>
 <ul id="chain-method-list" class="plain"></ul>
+<h3>Statistical-physics methods</h3>
+<ul id="phys-method-list" class="plain"></ul>
 <h3>Theory</h3>
 <ul id="theory-list" class="plain"></ul>
 </section>
@@ -281,6 +290,109 @@
 <p id="chain-replay" class="note" role="status" aria-live="polite"></p>
 <section id="chain-method-card" aria-label="Method of the lab"></section>
 </section>
+<section id="wb-physics" class="card" aria-labelledby="phys-title" hidden>
+<p class="label" id="phys-kind"></p>
+<h2 id="phys-title"></h2>
+<p id="phys-problem"></p>
+<p id="phys-observe"></p>
+<p class="callout" id="phys-statement"><strong>A finite lattice does not establish a universality class.</strong> @@PHYSICS_STATEMENT@@</p>
+<h3>Dynamics and assumptions</h3>
+<div id="phys-dynamics"></div>
+<div id="phys-errors" class="callout bad" role="alert" hidden></div>
+<div class="controls" id="phys-controls">
+<label id="phys-land-row">Energy landscape
+<select id="phys-land" data-field="ph_land"><option value="double-well">Tilted double well</option><option value="three-wells">Three wells</option><option value="rugged">Rugged bowl</option></select></label>
+<label id="phys-tlo-row">Lowest temperature
+<input id="phys-tlo" type="number" data-field="ph_tlo" min="0.05" max="2" step="any"></label>
+<label id="phys-thi-row">Highest temperature
+<input id="phys-thi" type="number" data-field="ph_thi" min="0.05" max="2" step="any"></label>
+<label id="phys-cap-row">Step limit, log2
+<input id="phys-cap" type="number" data-field="ph_cap" min="10" max="24" step="1"></label>
+<label id="phys-t0-row">Start temperature T_0
+<input id="phys-t0" type="number" data-field="ph_t0" min="0.05" max="5" step="any"></label>
+<label id="phys-tend-row">End temperature
+<input id="phys-tend" type="number" data-field="ph_tend" min="0.01" max="2" step="any"></label>
+<label id="phys-kappa-row">Logarithmic constant c/d*
+<input id="phys-kappa" type="number" data-field="ph_kappa" min="0.25" max="4" step="any"></label>
+<label id="phys-tmin-row">T_min
+<input id="phys-tmin" type="number" data-field="ph_tmin" min="0.02" max="2" step="any"></label>
+<label id="phys-tmax-row">T_max
+<input id="phys-tmax" type="number" data-field="ph_tmax" min="0.05" max="5" step="any"></label>
+<label id="phys-k-row">Temperatures K
+<input id="phys-k" type="number" data-field="ph_k" min="2" max="16" step="1"></label>
+<label id="phys-inner-row">Metropolis steps in each sweep
+<input id="phys-inner" type="number" data-field="ph_inner" min="1" max="64" step="1"></label>
+<label id="phys-start-row">Start
+<select id="phys-start" data-field="ph_start"><option value="trap">All chains in the trap</option><option value="spread">Chains spread over the wells</option></select></label>
+<label id="phys-steps-row">Steps or sweeps, log2
+<input id="phys-steps" type="number" data-field="ph_steps" min="8" max="20" step="1"></label>
+<label id="phys-reps-row">Replicates or chains, log2
+<input id="phys-reps" type="number" data-field="ph_reps" min="1" max="10" step="1"></label>
+<label id="phys-rule-row">Toppling rule
+<select id="phys-rule" data-field="ph_rule"><option value="btw">BTW: 4 grains, one to each neighbour</option><option value="manna">Manna: 2 grains to random neighbours</option></select></label>
+<label id="phys-bc-row">Boundary
+<select id="phys-bc" data-field="ph_bc"><option value="open">Open: grains leave</option><option value="closed">Closed: grains stay</option><option value="periodic">Periodic: grains wrap</option></select></label>
+<label id="phys-drive-row">Drive
+<select id="phys-drive" data-field="ph_drive"><option value="random">Random site</option><option value="centre">Centre site</option></select></label>
+<label id="phys-g-row">Grains for each drive
+<input id="phys-g" type="number" data-field="ph_g" min="1" max="64" step="1"></label>
+<label id="phys-eps-row">Bulk dissipation ε
+<input id="phys-eps" type="number" data-field="ph_eps" min="0" max="0.5" step="any"></label>
+<label id="phys-l-row">Lattice size L
+<input id="phys-l" type="number" data-field="ph_l" min="4" max="128" step="1"></label>
+<label id="phys-lmax-row">Largest L
+<select id="phys-lmax" data-field="ph_lmax"><option value="16">16</option><option value="32">32</option><option value="64">64</option><option value="128">128</option></select></label>
+<label id="phys-drives-row">Recorded drives, log2
+<input id="phys-drives" type="number" data-field="ph_drives" min="8" max="18" step="1"></label>
+<label id="phys-chains-row">Chains, log2
+<input id="phys-chains" type="number" data-field="ph_chains" min="1" max="6" step="1"></label>
+<label>Seed
+<input id="phys-seed" type="number" data-field="seed" min="0" max="4294967295" step="1"></label>
+</div>
+<p id="phys-size-out" class="note"></p>
+<div class="run-row" role="group" aria-label="Run controls of the physics lab">
+<button type="button" id="phys-step-run" aria-keyshortcuts=".">Step</button>
+<button type="button" id="phys-go" class="primary" aria-keyshortcuts="Space">Run</button>
+<button type="button" id="phys-pause" aria-keyshortcuts="Space">Pause</button>
+<button type="button" id="phys-reset">Reset run</button>
+<label class="check"><input type="checkbox" id="phys-autorun" checked> Run on each change</label>
+</div>
+<progress id="phys-progress" max="1" value="0" aria-label="Progress of the physics run">0 %</progress>
+<p id="phys-status" role="status" aria-live="polite"></p>
+<h3>Results and reference values</h3>
+<div id="phys-results" class="table-scroll"></div>
+<figure id="fig-phys">
+<figcaption class="label" id="phys-fig-caption">Figure</figcaption>
+<div id="phys-plots" class="seg" role="group" aria-label="Figure of the physics lab"></div>
+<div class="controls" id="phys-figure-controls">
+<label id="phys-view-row"><span>Turn <output id="phys-az-out" data-field="ph_az"></output>°</span>
+<input id="phys-az" type="range" data-field="ph_az" min="-180" max="180" step="5"></label>
+<label id="phys-el-row"><span>Tilt <output data-field="ph_el"></output>°</span>
+<input id="phys-el" type="range" data-field="ph_el" min="10" max="90" step="5"></label>
+<label id="phys-b-row">Block size b
+<select id="phys-b" data-field="ph_b"><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option><option value="16">16</option></select></label>
+<label id="phys-tau-row"><span>τ = <output id="phys-tau-out"></output></span>
+<input id="phys-tau" type="range" data-field="ph_tau" min="1" max="2" step="0.01"></label>
+<label id="phys-d-row"><span>D = <output id="phys-d-out"></output></span>
+<input id="phys-d" type="range" data-field="ph_d" min="1" max="4" step="0.01"></label>
+</div>
+<div id="phys-canvas-box"><canvas id="phys-canvas" tabindex="0" role="img" aria-label="3D view of the energy landscape"></canvas></div>
+<div id="phys-plot" class="plot"></div>
+<p id="phys-fig-note" class="note"></p>
+<p class="row exports"><button type="button" id="phys-plot-svg">Save SVG</button> <button type="button" id="phys-plot-png">Save PNG</button></p>
+</figure>
+<h3>Diagnostics</h3>
+<div id="phys-diagnostics"></div>
+<h3>Assumptions</h3>
+<div id="phys-assumptions"></div>
+<h3>Interpretation and rejection conditions</h3>
+<div id="phys-interpretation"></div>
+<h3>Records</h3>
+<p class="row"><button type="button" id="phys-save-run">Save physics run record</button> <label class="btn" for="phys-load-run">Load physics run record and replay</label><input type="file" id="phys-load-run" class="visually-hidden" accept="application/json,.json"> <button type="button" id="phys-save-csv">Save physics results CSV</button></p>
+<p id="phys-record-status" class="note" role="status" aria-live="polite"></p>
+<p id="phys-replay" class="note" role="status" aria-live="polite"></p>
+<section id="phys-method-card" aria-label="Method of the physics lab"></section>
+</section>
 <section id="wb-interview" class="card" aria-labelledby="iv-head" hidden>
 <h2 id="iv-head">Guided interview: candidate models</h2>
 <p class="note">The interview is the third way to make a model, after the examples and the editor. It makes the same model record as the editor.</p>
@@ -436,7 +548,7 @@
 </div>
 <section id="panel-theory" aria-label="Theory" hidden>
 <label class="label" for="theory-select">Theory panel</label>
-<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option><option value="ergodicity">Ergodicity, mixing, and time and ensemble averages</option><option value="sklar">Sklar's theorem and copulas</option><option value="mlmc">Multilevel Monte Carlo and discretisation bias</option><option value="ldp">Large deviations and the rate function</option><option value="tilting">Change of measure and exponential tilting</option><option value="ruin">Ruin theory: the Cramér–Lundberg model</option><option value="pk">The Pollaczek–Khinchine formula and subexponential ruin</option><option value="taildep">Dependence in extremes</option><option value="sensitivity">Tail sensitivity and ruin, in an explicit model</option><option value="markov">Ergodic averages and the Markov chain CLT</option><option value="particles">Importance weights, resampling and the unbiased likelihood</option><option value="rqmc">Randomised quasi-Monte Carlo: no bias and a smaller variance</option></select>
+<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option><option value="ergodicity">Ergodicity, mixing, and time and ensemble averages</option><option value="sklar">Sklar's theorem and copulas</option><option value="mlmc">Multilevel Monte Carlo and discretisation bias</option><option value="ldp">Large deviations and the rate function</option><option value="tilting">Change of measure and exponential tilting</option><option value="ruin">Ruin theory: the Cramér–Lundberg model</option><option value="pk">The Pollaczek–Khinchine formula and subexponential ruin</option><option value="taildep">Dependence in extremes</option><option value="sensitivity">Tail sensitivity and ruin, in an explicit model</option><option value="markov">Ergodic averages and the Markov chain CLT</option><option value="particles">Importance weights, resampling and the unbiased likelihood</option><option value="rqmc">Randomised quasi-Monte Carlo: no bias and a smaller variance</option><option value="metastability">Metastability: exit times and the Arrhenius law</option><option value="annealing">Simulated annealing: Hajek's cooling theorem</option><option value="scaling">Scale transformations: Dhar's exact results and finite-size scaling</option><option value="soc">Sornette's view: self-organised criticality as a tuned critical point</option></select>
 <div id="theory-body"></div>
 </section>
 <section id="panel-assumptions" aria-label="Assumptions" hidden></section>

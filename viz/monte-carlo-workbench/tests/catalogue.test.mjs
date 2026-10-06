@@ -104,7 +104,7 @@ test("each method has its estimator, assumptions, settings, suitable example, fa
 });
 
 test("each theory panel has a statement, assumptions, a proof sketch, a reference, a counterexample and a linked experiment", () => {
-  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity", "markov", "particles", "rqmc"]);
+  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity", "markov", "particles", "rqmc", "metastability", "annealing", "scaling", "soc"]);
   assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), M.FIELDS.theory.values, "the state can open every panel");
   for (const t of data.theory) {
     for (const k of ["title", "statement", "proof", "reference", "counterexample"]) assert.ok(t[k]?.length > 20, `${t.id}: ${k}`);
@@ -113,6 +113,8 @@ test("each theory panel has a statement, assumptions, a proof sketch, a referenc
     if (t.experiment.rare) { assert.ok(data.rare.presets.some((/** @type {any} */ p) => p.id === t.experiment.rare), `${t.id}: the linked rare-event example exists`); continue; }
     // Group 8's panels link to an example of its lab, which tests/chains-catalogue.test.mjs checks.
     if (t.experiment.chains) { assert.ok(data.chains.examples.some((/** @type {any} */ x) => x.id === t.experiment.chains), `${t.id}: the linked lab example exists`); continue; }
+    // Group 9's panels link to an example of the physics lab, which tests/physics-catalogue.test.mjs checks.
+    if (t.experiment.physics) { assert.ok(data.physics.examples.some((/** @type {any} */ x) => x.id === t.experiment.physics), `${t.id}: the linked physics example exists`); continue; }
     assert.ok(data.models.some((/** @type {any} */ m) => m.id === t.experiment.model), `${t.id}: the linked experiment exists`);
     const state = { ...M.exampleState(data.models.find((/** @type {any} */ m) => m.id === t.experiment.model)), ...t.experiment.settings };
     for (const [k, v] of Object.entries(state)) assert.notEqual(M.FIELDS[k], undefined, `${t.id}: ${k} is a state field (${v})`);
@@ -139,9 +141,9 @@ test("each real dataset states its source, date and licence, and its counts or i
   assert.deepEqual([total("horse-kicks"), total("rutherford-geiger"), total("weldon")], [200, 2608, 26306]);
 });
 
-test("the groups list pieces 1 to 8 here and the 2 groups to come, in merge order", () => {
+test("the groups list pieces 1 to 9 here and the group to come, in merge order", () => {
   assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.piece), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), [...Array(8).fill("here"), ...Array(2).fill("to come")]);
+  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), [...Array(9).fill("here"), "to come"]);
 });
 
 test("every technical abbreviation of the reader text has a glossary entry", () => {

@@ -24,6 +24,10 @@ const rareSettles = (page, states) => page.waitForFunction((s) => s.includes(/**
 const labRun = (page) => page.evaluate(() => { const r = /** @type {any} */ (window).MCChainView.run; return r ? { status: r.status, runs: r.acc?.blocks ?? 0, target: r.c.settings?.runs ?? 0 } : null; });
 /** @param {import("playwright").Page} page @param {string[]} states */
 const labSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).MCChainView.run?.status), states, { timeout: 90_000 });
+/** The run of the statistical-physics lab (group 9). @param {import("playwright").Page} page */
+const physRun = (page) => page.evaluate(() => { const r = /** @type {any} */ (window).MCPhysView.run; return r ? { status: r.status, blocks: r.acc?.blocks ?? 0, target: r.c.blocks ?? 0 } : null; });
+/** @param {import("playwright").Page} page @param {string[]} states */
+const physSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).MCPhysView.run?.status), states, { timeout: 120_000 });
 /** Change the view with a control that adds a Back entry: the method. @param {import("playwright").Page} page */
 const change = (page) => page.locator("#method").selectOption("inverse");
 
@@ -278,6 +282,27 @@ await fullSuite("monte-carlo-workbench", {
     await s.page.locator('#chain-plots button[value="acf"]').focus();
     await s.page.keyboard.press("Enter");
     assert.equal((await kitState(s.page)).c_plot, "acf", "Enter on a focused figure button shows that figure");
+    // Group 9: the physics lab by keyboard: step one block with ".", run with Space, and turn the 3D view by arrow keys.
+    await s.page.locator('[data-field="nav"][value="physics"]').focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.locator("#phys-autorun").uncheck();
+    await s.page.locator("#phys-reset").click();
+    assert.equal((await physRun(s.page))?.blocks, 0, "Reset run clears the physics result");
+    await blur(s.page);
+    await s.page.keyboard.press(".");
+    await physSettles(s.page, ["paused", "done"]);
+    assert.equal((await physRun(s.page))?.blocks, 1, "the full stop key steps one block");
+    await s.page.waitForFunction(() => /Paused: the partial result is not complete: 1 of 40 blocks/.test(document.getElementById("phys-status")?.textContent ?? ""));
+    await blur(s.page);
+    await s.page.keyboard.press("Space");
+    await physSettles(s.page, ["done"]);
+    assert.equal((await physRun(s.page))?.blocks, 40, "Space runs every block");
+    await s.page.locator('#phys-plots button[value="land"]').focus();
+    await s.page.keyboard.press("Enter");
+    const az = (await kitState(s.page)).ph_az;
+    await s.page.locator("#phys-canvas").focus();
+    await s.page.keyboard.press("ArrowRight");
+    assert.equal((await kitState(s.page)).ph_az, Number(az) + 10, "an arrow key on the focused 3D view turns it");
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
     await settlesTo(() => kitState(s.page), initial, "Enter on the focused Reset button resets the view");
@@ -331,6 +356,19 @@ await fullSuite("monte-carlo-workbench", {
     const lr = await labRun(page);
     assert.ok(lr && lr.runs < lr.target, "the paused lab run stopped before its last chain");
     await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#chain-results caption")?.textContent ?? ""));
+    // Group 9: a large sandpile run, then Pause: the physics lab reports the partial result as not complete.
+    await page.locator('[data-field="nav"][value="physics"]').click();
+    await page.locator('#phys-list [data-phys-open="sandpile-btw"]').click();
+    await page.locator("#phys-l").fill("128");
+    await page.locator("#phys-l").blur();
+    await page.locator("#phys-drives").fill("17");
+    await page.locator("#phys-drives").blur();
+    await page.waitForFunction(() => /** @type {any} */ (window).MCPhysView.run?.status === "running" && /** @type {any} */ (window).MCPhysView.run.job.drives === 131072);
+    await page.locator("#phys-pause").click();
+    await physSettles(page, ["paused", "done"]);
+    const pr = await physRun(page);
+    assert.ok(pr && pr.blocks < pr.target, "the paused physics run stopped before its last chain");
+    await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#phys-results caption")?.textContent ?? ""));
   }, kitState),
 
   "json-round-trip": (ctx) => jsonRoundTrip(ctx.open, async (page) => {
@@ -382,6 +420,19 @@ await fullSuite("monte-carlo-workbench", {
     await page.locator("#chain-load-run").setInputFiles({ name: lab.name, mimeType: "application/json", buffer: Buffer.from(lab.text) });
     await page.waitForFunction(() => /** @type {any} */ (window).MCChainView.run?.status === "done" && /Replay: 3 estimates identical, 0 equal up to the last digits, 0 different/.test(document.getElementById("chain-replay")?.textContent ?? ""), null, { timeout: 90_000 });
     assert.equal((await kitState(page)).c_example, "tank-level");
+    // Group 9: the physics run record: save it, load it, replay it, and get identical estimates.
+    await page.locator('[data-field="nav"][value="physics"]').click();
+    await page.locator('#phys-list [data-phys-open="sandpile-btw"]').click();
+    await physSettles(page, ["done"]);
+    const phys = await saved(page, () => page.locator("#phys-save-run").click());
+    const pdoc = JSON.parse(phys.text);
+    assert.equal(pdoc.format, "monte-carlo-workbench/physics-run");
+    assert.deepEqual([pdoc.example, pdoc.job.rule, pdoc.job.boundary, pdoc.dynamics.length, pdoc.results[0].claims], ["sandpile-btw", "btw", "open", 5, ["observation", "theorem"]]);
+    await page.locator('#phys-list [data-phys-open="tempering-wells"]').click();
+    await physSettles(page, ["done"]);
+    await page.locator("#phys-load-run").setInputFiles({ name: phys.name, mimeType: "application/json", buffer: Buffer.from(phys.text) });
+    await page.waitForFunction(() => /** @type {any} */ (window).MCPhysView.run?.status === "done" && /Replay: 5 estimates identical, 0 equal up to the last digits, 0 different/.test(document.getElementById("phys-replay")?.textContent ?? ""), null, { timeout: 120_000 });
+    assert.equal((await kitState(page)).ph_example, "sandpile-btw");
   }, kitState),
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await change(page); }, "Method: Inverse transform", "#save-beamdswitch, #copy-beamdswitch"),
