@@ -1,6 +1,6 @@
 /* Scientific Modelling: the fluid–structure interaction family (piece 9). A rigid airfoil section in pitch and
  * plunge, the typical section, with two declared aerodynamic models, after the open Georgia Tech typical-section
- * example (data/flutter.json names the sources):
+ * example (data/flutterrefs.json names the sources):
  *
  *   1. Frequency domain, Theodorsen's function C(k) from Hankel functions: the k method finds the flutter onset as
  *      the reduced frequency where the artificial damping g of a branch is 0; the p–k method gives the modal damping
@@ -714,7 +714,7 @@
     }
     const ps = eigenvalues(A);
     const lead = ps.reduce((b, p) => (p.re > b.re ? p : b), ps[0]);
-    return { V, tau, theta, xi, rate: lead.re, kind: lead.re > 1e-9 ? "grows" : lead.re < -1e-9 ? "decays" : "neutral", eigenvalues: ps.map((p) => ({ re: p.re, im: p.im, zeta: p.im > 1e-9 ? -p.re / cabs(p) : null, structural: isStructural(p) || p.im < -1e-9 })) };
+    return { V, tau, theta, xi, rate: lead.re, kind: lead.re > 1e-9 ? "grows" : lead.re < -1e-9 ? "decays" : "neutral", eigenvalues: ps.map((p) => ({ re: p.re, im: p.im, zeta: p.im > 1e-9 ? -p.re / cabs(p) : null })) };
   }
 
   /* ---------- the whole analysis ---------- */
@@ -722,7 +722,7 @@
   /** A uniform grid of n points on [lo, hi]. */
   const grid = (lo, hi, n) => Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / (n - 1));
 
-  /** The declared tolerances (data/flutter.json repeats them for the report). */
+  /** The declared tolerances. */
   const TOL = Object.freeze({ agreement: 0.01, consistency: 1e-8, samePoint: 1e-7, residual: 1e-9, reference: 1e-7, besselRef: 1e-10, convergence: 1e-6, order: [3.5, 4.5] });
 
   /**
@@ -864,7 +864,7 @@
         passed: last.error <= T.convergence && last.order >= T.order[0] && last.order <= T.order[1] });
     }
     const pkPoints = A.theodorsen.pkModes.reduce((s, m) => s + m.length, 0);
-    add({ id: "pkiter", title: `The p–k iteration converged at all ${pkPoints} points in ${A.theodorsen.pkIterations} iterations or fewer`, status: "numerical", tolerance: "1e-12 in k", passed: A.theodorsen.pkConverged });
+    add({ id: "pkiter", title: `The p–k iteration converged at all ${pkPoints} points in ${A.theodorsen.pkIterations} iterations or fewer`, status: "numerical", tolerance: "1e-12·max(1, Ω) in Ω", passed: A.theodorsen.pkConverged });
     add({ id: "jones", title: "R. T. Jones approximated the Wagner function as φ(s) = 1 − 0.165e^(−0.0455s) − 0.335e^(−0.3s), with s = Ut/b", status: "evidence", passed: true, evidence: ["byu-wagner"] });
     for (const u of declared.unsupported) add({ id: u.id, title: u.title.replace(/\.$/, ""), status: "unresolved", passed: false, next: u.next });
     return { A, checks };
@@ -916,7 +916,7 @@
     if (A.convergence) tables.push({ title: `Convergence of RK4 at V = ${fx(A.convergence.V)} over ${A.convergence.periods} periods`, columns: ["Steps per period", "Δτ", "Relative error", "Observed order"],
       rows: A.convergence.rows.map((r) => [String(r.perPeriod), fx(r.dt, 4), r.error.toExponential(2), r.order === null ? "–" : fx(r.order, 3)]) });
     if (A.response) tables.push({ title: `Eigenvalues of A(V) at V = ${fx(A.response.V, 3)}`, columns: ["Re p", "Im p", "ζ", "Kind"],
-      rows: A.response.eigenvalues.filter((q) => q.im >= 0).map((q) => [fx(q.re, 5), fx(q.im, 5), q.zeta === null ? "–" : fx(q.zeta, 4), q.zeta === null ? "aerodynamic lag" : "structural mode"]) });
+      rows: A.response.eigenvalues.filter((q) => q.im >= 0).map((q) => [fx(q.re, 5), fx(q.im, 5), q.zeta === null ? "–" : fx(q.zeta, 4), q.zeta !== null ? "structural mode" : q.re > 1e-9 ? "real, grows (divergence)" : "real (lag or static)"]) });
     const P = A.params;
     const results = checks.map((c) => ({ id: `r-fsi-${c.id}`, kind: "solution", title: `${c.title}.`, status: c.status === "exact" || c.status === "numerical" ? (c.passed ? c.status : "unresolved") : c.status,
       tolerance: c.tolerance ?? null, next: c.next ?? (c.passed ? "" : "Check the inputs of this result."), steps: ["s-st-eigen"], evidence: c.evidence.length ? c.evidence : ["spec-10"] }));

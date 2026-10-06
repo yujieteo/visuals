@@ -138,3 +138,14 @@ test("agreement: for both flutter examples the page's results, the Markdown reco
     for (const disp of d.stability.analysis.displays) for (const t of disp.tex) assert.ok(md.includes(`$$${t}$$`), `${ex}: ${disp.title}`);
   }
 });
+
+test("the eigenvalue table: above V_D the growing real eigenvalue is the divergence mode, not an aerodynamic lag", () => {
+  const rec = confirmed("flutter");
+  const d = derive("flutter", {}, R.confirm(R.edit(rec, (inp) => { inp.variables.find((v) => v.id === "v-U").value = "65"; }, "Changed U.")));
+  const table = d.stability.analysis.tables.find((t) => t.title.startsWith("Eigenvalues of A(V)"));
+  assert.equal(table.title, "Eigenvalues of A(V) at V = 2.6");
+  const kinds = table.rows.map((r) => r[3]);
+  assert.deepEqual(table.rows.filter((r) => Number(r[0]) > 0 && r[2] === "–").map((r) => r[3]), ["real, grows (divergence)"]);
+  assert.ok(kinds.includes("real (lag or static)") && kinds.includes("structural mode"));
+  assert.ok(!kinds.includes("aerodynamic lag"));
+});
