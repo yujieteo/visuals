@@ -106,7 +106,7 @@ never the candidate set, so the grammar's version and the fixtures' candidate se
 - Values with an offset are ordered in UTC and shown as written; values without one are "zone unknown" and never
   shifted; dates stay dates. The axis says UTC or zone unknown.
 - Dates known to the year or month (`1850`, `1851-03`) keep their precision and draw as a hatched span over that
-  year or month: no day is invented. Qualifiers (`c.`, `ca.`, `circa`, `about`, `approx.`, `~`, a trailing `?`)
+  year or month (a light span in the Nature preset, which avoids patterns): no day is invented. Qualifiers (`c.`, `ca.`, `circa`, `about`, `approx.`, `~`, a trailing `?`)
   are kept as written and drawn as open or dashed marks.
 - A missing start or end draws open to the axis edge, dashed, and is labelled "start unknown" or "end unknown". A
   row whose end comes before its start is not drawn and is counted.
@@ -123,4 +123,6 @@ order-check, page), `encoding` (a field and its class per channel: x, y, x2, lab
 log10, band, time with its zone, sequential), `layout` (width and height in mm, facet), `annotation` (title, labels,
 units only from the source or the person, caption, notes, findings) and `edits` (each change the person made).
 `ChartSpec.SCHEMA` is its JSON Schema; `ChartSpec.validate` checks it, then the rules above, before every figure is
-drawn. Figures are 180 mm wide (the general preset), 110 mm tall (timelines 140 mm), on white paper.
+drawn. Figures are 180 mm wide (the general preset), 110 mm tall (timelines 140 mm), on white paper. A publication
+preset (spec.md, step 4) changes only the final size, text sizes and colours, gridlines, patterns and where the title
+and caption sit, never the candidates, their data or their rules.
