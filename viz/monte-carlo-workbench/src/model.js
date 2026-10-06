@@ -54,12 +54,15 @@
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
     theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc"], default: "lln", label: "Theory panel" },
     mlmc_eps: { type: "number", min: 1e-6, max: 1e6, default: 0.05, label: "Target root mean square error ε of multilevel Monte Carlo" },
-    nav: { type: "enum", values: ["examples", "editor", "library"], default: "examples", label: "Left panel" },
+    nav: { type: "enum", values: ["examples", "interview", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
     sweep_from: { type: "number", min: -1e9, max: 1e9, default: 0, label: "Sweep from" },
     sweep_to: { type: "number", min: -1e9, max: 1e9, default: 1, label: "Sweep to" },
     sweep_points: { type: "integer", min: 3, max: 21, default: 9, label: "Sweep points" },
+    iv: { type: "string", default: "", label: "Answers of the guided interview, such as k=cnt;g=evt;m=4" },
+    iv_off: { type: "string", default: "", label: "Rules of the interview switched off, comma-separated" },
+    iv_pick: { type: "string", default: "", label: "Candidate that the reader picked (empty: the top candidate)" },
   };
 
   /** The state an example opens: its model and the settings its catalogue entry names. @param {any} m */

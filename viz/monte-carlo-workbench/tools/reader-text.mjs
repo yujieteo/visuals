@@ -23,4 +23,8 @@ for (const t of data.theory) section(`Theory: ${t.title}`, [t.assumptions, t.pro
 section("Glossary", data.glossary.map((/** @type {any} */ g) => g.definition));
 section("Datasets", data.datasets.map((/** @type {any} */ d) => `${d.title}. ${d.licence}`));
 section("Groups", data.groups.map((/** @type {any} */ g) => g.content));
+const iv = data.interview;
+section("Interview: questions", iv.questions.map((/** @type {any} */ q) => [q.text, q.help, q.options.map((/** @type {any} */ o) => o.label)]));
+section("Interview: rules", [iv.alerts, iv.rules.map((/** @type {any} */ r) => r.reason)]);
+section("Interview: candidates", iv.candidates.map((/** @type {any} */ c) => [c.competing.map((/** @type {any} */ x) => x.text), c.tests, c.methods ?? ""]));
 process.stdout.write(`${out.join("\n")}\n`);

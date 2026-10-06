@@ -135,9 +135,9 @@ test("each real dataset states its source, date and licence, and its counts or i
   assert.deepEqual([total("horse-kicks"), total("rutherford-geiger"), total("weldon")], [200, 2608, 26306]);
 });
 
-test("the groups list pieces 1 to 5 here and the 5 groups to come, in merge order", () => {
+test("the groups list pieces 1 to 6 here and the 4 groups to come, in merge order", () => {
   assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.piece), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", "here", "here", "here", ...Array(5).fill("to come")]);
+  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), [...Array(6).fill("here"), ...Array(4).fill("to come")]);
 });
 
 test("every technical abbreviation of the reader text has a glossary entry", () => {

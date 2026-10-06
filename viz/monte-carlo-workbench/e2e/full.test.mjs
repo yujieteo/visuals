@@ -32,6 +32,13 @@ await fullSuite("monte-carlo-workbench", {
       await link.page.goto(link.page.url().split("#")[0] + "#model=no-such-model");
       await link.page.reload();
       assert.match(await link.page.locator("#notice").innerText(), /not a valid value/, "a stale link resets with a notice");
+      // Group 6: a link with the interview's answers, a rule switched off and a pick restores the interview.
+      await link.page.goto(`${link.page.url().split("#")[0]}#nav=interview&iv=${encodeURIComponent("k=ext;ge=max;t=lgt;q=mx;m=95;sd=30")}&iv_off=x3&iv_pick=gev`);
+      await link.page.reload();
+      await link.page.waitForFunction(() => /ranks the GEV|ranks the generalised extreme value/i.test(document.getElementById("iv-status")?.textContent ?? ""));
+      assert.equal(await link.page.locator("#iv-q-ge").inputValue(), "max");
+      assert.equal(await link.page.locator("#iv-rule-x3").isChecked(), false, "the rule switched off stays off");
+      assert.ok(await link.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "the open interview does not scroll sideways");
     } finally {
       await link.close();
     }
@@ -203,6 +210,32 @@ await fullSuite("monte-carlo-workbench", {
     await s.page.keyboard.press("Space");
     await runSettles(s.page, ["done"]);
     assert.equal((await run(s.page))?.n, (await run(s.page))?.target, "Space runs to the full sample size");
+    // Group 6: the guided interview by keyboard. It starts with "insufficient evidence", proposes a candidate from the
+    // answers, follows a rule switched off and a pick, and makes the same model record as the editor.
+    await s.page.locator('[data-field="nav"][value="interview"]').focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.waitForFunction(() => /Insufficient evidence/.test(document.getElementById("iv-status")?.textContent ?? ""));
+    await s.page.locator("#iv-q-k").focus();
+    await s.page.locator("#iv-q-k").selectOption("cnt");
+    await s.page.locator("#iv-q-g").selectOption("het");
+    await s.page.locator("#iv-q-v").selectOption("gt");
+    await s.page.waitForFunction(() => /ranks the negative binomial law first/.test(document.getElementById("iv-status")?.textContent ?? ""));
+    assert.match(String((await kitState(s.page)).iv), /k=cnt;g=het;v=gt/, "the answers are in the state");
+    await s.page.locator("#iv-rule-c14").focus();
+    await s.page.keyboard.press("Space");
+    await s.page.waitForFunction(() => /** @type {any} */ (window).MCInterviewView.result()?.off.includes("c14"));
+    await s.page.locator("#iv-pick").selectOption("poisson");
+    await s.page.waitForFunction(() => /** @type {any} */ (window).MCInterviewView.result()?.chosen === "poisson");
+    await s.page.locator("#iv-pick").selectOption("");
+    await s.page.locator("#iv-make").focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.waitForFunction(() => /model=custom/.test(location.hash) && /nav=editor/.test(location.hash));
+    const same = await s.page.evaluate(() => {
+      const w = /** @type {any} */ (window), text = /** @type {HTMLTextAreaElement} */ (document.getElementById("editor-text")).value;
+      return { text, equal: JSON.stringify(w.MCDsl.parse(text, "custom").record) === JSON.stringify(w.Model.getCustom()) };
+    });
+    assert.ok(same.equal, "the editor reads the same record from the text that the interview applied");
+    assert.match(same.text, /X ~ mixture_poisson\(/, "with the rule c14 off, the finite mixture is the top candidate");
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
     await settlesTo(() => kitState(s.page), initial, "Enter on the focused Reset button resets the view");

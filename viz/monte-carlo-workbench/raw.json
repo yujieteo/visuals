@@ -9769,6 +9769,38 @@
   {
    "term": "SIR model",
    "definition": "Susceptible–infected–removed: an epidemic model with a finite population, in which the spread slows as the susceptible part falls."
+  },
+  {
+   "term": "rule graph",
+   "definition": "The data of the guided interview: questions, candidate models and rules. A rule goes from answers to candidates, to an unresolved assumption, or to “insufficient evidence”."
+  },
+  {
+   "term": "rule path",
+   "definition": "The rules that fired for the current answers, with the answers that fired each rule and the effect of each rule on the candidates."
+  },
+  {
+   "term": "candidate model",
+   "definition": "A law or a model part that the interview proposes. It has a reason, other explanations, rejection tests and sampling methods. It is a hypothesis, not a result."
+  },
+  {
+   "term": "insufficient evidence",
+   "definition": "The result of the interview when the answers do not separate the candidate laws, or when a fact that the decision needs is not known."
+  },
+  {
+   "term": "unresolved assumption",
+   "definition": "A fact that the interview does not know, such as the dependence of the values. The model record assumes a value for it, and the reader must check it."
+  },
+  {
+   "term": "rejection test",
+   "definition": "A test or a plot of data that can show that a candidate law does not fit. When a test does not reject a law, this does not prove the law."
+  },
+  {
+   "term": "hazard rate",
+   "definition": "The rate of an event at time t, given no event before t: h(t) = f(t)/S(t)."
+  },
+  {
+   "term": "atom",
+   "definition": "A value with a positive probability, such as an exact 0 in a law that is otherwise continuous."
   }
  ],
  "datasets": [
@@ -10193,8 +10225,8 @@
    "piece": 6,
    "id": "interview",
    "title": "The guided interview",
-   "status": "to come",
-   "content": "A rule graph that asks about the problem and proposes candidate models, with reasons, other explanations and rejection tests."
+   "status": "here",
+   "content": "A rule graph that asks about the problem and proposes candidate models, each with a reason, other explanations, rejection tests and sampling methods. The reader can switch a rule off or choose another candidate, and the interview can return “insufficient evidence”. It makes the same model record as the editor."
   },
   {
    "piece": 7,
@@ -10347,5 +10379,6336 @@
    "pathDraws": 20000,
    "copulaDimension": 16
   }
+ },
+ "interview": {
+  "version": 1,
+  "alerts": [
+   "Support and moments do not usually identify a unique distribution.",
+   "A marginal distribution does not define dependence."
+  ],
+  "topics": [
+   {
+    "id": "support",
+    "title": "Support and the generating mechanism"
+   },
+   {
+    "id": "shape",
+    "title": "Bounds, thresholds, atoms, mixtures and tails"
+   },
+   {
+    "id": "dependence",
+    "title": "Dependence, stationarity and observation"
+   },
+   {
+    "id": "decision",
+    "title": "Data and the decision"
+   }
+  ],
+  "questions": [
+   {
+    "id": "k",
+    "short": "support",
+    "topic": "support",
+    "text": "What does one value of the quantity measure?",
+    "help": "The answer sets the support: the set of values that the law can give.",
+    "ask": null,
+    "options": [
+     {
+      "id": "cnt",
+      "label": "A count: 0, 1, 2, …",
+      "noun": "count"
+     },
+     {
+      "id": "bin",
+      "label": "One result with two values: yes or no",
+      "noun": "yes-or-no result"
+     },
+     {
+      "id": "cat",
+      "label": "One category from a fixed list",
+      "noun": "category"
+     },
+     {
+      "id": "vec",
+      "label": "Counts in several categories, with a fixed total",
+      "noun": "set of category counts"
+     },
+     {
+      "id": "rnk",
+      "label": "A rank, such as the rank of a word by frequency",
+      "noun": "rank"
+     },
+     {
+      "id": "tim",
+      "label": "A waiting time or a lifetime",
+      "noun": "time"
+     },
+     {
+      "id": "pro",
+      "label": "A proportion or a probability, from 0 to 1",
+      "noun": "proportion"
+     },
+     {
+      "id": "shr",
+      "label": "Shares of a whole: proportions with the sum 1",
+      "noun": "set of shares"
+     },
+     {
+      "id": "siz",
+      "label": "A positive size or amount, such as a loss or a file size",
+      "noun": "size"
+     },
+     {
+      "id": "ext",
+      "label": "The largest or the smallest value of each period or block",
+      "noun": "extreme value"
+     },
+     {
+      "id": "mea",
+      "label": "A measurement that can be negative, such as an error or a change",
+      "noun": "measurement"
+     },
+     {
+      "id": "mvm",
+      "label": "Several measurements together, which can have a correlation",
+      "noun": "vector of measurements"
+     }
+    ]
+   },
+   {
+    "id": "g",
+    "short": "mechanism",
+    "topic": "support",
+    "text": "Which mechanism makes the count?",
+    "help": "A mechanism that you know gives the strongest reason for a law.",
+    "ask": {
+     "k": [
+      "cnt"
+     ]
+    },
+    "options": [
+     {
+      "id": "tri",
+      "label": "Successes in a fixed number n of independent trials, each with the same probability"
+     },
+     {
+      "id": "drw",
+      "label": "Successes in n draws without replacement from a finite population"
+     },
+     {
+      "id": "evt",
+      "label": "Independent events at a constant rate, in a fixed time, length or area"
+     },
+     {
+      "id": "wai",
+      "label": "Failures before a success: the first success or success number r"
+     },
+     {
+      "id": "het",
+      "label": "Events at a rate that changes between units or periods"
+     },
+     {
+      "id": "agg",
+      "label": "The total of a random number of groups, each with a random size"
+     },
+     {
+      "id": "eqv",
+      "label": "A value from a to b, each value with the same probability"
+     }
+    ]
+   },
+   {
+    "id": "r",
+    "short": "success number",
+    "topic": "support",
+    "text": "Which success ends the count?",
+    "help": "The count is the number of failures before this success.",
+    "ask": {
+     "g": [
+      "wai"
+     ]
+    },
+    "options": [
+     {
+      "id": "one",
+      "label": "The first success"
+     },
+     {
+      "id": "many",
+      "label": "Success number r, with r larger than 1"
+     }
+    ]
+   },
+   {
+    "id": "gt",
+    "short": "mechanism",
+    "topic": "support",
+    "text": "Which mechanism makes the time?",
+    "help": "The hazard rate is the rate of the event at time t, given no event before t.",
+    "ask": {
+     "k": [
+      "tim"
+     ]
+    },
+    "options": [
+     {
+      "id": "mem",
+      "label": "The chance of the event in the next short time does not depend on the time already waited"
+     },
+     {
+      "id": "stg",
+      "label": "The time is the sum of k stages, each with the same constant hazard rate"
+     },
+     {
+      "id": "age",
+      "label": "The hazard rate changes with age: wear or early failures"
+     },
+     {
+      "id": "mul",
+      "label": "The time is the product of many independent positive factors"
+     },
+     {
+      "id": "fpt",
+      "label": "The first time that a random process gets to a level"
+     }
+    ]
+   },
+   {
+    "id": "h",
+    "short": "shape of the hazard rate",
+    "topic": "support",
+    "text": "How does the hazard rate change with age?",
+    "help": "Use failure records or knowledge of the wear mechanism.",
+    "ask": {
+     "gt": [
+      "age"
+     ]
+    },
+    "options": [
+     {
+      "id": "inc",
+      "label": "It increases as a power of the age"
+     },
+     {
+      "id": "exg",
+      "label": "It increases exponentially with the age, as human mortality does"
+     },
+     {
+      "id": "dec",
+      "label": "It decreases: early failures"
+     },
+     {
+      "id": "hum",
+      "label": "It increases, then decreases"
+     }
+    ]
+   },
+   {
+    "id": "dr",
+    "short": "drift",
+    "topic": "support",
+    "text": "Does the process move toward the level on average?",
+    "help": "This is the drift of the process.",
+    "ask": {
+     "gt": [
+      "fpt"
+     ]
+    },
+    "options": [
+     {
+      "id": "yes",
+      "label": "Yes: the process has a positive drift toward the level"
+     },
+     {
+      "id": "no",
+      "label": "No: the process has no drift"
+     }
+    ]
+   },
+   {
+    "id": "gs",
+    "short": "mechanism",
+    "topic": "support",
+    "text": "Which mechanism makes the size?",
+    "help": "A size is a positive amount, such as a loss, a claim or a file size.",
+    "ask": {
+     "k": [
+      "siz"
+     ]
+    },
+    "options": [
+     {
+      "id": "mul",
+      "label": "The product of many independent positive factors"
+     },
+     {
+      "id": "add",
+      "label": "The sum of many independent positive parts"
+     },
+     {
+      "id": "agg",
+      "label": "The total of a random number of individual amounts"
+     },
+     {
+      "id": "pow",
+      "label": "A power law: the number of values above x decreases as x^(−α)"
+     },
+     {
+      "id": "exc",
+      "label": "The excess of a value over a high threshold"
+     },
+     {
+      "id": "hsum",
+      "label": "The total of many independent amounts with an infinite variance"
+     }
+    ]
+   },
+   {
+    "id": "pm",
+    "short": "start of the power law",
+    "topic": "support",
+    "text": "Where does the power law start?",
+    "help": "The power law describes the right tail. The body of the law can have a different shape.",
+    "ask": {
+     "gs": [
+      "pow"
+     ]
+    },
+    "options": [
+     {
+      "id": "min",
+      "label": "At a minimum value x_m larger than 0: no value is below x_m"
+     },
+     {
+      "id": "zero",
+      "label": "At 0: small values are possible, and the density decreases from 0"
+     },
+     {
+      "id": "body",
+      "label": "After a mode: small values are rare, and large values follow the power law"
+     }
+    ]
+   },
+   {
+    "id": "gp",
+    "short": "type of proportion",
+    "topic": "support",
+    "text": "What is the proportion?",
+    "help": "A proportion takes values in [0, 1].",
+    "ask": {
+     "k": [
+      "pro"
+     ]
+    },
+    "options": [
+     {
+      "id": "unc",
+      "label": "A probability or a fraction that changes between units or is not known exactly"
+     },
+     {
+      "id": "lim",
+      "label": "A value between known limits, with no other information"
+     }
+    ]
+   },
+   {
+    "id": "ge",
+    "short": "type of extreme value",
+    "topic": "support",
+    "text": "Which extreme value is it?",
+    "help": "A block is a period or a batch, such as one year of daily values.",
+    "ask": {
+     "k": [
+      "ext"
+     ]
+    },
+    "options": [
+     {
+      "id": "max",
+      "label": "The maximum of many values in each block"
+     },
+     {
+      "id": "min",
+      "label": "The minimum of many positive values: the weakest part"
+     },
+     {
+      "id": "exc",
+      "label": "Each value above a high threshold"
+     }
+    ]
+   },
+   {
+    "id": "gm",
+    "short": "mechanism",
+    "topic": "support",
+    "text": "Which mechanism makes the measurement?",
+    "help": "Each mechanism here has a theorem or a definition that gives a law.",
+    "ask": {
+     "k": [
+      "mea"
+     ]
+    },
+    "options": [
+     {
+      "id": "sum",
+      "label": "The sum of many small independent effects with a finite variance"
+     },
+     {
+      "id": "out",
+      "label": "Usually small, but sometimes very large deviations"
+     },
+     {
+      "id": "dif",
+      "label": "The difference of two independent exponential times"
+     },
+     {
+      "id": "lgs",
+      "label": "The difference of two independent Gumbel values, such as a latent value in a logistic model"
+     },
+     {
+      "id": "rat",
+      "label": "The ratio of two independent normal values with mean 0"
+     },
+     {
+      "id": "hsum",
+      "label": "The sum of many independent values with an infinite variance"
+     },
+     {
+      "id": "sq",
+      "label": "A sum of squares of independent standard normal values"
+     },
+     {
+      "id": "frat",
+      "label": "A ratio of two independent variance estimates"
+     },
+     {
+      "id": "tst",
+      "label": "A mean divided by its estimated standard error"
+     },
+     {
+      "id": "lim",
+      "label": "A value between known limits, each value equally likely"
+     }
+    ]
+   },
+   {
+    "id": "b",
+    "short": "upper limit",
+    "topic": "shape",
+    "text": "Does the count have a known upper limit?",
+    "help": "An example is the number of machines that fail in a group of n machines.",
+    "ask": {
+     "g": [
+      "evt",
+      "het",
+      "agg",
+      "?"
+     ]
+    },
+    "options": [
+     {
+      "id": "yes",
+      "label": "Yes: the count cannot be more than a known number n"
+     },
+     {
+      "id": "no",
+      "label": "No: there is no fixed upper limit"
+     }
+    ]
+   },
+   {
+    "id": "v",
+    "short": "dispersion",
+    "topic": "shape",
+    "text": "How does the variance of the count compare with its mean?",
+    "help": "Use data or knowledge of the mechanism. This is the dispersion of the count.",
+    "ask": {
+     "k": [
+      "cnt"
+     ]
+    },
+    "options": [
+     {
+      "id": "eq",
+      "label": "About equal"
+     },
+     {
+      "id": "gt",
+      "label": "The variance is larger: overdispersion"
+     },
+     {
+      "id": "lt",
+      "label": "The variance is smaller: underdispersion"
+     }
+    ]
+   },
+   {
+    "id": "z",
+    "short": "extra zeros",
+    "topic": "shape",
+    "text": "Are there more zeros than a Poisson or a negative binomial law gives?",
+    "help": "An example is a count of claims, with many policies that can never have a claim.",
+    "ask": {
+     "k": [
+      "cnt"
+     ]
+    },
+    "options": [
+     {
+      "id": "yes",
+      "label": "Yes: there are too many zeros"
+     },
+     {
+      "id": "no",
+      "label": "No"
+     }
+    ]
+   },
+   {
+    "id": "t",
+    "short": "tail",
+    "topic": "shape",
+    "text": "How fast does the probability of a very large value decrease?",
+    "help": "This is the right tail of the law. A finite sample cannot identify the tail.",
+    "ask": {
+     "k": [
+      "tim",
+      "siz",
+      "mea",
+      "ext"
+     ]
+    },
+    "options": [
+     {
+      "id": "bnd",
+      "label": "There is a finite upper limit"
+     },
+     {
+      "id": "lgt",
+      "label": "At least as fast as an exponential function: a light tail"
+     },
+     {
+      "id": "mid",
+      "label": "Slower than all exponential functions, but all moments exist"
+     },
+     {
+      "id": "pow",
+      "label": "As a power x^(−α): a heavy tail, and some moments do not exist"
+     }
+    ]
+   },
+   {
+    "id": "a",
+    "short": "atoms",
+    "topic": "shape",
+    "text": "Do some exact values occur with a positive probability?",
+    "help": "An example is a loss that is exactly 0 for most policies. Such a value is an atom of the law.",
+    "ask": {
+     "k": [
+      "tim",
+      "siz",
+      "mea",
+      "pro"
+     ]
+    },
+    "options": [
+     {
+      "id": "zer",
+      "label": "Yes: many values are exactly 0"
+     },
+     {
+      "id": "oth",
+      "label": "Yes: other exact values"
+     },
+     {
+      "id": "no",
+      "label": "No"
+     }
+    ]
+   },
+   {
+    "id": "x",
+    "short": "mixture",
+    "topic": "shape",
+    "text": "Is the population a mix of groups that behave differently?",
+    "help": "An example is a histogram with two peaks.",
+    "ask": {
+     "k": [
+      "cnt",
+      "rnk",
+      "tim",
+      "siz",
+      "pro",
+      "ext",
+      "mea"
+     ]
+    },
+    "options": [
+     {
+      "id": "yes",
+      "label": "Yes"
+     },
+     {
+      "id": "no",
+      "label": "No"
+     }
+    ]
+   },
+   {
+    "id": "o",
+    "short": "observation mechanism",
+    "topic": "dependence",
+    "text": "How are the values recorded?",
+    "help": "The observation mechanism decides the law of the recorded values.",
+    "ask": null,
+    "options": [
+     {
+      "id": "all",
+      "label": "Each value is recorded exactly"
+     },
+     {
+      "id": "cen",
+      "label": "A value beyond a limit is recorded only as “beyond the limit”"
+     },
+     {
+      "id": "trn",
+      "label": "A value beyond a limit is not recorded"
+     },
+     {
+      "id": "sel",
+      "label": "The chance to record a value depends on the value"
+     }
+    ]
+   },
+   {
+    "id": "d",
+    "short": "dependence",
+    "topic": "dependence",
+    "text": "Are the values independent of each other?",
+    "help": "A law of one value does not say how the values depend on each other.",
+    "ask": null,
+    "options": [
+     {
+      "id": "ind",
+      "label": "Yes: they are independent"
+     },
+     {
+      "id": "tim",
+      "label": "No: values close in time are related"
+     },
+     {
+      "id": "trg",
+      "label": "No: each event makes more events likely soon after"
+     },
+     {
+      "id": "gen",
+      "label": "No: each value makes the next values, as parents make offspring"
+     },
+     {
+      "id": "com",
+      "label": "No: several variables depend on each other or on a common cause"
+     }
+    ]
+   },
+   {
+    "id": "s",
+    "short": "type of process",
+    "topic": "dependence",
+    "text": "How does the process change over time?",
+    "help": "A stationary process keeps the same law at all times.",
+    "ask": {
+     "d": [
+      "tim"
+     ]
+    },
+    "options": [
+     {
+      "id": "sta",
+      "label": "It keeps the same behaviour: it is stationary"
+     },
+     {
+      "id": "stt",
+      "label": "It moves between a finite number of states"
+     },
+     {
+      "id": "drf",
+      "label": "It drifts or grows"
+     },
+     {
+      "id": "jmp",
+      "label": "It has sudden jumps at random times, a few in each period"
+     },
+     {
+      "id": "jall",
+      "label": "It moves by jumps of all sizes, also many small jumps"
+     }
+    ]
+   },
+   {
+    "id": "j",
+    "short": "tail dependence",
+    "topic": "dependence",
+    "text": "Do extreme values of the variables occur together?",
+    "help": "Tail dependence is the limit of the probability that one variable is extreme, given that another variable is extreme, as the level becomes more extreme.",
+    "ask": [
+     {
+      "d": [
+       "com"
+      ]
+     },
+     {
+      "k": [
+       "mvm"
+      ]
+     }
+    ],
+    "options": [
+     {
+      "id": "up",
+      "label": "Large values occur together"
+     },
+     {
+      "id": "lo",
+      "label": "Small values occur together"
+     },
+     {
+      "id": "both",
+      "label": "Large values and small values occur together"
+     },
+     {
+      "id": "no",
+      "label": "No: extreme values do not occur together more than the correlation gives"
+     }
+    ]
+   },
+   {
+    "id": "dn",
+    "short": "number of variables",
+    "topic": "dependence",
+    "text": "How many variables depend on each other?",
+    "help": "Some copulas give the same dependence to every pair of variables.",
+    "ask": [
+     {
+      "d": [
+       "com"
+      ]
+     },
+     {
+      "k": [
+       "mvm"
+      ]
+     }
+    ],
+    "options": [
+     {
+      "id": "two",
+      "label": "Two"
+     },
+     {
+      "id": "many",
+      "label": "More than two, with different dependence for each pair"
+     }
+    ]
+   },
+   {
+    "id": "dt",
+    "short": "data",
+    "topic": "decision",
+    "text": "Which data do you have?",
+    "help": "The rejection tests need data. Without data, each candidate is a hypothesis.",
+    "ask": null,
+    "options": [
+     {
+      "id": "non",
+      "label": "No data: only knowledge of the mechanism"
+     },
+     {
+      "id": "few",
+      "label": "Fewer than about 30 values"
+     },
+     {
+      "id": "many",
+      "label": "About 30 values or more"
+     },
+     {
+      "id": "big",
+      "label": "Several thousand values, enough to use them directly"
+     }
+    ]
+   },
+   {
+    "id": "q",
+    "short": "decision",
+    "topic": "decision",
+    "text": "On what does the decision depend?",
+    "help": "A decision on a tail needs more evidence about the tail than a decision on a mean.",
+    "ask": null,
+    "options": [
+     {
+      "id": "avg",
+      "label": "A mean value, such as an expected cost"
+     },
+     {
+      "id": "tl",
+      "label": "A tail probability or a high quantile, such as a capacity or a reserve"
+     },
+     {
+      "id": "mx",
+      "label": "The largest value in a period"
+     },
+     {
+      "id": "all",
+      "label": "The whole distribution"
+     }
+    ]
+   }
+  ],
+  "evidence": [
+   {
+    "id": "m",
+    "label": "Mean value",
+    "help": "From data or from knowledge. For a yes-or-no result, the probability of yes.",
+    "ask": {
+     "k": [
+      "cnt",
+      "bin",
+      "rnk",
+      "tim",
+      "pro",
+      "siz",
+      "ext",
+      "mea"
+     ]
+    },
+    "min": -1000000000,
+    "max": 1000000000,
+    "integer": false
+   },
+   {
+    "id": "sd",
+    "label": "Standard deviation",
+    "help": "Larger than 0. A negative binomial law needs a variance larger than the mean.",
+    "ask": {
+     "k": [
+      "cnt",
+      "tim",
+      "siz",
+      "ext",
+      "mea",
+      "pro"
+     ]
+    },
+    "min": 0,
+    "max": 1000000000,
+    "integer": false
+   },
+   {
+    "id": "lim",
+    "label": "Upper limit or number of trials n",
+    "help": "A whole number from 1 to 1,000,000.",
+    "ask": [
+     {
+      "k": [
+       "vec",
+       "rnk"
+      ]
+     },
+     {
+      "g": [
+       "tri",
+       "drw",
+       "eqv"
+      ]
+     },
+     {
+      "b": [
+       "yes"
+      ]
+     },
+     {
+      "o": [
+       "trn"
+      ]
+     }
+    ],
+    "min": 1,
+    "max": 1000000,
+    "integer": true
+   },
+   {
+    "id": "c",
+    "label": "Threshold of the decision",
+    "help": "The record estimates P(X > c), or P(X ≤ c) for a rank.",
+    "ask": {
+     "k": [
+      "cnt",
+      "rnk",
+      "tim",
+      "siz",
+      "ext",
+      "mea",
+      "pro",
+      "vec"
+     ]
+    },
+    "min": -1000000000,
+    "max": 1000000000,
+    "integer": false
+   }
+  ],
+  "examples": [
+   {
+    "id": "seals",
+    "label": "Pump seal faults at a constant rate",
+    "iv": "k=cnt;g=evt;b=no;v=eq;z=no;x=no;o=all;d=ind;dt=many;q=tl;m=2.4;c=5"
+   },
+   {
+    "id": "passengers",
+    "label": "Ticket holders who come to the flight",
+    "iv": "k=cnt;g=tri;v=lt;z=no;x=no;o=all;d=ind;dt=many;q=tl;m=172;lim=186;c=180"
+   },
+   {
+    "id": "claims",
+    "label": "Claims for each policy, with a rate that changes between policies",
+    "iv": "k=cnt;g=het;b=no;v=gt;z=no;x=no;o=all;d=ind;dt=many;q=avg;m=0.8;sd=1.4;c=3"
+   },
+   {
+    "id": "retries",
+    "label": "Failed attempts before the first good connection",
+    "iv": "k=cnt;g=wai;r=one;v=gt;z=no;x=no;o=all;d=ind;dt=few;q=tl;m=1.5;c=6"
+   },
+   {
+    "id": "rainfall",
+    "label": "Annual maximum of daily rainfall",
+    "iv": "k=ext;ge=max;t=lgt;x=no;o=all;d=ind;dt=many;q=mx;m=95;sd=30;c=200"
+   },
+   {
+    "id": "losses",
+    "label": "A positive loss with an unknown tail, for a reserve",
+    "iv": "k=siz;o=all;d=ind;dt=few;q=tl"
+   }
+  ],
+  "candidates": [
+   {
+    "id": "bernoulli",
+    "role": "law",
+    "law": "bernoulli",
+    "group": 1,
+    "name": "Bernoulli",
+    "kinds": [
+     "bin"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "conditional",
+      "text": "The probability depends on other variables. Then a conditional model gives each unit its own probability."
+     },
+     {
+      "id": "binomial",
+      "text": "Several results of the same kind are counted together. Their sum is binomial when the results are independent."
+     }
+    ],
+    "tests": [
+     "Independence: a runs test on the sequence of results.",
+     "Same probability for all units: compare the fractions of yes in groups with a chi-square test."
+    ],
+    "path": "k=bin",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "0.1"
+     },
+     "args": {
+      "p": "m"
+     },
+     "quantities": [
+      "prob yes = X == 1 \"probability of yes\""
+     ]
+    }
+   },
+   {
+    "id": "binomial",
+    "role": "law",
+    "law": "binomial",
+    "group": 1,
+    "name": "Binomial",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "poisson",
+      "text": "When n is large and p is small, Poisson(np) is close. The total variation distance is at most np²."
+     },
+     {
+      "id": "hypergeometric",
+      "text": "The draws are without replacement from a small population. Then the trials are not independent."
+     },
+     {
+      "id": "mixture",
+      "text": "The probability p changes between groups. Then the variance is larger than np(1 − p)."
+     }
+    ],
+    "tests": [
+     "Dispersion: the sample variance must be near np̂(1 − p̂). A much larger variance rejects a constant p.",
+     "Upper limit: no count is larger than n.",
+     "Goodness of fit: a chi-square test of the counts against Binomial(n, p̂), with cells pooled to an expected count of at least 5."
+    ],
+    "path": "k=cnt;g=tri",
+    "template": {
+     "uses": [
+      "m",
+      "lim"
+     ],
+     "defaults": {
+      "m": "5",
+      "lim": "max(20, ceil(2*m))"
+     },
+     "args": {
+      "n": "lim",
+      "p": "m/lim"
+     },
+     "c": "ceil(m + 2*sqrt(m*(1 - m/lim)))",
+     "requires": [
+      {
+       "expr": "m <= lim",
+       "text": "The mean m must be at most n."
+      }
+     ]
+    }
+   },
+   {
+    "id": "categorical",
+    "role": "law",
+    "law": "categorical",
+    "group": 1,
+    "name": "Categorical",
+    "kinds": [
+     "cat"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "empirical",
+      "text": "With many observations, the frequencies of the labels give the probabilities directly."
+     },
+     {
+      "id": "conditional",
+      "text": "The probabilities depend on other variables, such as the time of day."
+     }
+    ],
+    "tests": [
+     "Goodness of fit: a chi-square test of the label counts against the stated probabilities.",
+     "Stability: compare the frequencies of the labels in two halves of the data."
+    ],
+    "path": "k=cat",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "w",
+       "[0.5, 0.3, 0.2]",
+       "probabilities of the labels 1, 2 and 3: illustrative values"
+      ]
+     ],
+     "args": {
+      "p": "w"
+     },
+     "quantities": [
+      "prob first = X == 1 \"probability of label 1\""
+     ]
+    }
+   },
+   {
+    "id": "multinomial",
+    "role": "law",
+    "law": "multinomial",
+    "group": 1,
+    "name": "Multinomial",
+    "kinds": [
+     "vec"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "mixture",
+      "text": "The probabilities change between groups. Then the counts vary more than the multinomial law permits."
+     },
+     {
+      "id": "dirichlet",
+      "text": "Only the shares matter, not the counts. Then a Dirichlet law can model the shares."
+     }
+    ],
+    "tests": [
+     "Goodness of fit: a chi-square test of the category counts, with k − 1 degrees of freedom.",
+     "Overdispersion: compare the variance of each count between groups with n p_i (1 − p_i)."
+    ],
+    "path": "k=vec",
+    "template": {
+     "uses": [
+      "lim"
+     ],
+     "defaults": {
+      "lim": "100"
+     },
+     "extra": [
+      [
+       "w",
+       "[0.5, 0.3, 0.2]",
+       "probabilities of the categories 1, 2 and 3: illustrative values"
+      ]
+     ],
+     "args": {
+      "n": "lim",
+      "p": "w"
+     },
+     "c": "ceil(0.55*lim)",
+     "quantities": [
+      "prob exceed = X[1] > c \"category 1 above the threshold\"",
+      "mean first = X[1] \"mean count of category 1\""
+     ],
+     "focus": "X[1]"
+    }
+   },
+   {
+    "id": "uniform",
+    "role": "law",
+    "law": "uniform",
+    "group": 1,
+    "name": "Discrete uniform",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "categorical",
+      "text": "Some values are more likely than others. A categorical law states each probability."
+     },
+     {
+      "id": "binomial",
+      "text": "The value is a count of independent successes, so the middle values are more likely."
+     }
+    ],
+    "tests": [
+     "Goodness of fit: a chi-square test of the counts against equal probabilities.",
+     "Limits: no value is below a or above b."
+    ],
+    "path": "k=cnt;g=eqv",
+    "template": {
+     "uses": [
+      "m",
+      "lim"
+     ],
+     "defaults": {
+      "m": "lim/2",
+      "lim": "max(1, round(2*m))"
+     },
+     "args": {
+      "a": "2*m - lim",
+      "b": "lim"
+     },
+     "c": "ceil(0.9*lim)",
+     "requires": [
+      {
+       "expr": "round(2*m) == 2*m and 2*m - lim >= 0 and 2*m - lim <= lim",
+       "text": "A discrete uniform law from a ≥ 0 to n has the mean (a + n)/2, so the mean m must be a whole or half number from n/2 to n."
+      }
+     ],
+     "fallback": {
+      "m": "5"
+     }
+    }
+   },
+   {
+    "id": "geometric",
+    "role": "law",
+    "law": "geometric",
+    "group": 1,
+    "name": "Geometric",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "negbin",
+      "text": "The count ends at success number r, with r larger than 1."
+     },
+     {
+      "id": "mixture",
+      "text": "The success probability changes between units. Then the tail is heavier than geometric."
+     }
+    ],
+    "tests": [
+     "No memory: P(X ≥ k + j | X ≥ k) must equal P(X ≥ j). Compare the ratios in the data.",
+     "Dispersion: the variance must be near m(1 + m), with m the mean.",
+     "Goodness of fit: a chi-square test against Geometric(1/(1 + m̂))."
+    ],
+    "path": "k=cnt;g=wai;r=one",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "3"
+     },
+     "args": {
+      "p": "1/(1 + m)"
+     },
+     "c": "ceil(3*m)",
+     "requires": [
+      {
+       "expr": "m >= 0",
+       "text": "The mean m must be at least 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "negbin",
+    "role": "law",
+    "law": "negbin",
+    "group": 1,
+    "name": "Negative binomial",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "poisson",
+      "text": "The rate is the same for all units. Then the variance equals the mean."
+     },
+     {
+      "id": "cpoisson",
+      "text": "Events occur in clusters of random size. A compound Poisson count also has a variance larger than its mean."
+     },
+     {
+      "id": "mixture",
+      "text": "The rate takes a few distinct values, such as two types of units."
+     }
+    ],
+    "tests": [
+     "Dispersion: the variance must be larger than the mean. A variance near the mean supports the Poisson law.",
+     "Goodness of fit: a chi-square test against NB(r̂, p̂), with the maximum likelihood estimates.",
+     "Clusters: when events occur in groups, test a compound Poisson law."
+    ],
+    "path": "k=cnt;g=het;v=gt",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "4",
+      "sd": "sqrt(2*m)"
+     },
+     "args": {
+      "r": "m^2/(sd^2 - m)",
+      "p": "m/sd^2"
+     },
+     "c": "ceil(m + 2*sd)",
+     "requires": [
+      {
+       "expr": "sd^2 > m",
+       "text": "The variance sd² must be larger than the mean m."
+      }
+     ]
+    }
+   },
+   {
+    "id": "poisson",
+    "role": "law",
+    "law": "poisson",
+    "group": 1,
+    "name": "Poisson",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "negbin",
+      "text": "The rate changes between units or periods. Then the variance is larger than the mean."
+     },
+     {
+      "id": "binomial",
+      "text": "Each count has a known upper limit n."
+     },
+     {
+      "id": "cpoisson",
+      "text": "Events occur in clusters. Then the count of single items is compound Poisson."
+     }
+    ],
+    "tests": [
+     "Dispersion: under the Poisson law, (n − 1)s²/x̄ has approximately the χ²(n − 1) law. A value far in either tail rejects the Poisson law.",
+     "Goodness of fit: a chi-square test of the counts against Poisson(x̄), with cells pooled to an expected count of at least 5.",
+     "Constant rate: compare the mean counts of early and late periods."
+    ],
+    "path": "k=cnt;g=evt",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "4"
+     },
+     "args": {
+      "lambda": "m"
+     },
+     "c": "ceil(m + 2*sqrt(m))"
+    }
+   },
+   {
+    "id": "hypergeometric",
+    "role": "law",
+    "law": "hypergeometric",
+    "group": 1,
+    "name": "Hypergeometric",
+    "kinds": [
+     "cnt"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "binomial",
+      "text": "The sample is a small part of the population, or the draws are with replacement."
+     }
+    ],
+    "tests": [
+     "Limits: the count is at most min(n, K) and at least max(0, n − N + K).",
+     "Dispersion: the variance must be near n(K/N)(1 − K/N)(N − n)/(N − 1), smaller than the binomial variance."
+    ],
+    "path": "k=cnt;g=drw",
+    "template": {
+     "uses": [
+      "m",
+      "lim"
+     ],
+     "defaults": {
+      "m": "5",
+      "lim": "max(20, ceil(2*m))"
+     },
+     "extra": [
+      [
+       "pop",
+       "10*lim",
+       "population size N: an illustrative value"
+      ],
+      [
+       "K",
+       "round(m*pop/lim)",
+       "success items in the population, from the mean"
+      ]
+     ],
+     "args": {
+      "N": "pop",
+      "K": "K",
+      "n": "lim"
+     },
+     "c": "ceil(m + 2*sqrt(m))",
+     "requires": [
+      {
+       "expr": "m <= lim",
+       "text": "The mean m must be at most n."
+      }
+     ]
+    }
+   },
+   {
+    "id": "zipf",
+    "role": "law",
+    "law": "zipf",
+    "group": 1,
+    "name": "Zipf",
+    "kinds": [
+     "rnk"
+    ],
+    "discrete": true,
+    "tails": null,
+    "competing": [
+     {
+      "id": "empirical",
+      "text": "With enough data, the rank frequencies of the data need no law."
+     },
+     {
+      "id": "lognormal",
+      "text": "A lognormal law of the frequencies can also give a rank–frequency plot close to a straight line."
+     }
+    ],
+    "tests": [
+     "Rank–frequency plot: log frequency against log rank must be close to a straight line with the slope −s.",
+     "Goodness of fit: compare a Zipf fit with a lognormal fit by the likelihood ratio (Vuong test)."
+    ],
+    "path": "k=rnk",
+    "template": {
+     "uses": [
+      "lim"
+     ],
+     "defaults": {
+      "lim": "1000"
+     },
+     "extra": [
+      [
+       "s",
+       "1.1",
+       "exponent: an illustrative value"
+      ]
+     ],
+     "args": {
+      "s": "s",
+      "N": "lim"
+     },
+     "c": "10",
+     "quantities": [
+      "prob top = X <= c \"a rank of c or better\"",
+      "mean average = X \"mean rank\""
+     ]
+    }
+   },
+   {
+    "id": "cuniform",
+    "role": "law",
+    "law": "cuniform",
+    "group": 2,
+    "name": "Continuous uniform",
+    "kinds": [
+     "pro",
+     "mea",
+     "siz",
+     "tim"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "beta",
+      "text": "Values near the middle or near one limit are more likely."
+     },
+     {
+      "id": "truncated",
+      "text": "The quantity has a law of its own, and the limits only cut it."
+     }
+    ],
+    "tests": [
+     "Goodness of fit: a Kolmogorov–Smirnov test against the uniform law on [a, b].",
+     "Limits: no value is outside [a, b]."
+    ],
+    "path": "k=pro;gp=lim",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0.5",
+      "sd": "0.2"
+     },
+     "args": {
+      "a": "m - sqrt(3)*sd",
+      "b": "m + sqrt(3)*sd"
+     },
+     "c": "m + sd",
+     "requires": [
+      {
+       "expr": "sd > 0",
+       "text": "The standard deviation must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "normal",
+    "role": "law",
+    "law": "normal",
+    "group": 2,
+    "name": "Normal",
+    "kinds": [
+     "mea",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "studentt",
+      "text": "Large deviations are more frequent than a normal law permits."
+     },
+     {
+      "id": "lognormal",
+      "text": "The quantity is positive and has a long right tail."
+     }
+    ],
+    "tests": [
+     "Normal Q–Q plot: the points must be close to a straight line.",
+     "Shapiro–Wilk test of normality.",
+     "Tails: count the values more than 3 standard deviations from the mean. Expect about 0.27 %."
+    ],
+    "path": "k=mea;gm=sum",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0",
+      "sd": "1"
+     },
+     "args": {
+      "mu": "m",
+      "sigma": "sd"
+     },
+     "c": "m + 2*sd"
+    }
+   },
+   {
+    "id": "mvnormal",
+    "role": "law",
+    "law": "mvnormal",
+    "group": 2,
+    "name": "Multivariate normal",
+    "kinds": [
+     "mvm"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "copula-t",
+      "text": "Extreme values of the variables occur together. A Student-t copula has tail dependence."
+     },
+     {
+      "id": "conditional",
+      "text": "One variable depends on the others in a way that is not linear."
+     }
+    ],
+    "tests": [
+     "Each marginal law: a normal Q–Q plot.",
+     "Mardia's tests of multivariate skewness and kurtosis.",
+     "Tail dependence: count the joint exceedances of high quantiles."
+    ],
+    "path": "k=mvm",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0",
+      "sd": "1"
+     },
+     "extra": [
+      [
+       "rho",
+       "0.5",
+       "correlation of the two measurements: an illustrative value"
+      ]
+     ],
+     "args": {
+      "mu": "[m, m]",
+      "cov": "[sd^2, rho*sd^2, rho*sd^2, sd^2]"
+     },
+     "c": "m + 2*sd",
+     "quantities": [
+      "prob both = X[1] > c and X[2] > c \"both measurements above the threshold c\"",
+      "mean first = X[1] \"mean of measurement 1\""
+     ],
+     "focus": "X[1]"
+    }
+   },
+   {
+    "id": "exponential",
+    "role": "law",
+    "law": "exponential",
+    "group": 2,
+    "name": "Exponential",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "weibull",
+      "text": "The hazard rate changes with age."
+     },
+     {
+      "id": "gamma",
+      "text": "The time is a sum of several stages."
+     },
+     {
+      "id": "mixture",
+      "text": "A mix of units with different constant rates. Then the hazard rate decreases."
+     }
+    ],
+    "tests": [
+     "No memory: the excesses over a threshold must have the same mean as the whole sample.",
+     "A plot of log survival against time must be close to a straight line.",
+     "Coefficient of variation: it must be near 1."
+    ],
+    "path": "k=tim;gt=mem",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "1"
+     },
+     "args": {
+      "rate": "1/m"
+     },
+     "c": "3*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "gamma",
+    "role": "law",
+    "law": "gamma",
+    "group": 2,
+    "name": "Gamma",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "lognormal",
+      "text": "The right tail is heavier, and log X looks normal."
+     },
+     {
+      "id": "weibull",
+      "text": "The hazard rate is a power of the age."
+     }
+    ],
+    "tests": [
+     "Gamma Q–Q plot with the fitted shape.",
+     "Compare a gamma fit with a lognormal fit and a Weibull fit by the likelihood."
+    ],
+    "path": "k=siz;gs=add",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "2",
+      "sd": "m/sqrt(2)"
+     },
+     "args": {
+      "k": "m^2/sd^2",
+      "theta": "sd^2/m"
+     },
+     "c": "m + 2*sd",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "erlang",
+    "role": "law",
+    "law": "erlang",
+    "group": 2,
+    "name": "Erlang",
+    "kinds": [
+     "tim"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "gamma",
+      "text": "The number of stages is not an integer, or the stages have different rates."
+     },
+     {
+      "id": "exponential",
+      "text": "There is only one stage."
+     }
+    ],
+    "tests": [
+     "Coefficient of variation: it must be near 1/√k.",
+     "Gamma Q–Q plot with the shape k."
+    ],
+    "path": "k=tim;gt=stg",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "3",
+      "sd": "m/sqrt(3)"
+     },
+     "extra": [
+      [
+       "kst",
+       "max(1, round(m^2/sd^2))",
+       "number of stages, from the mean and the standard deviation"
+      ]
+     ],
+     "args": {
+      "k": "kst",
+      "rate": "kst/m"
+     },
+     "c": "m + 2*sd",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "beta",
+    "role": "law",
+    "law": "beta",
+    "group": 2,
+    "name": "Beta",
+    "kinds": [
+     "pro"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "cuniform",
+      "text": "Only the limits are known."
+     },
+     {
+      "id": "mixture",
+      "text": "The values form two or more groups, such as many values near 0 and near 1."
+     }
+    ],
+    "tests": [
+     "Beta Q–Q plot with the fitted parameters.",
+     "Atoms: exact values 0 or 1 do not fit a beta law."
+    ],
+    "path": "k=pro;gp=unc",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0.3",
+      "sd": "0.1"
+     },
+     "extra": [
+      [
+       "nu",
+       "m*(1 - m)/sd^2 - 1",
+       "a + b, from the mean and the variance"
+      ]
+     ],
+     "args": {
+      "a": "m*nu",
+      "b": "(1 - m)*nu"
+     },
+     "c": "min(0.99, m + 2*sd)",
+     "requires": [
+      {
+       "expr": "m > 0 and m < 1",
+       "text": "The mean m must be between 0 and 1."
+      },
+      {
+       "expr": "sd^2 < m*(1 - m)",
+       "text": "The variance sd² must be smaller than m(1 − m)."
+      }
+     ]
+    }
+   },
+   {
+    "id": "dirichlet",
+    "role": "law",
+    "law": "dirichlet",
+    "group": 2,
+    "name": "Dirichlet",
+    "kinds": [
+     "shr"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "multinomial",
+      "text": "The data are counts, not shares."
+     },
+     {
+      "id": "mixture",
+      "text": "The shares form distinct groups."
+     }
+    ],
+    "tests": [
+     "Each share: a beta Q–Q plot, because each marginal law of a Dirichlet law is beta.",
+     "Signs of the correlations: in a Dirichlet law, each pair of shares has a negative correlation. A positive correlation rejects it."
+    ],
+    "path": "k=shr",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "conc",
+       "10",
+       "concentration of the shares: an illustrative value"
+      ]
+     ],
+     "args": {
+      "alpha": "conc*[0.5, 0.3, 0.2]"
+     },
+     "quantities": [
+      "prob big = X[1] > 0.5 \"share 1 above one half\"",
+      "mean first = X[1] \"mean of share 1\""
+     ],
+     "focus": "X[1]"
+    }
+   },
+   {
+    "id": "chisquare",
+    "role": "law",
+    "law": "chisq",
+    "group": 2,
+    "name": "Chi-square",
+    "kinds": [
+     "mea",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "f",
+      "text": "The statistic is a ratio of two variance estimates."
+     },
+     {
+      "id": "gamma",
+      "text": "The degrees of freedom are not known. A gamma law has a free shape."
+     }
+    ],
+    "tests": [
+     "The mean must be near k and the variance near 2k.",
+     "Conditions of the theorem: independent normal parts with the variance 1."
+    ],
+    "path": "k=mea;gm=sq",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "4"
+     },
+     "args": {
+      "nu": "m"
+     },
+     "c": "m + 2*sqrt(2*m)",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m, the degrees of freedom, must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "studentt",
+    "role": "law",
+    "law": "student",
+    "group": 2,
+    "name": "Student's t",
+    "kinds": [
+     "mea"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "normal",
+      "text": "The degrees of freedom are large. Then the t law is close to normal."
+     },
+     {
+      "id": "laplace",
+      "text": "Large deviations are frequent, but the tails are exponential."
+     },
+     {
+      "id": "stable",
+      "text": "The variance is infinite, and sums keep the same shape."
+     }
+    ],
+    "tests": [
+     "Q–Q plot against the fitted t law. Points far from the line in the tails reject it.",
+     "Tail index: a Hill plot. The t law with ν degrees of freedom has the tail index ν."
+    ],
+    "path": "k=mea;gm=tst",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "nu",
+       "5",
+       "degrees of freedom: an illustrative value"
+      ]
+     ],
+     "args": {
+      "nu": "nu"
+     },
+     "c": "3"
+    }
+   },
+   {
+    "id": "f",
+    "role": "law",
+    "law": "fisher",
+    "group": 2,
+    "name": "F",
+    "kinds": [
+     "mea",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "chisquare",
+      "text": "The denominator has many degrees of freedom. Then d₁F is close to χ²(d₁)."
+     },
+     {
+      "id": "lognormal",
+      "text": "The ratio is of two positive amounts that are not sums of squares."
+     }
+    ],
+    "tests": [
+     "Conditions of the theorem: independent normal samples in the numerator and the denominator.",
+     "The mean must be near d₂/(d₂ − 2), for d₂ larger than 2."
+    ],
+    "path": "k=mea;gm=frat",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "d1",
+       "5",
+       "numerator degrees of freedom: an illustrative value"
+      ],
+      [
+       "d2",
+       "20",
+       "denominator degrees of freedom: an illustrative value"
+      ]
+     ],
+     "args": {
+      "d1": "d1",
+      "d2": "d2"
+     },
+     "c": "3"
+    }
+   },
+   {
+    "id": "logistic",
+    "role": "law",
+    "law": "logistic",
+    "group": 2,
+    "name": "Logistic",
+    "kinds": [
+     "mea"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "normal",
+      "text": "The tails are lighter. The logistic and normal laws are close in the centre."
+     },
+     {
+      "id": "laplace",
+      "text": "The density has a sharp peak at the centre."
+     }
+    ],
+    "tests": [
+     "Q–Q plot against the fitted logistic law.",
+     "Kurtosis: the excess kurtosis must be near 1.2."
+    ],
+    "path": "k=mea;gm=lgs",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0",
+      "sd": "1"
+     },
+     "args": {
+      "mu": "m",
+      "s": "sd*sqrt(3)/pi"
+     },
+     "c": "m + 2*sd"
+    }
+   },
+   {
+    "id": "laplace",
+    "role": "law",
+    "law": "laplace",
+    "group": 2,
+    "name": "Laplace",
+    "kinds": [
+     "mea"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "logistic",
+      "text": "The density is smooth at the centre."
+     },
+     {
+      "id": "studentt",
+      "text": "The tails are heavier than exponential."
+     }
+    ],
+    "tests": [
+     "Q–Q plot against the fitted Laplace law.",
+     "Kurtosis: the excess kurtosis must be near 3."
+    ],
+    "path": "k=mea;gm=dif",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "0",
+      "sd": "1"
+     },
+     "args": {
+      "mu": "m",
+      "b": "sd/sqrt(2)"
+     },
+     "c": "m + 2*sd"
+    }
+   },
+   {
+    "id": "lognormal",
+    "role": "law",
+    "law": "lognormal",
+    "group": 3,
+    "name": "Lognormal",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "mid"
+    ],
+    "competing": [
+     {
+      "id": "gamma",
+      "text": "The right tail is lighter: exponential, not lognormal."
+     },
+     {
+      "id": "pareto2",
+      "text": "The right tail is a power law. On a log–log plot of survival, a straight line supports a power law."
+     },
+     {
+      "id": "weibull",
+      "text": "The hazard rate is monotone."
+     }
+    ],
+    "tests": [
+     "Normal Q–Q plot of log X: the points must be close to a straight line.",
+     "Tail: a log–log plot of survival must bend down. A straight line supports a power law."
+    ],
+    "path": "k=siz;gs=mul",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "1"
+     },
+     "extra": [
+      [
+       "s2",
+       "log(1 + sd^2/m^2)",
+       "variance of log X, from the mean and the standard deviation"
+      ]
+     ],
+     "args": {
+      "mu": "log(m) - s2/2",
+      "sigma": "sqrt(s2)"
+     },
+     "c": "m + 3*sd",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "weibull",
+    "role": "law",
+    "law": "weibull",
+    "group": 3,
+    "name": "Weibull",
+    "kinds": [
+     "tim",
+     "siz",
+     "ext"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt",
+     "mid"
+    ],
+    "competing": [
+     {
+      "id": "gamma",
+      "text": "The hazard rate tends to a constant."
+     },
+     {
+      "id": "lognormal",
+      "text": "The hazard rate increases, then decreases."
+     },
+     {
+      "id": "gompertz",
+      "text": "The hazard rate increases exponentially."
+     }
+    ],
+    "tests": [
+     "Weibull plot: log(−log S(t)) against log t must be close to a straight line with the slope k.",
+     "Compare the Weibull fit with an exponential fit by the likelihood ratio: the exponential law is the case k = 1."
+    ],
+    "path": "k=tim;gt=age;h=inc",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "1"
+     },
+     "extra": [
+      [
+       "k",
+       "1.5",
+       "shape: an illustrative value"
+      ]
+     ],
+     "args": {
+      "k": "k",
+      "lambda": "m/exp(lgamma(1 + 1/k))"
+     },
+     "c": "3*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "invgauss",
+    "role": "law",
+    "law": "invgauss",
+    "group": 3,
+    "name": "Inverse Gaussian",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "lognormal",
+      "text": "The time is a product of factors, not a first passage time."
+     },
+     {
+      "id": "levy",
+      "text": "The process has no drift. Then the first passage time has an infinite mean."
+     }
+    ],
+    "tests": [
+     "Check the drift: a process with no drift gives the Lévy law instead.",
+     "Q–Q plot against the fitted inverse Gaussian law."
+    ],
+    "path": "k=tim;gt=fpt;dr=yes",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "1"
+     },
+     "args": {
+      "mu": "m",
+      "lambda": "m^3/sd^2"
+     },
+     "c": "m + 3*sd",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "gompertz",
+    "role": "law",
+    "law": "gompertz",
+    "group": 3,
+    "name": "Gompertz",
+    "kinds": [
+     "tim"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "weibull",
+      "text": "The hazard rate is a power of the age, not an exponential function."
+     },
+     {
+      "id": "mixture",
+      "text": "The population is a mix of groups with different hazard rates."
+     }
+    ],
+    "tests": [
+     "Log hazard against age must be close to a straight line.",
+     "Compare a Gompertz fit with a Weibull fit by the likelihood."
+    ],
+    "path": "k=tim;gt=age;h=exg",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "eta",
+       "0.01",
+       "initial hazard divided by b: an illustrative value"
+      ],
+      [
+       "b",
+       "0.1",
+       "rate of growth of the hazard: an illustrative value"
+      ]
+     ],
+     "args": {
+      "eta": "eta",
+      "b": "b"
+     },
+     "c": "40"
+    }
+   },
+   {
+    "id": "loglogistic",
+    "role": "law",
+    "law": "loglogistic",
+    "group": 3,
+    "name": "Log-logistic",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "lognormal",
+      "text": "The hazard rate also increases, then decreases, but the tail is not a power law."
+     },
+     {
+      "id": "burr12",
+      "text": "The tail needs its own shape parameter."
+     }
+    ],
+    "tests": [
+     "log(S/(1 − S)) against log t must be close to a straight line.",
+     "Tail: a log–log plot of survival must become a straight line."
+    ],
+    "path": "k=tim;gt=age;h=hum;t=pow",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "1"
+     },
+     "extra": [
+      [
+       "beta",
+       "3",
+       "shape: an illustrative value"
+      ]
+     ],
+     "args": {
+      "alpha": "m*sin(pi/beta)/(pi/beta)",
+      "beta": "beta"
+     },
+     "c": "5*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "pareto1",
+    "role": "law",
+    "law": "pareto1",
+    "group": 3,
+    "name": "Pareto I",
+    "kinds": [
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "pareto2",
+      "text": "Values near 0 are possible."
+     },
+     {
+      "id": "lognormal",
+      "text": "The log–log plot of survival bends down."
+     },
+     {
+      "id": "gpd",
+      "text": "Only the values above a high threshold follow the power law."
+     }
+    ],
+    "tests": [
+     "A log–log plot of survival must be a straight line from x_m.",
+     "Tail index: a Hill plot must be stable over a range of thresholds."
+    ],
+    "path": "k=siz;gs=pow;pm=min",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "sqrt(0.8)*m"
+     },
+     "extra": [
+      [
+       "alpha",
+       "1 + sqrt(1 + m^2/sd^2)",
+       "tail index, from the mean and the standard deviation"
+      ]
+     ],
+     "args": {
+      "xm": "m*(alpha - 1)/alpha",
+      "alpha": "alpha"
+     },
+     "c": "10*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "pareto2",
+    "role": "law",
+    "law": "pareto2",
+    "group": 3,
+    "name": "Pareto II (Lomax)",
+    "kinds": [
+     "siz",
+     "tim"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "pareto1",
+      "text": "No value is below a known minimum x_m."
+     },
+     {
+      "id": "lognormal",
+      "text": "The log–log plot of survival bends down."
+     }
+    ],
+    "tests": [
+     "A log–log plot of survival must become a straight line for large x.",
+     "Mean excess plot: it must increase as a straight line."
+    ],
+    "path": "k=siz;gs=pow;pm=zero",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "sqrt(5)*m"
+     },
+     "extra": [
+      [
+       "alpha",
+       "2*sd^2/(sd^2 - m^2)",
+       "tail index, from the mean and the standard deviation"
+      ]
+     ],
+     "args": {
+      "mu": "0",
+      "sigma": "m*(alpha - 1)",
+      "alpha": "alpha"
+     },
+     "c": "10*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      },
+      {
+       "expr": "sd > m",
+       "text": "A Pareto II law with a finite variance needs sd larger than m."
+      }
+     ]
+    }
+   },
+   {
+    "id": "burr12",
+    "role": "law",
+    "law": "burr12",
+    "group": 3,
+    "name": "Burr XII",
+    "kinds": [
+     "siz",
+     "tim"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "loglogistic",
+      "text": "The case k = 1 of the Burr XII law."
+     },
+     {
+      "id": "pareto2",
+      "text": "The case c = 1 of the Burr XII law."
+     }
+    ],
+    "tests": [
+     "Compare the Burr XII fit with its special cases, the log-logistic and the Pareto II laws, by the likelihood ratio.",
+     "Tail: the tail index ck from the fit must agree with a Hill estimate."
+    ],
+    "path": "k=siz;gs=pow;pm=body",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "1"
+     },
+     "extra": [
+      [
+       "cs",
+       "2",
+       "first shape: an illustrative value"
+      ],
+      [
+       "ks",
+       "2",
+       "second shape: an illustrative value"
+      ]
+     ],
+     "args": {
+      "c": "cs",
+      "k": "ks",
+      "lambda": "m/(ks*exp(lgamma(ks - 1/cs) + lgamma(1 + 1/cs) - lgamma(ks + 1)))"
+     },
+     "c": "10*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "frechet",
+    "role": "law",
+    "law": "frechet",
+    "group": 3,
+    "name": "Fréchet",
+    "kinds": [
+     "ext",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "gev",
+      "text": "The tail type is not known. The GEV law estimates it."
+     },
+     {
+      "id": "gumbel",
+      "text": "The tail of the values is light."
+     }
+    ],
+    "tests": [
+     "GEV fit: the shape ξ must be larger than 0.",
+     "Return level plot against log return period: it must bend up."
+    ],
+    "path": "k=ext;ge=max;t=pow",
+    "template": {
+     "uses": [
+      "m"
+     ],
+     "defaults": {
+      "m": "1"
+     },
+     "extra": [
+      [
+       "alpha",
+       "3",
+       "tail index: an illustrative value"
+      ]
+     ],
+     "args": {
+      "alpha": "alpha",
+      "s": "m/exp(lgamma(1 - 1/alpha))",
+      "m": "0"
+     },
+     "c": "5*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean m must be larger than 0."
+      }
+     ]
+    }
+   },
+   {
+    "id": "cauchy",
+    "role": "law",
+    "law": "cauchy",
+    "group": 3,
+    "name": "Cauchy",
+    "kinds": [
+     "mea"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "studentt",
+      "text": "The tails are heavy, but the mean exists. The Cauchy law is the t law with 1 degree of freedom."
+     },
+     {
+      "id": "stable",
+      "text": "The tail index is between 1 and 2."
+     }
+    ],
+    "tests": [
+     "The sample mean does not settle as n increases. The median does.",
+     "Q–Q plot against the fitted Cauchy law."
+    ],
+    "path": "k=mea;gm=rat",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "x0",
+       "0",
+       "median: an illustrative value"
+      ]
+     ],
+     "args": {
+      "x0": "x0",
+      "gamma": "1"
+     },
+     "c": "10"
+    }
+   },
+   {
+    "id": "levy",
+    "role": "law",
+    "law": "levy",
+    "group": 3,
+    "name": "Lévy",
+    "kinds": [
+     "tim",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "invgauss",
+      "text": "The process has a positive drift. Then the first passage time has finite moments."
+     }
+    ],
+    "tests": [
+     "Tail: P(T > t) must decrease as t^(−1/2).",
+     "Drift: estimate the drift of the process from its path."
+    ],
+    "path": "k=tim;gt=fpt;dr=no",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "cl",
+       "1",
+       "scale: an illustrative value"
+      ]
+     ],
+     "args": {
+      "mu": "0",
+      "c": "cl"
+     },
+     "c": "100"
+    }
+   },
+   {
+    "id": "stable",
+    "role": "law",
+    "law": "stable",
+    "group": 3,
+    "name": "Stable (S0)",
+    "kinds": [
+     "mea",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "studentt",
+      "text": "The variance is finite, and the tails are power laws."
+     },
+     {
+      "id": "normal",
+      "text": "The variance of each part is finite. Then the sum is approximately normal."
+     }
+    ],
+    "tests": [
+     "Tail index: a Hill plot must give α below 2.",
+     "Sums: the law of sums of blocks must keep the same shape after scaling by n^(1/α)."
+    ],
+    "path": "k=mea;gm=hsum",
+    "template": {
+     "uses": [],
+     "extra": [
+      [
+       "alpha",
+       "1.5",
+       "index of stability: an illustrative value"
+      ]
+     ],
+     "args": {
+      "alpha": "alpha",
+      "beta": "0",
+      "gamma": "1",
+      "delta": "0"
+     },
+     "c": "10"
+    }
+   },
+   {
+    "id": "gev",
+    "role": "law",
+    "law": "gev",
+    "group": 3,
+    "name": "Generalised extreme value (GEV)",
+    "kinds": [
+     "ext"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd",
+     "lgt",
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "gpd",
+      "text": "All values above a threshold are available, not only the block maxima."
+     },
+     {
+      "id": "gumbel",
+      "text": "The shape ξ is 0."
+     }
+    ],
+    "tests": [
+     "Probability and quantile plots of the fitted GEV law.",
+     "Return level plot with confidence intervals.",
+     "Likelihood ratio test of ξ = 0 (the Gumbel law)."
+    ],
+    "path": "k=ext;ge=max",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "100",
+      "sd": "30"
+     },
+     "extra": [
+      [
+       "xi",
+       "0",
+       "shape: an illustrative value; 0 is the Gumbel type"
+      ],
+      [
+       "sg",
+       "sd*sqrt(6)/pi",
+       "scale, from the standard deviation, exact for ξ = 0"
+      ]
+     ],
+     "args": {
+      "xi": "xi",
+      "mu": "m - 0.5772156649015329*sg",
+      "sigma": "sg"
+     },
+     "c": "m + 3*sd"
+    }
+   },
+   {
+    "id": "gpd",
+    "role": "law",
+    "law": "gpd",
+    "group": 3,
+    "name": "Generalised Pareto (GPD)",
+    "kinds": [
+     "ext",
+     "siz"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd",
+     "lgt",
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "gev",
+      "text": "Only the block maxima are available."
+     },
+     {
+      "id": "exponential",
+      "text": "The shape ξ is 0."
+     }
+    ],
+    "tests": [
+     "Mean excess plot: it must be close to a straight line above the threshold.",
+     "Threshold stability: the shape estimate must be stable above the threshold."
+    ],
+    "path": "k=ext;ge=exc",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "m/sqrt(0.6)"
+     },
+     "extra": [
+      [
+       "xi",
+       "(1 - m^2/sd^2)/2",
+       "shape, from the mean and the standard deviation"
+      ]
+     ],
+     "args": {
+      "xi": "xi",
+      "sigma": "m*(1 - xi)",
+      "mu": "0"
+     },
+     "c": "5*m",
+     "requires": [
+      {
+       "expr": "m > 0",
+       "text": "The mean excess m must be larger than 0."
+      },
+      {
+       "expr": "sd >= m/sqrt(11)",
+       "text": "A generalised Pareto law with these moments needs sd at least m/√11."
+      }
+     ]
+    }
+   },
+   {
+    "id": "gumbel",
+    "role": "law",
+    "law": "gumbel",
+    "group": 3,
+    "name": "Gumbel",
+    "kinds": [
+     "ext"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "gev",
+      "text": "The shape ξ is not 0."
+     },
+     {
+      "id": "frechet",
+      "text": "The values have a power-law tail."
+     }
+    ],
+    "tests": [
+     "Gumbel plot: −log(−log F) against the sorted values must be close to a straight line.",
+     "Likelihood ratio test against the GEV law."
+    ],
+    "path": "k=ext;ge=max;t=lgt",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "100",
+      "sd": "30"
+     },
+     "extra": [
+      [
+       "bt",
+       "sd*sqrt(6)/pi",
+       "scale, from the standard deviation"
+      ]
+     ],
+     "args": {
+      "mu": "m - 0.5772156649015329*bt",
+      "beta": "bt"
+     },
+     "c": "m + 3*sd"
+    }
+   },
+   {
+    "id": "rweibull",
+    "role": "law",
+    "law": "revweibull",
+    "group": 3,
+    "name": "Reverse Weibull",
+    "kinds": [
+     "ext"
+    ],
+    "discrete": false,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "gev",
+      "text": "The upper limit is not known. The GEV law estimates the shape."
+     },
+     {
+      "id": "gumbel",
+      "text": "There is no finite upper limit."
+     }
+    ],
+    "tests": [
+     "GEV fit: the shape ξ must be below 0.",
+     "The fitted upper limit must be above the largest observation."
+    ],
+    "path": "k=ext;ge=max;t=bnd",
+    "template": {
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "100",
+      "sd": "30"
+     },
+     "extra": [
+      [
+       "alpha",
+       "3",
+       "shape: an illustrative value"
+      ],
+      [
+       "sg",
+       "sd/sqrt(exp(lgamma(1 + 2/alpha)) - exp(2*lgamma(1 + 1/alpha)))",
+       "scale, from the standard deviation"
+      ]
+     ],
+     "args": {
+      "alpha": "alpha",
+      "mu": "m + sg*exp(lgamma(1 + 1/alpha))",
+      "sigma": "sg"
+     },
+     "c": "m + 2*sd"
+    }
+   },
+   {
+    "id": "mixture",
+    "role": "law",
+    "law": "mixture",
+    "group": 4,
+    "name": "Finite mixture",
+    "kinds": [
+     "cnt",
+     "tim",
+     "siz",
+     "pro",
+     "ext",
+     "mea"
+    ],
+    "discrete": null,
+    "tails": [
+     "bnd",
+     "lgt",
+     "mid",
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "negbin",
+      "text": "For counts: the rate changes continuously, not between a few groups."
+     },
+     {
+      "id": "kde",
+      "text": "The groups are not known. A kernel density estimate needs no groups."
+     }
+    ],
+    "tests": [
+     "Compare fits with 1, 2 and 3 components by an information criterion. The likelihood ratio test needs a bootstrap here.",
+     "Each component must have a meaning, such as a type of unit."
+    ],
+    "path": "k=cnt;g=het;x=yes",
+    "template": {
+     "byKind": {
+      "cnt": {
+       "law": "mixture_poisson",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "4"
+       },
+       "extra": [
+        [
+         "w",
+         "[0.5, 0.5]",
+         "weights of the two groups: illustrative values"
+        ]
+       ],
+       "args": {
+        "w": "w",
+        "lambda": "[0.5*m, 1.5*m]"
+       },
+       "c": "ceil(2*m)"
+      },
+      "tim": {
+       "law": "mixture_exponential",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "1"
+       },
+       "extra": [
+        [
+         "w",
+         "[0.5, 0.5]",
+         "weights of the two groups: illustrative values"
+        ]
+       ],
+       "args": {
+        "w": "w",
+        "rate": "[2/m, 2/(3*m)]"
+       },
+       "c": "3*m"
+      },
+      "siz": {
+       "law": "mixture_exponential",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "1"
+       },
+       "extra": [
+        [
+         "w",
+         "[0.5, 0.5]",
+         "weights of the two groups: illustrative values"
+        ]
+       ],
+       "args": {
+        "w": "w",
+        "rate": "[2/m, 2/(3*m)]"
+       },
+       "c": "3*m"
+      },
+      "pro": {
+       "law": "mixture_beta",
+       "uses": [],
+       "extra": [
+        [
+         "w",
+         "[0.5, 0.5]",
+         "weights of the two groups: illustrative values"
+        ]
+       ],
+       "args": {
+        "w": "w",
+        "a": "[2, 5]",
+        "b": "[5, 2]"
+       },
+       "c": "0.9"
+      },
+      "*": {
+       "law": "mixture_normal",
+       "uses": [
+        "m",
+        "sd"
+       ],
+       "defaults": {
+        "m": "0",
+        "sd": "1"
+       },
+       "extra": [
+        [
+         "w",
+         "[0.5, 0.5]",
+         "weights of the two groups: illustrative values"
+        ]
+       ],
+       "args": {
+        "w": "w",
+        "mu": "[m - sd/sqrt(2), m + sd/sqrt(2)]",
+        "sigma": "[sd/sqrt(2), sd/sqrt(2)]"
+       },
+       "c": "m + 2*sd"
+      }
+     }
+    }
+   },
+   {
+    "id": "cpoisson",
+    "role": "law",
+    "law": "compound",
+    "group": 4,
+    "name": "Compound Poisson",
+    "kinds": [
+     "siz",
+     "cnt"
+    ],
+    "discrete": null,
+    "tails": [
+     "lgt",
+     "mid",
+     "pow"
+    ],
+    "competing": [
+     {
+      "id": "gamma",
+      "text": "There is no atom at 0, and the total is a sum of a fixed number of parts."
+     },
+     {
+      "id": "negbin",
+      "text": "For counts with logarithmic group sizes, the compound Poisson law is negative binomial."
+     }
+    ],
+    "tests": [
+     "Atom at 0: the fraction of zeros must be near e^(−λ).",
+     "Check the number of events and the event sizes apart, when both are recorded."
+    ],
+    "path": "k=siz;gs=agg",
+    "template": {
+     "byKind": {
+      "cnt": {
+       "law": "compound_poisson",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "4"
+       },
+       "args": {
+        "freq": "m/2",
+        "lambda": "2"
+       },
+       "c": "ceil(2*m)"
+      },
+      "*": {
+       "law": "compound_exponential",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "1"
+       },
+       "extra": [
+        [
+         "freq",
+         "2",
+         "mean number of events: an illustrative value"
+        ]
+       ],
+       "args": {
+        "freq": "freq",
+        "rate": "freq/m"
+       },
+       "c": "3*m",
+       "requires": [
+        {
+         "expr": "m > 0",
+         "text": "The mean m must be larger than 0."
+        }
+       ]
+      }
+     }
+    }
+   },
+   {
+    "id": "empirical",
+    "role": "law",
+    "law": "empirical",
+    "group": 4,
+    "name": "Empirical law of the data",
+    "kinds": [
+     "cnt",
+     "rnk",
+     "cat",
+     "tim",
+     "siz",
+     "mea",
+     "pro"
+    ],
+    "discrete": true,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "kde",
+      "text": "The quantity is continuous, and values between the observations are possible."
+     },
+     {
+      "id": "gpd",
+      "text": "The decision needs values beyond the largest observation."
+     }
+    ],
+    "tests": [
+     "Size: the decision must not depend on values beyond the largest observation.",
+     "Stability: compare the empirical laws of two halves of the data."
+    ],
+    "path": "k=siz;t=bnd;dt=big",
+    "template": {
+     "byKind": {
+      "cat": {
+       "law": "empirical",
+       "uses": [],
+       "args": {
+        "x": "[1, 2, 3]",
+        "w": "[5, 3, 2]"
+       },
+       "quantities": [
+        "prob first = X == 1 \"probability of label 1\""
+       ]
+      },
+      "rnk": {
+       "law": "empirical",
+       "uses": [],
+       "args": {
+        "x": "[1, 2, 3, 4, 5]",
+        "w": "[10, 5, 3, 2, 1]"
+       },
+       "c": "2",
+       "quantities": [
+        "prob top = X <= c \"a rank of c or better\"",
+        "mean average = X \"mean rank\""
+       ]
+      },
+      "*": {
+       "law": "empirical",
+       "uses": [
+        "m"
+       ],
+       "defaults": {
+        "m": "1"
+       },
+       "extra": [
+        [
+         "data",
+         "m*[0.2, 0.5, 0.8, 1, 1.2, 1.5, 1.8]",
+         "observed values: illustrative, replace them with the data"
+        ]
+       ],
+       "args": {
+        "x": "data",
+        "w": "1"
+       },
+       "c": "1.5*m"
+      }
+     }
+    }
+   },
+   {
+    "id": "kde",
+    "role": "law",
+    "law": "kde",
+    "group": 4,
+    "name": "Kernel density model",
+    "kinds": [
+     "tim",
+     "siz",
+     "mea",
+     "pro"
+    ],
+    "discrete": false,
+    "tails": [
+     "lgt"
+    ],
+    "competing": [
+     {
+      "id": "empirical",
+      "text": "Only the observed values are possible."
+     },
+     {
+      "id": "gpd",
+      "text": "The decision depends on the tail. The tail of a kernel model follows the kernel, not the data."
+     }
+    ],
+    "tests": [
+     "Bandwidth: the result must not change much when the bandwidth changes.",
+     "Tail: the decision must not depend on values far beyond the data."
+    ],
+    "path": "k=mea;dt=big;t=lgt",
+    "template": {
+     "law": "kde",
+     "uses": [
+      "m",
+      "sd"
+     ],
+     "defaults": {
+      "m": "1",
+      "sd": "0.5"
+     },
+     "extra": [
+      [
+       "data",
+       "m + sd*[-1.5, -0.8, -0.3, 0, 0.3, 0.8, 1.5]",
+       "observed values: illustrative, replace them with the data"
+      ]
+     ],
+     "args": {
+      "x": "data",
+      "w": "1",
+      "h": "sd/2"
+     },
+     "c": "m + 2*sd"
+    }
+   },
+   {
+    "id": "truncated",
+    "role": "law",
+    "law": "truncated",
+    "group": 4,
+    "name": "Truncated law",
+    "kinds": [
+     "cnt",
+     "tim",
+     "siz",
+     "mea",
+     "ext"
+    ],
+    "discrete": null,
+    "tails": [
+     "bnd"
+    ],
+    "competing": [
+     {
+      "id": "censored",
+      "text": "Values beyond the limit are recorded as “beyond the limit”, not left out."
+     },
+     {
+      "id": "cuniform",
+      "text": "Only the limits are known."
+     }
+    ],
+    "tests": [
+     "No recorded value is beyond the limit.",
+     "Fit the law with the truncated likelihood f(x)/F(limit). An ordinary fit is biased."
+    ],
+    "path": "k=tim;o=trn;t=bnd",
+    "template": {
+     "byKind": {
+      "cnt": {
+       "law": "truncated_poisson",
+       "uses": [
+        "m",
+        "lim"
+       ],
+       "defaults": {
+        "m": "4",
+        "lim": "ceil(2*m)"
+       },
+       "args": {
+        "lambda": "m",
+        "lower": "0",
+        "upper": "lim"
+       },
+       "c": "ceil(m)"
+      },
+      "tim": {
+       "law": "truncated_exponential",
+       "uses": [
+        "m",
+        "lim"
+       ],
+       "defaults": {
+        "m": "1",
+        "lim": "ceil(3*m)"
+       },
+       "args": {
+        "rate": "1/m",
+        "lower": "0",
+        "upper": "lim"
+       },
+       "c": "m",
+       "requires": [
+        {
+         "expr": "m > 0",
+         "text": "The mean m must be larger than 0."
+        }
+       ]
+      },
+      "siz": {
+       "law": "truncated_exponential",
+       "uses": [
+        "m",
+        "lim"
+       ],
+       "defaults": {
+        "m": "1",
+        "lim": "ceil(3*m)"
+       },
+       "args": {
+        "rate": "1/m",
+        "lower": "0",
+        "upper": "lim"
+       },
+       "c": "m",
+       "requires": [
+        {
+         "expr": "m > 0",
+         "text": "The mean m must be larger than 0."
+        }
+       ]
+      },
+      "*": {
+       "law": "truncated_normal",
+       "uses": [
+        "m",
+        "sd",
+        "lim"
+       ],
+       "defaults": {
+        "m": "0",
+        "sd": "1",
+        "lim": "ceil(m + 2*sd)"
+       },
+       "args": {
+        "mu": "m",
+        "sigma": "sd",
+        "lower": "-inf",
+        "upper": "lim"
+       },
+       "c": "m"
+      }
+     }
+    }
+   },
+   {
+    "id": "censored",
+    "role": "component",
+    "law": "censoring",
+    "group": 3,
+    "name": "Censored observation",
+    "kind": "observation",
+    "competing": [
+     {
+      "id": "truncated",
+      "text": "Values beyond the limit are not recorded at all."
+     }
+    ],
+    "tests": [
+     "Fit with the censored likelihood: the density for the exact values, the survival function for the censored values.",
+     "Kaplan–Meier estimate: compare it with the survival function of the fitted law."
+    ],
+    "methods": "Draw the value from the law, then record min(X, limit) and a flag that says whether X is beyond the limit.",
+    "path": "k=tim;gt=mem;o=cen",
+    "example": "exp-censoring"
+   },
+   {
+    "id": "conditional",
+    "role": "component",
+    "law": "conditional",
+    "group": 5,
+    "name": "Conditional model",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-gauss",
+      "text": "The dependence is symmetric, and no variable is a cause of another."
+     }
+    ],
+    "tests": [
+     "Residuals: given the other variables, the residuals must have the stated law.",
+     "Check each conditional law in groups of the other variables."
+    ],
+    "methods": "Draw the variables in the order of the dependency graph, each from its law given the earlier variables.",
+    "path": "k=mea;gm=sum;d=com",
+    "example": "exp-conditional"
+   },
+   {
+    "id": "copula-gauss",
+    "role": "component",
+    "law": "gaussiancopula",
+    "group": 5,
+    "name": "Gaussian copula",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-t",
+      "text": "Extreme values occur together."
+     },
+     {
+      "id": "copula-frank",
+      "text": "There are only two variables."
+     }
+    ],
+    "tests": [
+     "Joint exceedances of high quantiles: they must be rare, because a Gaussian copula with correlation below 1 has no tail dependence.",
+     "Goodness of fit of the copula: a Cramér–von Mises test on the ranks."
+    ],
+    "methods": "Draw a multivariate normal vector, then apply the normal CDF to each part, then the quantile function of each marginal law.",
+    "path": "k=mea;gm=sum;d=com;j=no;dn=many",
+    "example": "exp-gaussiancopula"
+   },
+   {
+    "id": "copula-t",
+    "role": "component",
+    "law": "tcopula",
+    "group": 5,
+    "name": "Student-t copula",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-gauss",
+      "text": "Extreme values do not occur together."
+     }
+    ],
+    "tests": [
+     "Joint exceedances in the upper tail and in the lower tail: both must be more frequent than under a Gaussian copula.",
+     "Compare the t copula with the Gaussian copula by the likelihood."
+    ],
+    "methods": "Draw a multivariate t vector, then apply the t CDF to each part, then the quantile function of each marginal law.",
+    "path": "k=mea;gm=sum;d=com;j=both",
+    "example": "exp-tcopula"
+   },
+   {
+    "id": "copula-clayton",
+    "role": "component",
+    "law": "claytoncopula",
+    "group": 5,
+    "name": "Clayton copula",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-gumbel",
+      "text": "Large values occur together, not small values."
+     }
+    ],
+    "tests": [
+     "Joint exceedances below low quantiles must be frequent, and above high quantiles rare."
+    ],
+    "methods": "Marshall–Olkin method: a gamma frailty value, then independent exponential values.",
+    "path": "k=mea;gm=sum;d=com;j=lo",
+    "example": "exp-claytoncopula"
+   },
+   {
+    "id": "copula-gumbel",
+    "role": "component",
+    "law": "gumbelcopula",
+    "group": 5,
+    "name": "Gumbel copula",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-clayton",
+      "text": "Small values occur together, not large values."
+     }
+    ],
+    "tests": [
+     "Joint exceedances above high quantiles must be frequent, and below low quantiles rare."
+    ],
+    "methods": "Marshall–Olkin method: a positive stable frailty value, then independent exponential values.",
+    "path": "k=mea;gm=sum;d=com;j=up",
+    "example": "exp-gumbelcopula"
+   },
+   {
+    "id": "copula-frank",
+    "role": "component",
+    "law": "frankcopula",
+    "group": 5,
+    "name": "Frank copula",
+    "kind": "dependence",
+    "competing": [
+     {
+      "id": "copula-gauss",
+      "text": "There are more than two variables, with different dependence for each pair."
+     }
+    ],
+    "tests": [
+     "Joint exceedances of high and low quantiles must be rare: the Frank copula has no tail dependence.",
+     "Kendall's τ from the data must agree with the τ of the fitted parameter."
+    ],
+    "methods": "Conditional inverse transform: draw U, then V from the conditional law of V given U.",
+    "path": "k=mea;gm=sum;d=com;j=no;dn=two",
+    "example": "exp-frankcopula"
+   },
+   {
+    "id": "proc-markov",
+    "role": "component",
+    "law": "markovchain",
+    "group": 5,
+    "name": "Finite Markov chain",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-ou",
+      "text": "The state is a continuous value, not one of a few states."
+     }
+    ],
+    "tests": [
+     "Markov property: the next state must not depend on earlier states, given the current state. Compare chains of order 1 and 2.",
+     "Stationarity: compare the transition counts of early and late periods."
+    ],
+    "methods": "Draw each next state from the row of the transition matrix for the current state.",
+    "path": "k=cat;d=tim;s=stt",
+    "example": "exp-markovchain"
+   },
+   {
+    "id": "proc-bm",
+    "role": "component",
+    "law": "brownian",
+    "group": 5,
+    "name": "Brownian motion with drift",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-gbm",
+      "text": "The quantity is positive and grows by percentages."
+     },
+     {
+      "id": "proc-levy",
+      "text": "The path has jumps."
+     }
+    ],
+    "tests": [
+     "Increments: they must be independent and normal, with a variance proportional to the time step.",
+     "Jumps: the largest increments must not be too large for a normal law."
+    ],
+    "methods": "Exact simulation at the grid times: add independent normal increments.",
+    "path": "k=mea;gm=sum;d=tim;s=drf",
+    "example": "exp-brownian"
+   },
+   {
+    "id": "proc-gbm",
+    "role": "component",
+    "law": "gbm",
+    "group": 5,
+    "name": "Geometric Brownian motion",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-bm",
+      "text": "The quantity can be negative, and changes add instead of multiply."
+     }
+    ],
+    "tests": [
+     "Log increments: they must be independent and normal.",
+     "Volatility: the variance of the log increments must not change with time."
+    ],
+    "methods": "Exact simulation at the grid times: the exponential of a Brownian motion with drift.",
+    "path": "k=siz;gs=mul;d=tim;s=drf",
+    "example": "exp-gbm"
+   },
+   {
+    "id": "proc-ou",
+    "role": "component",
+    "law": "ou",
+    "group": 5,
+    "name": "Ornstein–Uhlenbeck process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-bm",
+      "text": "The process does not go back to a mean level."
+     },
+     {
+      "id": "proc-markov",
+      "text": "The state takes only a few values."
+     }
+    ],
+    "tests": [
+     "Autocorrelation: it must decrease exponentially with the time lag.",
+     "Stationary law: the values must have a normal marginal law."
+    ],
+    "methods": "Exact simulation at the grid times: an AR(1) recursion with the exact transition law.",
+    "path": "k=mea;gm=sum;d=tim;s=sta",
+    "example": "exp-ou"
+   },
+   {
+    "id": "proc-poisson",
+    "role": "component",
+    "law": "poissonprocess",
+    "group": 5,
+    "name": "Poisson process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-hawkes",
+      "text": "Events make more events likely."
+     }
+    ],
+    "tests": [
+     "Gaps between events: they must be independent and exponential.",
+     "Counts in disjoint windows must be independent."
+    ],
+    "methods": "Add independent exponential gaps until the end of the window.",
+    "path": "k=cnt;g=evt;d=ind",
+    "example": "exp-poissonprocess"
+   },
+   {
+    "id": "proc-cpp",
+    "role": "component",
+    "law": "compoundprocess",
+    "group": 5,
+    "name": "Compound Poisson process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-levy",
+      "text": "The process has infinitely many small jumps."
+     }
+    ],
+    "tests": [
+     "Jump times: the gaps must be independent and exponential.",
+     "Jump sizes: they must be independent of the jump times."
+    ],
+    "methods": "Draw the jump times as a Poisson process, then add independent jump sizes.",
+    "path": "k=siz;gs=agg;d=tim;s=jmp",
+    "example": "exp-compoundprocess"
+   },
+   {
+    "id": "proc-branch",
+    "role": "component",
+    "law": "branching",
+    "group": 5,
+    "name": "Branching process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-hawkes",
+      "text": "Events in continuous time trigger later events."
+     }
+    ],
+    "tests": [
+     "Offspring law: check the counts of offspring of each parent.",
+     "Mean offspring: a mean above 1 gives growth with a positive probability. At most 1, the process ends with probability 1, unless each parent has exactly one offspring."
+    ],
+    "methods": "Draw the offspring count of each member of each generation.",
+    "path": "k=cnt;g=het;v=gt;d=gen",
+    "example": "exp-branching"
+   },
+   {
+    "id": "proc-hawkes",
+    "role": "component",
+    "law": "hawkes",
+    "group": 5,
+    "name": "Hawkes process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-poisson",
+      "text": "Events do not trigger other events."
+     },
+     {
+      "id": "proc-branch",
+      "text": "The events form discrete generations."
+     }
+    ],
+    "tests": [
+     "Time change: after the compensator transform, the gaps must be independent and exponential.",
+     "Branching ratio: the estimate must be below 1 for a stationary process."
+    ],
+    "methods": "Ogata thinning, or the cluster method: immigrants as a Poisson process, then offspring of each event.",
+    "path": "k=cnt;g=evt;v=gt;d=trg",
+    "example": "exp-hawkes"
+   },
+   {
+    "id": "proc-levy",
+    "role": "component",
+    "law": "variancegamma",
+    "group": 5,
+    "name": "Lévy process",
+    "kind": "process",
+    "competing": [
+     {
+      "id": "proc-cpp",
+      "text": "There are only a few jumps in each period."
+     },
+     {
+      "id": "proc-bm",
+      "text": "The path is continuous."
+     }
+    ],
+    "tests": [
+     "Increments: they must be independent, with the same law for windows of the same length.",
+     "Small jumps: count the jumps above smaller and smaller thresholds."
+    ],
+    "methods": "Exact increments when the page knows the law of an increment, or a compound Poisson approximation of the small jumps.",
+    "path": "k=mea;gm=out;d=tim;s=jall",
+    "example": "exp-variancegamma"
+   }
+  ],
+  "rules": [
+   {
+    "id": "k1",
+    "when": {
+     "k": [
+      "bin"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "bernoulli"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the Bernoulli law",
+    "reason": "A yes-or-no result is a Bernoulli variable. Its law has one parameter: p = P(yes)."
+   },
+   {
+    "id": "k2",
+    "when": {
+     "k": [
+      "cat"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "categorical"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the categorical law",
+    "reason": "Each law on a finite list of labels is categorical. The parameters are the probabilities of the labels."
+   },
+   {
+    "id": "k3",
+    "when": {
+     "k": [
+      "vec"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "multinomial"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Counts of independent categorical draws",
+    "reason": "The counts of n independent draws, each with the same category probabilities, have the multinomial law."
+   },
+   {
+    "id": "k4",
+    "when": {
+     "k": [
+      "rnk"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "zipf"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Zipf's law, an empirical regularity",
+    "reason": "Rank–frequency data often follow a power law. Zipf's law is a regularity of data, not a theorem."
+   },
+   {
+    "id": "k5",
+    "when": {
+     "k": [
+      "shr"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "dirichlet"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "The standard law on the simplex",
+    "reason": "The Dirichlet law is the standard law for proportions with the sum 1. It is conjugate to the multinomial law. This is a common choice, not a theorem."
+   },
+   {
+    "id": "k6",
+    "when": {
+     "k": [
+      "mvm"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mvnormal"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Multivariate central limit theorem",
+    "reason": "A vector of sums of many independent effects with finite variances, and no effect that dominates, is approximately multivariate normal."
+   },
+   {
+    "id": "c1",
+    "when": {
+     "g": [
+      "tri"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "binomial"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the binomial law",
+    "reason": "The number of successes in n independent trials, each with probability p, has the Binomial(n, p) law."
+   },
+   {
+    "id": "c2",
+    "when": {
+     "g": [
+      "drw"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "hypergeometric"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the hypergeometric law",
+    "reason": "The number of success items in n draws without replacement, from N items with K success items, has the Hypergeometric(N, K, n) law."
+   },
+   {
+    "id": "c2b",
+    "when": {
+     "g": [
+      "drw"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "binomial"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Binomial limit of the hypergeometric law",
+    "reason": "When n is a small part of N, Binomial(n, K/N) is close to the hypergeometric law."
+   },
+   {
+    "id": "c3",
+    "when": {
+     "g": [
+      "evt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "poisson",
+     "proc-poisson"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Poisson process: independent increments and a constant rate",
+    "reason": "Independent events at a constant rate λ, in a window of size t, give a Poisson(λt) count. The counts in all windows form a Poisson process."
+   },
+   {
+    "id": "c4",
+    "when": {
+     "g": [
+      "wai"
+     ],
+     "r": [
+      "one"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "geometric"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the geometric law",
+    "reason": "The number of failures before the first success, in independent trials with probability p, has the Geometric(p) law."
+   },
+   {
+    "id": "c5",
+    "when": {
+     "g": [
+      "wai"
+     ],
+     "r": [
+      "many"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "negbin"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the negative binomial law",
+    "reason": "The number of failures before success number r has the negative binomial law NB(r, p)."
+   },
+   {
+    "id": "c6",
+    "when": {
+     "g": [
+      "wai"
+     ],
+     "r": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "geometric",
+     "negbin"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definitions of the geometric and negative binomial laws",
+    "reason": "The failures before the first success give a geometric law. The failures before success number r give a negative binomial law."
+   },
+   {
+    "id": "c7",
+    "when": {
+     "g": [
+      "het"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "negbin"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "The gamma–Poisson mixture",
+    "reason": "A Poisson count with a rate that has a gamma law between units is negative binomial."
+   },
+   {
+    "id": "c7b",
+    "when": {
+     "g": [
+      "het"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mixture"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definition of a finite mixture",
+    "reason": "A rate with a finite number of values gives a finite mixture of Poisson laws."
+   },
+   {
+    "id": "c7c",
+    "when": {
+     "g": [
+      "het"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "The law of total variance",
+    "reason": "A rate that changes between units makes the variance larger than the mean. A Poisson law has a variance equal to its mean."
+   },
+   {
+    "id": "c8",
+    "when": {
+     "g": [
+      "agg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cpoisson"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the compound Poisson law",
+    "reason": "A total of N groups, with N ~ Poisson and independent group sizes with the same law, has a compound Poisson law."
+   },
+   {
+    "id": "c8b",
+    "when": {
+     "g": [
+      "agg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "negbin"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Quenouille's theorem",
+    "reason": "A compound Poisson sum of group sizes with the logarithmic law is negative binomial."
+   },
+   {
+    "id": "c9",
+    "when": {
+     "g": [
+      "eqv"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "uniform"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the discrete uniform law",
+    "reason": "Equal probabilities on the integers from a to b define the discrete uniform law."
+   },
+   {
+    "id": "c10",
+    "when": {
+     "g": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "poisson",
+     "negbin",
+     "binomial",
+     "geometric"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Common laws for counts",
+    "reason": "These laws are common for counts. Without a mechanism, the rule graph cannot rank them."
+   },
+   {
+    "id": "c11",
+    "when": {
+     "b": [
+      "yes"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "binomial"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "A law on {0, …, n}",
+    "reason": "A count with a fixed upper limit n needs a law on {0, …, n}. The binomial law is the simplest one with independent trials."
+   },
+   {
+    "id": "c11b",
+    "when": {
+     "b": [
+      "yes"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson",
+     "negbin",
+     "geometric"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Unbounded support",
+    "reason": "These laws give a positive probability to each count, also to counts above n."
+   },
+   {
+    "id": "c12",
+    "when": {
+     "b": [
+      "no"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "binomial",
+     "hypergeometric",
+     "uniform"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Bounded support",
+    "reason": "These laws have a finite upper limit."
+   },
+   {
+    "id": "c13",
+    "when": {
+     "v": [
+      "eq"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "poisson"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Moments of the Poisson law",
+    "reason": "A Poisson law has a variance equal to its mean. This agreement supports the Poisson law, but it does not prove it."
+   },
+   {
+    "id": "c14",
+    "when": {
+     "v": [
+      "gt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "negbin"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Moments of the negative binomial law",
+    "reason": "A negative binomial law has the variance μ + μ²/r, larger than its mean μ."
+   },
+   {
+    "id": "c14b",
+    "when": {
+     "v": [
+      "gt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cpoisson",
+     "mixture",
+     "geometric"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "The law of total variance",
+    "reason": "A compound Poisson count with group sizes above 1, a mixture of Poisson counts, and a geometric count all have a variance larger than the mean."
+   },
+   {
+    "id": "c14c",
+    "when": {
+     "v": [
+      "gt"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "binomial",
+     "hypergeometric"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Moments of the binomial and hypergeometric laws",
+    "reason": "A binomial variance np(1 − p) is smaller than the mean np. A hypergeometric variance is smaller still."
+   },
+   {
+    "id": "c14d",
+    "when": {
+     "v": [
+      "gt"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Moments of the Poisson law",
+    "reason": "A Poisson law has a variance equal to its mean."
+   },
+   {
+    "id": "c15",
+    "when": {
+     "v": [
+      "lt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "binomial",
+     "hypergeometric"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Moments of the binomial and hypergeometric laws",
+    "reason": "These laws have a variance smaller than their mean."
+   },
+   {
+    "id": "c15b",
+    "when": {
+     "v": [
+      "lt"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "negbin",
+     "geometric"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Moments of the negative binomial and geometric laws",
+    "reason": "These laws have a variance larger than their mean."
+   },
+   {
+    "id": "c15c",
+    "when": {
+     "v": [
+      "lt"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Moments of the Poisson law",
+    "reason": "A Poisson law has a variance equal to its mean."
+   },
+   {
+    "id": "c16",
+    "when": {
+     "z": [
+      "yes"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mixture"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definition of a zero-inflated law",
+    "reason": "A count with extra zeros is a mixture of a point mass at 0 and another count law."
+   },
+   {
+    "id": "c16b",
+    "when": {
+     "z": [
+      "yes"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "P(0) of the Poisson law",
+    "reason": "A Poisson law sets P(0) = e^(−λ) from its mean, so extra zeros do not fit it."
+   },
+   {
+    "id": "t1",
+    "when": {
+     "gt": [
+      "mem"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "exponential"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Characterisation of the exponential law",
+    "reason": "The exponential law is the only continuous law with no memory: P(T > s + t | T > s) = P(T > t)."
+   },
+   {
+    "id": "t2",
+    "when": {
+     "gt": [
+      "stg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "erlang"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Sum of exponential stages",
+    "reason": "The sum of k independent exponential stages with the same rate has the Erlang(k, λ) law."
+   },
+   {
+    "id": "t2b",
+    "when": {
+     "gt": [
+      "stg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gamma"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "A common approximation",
+    "reason": "A gamma law with a fitted shape is a common approximation when the stages have different rates."
+   },
+   {
+    "id": "t3",
+    "when": {
+     "gt": [
+      "age"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "The standard law of reliability",
+    "reason": "The Weibull law has a hazard rate that is a power of the age. It is the most common law for wear and early failures."
+   },
+   {
+    "id": "t3b",
+    "when": {
+     "gt": [
+      "age"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gompertz",
+     "loglogistic",
+     "lognormal"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Other laws with a hazard rate that changes",
+    "reason": "These laws also have a hazard rate that changes with age."
+   },
+   {
+    "id": "t3c",
+    "when": {
+     "gt": [
+      "age"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "exponential"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Constant hazard of the exponential law",
+    "reason": "Only the exponential law has a constant hazard rate. A hazard rate that changes with age excludes it."
+   },
+   {
+    "id": "t4",
+    "when": {
+     "h": [
+      "inc"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Hazard of the Weibull law",
+    "reason": "A Weibull law with the shape k > 1 has the hazard rate (k/λ)(t/λ)^(k−1), which increases."
+   },
+   {
+    "id": "t4b",
+    "when": {
+     "h": [
+      "inc"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gamma"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Hazard of the gamma law",
+    "reason": "A gamma law with a shape above 1 has a hazard rate that increases to a constant."
+   },
+   {
+    "id": "t5",
+    "when": {
+     "h": [
+      "exg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gompertz"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the Gompertz law",
+    "reason": "The Gompertz law has the hazard rate b·e^(ct) with c > 0, which increases exponentially."
+   },
+   {
+    "id": "t5b",
+    "when": {
+     "h": [
+      "exg"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Hazard of the Weibull law",
+    "reason": "A Weibull hazard rate is a power of the age, not an exponential function."
+   },
+   {
+    "id": "t6",
+    "when": {
+     "h": [
+      "dec"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Hazard of the Weibull law",
+    "reason": "A Weibull law with the shape k < 1 has a hazard rate that decreases."
+   },
+   {
+    "id": "t6b",
+    "when": {
+     "h": [
+      "dec"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mixture",
+     "pareto2"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Decreasing hazard rates",
+    "reason": "A mix of strong and weak units, each with a constant hazard rate, has a hazard rate that decreases, because the weak units fail first. The hazard rate α/(σ + t) of the Pareto II law also decreases."
+   },
+   {
+    "id": "t7",
+    "when": {
+     "h": [
+      "hum"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "loglogistic",
+     "lognormal"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Hazard rates that increase, then decrease",
+    "reason": "The log-logistic law with a shape above 1 and the lognormal law have a hazard rate that increases, then decreases."
+   },
+   {
+    "id": "t7b",
+    "when": {
+     "h": [
+      "hum"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "weibull",
+     "gompertz"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Monotone hazard rates",
+    "reason": "The Weibull and Gompertz hazard rates are monotone."
+   },
+   {
+    "id": "t8",
+    "when": {
+     "gt": [
+      "mul"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "lognormal"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Central limit theorem for log T",
+    "reason": "When T is a product of many independent positive factors, log T is a sum. When the logarithms have a finite variance, T is approximately lognormal."
+   },
+   {
+    "id": "t9",
+    "when": {
+     "gt": [
+      "fpt"
+     ],
+     "dr": [
+      "yes"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "invgauss"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "First passage of Brownian motion with drift",
+    "reason": "The first time that a Brownian motion with a positive drift gets to a level above its start has the inverse Gaussian law."
+   },
+   {
+    "id": "t10",
+    "when": {
+     "gt": [
+      "fpt"
+     ],
+     "dr": [
+      "no"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "levy"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Reflection principle",
+    "reason": "Without drift, the first passage time of a Brownian motion to a level has the Lévy law. Its mean is infinite."
+   },
+   {
+    "id": "t11",
+    "when": {
+     "gt": [
+      "fpt"
+     ],
+     "dr": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "invgauss",
+     "levy"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "First passage of Brownian motion",
+    "reason": "A first passage time of a Brownian motion is inverse Gaussian with a positive drift, and Lévy without drift."
+   },
+   {
+    "id": "t12",
+    "when": {
+     "gt": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "exponential",
+     "weibull",
+     "gamma",
+     "lognormal"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Common laws for times",
+    "reason": "These laws are common for times. Without a mechanism, the rule graph cannot rank them."
+   },
+   {
+    "id": "s1",
+    "when": {
+     "gs": [
+      "mul"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "lognormal"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Central limit theorem for log X",
+    "reason": "A product of many independent positive factors has a logarithm that is a sum. When the logarithms have a finite variance, the size is approximately lognormal."
+   },
+   {
+    "id": "s2",
+    "when": {
+     "gs": [
+      "add"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gamma"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "A common law for positive sums",
+    "reason": "The gamma law is a common law for a sum of positive parts. Independent gamma parts with the same scale have a gamma sum."
+   },
+   {
+    "id": "s2b",
+    "when": {
+     "gs": [
+      "add"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "normal"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Central limit theorem",
+    "reason": "A sum of many independent parts with a finite variance, and no part that dominates, is approximately normal. A normal law also gives negative values, so use it only when the mean is many standard deviations above 0."
+   },
+   {
+    "id": "s3",
+    "when": {
+     "gs": [
+      "agg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cpoisson"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the compound Poisson law",
+    "reason": "A total of a Poisson number of independent amounts with the same law has a compound Poisson law."
+   },
+   {
+    "id": "s4",
+    "when": {
+     "gs": [
+      "pow"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "pareto1",
+     "pareto2"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Power laws",
+    "reason": "A power law above a minimum value is the Pareto I law. A power law that starts at 0 is the Pareto II law."
+   },
+   {
+    "id": "s4b",
+    "when": {
+     "pm": [
+      "min"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "pareto1"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definition of the Pareto I law",
+    "reason": "The Pareto I law has the survival function (x_m/x)^α for x ≥ x_m."
+   },
+   {
+    "id": "s4c",
+    "when": {
+     "pm": [
+      "zero"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "pareto2"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definition of the Pareto II law",
+    "reason": "The Pareto II law has the survival function (1 + x/σ)^(−α) for x ≥ 0, with a density that decreases from its maximum at x = 0."
+   },
+   {
+    "id": "s4d",
+    "when": {
+     "pm": [
+      "zero"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "burr12"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Special cases of the Burr XII law",
+    "reason": "The Pareto II law is the case c = 1 of the Burr XII law."
+   },
+   {
+    "id": "s4e",
+    "when": {
+     "pm": [
+      "body"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "burr12"
+    ],
+    "weight": 3,
+    "basis": "assumption",
+    "source": "Body and tail shapes of the Burr XII law",
+    "reason": "When c > 1, the Burr XII law has a mode above 0 and a power-law tail, with separate shape parameters for the body and the tail."
+   },
+   {
+    "id": "s4f",
+    "when": {
+     "pm": [
+      "body"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "loglogistic"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Special cases of the Burr XII law",
+    "reason": "The log-logistic law is the case k = 1 of the Burr XII law."
+   },
+   {
+    "id": "s5",
+    "when": {
+     "gs": [
+      "exc"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gpd"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Pickands–Balkema–de Haan theorem",
+    "reason": "The excesses over a high threshold have approximately a generalised Pareto law, when the law is in the domain of attraction of an extreme-value law."
+   },
+   {
+    "id": "s6",
+    "when": {
+     "gs": [
+      "hsum"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "stable"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Generalised central limit theorem",
+    "reason": "A normalised sum of many independent values with the same law, and a balanced regularly varying tail of index α < 2, converges to a stable law."
+   },
+   {
+    "id": "s7",
+    "when": {
+     "gs": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "lognormal",
+     "gamma",
+     "weibull",
+     "pareto2"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Common laws for sizes",
+    "reason": "These laws are common for positive sizes. Without a mechanism, the rule graph cannot rank them."
+   },
+   {
+    "id": "p1",
+    "when": {
+     "gp": [
+      "unc"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "beta"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "The standard law for a probability",
+    "reason": "The beta law is the standard law for an unknown probability. It is conjugate to the binomial law, so data change it in closed form."
+   },
+   {
+    "id": "p2",
+    "when": {
+     "gp": [
+      "lim"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cuniform"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Largest entropy on an interval",
+    "reason": "With only the limits known, the uniform law is a common default. It has the largest entropy of all laws on the interval, but that is a choice, not knowledge."
+   },
+   {
+    "id": "p3",
+    "when": {
+     "gp": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "beta",
+     "cuniform"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Common laws for proportions",
+    "reason": "These laws are common for proportions."
+   },
+   {
+    "id": "x1",
+    "when": {
+     "ge": [
+      "max"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gev"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Fisher–Tippett–Gnedenko theorem",
+    "reason": "When the normalised maximum of a block has a limit law that is not a point mass, that limit is a generalised extreme value law."
+   },
+   {
+    "id": "x1b",
+    "when": {
+     "ge": [
+      "max"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Limit laws of maxima and minima",
+    "reason": "The Weibull law is a limit law of minima. For maxima, its reflection, the reverse Weibull law, is the limit."
+   },
+   {
+    "id": "x2",
+    "when": {
+     "ge": [
+      "max"
+     ],
+     "t": [
+      "pow"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "frechet"
+    ],
+    "weight": 4,
+    "basis": "theorem",
+    "source": "Gnedenko's domain-of-attraction conditions",
+    "reason": "Values with a regularly varying tail of index α give maxima in the Fréchet domain, with the GEV shape ξ = 1/α > 0."
+   },
+   {
+    "id": "x3",
+    "when": {
+     "ge": [
+      "max"
+     ],
+     "t": [
+      "lgt",
+      "mid"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gumbel"
+    ],
+    "weight": 4,
+    "basis": "theorem",
+    "source": "Gnedenko's domain-of-attraction conditions",
+    "reason": "Values with an exponential, normal or lognormal type of tail give maxima in the Gumbel domain, with the GEV shape ξ = 0."
+   },
+   {
+    "id": "x4",
+    "when": {
+     "ge": [
+      "max"
+     ],
+     "t": [
+      "bnd"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "rweibull"
+    ],
+    "weight": 4,
+    "basis": "theorem",
+    "source": "Gnedenko's domain-of-attraction conditions",
+    "reason": "Values with a finite upper limit and a power law near that limit give maxima in the reverse Weibull domain, with ξ < 0."
+   },
+   {
+    "id": "x5",
+    "when": {
+     "ge": [
+      "min"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "weibull"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Limit law of minima: the weakest-link theorem",
+    "reason": "The minimum of many independent positive values, with a lower tail that behaves as a power near 0, is approximately Weibull."
+   },
+   {
+    "id": "x6",
+    "when": {
+     "ge": [
+      "exc"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gpd"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Pickands–Balkema–de Haan theorem",
+    "reason": "The excesses over a high threshold have approximately a generalised Pareto law, when the law is in the domain of attraction of an extreme-value law."
+   },
+   {
+    "id": "x7",
+    "when": {
+     "ge": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "gev",
+     "gpd"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "The two limit laws of extremes",
+    "reason": "Block maxima approximately follow a GEV law, and excesses over a threshold a generalised Pareto law."
+   },
+   {
+    "id": "m1",
+    "when": {
+     "gm": [
+      "sum"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "normal"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Central limit theorem (Lindeberg condition)",
+    "reason": "A sum of many small independent effects, with finite variances and no effect that dominates, is approximately normal."
+   },
+   {
+    "id": "m2",
+    "when": {
+     "gm": [
+      "out"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "studentt"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Heavy tails of the t law",
+    "reason": "Student's t law has power-law tails, so large deviations are more frequent than for a normal law."
+   },
+   {
+    "id": "m2b",
+    "when": {
+     "gm": [
+      "out"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "laplace",
+     "logistic",
+     "cauchy",
+     "stable"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Tails heavier than normal",
+    "reason": "The Laplace and logistic laws have exponential tails, heavier than normal tails. The Cauchy law and the other stable laws with α < 2 have power-law tails with an infinite variance."
+   },
+   {
+    "id": "m2c",
+    "when": {
+     "gm": [
+      "out"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "normal"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Normal tail probabilities",
+    "reason": "A normal law gives P(|X − μ| > 5σ) < 6·10^(−7). Frequent very large deviations do not fit it."
+   },
+   {
+    "id": "m3",
+    "when": {
+     "gm": [
+      "dif"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "laplace"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Difference of exponential values",
+    "reason": "The difference of two independent exponential values with the same rate has the Laplace law."
+   },
+   {
+    "id": "m4",
+    "when": {
+     "gm": [
+      "lgs"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "logistic"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Difference of Gumbel values",
+    "reason": "The difference of two independent Gumbel values with the same scale has the logistic law."
+   },
+   {
+    "id": "m5",
+    "when": {
+     "gm": [
+      "rat"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cauchy"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Ratio of normal values",
+    "reason": "The ratio of two independent normal values with mean 0 has the Cauchy law. Its mean does not exist."
+   },
+   {
+    "id": "m6",
+    "when": {
+     "gm": [
+      "hsum"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "stable"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Generalised central limit theorem",
+    "reason": "A normalised sum of many independent values with the same law, and a balanced regularly varying tail of index α < 2, converges to a stable law."
+   },
+   {
+    "id": "m7",
+    "when": {
+     "gm": [
+      "sq"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "chisquare"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the chi-square law",
+    "reason": "A sum of squares of k independent standard normal values has the χ²(k) law."
+   },
+   {
+    "id": "m8",
+    "when": {
+     "gm": [
+      "frat"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "f"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the F law",
+    "reason": "A ratio of two independent chi-square values, each divided by its degrees of freedom, has the F law."
+   },
+   {
+    "id": "m9",
+    "when": {
+     "gm": [
+      "tst"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "studentt"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Student's theorem",
+    "reason": "For normal data, the mean minus μ, divided by its estimated standard error, has Student's t law with n − 1 degrees of freedom."
+   },
+   {
+    "id": "m10",
+    "when": {
+     "gm": [
+      "lim"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cuniform"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Equal probability on an interval",
+    "reason": "Equal probability for all values between the limits defines the continuous uniform law. Make sure that all values between the limits have equal probability."
+   },
+   {
+    "id": "m11",
+    "when": {
+     "gm": [
+      "?"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "normal",
+     "studentt",
+     "laplace",
+     "logistic"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Common laws for measurements",
+    "reason": "These laws are common for measurements. Without a mechanism, the rule graph cannot rank them."
+   },
+   {
+    "id": "tb",
+    "when": {
+     "t": [
+      "bnd"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "tail:bnd"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Support of the law",
+    "reason": "These laws have a finite upper limit."
+   },
+   {
+    "id": "tb2",
+    "when": {
+     "t": [
+      "bnd"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "!tail:bnd"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Support of the law",
+    "reason": "These laws have no upper limit: they give a positive probability above each level."
+   },
+   {
+    "id": "tl",
+    "when": {
+     "t": [
+      "lgt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "tail:lgt"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Tail of the law",
+    "reason": "These laws have a tail that decreases at least exponentially."
+   },
+   {
+    "id": "tl2",
+    "when": {
+     "t": [
+      "lgt"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "!tail:lgt"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail of the law",
+    "reason": "These laws do not have an unbounded light tail."
+   },
+   {
+    "id": "tm",
+    "when": {
+     "t": [
+      "mid"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "tail:mid"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail of the law",
+    "reason": "These laws have a tail that decreases slower than each exponential function, with all moments finite."
+   },
+   {
+    "id": "tm2",
+    "when": {
+     "t": [
+      "mid"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "!tail:mid"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail of the law",
+    "reason": "These laws have a different tail: a finite limit, an exponential tail or a power-law tail."
+   },
+   {
+    "id": "tp",
+    "when": {
+     "t": [
+      "pow"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "tail:pow"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Regular variation",
+    "reason": "These laws have a power-law tail: P(X > x) = x^(−α)L(x), with L slowly varying."
+   },
+   {
+    "id": "tp2",
+    "when": {
+     "t": [
+      "pow"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "!tail:pow"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Moments of the law",
+    "reason": "These laws have all moments finite, or a finite upper limit. A power-law tail excludes them."
+   },
+   {
+    "id": "tp3",
+    "when": {
+     "t": [
+      "pow"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Moment conditions",
+    "reason": "With a power-law tail of index α, the moments above order α do not exist. The moment of order α can also be infinite. Check the moment status of each quantity before you use an interval."
+   },
+   {
+    "id": "a1",
+    "when": {
+     "a": [
+      "zer"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "cpoisson",
+     "mixture"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Atoms at 0",
+    "reason": "A compound Poisson total of positive amounts is exactly 0 with the probability e^(−λ). A point mass at 0, mixed with a continuous law, also gives exact zeros."
+   },
+   {
+    "id": "a1b",
+    "when": {
+     "a": [
+      "zer",
+      "oth"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "continuous"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Continuous laws have no atoms",
+    "reason": "A continuous law gives the probability 0 to each exact value."
+   },
+   {
+    "id": "a2",
+    "when": {
+     "a": [
+      "oth"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mixture"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Definition of a mixed law",
+    "reason": "A law with atoms and a continuous part is a mixture of point masses and a continuous law."
+   },
+   {
+    "id": "a2b",
+    "when": {
+     "a": [
+      "oth"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "empirical"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "The data as the law",
+    "reason": "With many data, the empirical law keeps the atoms of the data."
+   },
+   {
+    "id": "x8",
+    "when": {
+     "x": [
+      "yes"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "mixture"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of a finite mixture",
+    "reason": "A population of groups with different laws has the mixture law Σ w_i f_i."
+   },
+   {
+    "id": "x8b",
+    "when": {
+     "x": [
+      "yes"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "negbin"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "The gamma–Poisson mixture",
+    "reason": "For counts, a continuous mix of Poisson rates with a gamma law gives the negative binomial law."
+   },
+   {
+    "id": "o1",
+    "when": {
+     "o": [
+      "cen"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "censored"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of censoring",
+    "reason": "A value recorded only as “beyond the limit” is a censored observation. Its likelihood term is the survival function at the limit."
+   },
+   {
+    "id": "o1b",
+    "when": {
+     "o": [
+      "cen"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Censored data",
+    "reason": "Fit and test the law with methods for censored data. A histogram of the recorded values has a bias."
+   },
+   {
+    "id": "o2",
+    "when": {
+     "o": [
+      "trn"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "truncated"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of truncation",
+    "reason": "When the record leaves out each value beyond the limit, the recorded values have the truncated law f(x)/F(limit)."
+   },
+   {
+    "id": "o3",
+    "when": {
+     "o": [
+      "sel"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Selection bias",
+    "reason": "The chance to record a value depends on the value. Then the recorded values do not have the law of the quantity. Without a model of the selection, the data cannot identify the law."
+   },
+   {
+    "id": "o4",
+    "when": {
+     "o": [
+      "?"
+     ]
+    },
+    "effect": "assume",
+    "basis": "assumption",
+    "source": "Observation mechanism",
+    "reason": "The interview does not know the observation mechanism. The model record assumes an exact record of each value."
+   },
+   {
+    "id": "d1",
+    "when": {
+     "d": [
+      "?"
+     ]
+    },
+    "effect": "assume",
+    "basis": "assumption",
+    "source": "Dependence",
+    "reason": "The interview does not know if the values are independent. A marginal law does not define dependence. The model record assumes independent values."
+   },
+   {
+    "id": "d2",
+    "when": {
+     "d": [
+      "tim"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Dependence in time",
+    "reason": "Values close in time depend on each other. A law of one value does not define this dependence, so the model needs a process."
+   },
+   {
+    "id": "d3",
+    "when": {
+     "s": [
+      "sta"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-ou"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Doob's theorem",
+    "reason": "In continuous time, a stationary Gaussian Markov process that is continuous in probability and not constant is an Ornstein–Uhlenbeck process."
+   },
+   {
+    "id": "d3b",
+    "when": {
+     "s": [
+      "sta"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-markov"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Stationary chains",
+    "reason": "A finite Markov chain that starts from its stationary law is a stationary process."
+   },
+   {
+    "id": "d4",
+    "when": {
+     "s": [
+      "stt"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-markov"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Markov property",
+    "reason": "A process on a finite set of states, with a next state that depends only on the current state, is a finite Markov chain."
+   },
+   {
+    "id": "d5",
+    "when": {
+     "s": [
+      "drf"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-bm",
+     "proc-gbm"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Processes with drift",
+    "reason": "Brownian motion with drift has independent normal increments. Geometric Brownian motion has independent normal log increments, so it stays positive."
+   },
+   {
+    "id": "d5b",
+    "when": {
+     "s": [
+      "drf"
+     ],
+     "k": [
+      "siz",
+      "tim",
+      "pro"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-gbm"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Positivity",
+    "reason": "A positive quantity needs a process that stays positive. Geometric Brownian motion stays positive."
+   },
+   {
+    "id": "d5c",
+    "when": {
+     "s": [
+      "drf"
+     ],
+     "k": [
+      "mea",
+      "mvm"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-bm"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "Additive changes",
+    "reason": "A quantity that can be negative, with changes that add, fits Brownian motion with drift."
+   },
+   {
+    "id": "d5d",
+    "when": {
+     "s": [
+      "drf"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "proc-ou"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Stationarity of the OU process",
+    "reason": "An Ornstein–Uhlenbeck process goes back to its mean level, and it is stationary when it starts from its stationary law. A drift excludes it."
+   },
+   {
+    "id": "d6",
+    "when": {
+     "s": [
+      "jmp"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-cpp"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the compound Poisson process",
+    "reason": "A process with jumps at the times of a Poisson process, and independent jump sizes, is a compound Poisson process."
+   },
+   {
+    "id": "d6b",
+    "when": {
+     "s": [
+      "jmp",
+      "jall"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "proc-bm"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Continuous paths of Brownian motion",
+    "reason": "Brownian motion has continuous paths, so jumps exclude it."
+   },
+   {
+    "id": "d7",
+    "when": {
+     "s": [
+      "jall"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-levy"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Lévy–Itô decomposition",
+    "reason": "A process with stationary independent increments and infinitely many small jumps in each time interval is a Lévy process with an infinite jump intensity."
+   },
+   {
+    "id": "d8",
+    "when": {
+     "d": [
+      "trg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-hawkes"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the Hawkes process",
+    "reason": "A point process in which each event raises the rate of later events is a Hawkes process."
+   },
+   {
+    "id": "d8b",
+    "when": {
+     "d": [
+      "trg"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-branch",
+     "negbin"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Cluster representation (Hawkes and Oakes 1974)",
+    "reason": "A Hawkes process is a branching process of immigrants and their offspring. Its counts in windows have overdispersion, so a negative binomial count can approximate them."
+   },
+   {
+    "id": "d8c",
+    "when": {
+     "d": [
+      "trg"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "poisson",
+     "proc-poisson"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Overdispersion of self-excited counts",
+    "reason": "Self-excitation makes the counts in windows overdispersed, so a Poisson count does not fit."
+   },
+   {
+    "id": "d9",
+    "when": {
+     "d": [
+      "gen"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "proc-branch"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Definition of the Galton–Watson process",
+    "reason": "A population in which each member has an independent random number of offspring is a branching process."
+   },
+   {
+    "id": "d9b",
+    "when": {
+     "d": [
+      "gen"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Generation sizes",
+    "reason": "The law of a generation size follows from the offspring law. In general it has no closed form, so simulate the process."
+   },
+   {
+    "id": "d10",
+    "when": {
+     "d": [
+      "com"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "conditional"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Conditional models",
+    "reason": "A conditional model states the law of one variable given the others. It suits a variable that depends on a cause."
+   },
+   {
+    "id": "d10b",
+    "when": [
+     {
+      "d": [
+       "com"
+      ]
+     },
+     {
+      "k": [
+       "mvm"
+      ]
+     }
+    ],
+    "effect": "for",
+    "targets": [
+     "copula-gauss"
+    ],
+    "weight": 1,
+    "basis": "assumption",
+    "source": "The default copula",
+    "reason": "A Gaussian copula keeps the marginal laws and adds a correlation matrix."
+   },
+   {
+    "id": "d10c",
+    "when": [
+     {
+      "d": [
+       "com"
+      ]
+     },
+     {
+      "k": [
+       "mvm"
+      ]
+     }
+    ],
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Sklar's theorem",
+    "reason": "A joint law is its marginal laws and a copula. A marginal law does not define dependence, so choose the copula apart from the marginal laws."
+   },
+   {
+    "id": "d11",
+    "when": {
+     "j": [
+      "up"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-gumbel"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Tail dependence of the Gumbel copula",
+    "reason": "The Gumbel copula has the upper tail dependence 2 − 2^(1/θ), larger than 0 for θ > 1, and no lower tail dependence."
+   },
+   {
+    "id": "d11b",
+    "when": {
+     "j": [
+      "up"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "copula-gauss",
+     "copula-frank",
+     "copula-clayton"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail dependence of copulas",
+    "reason": "The Gaussian copula with correlation below 1 and the Frank copula have no tail dependence. The Clayton copula has no upper tail dependence."
+   },
+   {
+    "id": "d12",
+    "when": {
+     "j": [
+      "lo"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-clayton"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Tail dependence of the Clayton copula",
+    "reason": "The Clayton copula has the lower tail dependence 2^(−1/θ), larger than 0 for θ > 0, and no upper tail dependence."
+   },
+   {
+    "id": "d12b",
+    "when": {
+     "j": [
+      "lo"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "copula-gauss",
+     "copula-frank",
+     "copula-gumbel"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail dependence of copulas",
+    "reason": "The Gaussian copula with correlation below 1 and the Frank copula have no tail dependence. The Gumbel copula has no lower tail dependence."
+   },
+   {
+    "id": "d13",
+    "when": {
+     "j": [
+      "both"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-t"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Tail dependence of the t copula",
+    "reason": "When the correlation is above −1, the Student-t copula has the same tail dependence, larger than 0, in both tails."
+   },
+   {
+    "id": "d13b",
+    "when": {
+     "j": [
+      "both"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "copula-gauss",
+     "copula-frank",
+     "copula-gumbel",
+     "copula-clayton"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Tail dependence of copulas",
+    "reason": "These copulas have no tail dependence, or tail dependence in one tail only."
+   },
+   {
+    "id": "d14",
+    "when": {
+     "j": [
+      "no"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-gauss",
+     "copula-frank"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Copulas without tail dependence",
+    "reason": "The Gaussian copula with correlation below 1 and the Frank copula have no tail dependence."
+   },
+   {
+    "id": "d14b",
+    "when": {
+     "j": [
+      "no"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "copula-gumbel",
+     "copula-clayton",
+     "copula-t"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Copulas with tail dependence",
+    "reason": "These copulas have tail dependence."
+   },
+   {
+    "id": "d15",
+    "when": {
+     "dn": [
+      "two"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-frank"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Two-variable copulas",
+    "reason": "With two variables, the Frank copula gives negative or positive dependence with no tail dependence. Its parameter has a closed-form relation to Kendall's τ."
+   },
+   {
+    "id": "d15b",
+    "when": {
+     "dn": [
+      "many"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "copula-gauss",
+     "copula-t"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Elliptical copulas",
+    "reason": "Gaussian and t copulas have a correlation matrix, so each pair can have a different dependence."
+   },
+   {
+    "id": "d15c",
+    "when": {
+     "dn": [
+      "many"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "copula-frank",
+     "copula-clayton",
+     "copula-gumbel"
+    ],
+    "weight": 1,
+    "basis": "theorem",
+    "source": "Exchangeable Archimedean copulas",
+    "reason": "These copulas, with one parameter, give the same dependence to every pair of variables."
+   },
+   {
+    "id": "n1",
+    "when": {
+     "dt": [
+      "non"
+     ]
+    },
+    "effect": "assume",
+    "basis": "assumption",
+    "source": "No data",
+    "reason": "There are no data. Each candidate is a hypothesis, and the rejection tests must wait for data."
+   },
+   {
+    "id": "n2",
+    "when": {
+     "dt": [
+      "few"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Power of a test",
+    "reason": "With fewer than about 30 values, the rejection tests have little power. A test that does not reject a candidate does not confirm it."
+   },
+   {
+    "id": "n3",
+    "when": {
+     "dt": [
+      "big"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "empirical"
+    ],
+    "weight": 3,
+    "basis": "theorem",
+    "source": "Glivenko–Cantelli theorem",
+    "reason": "The empirical CDF of independent data with the same law converges uniformly to the true CDF. With several thousand values, the data can be the law, but only inside the range of the data."
+   },
+   {
+    "id": "n3b",
+    "when": {
+     "dt": [
+      "big"
+     ],
+     "k": [
+      "tim",
+      "siz",
+      "mea",
+      "pro"
+     ]
+    },
+    "effect": "for",
+    "targets": [
+     "kde"
+    ],
+    "weight": 2,
+    "basis": "assumption",
+    "source": "Smooth estimates of a density",
+    "reason": "A kernel density model smooths the data. Its tail follows the kernel, not the data, so it is not valid far beyond the data."
+   },
+   {
+    "id": "n4",
+    "when": {
+     "q": [
+      "tl",
+      "mx"
+     ],
+     "t": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Tail sensitivity",
+    "reason": "The decision depends on the tail, but the interview does not know the tail. Candidates with light and heavy tails give very different tail probabilities. A finite sample cannot settle the tail."
+   },
+   {
+    "id": "n5",
+    "when": {
+     "q": [
+      "tl",
+      "mx"
+     ],
+     "dt": [
+      "non",
+      "few"
+     ],
+     "t": [
+      "pow",
+      "mid"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Tail extrapolation",
+    "reason": "A tail probability from few data depends mostly on the chosen law. Compare the decision under two candidates with different tails."
+   },
+   {
+    "id": "n6",
+    "when": {
+     "q": [
+      "mx"
+     ],
+     "k": [
+      "cnt",
+      "tim",
+      "siz",
+      "mea"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Maxima of a period",
+    "reason": "The decision uses the largest value in a period. Simulate the whole period, or model the block maximum with an extreme-value law."
+   },
+   {
+    "id": "n7",
+    "when": {
+     "q": [
+      "avg"
+     ],
+     "t": [
+      "pow"
+     ]
+    },
+    "effect": "assume",
+    "basis": "theorem",
+    "source": "Moment conditions",
+    "reason": "The mean can be infinite with a power-law tail. Check the moment status before you use a mean."
+   },
+   {
+    "id": "n8",
+    "when": {
+     "q": [
+      "tl",
+      "mx"
+     ],
+     "dt": [
+      "big"
+     ]
+    },
+    "effect": "against",
+    "targets": [
+     "empirical"
+    ],
+    "weight": 2,
+    "basis": "theorem",
+    "source": "Range of the empirical law",
+    "reason": "The empirical law gives the probability 0 above the largest observation, so it cannot estimate a rare tail event."
+   },
+   {
+    "id": "i1",
+    "when": {
+     "k": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Support",
+    "reason": "The interview does not know what one value measures. The support is the first fact that limits the candidate laws."
+   },
+   {
+    "id": "i2",
+    "when": {
+     "gt": [
+      "?"
+     ],
+     "t": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Identification",
+    "reason": "The interview knows neither the mechanism nor the tail of the time. Support and moments alone do not identify a law."
+   },
+   {
+    "id": "i3",
+    "when": {
+     "gs": [
+      "?"
+     ],
+     "t": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Identification",
+    "reason": "The interview knows neither the mechanism nor the tail of the size. Support and moments alone do not identify a law."
+   },
+   {
+    "id": "i4",
+    "when": {
+     "gm": [
+      "?"
+     ],
+     "t": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Identification",
+    "reason": "The interview knows neither the mechanism nor the tail of the measurement. Support and moments alone do not identify a law."
+   },
+   {
+    "id": "i5",
+    "when": {
+     "ge": [
+      "?"
+     ],
+     "t": [
+      "?"
+     ]
+    },
+    "effect": "insufficient",
+    "basis": "theorem",
+    "source": "Identification",
+    "reason": "The interview knows neither the mechanism nor the tail of the extreme value. Support and moments alone do not identify a law."
+   },
+   {
+    "id": "wk",
+    "when": "weak",
+    "effect": "insufficient",
+    "basis": "assumption",
+    "source": "Strength of the evidence",
+    "reason": "No candidate has strong support: no candidate has a score of 2 or more. The answers do not separate the candidate laws."
+   }
+  ]
  }
 }
