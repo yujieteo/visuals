@@ -4,8 +4,9 @@
 # checks (e2e/, its e2e/) get their own job per browser project too; a change to a visual the site keeps runs
 # that visual's (e2e/site/<slug>/). A change to shared tooling selects every visual, and a change to the
 # browser harness every visual's browser checks and the site's own, in shards when there are too many for a
-# job each. The repository job runs on every change: the shared tooling's tests and type check, every
-# visual.json, tracked build or OS artifacts, and the generated catalogue, kept as an artifact and never committed. A daily run repeats every visual's browser
+# job each. The repository job runs on every change on Python 3.9 and 3.12: every tracked Python file must
+# parse and the shared tooling's tests must pass on both. It also checks the tooling's types, every
+# visual.json and tracked artifacts, and generates the catalogue (uploaded once, on 3.12). A daily run repeats every visual's browser
 # checks, and the site's own, against new browser releases.
 name: CI
 
@@ -58,14 +59,18 @@ jobs:
           fi
 
   repository:
-    name: Repository checks
+    name: Repository checks (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -73,7 +78,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             e2e/package-lock.json
-      - name: Every visual.json against the schema, the folder rules, no absolute home paths, no tracked artifacts, no dead tooling Python
+      - name: Parse every tracked Python file, check metadata and folder rules, reject home paths, artifacts and dead tooling Python
         run: python3 scripts/check_repo.py
       # tsc checks the JSDoc types of the shared tooling (tsconfig.json), with the versions package.json pins, and
       # fails on its unused locals and unreachable code. It goes first: the tooling's tests run the pinned tsc too.
@@ -91,6 +96,7 @@ jobs:
       - name: Generate the catalogue and gallery
         run: python3 scripts/build_catalogue.py
       - uses: actions/upload-artifact@v4
+        if: matrix.python == '3.12'
         with:
           name: catalogue
           path: build/

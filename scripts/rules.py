@@ -25,6 +25,7 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 of running the code
   vendor        every vendored block of the page (<script data-vendor>, such as MathJax 4.1.3 with its Fira font)
                 is the bundle scripts/visual_kit.py builds from scripts/vendor/, unchanged
+  syntax        every tracked Python file parses on the interpreter running the repository check
   artifacts     no tracked __pycache__, *.pyc, .DS_Store or AppleDouble ._* file, and .gitignore keeps them out
 
 A finding a visual keeps on purpose is listed, with its reason in the pull request, in visual.json
@@ -409,6 +410,20 @@ def _unused_locals(tree, where):
             for target in targets:
                 if isinstance(target, ast.Name) and target.id not in loaded and target.id not in declared and not target.id.startswith("_"):
                     problems.append(f"{where}:{target.lineno}: local {target.id} is assigned but never read")
+    return problems
+
+
+def python_syntax_problems(root, paths):
+    """Parse the tracked Python paths without importing, executing or writing bytecode."""
+    problems = []
+    for name in paths:
+        try:
+            # Bytes let Python honour a source file's encoding declaration.
+            ast.parse((root / name).read_bytes(), filename=name)
+        except SyntaxError as error:
+            problems.append(f"{name}:{error.lineno}: does not parse: {error.msg}")
+        except OSError as error:
+            problems.append(f"{name}: cannot read tracked Python file: {error.strerror}")
     return problems
 
 
