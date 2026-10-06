@@ -123,7 +123,7 @@ test("the page's SQL gives the reference statistics: Spearman, Welch's t and ANO
   }
 });
 
-test("discovery: the planted patterns lead the unusual-pattern list, the tested effects are statistically supported, and every highlight is explained", () => {
+test("discovery: the planted patterns lead the unusual-pattern list, the tested effects are statistically supported, and every highlight is explained", async () => {
   const ranked = Rank.rank(plantedCharts, plantedFamily, { ctx: planted.ctx, classes: planted.classes, highlights: 6 });
   const place = (id) => ranked.places.unusual.get(id);
   const planted5 = ["planted.bar.region", "planted.histogram.weight", "planted.scatter.dose.response", "planted.box-by-group.segment.score", "planted.mean-series.order_date.sales"];
@@ -162,6 +162,10 @@ test("discovery: the planted patterns lead the unusual-pattern list, the tested 
   assert.ok(ranked.entries.get("planted.histogram.temp_c").unusualness < 0.2, "the stand-ins do not make temp_c unusual");
   const temp = Rank.explain(plantedCharts.find((c) => c.id === "planted.histogram.temp_c"), ranked, plantedFamily, { errors: { temp_c: { count: 5, sentinels: 5 } } });
   assert.ok(temp.cautions.some((c) => /Possible data error: temp_c holds 5 suspected data errors.*left out of these numbers/.test(c)));
+  // A dismissed stand-in is a value again: the statistics use it.
+  const kept = await family(planted, { dismissed: ["temp_c::sentinel::-999"] });
+  assert.equal(kept.measures.shape.temp_c.n, 2000);
+  assert.deepEqual(kept.sentinels, {});
   // The person's count: none, or as many as exist.
   assert.deepEqual(Rank.rank(plantedCharts, plantedFamily, { ctx: planted.ctx, classes: planted.classes, highlights: 0 }).highlights, { unusual: [], supported: [] });
   const all = Rank.rank(plantedCharts, plantedFamily, { ctx: planted.ctx, classes: planted.classes, highlights: 50 });
@@ -209,7 +213,8 @@ test("independence: a repeated identifier and serial correlation turn the tests 
   assert.ok(no.members.filter((m) => ["monotone", "difference", "association"].includes(m.pattern)).every((m) => m.reason === "Not tested: you said the observations are not independent."));
   assert.ok(no.members.filter((m) => m.pattern === "trend" || m.pattern === "shift").every((m) => m.status === "tested"));
   assert.ok(Family.decide(p, { design: "clustered" }).members.filter((m) => m.pattern === "monotone").every((m) => /clustered/.test(m.reason)));
-  assert.ok(Family.decide(p, { repeated: "region" }).members.filter((m) => m.pattern === "difference").every((m) => /repeated measurements by region/.test(m.reason)));
+  assert.ok(Family.decide(p, { repeated: "field:region" }).members.filter((m) => m.pattern === "difference").every((m) => /repeated measurements by region/.test(m.reason)));
+  assert.equal(member(Family.decide(p, { repeated: "none" }), "monotone", ["dose", "response"]).status, "tested", "no repeated measurements: the tests run");
   const yes = Family.decide(p, { independent: "yes" });
   assert.equal(member(yes, "monotone", ["dose", "response"]).assumption, "Independence stated by you.");
   assert.equal(member(p, "monotone", ["dose", "response"]).assumption, "Independence assumed, not confirmed.");
@@ -236,6 +241,31 @@ test("rejection: fewer than 5 complete rows or one value in an encoded field exc
   assert.deepEqual([flat.outcome, flat.reason], ["excluded", "Zero variance: every complete row has the same a."]);
   const ranked = Rank.rank(await charts(t3), await family(t3), { ctx: t3.ctx, classes: t3.classes });
   assert.ok(!ranked.entries.has("sparse3.scatter.a.b"), "an excluded chart is never ranked");
+});
+
+test("an engine error in one member leaves the family incomplete, with its reason and no adjusted p-values", async () => {
+  let spearman = 0;
+  const failing = async (/** @type {string} */ sql) => {
+    if (/corr\(rx, ry\)/.test(sql) && ++spearman === 3) throw new Error("Out of Memory Error: failed to allocate");
+    return e.query(sql);
+  };
+  const fam = await Family.run(failing, { table: "planted", name: "planted", run: 9, ctx: planted.ctx, classes: planted.classes, columns: planted.profile.columns });
+  assert.equal(fam.status, "incomplete");
+  assert.match(fam.reason, /^the engine stopped at monotone association of price and response: Out of Memory Error/);
+  assert.ok(fam.members.every((m) => m.adjusted === null), "no adjustment over part of a family");
+  assert.equal(Rank.rank(plantedCharts, fam, { ctx: planted.ctx, classes: planted.classes }).supported.length, 0);
+});
+
+test("a category of more than 12 levels against a measure: not tested, described by its groups as drawn", async () => {
+  const u = Stats.random(4);
+  const rows = Array.from({ length: 300 }, (_, i) => [`k${String(i % 15).padStart(2, "0")}`, ((i % 15) + u() * 3).toFixed(3)]);
+  const t = await load("many_levels", csv(["kind", "value"], rows));
+  const m = member(await family(t), "difference", ["kind", "value"]);
+  assert.equal(m.reason, "Not tested: 15 groups, more than the 12 Welch's ANOVA takes.");
+  assert.equal(m.measured.groups.length, 15);
+  assert.deepEqual(m.measured.drawn.map((g) => g.level).slice(-1), ["Other (3 levels)"], "12 levels and Other, as the chart draws them");
+  assert.equal(m.measured.drawn.reduce((a, g) => a + g.n, 0), 300);
+  assert.ok(m.effect.value > 0.5, `omega-squared over the drawn groups: ${m.effect.value}`);
 });
 
 test("a subset is a family of its own: its rows, its members without the subset field, its own ids and adjustment", async () => {

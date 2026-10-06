@@ -80,6 +80,21 @@ test("redundancy: one cluster per hypothesis, fields that substitute count as on
   assert.equal(Rank.highlightCount(undefined), 6);
 });
 
+test("an unbounded shift scores 1 and reads as unbounded; field names with commas never share a cluster", () => {
+  const step = [...Array(34).fill(2), ...Array(6).fill(4)];
+  const counts = Family.describeSeries({ unit: "day" }, step);
+  assert.equal(counts.shiftSd, Infinity, "no noise about the two levels");
+  const f = fam();
+  f.measures.counts.t = counts;
+  const tc = [{ name: "t", position: 9, cls: "T", levels: 40 }];
+  const c = cand("count-series", ["t"]);
+  const r = Rank.rank([c], f, { ctx: { fields: { t: { cls: "T", levels: 40 } } }, classes: tc });
+  assert.equal(r.entries.get(c.id).usefulness.score, 1);
+  assert.match(Rank.explain(c, r, f).observed[0], /the largest shift is unbounded long-run SD, from 2 to 4 rows a day/);
+  const subs = { of: (/** @type {string} */ n) => n };
+  assert.notEqual(Rank.clusterOf({ kind: "scatter", fields: ["a,b", "c"] }, subs).id, Rank.clusterOf({ kind: "scatter", fields: ["a", "b,c"] }, subs).id);
+});
+
 test("the record and the deck carry the family's counts and each list's highlights, with names only in list items", () => {
   const snapshot = {
     engine: { duckdb: "v1.5.4", duckdbWasm: "1.33.1-dev57.0", budget: "2.0 GiB" }, pieces: [{ n: 4, title: "Publication figures" }], log: [],
@@ -97,4 +112,8 @@ test("the record and the deck carry the family's counts and each list's highligh
   assert.doesNotMatch(report.results[0].narration, /region|dose/);
   const deck = parseDeck(Beamdswitch.deck(report));
   assert.ok(deck.frames.filter((f) => f.kind === "frame").every((f) => f.narration && !/[$|*_#]/.test(f.narration)));
+  const said = (study) => Report.report({ ...snapshot, tables: [{ ...snapshot.tables[0], findings: { ...snapshot.tables[0].findings, family: { ...snapshot.tables[0].findings.family, study } } }] }).results[0].body;
+  assert.match(said({ independent: "no" }), /the tests of independent rows are off, as the study details say/);
+  assert.match(said({ independent: "unknown", repeated: "field:region" }), /the tests of independent rows are off/);
+  assert.match(said({ independent: "yes" }), /independence stated by you/);
 });

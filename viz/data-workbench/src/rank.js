@@ -92,7 +92,8 @@
    * @param {{ kind: string, fields: string[] }} cand @param {any} fam a decided family @param {Map<string, any>} keys
    */
   function usefulness(cand, fam, keys) {
-    const part = (name, value, large, scale = Math.abs(value) / large) => ({ name, value, large, score: clamp(Number.isFinite(scale) ? scale : 0) });
+    // An unbounded effect (a shift with no noise about its two levels) is as large as can be.
+    const part = (name, value, large, scale = Math.abs(value) / large) => ({ name, value, large, score: Number.isNaN(scale) ? 0 : clamp(scale) });
     const best = (parts) => parts.reduce((a, p) => (p.score > a.score ? p : a), parts[0]);
     const none = (why) => ({ name: "none", value: null, large: null, score: 0, why });
     const [a, b] = cand.fields;
@@ -199,7 +200,7 @@
   /** A chart's redundancy cluster: its grammar pattern and its fields, each as its group's first field. */
   function clusterOf(cand, subs) {
     const pattern = Grammar.KIND[cand.kind].pattern;
-    const key = `${pattern}:${cand.fields.map(subs.of).sort().join(",")}`;
+    const key = `${pattern}:${JSON.stringify(cand.fields.map(subs.of).sort())}`;
     return { key, id: `r${shortHash(key)}` };
   }
 
@@ -299,14 +300,18 @@
         break;
       }
       case "box-by-group": case "mean-bar": {
-        const g = m0?.measured?.groups ?? [];
+        // A category of more than 12 levels is described by its groups as the chart draws them: 12 levels and Other.
+        const g = m0?.measured?.drawn ?? m0?.measured?.groups ?? [];
         if (g.length === 2) {
-          const h = Stats.hedges(g[0], g[1]);
           out.push(`Mean ${b}: ${fmt(g[0].mean, 4)} in ${g[0].level} (n ${whole(g[0].n)}) and ${fmt(g[1].mean, 4)} in ${g[1].level} (n ${whole(g[1].n)}); ${g[0].level} − ${g[1].level} = ${fmt(g[0].mean - g[1].mean, 4)}${m0.result?.difference ? ci(m0.result.difference.ci, 4) : ""}.`);
-          if (Number.isFinite(h.value)) out.push(`Hedges' g ${fmt(h.value)}${ci(h.ci)}.`);
+          // Hedges' g needs a variance in each group, as the usefulness does.
+          if (g.every((x) => x.n > 1 && x.var !== null)) {
+            const h = Stats.hedges(g[0], g[1]);
+            if (Number.isFinite(h.value)) out.push(`Hedges' g ${fmt(h.value)}${ci(h.ci)}.`);
+          }
         } else if (g.length > 2) {
           const lo = g.reduce((x, y) => (y.mean < x.mean ? y : x)), hi = g.reduce((x, y) => (y.mean > x.mean ? y : x));
-          out.push(`Mean ${b} by ${a}, ${g.length} groups: from ${fmt(lo.mean, 4)} (${lo.level}, n ${whole(lo.n)}) to ${fmt(hi.mean, 4)} (${hi.level}, n ${whole(hi.n)}); omega-squared ${fmt(m0.effect?.value ?? 0, 3)}.`);
+          out.push(`Mean ${b} by ${a}, ${g.length} groups${m0.measured.drawn ? " as drawn" : ""}: from ${fmt(lo.mean, 4)} (${lo.level}, n ${whole(lo.n)}) to ${fmt(hi.mean, 4)} (${hi.level}, n ${whole(hi.n)}); omega-squared ${fmt(m0.effect?.value ?? 0, 3)}.`);
         }
         break;
       }

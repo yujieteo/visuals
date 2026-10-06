@@ -80,6 +80,12 @@
     };
   }
 
+  /** What the study details say of independence, in words. */
+  function independence(study) {
+    if (study?.independent === "no" || String(study?.repeated ?? "").startsWith("field:") || study?.design === "clustered") return "the tests of independent rows are off, as the study details say";
+    return study?.independent === "yes" ? "independence stated by you" : "independence assumed, not confirmed";
+  }
+
   /**
    * A table's findings as list items: the family's counts, then each list's highlights (titles name fields, so they
    * stay in the body, escaped, and never in narration).
@@ -88,7 +94,7 @@
   function findings(f) {
     if (!f?.family) return ["- Findings: the statistics have not run yet."];
     const fam = f.family;
-    const head = `- Findings (catalogue v${cell(fam.catalogue)}), family ${cell(fam.name)}, run ${n(fam.run)}: ${count(fam.size, "hypothesis", "hypotheses")}, ${n(fam.m)} tested, ${n(fam.notTested)} not tested; ${fam.status === "complete" ? `${n(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli)` : "incomplete, so no adjusted p-values"}; ${fam.study?.independent === "yes" ? "independence stated" : "independence assumed, not confirmed"}.`;
+    const head = `- Findings (catalogue v${cell(fam.catalogue)}), family ${cell(fam.name)}, run ${n(fam.run)}: ${count(fam.size, "hypothesis", "hypotheses")}, ${n(fam.m)} tested, ${n(fam.notTested)} not tested; ${fam.status === "complete" ? `${n(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli)` : "incomplete, so no adjusted p-values"}; ${independence(fam.study)}.`;
     if (!f.unusual) return [head];
     const p = (x) => (x < 1e-4 ? (x === 0 ? "< 1e-300" : x.toExponential(1)) : String(Math.round(x * 1e4) / 1e4));
     return [head,

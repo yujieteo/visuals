@@ -502,9 +502,11 @@ and carries fixed non-causal cautions. No causal claims, invented units or meani
   mark's width already holding one (`Render.render` counts them). Small groups: a box or mean bar, or a period of a
   mean time series, of fewer than 5 rows.
 - A chart in list 2 is ordered by the smallest adjusted p-value of its supported hypotheses (a mean time series has
-  two). The lists need a complete family; an incomplete one shows its members and a button to run again.
+  two). The lists need a complete family whose charts have not been drawn again since; otherwise they are hidden,
+  with a button to run the statistics again. An engine error in any member leaves the family incomplete.
 - **[Changed in step 3]** Values the profile flags as stand-ins for no value (open sentinel suggestions, such as
-  -999) are left out of every statistic and counted on the finding; the figure still draws them. Section 3 asks to
+  -999) are left out of every statistic and counted on the finding; the figure still draws them, and dismissing the
+  suggestion makes them values again. Section 3 asks to
   show suspected data errors apart from patterns in usable data: with them, the five -999 values of the planted
   example's temp_c gave it a skewness of −19.8, the most skewed field of the table; without them, 0.04
   (tests/findings-engine.test.mjs, "discovery").
@@ -551,6 +553,8 @@ Where the plan left a choice or changed:
   time field, row order is not taken as time order. The identifier rule counts values that repeat an earlier one.
 - Study details are each table's own. "Yes" tags the tests "Independence stated by you" but never overrides the
   data's checks; a stratified or convenience design adds a caution to every result.
+- A category of more than 12 levels against a measure is not tested (T3 takes 3 to 12 groups); its effect uses its
+  groups as the chart draws them, the 12 most frequent and Other.
 - A subset family (one level of a category of at most 12 levels) has its own ids, tests and adjustment, and is shown
   apart: the two lists rank the table's charts only.
 

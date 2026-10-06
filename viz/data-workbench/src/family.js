@@ -86,14 +86,16 @@
   /* ---------- what each test needs, from the engine ---------- */
 
   /**
-   * The open stand-ins of each numeric field (suspected errors the person has not approved as missing), by field.
-   * @param {any[]} columns the profiles
+   * The open stand-ins of each numeric field, by field: suspected errors the person has neither approved as missing
+   * (the profile then reads them as missing) nor dismissed (then they are values like any other).
+   * @param {any[]} columns the profiles @param {string[]} [dismissed] the ids of dismissed suggestions
    */
-  function sentinelsOf(columns) {
+  function sentinelsOf(columns, dismissed = []) {
     /** @type {Record<string, number[]>} */
     const out = {};
     for (const c of columns) {
-      const list = (c.errors ?? []).filter((e) => e.kind === "sentinel").map((e) => Number(e.examples[0])).filter(Number.isFinite);
+      const list = (c.errors ?? []).filter((e) => e.kind === "sentinel" && !dismissed.includes(`${c.name}::sentinel::${e.examples[0]}`))
+        .map((e) => Number(e.examples[0])).filter(Number.isFinite);
       if (list.length) out[c.name] = list;
     }
     return out;
@@ -104,7 +106,7 @@
    * needs, then decide. Cancel (o.stopped) leaves the family incomplete, with no adjusted p-values.
    * @param {(sql: string) => Promise<any[]>} query
    * @param {{ table: string, name: string, run: number, subset?: { field: string, level: string } | null, ctx: any, classes: any[], columns: any[],
-   *   study?: any, stopped?: () => boolean, progress?: (text: string, done: number, total: number) => void }} o
+   *   dismissed?: string[], study?: any, stopped?: () => boolean, progress?: (text: string, done: number, total: number) => void }} o
    */
   async function run(query, o) {
     const ctx = o.ctx;
@@ -114,7 +116,7 @@
     const counts = { q: 0, c: 0, t: 0 };
     for (const f of fields) if (f.cls === "Q" || f.cls === "C" || f.cls === "T") counts[/** @type {"q" | "c" | "t"} */ (f.cls.toLowerCase())] += 1;
     const list = members(classes).map((m) => ({ ...m, id: hypothesisId(o.name, m.pattern, m.fields), key: keyOf(m.pattern, m.fields) }));
-    const sentinels = sentinelsOf(o.columns);
+    const sentinels = sentinelsOf(o.columns, o.dismissed ?? []);
     const fam = {
       name: o.name, table: o.table, run: o.run, subset, catalogue: CATALOGUE, grammar: Grammar.VERSION, alpha: ALPHA, method: "Benjamini–Yekutieli",
       counts, size: size(counts), definition: definition(o.name, counts, subset),
@@ -133,7 +135,7 @@
     const cat = (name) => {
       const c = ChartSql.category(field(name));
       const s = sentinels[name] ?? [];
-      return s.length ? { label: `CASE WHEN (${c.key}) NOT IN (${s.join(", ")}) THEN ${c.label} END`, key: c.key } : c;
+      return { field: name, key: c.key, label: s.length ? `CASE WHEN (${c.key}) NOT IN (${s.join(", ")}) THEN ${c.label} END` : c.label };
     };
     const tim = (name) => ChartSql.time(field(name));
 
@@ -149,6 +151,19 @@
       const by = new Map(rows.map((x) => [x.p, x]));
       const points = per.periods.map((p) => ({ p, n: by.get(p)?.n ?? 0, mean: by.get(p)?.mean ?? null }));
       return { unit: per.unit, points, periods: per.periods.length, unplaced: per.unplaced };
+    }
+
+    /**
+     * The groups of a category against a measure as the chart draws them, its 12 most frequent levels and Other, for
+     * the descriptive effect of a category of more than 12 levels (no test takes so many groups).
+     */
+    async function drawnGroups(k, q) {
+      const r = rel({ c: k.label, k: k.key, x: meas(q) }, ["c", "x"]);
+      const lv = await kept(r, "c", "k", k.field);
+      const other = `Other (${lv.other} levels)`;
+      const rows = (await query(StatSql.groups(StatSql.keptLevels(r, lv.levels, other)))).map((g) => ({ level: g.level, n: g.n, mean: g.mean, var: g.var }));
+      const at = (l) => (l === other ? lv.levels.length : lv.levels.indexOf(l));
+      return rows.sort((x, y) => at(x.level) - at(y.level));
     }
 
     /** Category levels in their chart order, the 12 most frequent kept and the rest as Other. */
@@ -222,7 +237,7 @@
     const shared = new Map();
     fam.members.forEach((m) => steps.push({ text: `${PATTERNS[/** @type {keyof typeof PATTERNS} */ (m.pattern)].label} of ${m.fields.join(" and ")}`, run: async () => {
       const [a, b] = m.fields;
-      try {
+      {
         if (m.pattern === "monotone") {
           const s = (await query(StatSql.spearman(rel({ x: meas(a), y: meas(b) }, ["x", "y"]))))[0];
           m.measured = { n: s.n, rho: s.rho, distinct: [s.dx, s.dy] };
@@ -230,7 +245,7 @@
           const k = cat(a);
           const groups = (await query(StatSql.groups(rel({ c: k.label, k: k.key, x: meas(b) }, ["c", "x"])))).map((g) => ({ level: g.level, key: g.sort_key, n: g.n, mean: g.mean, var: g.var, skew: g.skew, med: g.med, mad: g.mad, far: g.far }));
           if (field(a).ordered) groups.sort((x, y) => (x.key ?? 0) - (y.key ?? 0) || String(x.level).localeCompare(String(y.level)));
-          m.measured = { groups };
+          m.measured = { groups, drawn: groups.length > MAX_GROUPS ? await drawnGroups(k, b) : null };
         } else if (m.pattern === "association") {
           const ka = cat(a), kb = cat(b);
           const r = rel({ cx: ka.label, kx: ka.key, cy: kb.label, ky: kb.key }, ["cx", "cy"]);
@@ -243,12 +258,10 @@
           if (!shared.has(key)) shared.set(key, series(a, b));
           m.measured = { ...(await shared.get(key)) };
         }
-      } catch (error) {
-        if (o.stopped?.()) throw error;
-        m.measured = { error: String(error?.message ?? error).split("\n")[0].slice(0, 300) };
       }
     } }));
-    // A stop keeps what was computed; an engine error (the memory budget, for one) stops the run with its reason.
+    // A stop keeps what was computed; an engine error (the memory budget, for one) stops the run with its reason, and
+    // the family is incomplete: an adjustment over fewer members than the family's would understate every p-value.
     let done = 0;
     for (const s of steps) {
       if (o.stopped?.()) break;
@@ -270,7 +283,8 @@
   function describeSeries(s, values) {
     const k = values.length > 1 ? Stats.kendall(values) : null;
     const shift = values.length > 2 ? Stats.levelShift(values) : null;
-    return { unit: s.unit, periods: values.length, tau: k ? k.tau : 0, shiftSd: shift && !shift.failed && Number.isFinite(shift.effect.value) ? shift.effect.value : 0, shift: shift?.shift ?? null };
+    // A series that only steps, with no noise about its two levels, shifts by an unbounded number of SDs.
+    return { unit: s.unit, periods: values.length, tau: k ? k.tau : 0, shiftSd: shift && !shift.failed && !Number.isNaN(shift.effect.value) ? shift.effect.value : 0, shift: shift?.shift ?? null };
   }
 
   /** The family's definition in words. */
@@ -287,7 +301,7 @@
   /** Why a test that assumes independent rows does not apply to a member, or "". */
   function dependence(fam, m, study) {
     if (study.independent === "no") return "Not tested: you said the observations are not independent.";
-    if (study.repeated && study.repeated !== "none") return `Not tested: you said the rows hold repeated measurements by ${study.repeated}.`;
+    if (repeatedBy(study)) return `Not tested: you said the rows hold repeated measurements by ${repeatedBy(study)}.`;
     if (study.design === "clustered") return "Not tested: you said the sample is clustered, and this test assumes independent rows.";
     const rep = fam.independence.repeated[0];
     if (rep) return `Not tested: independence contradicted. The identifier ${rep.field} repeats in ${pct(rep.share)} of its values (repeated measurements).`;
@@ -295,6 +309,9 @@
     if (s) return `Not tested: independence contradicted. ${s.field} has a lag-1 autocorrelation of ${fmt(s.r1)} (p ${s.p < 0.001 ? "< 0.001" : fmt(s.p, 3)}) in the order of ${s.time}.`;
     return "";
   }
+
+  /** The field the person said holds repeated measurements (study.repeated "field:<name>"), or "". */
+  const repeatedBy = (study) => (String(study.repeated ?? "").startsWith("field:") ? String(study.repeated).slice(6) : "");
 
   /** The normality support of a group: n at least 30, or |skewness| at most 1 and no value with robust z above 5. */
   function support(g) {
@@ -320,7 +337,6 @@
     const pat = PATTERNS[/** @type {keyof typeof PATTERNS} */ (m.pattern)];
     const d = m.measured;
     if (!d) return { status: "not run", reason: "Not computed: the run stopped before this member.", effect: null };
-    if (d.error) return { status: "not tested", reason: `Not tested: the engine could not compute it (${d.error}).`, effect: null };
     const out = (reason, effect) => ({ status: "not tested", reason, effect });
     const blocked = pat.independent ? dependence(fam, m, study) : "";
     if (m.pattern === "monotone") {
@@ -334,8 +350,9 @@
     }
     if (m.pattern === "difference") {
       const g = d.groups;
-      const effect = g.length === 2 && g.every((x) => x.n > 1 && x.var !== null) && g[0].n + g[1].n > 2 ? { name: "Hedges' g", value: Stats.hedges(g[0], g[1]).value }
-        : g.length > 2 ? { name: "omega-squared", value: Stats.omegaSquared(g.map((x) => ({ ...x, var: x.var ?? 0 }))) } : null;
+      const shown = d.drawn ?? g;
+      const effect = shown.length === 2 && shown.every((x) => x.n > 1 && x.var !== null) ? { name: "Hedges' g", value: Stats.hedges(shown[0], shown[1]).value }
+        : shown.length > 2 ? { name: "omega-squared", value: Stats.omegaSquared(shown.map((x) => ({ ...x, var: x.var ?? 0 }))) } : null;
       const good = effect && Number.isFinite(effect.value) ? effect : null;
       if (blocked) return out(blocked, good);
       if (g.length < 2) return out("Not tested: one group only.", null);
@@ -364,7 +381,7 @@
     const need = m.pattern === "trend" ? 12 : 20;
     const values = reg.values;
     const desc = m.pattern === "trend" ? (values.length > 1 ? { name: "Kendall's tau", value: Stats.kendall(values).tau } : null)
-      : (() => { const s = values.length > 2 ? Stats.levelShift(values) : null; return s && !s.failed && Number.isFinite(s.effect.value) ? { name: "shift in long-run SD", value: s.effect.value } : null; })();
+      : (() => { const s = values.length > 2 ? Stats.levelShift(values) : null; return s && !s.failed && !Number.isNaN(s.effect.value) ? { name: "shift in long-run SD", value: s.effect.value } : null; })();
     if (values.length < need) return out(`Not tested: ${plural(values.length, "period", "periods")} with a value (by ${d.unit ?? "period"}), fewer than the ${need} ${m.pattern === "trend" ? "T7" : "T8"} needs.`, desc);
     if (!reg.ok) return out(`Not tested: the periods are not regular: ${reg.empty} of ${reg.span} ${d.unit}s between the first and the last are empty (more than 10%).`, desc);
     const result = m.pattern === "trend" ? Stats.mannKendall(values) : Stats.levelShift(values);
@@ -413,5 +430,5 @@
   /** The tested members of a family by key, for the charts that show them. */
   const byKey = (fam) => new Map(fam.members.map((m) => [m.key, m]));
 
-  return { CATALOGUE, ALPHA, SEED, TESTS, PATTERNS, DESIGNS, NO_STUDY, members, size, keyOf, hypothesisId, patternsOfKind, sentinelsOf, run, decide, byKey, describeSeries };
+  return { CATALOGUE, ALPHA, SEED, TESTS, PATTERNS, DESIGNS, NO_STUDY, members, size, keyOf, hypothesisId, patternsOfKind, sentinelsOf, repeatedBy, run, decide, byKey, describeSeries };
 });

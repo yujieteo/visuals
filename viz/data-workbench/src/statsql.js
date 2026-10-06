@@ -6,7 +6,8 @@
  * counts, means, variances, ranks' correlations, medians and tables of counts only.
  *
  *   spearman    n, rho (the correlation of average ranks) and the distinct values of x and y
- *   groups      per level of c: n, mean, variance, skewness, median, MAD and the farthest value from the median
+ *   groups      per level of c: n, mean, variance, skewness, median, MAD and the farthest value from the median;
+ *               keptLevels maps c to the levels a chart keeps and Other first
  *   shape       n, skewness, excess kurtosis, median, MAD and the values with robust z above 3.5
  *   serial      the lag-1 autocorrelation of x in the order of t (ties by source row)
  */
@@ -23,6 +24,10 @@
 
   /** A relation's rows where the alias s equals one level: a subset family. */
   const within = (rel, level) => `SELECT * FROM (${rel}) WHERE ${ident("s")} = ${literal(level)}`;
+
+  /** A relation's category c mapped to the levels a chart keeps, the rest to one Other label, as the chart draws them. */
+  const keptLevels = (rel, levels, other) =>
+    `SELECT r, coalesce(${levels.length ? `CASE WHEN c IN (${levels.map(literal).join(", ")}) THEN c END` : "NULL::VARCHAR"}, ${literal(other)}) AS c, k, x FROM (${rel})`;
 
   /** The average rank of an alias: rank() plus half the other rows tied with it. */
   const avgRank = (a) => `(rank() OVER (ORDER BY ${ident(a)}) + (count(*) OVER (PARTITION BY ${ident(a)}) - 1) / 2.0)`;
@@ -55,5 +60,5 @@ SELECT n, skew, kurt, med, mad, (SELECT count(*) FROM d WHERE s.mad > 0 AND abs(
 SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   }
 
-  return { usable, within, spearman, groups, shape, serial };
+  return { usable, within, keptLevels, spearman, groups, shape, serial };
 });

@@ -51,17 +51,23 @@
       if (!subset) Object.assign(st, { status: "running", reason: "" });
       st.runs += 1;
       app.refresh();
+      // The charts this run ranks: a later regeneration makes the lists stale until the statistics run again.
+      const chartsAt = charts.timing?.start ?? null;
       let fam;
       try {
         fam = await Family.run(api.query, { table: table.name, name, run: st.runs, subset, ctx: charts.ctx, classes: charts.classes, columns: table.columns,
-          study: st.study, stopped: () => store.stop, progress: app.progress });
+          dismissed: table.dismissed, study: st.study, stopped: () => store.stop, progress: app.progress });
       } catch (error) {
         if (!subset) Object.assign(st, { status: "failed", reason: app.message(error) });
         app.note({ kind: "failed", table: table.name, text: `The statistics of ${name} could not run: ${app.message(error)}` });
         return;
       }
       if (subset) st.subsets = [...st.subsets.filter((x) => x.name !== name), fam];
-      else Object.assign(st, { family: fam, status: fam.status, reason: fam.reason });
+      else {
+        // Subset families were computed from the table as it read before: they go, and can be opened again.
+        if (st.subsets.length) app.note({ kind: "statistics", table: table.name, text: `The subset families of ${table.name} (${st.subsets.map((f) => f.name).join("; ")}) were closed: the table's statistics ran again.` });
+        Object.assign(st, { family: fam, status: fam.status, reason: fam.reason, chartsAt, subsets: [] });
+      }
       app.note({ kind: "statistics", table: table.name, text: `Statistics of ${name}, run ${fam.run} (catalogue v${Family.CATALOGUE}): ${plural(fam.members.length, "hypothesis", "hypotheses")}, ${fmtInt(fam.m)} tested, ${fmtInt(fam.notTested)} not tested; `
         + (fam.status === "complete" ? `${fmtInt(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli).` : `incomplete (${fam.reason}), so no adjusted p-values.`) });
     }
@@ -76,7 +82,7 @@
       if (st.family) st.family = Family.decide(st.family, next);
       st.subsets = st.subsets.map((f) => Family.decide(f, next));
       const said = [`independent observations: ${INDEPENDENT.find(([v]) => v === next.independent)?.[1].toLowerCase()}`,
-        `repeated measurements: ${next.repeated === "" ? "not stated" : next.repeated === "none" ? "none" : `by ${next.repeated}`}`, `sample design: ${next.design}`];
+        `repeated measurements: ${next.repeated === "" ? "not stated" : next.repeated === "none" ? "none" : `by ${Family.repeatedBy(next)}`}`, `sample design: ${next.design}`];
       app.note({ kind: "changed", table: table.name, text: `You set the study details of ${table.name}: ${said.join("; ")}.${st.family ? ` The tests were decided again: ${fmtInt(st.family.m)} tested, ${fmtInt(st.family.flagged)} with an adjusted p-value at or below 0.05.` : ""}` });
       app.refresh();
     }
@@ -85,19 +91,23 @@
 
     /* ---------- ranking ---------- */
 
-    /** The ranked lists of a table, or null while its family is not complete. */
+    /** Whether the charts were drawn again since the table's statistics ran. */
+    const stale = (st, charts) => !!st?.family && !!charts && st.chartsAt !== (charts.timing?.start ?? null);
+
+    /** The ranked lists of a table, or null while its family is not complete or its charts changed since. */
     function ranked(name) {
       const st = stateOf(name), charts = app.gallery.state(name);
-      if (!st?.family || st.family.status !== "complete" || !charts) return null;
+      if (!st?.family || st.family.status !== "complete" || !charts || stale(st, charts)) return null;
       return Rank.rank(charts.candidates, st.family, { ctx: charts.ctx, classes: charts.classes, highlights: app.highlights() });
     }
 
-    /** The suspected data errors of each field, for the cautions. */
+    /** The suspected data errors of each field, for the cautions: a stand-in the person dismissed is a value, not an error. */
     function errorsOf(table) {
       const out = {};
       for (const c of table.columns) {
-        const count = (c.errors ?? []).reduce((a, e) => a + e.count, 0);
-        if (count) out[c.name] = { count, sentinels: (c.errors ?? []).filter((e) => e.kind === "sentinel").reduce((a, e) => a + e.count, 0) };
+        const open = (c.errors ?? []).filter((e) => e.kind !== "sentinel" || !table.dismissed.includes(`${c.name}::sentinel::${e.examples[0]}`));
+        const count = open.reduce((a, e) => a + e.count, 0);
+        if (count) out[c.name] = { count, sentinels: open.filter((e) => e.kind === "sentinel").reduce((a, e) => a + e.count, 0) };
       }
       return out;
     }
@@ -134,15 +144,16 @@
         fam.status === "complete" ? `${fmtInt(fam.flagged)} with an adjusted p-value at or below 0.05.` : "no adjusted p-values while the family is incomplete."));
       else out.push(h("p", { class: "note", "data-family": st.status, text: st.status === "running" ? "Running the statistics…" : `The statistics could not run: ${st.reason}` }));
       if (store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", onclick: () => app.cancel(), text: "Cancel" }), h("span", { class: "note", text: ` ${store.busy.text}` })));
-      else if (st.status !== "complete" && st.status !== "running") out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics again" })));
+      else if ((st.status !== "complete" && st.status !== "running") || stale(st, charts)) out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics again" })));
       out.push(study(table, st, charts));
       const r = ranked(table.name);
       if (r) {
         out.push(h("div", { class: "filters" }, h("div", { class: "field" },
           h("label", { for: "highlight-count", text: "Distinct highlights per list (0 to 50)" }),
-          h("input", { id: "highlight-count", type: "number", min: "0", max: "50", step: "1", value: String(r.count), onchange: (ev) => app.setHighlights(Number(ev.target.value)) }))));
+          // An emptied field keeps the count it had.
+          h("input", { id: "highlight-count", type: "number", min: "0", max: "50", step: "1", value: String(r.count), onchange: (ev) => (ev.target.value.trim() === "" ? draw() : app.setHighlights(Number(ev.target.value))) }))));
         out.push(list(table, st, r, "unusual"), list(table, st, r, "supported"));
-      } else if (fam) out.push(h("p", { class: "warn-text", text: "The two lists need a complete family: run the statistics again to rank the charts." }));
+      } else if (fam) out.push(h("p", { class: "warn-text", text: stale(st, charts) ? "The charts were drawn again since the statistics ran: run the statistics again to rank them." : "The two lists need a complete family: run the statistics again to rank the charts." }));
       if (fam) out.push(familyView(fam, st, "family", `Hypothesis family ${fam.name}, run ${fam.run}: every member, tested or why not`));
       if (fam) out.push(subsets(table, st, charts));
       view.replaceChildren(...out);
@@ -160,7 +171,7 @@
         h("p", { class: "note", text: "The figures and both lists are made without them. They decide which tests apply: without them, tests of independent rows run tagged \"independence assumed, not confirmed\", and are refused where the data contradicts independence (an identifier that repeats, serial correlation in time order)." }),
         h("form", { class: "change", onsubmit: (ev) => { ev.preventDefault(); setStudy(table, ev.target); } },
           select("independent", "Independent observations", INDEPENDENT, s.independent),
-          select("repeated", "Repeated measurements", [["", "Not stated"], ["none", "None"], ...fields.map((f) => [f, `By ${f}`])], s.repeated),
+          select("repeated", "Repeated measurements", [["", "Not stated"], ["none", "None"], ...fields.map((f) => [`field:${f}`, `By ${f}`])], s.repeated),
           select("design", "Sample design", Family.DESIGNS.map((d) => [d, d === "unknown" ? "Not stated" : `${d[0].toUpperCase()}${d.slice(1)}`]), s.design),
           h("p", { class: "actions" }, h("button", { type: "submit", disabled: !!store.busy || !st.family, text: "Apply" })),
           h("p", { class: "note", text: "A \"no\", repeated measurements or a clustered design turns off the tests that assume independent rows, each with its reason; trend and level-shift tests allow for dependence in time." })),
@@ -305,7 +316,7 @@
         const x = r ? finding(table, r, o.id) : null;
         const cand = app.gallery.state(name)?.candidates.find((c) => c.id === o.id);
         if (!cand) return null;
-        if (!x) return { id: o.id, outcome: cand.outcome, reason: cand.reason || "Not ranked: the family is not complete.", hypotheses: [] };
+        if (!x) return { id: o.id, outcome: cand.outcome, reason: cand.reason || "Not ranked: the family is not complete, or the charts changed since the statistics ran.", hypotheses: [] };
         const keys = new Set(r.entries.get(o.id).hypotheses);
         return { ...x, places: { unusual: r.places.unusual.get(o.id), supported: r.places.supported.get(o.id) ?? null }, hypotheses: st.family.members.filter((m) => keys.has(m.id)).map(hypothesisOut) };
       }
@@ -313,7 +324,7 @@
       const entry = (id, place) => { const e = r.entries.get(id); return { place, id, kind: e.kind, fields: e.fields, title: e.title, unusualness: e.unusualness, adjusted: e.adjusted ?? undefined, usefulness: e.usefulness.score, measure: e.usefulness.name, penalties: e.penalties.map((p) => p.rule), cluster: e.cluster }; };
       const out = { table: name, family: familyOut(st.family), subsets: st.subsets.map((f) => ({ ...familyOut(f), hypotheses: f.members.map(hypothesisOut) })) };
       if (o.list === "family") return { ...out, offset, hypotheses: st.family.members.slice(offset, offset + 1000).map(hypothesisOut) };
-      if (!r) return { ...out, lists: null, reason: "The two lists need a complete family." };
+      if (!r) return { ...out, lists: null, reason: "The two lists need a complete family whose charts have not changed since it ran." };
       const lists = { highlights: r.count, unusual: { charts: r.unusual.length, highlighted: r.highlights.unusual.map((id) => finding(table, r, id)), fewer: r.fewer.unusual },
         supported: { charts: r.supported.length, highlighted: r.highlights.supported.map((id) => finding(table, r, id)), fewer: r.fewer.supported } };
       if (o.list === "unusual" || o.list === "supported") {

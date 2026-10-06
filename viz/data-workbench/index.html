@@ -3554,6 +3554,12 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     };
   }
 
+  /** What the study details say of independence, in words. */
+  function independence(study) {
+    if (study?.independent === "no" || String(study?.repeated ?? "").startsWith("field:") || study?.design === "clustered") return "the tests of independent rows are off, as the study details say";
+    return study?.independent === "yes" ? "independence stated by you" : "independence assumed, not confirmed";
+  }
+
   /**
    * A table's findings as list items: the family's counts, then each list's highlights (titles name fields, so they
    * stay in the body, escaped, and never in narration).
@@ -3562,7 +3568,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   function findings(f) {
     if (!f?.family) return ["- Findings: the statistics have not run yet."];
     const fam = f.family;
-    const head = `- Findings (catalogue v${cell(fam.catalogue)}), family ${cell(fam.name)}, run ${n(fam.run)}: ${count(fam.size, "hypothesis", "hypotheses")}, ${n(fam.m)} tested, ${n(fam.notTested)} not tested; ${fam.status === "complete" ? `${n(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli)` : "incomplete, so no adjusted p-values"}; ${fam.study?.independent === "yes" ? "independence stated" : "independence assumed, not confirmed"}.`;
+    const head = `- Findings (catalogue v${cell(fam.catalogue)}), family ${cell(fam.name)}, run ${n(fam.run)}: ${count(fam.size, "hypothesis", "hypotheses")}, ${n(fam.m)} tested, ${n(fam.notTested)} not tested; ${fam.status === "complete" ? `${n(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli)` : "incomplete, so no adjusted p-values"}; ${independence(fam.study)}.`;
     if (!f.unusual) return [head];
     const p = (x) => (x < 1e-4 ? (x === 0 ? "< 1e-300" : x.toExponential(1)) : String(Math.round(x * 1e4) / 1e4));
     return [head,
@@ -5791,7 +5797,8 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
  * counts, means, variances, ranks' correlations, medians and tables of counts only.
  *
  *   spearman    n, rho (the correlation of average ranks) and the distinct values of x and y
- *   groups      per level of c: n, mean, variance, skewness, median, MAD and the farthest value from the median
+ *   groups      per level of c: n, mean, variance, skewness, median, MAD and the farthest value from the median;
+ *               keptLevels maps c to the levels a chart keeps and Other first
  *   shape       n, skewness, excess kurtosis, median, MAD and the values with robust z above 3.5
  *   serial      the lag-1 autocorrelation of x in the order of t (ties by source row)
  */
@@ -5808,6 +5815,10 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
 
   /** A relation's rows where the alias s equals one level: a subset family. */
   const within = (rel, level) => `SELECT * FROM (${rel}) WHERE ${ident("s")} = ${literal(level)}`;
+
+  /** A relation's category c mapped to the levels a chart keeps, the rest to one Other label, as the chart draws them. */
+  const keptLevels = (rel, levels, other) =>
+    `SELECT r, coalesce(${levels.length ? `CASE WHEN c IN (${levels.map(literal).join(", ")}) THEN c END` : "NULL::VARCHAR"}, ${literal(other)}) AS c, k, x FROM (${rel})`;
 
   /** The average rank of an alias: rank() plus half the other rows tied with it. */
   const avgRank = (a) => `(rank() OVER (ORDER BY ${ident(a)}) + (count(*) OVER (PARTITION BY ${ident(a)}) - 1) / 2.0)`;
@@ -5840,7 +5851,7 @@ SELECT n, skew, kurt, med, mad, (SELECT count(*) FROM d WHERE s.mad > 0 AND abs(
 SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   }
 
-  return { usable, within, spearman, groups, shape, serial };
+  return { usable, within, keptLevels, spearman, groups, shape, serial };
 });
 </script>
 <script id="family">
@@ -5932,14 +5943,16 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   /* ---------- what each test needs, from the engine ---------- */
 
   /**
-   * The open stand-ins of each numeric field (suspected errors the person has not approved as missing), by field.
-   * @param {any[]} columns the profiles
+   * The open stand-ins of each numeric field, by field: suspected errors the person has neither approved as missing
+   * (the profile then reads them as missing) nor dismissed (then they are values like any other).
+   * @param {any[]} columns the profiles @param {string[]} [dismissed] the ids of dismissed suggestions
    */
-  function sentinelsOf(columns) {
+  function sentinelsOf(columns, dismissed = []) {
     /** @type {Record<string, number[]>} */
     const out = {};
     for (const c of columns) {
-      const list = (c.errors ?? []).filter((e) => e.kind === "sentinel").map((e) => Number(e.examples[0])).filter(Number.isFinite);
+      const list = (c.errors ?? []).filter((e) => e.kind === "sentinel" && !dismissed.includes(`${c.name}::sentinel::${e.examples[0]}`))
+        .map((e) => Number(e.examples[0])).filter(Number.isFinite);
       if (list.length) out[c.name] = list;
     }
     return out;
@@ -5950,7 +5963,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
    * needs, then decide. Cancel (o.stopped) leaves the family incomplete, with no adjusted p-values.
    * @param {(sql: string) => Promise<any[]>} query
    * @param {{ table: string, name: string, run: number, subset?: { field: string, level: string } | null, ctx: any, classes: any[], columns: any[],
-   *   study?: any, stopped?: () => boolean, progress?: (text: string, done: number, total: number) => void }} o
+   *   dismissed?: string[], study?: any, stopped?: () => boolean, progress?: (text: string, done: number, total: number) => void }} o
    */
   async function run(query, o) {
     const ctx = o.ctx;
@@ -5960,7 +5973,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     const counts = { q: 0, c: 0, t: 0 };
     for (const f of fields) if (f.cls === "Q" || f.cls === "C" || f.cls === "T") counts[/** @type {"q" | "c" | "t"} */ (f.cls.toLowerCase())] += 1;
     const list = members(classes).map((m) => ({ ...m, id: hypothesisId(o.name, m.pattern, m.fields), key: keyOf(m.pattern, m.fields) }));
-    const sentinels = sentinelsOf(o.columns);
+    const sentinels = sentinelsOf(o.columns, o.dismissed ?? []);
     const fam = {
       name: o.name, table: o.table, run: o.run, subset, catalogue: CATALOGUE, grammar: Grammar.VERSION, alpha: ALPHA, method: "Benjamini–Yekutieli",
       counts, size: size(counts), definition: definition(o.name, counts, subset),
@@ -5979,7 +5992,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     const cat = (name) => {
       const c = ChartSql.category(field(name));
       const s = sentinels[name] ?? [];
-      return s.length ? { label: `CASE WHEN (${c.key}) NOT IN (${s.join(", ")}) THEN ${c.label} END`, key: c.key } : c;
+      return { field: name, key: c.key, label: s.length ? `CASE WHEN (${c.key}) NOT IN (${s.join(", ")}) THEN ${c.label} END` : c.label };
     };
     const tim = (name) => ChartSql.time(field(name));
 
@@ -5995,6 +6008,19 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
       const by = new Map(rows.map((x) => [x.p, x]));
       const points = per.periods.map((p) => ({ p, n: by.get(p)?.n ?? 0, mean: by.get(p)?.mean ?? null }));
       return { unit: per.unit, points, periods: per.periods.length, unplaced: per.unplaced };
+    }
+
+    /**
+     * The groups of a category against a measure as the chart draws them, its 12 most frequent levels and Other, for
+     * the descriptive effect of a category of more than 12 levels (no test takes so many groups).
+     */
+    async function drawnGroups(k, q) {
+      const r = rel({ c: k.label, k: k.key, x: meas(q) }, ["c", "x"]);
+      const lv = await kept(r, "c", "k", k.field);
+      const other = `Other (${lv.other} levels)`;
+      const rows = (await query(StatSql.groups(StatSql.keptLevels(r, lv.levels, other)))).map((g) => ({ level: g.level, n: g.n, mean: g.mean, var: g.var }));
+      const at = (l) => (l === other ? lv.levels.length : lv.levels.indexOf(l));
+      return rows.sort((x, y) => at(x.level) - at(y.level));
     }
 
     /** Category levels in their chart order, the 12 most frequent kept and the rest as Other. */
@@ -6068,7 +6094,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     const shared = new Map();
     fam.members.forEach((m) => steps.push({ text: `${PATTERNS[/** @type {keyof typeof PATTERNS} */ (m.pattern)].label} of ${m.fields.join(" and ")}`, run: async () => {
       const [a, b] = m.fields;
-      try {
+      {
         if (m.pattern === "monotone") {
           const s = (await query(StatSql.spearman(rel({ x: meas(a), y: meas(b) }, ["x", "y"]))))[0];
           m.measured = { n: s.n, rho: s.rho, distinct: [s.dx, s.dy] };
@@ -6076,7 +6102,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
           const k = cat(a);
           const groups = (await query(StatSql.groups(rel({ c: k.label, k: k.key, x: meas(b) }, ["c", "x"])))).map((g) => ({ level: g.level, key: g.sort_key, n: g.n, mean: g.mean, var: g.var, skew: g.skew, med: g.med, mad: g.mad, far: g.far }));
           if (field(a).ordered) groups.sort((x, y) => (x.key ?? 0) - (y.key ?? 0) || String(x.level).localeCompare(String(y.level)));
-          m.measured = { groups };
+          m.measured = { groups, drawn: groups.length > MAX_GROUPS ? await drawnGroups(k, b) : null };
         } else if (m.pattern === "association") {
           const ka = cat(a), kb = cat(b);
           const r = rel({ cx: ka.label, kx: ka.key, cy: kb.label, ky: kb.key }, ["cx", "cy"]);
@@ -6089,12 +6115,10 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
           if (!shared.has(key)) shared.set(key, series(a, b));
           m.measured = { ...(await shared.get(key)) };
         }
-      } catch (error) {
-        if (o.stopped?.()) throw error;
-        m.measured = { error: String(error?.message ?? error).split("\n")[0].slice(0, 300) };
       }
     } }));
-    // A stop keeps what was computed; an engine error (the memory budget, for one) stops the run with its reason.
+    // A stop keeps what was computed; an engine error (the memory budget, for one) stops the run with its reason, and
+    // the family is incomplete: an adjustment over fewer members than the family's would understate every p-value.
     let done = 0;
     for (const s of steps) {
       if (o.stopped?.()) break;
@@ -6116,7 +6140,8 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   function describeSeries(s, values) {
     const k = values.length > 1 ? Stats.kendall(values) : null;
     const shift = values.length > 2 ? Stats.levelShift(values) : null;
-    return { unit: s.unit, periods: values.length, tau: k ? k.tau : 0, shiftSd: shift && !shift.failed && Number.isFinite(shift.effect.value) ? shift.effect.value : 0, shift: shift?.shift ?? null };
+    // A series that only steps, with no noise about its two levels, shifts by an unbounded number of SDs.
+    return { unit: s.unit, periods: values.length, tau: k ? k.tau : 0, shiftSd: shift && !shift.failed && !Number.isNaN(shift.effect.value) ? shift.effect.value : 0, shift: shift?.shift ?? null };
   }
 
   /** The family's definition in words. */
@@ -6133,7 +6158,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   /** Why a test that assumes independent rows does not apply to a member, or "". */
   function dependence(fam, m, study) {
     if (study.independent === "no") return "Not tested: you said the observations are not independent.";
-    if (study.repeated && study.repeated !== "none") return `Not tested: you said the rows hold repeated measurements by ${study.repeated}.`;
+    if (repeatedBy(study)) return `Not tested: you said the rows hold repeated measurements by ${repeatedBy(study)}.`;
     if (study.design === "clustered") return "Not tested: you said the sample is clustered, and this test assumes independent rows.";
     const rep = fam.independence.repeated[0];
     if (rep) return `Not tested: independence contradicted. The identifier ${rep.field} repeats in ${pct(rep.share)} of its values (repeated measurements).`;
@@ -6141,6 +6166,9 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     if (s) return `Not tested: independence contradicted. ${s.field} has a lag-1 autocorrelation of ${fmt(s.r1)} (p ${s.p < 0.001 ? "< 0.001" : fmt(s.p, 3)}) in the order of ${s.time}.`;
     return "";
   }
+
+  /** The field the person said holds repeated measurements (study.repeated "field:<name>"), or "". */
+  const repeatedBy = (study) => (String(study.repeated ?? "").startsWith("field:") ? String(study.repeated).slice(6) : "");
 
   /** The normality support of a group: n at least 30, or |skewness| at most 1 and no value with robust z above 5. */
   function support(g) {
@@ -6166,7 +6194,6 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     const pat = PATTERNS[/** @type {keyof typeof PATTERNS} */ (m.pattern)];
     const d = m.measured;
     if (!d) return { status: "not run", reason: "Not computed: the run stopped before this member.", effect: null };
-    if (d.error) return { status: "not tested", reason: `Not tested: the engine could not compute it (${d.error}).`, effect: null };
     const out = (reason, effect) => ({ status: "not tested", reason, effect });
     const blocked = pat.independent ? dependence(fam, m, study) : "";
     if (m.pattern === "monotone") {
@@ -6180,8 +6207,9 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     }
     if (m.pattern === "difference") {
       const g = d.groups;
-      const effect = g.length === 2 && g.every((x) => x.n > 1 && x.var !== null) && g[0].n + g[1].n > 2 ? { name: "Hedges' g", value: Stats.hedges(g[0], g[1]).value }
-        : g.length > 2 ? { name: "omega-squared", value: Stats.omegaSquared(g.map((x) => ({ ...x, var: x.var ?? 0 }))) } : null;
+      const shown = d.drawn ?? g;
+      const effect = shown.length === 2 && shown.every((x) => x.n > 1 && x.var !== null) ? { name: "Hedges' g", value: Stats.hedges(shown[0], shown[1]).value }
+        : shown.length > 2 ? { name: "omega-squared", value: Stats.omegaSquared(shown.map((x) => ({ ...x, var: x.var ?? 0 }))) } : null;
       const good = effect && Number.isFinite(effect.value) ? effect : null;
       if (blocked) return out(blocked, good);
       if (g.length < 2) return out("Not tested: one group only.", null);
@@ -6210,7 +6238,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     const need = m.pattern === "trend" ? 12 : 20;
     const values = reg.values;
     const desc = m.pattern === "trend" ? (values.length > 1 ? { name: "Kendall's tau", value: Stats.kendall(values).tau } : null)
-      : (() => { const s = values.length > 2 ? Stats.levelShift(values) : null; return s && !s.failed && Number.isFinite(s.effect.value) ? { name: "shift in long-run SD", value: s.effect.value } : null; })();
+      : (() => { const s = values.length > 2 ? Stats.levelShift(values) : null; return s && !s.failed && !Number.isNaN(s.effect.value) ? { name: "shift in long-run SD", value: s.effect.value } : null; })();
     if (values.length < need) return out(`Not tested: ${plural(values.length, "period", "periods")} with a value (by ${d.unit ?? "period"}), fewer than the ${need} ${m.pattern === "trend" ? "T7" : "T8"} needs.`, desc);
     if (!reg.ok) return out(`Not tested: the periods are not regular: ${reg.empty} of ${reg.span} ${d.unit}s between the first and the last are empty (more than 10%).`, desc);
     const result = m.pattern === "trend" ? Stats.mannKendall(values) : Stats.levelShift(values);
@@ -6259,7 +6287,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   /** The tested members of a family by key, for the charts that show them. */
   const byKey = (fam) => new Map(fam.members.map((m) => [m.key, m]));
 
-  return { CATALOGUE, ALPHA, SEED, TESTS, PATTERNS, DESIGNS, NO_STUDY, members, size, keyOf, hypothesisId, patternsOfKind, sentinelsOf, run, decide, byKey, describeSeries };
+  return { CATALOGUE, ALPHA, SEED, TESTS, PATTERNS, DESIGNS, NO_STUDY, members, size, keyOf, hypothesisId, patternsOfKind, sentinelsOf, repeatedBy, run, decide, byKey, describeSeries };
 });
 </script>
 <script id="rank">
@@ -6357,7 +6385,8 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
    * @param {{ kind: string, fields: string[] }} cand @param {any} fam a decided family @param {Map<string, any>} keys
    */
   function usefulness(cand, fam, keys) {
-    const part = (name, value, large, scale = Math.abs(value) / large) => ({ name, value, large, score: clamp(Number.isFinite(scale) ? scale : 0) });
+    // An unbounded effect (a shift with no noise about its two levels) is as large as can be.
+    const part = (name, value, large, scale = Math.abs(value) / large) => ({ name, value, large, score: Number.isNaN(scale) ? 0 : clamp(scale) });
     const best = (parts) => parts.reduce((a, p) => (p.score > a.score ? p : a), parts[0]);
     const none = (why) => ({ name: "none", value: null, large: null, score: 0, why });
     const [a, b] = cand.fields;
@@ -6464,7 +6493,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
   /** A chart's redundancy cluster: its grammar pattern and its fields, each as its group's first field. */
   function clusterOf(cand, subs) {
     const pattern = Grammar.KIND[cand.kind].pattern;
-    const key = `${pattern}:${cand.fields.map(subs.of).sort().join(",")}`;
+    const key = `${pattern}:${JSON.stringify(cand.fields.map(subs.of).sort())}`;
     return { key, id: `r${shortHash(key)}` };
   }
 
@@ -6564,14 +6593,18 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
         break;
       }
       case "box-by-group": case "mean-bar": {
-        const g = m0?.measured?.groups ?? [];
+        // A category of more than 12 levels is described by its groups as the chart draws them: 12 levels and Other.
+        const g = m0?.measured?.drawn ?? m0?.measured?.groups ?? [];
         if (g.length === 2) {
-          const h = Stats.hedges(g[0], g[1]);
           out.push(`Mean ${b}: ${fmt(g[0].mean, 4)} in ${g[0].level} (n ${whole(g[0].n)}) and ${fmt(g[1].mean, 4)} in ${g[1].level} (n ${whole(g[1].n)}); ${g[0].level} − ${g[1].level} = ${fmt(g[0].mean - g[1].mean, 4)}${m0.result?.difference ? ci(m0.result.difference.ci, 4) : ""}.`);
-          if (Number.isFinite(h.value)) out.push(`Hedges' g ${fmt(h.value)}${ci(h.ci)}.`);
+          // Hedges' g needs a variance in each group, as the usefulness does.
+          if (g.every((x) => x.n > 1 && x.var !== null)) {
+            const h = Stats.hedges(g[0], g[1]);
+            if (Number.isFinite(h.value)) out.push(`Hedges' g ${fmt(h.value)}${ci(h.ci)}.`);
+          }
         } else if (g.length > 2) {
           const lo = g.reduce((x, y) => (y.mean < x.mean ? y : x)), hi = g.reduce((x, y) => (y.mean > x.mean ? y : x));
-          out.push(`Mean ${b} by ${a}, ${g.length} groups: from ${fmt(lo.mean, 4)} (${lo.level}, n ${whole(lo.n)}) to ${fmt(hi.mean, 4)} (${hi.level}, n ${whole(hi.n)}); omega-squared ${fmt(m0.effect?.value ?? 0, 3)}.`);
+          out.push(`Mean ${b} by ${a}, ${g.length} groups${m0.measured.drawn ? " as drawn" : ""}: from ${fmt(lo.mean, 4)} (${lo.level}, n ${whole(lo.n)}) to ${fmt(hi.mean, 4)} (${hi.level}, n ${whole(hi.n)}); omega-squared ${fmt(m0.effect?.value ?? 0, 3)}.`);
         }
         break;
       }
@@ -7357,17 +7390,23 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
       if (!subset) Object.assign(st, { status: "running", reason: "" });
       st.runs += 1;
       app.refresh();
+      // The charts this run ranks: a later regeneration makes the lists stale until the statistics run again.
+      const chartsAt = charts.timing?.start ?? null;
       let fam;
       try {
         fam = await Family.run(api.query, { table: table.name, name, run: st.runs, subset, ctx: charts.ctx, classes: charts.classes, columns: table.columns,
-          study: st.study, stopped: () => store.stop, progress: app.progress });
+          dismissed: table.dismissed, study: st.study, stopped: () => store.stop, progress: app.progress });
       } catch (error) {
         if (!subset) Object.assign(st, { status: "failed", reason: app.message(error) });
         app.note({ kind: "failed", table: table.name, text: `The statistics of ${name} could not run: ${app.message(error)}` });
         return;
       }
       if (subset) st.subsets = [...st.subsets.filter((x) => x.name !== name), fam];
-      else Object.assign(st, { family: fam, status: fam.status, reason: fam.reason });
+      else {
+        // Subset families were computed from the table as it read before: they go, and can be opened again.
+        if (st.subsets.length) app.note({ kind: "statistics", table: table.name, text: `The subset families of ${table.name} (${st.subsets.map((f) => f.name).join("; ")}) were closed: the table's statistics ran again.` });
+        Object.assign(st, { family: fam, status: fam.status, reason: fam.reason, chartsAt, subsets: [] });
+      }
       app.note({ kind: "statistics", table: table.name, text: `Statistics of ${name}, run ${fam.run} (catalogue v${Family.CATALOGUE}): ${plural(fam.members.length, "hypothesis", "hypotheses")}, ${fmtInt(fam.m)} tested, ${fmtInt(fam.notTested)} not tested; `
         + (fam.status === "complete" ? `${fmtInt(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli).` : `incomplete (${fam.reason}), so no adjusted p-values.`) });
     }
@@ -7382,7 +7421,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
       if (st.family) st.family = Family.decide(st.family, next);
       st.subsets = st.subsets.map((f) => Family.decide(f, next));
       const said = [`independent observations: ${INDEPENDENT.find(([v]) => v === next.independent)?.[1].toLowerCase()}`,
-        `repeated measurements: ${next.repeated === "" ? "not stated" : next.repeated === "none" ? "none" : `by ${next.repeated}`}`, `sample design: ${next.design}`];
+        `repeated measurements: ${next.repeated === "" ? "not stated" : next.repeated === "none" ? "none" : `by ${Family.repeatedBy(next)}`}`, `sample design: ${next.design}`];
       app.note({ kind: "changed", table: table.name, text: `You set the study details of ${table.name}: ${said.join("; ")}.${st.family ? ` The tests were decided again: ${fmtInt(st.family.m)} tested, ${fmtInt(st.family.flagged)} with an adjusted p-value at or below 0.05.` : ""}` });
       app.refresh();
     }
@@ -7391,19 +7430,23 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
 
     /* ---------- ranking ---------- */
 
-    /** The ranked lists of a table, or null while its family is not complete. */
+    /** Whether the charts were drawn again since the table's statistics ran. */
+    const stale = (st, charts) => !!st?.family && !!charts && st.chartsAt !== (charts.timing?.start ?? null);
+
+    /** The ranked lists of a table, or null while its family is not complete or its charts changed since. */
     function ranked(name) {
       const st = stateOf(name), charts = app.gallery.state(name);
-      if (!st?.family || st.family.status !== "complete" || !charts) return null;
+      if (!st?.family || st.family.status !== "complete" || !charts || stale(st, charts)) return null;
       return Rank.rank(charts.candidates, st.family, { ctx: charts.ctx, classes: charts.classes, highlights: app.highlights() });
     }
 
-    /** The suspected data errors of each field, for the cautions. */
+    /** The suspected data errors of each field, for the cautions: a stand-in the person dismissed is a value, not an error. */
     function errorsOf(table) {
       const out = {};
       for (const c of table.columns) {
-        const count = (c.errors ?? []).reduce((a, e) => a + e.count, 0);
-        if (count) out[c.name] = { count, sentinels: (c.errors ?? []).filter((e) => e.kind === "sentinel").reduce((a, e) => a + e.count, 0) };
+        const open = (c.errors ?? []).filter((e) => e.kind !== "sentinel" || !table.dismissed.includes(`${c.name}::sentinel::${e.examples[0]}`));
+        const count = open.reduce((a, e) => a + e.count, 0);
+        if (count) out[c.name] = { count, sentinels: open.filter((e) => e.kind === "sentinel").reduce((a, e) => a + e.count, 0) };
       }
       return out;
     }
@@ -7440,15 +7483,16 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
         fam.status === "complete" ? `${fmtInt(fam.flagged)} with an adjusted p-value at or below 0.05.` : "no adjusted p-values while the family is incomplete."));
       else out.push(h("p", { class: "note", "data-family": st.status, text: st.status === "running" ? "Running the statistics…" : `The statistics could not run: ${st.reason}` }));
       if (store.busy) out.push(h("p", { class: "actions" }, h("button", { type: "button", onclick: () => app.cancel(), text: "Cancel" }), h("span", { class: "note", text: ` ${store.busy.text}` })));
-      else if (st.status !== "complete" && st.status !== "running") out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics again" })));
+      else if ((st.status !== "complete" && st.status !== "running") || stale(st, charts)) out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", onclick: () => analyse(table), text: "Run the statistics again" })));
       out.push(study(table, st, charts));
       const r = ranked(table.name);
       if (r) {
         out.push(h("div", { class: "filters" }, h("div", { class: "field" },
           h("label", { for: "highlight-count", text: "Distinct highlights per list (0 to 50)" }),
-          h("input", { id: "highlight-count", type: "number", min: "0", max: "50", step: "1", value: String(r.count), onchange: (ev) => app.setHighlights(Number(ev.target.value)) }))));
+          // An emptied field keeps the count it had.
+          h("input", { id: "highlight-count", type: "number", min: "0", max: "50", step: "1", value: String(r.count), onchange: (ev) => (ev.target.value.trim() === "" ? draw() : app.setHighlights(Number(ev.target.value))) }))));
         out.push(list(table, st, r, "unusual"), list(table, st, r, "supported"));
-      } else if (fam) out.push(h("p", { class: "warn-text", text: "The two lists need a complete family: run the statistics again to rank the charts." }));
+      } else if (fam) out.push(h("p", { class: "warn-text", text: stale(st, charts) ? "The charts were drawn again since the statistics ran: run the statistics again to rank them." : "The two lists need a complete family: run the statistics again to rank the charts." }));
       if (fam) out.push(familyView(fam, st, "family", `Hypothesis family ${fam.name}, run ${fam.run}: every member, tested or why not`));
       if (fam) out.push(subsets(table, st, charts));
       view.replaceChildren(...out);
@@ -7466,7 +7510,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
         h("p", { class: "note", text: "The figures and both lists are made without them. They decide which tests apply: without them, tests of independent rows run tagged \"independence assumed, not confirmed\", and are refused where the data contradicts independence (an identifier that repeats, serial correlation in time order)." }),
         h("form", { class: "change", onsubmit: (ev) => { ev.preventDefault(); setStudy(table, ev.target); } },
           select("independent", "Independent observations", INDEPENDENT, s.independent),
-          select("repeated", "Repeated measurements", [["", "Not stated"], ["none", "None"], ...fields.map((f) => [f, `By ${f}`])], s.repeated),
+          select("repeated", "Repeated measurements", [["", "Not stated"], ["none", "None"], ...fields.map((f) => [`field:${f}`, `By ${f}`])], s.repeated),
           select("design", "Sample design", Family.DESIGNS.map((d) => [d, d === "unknown" ? "Not stated" : `${d[0].toUpperCase()}${d.slice(1)}`]), s.design),
           h("p", { class: "actions" }, h("button", { type: "submit", disabled: !!store.busy || !st.family, text: "Apply" })),
           h("p", { class: "note", text: "A \"no\", repeated measurements or a clustered design turns off the tests that assume independent rows, each with its reason; trend and level-shift tests allow for dependence in time." })),
@@ -7611,7 +7655,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
         const x = r ? finding(table, r, o.id) : null;
         const cand = app.gallery.state(name)?.candidates.find((c) => c.id === o.id);
         if (!cand) return null;
-        if (!x) return { id: o.id, outcome: cand.outcome, reason: cand.reason || "Not ranked: the family is not complete.", hypotheses: [] };
+        if (!x) return { id: o.id, outcome: cand.outcome, reason: cand.reason || "Not ranked: the family is not complete, or the charts changed since the statistics ran.", hypotheses: [] };
         const keys = new Set(r.entries.get(o.id).hypotheses);
         return { ...x, places: { unusual: r.places.unusual.get(o.id), supported: r.places.supported.get(o.id) ?? null }, hypotheses: st.family.members.filter((m) => keys.has(m.id)).map(hypothesisOut) };
       }
@@ -7619,7 +7663,7 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
       const entry = (id, place) => { const e = r.entries.get(id); return { place, id, kind: e.kind, fields: e.fields, title: e.title, unusualness: e.unusualness, adjusted: e.adjusted ?? undefined, usefulness: e.usefulness.score, measure: e.usefulness.name, penalties: e.penalties.map((p) => p.rule), cluster: e.cluster }; };
       const out = { table: name, family: familyOut(st.family), subsets: st.subsets.map((f) => ({ ...familyOut(f), hypotheses: f.members.map(hypothesisOut) })) };
       if (o.list === "family") return { ...out, offset, hypotheses: st.family.members.slice(offset, offset + 1000).map(hypothesisOut) };
-      if (!r) return { ...out, lists: null, reason: "The two lists need a complete family." };
+      if (!r) return { ...out, lists: null, reason: "The two lists need a complete family whose charts have not changed since it ran." };
       const lists = { highlights: r.count, unusual: { charts: r.unusual.length, highlighted: r.highlights.unusual.map((id) => finding(table, r, id)), fewer: r.fewer.unusual },
         supported: { charts: r.supported.length, highlighted: r.highlights.supported.map((id) => finding(table, r, id)), fewer: r.fewer.supported } };
       if (o.list === "unusual" || o.list === "supported") {
@@ -7984,6 +8028,8 @@ SELECT count(*)::DOUBLE AS n, sum(e * pe) AS num, sum(e * e) AS den FROM o`;
     table.dismissed.push(id);
     note({ kind: "dismissed", table: table.name, column: colName, text: `Dismissed: ${s.text}` });
     refresh();
+    // A dismissed stand-in is a value again, so the statistics that left it out run again.
+    if (s.kind === "missing-number" && Findings.state(table.name)?.family) Findings.analyse(table);
   }
 
   /** What a change did, for the log. */

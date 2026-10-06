@@ -42,10 +42,13 @@ by descriptive measures only, and say so.
 
 The rows of the chart with every field present, as the profile reads them. Values the profile flags as stand-ins for
 no value (an open sentinel suggestion, such as -999) are left out of every statistic and counted on the finding;
-the figure still draws them, and approving the suggestion in Inspect makes them missing. Nothing else is removed or
-filled. A category of more than 12 levels is tested with its 12 most frequent levels and Other, as the count
-heatmap draws it. A time is read by the period rule of the mean time series (the coarsest of hour, day, week,
-month, quarter or year that gives at least 20 periods), and its tests use the period means.
+the figure still draws them. Approving the suggestion in Inspect makes them missing; dismissing it makes them values
+like any other, and the statistics run again with them. Nothing else is removed or filled. In an association of
+categories, a category of more than 12 levels is tested with its 12 most frequent levels and Other, as the count
+heatmap draws it; against a measure it is not tested (T3 takes at most 12 groups), and its effect and Observed use
+its groups as the chart draws them, the 12 most frequent and Other. A time is read by the period rule of the mean
+time series (the coarsest of hour, day, week, month, quarter or year that gives at least 20 periods), and its tests
+use the period means.
 
 ## Independence
 
@@ -78,7 +81,9 @@ to every result. T7 and T8 allow for dependence in time and run either way.
 
 Failure behaviour: a member that fails a check, or whose test cannot be computed (no variance, a correction that
 leaves none), keeps its descriptive effect where one can be computed and is listed "Not tested" with the reason. Its
-chart is still ranked in the unusual-pattern list; it never enters the statistically supported list.
+chart is still ranked in the unusual-pattern list; it never enters the statistically supported list. An engine error
+(the memory budget, for one) stops the run: the family is incomplete, with the reason, and gets no adjusted
+p-values, since an adjustment over part of a family would understate every one of them.
 
 Reference values: `tests/fixtures/stats-reference.json`, written by `tools/reference_stats.py` with SciPy 1.13.1,
 statsmodels 0.14.6, pymannkendall 1.4.3 and NumPy 2.0.2, which the file records. `tests/stats.test.mjs` compares
@@ -112,7 +117,8 @@ values at or below 0, or a bar does not start at zero. Every score is logged wit
   plot, binned heatmap); Hedges' |g| against 0.8, or omega-squared against 0.14 for 3 or more groups (box plot by
   group, mean bar); bias-corrected Cramér's V against 0.5 (count heatmap; the period-by-category heatmap with the
   periods as levels); |Kendall's tau| against 0.5 or the level shift against 2 long-run SDs, whichever is larger
-  (mean time series; the count time series on its counts). For one measure (histogram, box plot), the largest of
+  (mean time series; the count time series on its counts; a series that only steps, with no noise about its two
+  levels, shifts by an unbounded number of SDs and scores 1). For one measure (histogram, box plot), the largest of
   |skewness| against 2, a bimodality coefficient above 0.555 (1, else 0), and the share of values with robust z
   above 3.5 against 1%. For one category (bar chart), the rarity of its rarest level, 1 − k · its share, against
   0.95, for at most 29 levels. Timelines have no effect measure and score 0.
@@ -128,6 +134,9 @@ values at or below 0, or a bar does not start at zero. Every score is logged wit
   (|rho| or V at least 0.95) counted as the first of them in column order. Each chart has a cluster id.
 - **Distinct highlights**: from the top of each list, skipping a chart whose cluster is chosen or that shares more
   than one field with a chosen chart; 6 by default, 0 to 50 by choice, fewer when fewer are distinct, stated.
+- The lists rank the charts the statistics ran with. The statistics run again after every regeneration of the charts
+  that is not cancelled; until then the lists are hidden, with a button to run them. A subset family closes when the
+  table's statistics run again.
 
 Each highlight shows **Observed** (the numbers: the effect with its interval, the sample count, supporting values)
 apart from **Why highlighted** (the rule scores and its places), its statistical status, and fixed cautions that

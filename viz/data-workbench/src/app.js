@@ -346,6 +346,8 @@
     table.dismissed.push(id);
     note({ kind: "dismissed", table: table.name, column: colName, text: `Dismissed: ${s.text}` });
     refresh();
+    // A dismissed stand-in is a value again, so the statistics that left it out run again.
+    if (s.kind === "missing-number" && Findings.state(table.name)?.family) Findings.analyse(table);
   }
 
   /** What a change did, for the log. */
