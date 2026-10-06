@@ -432,6 +432,11 @@
     if (!rg || !rg.ready) {
       const r = rg ?? { reason: "no-declaration", message: "", next: "" };
       const blocked = r.reason === "blocked" ? (r.blockedBy ?? []).map((/** @type {string} */ id) => d.interp.issues.find((/** @type {any} */ i) => i.id === id)).filter(Boolean) : [];
+      if (r.reason === "no-declaration" && d.stability?.kind === "custom") {
+        gate.innerHTML = `<div class="callout"><p><strong>This record is a custom ODE system.</strong> The regime map needs a declared model. The stability and bifurcation analysis below runs on the custom system.</p></div>`;
+        main.hidden = true;
+        return;
+      }
       gate.innerHTML = `<div class="callout ${r.reason === "no-declaration" ? "" : "bad"}"><p><strong>${r.reason === "no-declaration" ? "This record names no declared model." : r.reason === "blocked" ? "A failed check blocks the regime map." : r.reason === "mismatch" ? "The record's dimensionless model is not the declared model." : "The regime map cannot run on this record."}</strong> ${esc(r.message)}</p>
         ${blocked.map((/** @type {any} */ i) => `<p>${esc(i.message)} <span class="next">Next: ${esc(i.next)}</span></p>`).join("")}
         ${(r.problems ?? []).length ? `<ul class="issue-list">${r.problems.map((/** @type {string} */ p) => `<li>${chip("unresolved")} ${esc(p)}</li>`).join("")}</ul>` : ""}
@@ -512,7 +517,7 @@
       ${b ? `<p>${chip(b.status)} ${esc(b.label)}. <strong>${esc(rg.boundaryTypes.find((/** @type {any} */ x) => x.id === b.boundary)?.name ?? b.boundary)}.</strong> Criterion: ${esc(b.criterion)}. ${b.refined ? `Brent's method refines the point on the boundary. The residual of the criterion there is ${esc(fmt(b.residual))} (log scale).` : "The point is the nearest drawn point of the boundary."} Evidence: ${b.evidence.map(sourceLink).join(", ")}.</p>${b.boundary === "balance-crossover" ? `<p class="note">${esc(rg.analysis.balance.note)}</p>` : ""}` : ""}
       <p><strong>${esc(pText)}</strong>${insp.ok ? "" : ` ${chip("unresolved")} ${esc(insp.reason)}`}</p>
       ${insp.ok ? `<div class="scroll"><table class="data"><caption class="visually-hidden">Layers at the inspected point</caption><thead><tr><th scope="col">Layer</th><th scope="col">Value</th><th scope="col">Here</th></tr></thead><tbody>${insp.layers.map((/** @type {any} */ l) => `<tr><td>${esc(l.title)}</td><td class="num">${esc(fmt(l.value))}</td><td>${l.kind === "approximation" ? (l.meets ? "meets the tolerance" : "does not meet it") : esc(l.region ?? "")}</td></tr>`).join("")}</tbody></table></div>
-      <h4>Applicable reduced models</h4>${insp.reduced.length ? `<ul class="plain-list">${insp.reduced.map((/** @type {any} */ r) => `<li>${esc(r.label)}: ${ti(r.tex)} <span class="note">${esc(r.limit)}</span></li>`).join("")}</ul>` : `<p>${chip("unresolved")} No approximation meets the tolerance here: only the full solution is accurate.</p>`}
+      <h4>Applicable reduced models</h4>${insp.reduced.length ? `<ul class="plain-list">${insp.reduced.map((/** @type {any} */ r) => `<li>${esc(r.label)}: ${ti(r.tex)} <span class="note">${esc(r.limit)}</span></li>`).join("")}</ul>` : !rg.approximations.length ? `<p class="muted">This declared model has no reduced models: the stability and bifurcation analysis is below the map.</p>` : `<p>${chip("unresolved")} No approximation meets the tolerance here: only the full solution is accurate.</p>`}
       <div id="regime-profile"></div>
       ${(det.values ?? []).length ? `<h4>Values</h4><ul class="plain-list">${det.values.map((/** @type {any} */ v) => `<li>${ti(v.tex)} = ${esc(v.exact ?? fmt(v.value))} <span class="note">${esc(v.label)}</span></li>`).join("")}</ul>` : ""}
       ${(det.nodes ?? []).length ? `<h4>Temperatures along the path (θ = 1 at fluid 1, 0 at fluid 2)</h4><ul class="plain-list">${det.nodes.map((/** @type {any} */ n) => `<li>${esc(n.at)}: θ = ${esc(fmt(n.theta))}</li>`).join("")}</ul>` : ""}

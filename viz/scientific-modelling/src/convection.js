@@ -7,7 +7,7 @@
  * Linear stability: normal modes exp(σt + iax) and Chebyshev collocation on a basis that meets the wall conditions
  * (W = (1−ξ²)²p, Θ = (1−ξ²)q, ξ = 2z), so every eigenproblem is a standard one: the neutral Rayleigh number at
  * each wavenumber, the critical point, the temporal growth rates σ and their modes. The enclosure with stress-free,
- * insulating side walls admits only the wavenumbers nπ/Γ. Nonlinear: steady two-dimensional rolls of one
+ * adiabatic side walls admits only the wavenumbers nπ/Γ. Nonlinear: steady two-dimensional rolls of one
  * horizontal period, Fourier in x (ψ odd, θ even) and the same collocation in z, solved by Newton's method and
  * followed in Ra by pseudo-arclength continuation, with the Nusselt number from the volume average and from both
  * walls. A weakly nonlinear (Landau) coefficient from the same operators classifies the onset.
@@ -106,7 +106,7 @@
     return { sigma: ev, lead, residual: v.residual, mode: { p: v.re.slice(0, K), q: v.re.slice(K) } };
   }
 
-  /** Onset in a 2D enclosure of aspect ratio Γ with stress-free insulating side walls: a = nπ/Γ, n = 1, 2, ... */
+  /** Onset in a 2D enclosure of aspect ratio Γ with stress-free adiabatic side walls: a = nπ/Γ, n = 1, 2, ... */
   function enclosureOnset(K, Gamma, nmax = 12) {
     const modes = [];
     for (let n = 1; n <= nmax; n++) {
@@ -529,7 +529,7 @@
           { id: "unstable", tex: "N_u", label: "box modes with σ > 0", value: bm.modes.filter((m) => p.Ra > m.Ra).length },
         ],
         checks: [{ id: "exchange", title: "The largest growth rate is real (exchange of stabilities)", passed: real, status: "numerical", tolerance: "|Im σ| ≤ 1e-8 max(1, |Re σ|)", detail: `σ₁ = ${num(gr.lead.re)}${gr.lead.im ? ` ${gr.lead.im > 0 ? "+" : "−"} ${num(Math.abs(gr.lead.im))}i` : ""}.` },
-          { id: "residual", title: "Residual of the leading eigenpair", passed: gr.residual < 1e-8, status: "numerical", tolerance: "1e-8", detail: `||Ax − σBx|| ÷ (||A|| ||x||) = ${gr.residual.toExponential(2)}.` }],
+          { id: "residual", title: "Residual of the eigenpair with the largest growth rate", passed: gr.residual < 1e-8, status: "numerical", tolerance: "1e-8", detail: `||Ax − σBx|| ÷ (||A|| ||x||) = ${gr.residual.toExponential(2)}.` }],
         reconstruction: recon };
     };
     const derived = (p) => {
@@ -663,7 +663,7 @@
         branch.field = { xs: branch.field.xs.map((x) => Number(x.toFixed(4))), zs: branch.field.zs.map((z) => Number((z + 0.5).toFixed(4))), T: branch.field.T.map((r) => r.map((v) => Number((v + 0.5).toFixed(4)))) };
       } else branch = { ok: false, reason: br.reason };
       return {
-        family: "buoyancy-convection", point: { Ra: p.Ra, Gamma: p.Gamma, Pr: p.Pr }, concept: "linear temporal stability of the conductive state to two-dimensional normal modes; nonlinear steady rolls in the symmetric subspace of the box",
+        family: "buoyancy-convection", point: { Ra: p.Ra, Gamma: p.Gamma, Pr: p.Pr }, concept: "linear temporal stability of the conductive state to two-dimensional normal modes, and nonlinear steady rolls in the symmetric subspace of the box",
         box: { n: bm.n, a: num(bm.a), Ra: num(bm.Ra), modes }, lead: { re: num(lead.lead.re), im: num(lead.lead.im), residual: lead.residual, spectrum: lead.sigma.slice(0, 8).map((e) => ({ re: num(e.re), im: num(e.im) })) },
         shape, curve, critical: crit.map((c) => ({ K: c.K, Ra: num(c.Ra), a: num(c.a) })),
         transversality: { dsigma: num((sp - sm) / (2 * dRa)), second: num(atOnset.sigma[1].re), zero: num(atOnset.lead.re) }, branch,

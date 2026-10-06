@@ -43,10 +43,12 @@
     const target = G(thetaI, a) - tau;
     const f = (th) => G(th, a) - target;
     // G decreases from θ_i towards a from either side, so f changes sign between θ_i and a (exclusive).
-    const lo = Math.min(thetaI, a), hi = Math.max(thetaI, a);
     const eps = 1e-15 * a;
-    const r = SF.brent(f, thetaI > a ? a + eps : thetaI, thetaI > a ? thetaI : a - eps, 1e-15);
-    return r === null ? (lo + hi) / 2 : r;
+    const near = thetaI > a ? a + eps : a - eps;
+    // Past the time where θ is within 10⁻¹⁵ of a, double precision cannot separate θ from a.
+    if (f(near) * f(thetaI) > 0) return a;
+    const r = SF.brent(f, Math.min(near, thetaI), Math.max(near, thetaI), 1e-15);
+    return r === null ? a : r;
   }
   const linearDecay = (thetaI, q, tau) => { const a = equilibrium(q); return a + (thetaI - a) * Math.exp(-4 * a ** 3 * tau); };
   /** Emission only (θ⁴ ≫ 1 + q): θ_τ = −θ⁴ gives θ = θ_i (1 + 3θ_i³τ)^{−1/3}. */
@@ -67,8 +69,10 @@
     const layers = [
       approxLayer("linear", "Linearized decay", "err-linear", "|θ_lin(τ) − θ(τ)| ÷ |θ_i − θ*|, with θ_lin = θ* + (θ_i − θ*)e^{−4θ*³τ} and θ from the closed form, ≤ the tolerance", steps),
       approxLayer("emission", "Emission only", "err-emission", "|θ_i(1 + 3θ_i³τ)^{−1/3} − θ(τ)| ÷ |θ_i − θ*| ≤ the tolerance: the enclosure and the supplied heat are neglected", steps),
-      balanceLayer("emission-balance", "Emission against the enclosure and the supply", "bal-emission", "θ⁴ ÷ (1 + q): the emitted flux against the absorbed and supplied flux, at the time τ",
-        "Absorption and supply control: the body is near or below the enclosure temperature", "Emission controls: the body cools as θ_τ ≈ −θ⁴", steps, ["spec-8", "lienhard-2024"]),
+      { ...balanceLayer("emission-balance", "Emission against the enclosure and the supply", "bal-emission", "θ⁴ ÷ (1 + q): the emitted flux against the absorbed and supplied flux, at the time τ. The ratio 1 is the equilibrium itself, so the map draws the edges of the crossover band, 1/10 and 10",
+        "Absorption and supply control: the body is far below the equilibrium", "Emission controls: the body cools as θ_τ ≈ −θ⁴", steps, ["spec-8", "lienhard-2024"]),
+      thresholds: () => ({ curves: [{ value: 10, label: "Emission is ten times absorption and supply" }, { value: 0.1, label: "Emission is a tenth of absorption and supply" }],
+        regions: [{ id: "low", label: "Absorption and supply control: the body is far below the equilibrium", lo: 0, hi: 0.1 }, { id: "band", label: "Comparable terms: the balance crossover region", lo: 0.1, hi: 10 }, { id: "high", label: "Emission controls: the body cools as θ_τ ≈ −θ⁴", lo: 10, hi: null }] }) },
       { id: "equilibrium", kind: "stability", boundary: "stability", title: "Stability of the equilibrium", measure: "decay", scale: "log", status: "exact", steps: ["s-st-equilibrium", "s-st-jacobian"], evidence: ["spec-8"],
         criterion: "Linear temporal stability of θ* = (1 + q)^{1/4}: the eigenvalue f′(θ*) = −4θ*³ must be negative. f′(θ) = −4θ³ < 0 for every θ > 0 (exact), so no point of the domain has a neutral equilibrium",
         thresholds: () => ({ curves: [], regions: [{ id: "stable", label: "One equilibrium, linearly stable, and it attracts every θ_i > 0", lo: 0, hi: null }] }) },
@@ -167,7 +171,7 @@
     const taus = Array.from({ length: 41 }, (_, i) => 3 * (i / 40) / Math.abs(lam) + 0);
     const sol = N.rk45((t, y) => [p.q + 1 - y[0] ** 4], 0, [p.theta_i], taus.at(-1), { rtol: 1e-10, atol: 1e-12 });
     return {
-      family: "radiation", model: "lumped-radiation", point: { q: p.q, theta_i: p.theta_i }, concept: "linear temporal stability of the equilibrium; global attraction from the strictly decreasing balance",
+      family: "radiation", model: "lumped-radiation", point: { q: p.q, theta_i: p.theta_i }, concept: "linear temporal stability of the equilibrium, and global attraction because the balance decreases strictly",
       equilibrium: { theta: num(a), residual: Math.abs(p.q + 1 - a ** 4), eigenvalue: num(lam), timeConstant: num(1 / Math.abs(lam)), timeConstantSeconds: ts ? num(ts.float / Math.abs(lam)) : null },
       transient: { tau: taus.map(num), exact: taus.map((t) => num(lumpedTheta(p.theta_i, p.q, t))), linear: taus.map((t) => num(linearDecay(p.theta_i, p.q, t))), rk45: { accepted: sol.accepted, rejected: sol.rejected, end: num(sol.ys.at(-1)[0]), exactEnd: num(lumpedTheta(p.theta_i, p.q, taus.at(-1))) } },
       coverage: "A scalar balance with f′ < 0 has exactly one equilibrium on θ > 0, so the search is complete for this model.",
@@ -258,7 +262,7 @@
       balance: {
         terms: [
           { tex: "\\frac{1-\\varepsilon_1}{\\varepsilon_1}+\\frac{1-\\varepsilon_2}{\\varepsilon_2}", label: "surface resistances of floor and ceiling", scale: "\\frac{1-\\varepsilon}{\\varepsilon}", why: "Lienhard, section 10.4: the surface resistance of a grey surface per unit area." },
-          { tex: "\\left(F_{12}+F_{1R}/2\\right)^{-1}", label: "space resistance with the reradiating walls", scale: "1/F", why: "The direct path in parallel with the path through the side walls." },
+          { tex: "\\left(F_{12}+F_{1R}/2\\right)^{-1}", label: "space resistance with the walls that reradiate", scale: "1/F", why: "The direct path in parallel with the path through the side walls." },
         ],
         balances: [{ title: "Geometry-controlled exchange", when: "\\text{surface}\\ll\\text{space}", derivation: "The surfaces are nearly black.", reduced: "q_1^{*}=(1-\\theta_2^{4})(F_{12}+F_{1R}/2)", neglected: "the surface resistances", assumptions: [],
           residual: { tex: "\\text{surface}/(\\text{surface}+\\text{space})", order: "the exact relative error", status: "exact", note: "" } }],
@@ -282,7 +286,7 @@
     const W = geometry?.width !== undefined ? Q.parse(String(geometry.width)) : null, H = geometry?.height !== undefined ? Q.parse(String(geometry.height)) : null;
     const vf = W && H ? viewFactors(W, H) : null;
     if (vf && vf.exact) {
-      checks.push({ id: "crossed-strings", title: "F₁₂ of the record equals the crossed-string value (√(W² + H²) − H)/W", passed: Q.eq(vf.F12, F12), status: "exact", detail: `W = ${Q.str(W)}, H = ${Q.str(H)}: F₁₂ = ${Q.str(vf.F12)}; the record has ${Q.str(F12)}.` });
+      checks.push({ id: "crossed-strings", title: "F₁₂ of the record equals the crossed-string value (√(W² + H²) − H)/W", passed: Q.eq(vf.F12, F12), status: "exact", detail: `W = ${Q.str(W)}, H = ${Q.str(H)}: F₁₂ = ${Q.str(vf.F12)}. The record has ${Q.str(F12)}.` });
       const A1 = W, AR = Q.mul(Q.q(2), H);
       checks.push({ id: "reciprocity", title: "Reciprocity A₁F₁R = A_R F_R1", passed: Q.eq(Q.mul(A1, vf.F1R), Q.mul(AR, vf.FR1)), status: "exact", detail: `${Q.str(Q.mul(A1, vf.F1R))} = ${Q.str(Q.mul(AR, vf.FR1))} per unit length of the duct.` });
       checks.push({ id: "summation", title: "Summation: F₁₂ + F₁R = 1 and 2F_R1 + F_RR = 1", passed: Q.eq(Q.add(vf.F12, vf.F1R), Q.ONE) && Q.eq(Q.add(Q.mul(Q.q(2), vf.FR1), vf.FRR), Q.ONE), status: "exact",
@@ -296,7 +300,7 @@
     checks.push({ id: "reradiating", title: "The side walls reradiate: j_R = (j₁ + j₂)/2", passed: Q.eq(Q.mul(Q.q(2), net.j[2]), Q.add(net.j[0], net.j[1])), status: "exact", detail: `j_R = ${Q.str(net.j[2])}.` });
     const sigma = ctx.role?.("sigma");
     const q1dim = sigma ? fl(net.q1) * sigma.float * fl(T1) ** 4 : null;
-    return { family: "radiation", model: "surface-radiation", ok: true, concept: "steady grey diffuse exchange; the network is linear in the radiosities, so stability and bifurcation do not apply",
+    return { family: "radiation", model: "surface-radiation", ok: true, concept: "the steady exchange between grey diffuse surfaces. The network is linear in the radiosities, so stability and bifurcation do not apply",
       viewFactors: vf && vf.exact ? { W: Q.str(W), H: Q.str(H), d: Q.str(vf.d), F12: Q.str(vf.F12), F1R: Q.str(vf.F1R), FR1: Q.str(vf.FR1), FRR: Q.str(vf.FRR) } : null,
       theta2: Q.str(t2), theta2pow4: Q.str(Q.pow(t2, 4)), j: net.j.map(Q.str), q1: Q.str(net.q1), q2: Q.str(net.q2), q1float: num(fl(net.q1)), q1dim: num(q1dim), resistances: { surface: Q.str(net.surface), space: Q.str(net.space) },
       sideWallTemperature: num(fl(T1) * fl(net.j[2]) ** 0.25), checks };

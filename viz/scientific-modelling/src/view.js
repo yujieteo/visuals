@@ -430,6 +430,7 @@
       regimeMap: d.regime && d.regime.ready ? { declaration: d.regime.declaration.id, match: d.regime.match, axes: d.regime.axes, tolerance: d.regime.tolerance, fixed: d.regime.fixed,
         layers: d.regime.layers.map((/** @type {any} */ l) => ({ id: l.id, kind: l.kind, boundary: l.boundary, criterion: l.criterion, status: l.status, curves: l.curves.map((/** @type {any} */ c) => ({ id: c.id, label: c.label, points: c.points })) })),
         unresolved: { points: d.regime.unresolved.count, reasons: d.regime.unresolved.reasons }, point: d.regime.point, acceptance: d.regime.acceptance } : null,
+      stability: d.stability && d.stability.ready ? d.stability : null,
       items: R.ITEMS };
     return `${JSON.stringify(doc, null, 2)}\n`;
   }

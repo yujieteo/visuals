@@ -164,14 +164,14 @@
     host.innerHTML = `${head}${exact}
       <h4>Eigenvalue problem</h4>
       <p>Normal modes ${ti("e^{\\sigma\\tau+iaX}")} of the box have ${ti("a=n\\pi/\\Gamma")}. The least stable is mode n = ${an.box.n}: onset at ${ti(`Ra_c(\\Gamma)=${fmt(an.box.Ra)}`)}. At Ra = ${fmt(an.point.Ra)} its largest growth rate is ${ti(`\\sigma_1=${fmt(an.lead.re)}`)} (residual ${an.lead.residual.toExponential(1)}).</p>
-      <figure class="st-figure"><div id="st-neutral" class="st-plot"></div><figcaption class="note">The neutral curve Ra(a) of the unbounded layer (line), its minimum Ra_c = ${fmt(an.critical.at(-1).Ra)} at a_c = ${an.critical.at(-1).a.toFixed(4)} (diamond), the admissible box wavenumbers nπ/Γ (circles) and the record's point (square). Above the curve the conductive state is unstable.</figcaption></figure>
+      <figure class="st-figure"><div id="st-neutral" class="st-plot"></div><figcaption class="note">The line is the neutral curve Ra(a) of the unbounded layer. The diamond is its minimum Ra_c = ${fmt(an.critical.at(-1).Ra)} at a_c = ${an.critical.at(-1).a.toFixed(4)}. The circles are the wavenumbers nπ/Γ of the box, and the square is the record's point. Above the curve the conductive state is unstable.</figcaption></figure>
       <div class="scroll"><table class="data"><caption>Box modes at Ra = ${fmt(an.point.Ra)}</caption><thead><tr><th scope="col">n</th><th scope="col">a = nπ/Γ</th><th scope="col">Neutral Ra</th><th scope="col">Largest σ</th></tr></thead><tbody>${an.box.modes.map((/** @type {any} */ m) => `<tr><td class="num">${m.n}</td><td class="num">${fmt(m.a)}</td><td class="num">${fmt(m.Ra)}</td><td class="num">${fmt(m.sigma)}</td></tr>`).join("")}</tbody></table></div>
       <figure class="st-figure"><div id="st-mode" class="st-plot"></div><figcaption class="note">The neutral mode of n = ${an.box.n}: vertical velocity W(z) (blue) and temperature Θ(z) (orange), each scaled to 1.</figcaption></figure>
       ${br && br.ok ? `<h4>Roll branch and bifurcation</h4>
-      <figure class="st-figure"><div id="st-branch" class="st-plot"></div><figcaption class="note">Nu against Ra: the conductive state Nu = 1 (stable solid, unstable dashed), the computed roll branch (blue line), ${br.compare.length ? "Table 1S of Wen, Goluskin and Doering (open circles), " : ""}the slope of the amplitude equation at onset (dotted) and the record's Ra (square).</figcaption></figure>
+      <figure class="st-figure"><div id="st-branch" class="st-plot"></div><figcaption class="note">Nu against Ra. The conductive state has Nu = 1: solid where it is stable, dashed where it is unstable. The blue line is the computed roll branch${br.compare.length ? ", and the open circles are Table 1S of Wen, Goluskin and Doering" : ""}. The dotted line is the slope of the amplitude equation at onset, and the square is the record's Ra.</figcaption></figure>
       ${br.field ? `<figure class="st-figure"><div id="st-field" class="st-field"></div><figcaption class="note">Temperature T = (T_dim − T_c)/ΔT of the steady rolls at Ra = ${fmt(br.record ? br.record.Ra : br.points.at(-1).Ra)}, one period 0 ≤ X < 2π/a: cold (0) to hot (1).</figcaption></figure>` : ""}
       ${br.compare.length ? `<details class="step-section" data-section><summary>Comparison with Table 1S (${br.compare.length} values of Ra)</summary><div class="scroll"><table class="data"><thead><tr><th scope="col">Ra</th><th scope="col">Nu (page)</th><th scope="col">Nu (Table 1S)</th><th scope="col">Relative difference</th><th scope="col">Re (page)</th><th scope="col">Re (Table 1S)</th></tr></thead><tbody>${br.compare.map((/** @type {any} */ c) => `<tr><td class="num">${fmt(c.Ra)}</td><td class="num">${c.Nu.toFixed(6)}</td><td class="num">${c.ref.toFixed(6)}</td><td class="num">${c.rel.toExponential(1)}</td><td class="num">${c.Re.toFixed(4)}</td><td class="num">${c.refRe.toFixed(4)}</td></tr>`).join("")}</tbody></table></div></details>` : ""}
-      <p>Amplitude equation (stationary part): ${ti(`g_1(Ra-Ra_c)A+g_3A^3=0,\\quad g_3/g_1=${fmt(br.amplitude.ratio)}`)}. ${br.amplitude.supercritical ? "The rolls exist above onset: a supercritical pitchfork." : "The rolls exist below onset."} Onset slope ${ti(`dNu/d\\varepsilon=${fmt(br.amplitude.slope)}`)}.</p>` : `<p class="bad">${esc(br?.reason ?? "The roll branch did not compute.")}</p>`}
+      <p>Amplitude equation (stationary part): ${ti(`g_1(Ra-Ra_c)A+g_3A^3=0,\\quad g_3/g_1=${fmt(br.amplitude.ratio)}`)}. ${br.amplitude.supercritical ? "The roll branch starts above onset: a supercritical pitchfork." : "The roll branch starts below onset."} Onset slope ${ti(`dNu/d\\varepsilon=${fmt(br.amplitude.slope)}`)}.</p>` : `<p class="bad">${esc(br?.reason ?? "The roll branch did not compute.")}</p>`}
       <h4>Results</h4>${list}`;
     plot(byId("st-neutral"), {
       aria: `Neutral curve of the layer: Ra against the wavenumber a, with the minimum Ra_c = ${fmt(an.critical.at(-1).Ra)} and the box modes.`,
@@ -202,18 +202,39 @@
     }
   }
 
-  /** A temperature field as a grid of cells on a uniform grid, top row first. @param {HTMLElement} host @param {any} f */
+  /** An RGB triple from a colour token such as #2a78d6. @param {string} name */
+  function token(name) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(v);
+    return m ? [1, 2, 3].map((i) => parseInt(m[i], 16)) : [128, 128, 128];
+  }
+  /**
+   * A temperature field as an image: one pixel per grid point, top row first, scaled smoothly by the browser.
+   * Cold (0) is the first data colour, hot (1) the second, and 1/2 the background.
+   * @param {HTMLElement} host @param {any} f
+   */
   function field(host, f) {
-    const W = Math.max(280, Math.round(host.clientWidth || 500));
     const nx = f.xs.length, nz = f.zs.length;
-    const h = Math.round(Math.min(220, W * 0.35));
-    const svg = el("svg", { class: "chart", viewBox: `0 0 ${W} ${h}`, width: W, height: h, role: "img", "shape-rendering": "crispEdges", "aria-label": "Temperature of the steady rolls over one period: hot plumes rise and cold plumes sink." });
-    const cw = W / nx, ch = h / nz;
-    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-      const t = Math.max(0, Math.min(1, f.T[i][j]));
-      svg.append(el("rect", { x: (i * cw).toFixed(2), y: (j * ch).toFixed(2), width: (cw + 0.6).toFixed(2), height: (ch + 0.6).toFixed(2), fill: t >= 0.5 ? "var(--c2)" : "var(--c1)", "fill-opacity": (Math.abs(t - 0.5) * 1.6).toFixed(3) }));
+    const cold = token("--c1"), hot = token("--c2"), bg = token("--bg");
+    const canvas = document.createElement("canvas");
+    canvas.width = nx;
+    canvas.height = nz;
+    canvas.className = "st-canvas";
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", "Temperature of the steady rolls over one period: hot plumes rise and cold plumes sink.");
+    const g = canvas.getContext("2d");
+    if (g) {
+      const img = g.createImageData(nx, nz);
+      for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+        const t = Math.max(0, Math.min(1, f.T[i][j]));
+        const c = t >= 0.5 ? hot : cold, w = Math.min(1, Math.abs(t - 0.5) * 2);
+        const k = 4 * (j * nx + i);
+        for (let q = 0; q < 3; q++) img.data[k + q] = Math.round(bg[q] + w * (c[q] - bg[q]));
+        img.data[k + 3] = 255;
+      }
+      g.putImageData(img, 0, 0);
     }
-    host.replaceChildren(svg);
+    host.replaceChildren(canvas);
   }
 
   /** The lumped body: equilibrium and transient. @param {HTMLElement} host @param {string} head @param {string} exact @param {any} an @param {string} list */
@@ -227,7 +248,7 @@
     const tr = an.transient;
     plot(byId("st-transient"), {
       aria: "Temperature ratio against time: the closed form, the linearized decay and the equilibrium.", x: { min: 0, max: tr.tau.at(-1), label: "τ" },
-      y: range([...tr.exact, ...tr.linear, e.theta], 0.08), series: [{ pts: tr.tau.map((/** @type {number} */ t, /** @type {number} */ i) => [t, tr.exact[i]]), stroke: "var(--c1)" }, { pts: tr.tau.map((/** @type {number} */ t, /** @type {number} */ i) => [t, tr.linear[i]]), stroke: "var(--c2)", dash: "6 4" }, { pts: [[0, e.theta], [tr.tau.at(-1), e.theta]], stroke: "var(--faint)", width: 1.5 }],
+      y: { ...range([...tr.exact, ...tr.linear, e.theta], 0.08), label: "θ = T/T_e" }, series: [{ pts: tr.tau.map((/** @type {number} */ t, /** @type {number} */ i) => [t, tr.exact[i]]), stroke: "var(--c1)" }, { pts: tr.tau.map((/** @type {number} */ t, /** @type {number} */ i) => [t, tr.linear[i]]), stroke: "var(--c2)", dash: "6 4" }, { pts: [[0, e.theta], [tr.tau.at(-1), e.theta]], stroke: "var(--faint)", width: 1.5 }],
     });
   }
 
@@ -241,7 +262,7 @@
       <div class="scroll"><table class="data"><caption>Exact solution in units of σT₁⁴, with θ₂ = T₂/T₁ = ${esc(an.theta2)}</caption><thead><tr><th scope="col">Quantity</th><th scope="col">Exact</th><th scope="col">Decimal</th></tr></thead><tbody>
         ${["j_1", "j_2", "j_R"].map((n, i) => `<tr><td>${ti(n.replace("_", "_{") + "}")}</td><td class="num">${esc(an.j[i])}</td><td class="num">${fmt(Number(an.j[i].split("/")[0]) / Number(an.j[i].split("/")[1] ?? 1))}</td></tr>`).join("")}
         <tr><td>${ti("q_1^{*}")}</td><td class="num">${esc(an.q1)}</td><td class="num">${fmt(an.q1float)}</td></tr><tr><td>${ti("q_2^{*}")}</td><td class="num">${esc(an.q2)}</td><td class="num">${fmt(-an.q1float)}</td></tr></tbody></table></div>
-      <p>${an.q1dim !== null ? `With σ, the floor loses ${ti(`q_1=${fmt(an.q1dim)}\\ \\mathrm{W/m^2}`)}. ` : ""}The reradiating side walls settle at ${fmt(an.sideWallTemperature)} K.</p>
+      <p>${an.q1dim !== null ? `With σ, the floor loses ${ti(`q_1=${fmt(an.q1dim)}\\ \\mathrm{W/m^2}`)}. ` : ""}The side walls, which reradiate, settle at ${fmt(an.sideWallTemperature)} K.</p>
       <h4>Results</h4>${list}`;
   }
 
@@ -257,13 +278,16 @@
       <h4>Equilibria at ${esc(an.control)} = ${fmt(an.values[an.control])}</h4>
       <div class="scroll"><table class="data"><thead><tr><th scope="col">#</th><th scope="col">${esc(an.states.join(", "))}</th><th scope="col">Eigenvalues</th><th scope="col">Stability</th></tr></thead><tbody>${an.equilibria.map((/** @type {any} */ e, /** @type {number} */ i) => `<tr><td class="num">${i + 1}</td><td class="num">${e.x.map(fmt).join(", ")}</td><td class="num">${[...new Set(e.eigenvalues.map((/** @type {any} */ v) => (v.im ? `${fmt(v.re)} ± ${fmt(Math.abs(v.im))}i` : fmt(v.re))))].join(", ")}</td><td>${esc(e.type)}</td></tr>`).join("")}</tbody></table></div>
       <h4>Continuation in ${esc(an.control)}</h4>
-      <figure class="st-figure"><div id="st-ode-branches" class="st-plot"></div><figcaption class="note">${esc(an.states[0])} against ${esc(an.control)}: stable equilibria (solid), unstable (dashed), folds (diamonds), branch points (squares), Hopf points (circles). The shaded intervals have two or more stable equilibria.</figcaption></figure>
+      <figure class="st-figure"><div id="st-ode-branches" class="st-plot"></div><figcaption class="note">${esc(an.states[0])} against ${esc(an.control)}. Solid lines are stable equilibria and dashed lines unstable ones. Diamonds are folds, squares branch points and circles Hopf points. The shaded intervals have two or more stable equilibria.</figcaption></figure>
       <div class="scroll"><table class="data"><caption>Special points</caption><thead><tr><th scope="col">Point</th><th scope="col">${esc(an.control)}</th><th scope="col">${esc(an.states.join(", "))}</th><th scope="col">Checks</th></tr></thead><tbody>${sp.map((/** @type {any} */ s) => `<tr><td>${esc(s.label)}</td><td class="num">${fmt(s.mu)}</td><td class="num">${s.x.map(fmt).join(", ")}</td><td>${esc(s.text)}</td></tr>`).join("")}</tbody></table></div>
-      ${an.two ? `<h4>Two parameters: ${esc(an.control)} and ${esc(an.control2)}</h4><figure class="st-figure"><div id="st-ode-two" class="st-plot"></div><figcaption class="note">The number of linearly stable equilibria found at each grid point (no shade: one; violet: two; grey hatched: none in the search box), the fold curves (lines) and the cusp (diamond).</figcaption></figure>` : ""}
+      ${an.two ? `<h4>Two parameters: ${esc(an.control)} and ${esc(an.control2)}</h4><figure class="st-figure"><div id="st-ode-two" class="st-plot"></div><figcaption class="note">The shade gives the number of linearly stable equilibria at each grid point. No shade means one, violet means two, and grey means none in the search box. The lines are the fold curves, and the diamond is the cusp.</figcaption></figure>` : ""}
       <h4>Results</h4>${list}`;
     const pts = an.branches.flatMap((/** @type {any} */ b) => b.points);
     const xs = { min: an.range[0], max: an.range[1], label: an.control };
-    const ys = range(pts.map((/** @type {any} */ p) => p.x[0]), 0.06);
+    const first = pts.map((/** @type {any} */ p) => p.x[0]);
+    const lo = Math.min(...first), hi = Math.max(...first);
+    // A positive state that spans more than two decades reads better on a logarithmic axis.
+    const ys = { ...(lo > 0 && hi / lo > 100 ? range(first, 0, true) : range(first, 0.06)), log: lo > 0 && hi / lo > 100, label: an.states[0] };
     const series = [];
     for (const b of an.branches) {
       let run = [], stable = null;

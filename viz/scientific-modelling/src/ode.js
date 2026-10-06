@@ -155,9 +155,13 @@
     return { stable: false, type: "saddle", text: `linearly unstable (saddle: ${pos} unstable and ${neg} stable directions)` };
   }
 
-  /** Equilibria at fixed parameters, from a grid of seeds in the box. */
+  /**
+   * Equilibria at fixed parameters. In one dimension every sign change of f on 2001 points of the box, refined by
+   * Brent's method; in more dimensions Newton's method from a grid of seeds in the box.
+   */
   function equilibria(M, sys, p, box, perDim) {
     const n = M.n;
+    if (n === 1) return equilibria1(M, p, box[0]);
     const grid = sys.states.map((s, i) => { const [a, b] = box[i]; const m = perDim; return Array.from({ length: m }, (_, k) => a + ((b - a) * (k + 0.5)) / m); });
     const seeds = [];
     const rec = (i, cur) => { if (i === n) { seeds.push(cur.slice()); return; } for (const g of grid[i]) { cur[i] = g; rec(i + 1, cur); } };
@@ -176,6 +180,25 @@
     }
     found.sort((a, b) => a.x[0] - b.x[0]);
     return { list: found, seeds: seeds.length };
+  }
+
+  function equilibria1(M, p, [a, b]) {
+    const f = (x) => M.F([x], p)[0];
+    const xs = Array.from({ length: 2001 }, (_, i) => a + ((b - a) * i) / 2000);
+    const found = [];
+    let fa = f(xs[0]);
+    for (let i = 1; i < xs.length; i++) {
+      const fb = f(xs[i]);
+      if (Number.isFinite(fa) && Number.isFinite(fb) && (fa === 0 || fa * fb < 0)) {
+        const x = fa === 0 ? xs[i - 1] : SF.brent(f, xs[i - 1], xs[i], 1e-15);
+        if (x !== null && !found.some((e) => Math.abs(e.x[0] - x) <= 1e-9 * (1 + Math.abs(x)))) {
+          const ev = N.eig(M.J([x], p)) ?? [];
+          found.push({ x: [x], residual: Math.abs(f(x)), eigenvalues: ev, ...classify(ev) });
+        }
+      }
+      fa = fb;
+    }
+    return { list: found, seeds: xs.length };
   }
 
   /* ---------- continuation in one parameter ---------- */
@@ -318,7 +341,7 @@
     const pitch = Boolean(sym && fixes && flips);
     return { kind: "branch-point", mu: m, x: at.x, converged: at.ok, det: at.det, symmetry: sym ? sym.text : null, classified: pitch,
       label: pitch ? "Branch point: pitchfork (symmetry-breaking)" : "Branch point candidate",
-      text: pitch ? `Another branch crosses here. The exact symmetry ${sym.text} fixes the equilibrium and reverses the null vector, so the new branch is a symmetric pair: a pitchfork. Its direction comes from the continued branch.`
+      text: pitch ? `Another branch crosses here. The exact symmetry ${sym.text} fixes the equilibrium and reverses the null vector. Thus the new branch is a symmetric pair: a pitchfork. Its direction comes from the continued branch.`
         : "Another branch crosses here (the augmented determinant changes sign). The page did not find a symmetry or a normal form that classifies it." };
   }
 
@@ -359,7 +382,7 @@
     const l1 = lyapunov(M, x, q, omega);
     const ok = r.converged && Number.isFinite(l1) && Math.abs(l1) > 1e-10 && Math.abs(speed) > 1e-10;
     return { kind: "hopf", mu: m, x, converged: r.converged, omega, speed, l1, classified: ok, label: ok ? (l1 < 0 ? "Hopf point: supercritical" : "Hopf point: subcritical") : "Hopf candidate",
-      text: ok ? `A complex pair λ = ±${num(omega)}i crosses the imaginary axis with speed d(Re λ)/dμ = ${num(speed)} ≠ 0. First Lyapunov coefficient ℓ₁ = ${num(l1)}: ${l1 < 0 ? "a stable periodic orbit grows from the point on the side where the equilibrium is unstable" : "an unstable periodic orbit exists on the side where the equilibrium is stable, and the equilibrium loses stability with no small stable orbit nearby"}.`
+      text: ok ? `A complex pair λ = ±${num(omega)}i crosses the imaginary axis with the speed d(Re λ)/dμ = ${num(speed)} ≠ 0. The first Lyapunov coefficient is ℓ₁ = ${num(l1)}. ${l1 < 0 ? "A stable periodic orbit grows from the point on the side where the equilibrium is unstable." : "An unstable periodic orbit exists on the side where the equilibrium is stable. The equilibrium loses stability with no small stable orbit near it."}`
         : "A complex pair crosses the imaginary axis. The crossing speed or the first Lyapunov coefficient is too small to classify the point." };
   }
 
@@ -554,7 +577,7 @@
         special: b.special.map((s) => ({ ...s, mu: num(s.mu), x: s.x.map(num) })) })),
       multistable: multi.map(([a, c]) => [num(a), num(c)]), hysteresis, runs: runs.map((r) => ({ ...r, lo: num(r.lo), hi: num(r.hi) })),
       two: two ? { curves: two.curves.map((c) => ({ id: c.id, points: c.points.map((pt) => [num(pt.mu), num(pt.mu2)]), cusps: c.cusps.map((k) => ({ mu: num(k.mu), mu2: num(k.mu2), x: k.x.map(num) })) })), grid: { xs: two.grid.xs.map(num), ys: two.grid.ys.map(num), counts: two.grid.counts } } : null,
-      coverage: `The search started Newton's method from ${eq.seeds} seeds on a grid in the box ${sys.states.map((s, i) => `${s} in [${num(box[i][0])}, ${num(box[i][1])}]`).join(", ")}, at ${mu} = ${num(p[mu])}. It followed each branch through those equilibria over ${mu} in [${num(range[0])}, ${num(range[1])}] with at most 600 steps each way. Branches that do not pass through an equilibrium found at the start, and equilibria outside the box, are not in the result: the search is not exhaustive.`,
+      coverage: `At ${mu} = ${num(p[mu])}, the search ${sys.states.length === 1 ? `looked for every sign change of f at ${eq.seeds} points` : `started Newton's method from ${eq.seeds} seeds`}. The box was ${sys.states.map((s, i) => `${s} in [${num(box[i][0])}, ${num(box[i][1])}]`).join(", ")}. It followed each branch through those equilibria over ${mu} in [${num(range[0])}, ${num(range[1])}], with at most 600 steps each way. The result does not hold a branch that misses every equilibrium of the start, or an equilibrium outside the box. The search is not exhaustive.`,
     };
   }
 

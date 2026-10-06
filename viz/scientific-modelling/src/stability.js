@@ -14,6 +14,10 @@
 
   const FAMILIES = ["buoyancy-convection", "radiation"];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(12)) : null);
+  const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+  const GREEK = { theta: "θ", theta_s: "θ_s", Psi: "Ψ", Omega: "Ω", eps: "ε" };
+  /** Readable text of a plain expression: Greek names, superscript integer powers and no multiplication signs. */
+  const pretty = (t) => String(t).replace(/[A-Za-z][A-Za-z0-9_]*/g, (w) => GREEK[w] ?? w).replace(/\^\(?(\d)\)?/g, (_, d) => SUP[d]).replace(/\*/g, "").replace(/ - /g, " − ").replace(/^-/, "−");
   const short = (x) => (x === null || x === undefined || !Number.isFinite(x) ? "–" : Math.abs(x) >= 1e-3 && Math.abs(x) < 1e6 || x === 0 ? String(Number(x.toPrecision(6))) : x.toExponential(4));
 
   /** The derivation steps of hand calculation 9, each with its reason and evidence. */
@@ -84,7 +88,7 @@
           res = S.subst(res, { sym: (n) => (n === atSym.trim() ? S.read(atVal, ctx) : relSub.get(n) ?? null) }, ctx);
           return { of: c.of, text: c.text, at: c.at, residual: S.plain(res) || "0", ok: res.size === 0 };
         });
-        out.base = { state: Object.entries(st.base).map(([f, t]) => ({ field: f, text: t, tex: S.tex(S.read(t, ctx)) })), relation: st.relation ?? null, equations: eqs, conditions: conds, ok: eqs.every((e) => e.ok) && conds.every((c) => c.ok) };
+        out.base = { state: Object.entries(st.base).map(([f, t]) => ({ field: f, text: t, tex: S.tex(S.read(t, ctx)) })), relation: st.relation ?? null, equations: eqs, conditions: conds, skipped: (st.skipConditions ?? []).length > 0, ok: eqs.every((e) => e.ok) && conds.every((c) => c.ok) };
         // Perturbation: f = base + eps*f_p for each perturbed field.
         const pf = new Set([...fields, ...(st.perturb ?? []).map((f) => `${f}_p`)]);
         const pctx = ctxOf(pf, coords);
@@ -175,10 +179,10 @@
     const add = (r) => out.push({ inputs, evidence: [], steps: [], ...r });
     if (st.kind === "custom") { customResults(st.analysis, add); return out; }
     const ex = st.exact;
-    if (ex?.base) add({ id: "r-st-base", kind: "stability", title: `The base state ${ex.base.state.map((b) => `${b.field} = ${b.text}`).join(", ")} satisfies ${ex.base.equations.length} equation${ex.base.equations.length > 1 ? "s" : ""} and ${ex.base.conditions.length} condition${ex.base.conditions.length === 1 ? "" : "s"} exactly${ex.base.ok ? "" : ": NOT for every item"}.`, status: ex.base.ok ? "exact" : "unresolved", steps: ["s-st-base"], evidence: ["spec-8"] });
+    if (ex?.base) add({ id: "r-st-base", kind: "stability", title: `The base state ${ex.base.state.map((b) => `${pretty(b.field)} = ${pretty(b.text)}`).join(", ")} satisfies ${ex.base.equations.length} equation${ex.base.equations.length > 1 ? "s" : ""}${ex.base.conditions.length ? ` and ${ex.base.conditions.length} condition${ex.base.conditions.length === 1 ? "" : "s"}` : ""} exactly${ex.base.relation ? `, with ${pretty(ex.base.relation)}` : ""}${ex.base.ok ? "" : ": not for every item"}.${ex.base.skipped ? " The initial condition is the disturbance, so it is not a condition of the base state." : ""}`, status: ex.base.ok ? "exact" : "unresolved", steps: ["s-st-base"], evidence: ["spec-8"] });
     if (ex?.perturbation?.length) add({ id: "r-st-perturb", kind: "stability", title: `The perturbation equations are the order-ε part of the substitution: ${ex.perturbation.length} linear equation${ex.perturbation.length > 1 ? "s" : ""}, and the order-1 part is 0.`, status: ex.perturbation.every((p) => p.zeroOrder) ? "exact" : "unresolved", steps: ["s-st-perturb"], evidence: ["spec-8"] });
     if (ex?.symmetry) add({ id: "r-st-symmetry", kind: "bifurcation", title: `The equations are invariant under ${ex.symmetry.text}.`, status: ex.symmetry.ok ? "exact" : "unresolved", steps: ["s-st-amplitude"], evidence: ["spec-8"] });
-    if (ex?.jacobian) add({ id: "r-st-jacobian", kind: "stability", title: `∂f/∂${ex.jacobian.field} = ${ex.jacobian.derivative} exactly.`, status: ex.jacobian.ok ? "exact" : "unresolved", steps: ["s-st-jacobian"], evidence: ["spec-8"] });
+    if (ex?.jacobian) add({ id: "r-st-jacobian", kind: "stability", title: `The derivative of the right side f = ${pretty(ex.jacobian.rhs)} with respect to ${pretty(ex.jacobian.field)} is ${pretty(ex.jacobian.derivative)}, exactly.`, status: ex.jacobian.ok ? "exact" : "unresolved", steps: ["s-st-jacobian"], evidence: ["spec-8"] });
     if (ex?.error) add({ id: "r-st-exact-error", kind: "stability", title: `The exact checks cannot run: ${ex.error}`, status: "unresolved", next: "Check the declared stability set-up." });
     const an = st.analysis;
     if (!an) return out;
@@ -204,32 +208,32 @@
       const worst = Math.max(...br.compare.map((x) => x.rel));
       add({ id: "r-st-wgd", kind: "bifurcation", title: `Nu agrees with Wen, Goluskin and Doering (2022, Table 1S) at ${br.compare.length} values of Ra within ${worst.toExponential(1)} relative.`, status: worst <= 1e-4 ? "evidence" : "unresolved", tolerance: "1e-4 relative", steps: ["s-st-branch"], evidence: ["wgd-2022"] });
       const reOff = br.compare.filter((x) => x.relRe > 1e-4);
-      if (reOff.length) add({ id: "r-st-wgd-re", kind: "bifurcation", title: `Re differs from Table 1S by more than 1e-4 at Ra = ${reOff.map((x) => short(x.Ra)).join(", ")} (${reOff.map((x) => `${(100 * x.relRe).toFixed(2)} %`).join(", ")}), while Nu agrees there and Re agrees at the other ${br.compare.length - reOff.length} values. The cause is not resolved.`,
+      if (reOff.length) add({ id: "r-st-wgd-re", kind: "bifurcation", title: `Re differs from Table 1S by more than 1e-4 at Ra = ${reOff.map((x) => short(x.Ra)).join(", ")} (${reOff.map((x) => `${(100 * x.relRe).toFixed(2)} %`).join(", ")}). Nu agrees there, and Re agrees at the other ${br.compare.length - reOff.length} values. The page has not found the cause.`,
         status: "unresolved", steps: ["s-st-branch"], evidence: ["wgd-2022"], next: "Compare with the authors' data files, or with a third computation." });
     }
     add({ id: "r-st-convergence", kind: "bifurcation", title: `Resolution check at Ra = ${short(br.convergence.Ra)}: Nu = ${short(br.convergence.coarse)} with ${br.M} × ${br.K} and ${short(br.convergence.fine)} with ${br.convergence.M} × ${br.convergence.K}.`, status: br.convergence.rel <= 1e-5 ? "numerical" : "unresolved", tolerance: "1e-5 relative", steps: ["s-st-branch"], evidence: ["spec-14"] });
     const am = br.amplitude;
-    add({ id: "r-st-amplitude", kind: "bifurcation", title: `Amplitude equation: g₃/g₁ = ${short(am.ratio)} ${am.supercritical ? "< 0, so rolls exist above onset" : "> 0, so rolls exist below onset"}. Onset slope dNu/dε = ${short(am.slope)}; the branch gives ${am.branchSlopes.map((s) => short(s.slope)).join(", ")} at ε = ${am.branchSlopes.map((s) => short(s.eps)).join(", ")}.`,
+    add({ id: "r-st-amplitude", kind: "bifurcation", title: `Amplitude equation: g₃/g₁ = ${short(am.ratio)} ${am.supercritical ? "< 0, so the roll branch starts above onset" : "> 0, so the roll branch starts below onset"}. The slope of Nu at onset is dNu/dε = ${short(am.slope)}. The branch gives ${am.branchSlopes.map((s) => short(s.slope)).join(", ")} at ε = ${am.branchSlopes.map((s) => short(s.eps)).join(", ")}.`,
       status: "numerical", tolerance: "solvability residual ≤ 1e-12", steps: ["s-st-amplitude"], evidence: ["spec-8"] });
     const rs = br.rollStability;
-    add({ id: "r-st-classify", kind: "bifurcation", title: `Classification: ${am.supercritical && rs.near.sigma < 0 ? "supercritical pitchfork" : "not classified"}. Checked: the mirror symmetry (exact), a simple zero eigenvalue with nonzero crossing speed, g₃/g₁ < 0, and stable rolls near onset (σ = ${short(rs.near.sigma)} ≈ −2σ_cond = ${short(-2 * rs.near.conduction)}).`,
+    add({ id: "r-st-classify", kind: "bifurcation", title: `Classification: ${am.supercritical && rs.near.sigma < 0 ? "supercritical pitchfork" : "not classified"}. Checked: the mirror symmetry (exact) and a simple zero eigenvalue that moves through 0 with a nonzero speed. Also g₃/g₁ < 0, and the rolls near onset are stable (σ = ${short(rs.near.sigma)} ≈ −2σ_cond = ${short(-2 * rs.near.conduction)}).`,
       status: am.supercritical && rs.near.sigma < 0 ? "numerical" : "unresolved", steps: ["s-st-amplitude", "s-st-branch"], evidence: ["spec-8", "wgd-2022"] });
     if (rs.record) add({ id: "r-st-rolls", kind: "stability", title: `At Ra = ${short(rs.record.Ra)} the rolls are linearly ${rs.record.stable ? "stable" : "unstable"} (σ = ${short(rs.record.sigma)}) to disturbances of the same period and mirror symmetry. This is not a statement about three-dimensional or asymmetric disturbances.`,
       status: "numerical", steps: ["s-st-branch"], evidence: ["spec-8"] });
-    add({ id: "r-st-coverage", kind: "bifurcation", title: "Not searched: three-dimensional states, other periods, asymmetric rolls and secondary bifurcations. The calculation found one roll branch; it makes no claim of exhaustive branch discovery.", status: "unresolved", steps: ["s-st-branch"], evidence: ["farrell-2016"], next: "A separate search, such as deflated continuation, is needed for other branches." });
+    add({ id: "r-st-coverage", kind: "bifurcation", title: "Not searched: three-dimensional states, other periods, asymmetric rolls and secondary bifurcations. The calculation found one roll branch. It makes no claim of exhaustive branch discovery.", status: "unresolved", steps: ["s-st-branch"], evidence: ["farrell-2016"], next: "Other branches need a separate search, such as deflated continuation." });
   }
 
   function lumpedResults(an, add) {
     const e = an.equilibrium;
-    add({ id: "r-st-equilibrium", kind: "stability", title: `Equilibrium θ* = (1 + q)^{1/4} = ${short(e.theta)} (residual ${e.residual.toExponential(1)}); eigenvalue f′(θ*) = −4θ*³ = ${short(e.eigenvalue)} < 0: linearly stable, with the time constant ${short(e.timeConstant)} in τ${e.timeConstantSeconds !== null ? ` (${short(e.timeConstantSeconds)} s)` : ""}.`,
+    add({ id: "r-st-equilibrium", kind: "stability", title: `Equilibrium θ* = (1 + q)^{1/4} = ${short(e.theta)}, with the residual ${e.residual.toExponential(1)}. The eigenvalue f′(θ*) = −4θ*³ = ${short(e.eigenvalue)} is negative, so θ* is linearly stable. The time constant is ${short(e.timeConstant)} in τ${e.timeConstantSeconds !== null ? ` (${short(e.timeConstantSeconds)} s)` : ""}.`,
       status: "numerical", tolerance: "1e-12", steps: ["s-st-equilibrium", "s-st-jacobian"], evidence: ["spec-8"] });
     add({ id: "r-st-global", kind: "stability", title: "f(θ) = q + 1 − θ⁴ decreases strictly for θ > 0, so θ* is the only equilibrium and every θ_i > 0 tends to it. No branch can split: bifurcation analysis does not apply.", status: "exact", steps: ["s-st-jacobian"], evidence: ["spec-8"] });
     const r = an.transient.rk45;
-    add({ id: "r-st-transient", kind: "stability", title: `The Dormand–Prince integration (${r.accepted} steps) ends at θ = ${short(r.end)}; the closed form gives ${short(r.exactEnd)}.`, status: Math.abs(r.end - r.exactEnd) <= 1e-8 ? "numerical" : "unresolved", tolerance: "1e-8", steps: ["s-st-equilibrium"], evidence: ["spec-8"] });
+    add({ id: "r-st-transient", kind: "stability", title: `The Dormand–Prince integration (${r.accepted} steps) ends at θ = ${short(r.end)}. The closed form gives ${short(r.exactEnd)}.`, status: Math.abs(r.end - r.exactEnd) <= 1e-8 ? "numerical" : "unresolved", tolerance: "1e-8", steps: ["s-st-equilibrium"], evidence: ["spec-8"] });
   }
 
   function customResults(an, add) {
-    add({ id: "r-st-ode-system", kind: "stability", title: `Custom ODE system in ${an.states.join(", ")} with the control parameter ${an.control}: the right sides and the Jacobian are exact canonical forms.`, status: "exact", steps: ["s-st-ode"], evidence: ["spec-8"] });
+    add({ id: "r-st-ode-system", kind: "stability", title: `Custom ODE system in ${an.states.join(", ")}, with the control parameter ${an.control}. The right sides and the Jacobian are exact canonical forms.`, status: "exact", steps: ["s-st-ode"], evidence: ["spec-8"] });
     if (an.symmetry) add({ id: "r-st-ode-symmetry", kind: "bifurcation", title: `The system is equivariant under ${an.symmetry}: f(Sx) = S f(x) exactly.`, status: "exact", steps: ["s-st-ode"], evidence: ["spec-8"] });
     an.equilibria.forEach((e, i) => add({ id: `r-st-ode-eq-${i + 1}`, kind: "stability", title: `Equilibrium ${i + 1} at ${an.control} = ${short(an.values[an.control])}: (${e.x.map(short).join(", ")}), ${e.text}. Eigenvalues ${e.eigenvalues.map((v) => (v.im ? `${short(v.re)} ± ${short(Math.abs(v.im))}i` : short(v.re))).filter((t, k, a) => a.indexOf(t) === k).join(", ")}.`,
       status: "numerical", tolerance: `residual ${e.residual.toExponential(1)}`, steps: ["s-st-ode"], evidence: ["spec-8"] }));
@@ -237,7 +241,7 @@
     sp.forEach((s, i) => add({ id: `r-st-ode-sp-${i + 1}`, kind: "bifurcation", title: `${s.label} at ${an.control} = ${short(s.mu)}, (${s.x.map(short).join(", ")}). ${s.text}`, status: s.classified ? "numerical" : "unresolved", tolerance: s.kind === "hopf" ? "Brent 1e-14 on Re λ" : "Newton 1e-12", steps: ["s-st-ode"], evidence: ["spec-8"],
       next: s.classified ? "" : "Supply the normal form or a symmetry, or refine the continuation near the point." }));
     for (const [a, b] of an.multistable) add({ id: `r-st-ode-multi-${a}`, kind: "bifurcation", title: `Two or more stable equilibria coexist for ${an.control} in [${short(a)}, ${short(b)}]${an.hysteresis.some((h) => h[0] === a && h[1] === b) ? ", bounded by two folds: hysteresis" : ""}.`, status: "numerical", steps: ["s-st-ode"], evidence: ["spec-8"] });
-    if (an.two) for (const c of an.two.curves) for (const k of c.cusps) add({ id: `r-st-ode-cusp-${c.id}`, kind: "bifurcation", title: `The fold curves meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}: the coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] });
+    if (an.two) for (const c of an.two.curves) for (const k of c.cusps) add({ id: `r-st-ode-cusp-${c.id}`, kind: "bifurcation", title: `The fold curves meet at a cusp near ${an.control} = ${short(k.mu)}, ${an.control2} = ${short(k.mu2)}. The coefficient a of the fold changes sign there.`, status: "numerical", tolerance: "linear interpolation between continuation steps", steps: ["s-st-ode"], evidence: ["spec-8"] });
     add({ id: "r-st-ode-coverage", kind: "bifurcation", title: an.coverage, status: "unresolved", steps: ["s-st-ode"], evidence: ["farrell-2016"], next: "Widen the box or the seeds, or add a completeness argument, before you claim that no other branch exists." });
   }
 
