@@ -289,19 +289,22 @@
     return { A: Q.str(A), B: Q.str(B), H2: Q.str(Q.inv(Dl)), particular: Q.eq(cosPart, one) && Q.isZero(sinPart), energy,
       peak: under ? { r2: Q.str(Q.sub(one, Q.mul(Q.mul(two, zQ), zQ))), H2: Q.str(Q.inv(Q.mul(Q.mul(Q.q(4n), Q.mul(zQ, zQ)), Q.sub(one, Q.mul(zQ, zQ))))) } : null, A0: Q.toNumber(A), B0: Q.toNumber(B) };
   }
-  /** RK4 from rest until the transient is below 1e-10, then the cosine and sine parts of the last period. */
+  /** RK4 from rest for at most 4000 periods, until the transient is below 1e-10, then the cosine and sine parts of the last period. */
   function oscillatorRK4(r, z) {
     const per = 200, T = (2 * PI) / r;
     const periods = Math.min(4000, Math.ceil(Math.log(1e10) / (z * T)) + 1);
-    const n = periods * per;
-    const sim = N.rk4((t, y) => [y[1], Math.cos(r * t) - 2 * z * y[1] - y[0]], [0, 0], 0, periods * T, n, true);
-    const last = sim.path.slice(n - per), h = T / per, t0 = (periods - 1) * T;
+    const n = periods * per, head = Math.min(6, periods - 1), t0 = (periods - 1) * T;
+    const f = (t, y) => [y[1], Math.cos(r * t) - 2 * z * y[1] - y[0]];
+    const start = N.rk4(f, [0, 0], 0, head * T, head * per, true);
+    const mid = N.rk4(f, start.y, head * T, t0, (periods - 1 - head) * per);
+    const last = N.rk4(f, mid.y, t0, periods * T, per, true).path, h = T / per;
+    const first = head < 6 ? [...start.path, ...last.slice(1)] : start.path;
     const A = (2 / T) * N.simpson(last.map((y, i) => y[0] * Math.cos(r * (t0 + i * h))), h);
     const B = (2 / T) * N.simpson(last.map((y, i) => y[0] * Math.sin(r * (t0 + i * h))), h);
     const win = N.simpson(last.map((y, i) => Math.cos(r * (t0 + i * h)) * y[1]), h);
     const wd = N.simpson(last.map((y) => 2 * z * y[1] * y[1]), h);
-    const early = sim.path.slice(0, Math.min(sim.path.length, 6 * per)).filter((_, i) => i % 10 === 0).map((y, i) => [num(i * 10 * h), num(y[0])]);
-    return { periods, steps: n, per, A, B, win, wd, early };
+    const early = first.slice(0, 6 * per).filter((_, i) => i % 10 === 0).map((y, i) => [num(i * 10 * h), num(y[0])]);
+    return { periods, steps: n, per, A, B, win, wd, early, decay: Math.exp(-z * t0) };
   }
 
   /* ---------- plates and shells ---------- */
@@ -558,6 +561,8 @@
     const c2 = fit[0] + (fit[0] - fit[1]) / 3;
     const below = secondVariation(new Array(sv + 1).fill(0), 0.5 * PI2);
     const straightAt = secondVariation(new Array(sv + 1).fill(0), lam);
+    let unstableModes = 0;
+    while ((unstableModes + 1) ** 2 * PI2 < lam) unstableModes++;
     const tPerf = lam > PI2 ? theta0At(lam, 0, steps, perfectTheta0(lam)) : null;
     const buckled = tPerf !== null ? secondVariation(nodesOf(tPerf, lam, 0, sv), lam) : null;
     const mirror = tPerf !== null ? Math.abs(theta0At(lam, 0, steps, -tPerf) + tPerf) : null;
@@ -575,12 +580,14 @@
     const deg = (t) => (t * 180) / PI;
     const results = [
       { id: "r-st-bp", kind: "bifurcation", title: `The straight state θ = 0 has branch points at λ/π² = ${bps.map((x) => fmt(x, 9)).join(" and ")} in the searched range 0 < λ/π² ≤ ${muMax}.`, status: Math.abs(bps[0] - 1) <= 1e-6 ? "numerical" : "unresolved", tolerance: "1e-6 against 1", steps: ["s-st-branch"], evidence: ["spec-8"] },
-      { id: "r-st-symmetry", kind: "bifurcation", title: "The perfect model is symmetric under θ → −θ: θ'' and sin θ are odd in θ, and so are the end conditions θ' = 0.", status: "exact", steps: ["s-st-amplitude"], evidence: ["spec-8"] },
-      { id: "r-st-series", kind: "bifurcation", title: `The exact series is λ/π² = 1 + ${series[1]}·θ0² + ${series[2]}·θ0⁴ + …. The coefficient 1/8 is positive, so the buckled branch rises on both sides of λ = π²: a supercritical pitchfork. The computed branch gives ${fmt(c2, 8)}.`,
-        status: series[1] === "1/8" && Math.abs(c2 - 0.125) <= 1e-4 ? "exact" : "unresolved", steps: ["s-st-amplitude"], evidence: ["holmes-2019", "dlmf-19-5", "yong-mahadevan-2025"] },
+      { id: "r-st-symmetry", kind: "bifurcation", title: "The perfect model is symmetric under θ → −θ: θ'' and sin θ are odd in θ, and so are the end conditions θ' = 0.", status: "evidence", steps: ["s-st-amplitude"], evidence: ["spec-8"] },
+      { id: "r-st-series", kind: "bifurcation", title: `The exact series is λ/π² = 1 + ${series[1]}·θ0² + ${series[2]}·θ0⁴ + …. The coefficient ${series[1]} is ${series[1].startsWith("-") ? "negative" : "positive"}, so the buckled branch ${series[1].startsWith("-") ? "falls" : "rises"} on both sides of λ = π²: a ${series[1].startsWith("-") ? "subcritical" : "supercritical"} pitchfork.`,
+        status: series[1] === "1/8" ? "exact" : "unresolved", steps: ["s-st-amplitude"], evidence: ["holmes-2019", "dlmf-19-5", "yong-mahadevan-2025"] },
+      { id: "r-st-series-branch", kind: "bifurcation", title: `The computed branch gives the coefficient of θ0² as ${fmt(c2, 8)}, against the exact 1/8.`,
+        status: Math.abs(c2 - 0.125) <= 1e-4 ? "numerical" : "unresolved", tolerance: "1e-4 absolute against 1/8", steps: ["s-st-branch"], evidence: ["spec-8"] },
       { id: "r-st-branch", kind: "bifurcation", title: `Pseudo-arclength continuation followed the buckled branch from λ = π² in both directions: ${up.pts.length + down.pts.length} points, ${up.newton + down.newton} Newton steps, up to |θ0| = ${fmt(deg(opts.thetaMax), 4)}°.`, status: "numerical", tolerance: "Newton 1e-12", steps: ["s-st-branch"], evidence: ["spec-8"] },
-      { id: "r-st-stable", kind: "stability", title: `Second variation with the end constraint (${sv} intervals): the straight state has ${below.negative} unstable direction${below.negative === 1 ? "" : "s"} at λ = π²/2 (smallest eigenvalue ${fmt(below.smallest[0], 6)}, exact π² − λ = ${fmt(PI2 / 2, 6)}) and ${straightAt.negative} at the record's λ = ${fmt(lam, 6)}.${buckled ? ` The buckled shape there (θ0 = ${fmt(deg(tPerf), 5)}°) has ${buckled.negative}: it is stable.` : ""}`,
-        status: "numerical", tolerance: "the sign of each eigenvalue; 5e-3 relative against π² − λ", steps: ["s-st-eigen"], evidence: ["spec-8"] },
+      { id: "r-st-stable", kind: "stability", title: `Second variation with the end constraint (${sv} intervals): the straight state has ${below.negative} unstable direction${below.negative === 1 ? "" : "s"} at λ = π²/2 (smallest eigenvalue ${fmt(below.smallest[0], 6)}, exact π² − λ = ${fmt(PI2 / 2, 6)}) and ${straightAt.negative} at the record's λ = ${fmt(lam, 6)}.${buckled ? ` The buckled shape there (θ0 = ${fmt(deg(tPerf), 5)}°) has ${buckled.negative}: it is ${buckled.negative ? "not stable" : "stable"}.` : ""}`,
+        status: below.negative === 0 && relErr(below.smallest[0], PI2 / 2) <= 5e-3 && straightAt.negative === unstableModes && (!buckled || buckled.negative === 0) ? "numerical" : "unresolved", tolerance: "the sign of each eigenvalue; 5e-3 relative against π² − λ", steps: ["s-st-eigen"], evidence: ["spec-8"] },
     ];
     if (mirror !== null) results.push({ id: "r-st-mirror", kind: "bifurcation", title: `At the record's load the mirror shape θ0 = −${fmt(deg(tPerf), 5)}° is also a solution (difference ${fmt(mirror, 2)} rad).`, status: mirror <= 1e-10 ? "numerical" : "unresolved", tolerance: "1e-10", steps: ["s-st-branch"], evidence: ["spec-8"] });
     if (imp) {
@@ -687,7 +694,7 @@
         points: [{ x: num(r), y: num(H(r, z)), shape: "square", label: "record" }], caption: "The amplitude ratio of the steady motion, with the two limits of the dominant balance. The square is the record's forcing frequency." },
       { id: "st-osc-start", title: "Start from rest", x: { min: 0, max: sim.early.at(-1)[0], label: "τ = ω_n t" }, y: { min: -1.2 * Math.max(...sim.early.map((q) => Math.abs(q[1]))), max: 1.2 * Math.max(...sim.early.map((q) => Math.abs(q[1]))), label: "U = uk/F_0" },
         series: [{ label: "RK4", pts: sim.early }], caption: "The first six forcing periods from rest: the transient decays as e^{−ζτ}." }],
-      tables: [], method: ["Steady solution X = A cos rτ + B sin rτ with A = (1 − r²)/Δ and B = 2ζr/Δ, Δ = (1 − r²)² + (2ζr)².", `RK4 from rest with ${sim.per} steps in each period, over ${sim.periods} periods, until the transient is below 1e-10.`] };
+      tables: [], method: ["Steady solution X = A cos rτ + B sin rτ with A = (1 − r²)/Δ and B = 2ζr/Δ, Δ = (1 − r²)² + (2ζr)².", `RK4 from rest with ${sim.per} steps in each period, over ${sim.periods} periods. At the start of the last period the transient factor e^{−ζτ} is ${fmt(sim.decay, 2)}.`] };
   }
 
   function modesImpl(decl) {
@@ -893,10 +900,12 @@
     const rod = Q.div(Q.mul(Q.mul(A, L), Q.mul(sigma, sigma)), Q.mul(Q.q(2n), E));
     const spring = Q.div(Q.mul(ks, Q.mul(uL, uL)), Q.q(2n));
     const work = Q.div(Q.mul(Q.abs(Q.mul(sigma, A)), Q.mul(strain, L)), Q.q(2n));
+    const s1 = Q.mul(kap, u1);
+    const limits = !Q.isZero(kap) && Q.eq(Q.div(Q.sub(Q.ONE, s1), s1), Q.inv(kap)) && Q.eq(Q.div(Q.sub(Q.ONE, u1), u1), kap);
     return [
       { id: "solution", title: `U = X/(1 + κ) with κ = ${Q.str(kap)} satisfies U'' = 0, U(0) = 0 and U'(1) − 1 + κU(1) = 0`, passed: ok, status: "exact", detail: `σ = EαΔT(U' − 1) = ${Q.str(sigma)} Pa and u(L) = ${Q.str(uL)} m, in rationals.` },
       { id: "energy", title: "The strain energy of the rod plus the spring energy equals half the end force times the free expansion αΔTL", passed: Q.eq(Q.add(rod, spring), work), status: "exact", detail: `${Q.str(rod)} J + ${Q.str(spring)} J = ${Q.str(work)} J.` },
-      { id: "limits", title: "κ → ∞ gives σ = −EαΔT and κ → 0 gives the free expansion αΔTL", passed: true, status: "exact", detail: `−κ/(1 + κ) → −1 and 1/(1 + κ) → 1; at the record −κ/(1 + κ) = ${Q.str(Q.neg(Q.mul(kap, u1)))}.` },
+      { id: "limits", title: "The relative error of the fixed-end stress −EαΔT is 1/κ and the relative error of the free expansion αΔTL is κ", passed: limits, status: "exact", detail: `−κ/(1 + κ) = ${Q.str(Q.neg(Q.mul(kap, u1)))} and 1/(1 + κ) = ${Q.str(u1)} at the record, in rationals.` },
     ];
   }
 
@@ -932,14 +941,23 @@
     const u2 = Q.mul(sigma, Q.neg(strain));
     const u3 = Q.div(Q.mul(E, Q.mul(strain, strain)), om);
     const face = Q.div(Q.mul(E, Q.mul(al, dTg)), Q.mul(Q.q(2n), om));
+    // Held flat and restrained: the total strain is 0, so σ(Z) = E(0 − αΔT(Z))/(1 − ν) with ΔT(Z) = ΔT + ΔT_g Z, Z = z/h.
+    const held = (Z) => Q.div(Q.mul(E, Q.neg(Q.mul(al, Q.add(dT, Q.mul(dTg, Z))))), om);
+    const half = Q.q(1n, 2n);
+    const bendingOk = Q.eq(Q.sub(held(Q.neg(half)), sigma), face) && Q.eq(Q.sub(held(half), sigma), Q.neg(face));
     const out = [
       { id: "membrane", title: "Ê = 0 and Ŝ = −1/(1 − ν) satisfy the equations exactly", passed: ok, status: "exact", detail: `σ = ${Q.str(sigma)} Pa in rationals.` },
       { id: "energy", title: "Three forms of the energy density agree", passed: Q.eq(u1, u3) && Q.eq(u2, u3), status: "exact", detail: `(σx² + σy² − 2νσxσy)/(2E) = ½Σσε = Eα²ΔT²/(1 − ν) = ${Q.str(u3)} J/m³.` },
-      { id: "bending", title: "The face bending stress of the plate held against bending is ±EαΔT_g/(2(1 − ν))", passed: Q.sign(face) !== 0 || Q.isZero(dTg), status: "exact", detail: `±${Q.str(face)} Pa in rationals.` },
+      { id: "bending", title: "The face bending stress of the plate held against bending is ±EαΔT_g/(2(1 − ν))", passed: bendingOk, status: "exact", detail: `±${Q.str(face)} Pa in rationals.` },
     ];
     if (h) {
-      const kappa = Q.div(Q.mul(al, dTg), h);
-      out.push({ id: "free", title: "A free plate with the gradient has no stress: its strain ε0 + κz equals αΔT(z) at every z", passed: Q.eq(Q.mul(kappa, h), Q.mul(al, dTg)), status: "exact", detail: `κ = αΔT_g/h = ${Q.str(kappa)} m⁻¹.` });
+      // A free plate: N = ∫σ dz = 0 and M = ∫σz dz = 0 give ε0 and κ; Simpson's rule is exact for these quadratics.
+      const zs = [Q.neg(Q.div(h, Q.q(2n))), Q.ZERO, Q.div(h, Q.q(2n))], ws = [Q.ONE, Q.q(4n), Q.ONE].map((w) => Q.div(Q.mul(w, h), Q.q(6n)));
+      const free = (z) => Q.mul(al, Q.add(dT, Q.div(Q.mul(dTg, z), h)));
+      const integral = (g) => zs.reduce((a, z, i) => Q.add(a, Q.mul(ws[i], g(z))), Q.ZERO);
+      const eps0 = Q.div(integral(free), h), kappa = Q.div(integral((z) => Q.mul(free(z), z)), Q.div(Q.mul(h, Q.mul(h, h)), Q.q(12n)));
+      const freeOk = zs.every((z) => Q.isZero(Q.sub(Q.add(eps0, Q.mul(kappa, z)), free(z))));
+      out.push({ id: "free", title: "A free plate with the gradient has no stress: N = 0 and M = 0 give the strain ε0 + κz, and it equals αΔT(z) at every z", passed: freeOk, status: "exact", detail: `ε0 = ${Q.str(eps0)} and κ = ${Q.str(kappa)} m⁻¹ in rationals.` });
     }
     return out;
   }

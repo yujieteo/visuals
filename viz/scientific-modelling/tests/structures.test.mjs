@@ -106,6 +106,10 @@ test("the elastica: branch point π², the exact series 1/8, symmetry, stability
   const byId = Object.fromEntries(d.results.map((r) => [r.id, r]));
   assert.match(byId["r-st-bp"].title, /λ\/π² = 1 /);
   assert.equal(byId["r-st-series"].status, "exact");
+  assert.doesNotMatch(byId["r-st-series"].title, /computed/, "the exact result does not depend on the computed branch");
+  assert.equal(byId["r-st-series-branch"].status, "numerical");
+  assert.equal(byId["r-st-symmetry"].status, "evidence", "the symmetry has no exact check, so it is not exact");
+  assert.equal(byId["r-st-stable"].status, "numerical");
   assert.match(byId["r-st-stable"].title, /0 unstable directions at λ = π²\/2 .* and 1 at the record's λ = 12\. The buckled shape there .* has 0/);
   assert.equal(byId["r-st-imperfect"].status, "numerical");
   assert.equal(byId["r-st-coverage"].status, "unresolved", "the search coverage stays visible");
@@ -118,6 +122,7 @@ test("vibration: the oscillator's steady solution, peak and energy balance are e
   assert.equal(e.H2, "2000/137");
   assert.deepEqual(e.peak, { r2: "49/50", H2: "2500/99" });
   const d = derive("damped-oscillator");
+  assert.match(d.stability.analysis.method[1], /At the start of the last period the transient factor e\^\{−ζτ\} is \d/);
   assert.ok(d.results.some((r) => r.id === "r-st-roots" && r.status === "exact" && /ζ = 1\/10/.test(r.title)));
   assert.ok(d.regime.layers.find((l) => l.id === "inertia-stiffness").curves.length >= 1, "the inertia–stiffness crossover r = 1 is on the map");
   for (const k of [1, 2, 3]) assert.ok(STR.sineModeCheck(k, Q.q(5n, 2n)), `sin(${k}πX) with λ = 5/2`);
@@ -148,7 +153,10 @@ test("thermoelasticity: the rod against its spring and the plate held at its edg
   const plate = derive("thermal-plate");
   const m = plate.regime.acceptance.find((c) => c.id === "membrane");
   assert.ok(m.passed && /σ = -6440000000\/67 Pa/.test(m.detail), m.detail);
-  assert.ok(plate.regime.acceptance.every((c) => c.status === "exact"));
+  assert.ok(plate.regime.acceptance.every((c) => c.status === "exact" && c.passed));
+  assert.deepEqual(plate.regime.acceptance.map((c) => c.id), ["membrane", "energy", "bending", "free"]);
+  assert.ok(rod.regime.acceptance.find((c) => c.id === "limits").passed);
+  assert.match(rod.regime.acceptance.find((c) => c.id === "limits").detail, /−κ\/\(1 \+ κ\) = -4\/5 and 1\/\(1 \+ κ\) = 1\/5/);
 });
 
 test("the beam under a uniform load: W(½) = 5/384 exactly, and the amplification factor near the critical load", () => {
