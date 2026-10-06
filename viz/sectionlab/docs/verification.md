@@ -60,6 +60,14 @@ paths; skipped locally without one, required under CI): it opens the hand
 calculations, checks one card per step with drawn equations and no raw TeX, saves the
 Markdown through a real download and copies it through the real clipboard (both must
 equal the engine's document), and checks the page does not scroll sideways at 375 px.
+Chrome has one 20-second startup budget for publishing its DevTools port and connecting
+its WebSocket. A startup failure kills and reaps the spawned Chrome, removes its profile
+and downloads, and closes the page server before reporting the error.
+`tests/browser-startup.test.mjs` runs that same browser test in isolated child runners
+with disposable Chrome stand-ins: no port and a stalled WebSocket handshake. It checks
+a nonzero runner exit without its 25-second watchdog, no surviving Chrome process, and
+no leftover profile or downloads. The two cases run concurrently, so this regression
+takes about 20 seconds and needs no installed Chrome.
 
 `tests/file-paths.test.mjs` copies the page and its test helpers into a temporary
 folder whose name contains spaces, `%`, `#` and Unicode. It checks the decoded
