@@ -339,8 +339,8 @@
     steps.push(step(10, "Checks", "The groups are exact. The root, the profiles, the latent-energy balance and the transient front are numerical checks with stated tolerances.",
       ["\\frac{Ste_l}{\\sqrt\\pi\\operatorname{erf}\\lambda}=\\lambda+Ste_l\\!\\int_0^\\lambda\\!\\theta_l\\,\\mathrm d\\eta+Ste_s\\lambda+\\frac{Ste_s}{\\nu}\\frac{\\operatorname{ierfc}(\\nu\\lambda)}{\\operatorname{erfc}(\\nu\\lambda)}"]));
     // Figures: the temperature profile at t_r, the front against time, and λ against Ste_l.
-    const Tm = qn(p.Tm ?? Q.parse("273.15")), dTl = qn(p.DTl), dTs = qn(p.DTs);
-    const xMax = Math.max(4 * front, 6 * Math.sqrt(alphaS * tr0));
+    const dTl = qn(p.DTl), dTs = qn(p.DTs);
+    const xMax = Math.max(4 * front, 4 * Math.sqrt(alphaS * tr0));
     const xs = Array.from({ length: 121 }, (_, i) => (xMax * i) / 120);
     const prof = xs.map((x) => { const eta = x / (2 * Math.sqrt(alphaL * tr0)); return [1000 * x, eta < lam ? dTl * thL(eta) : dTs * psS(eta)]; });
     const fineTr = tr[2].track;
@@ -461,14 +461,14 @@
     if (!okFluid) refused.push("the fluid");
     const pair = (B.surfaces ?? []).find((x) => x.fluid === fluid && x.surface === surface);
     const sameC = pair ? Q.eq(Q.parse(pair.Csf), p.Csf) : false;
-    checks.push(check("bo-surface", pair ? (sameC ? `Surface: water on ${surface}, C_sf = ${pair.Csf} in Table 9.2, and the record uses the same value.` : `Surface: water on ${surface} has C_sf = ${pair.Csf} in Table 9.2, but the record uses ${Q.str(p.Csf)}.`)
-      : `Surface: "${surface || "not stated"}" has no value of C_sf for water in Table 9.2 (nickel, platinum, copper and brass have one). The page refuses the correlation and does not guess a constant.`, pair && sameC ? "evidence" : "unresolved",
+    checks.push(check("bo-surface", pair ? (sameC ? `Surface: water on ${surface}, C_sf = ${pair.Csf} in Table 9.2, and the record uses the same value, exactly.` : `Surface: water on ${surface} has C_sf = ${pair.Csf} in Table 9.2, but the record uses ${Q.str(p.Csf)}.`)
+      : `Surface: "${surface || "not stated"}" has no value of C_sf for water in Table 9.2 (nickel, platinum, copper and brass have one). The page refuses the correlation and does not guess a constant.`, pair && sameC ? "exact" : "unresolved",
       { passed: Boolean(pair && sameC), evidence: ["lienhard-2024"], next: pair ? "Use the C_sf of Table 9.2." : "Choose a surface of Table 9.2, or measure C_sf for this surface." }));
     if (!(pair && sameC)) refused.push("the surface");
     const P = B.pressure;
     const pr = qn(p.pressure);
-    const okP = P ? pr >= P.min && pr <= P.max : false;
-    checks.push(check("bo-pressure", `Pressure: ${f(pr / 101325, 4)} atm ${okP ? "is inside" : "is outside"} the data of Rohsenow's comparison for water, 1 atm to 167.7 atm (${P?.where ?? "Fig. 9.7"}).`, okP ? "evidence" : "unresolved",
+    const okP = P ? Q.cmp(p.pressure, Q.fromNumber(P.min)) >= 0 && Q.cmp(p.pressure, Q.fromNumber(P.max)) <= 0 : false;
+    checks.push(check("bo-pressure", `Pressure: ${f(pr / 101325, 4)} atm ${okP ? "is inside" : "is outside"} the data of Rohsenow's comparison for water, 1 atm to 167.7 atm (${P?.where ?? "Fig. 9.7"}), by an exact comparison.`, okP ? "exact" : "unresolved",
       { passed: okP, evidence: ["lienhard-2024"], next: okP ? "" : "The page does not extrapolate to other pressures." }));
     if (!okP) refused.push("the pressure");
     const orient = String(geometry?.orientation ?? ""), heater = String(geometry?.heater ?? ""), pool = String(geometry?.pool ?? "");
@@ -477,8 +477,8 @@
       { passed: okGeo, evidence: ["lienhard-2024"], next: okGeo ? "" : "Other orientations and subcooled pools need separate declarations." }));
     if (!okGeo) refused.push("the orientation or the pool");
     const R = B.range;
-    const inData = R ? xb >= R.lo && xb <= R.hi : false;
-    checks.push(check("bo-range", `Superheat group X_b = ${f(xb, 4)} (ΔT_e = ${f(qn(p.DTe))} K) ${inData ? "is inside" : "is outside"} the data of Fig. 9.7, ${R?.lo} ≤ X_b ≤ ${R?.hi} (read from the figure).`, inData ? "evidence" : "unresolved",
+    const inData = R ? Q.cmp(Xb, Q.fromNumber(R.lo)) >= 0 && Q.cmp(Xb, Q.fromNumber(R.hi)) <= 0 : false;
+    checks.push(check("bo-range", `Superheat group X_b = ${f(xb, 4)} (ΔT_e = ${f(qn(p.DTe))} K) ${inData ? "is inside" : "is outside"} the data of Fig. 9.7, ${R?.lo} ≤ X_b ≤ ${R?.hi} (read from the figure), by an exact comparison.`, inData ? "exact" : "unresolved",
       { passed: inData, evidence: ["lienhard-2024"], next: inData ? "" : "The page does not extrapolate the correlation outside its data." }));
     if (!inData) refused.push("the superheat");
     const lambdaD1 = 2 * Math.PI * Math.sqrt(3) * Math.sqrt(qn(p.sigma) / (qn(p.g) * qn(p.Drho)));
@@ -498,7 +498,7 @@
       { passed: true, tex: B.correlation?.tex ?? null, detail: `${B.correlation?.where}. ${B.correlation?.data}`, evidence: ["lienhard-2024"] })
       : check("bo-q", `The page refuses Rohsenow's correlation here: ${refused.join(", ")} ${refused.length > 1 ? "are" : "is"} outside its declared domain. It gives no heat flux and does not extrapolate.`, "unresolved",
         { passed: false, evidence: ["lienhard-2024"], next: "Bring the point inside the declared fluid, surface, pressure, data range and regime, or use another declaration." }));
-    checks.push(check("bo-zuber", `The Zuber–Kutateladze constant 0.131 gives ${f((0.131 / C) * qmax / 1e6, 4)} MW/m², ${f(100 * (1 - 0.131 / C), 3)} % lower. ${B.peak?.zuber?.text ?? ""}`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
+    checks.push(check("bo-zuber", `The Zuber–Kutateladze constant 0.131 gives ${f((0.131 / C) * qmax / 1e6, 4)} MW/m²; eqn. (9.11) is ${f(100 * (C / 0.131 - 1), 3)} % higher. ${B.peak?.zuber?.text ?? ""}`, "evidence", { passed: true, evidence: ["lienhard-2024"] }));
     const lit2 = data?.literature?.ex92, lit5 = data?.literature?.ex95;
     if (lit2 && lit5) {
       const grp = (lit2.mu * lit2.cp ** 3 * Math.sqrt((lit2.g * lit2.drho) / lit2.sigma)) / (lit2.hfg ** 2 * lit2.Pr ** 3);
@@ -601,7 +601,7 @@
     const half = (side) => SF.gauss((t) => G(side ? 1 - (t * t) / 2 : (t * t) / 2) * t, 0, 1, 4);
     const absorbed = tau * (half(0) + half(1));
     checks.push(check("sl-energy", `Energy balance of the gas: ∫κ_a(G − 4σT_g⁴)dx = ${f(absorbed, 8)} W/m² by quadrature, and the net fluxes into the gas at the two walls add to ${f(q1 + q2, 8)} W/m² = ε_s(σT_1⁴ + σT_2⁴ − 2σT_g⁴). ${q1 + q2 < 0 ? "The gas loses this power: the prescribed temperature needs a heat source of the same size." : "The gas gains this power."}`, "numerical",
-      { passed: rel(absorbed, q1 + q2) <= 1e-9, tolerance: "relative 1e-9 (20-point Gauss–Legendre on 4 panels in x and in μ)", evidence: ["beach-1971"] }));
+      { passed: rel(absorbed, q1 + q2) <= 1e-9, tolerance: "relative 1e-9 (20-point Gauss–Legendre on 4 panels in μ, and in t with x = t²/2 from each wall)", evidence: ["beach-1971"] }));
     const er = slabErrors(tau);
     const bnd = refs?.slab?.boundaries?.["1e-2"] ?? null;
     checks.push(check("sl-limits", `Optical-thickness limits at τ_L = ${f(tau)}: the thin form ε_s ≈ 2τ_L has the relative error ${f(er.thin, 4)}, and the opaque form ε_s ≈ 1 has ${f(er.thick, 4)}.${bnd ? ` At the tolerance 0.01 the thin form holds for τ_L ≤ ${f(bnd.thin, 4)} and the opaque form for τ_L ≥ ${f(bnd.thick, 4)} (mpmath, tools/transfer_references.py).` : ""}`, "numerical",
@@ -720,7 +720,7 @@
   }
 
   function stefanImpl(decl, data) {
-    const run = (ctx) => { const v = values(ctx, { rho: "rho", cl: "c_l", cs: "c_s", kl: "k_l", ks: "k_s", ell: "ell", DTl: "DT_l", DTs: "DT_s", tr: "t_r", Tm: "T_m" }); const lack = lacking(v, ["rho", "cl", "cs", "kl", "ks", "ell", "DTl", "DTs", "tr"]); return lack.length ? { lack } : once(keyOf(decl.id, v), () => stefan(v, data?.transferrefs)); };
+    const run = (ctx) => { const v = values(ctx, { rho: "rho", cl: "c_l", cs: "c_s", kl: "k_l", ks: "k_s", ell: "ell", DTl: "DT_l", DTs: "DT_s", tr: "t_r" }); const lack = lacking(v, ["rho", "cl", "cs", "kl", "ks", "ell", "DTl", "DTs", "tr"]); return lack.length ? { lack } : once(keyOf(decl.id, v), () => stefan(v, data?.transferrefs)); };
     const errs = (p) => { const nu = 1 / Math.sqrt(p.kappa), l = lambda(p.Ste_l, p.Ste_s, nu), l1 = lambda(p.Ste_l, 0, 1); return { qs: Math.abs(Math.sqrt(p.Ste_l / 2) - l) / l, one: Math.abs(l1 - l) / l, ratio: p.Ste_l, lambda: l }; };
     return baseImpl(decl, { axes: { x: "Ste_l", y: "Ste_s" },
       approximations: [{ id: "qs", label: "Quasi-steady one-phase front λ = (Ste_l/2)^(1/2)", tex: "Ste_l\\to0", limit: "Ste_l → 0, Ste_s → 0", why: "The latent heat controls: the liquid profile is linear and the solid takes no heat.", error: "relative error of λ against the two-phase root" },

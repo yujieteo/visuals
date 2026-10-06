@@ -163,6 +163,38 @@ await fullSuite("scientific-modelling", {
     } finally {
       await tc.close();
     }
+    // Piece 8, from the URL: the balanced counterflow exchanger with its exact limit; the pool-boiling failure example,
+    // where the page refuses the correlation outside its domain; the absorbing slab with the Rosseland boundary on its map.
+    const hx = await ctx.open("#example=hx-counterflow&tool=regime");
+    try {
+      await hx.page.locator("#confirm").click();
+      await hx.page.waitForSelector("#stability-panel #st-tr-hx-counterflow-hx-eps svg");
+      const trace = await hx.page.locator("#trace").innerText();
+      assert.match(trace, /ε = NTU\/\(1 \+ NTU\) = 3\/5 exactly/);
+      assert.match(trace, /ε = 3\/5 \+ 9\/50\(1 − C_r\)/, "the exact series about C_r = 1");
+    } finally {
+      await hx.close();
+    }
+    const boil = await ctx.open("#example=fail-boiling-domain&tool=regime");
+    try {
+      await boil.page.locator("#confirm").click();
+      await boil.page.waitForSelector("#stability-panel #st-tr-rohsenow-water-bo-curve svg");
+      const trace = await boil.page.locator("#trace").innerText();
+      assert.match(trace, /refuses Rohsenow's correlation here: the surface, the pressure, the regime/);
+      assert.match(trace, /"aluminium" has no value of C_sf/);
+    } finally {
+      await boil.close();
+    }
+    const slab = await ctx.open("#example=absorbing-slab&tool=regime");
+    try {
+      await slab.page.locator("#confirm").click();
+      await slab.page.waitForSelector("#stability-panel #st-tr-absorbing-slab-sl-emissivity svg");
+      await slab.page.waitForSelector("#regime-map svg");
+      assert.match(await slab.page.locator("#trace").innerText(), /outside the assumption τ ≫ 1/);
+      assert.match(await slab.page.locator("#regime-legend").innerText(), /Rosseland diffusion/);
+    } finally {
+      await slab.close();
+    }
     const stale = await ctx.open("#example=no-such-model");
     try {
       assert.match(await stale.page.locator("#notice").innerText(), /not a valid value/);
