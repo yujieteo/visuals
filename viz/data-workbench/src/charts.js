@@ -12,83 +12,16 @@
  * every point up to 50,000, else a seeded sample of 50,000; timelines of 500 events a figure, in time order.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar.js"), require("./chartspec.js"), require("./chartsql.js"), require("./render.js"));
-  else root.DWCharts = factory(root.DWGrammar, root.DWChartSpec, root.DWChartSql, root.DWRender);
-})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, ChartSql, Render) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar.js"), require("./chartspec.js"), require("./chartsql.js"), require("./render.js"), require("./stats.js"));
+  else root.DWCharts = factory(root.DWGrammar, root.DWChartSpec, root.DWChartSql, root.DWRender, root.DWStats);
+})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, ChartSql, Render, Stats) {
   "use strict";
 
   const SCATTER_MAX = 50000;
   const MAX_PERIODS = 500;
   const MIN_PERIODS = 20;
 
-  /* ---------- small statistics ---------- */
-
-  /** ln Γ(x), Lanczos. */
-  function lgamma(x) {
-    const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
-    let y = x, tmp = x + 5.5;
-    tmp -= (x + 0.5) * Math.log(tmp);
-    let ser = 1.000000000190015;
-    for (const c of g) ser += c / ++y;
-    return -tmp + Math.log((2.5066282746310005 * ser) / x);
-  }
-
-  /** The continued fraction of the incomplete beta function (Numerical Recipes betacf). */
-  function betacf(a, b, x) {
-    const tiny = 1e-300;
-    let c = 1, d = 1 - ((a + b) * x) / (a + 1);
-    if (Math.abs(d) < tiny) d = tiny;
-    d = 1 / d;
-    let h = d;
-    for (let m = 1; m <= 300; m++) {
-      const m2 = 2 * m;
-      let aa = (m * (b - m) * x) / ((a + m2 - 1) * (a + m2));
-      d = 1 + aa * d; if (Math.abs(d) < tiny) d = tiny;
-      c = 1 + aa / c; if (Math.abs(c) < tiny) c = tiny;
-      d = 1 / d; h *= d * c;
-      aa = (-(a + m) * (a + b + m) * x) / ((a + m2) * (a + m2 + 1));
-      d = 1 + aa * d; if (Math.abs(d) < tiny) d = tiny;
-      c = 1 + aa / c; if (Math.abs(c) < tiny) c = tiny;
-      d = 1 / d;
-      const del = d * c;
-      h *= del;
-      if (Math.abs(del - 1) < 1e-15) break;
-    }
-    return h;
-  }
-
-  /** The regularized incomplete beta function I_x(a, b). */
-  function ibeta(x, a, b) {
-    if (x <= 0) return 0;
-    if (x >= 1) return 1;
-    const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
-    return x < (a + 1) / (a + b + 2) ? (bt * betacf(a, b, x)) / a : 1 - (bt * betacf(b, a, 1 - x)) / b;
-  }
-
-  /** The CDF of Student's t with df degrees of freedom. */
-  function tCdf(t, df) {
-    const p = 0.5 * ibeta(df / (df + t * t), df / 2, 0.5);
-    return t >= 0 ? 1 - p : p;
-  }
-
-  /** The p-quantile of Student's t (0 < p < 1), by bisection on the CDF. */
-  function tQuantile(p, df) {
-    if (!(df > 0) || !(p > 0 && p < 1)) return NaN;
-    let lo = -1e3, hi = 1e3;
-    for (let i = 0; i < 200; i++) {
-      const mid = (lo + hi) / 2;
-      if (tCdf(mid, df) < p) lo = mid; else hi = mid;
-      if (hi - lo < 1e-12) break;
-    }
-    return (lo + hi) / 2;
-  }
-
-  /** A mean's 95% interval from n, mean and the sample standard deviation: mean ± t(0.975, n − 1) · sd / √n. */
-  function meanInterval(n, mean, sd) {
-    if (!(n >= 2) || !Number.isFinite(sd)) return { lo: null, hi: null };
-    const half = tQuantile(0.975, n - 1) * (sd / Math.sqrt(n));
-    return { lo: mean - half, hi: mean + half };
-  }
+  const { tCdf, tQuantile, meanInterval } = Stats;
 
   /* ---------- fixed rules ---------- */
 
@@ -441,6 +374,39 @@
   }
 
   /**
+   * The ranking's rejection rules on the data (spec.md, "Ranking"): a chart with fewer than 5 complete rows, or an
+   * encoded field with one value only among them (zero variance), is excluded and never ranked. Labels may repeat.
+   * Returns the reason, or "".
+   * @param {(sql: string) => Promise<any[]>} query @param {any} spec @param {Context} ctx
+   */
+  async function rejection(query, spec, ctx) {
+    const kind = Grammar.KIND[spec.kind];
+    const columns = {}, require = [], either = [], checked = [];
+    if (spec.layout.facet) {
+      columns.f = ChartSql.category(ctx.fields[spec.layout.facet.field]).label;
+      require.push("f");
+    }
+    kind.channels.forEach((channel, i) => {
+      const f = fieldOf(ctx, spec, channel);
+      const alias = `c${i}`;
+      columns[alias] = f.cls === "Q" ? ChartSql.measure({ ...f, log: isLog(spec, channel) }) : f.cls === "C" ? ChartSql.category(f).label : f.cls === "T" ? ChartSql.time(f).t : ChartSql.label(f);
+      if (spec.kind === "interval-timeline" && channel !== "label") either.push(alias); else require.push(alias);
+      if (f.cls !== "L") checked.push({ alias, name: f.name });
+    });
+    const rel = ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns, require, either });
+    const n = (await query(ChartSql.countUpTo(rel, 5)))[0].n;
+    if (!n) return "No row has a value present for every field of the chart.";
+    if (n < 5) return `Only ${n} row${n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
+    const flat = [];
+    for (const c of checked) {
+      const any = (await query(ChartSql.countUpTo(rel, 1, c.alias)))[0].n;
+      if (any && !(await query(ChartSql.differs(rel, c.alias)))[0].n) flat.push(c.name);
+    }
+    if (flat.length) return `Zero variance: every complete row has the same ${flat.join(" and the same ")}.`;
+    return "";
+  }
+
+  /**
    * One candidate's outcome: its specification validated, computed and drawn. An invalid specification or a rule
    * that fails on the data excludes it with the reason; an error of the engine is thrown for the caller to sort
    * into failed or incomplete (cancelled, the memory budget).
@@ -449,10 +415,12 @@
   async function evaluate(query, spec, ctx) {
     const v = ChartSpec.validate(spec, ctx);
     if (!v.ok) return { outcome: "excluded", reason: `Invalid specification: ${v.errors.join("; ")}` };
+    const rejected = await rejection(query, spec, ctx);
+    if (rejected) return { outcome: "excluded", reason: rejected };
     const data = await compute(query, spec, ctx);
     if (data.excluded) return { outcome: "excluded", reason: data.excluded };
     return { outcome: "valid", reason: "", data, drawn: Render.render(spec, data) };
   }
 
-  return { SCATTER_MAX, prepare, evaluate, tQuantile, tCdf, meanInterval, fdBins, floorPeriod, nextPeriod, periodsBetween, choosePeriod, compute, fieldInfo };
+  return { SCATTER_MAX, prepare, evaluate, rejection, tQuantile, tCdf, meanInterval, fdBins, floorPeriod, nextPeriod, periodsBetween, choosePeriod, compute, fieldInfo };
 });

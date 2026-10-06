@@ -13,6 +13,7 @@
  *   levels      the most frequent levels of a category, with the count of every level
  *   grouped     counts, means, standard deviations and sums per group, period or cell
  *   timeRange   the first and last time and how many values are known only to the year or month
+ *   countUpTo   the rows of a relation, up to a number; differs whether a field holds a second value (rejections)
  *   points      the points of a scatter plot: all of them, or a seeded sample of 50,000
  *   events      a page of timeline events, duplicates merged; intervalCheck the share of ends at or after starts
  */
@@ -174,6 +175,15 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
   /** The number of rows of a relation. */
   const count = (rel) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n FROM d`;
 
+  /** The rows of a relation, only those with a value of `alias` when it is given, counted up to `most`: the reading stops there. */
+  const countUpTo = (rel, most, alias) => `SELECT count(*)::DOUBLE AS n FROM (SELECT 1 FROM (${rel})${alias ? ` WHERE ${ident(alias)} IS NOT NULL` : ""} LIMIT ${most})`;
+
+  /** 1 when an alias holds a value other than its first one in a relation, else 0: the reading stops at that row. */
+  const differs = (rel, alias) => {
+    const a = ident(alias);
+    return `SELECT count(*)::DOUBLE AS n FROM (SELECT 1 FROM (${rel}) WHERE ${a} <> (SELECT ${a} FROM (${rel}) WHERE ${a} IS NOT NULL LIMIT 1) LIMIT 1)`;
+  };
+
   /** The points of a scatter plot in source order: every point, or a seeded reservoir sample of `rows`. */
   function points(rel, facet, sample) {
     const cols = `${facet ? "f, " : ""}x, y`;
@@ -227,5 +237,5 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return `WITH d AS (${rel}) SELECT epoch(least(min(s), min(e)))::DOUBLE AS lo, epoch(greatest(max(${spanEnd("s", "ps")}), max(${spanEnd("e", "pe")})))::DOUBLE AS hi FROM d WHERE NOT (${reversed})`;
   }
 
-  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
+  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, countUpTo, differs, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
 });

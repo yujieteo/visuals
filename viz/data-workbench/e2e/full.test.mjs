@@ -3,8 +3,9 @@
 // stage), as the site publishes it, and points the harness at that folder. Every check then imports and profiles
 // real tables in each browser project: the examples, a CSV and a Parquet file chosen through the file input, a
 // file too large for the budget, Cancel while reading, an approval by keyboard, the Markdown record and the deck,
-// and the charts: every candidate of the planted example, the full-size view, an edit with facets, a refused edit
-// and a page of timeline events, with the time to the first figure.
+// the charts: every candidate of the planted example, the full-size view, an edit with facets, a refused edit
+// and a page of timeline events, with the time to the first figure; and the findings: the family, both lists with
+// their highlights explained, the highlight count, the study details and get_findings.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -33,13 +34,15 @@ const { parseDeck } = await import("../../../scripts/templates/beamdswitch/deck.
 const kitState = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.state);
 
 /**
- * Wait until a table is imported, every column profiled and its charts generated, and the page is idle.
+ * Wait until a table is imported, every column profiled, its charts generated and its statistics run, and the page
+ * is idle.
  * @param {import("playwright").Page} page @param {string} name
  */
 const ready = (page, name) => page.waitForFunction((n) => {
   const tab = document.getElementById(`tab-${n}`);
   const charts = document.querySelector('#charts-view [data-accounting="complete"], #charts-view [data-accounting="incomplete"]');
-  return !!tab && !/profiling|incomplete/.test(tab.textContent ?? "") && !!charts && /** @type {HTMLElement} */ (document.getElementById("progress")).hidden;
+  const findings = document.querySelector('#findings-view [data-family="complete"], #findings-view [data-family="incomplete"], #findings-view [data-family="failed"]');
+  return !!tab && !/profiling|incomplete/.test(tab.textContent ?? "") && !!charts && !!findings && /** @type {HTMLElement} */ (document.getElementById("progress")).hidden;
 }, name, { timeout: 180_000 });
 
 /** The text of the selected table's view. @param {import("playwright").Page} page */
@@ -51,7 +54,7 @@ const csv = ["id,city,amount,when", ...Array.from({ length: 24 }, (_, i) => `${i
 await fullSuite(SLUG, {
   "url-state": (ctx) => using(ctx.open, async (s) => {
     await ready(s.page, "messy");
-    assert.deepEqual(await kitState(s.page), { example: "messy" }, "the example in the URL opens");
+    assert.deepEqual(await kitState(s.page), { example: "messy", highlights: 6 }, "the example in the URL opens");
     const text = await view(s.page);
     assert.match(text, /Line 19: too few fields/, "a short row is listed with its line");
     assert.match(text, /Line 20: too many fields/, "a long row is listed with its line");
@@ -66,10 +69,10 @@ await fullSuite(SLUG, {
     assert.equal(await s.page.evaluate(() => location.hash), "#example=planted");
     await s.page.goBack();
     await s.page.waitForFunction(() => location.hash === "");
-    assert.deepEqual(await kitState(s.page), { example: "none" }, "Back restores the earlier view");
+    assert.deepEqual(await kitState(s.page), { example: "none", highlights: 6 }, "Back restores the earlier view");
     await s.page.goForward();
     await s.page.waitForFunction(() => location.hash === "#example=planted");
-    assert.deepEqual(await kitState(s.page), { example: "planted" }, "Forward restores the later view");
+    assert.deepEqual(await kitState(s.page), { example: "planted", highlights: 6 }, "Forward restores the later view");
     assert.equal(await s.page.locator('[role="tab"]').count(), 1, "the table is imported once");
   }),
 
@@ -210,6 +213,12 @@ if (selected) {
       test("charts: every candidate of the planted example; the full-size view, an edit with facets, a refused edit, a page of events", { timeout: 300_000 }, async () => {
         const s = await openSession(browser, project, targets.origin(artifact));
         try {
+          // A WebMCP host of the test's own, so get_findings can be called as an agent would.
+          await s.page.addInitScript(() => {
+            const tools = /** @type {Record<string, any>} */ ({});
+            Object.defineProperty(document, "modelContext", { value: { registerTool: (/** @type {any} */ t) => { tools[t.name] = t; } }, configurable: true });
+            /** @type {any} */ (window).__tools = tools;
+          });
           await s.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
           await settle(s.page, 'html[data-ready="true"]');
           const started = Date.now();
@@ -220,7 +229,7 @@ if (selected) {
           const all = ((Date.now() - started) / 1000).toFixed(1);
           const accounting = await s.page.locator("[data-accounting]").innerText();
           assert.match(accounting, /155 candidates of grammar v1: 155 valid, 0 excluded, 0 failed, 0 incomplete/, "every candidate accounted for");
-          console.log(`${project.name}: planted example (2,000 rows): first figure ${first} s after the click, all 155 candidates ${all} s`);
+          console.log(`${project.name}: planted example (2,000 rows): first figure ${first} s after the click, all 155 candidates and the statistics ${all} s`);
           await s.page.locator("details.scope summary").click();
           assert.match(await s.page.locator("details.scope").innerText(), /order_id\s+excluded\s+An identifier, never a measure/, "the scope lists each exclusion with its reason");
           // The full-size view: an edit with facets, recorded in the figure and the log.
@@ -256,6 +265,39 @@ if (selected) {
           await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
           assert.match(await s.page.locator("#viewer-figure svg").innerHTML(), /Events 501–1,000 of 2,000, page 2 of 4/);
           await s.page.locator("#viewer-close").click();
+          // The findings: the family, both lists with distinct highlights explained, and the count of highlights.
+          const findings = s.page.locator("#findings-view");
+          assert.match(await findings.locator("[data-family]").innerText(), /Family planted, run 1: 80 hypotheses, 62 tested \(m\), 18 not tested; 2 with an adjusted p-value at or below 0\.05\./);
+          const unusual = findings.locator('section[aria-labelledby="list-unusual"] .highlights > li');
+          assert.equal(await unusual.count(), 6, "6 distinct highlights by default");
+          assert.match(await unusual.first().innerText(), /1\. Rows by region[\s\S]*Observed[\s\S]*the rarest, Atlantis, holds 0\.5% of 2,000 rows[\s\S]*Why highlighted[\s\S]*Unusualness 1 = usefulness 1/i);
+          const supported = findings.locator('section[aria-labelledby="list-supported"] .highlights > li');
+          assert.equal(await supported.count(), 2, "fewer distinct supported patterns, stated");
+          assert.match(await findings.locator('[data-highlights="supported"]').innerText(), /fewer than the 6 you asked for/);
+          assert.match(await supported.nth(1).innerText(), /Welch's two-sample t-test \(T2\)[\s\S]*exploratory evidence[\s\S]*Independence assumed, not confirmed/);
+          await s.page.locator("#highlight-count").fill("3");
+          await s.page.locator("#highlight-count").dispatchEvent("change");
+          await s.page.waitForFunction(() => document.querySelectorAll('section[aria-labelledby="list-unusual"] .highlights > li').length === 3);
+          assert.match(await s.page.evaluate(() => location.hash), /highlights=3/, "the count is view state in the URL");
+          // A highlight's picture opens the chart full size.
+          await unusual.first().locator("button.thumb").click();
+          await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
+          assert.match(await s.page.locator("#viewer-title").innerText(), /Rows by region/);
+          await s.page.locator("#viewer-close").click();
+          // An agent reads the findings; no tool returns a row.
+          const tool = await s.page.evaluate(async () => JSON.parse((await /** @type {any} */ (window).__tools.get_findings.execute({ table: "planted", list: "family" })).content[0].text));
+          assert.equal(tool.hypotheses.length, 80);
+          assert.equal(tool.family.m, 62);
+          const one = await s.page.evaluate(async () => JSON.parse((await /** @type {any} */ (window).__tools.get_findings.execute({ table: "planted", id: "planted.scatter.dose.response" })).content[0].text));
+          assert.equal(one.hypotheses[0].test, "T1");
+          assert.ok(one.hypotheses[0].evidence, "the dose and response: exploratory evidence");
+          // The study details decide the tests again: "not independent" turns off every test of independent rows.
+          await findings.locator("details.study > summary").click();
+          await s.page.locator("#study-independent").selectOption("no");
+          await findings.locator("details.study button[type=submit]").click();
+          await s.page.locator("#log").getByText("You set the study details of planted: independent observations: no").waitFor({ timeout: 60_000 });
+          assert.match(await findings.locator("[data-family]").innerText(), /80 hypotheses, 14 tested \(m\), 66 not tested/);
+          assert.match(await findings.locator('section[aria-labelledby="list-supported"]').innerText(), /No chart has a tested hypothesis with an adjusted p-value at or below 0\.05\./);
           assert.deepEqual(s.observed.pageErrors, [], "no uncaught errors");
           assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
         } finally {

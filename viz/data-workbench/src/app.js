@@ -1,9 +1,10 @@
 /* Universal Data Workbench: the page. Import CSV and Parquet files, check them against the memory budget first,
  * profile every column, and let the person approve or dismiss each suggested correction. Runs only in the browser.
  *
- * State lives in `store`; every change redraws from it. The kit (VisualKit) keeps the one piece of URL state, the
- * open example, and gives the command palette, the Markdown record, the deck and the read-only WebMCP tools. No
- * imported value enters the URL, and no tool returns a row: they return the profiles, which hold example values.
+ * State lives in `store`; every change redraws from it. The kit (VisualKit) keeps the URL state, the open example
+ * and the number of highlights a list, and gives the command palette, the Markdown record, the deck and the read-only
+ * WebMCP tools. No imported value enters the URL, and no tool returns a row: they return the profiles, which hold
+ * example values, and the statistics. The charts are src/gallery.js; the statistics and both lists src/findings.js.
  */
 (function () {
   "use strict";
@@ -345,6 +346,8 @@
     table.dismissed.push(id);
     note({ kind: "dismissed", table: table.name, column: colName, text: `Dismissed: ${s.text}` });
     refresh();
+    // A dismissed stand-in is a value again, so the statistics that left it out run again.
+    if (s.kind === "missing-number" && Findings.state(table.name)?.family) Findings.analyse(table);
   }
 
   /** What a change did, for the log. */
@@ -416,6 +419,7 @@
     await api.query(`DROP TABLE ${Sql.ident(table.name)}`);
     store.tables = store.tables.filter((t) => t !== table);
     Gallery.drop(table.name);
+    Findings.drop(table.name);
     if (store.selected === table.name) store.selected = store.tables[0]?.name ?? "";
     note({ kind: "removed", table: table.name, text: `Removed ${table.name} from the workbench; the file itself is unchanged.` });
     refresh();
@@ -482,6 +486,7 @@
     drawQueue();
     drawTables();
     Gallery.draw();
+    Findings.draw();
     drawExamples();
     drawLog();
   }
@@ -798,6 +803,7 @@
         failedColumns: t.columns.filter((c) => c.failed).map((c) => ({ name: c.name, error: c.failed })),
         notProfiled: t.imported.columns.filter((c) => c.name !== t.imported.rowColumn && !t.columns.some((p) => p.name === c.name)).map((c) => c.name),
         charts: Gallery.summary(t.name),
+        findings: Findings.summary(t.name),
       })),
       log: store.log.map((e) => e.text),
     };
@@ -808,6 +814,16 @@
   const Gallery = window.DWGallery.mount({
     store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
     cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory,
+    // Once a table's charts are drawn, its statistics run and its charts are ranked.
+    charted: (table) => Findings.analyse(table),
+  });
+
+  /* ---------- findings ---------- */
+
+  const Findings = window.DWFindings.mount({
+    store, h, byId, fmtInt, plural, busy, progress, refresh, ensureEngine, note, message, cancel, gallery: Gallery,
+    highlights: () => kit?.state.highlights ?? 6,
+    setHighlights: (n) => kit?.set({ highlights: n }, "replace"),
   });
 
   /* ---------- start ---------- */
@@ -819,7 +835,10 @@
     title: "Universal Data Workbench",
     summary: "Import CSV and Parquet tables and inspect every column on this device.",
     schemaVersion: 1,
-    fields: { example: { type: "enum", values: examples, default: "none", label: "Example" } },
+    fields: {
+      example: { type: "enum", values: examples, default: "none", label: "Example" },
+      highlights: { type: "integer", min: 0, max: 50, default: 6, label: "Distinct highlights per list" },
+    },
     derive: () => snapshot(),
     render: (state) => {
       draw();
@@ -866,10 +885,23 @@
           const text = out ? JSON.stringify(out, null, 2) : !tableOf(input?.table) ? `No table named ${JSON.stringify(input?.table)}; get_tables lists them.` : input?.id ? `No candidate ${JSON.stringify(input.id)} in ${input.table}.` : `The charts of ${input.table} are not generated yet.`;
           return { content: [{ type: "text", text }] };
         } },
+      { name: "get_findings", description: "Return one table's findings: its hypothesis family (definition, members tested and not tested with reasons, m, Benjamini–Yekutieli adjusted p-values, study details and independence checks) and its two lists, unusual patterns and statistically supported patterns, with each distinct highlight explained (observed numbers apart from the rule scores, statistical status, cautions). With list, 1,000 entries of that list from offset, or with list=family the hypotheses; with id, one chart's finding. Never returns rows.",
+        inputSchema: { type: "object", properties: {
+          table: { type: "string", description: "The table name, as get_tables lists it" },
+          list: { type: "string", enum: ["unusual", "supported", "family"], description: "One list, or the family's hypotheses" },
+          offset: { type: "integer", minimum: 0, description: "Skip this many entries of the list" },
+          id: { type: "string", description: "One chart's id: return its finding and its hypotheses" },
+        }, required: ["table"], additionalProperties: false }, annotations: { readOnlyHint: true },
+        execute: async (/** @type {any} */ input) => {
+          const out = tableOf(input?.table) ? Findings.tool(input.table, { list: input?.list, offset: input?.offset, id: input?.id }) : undefined;
+          const text = out ? JSON.stringify(out, null, 2) : !tableOf(input?.table) ? `No table named ${JSON.stringify(input?.table)}; get_tables lists them.` : input?.id ? `No chart ${JSON.stringify(input.id)} in ${input.table}.` : `The statistics of ${input.table} have not run yet.`;
+          return { content: [{ type: "text", text }] };
+        } },
     ],
     commands: [
       ...DATA.examples.map((x) => ({ label: `Open the example: ${x.title}`, run: () => { kit.set({ example: x.id }); openExample(x.id); } })),
       { label: "Choose files to import", run: () => byId("files").click() },
+      { label: "Go to the findings: unusual and statistically supported patterns", run: () => byId("findings-title")?.scrollIntoView({ block: "start" }) },
     ],
   });
 })();

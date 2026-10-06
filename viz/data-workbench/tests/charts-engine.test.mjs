@@ -223,16 +223,16 @@ test("an end known only to the year or month counts by its whole span: 1850-03 e
 test("time zones: values with an offset are ordered in UTC and shown as written; values without one are zone unknown and never shifted", async () => {
   const lines = ["label,seen,naive",
     "Tokyo,2026-01-01T23:30:00+09:00,2026-01-01T23:30:00", "London,2026-01-01T15:00:00Z,2026-01-01T15:00:00", "Lima,2026-01-01T09:00:00-05:00,2026-01-01T09:00:00",
-    "Delhi,2026-01-01T19:45:00+05:30,2026-01-01T19:45:00"];
+    "Delhi,2026-01-01T19:45:00+05:30,2026-01-01T19:45:00", "Auckland,2026-01-01T11:00:00+13:00,2026-01-01T11:00:00"];
   const t = await load("zones", encode(lines.join("\n")));
   const zoned = await chart(t, "point-timeline", ["seen", "label"]);
   assert.equal(zoned.spec.scale.x.zone, "utc");
-  assert.deepEqual(zoned.data.events.map((/** @type {any} */ x) => x.label), ["Lima", "Delhi", "Tokyo", "London"], "14:00, 14:15, 14:30 and 15:00 in UTC");
-  assert.equal(zoned.data.events[0].raw, "2026-01-01T09:00:00-05:00", "shown as written, in its own offset");
+  assert.deepEqual(zoned.data.events.map((/** @type {any} */ x) => x.label), ["Auckland", "Lima", "Delhi", "Tokyo", "London"], "22:00 the day before, then 14:00, 14:15, 14:30 and 15:00 in UTC");
+  assert.equal(zoned.data.events[1].raw, "2026-01-01T09:00:00-05:00", "shown as written, in its own offset");
   assert.match(zoned.svg, /seen \(UTC\)/);
   const naive = await chart(t, "point-timeline", ["naive", "label"]);
   assert.equal(naive.spec.scale.x.zone, "unknown");
-  assert.deepEqual(naive.data.events.map((/** @type {any} */ x) => x.label), ["Lima", "London", "Delhi", "Tokyo"], "as written, never shifted");
+  assert.deepEqual(naive.data.events.map((/** @type {any} */ x) => x.label), ["Lima", "Auckland", "London", "Delhi", "Tokyo"], "as written, never shifted");
   assert.match(naive.svg, /naive \(zone unknown\)/);
 });
 
