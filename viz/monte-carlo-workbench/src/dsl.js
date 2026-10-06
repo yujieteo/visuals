@@ -84,7 +84,7 @@
       else if ((m = /^param\s+([A-Za-z]\w*)\s*=\s*(.+)$/.exec(line))) {
         const t = tail(m[2]);
         rec.parameters.push({ name: m[1], expr: t.rest, unit: t.unit, note: t.note });
-      } else if ((m = /^([A-Za-z]\w*)\s*~\s*([a-z]+)\s*\((.*)\)(.*)$/.exec(line))) {
+      } else if ((m = /^([A-Za-z]\w*)\s*~\s*([a-z][a-z0-9]*)\s*\((.*)\)(.*)$/.exec(line))) {
         const t = tail(m[4]);
         if (t.rest) { errors.push(`${at}: "${t.rest.slice(0, 30)}" after the law is not repeat, {unit} or "note".`); return; }
         /** @type {Record<string, string>} */

@@ -45,10 +45,10 @@
     failure: { type: "enum", values: ["none", "envelope", "stream_reuse", "table_cut", "control_mean"], default: "none", label: "Assumption failure" },
     quantity: { type: "integer", min: 1, max: 8, default: 1, label: "Quantity in the plots" },
     alt: { type: "integer", min: 1, max: 4, default: 1, label: "Alternative in the plots" },
-    plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF)" },
+    plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile", "tail"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF; tail: the survival function on log–log axes)" },
     yscale: { type: "enum", values: ["linear", "log"], default: "linear", label: "Vertical axis" },
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
-    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction"], default: "lln", label: "Theory panel" },
+    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances"], default: "lln", label: "Theory panel" },
     nav: { type: "enum", values: ["examples", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
@@ -135,6 +135,20 @@ focus N
     const [name, idx] = En.splitFocus(c.focus);
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
     let lo = Infinity, hi = -Infinity, top = 0, heavy = false, continuous = false;
+    // A continuous focus with an exact law (a variable, or a maximum, minimum, sum or affine function of draws): the
+    // window from its quantiles, and for a heavy tail 24 thresholds equally spaced on a log scale past the window, to
+    // the 1 − 10^-8 quantile, for the survival and tail plots.
+    const exact = node?.type === "var" && node.constant ? [] : c.alternatives.map((/** @type {any} */ _, /** @type {number} */ a) => En.focusLaw(c, a));
+    if (exact.length && exact.every((/** @type {any} */ b) => b && b.continuous)) {
+      for (const b of exact) {
+        const tail = b.order === Infinity ? 1e-4 : 0.005;
+        lo = Math.min(lo, Math.max(b.support.lo, b.quantile(tail, 1 - tail)));
+        hi = Math.max(hi, Math.min(b.support.hi, b.quantile(1 - tail, tail)));
+        if (b.order !== Infinity) { heavy = true; top = Math.max(top, Math.min(b.support.hi, b.quantile(1 - 1e-8, 1e-8))); }
+      }
+      const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
+      return { lo, width, bins: CBINS, thresholds: logThresholds(lo + CBINS * width, top, heavy), integer: false, heavy, continuous: true };
+    }
     if (node?.type === "var" && node.constant) {
       for (const alt of c.alternatives) {
         const p = En.argsAt(node, alt.values).params, m = marginalLaw(node, p, idx);
@@ -145,7 +159,7 @@ focus N
           continuous = true;
           lo = Math.min(lo, Math.max(s.lo, m.law.quantile(tail, m.params)));
           hi = Math.max(hi, Math.min(s.hi, m.law.isf(tail, m.params)));
-          if (order < Infinity) { heavy = true; top = 1e6; }
+          if (order < Infinity) { heavy = true; top = Math.max(top, Math.min(s.hi, m.law.isf(1e-8, m.params))); }
           continue;
         }
         // The window holds the support less a mass of about 10^-9 on the left and 10^-6 on the right.
@@ -174,9 +188,7 @@ focus N
     }
     if (continuous && hi >= lo) {
       const width = hi > lo ? (hi - lo) / CBINS : Math.max(Math.abs(lo) * 1e-6, 1e-9);
-      const thresholds = [];
-      for (let t = 10; heavy && t <= top; t *= 10) if (t > lo + CBINS * width) thresholds.push(t);
-      return { lo, width, bins: CBINS, thresholds, integer: false, heavy, continuous: true };
+      return { lo, width, bins: CBINS, thresholds: logThresholds(lo + CBINS * width, top, heavy), integer: false, heavy, continuous: true };
     }
     if (!(hi >= lo)) {
       lo = 0;
@@ -193,6 +205,29 @@ focus N
     return { lo, width, bins, thresholds, integer, heavy, continuous: false };
   }
 
+  /**
+   * The name and the tail index of the focus law, for the plot notes: the law of a variable, or of a maximum,
+   * minimum, sum or affine function of draws; null when the focus has no exact law.
+   * @param {any} c @param {number} a
+   */
+  function focusLabel(c, a) {
+    const [name, idx] = En.splitFocus(c.focus), node = c.nodes.find((/** @type {any} */ n) => n.name === name);
+    if (node?.type === "var" && node.constant && !idx && node.repeat === 1) {
+      const p = En.argsAt(node, c.alternatives[a].values).params;
+      if (node.law.check(p).length) return null;
+      const order = node.law.moments(p).order, index = node.law.tailIndex ? node.law.tailIndex(p) : order < Infinity ? order : null;
+      return { label: `the ${node.law.name} law`, tailIndex: safe(index), numeric: !!node.law.numeric };
+    }
+    const b = En.focusLaw(c, a);
+    return b ? { label: b.label, tailIndex: safe(b.tailIndex), numeric: b.numeric } : null;
+  }
+
+  /** 24 thresholds equally spaced on a log scale from the end of the window to top, for a heavy tail. @param {number} end @param {number} top @param {boolean} heavy */
+  function logThresholds(end, top, heavy) {
+    if (!heavy || !(end > 0) || !(top > end * 1.01) || !Number.isFinite(top)) return [];
+    return Array.from({ length: 24 }, (_, i) => end * Math.pow(top / end, (i + 1) / 24));
+  }
+
   /** The law of a variable, or of component idx of a vector variable. @param {any} node @param {any} p @param {number} idx */
   function marginalLaw(node, p, idx) {
     if (node.law.check(p).length) return null;
@@ -206,12 +241,28 @@ focus N
   /**
    * The reference law of the focus variable for one alternative, in the form one plot needs: points of the PMF,
    * CDF or survival function, or the quantile function on a grid of u.
-   * @param {any} c @param {any} ref @param {any} win @param {number} a @param {string} kind
+   * @param {any} c @param {any} ref @param {any} win @param {number} a @param {string} kind @returns {{ x: number[], y: number[] } | null}
    */
   function focusTheory(c, ref, win, a, kind) {
+    if (kind === "tail") {
+      // The tail plot: the survival function at the points with x > 0 and a positive value, on log–log axes.
+      const sf = /** @type {{ x: number[], y: number[] } | null} */ (focusTheory(c, ref, win, a, "survival"));
+      if (!sf) return null;
+      /** @type {number[]} */
+      const keep = sf.x.map((/** @type {number} */ _, /** @type {number} */ i) => i).filter((/** @type {number} */ i) => sf.x[i] > 0 && sf.y[i] > 0);
+      return { x: keep.map((/** @type {number} */ i) => sf.x[i]), y: keep.map((/** @type {number} */ i) => sf.y[i]) };
+    }
     const [name, idx] = En.splitFocus(c.focus);
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
     const grid = Array.from({ length: 199 }, (_, i) => (i + 1) / 200);
+    const exact = node?.type === "var" && node.constant ? null : En.focusLaw(c, a);
+    if (exact && exact.continuous && win.continuous) {
+      if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(exact.quantile(u, 1 - u)) ?? 0) };
+      const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
+      if (kind === "survival") for (const t of win.thresholds) xs.push(t);
+      const f = kind === "pmf" ? exact.mass : kind === "cdf" ? exact.cdf : exact.sf;
+      return { x: xs, y: xs.map((x) => safe(f(x)) ?? 0) };
+    }
     if (node?.type === "var" && node.constant) {
       const m = marginalLaw(node, En.argsAt(node, c.alternatives[a].values).params, idx);
       if (!m) return null;
@@ -315,7 +366,7 @@ focus N
       if (!n.constant || n.law.check(p).length) { out.push({ variable: n.name, law: n.law.id, name: n.law.name, constant: false, methods: null }); continue; }
       /** @param {any} s */
       const show = (s) => ("unavailable" in s ? { label: "Not available", exactness: s.unavailable, acceptance: null } : { label: s.label, exactness: s.exactness, acceptance: safe(s.acceptance) });
-      out.push({ variable: n.name, law: n.law.id, name: n.law.name, constant: true, methods: {
+      out.push({ variable: n.name, law: n.law.id, name: n.law.name, constant: true, alternate: n.law.alternate ? n.law.alternate(p) : null, methods: {
         independent: show(n.law.reference(p)),
         inverse: show(n.law.inverse(p, failure === "table_cut" ? 0.99 : undefined)),
         rejection: show(n.law.rejection(p, failure === "envelope" ? 0.5 : 1)),
@@ -357,6 +408,92 @@ focus N
       return { label: alt.label, ...test(p, 0) };
     });
     return { n, mean, fitted, estimate: ds.law === "poisson" ? mean : mean / ds.trials, fittedTest: test(fitted, 1), expected, alternatives };
+  }
+
+  /**
+   * Nelder–Mead minimisation of f from x0 with initial steps `step`, to a relative change of 1e-12 or 4,000 steps.
+   * @param {(x: number[]) => number} f @param {number[]} x0 @param {number[]} step
+   */
+  function nelderMead(f, x0, step) {
+    const n = x0.length;
+    let pts = [x0, ...step.map((h, i) => x0.map((v, j) => (i === j ? v + h : v)))].map((x) => ({ x, f: f(x) }));
+    for (let it = 0; it < 4000; it++) {
+      pts.sort((a, b) => a.f - b.f);
+      if (Math.abs(pts[n].f - pts[0].f) <= 1e-12 * (Math.abs(pts[0].f) + 1e-12)) break;
+      const c = x0.map((_, j) => pts.slice(0, n).reduce((t, p) => t + p.x[j], 0) / n);
+      /** @param {number} t */
+      const at = (t) => { const x = c.map((v, j) => v + t * (pts[n].x[j] - v)); return { x, f: f(x) }; };
+      const r = at(-1);
+      if (r.f < pts[0].f) { const e = at(-2); pts[n] = e.f < r.f ? e : r; }
+      else if (r.f < pts[n - 1].f) pts[n] = r;
+      else {
+        const k = at(r.f < pts[n].f ? -0.5 : 0.5);
+        if (k.f < Math.min(r.f, pts[n].f)) pts[n] = k;
+        else pts = pts.map((p, i) => (i === 0 ? p : { x: p.x.map((v, j) => pts[0].x[j] + 0.5 * (v - pts[0].x[j])), f: 0 })).map((p, i) => (i === 0 ? p : { x: p.x, f: f(p.x) }));
+      }
+    }
+    pts.sort((a, b) => a.f - b.f);
+    return pts[0];
+  }
+
+  /** The inverse of a symmetric matrix by Gauss–Jordan elimination, or null when it is singular. @param {number[][]} m */
+  function inverse(m) {
+    const n = m.length, a = m.map((r, i) => [...r, ...r.map((_, j) => +(i === j))]);
+    for (let i = 0; i < n; i++) {
+      let piv = i;
+      for (let r = i + 1; r < n; r++) if (Math.abs(a[r][i]) > Math.abs(a[piv][i])) piv = r;
+      if (!(Math.abs(a[piv][i]) > 1e-300)) return null;
+      [a[i], a[piv]] = [a[piv], a[i]];
+      const d = a[i][i];
+      for (let j = 0; j < 2 * n; j++) a[i][j] /= d;
+      for (let r = 0; r < n; r++) if (r !== i) { const f = a[r][i]; for (let j = 0; j < 2 * n; j++) a[r][j] -= f * a[i][j]; }
+    }
+    return a.map((r) => r.slice(n));
+  }
+
+  /**
+   * The fit of a series of annual maxima: the GEV law and the Gumbel law (ξ = 0) by maximum likelihood, the standard
+   * errors from the observed information (a numerical Hessian), the deviance test of ξ = 0, return levels, and the
+   * points of a probability plot with the Gringorten plotting positions (i − 0.44)/(n + 0.12).
+   * @param {any} ds
+   */
+  function seriesFit(ds) {
+    const x = ds.values.slice(), n = x.length, mean = x.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / n;
+    const sd = Math.sqrt(x.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + (b - mean) ** 2, 0) / (n - 1));
+    const gev = L.BY_ID.gev;
+    /** The negative log-likelihood at (μ, log σ, ξ). @param {number[]} t */
+    const nll = (t) => {
+      const p = { mu: t[0], sigma: Math.exp(t[1]), xi: Math.abs(t[2]) < 1e-9 ? 0 : t[2] };
+      let s = 0;
+      for (const v of x) { const d = gev.pdf(v, p); if (!(d > 0)) return 1e300; s -= Math.log(d); }
+      return s;
+    };
+    // Starting values from the moments of the Gumbel law: σ = s√6/π, μ = x̄ − 0.5772 σ.
+    const s0 = (sd * Math.sqrt(6)) / Math.PI, m0 = mean - 0.5772156649 * s0;
+    const g0 = nelderMead((t) => nll([t[0], t[1], 0]), [m0, Math.log(s0)], [s0 / 4, 0.2]);
+    const full = nelderMead(nll, [g0.x[0], g0.x[1], 0.05], [s0 / 4, 0.2, 0.1]);
+    /** Standard errors of (μ, σ, ξ) from the inverse of the numerical Hessian of nll. @param {number[]} t @param {number} k */
+    const se = (t, k) => {
+      const h = t.map((v, i) => (i === 1 ? 1e-4 : 1e-4 * Math.max(1, Math.abs(v))));
+      /** @param {number} i @param {number} j */
+      const d2 = (i, j) => {
+        /** @param {number} a @param {number} b */
+        const f = (a, b) => nll([...t.map((v, m) => v + (m === i ? a * h[i] : 0) + (m === j ? b * h[j] : 0)), ...(k === 2 ? [0] : [])].slice(0, 3));
+        return (f(1, 1) - f(1, -1) - f(-1, 1) + f(-1, -1)) / (4 * h[i] * h[j]);
+      };
+      const H = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => d2(i, j)));
+      const V = inverse(H);
+      if (!V || V.some((r, i) => !(r[i] > 0))) return t.map(() => null);
+      // The scale is fitted on the log scale: SE(σ) = σ·SE(log σ) by the delta method.
+      return V.map((r, i) => (i === 1 ? Math.exp(t[1]) * Math.sqrt(r[i]) : Math.sqrt(r[i])));
+    };
+    const gevP = { mu: full.x[0], sigma: Math.exp(full.x[1]), xi: full.x[2] }, gumP = { mu: g0.x[0], sigma: Math.exp(g0.x[1]), xi: 0 };
+    const dev = 2 * (g0.f - full.f);
+    const levels = [10, 50, 100, 200].map((T) => ({ T, gev: gev.isf(1 / T, gevP), gumbel: gev.isf(1 / T, gumP) }));
+    const sorted = x.slice().sort((/** @type {number} */ a, /** @type {number} */ b) => a - b);
+    const plot = sorted.map((/** @type {number} */ v, /** @type {number} */ i) => { const u = (i + 1 - 0.44) / (n + 0.12); return { x: v, gev: gev.quantile(u, gevP), gumbel: gev.quantile(u, gumP) }; });
+    return { kind: "series", n, mean, sd, max: sorted[n - 1], gev: { ...gevP, se: se(full.x, 3), loglik: -full.f }, gumbel: { mu: gumP.mu, sigma: gumP.sigma, se: se(g0.x, 2), loglik: -g0.f },
+      deviance: dev, p: S.chiSquareSf(Math.max(0, dev), 1), levels, plot };
   }
 
   /**
@@ -411,16 +548,19 @@ focus N
       ok: true, errors: [], ...base,
       alternatives: c.alternatives.map((/** @type {any} */ alt) => alt.label), alt: a + 1,
       quantities: c.quantities.map((/** @type {any} */ qu, /** @type {number} */ k) => ({ name: qu.name, kind: qu.kind, unit: qu.unit, note: record.quantities[k].note ?? "", status: status[k] })), quantity: q + 1,
-      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed, method: r.method })),
-      focus: { name: c.focus, window: { lo: win.lo, width: win.width, bins: win.bins, thresholds: win.thresholds }, heavy: win.heavy, integer: win.integer, continuous: win.continuous, theory: focusTheory(c, refs[a], win, a, state.plot) },
+      references: refs.map((/** @type {any} */ r) => ({ values: r.values.map(safe), reason: r.reason, neglected: safe(r.neglected), closed: r.closed, method: r.method, how: r.how ?? null })),
+      focus: { name: c.focus, window: { lo: win.lo, width: win.width, bins: win.bins, thresholds: win.thresholds }, heavy: win.heavy, integer: win.integer, continuous: win.continuous, theory: focusTheory(c, refs[a], win, a, state.plot),
+        law: focusLabel(c, a) },
       graph: graphOf(c, record), equations: equations(record), samplers: samplersOf(c, state.failure), failureNote,
       design: { streams: state.streams, stratify: c.stratify ? { name: c.stratify.name, K: c.stratify.K } : null,
         scalars: c.nodes.filter((/** @type {any} */ n) => n.type === "var" && n.repeat === 1 && !n.law.dim).map((/** @type {any} */ n) => n.name),
         control: c.control ? { name: c.control.name, expr: c.control.expr, means: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.mean) : null)), sds: c.control.exact.map((/** @type {any} */ m) => (m ? safe(m.sd) : null)), why: c.control.exact.map((/** @type {any} */ m) => m?.why ?? "") } : null },
+      observation: record.observation ?? null,
+      censoring: (() => { const n = c.nodes.find((/** @type {any} */ x) => x.censoring); return n ? { text: record.censoring, obs: n.name, event: n.name.replace(/_obs$/, "_event") } : null; })(),
       decision: c.decision, variables: c.nodes.filter((/** @type {any} */ n) => n.type === "var").map((/** @type {any} */ n) => n.name), variableTable: variablesOf(c, record),
-      dataset: dataset ? { id: dataset.id, fit: fitOf(dataset, c) } : null,
+      dataset: dataset ? { id: dataset.id, fit: dataset.kind === "series" ? seriesFit(dataset) : fitOf(dataset, c) } : null,
     };
   }
 
-  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
+  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
 });

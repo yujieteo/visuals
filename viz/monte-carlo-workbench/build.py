@@ -29,7 +29,7 @@ from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
 DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits"]
-ENGINE = ["rng", "special", "expr", "continuous", "laws", "engine", "dsl"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "engine", "dsl"]
 PAGE = ["plots", "model", "report", "pool", "view"]
 
 
@@ -64,7 +64,14 @@ def static_parts(cat):
                   f"{e(lim['how'])}</p>")
     else:
         limits = "<p>The limits are not measured yet.</p>"
-    return {"GROUPS": groups, "GLOSSARY": glossary, "CATALOGUE": listing, "DATASETS": datasets, "LIMITS": limits}
+    here = [g for g in cat["groups"] if g["status"] == "here"]
+    titles = [g["title"][0].lower() + g["title"][1:] for g in here]
+    span = lambda gs: f"{gs[0]['piece']}" if len(gs) == 1 else f"{gs[0]['piece']} to {gs[-1]['piece']}"
+    later = [g for g in cat["groups"] if g["status"] != "here"]
+    summary = (f"This page holds group{'s' if len(here) > 1 else ''} {span(here)} of {len(cat['groups'])}: "
+               f"{', '.join(titles[:-1]) + ', and ' + titles[-1] if len(titles) > 1 else titles[0]}."
+               + (f" Group{'s' if len(later) > 1 else ''} {span(later)} {'are' if len(later) > 1 else 'is'} not yet available." if later else ""))
+    return {"GROUPS_SUMMARY": e(summary), "GROUPS": groups, "GLOSSARY": glossary, "CATALOGUE": listing, "DATASETS": datasets, "LIMITS": limits}
 
 
 def build():

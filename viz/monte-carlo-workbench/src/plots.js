@@ -192,6 +192,55 @@
   }
 
   /**
+   * The tail plot: P(X > x) against x on log–log axes, for x > 0. The reference law is a line and the run's
+   * frequencies are dots. A regularly varying tail P(X > x) = x^(−α) ℓ(x) becomes a line of slope −α for large x, so
+   * the plot adds a dashed guide of that slope through the reference value at the largest x, when the index is known.
+   * @param {{ xlabel: string, theory: { x: number[], y: number[] } | null, empirical: { x: number[], y: number[] } | null, n: number, alpha?: number | null }} o
+   */
+  function tail(o) {
+    const pos = (/** @type {{ x: number[], y: number[] } | null} */ d) => (d ? d.x.map((x, i) => [x, d.y[i]]).filter(([x, y]) => x > 0 && y > 0 && Number.isFinite(x) && Number.isFinite(y)) : []);
+    const t = pos(o.theory), e = pos(o.empirical);
+    const label = `Tail plot of ${o.xlabel}: P(X > x) against x on log–log axes${t.length ? ", reference law as a line" : ""}${e.length ? `, frequencies of ${o.n.toLocaleString("en-US")} draws as dots` : ""}${o.alpha ? `, guide of slope −${fmt(o.alpha)}` : ""}`;
+    const all = [...t, ...e];
+    if (all.length < 2) return svg(label, `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">No positive values to draw on log axes yet.</text>`);
+    const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+    let x0 = Math.min(...xs), x1 = Math.max(...xs);
+    if (!(x1 > x0)) { x0 /= 2; x1 *= 2; }
+    const yr = logRange(ys);
+    const f = frame({ x: [x0, x1], y: yr, xlog: true, ylog: true, xlabel: `${o.xlabel} (log axis)`, ylabel: "P(X > x) (log axis)" });
+    const parts = [f.markup];
+    if (o.alpha && t.length) {
+      // The guide y = y_end (x/x_end)^(−α), clipped to the frame.
+      const al = o.alpha, [xe, ye] = t[t.length - 1], g = (/** @type {number} */ x) => ye * Math.pow(x / xe, -al);
+      const ga = Math.max(x0, xe * Math.pow(yr[1] / ye, -1 / al)), gb = Math.min(x1, xe * Math.pow(yr[0] / ye, -1 / al));
+      if (gb > ga) parts.push(`<line class="ref" x1="${f.sx(ga).toFixed(1)}" y1="${f.sy(g(ga)).toFixed(1)}" x2="${f.sx(gb).toFixed(1)}" y2="${f.sy(g(gb)).toFixed(1)}"/>`);
+    }
+    if (t.length) parts.push(`<path class="series s2 ref-law" d="${path(t.map((p) => p[0]), t.map((p) => p[1]), f.sx, f.sy)}"/>`);
+    if (e.length) parts.push(`<g class="tail-dots">${e.map(([x, y]) => `<circle class="dot s1" cx="${f.sx(x).toFixed(1)}" cy="${f.sy(y).toFixed(1)}" r="2.2"/>`).join("")}</g>`);
+    const key = [e.length ? "blue dots: the run" : "", t.length ? "orange: reference law" : "", o.alpha && t.length ? `dashed: slope −${fmt(o.alpha)}` : ""].filter(Boolean).join(" · ");
+    parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">${esc(key)}</text>`);
+    return svg(label, parts.join(""));
+  }
+
+  /**
+   * A probability plot of a series against two fitted laws: each observed value against the fitted quantile at its
+   * plotting position, with the diagonal. Blue dots: the GEV fit; orange circles: the Gumbel fit.
+   * @param {{ points: { x: number, gev: number, gumbel: number }[], xlabel: string, ylabel: string }} o
+   */
+  function probability(o) {
+    const pts = o.points.filter((p) => Number.isFinite(p.gev) && Number.isFinite(p.gumbel));
+    const label = `Probability plot: ${pts.length} observed values against the quantiles of the GEV fit (dots) and of the Gumbel fit (circles), with the diagonal`;
+    if (pts.length < 2) return svg(label, `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">No data.</text>`);
+    const vals = pts.flatMap((p) => [p.x, p.gev, p.gumbel]), [lo, hi] = padRange(vals, 0.05);
+    const f = frame({ x: [lo, hi], y: [lo, hi], xlabel: o.xlabel, ylabel: o.ylabel });
+    const parts = [f.markup, `<line class="ref" x1="${f.sx(lo).toFixed(1)}" y1="${f.sy(lo).toFixed(1)}" x2="${f.sx(hi).toFixed(1)}" y2="${f.sy(hi).toFixed(1)}"/>`];
+    parts.push(`<g>${pts.map((p) => `<circle class="dot s2 hollow" cx="${f.sx(p.gumbel).toFixed(1)}" cy="${f.sy(p.x).toFixed(1)}" r="3"/>`).join("")}</g>`);
+    parts.push(`<g>${pts.map((p) => `<circle class="dot s1" cx="${f.sx(p.gev).toFixed(1)}" cy="${f.sy(p.x).toFixed(1)}" r="2.4"/>`).join("")}</g>`);
+    parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">blue dots: GEV fit · orange circles: Gumbel fit · dashed: diagonal</text>`);
+    return svg(label, parts.join(""));
+  }
+
+  /**
    * The estimate after each block, with its 95 % interval as a band and the reference value as a dashed line, on a
    * log axis of the sample count.
    * @param {{ trace: { n: number, est: number | null, lo: number | null, hi: number | null }[], reference: number | null, ylabel: string, ylog?: boolean, note?: string }} o
@@ -295,5 +344,5 @@
     return `<svg class="chart graph" viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg"><title>${esc(label)}</title>${parts.join("")}</svg>`;
   }
 
-  return { fmt, tickLabel, padRange, ticks, logTicks, scale, distribution, convergence, comparison, sweep, graph, W, H };
+  return { fmt, tickLabel, padRange, ticks, logTicks, scale, distribution, tail, probability, convergence, comparison, sweep, graph, W, H };
 });

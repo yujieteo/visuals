@@ -95,7 +95,7 @@
     }
     const checks = [{
       title: "Diagnostics",
-      body: d.quantities.map((/** @type {any} */ q) => `- ${q.name}: mean ${q.status.mean}, variance ${q.status.variance}. ${q.status.reason}`).join("\n") + (sm ? `\n- Rejection: ${sm.rejection.proposals ? `${sm.rejection.accepts} of ${sm.rejection.proposals} proposals accepted, ${sm.rejection.violations} envelope violations` : "not used"}` : ""),
+      body: d.quantities.map((/** @type {any} */ q) => `- ${q.name}: mean ${q.status.twoSided ? "does not exist" : q.status.mean}, variance ${q.status.variance}. ${q.status.reason}`).join("\n") + (sm ? `\n- Rejection: ${sm.rejection.proposals ? `${sm.rejection.accepts} of ${sm.rejection.proposals} proposals accepted, ${sm.rejection.violations} envelope violations` : "not used"}` : ""),
       narration: "Each quantity states whether its mean and variance exist. An interval needs a finite variance.",
     }, {
       title: "Limitations and takeaway",

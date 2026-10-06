@@ -3,7 +3,8 @@
 // Beyond the kit's checks this file drives the run controls (Step, Run, Pause, Reset run, Space and "."), the
 // cancel of a large run, which must not report a partial result as complete, the round trip of the run record (save
 // it, load it, replay it, and get identical estimates), and the variance-reduction methods of group 2: a link to a
-// stratified run with its gain, and the common-random-numbers card that switches to separate streams.
+// stratified run with its gain, and the common-random-numbers card that switches to separate streams; and group 3:
+// the tail plot of a heavy tail, the GEV fit of the rainfall series, and the observed names of a censored model.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 import { kitState } from "../../../e2e/lib/kit.js";
@@ -59,6 +60,34 @@ await fullSuite("monte-carlo-workbench", {
       assert.ok(sep > 0.8 && sep < 1.25, `separate streams give a ratio near 1: ${sep}`);
     } finally {
       await crn.close();
+    }
+    // Group 3: a link to the tail plot of a heavy-tailed experiment draws its log–log plot with the slope guide; the
+    // rainfall workflow shows its GEV fit and probability plot; a censoring workflow names its observed variables.
+    const tail = await ctx.open("#model=exp-pareto1&plot=tail");
+    try {
+      await runSettles(tail.page, ["done"]);
+      assert.match(await tail.page.locator("#dist-plot svg").getAttribute("aria-label") ?? "", /Tail plot .* log–log axes.*slope/);
+      assert.ok(await tail.page.locator("#dist-plot .tail-dots circle").count() > 10, "the run's tail draws as dots");
+      assert.match(await tail.page.locator("#dist-note").innerText(), /regularly varying tail with index α = /);
+    } finally {
+      await tail.close();
+    }
+    const rain = await ctx.open("#model=gev-rainfall&panel=diagnostics");
+    try {
+      await runSettles(rain.page, ["done"]);
+      const panel = await rain.page.locator("#panel-diagnostics").innerText();
+      assert.match(panel, /128 annual maxima, 1896 to 2025/);
+      assert.match(panel, /Deviance test of ξ = 0/);
+      assert.ok(await rain.page.locator("#panel-diagnostics svg[aria-label^=\"Probability plot\"]").count() === 1, "the probability plot of the fit");
+    } finally {
+      await rain.close();
+    }
+    const cens = await ctx.open("#model=exp-censoring&panel=assumptions");
+    try {
+      assert.match(await cens.page.locator("#panel-assumptions").innerText(), /the model observes T_obs and the event indicator T_event/);
+      assert.match(await cens.page.locator("#law-card").innerText(), /Observation mechanism/i);
+    } finally {
+      await cens.close();
     }
   }),
 
