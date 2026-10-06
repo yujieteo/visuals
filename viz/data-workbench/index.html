@@ -4289,7 +4289,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
  *   levels      the most frequent levels of a category, with the count of every level
  *   grouped     counts, means, standard deviations and sums per group, period or cell
  *   timeRange   the first and last time and how many values are known only to the year or month
- *   check       the complete rows and whether an encoded field holds one value only (the ranking's rejections)
+ *   countUpTo   the rows of a relation, up to a number; differs whether a field holds a second value (rejections)
  *   points      the points of a scatter plot: all of them, or a seeded sample of 50,000
  *   events      a page of timeline events, duplicates merged; intervalCheck the share of ends at or after starts
  */
@@ -4451,8 +4451,14 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
   /** The number of rows of a relation. */
   const count = (rel) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n FROM d`;
 
-  /** The rows of a relation, and for each alias whether it holds one value only among them (`alias_one`). */
-  const check = (rel, aliases) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n${aliases.map((a) => `, (min(${ident(a)}) = max(${ident(a)})) AS ${ident(`${a}_one`)}`).join("")} FROM d`;
+  /** The rows of a relation, only those with a value of `alias` when it is given, counted up to `most`: the reading stops there. */
+  const countUpTo = (rel, most, alias) => `SELECT count(*)::DOUBLE AS n FROM (SELECT 1 FROM (${rel})${alias ? ` WHERE ${ident(alias)} IS NOT NULL` : ""} LIMIT ${most})`;
+
+  /** 1 when an alias holds a value other than its first one in a relation, else 0: the reading stops at that row. */
+  const differs = (rel, alias) => {
+    const a = ident(alias);
+    return `SELECT count(*)::DOUBLE AS n FROM (SELECT 1 FROM (${rel}) WHERE ${a} <> (SELECT ${a} FROM (${rel}) WHERE ${a} IS NOT NULL LIMIT 1) LIMIT 1)`;
+  };
 
   /** The points of a scatter plot in source order: every point, or a seeded reservoir sample of `rows`. */
   function points(rel, facet, sample) {
@@ -4507,7 +4513,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return `WITH d AS (${rel}) SELECT epoch(least(min(s), min(e)))::DOUBLE AS lo, epoch(greatest(max(${spanEnd("s", "ps")}), max(${spanEnd("e", "pe")})))::DOUBLE AS hi FROM d WHERE NOT (${reversed})`;
   }
 
-  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, check, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
+  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, countUpTo, differs, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
 });
 </script>
 <script id="render">
@@ -5761,10 +5767,14 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       if (f.cls !== "L") checked.push({ alias, name: f.name });
     });
     const rel = ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns, require, either });
-    const r = (await query(ChartSql.check(rel, checked.map((c) => c.alias))))[0];
-    if (!r.n) return "No row has a value present for every field of the chart.";
-    if (r.n < 5) return `Only ${r.n} row${r.n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
-    const flat = checked.filter((c) => r[`${c.alias}_one`]).map((c) => c.name);
+    const n = (await query(ChartSql.countUpTo(rel, 5)))[0].n;
+    if (!n) return "No row has a value present for every field of the chart.";
+    if (n < 5) return `Only ${n} row${n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
+    const flat = [];
+    for (const c of checked) {
+      const any = (await query(ChartSql.countUpTo(rel, 1, c.alias)))[0].n;
+      if (any && !(await query(ChartSql.differs(rel, c.alias)))[0].n) flat.push(c.name);
+    }
     if (flat.length) return `Zero variance: every complete row has the same ${flat.join(" and the same ")}.`;
     return "";
   }

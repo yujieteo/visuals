@@ -394,10 +394,14 @@
       if (f.cls !== "L") checked.push({ alias, name: f.name });
     });
     const rel = ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns, require, either });
-    const r = (await query(ChartSql.check(rel, checked.map((c) => c.alias))))[0];
-    if (!r.n) return "No row has a value present for every field of the chart.";
-    if (r.n < 5) return `Only ${r.n} row${r.n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
-    const flat = checked.filter((c) => r[`${c.alias}_one`]).map((c) => c.name);
+    const n = (await query(ChartSql.countUpTo(rel, 5)))[0].n;
+    if (!n) return "No row has a value present for every field of the chart.";
+    if (n < 5) return `Only ${n} row${n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
+    const flat = [];
+    for (const c of checked) {
+      const any = (await query(ChartSql.countUpTo(rel, 1, c.alias)))[0].n;
+      if (any && !(await query(ChartSql.differs(rel, c.alias)))[0].n) flat.push(c.name);
+    }
     if (flat.length) return `Zero variance: every complete row has the same ${flat.join(" and the same ")}.`;
     return "";
   }
