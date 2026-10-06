@@ -28,9 +28,9 @@ import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
-DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview"]
-ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl"]
-PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "view"]
+DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview", "rare"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl", "rare"]
+PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "rareview", "view"]
 
 
 def read(path):
@@ -69,6 +69,10 @@ def static_parts(cat):
                   f"{e(lim['how'])}</p>")
     else:
         limits = "<p>The limits are not measured yet.</p>"
+    rare = cat["limits"].get("rare")
+    if rare:
+        limits += (f"<p>Rare-event lab: at most 2^{rare['maxSize']} = {2 ** rare['maxSize']:,} paths in each replication, {rare['maxReps']} replications "
+                   f"and {rare['seconds']} s for one run. {e(rare['how'])}</p>")
     here = [g for g in cat["groups"] if g["status"] == "here"]
     titles = [g["title"][0].lower() + g["title"][1:] for g in here]
     span = lambda gs: f"{gs[0]['piece']}" if len(gs) == 1 else f"{gs[0]['piece']} to {gs[-1]['piece']}"
@@ -92,6 +96,7 @@ def build():
               script("beamdswitch", read(HERE / "beamdswitch.js"))]
     blocks += [script(f"src-{m}", read(HERE / "src" / f"{m}.js")) for m in ENGINE]
     blocks.append(script("src-worker", read(HERE / "src" / "worker.js"), "text/plain"))
+    blocks.append(script("src-rare-worker", read(HERE / "src" / "rare-worker.js"), "text/plain"))
     blocks += [script(f"src-{m}", read(HERE / "src" / f"{m}.js")) for m in PAGE]
     blocks.append(script("mathjax", kit.mathjax_bundle(), vendor=kit.MATHJAX))
     parts = {

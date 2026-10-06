@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView, Rv = g.MCRareView;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -138,14 +138,17 @@
 
   /** @param {Record<string, any>} s */
   function drawNav(s) {
-    for (const id of ["examples", "interview", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
+    for (const id of ["examples", "interview", "rare", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
     Ivw.draw(s);
+    // Group 7: the rare-event lab draws its own list, card and run.
+    Rv.draw(s);
     const list = matches(s.q);
     // The custom input examples of group 4 come last, under their own heading.
     const byLaw = [...data.laws, { id: "custom", name: "Custom law inputs" }].map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
-    $("example-list").innerHTML = byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
+    const rareHtml = Rv.examples(s.q, s);
+    $("example-list").innerHTML = (byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
       `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : m.kind === "input" ? `Input${m.fails ? ", fails" : ""}` : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
-      : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`;
+      : rareHtml ? "" : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`) + rareHtml;
     // Group 5 adds the dependence library and the process library under their own headings.
     const heads = /** @type {Record<string, string>} */ ({ conditional: "Dependence", process: "Processes" });
     let seen = "";
@@ -846,8 +849,12 @@ ${parts}`;
         app.set({ params: M.formatParams(overrides, M.modelOf(app.state, data).record) });
       } else if (t.dataset.linked) {
         const th = data.theory.find((/** @type {any} */ x) => x.id === t.dataset.linked);
-        openModel(th.experiment.model);
-        app.set({ ...th.experiment.settings, panel: "diagnostics" });
+        // Group 7's panels link to an example of the rare-event lab.
+        if (th.experiment.rare) Rv.open(th.experiment.rare);
+        else {
+          openModel(th.experiment.model);
+          app.set({ ...th.experiment.settings, panel: "diagnostics" });
+        }
       } else if (t.dataset.methodOpen) {
         const [id, part] = t.dataset.methodOpen.split(":"), m = data.methods.find((/** @type {any} */ x) => x.id === id);
         const target = m[part];
@@ -923,6 +930,7 @@ ${parts}`;
       app.set({ model: "custom", params: "", sweep: "", stratify: "", quantity: 1, alt: 1 });
     });
     loader("load-run", loadRun);
+    Rv.bind(a, data, { save, saveSvg, savePng });
     $("mlmc-run").addEventListener("click", () => Dv.startMultilevel({ state: app.state, derived: app.derived, record: M.modelOf(app.state, data).record, overrides: M.parseParams(app.state.params).overrides, pool: getPool(), redraw: schedule }));
     $("mlmc-stop").addEventListener("click", () => { Dv.stopMultilevel(); schedule(); });
     for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"], ["paths-plot", "paths"], ["scatter-plot", "scatter"], ["mlmc-plot", "multilevel"]]) {
@@ -933,6 +941,7 @@ ${parts}`;
     document.addEventListener("keydown", (e) => {
       const t = /** @type {HTMLElement} */ (e.target);
       if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable) return;
+      if (app.state.nav === "rare" && (e.key === " " || e.key === ".")) { e.preventDefault(); Rv.key(e.key); return; }
       if (e.key === " ") { e.preventDefault(); if (run?.handle) pauseRun(); else startRun(); }
       else if (e.key === ".") stepRun();
     });
@@ -988,6 +997,7 @@ ${parts}`;
     { name: "get_multilevel", description: "Return the last multilevel Monte Carlo run: its status, target error, seed, method and quantity, each level's samples, mean, variance and cost, the estimate with its Monte Carlo interval, the bias estimate kept apart, and the reference.", inputSchema: none, annotations: ro,
       execute: async () => { Dv.sync(app.state, app.derived); return out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }); } },
     Ivw.tool,
+    Rv.tool,
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },
@@ -1000,6 +1010,7 @@ ${parts}`;
     ...data.models.map((/** @type {any} */ m) => ({ label: `Open ${m.title}`, run: () => openModel(m.id) })),
     ...data.theory.map((/** @type {any} */ t) => ({ label: `Theory: ${t.title}`, run: () => app.set({ theory: t.id, panel: "theory" }) })),
     ...Ivw.commands,
+    ...Rv.commands,
   ];
 
   app = K.start({
@@ -1007,7 +1018,7 @@ ${parts}`;
     schemaVersion: M.SCHEMA_VERSION, fields: M.FIELDS,
     derive: (/** @type {any} */ s) => M.derive(s, data),
     render,
-    report: (/** @type {any} */ s, /** @type {any} */ d) => Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
+    report: (/** @type {any} */ s, /** @type {any} */ d) => s.nav === "rare" ? Rv.report(s) : Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
     bind, tools, commands,
   });
   g.Workbench = { get run() { return run; }, summary, runRecord, modelRecord, resultsCsv, traceCsv, startRun, stepRun, pauseRun, resetRun, get pool() { return pool; } };

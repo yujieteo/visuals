@@ -201,5 +201,101 @@
     "method": "euler"
    }
   }
+ },
+ {
+  "id": "ldp",
+  "title": "Large deviations and the rate function",
+  "statement": "\\begin{gathered} \\Lambda(\\theta) = \\log \\mathbb E\\, e^{\\theta X_1}, \\quad I(a) = \\sup_{\\theta} \\left(\\theta a - \\Lambda(\\theta)\\right) \\\\ \\Longrightarrow \\ \\frac{1}{n}\\log \\mathbb P(S_n \\ge na) \\to -I(a) \\ \\text{and} \\ \\mathbb P(S_n \\ge na) \\le e^{-n I(a)} \\ \\text{for } a > \\mathbb E X_1 \\end{gathered}",
+  "assumptions": [
+   "X_1, X_2, … are i.i.d. real random variables, and S_n = X_1 + … + X_n.",
+   "Λ(θ) < ∞ for θ in a neighbourhood of 0, and a is inside the range of Λ'. The upper bound (Chernoff) holds for every n.",
+   "For exponential jumps with mean μ, I(a) = a/μ − 1 − log(a/μ) and θ* = 1/μ − 1/a. Bahadur and Rao refine the limit: P(S_n ≥ na) ~ e^(−nI(a)) / (θ* σ_a √(2πn))."
+  ],
+  "proof": "Upper bound: for θ ≥ 0, Markov's inequality gives P(S_n ≥ na) ≤ E e^(θS_n) e^(−θna) = e^(−n(θa − Λ(θ))). Take the best θ. Lower bound: change the measure to the tilted law dF_θ* = e^(θ*x − Λ(θ*)) dF, under which the mean is a. Then P(S_n ≥ na) = E_θ*[e^(−θ*S_n + nΛ(θ*)); S_n ≥ na]. Under the tilted law, S_n stays within √n of na with a probability bounded below (CLT). This gives the rate −I(a).",
+  "reference": "A. Dembo and O. Zeitouni, Large Deviations Techniques and Applications, 2nd ed., Springer, 1998, theorem 2.2.3. R. R. Bahadur and R. Ranga Rao, Ann. Math. Statist. 31 (1960) 1015–1027.",
+  "counterexample": "For Pareto II jumps, Λ(θ) = ∞ for every θ > 0, so I(a) = 0 above the mean. P(S_n > na) then decays as a power of n, about n P(X > n(a − μ)), not exponentially. The Chernoff bound gives only the value 1.",
+  "experiment": {
+   "rare": "sum-exp-tilting"
+  }
+ },
+ {
+  "id": "tilting",
+  "title": "Change of measure and exponential tilting",
+  "statement": "\\begin{gathered} \\mathbb E_f\\!\\left[h(X)\\right] = \\mathbb E_g\\!\\left[h(X)\\,\\frac{f(X)}{g(X)}\\right] \\ \\text{when } g > 0 \\text{ wherever } h f \\ne 0; \\\\ \\operatorname{Var}_g = \\mathbb E_g\\!\\left[h^2 \\tfrac{f^2}{g^2}\\right] - \\left(\\mathbb E_f h\\right)^2, \\quad g^* = \\frac{|h| f}{\\mathbb E_f |h|} \\ \\text{has zero variance for } h \\ge 0 \\end{gathered}",
+  "assumptions": [
+   "The proposal g is positive wherever h f is not zero: then the weighted estimator has no bias.",
+   "The variance is finite only if E_g[h² f²/g²] < ∞. A proposal with a lighter tail than f can make it infinite.",
+   "An exponential tilt dF_θ = e^(θx − Λ(θ)) dF exists only when Λ(θ) < ∞. For the tail of a sum it is logarithmically efficient: the second moment decays at twice the rate of p (Sadowsky and Bucklew, 1990)."
+  ],
+  "proof": "The identity is ∫ h f = ∫ h (f/g) g on the set where g > 0. This set contains every point where h f ≠ 0. The zero-variance law follows from the Cauchy–Schwarz inequality: E_g[h² f²/g²] ≥ (E_f |h|)², with equality when g ∝ |h| f. For the tail of a sum, the tilt θ* makes the weight e^(nΛ(θ*) − θ*S_n) at most e^(−nI(a)) on the event. Thus the second moment is at most e^(−2nI(a)).",
+  "reference": "S. Asmussen and P. W. Glynn, Stochastic Simulation: Algorithms and Analysis, Springer, 2007, chapter VI. J. S. Sadowsky and J. A. Bucklew, IEEE Trans. Inform. Theory 36 (1990) 579–588. D. Siegmund, Ann. Statist. 4 (1976) 673–684.",
+  "counterexample": "For Pareto II claims, an exponential proposal with any mean gives f/g → ∞ as x → ∞, and E_g[f²/g²; S > b] = ∞. The estimator has no bias, but its variance is infinite. Most replications give a value below p, and a few replications give very large values.",
+  "experiment": {
+   "rare": "sum-pareto-ce-light"
+  }
+ },
+ {
+  "id": "ruin",
+  "title": "Ruin theory: the Cramér–Lundberg model",
+  "statement": "\\begin{gathered} U(t) = u + ct - \\sum_{i=1}^{N(t)} X_i, \\quad \\psi(u) = \\mathbb P\\!\\left(\\inf_{t \\ge 0} U(t) < 0\\right), \\quad \\lambda\\left(\\mathbb E e^{RX} - 1\\right) = cR \\\\ \\Longrightarrow \\ \\psi(u) \\le e^{-Ru} \\ \\text{(Lundberg)}, \\qquad \\psi(u) \\sim C e^{-Ru} \\ \\text{(Cramér)}, \\qquad \\psi(u) = \\rho\\, e^{-(1-\\rho)u/\\mu} \\ \\text{for exponential } X \\text{ with mean } \\mu \\end{gathered}",
+  "assumptions": [
+   "The claims arrive as a Poisson process with rate λ, and their sizes X_i are i.i.d., positive and independent of the arrivals.",
+   "The net profit condition ρ = λ E X / c < 1 holds. Else ψ(u) = 1 for every u.",
+   "The equation λ(E e^(RX) − 1) = cR has a positive root R, the adjustment coefficient. This needs E e^(θX) < ∞ for some θ > 0, but that alone is not enough. No root exists for heavy-tailed claims."
+  ],
+  "proof": "The process e^(−R U(t)) is a martingale when λ(E e^(RX) − 1) = cR. At the time of ruin τ, U(τ) < 0. The optional stopping theorem then gives e^(−Ru) = E[e^(−RU(τ)); τ < ∞] ≥ P(τ < ∞), which is the Lundberg inequality. Under the measure tilted by R, ruin is certain, and ψ(u) = e^(−Ru) E_R[e^(−Rξ)] with the overshoot ξ. The renewal theorem gives the constant C. For exponential claims, the overshoot is exponential, and this gives the exact formula.",
+  "reference": "S. Asmussen and H. Albrecher, Ruin Probabilities, 2nd ed., World Scientific, 2010, chapters I and IV. D. Siegmund, Ann. Statist. 4 (1976) 673–684.",
+  "counterexample": "With Pareto II claims (α = 2.5), E e^(θX) = ∞ for every θ > 0, so no R exists and no exponential bound holds: ψ(u) decays as u^(−1.5). Double the capital, and the ruin probability falls by a factor of about 2.8, not by a factor that grows exponentially in u.",
+  "experiment": {
+   "rare": "ruin-exp-siegmund"
+  }
+ },
+ {
+  "id": "pk",
+  "title": "The Pollaczek–Khinchine formula and subexponential ruin",
+  "statement": "\\begin{gathered} \\psi(u) = (1-\\rho)\\sum_{k=1}^{\\infty} \\rho^k\\, \\overline{F_I^{*k}}(u), \\qquad F_I(x) = \\frac{1}{\\mu}\\int_0^x \\bar F(y)\\,dy \\\\ F_I \\ \\text{subexponential} \\ \\Longrightarrow \\ \\psi(u) \\sim \\frac{\\rho}{1-\\rho}\\,\\bar F_I(u) \\quad (u \\to \\infty) \\end{gathered}",
+  "assumptions": [
+   "The Cramér–Lundberg model with ρ = λμ/c < 1 and a finite mean claim μ.",
+   "The integrated-tail law F_I is the law of a ladder height. A ladder height is the amount by which the maximum of the claim surplus grows at a new record. For Pareto II claims with index α, F_I is Pareto II with index α − 1.",
+   "The asymptotic needs F_I subexponential (Embrechts and Veraverbeke, 1982). It is a limit as u → ∞, not a bound at a given u."
+  ],
+  "proof": "The maximum M of the claim surplus is the sum of its ladder heights. A new record occurs with probability ρ. Each record adds an independent ladder height with law F_I (Wiener–Hopf factorisation). Thus M is a geometric sum, and ψ(u) = P(M > u). For a subexponential F_I, P(Y_1 + … + Y_k > u) ~ k F̄_I(u). Dominated convergence (Kesten's bound) then gives Σ (1 − ρ) ρ^k k F̄_I(u) = ρ/(1 − ρ) F̄_I(u).",
+  "reference": "P. Embrechts and N. Veraverbeke, Insurance Math. Econom. 1 (1982) 55–72. P. Embrechts, C. Klüppelberg and T. Mikosch, Modelling Extremal Events, Springer, 1997, section 1.4. S. Asmussen and D. P. Kroese, Adv. Appl. Probab. 38 (2006) 545–558.",
+  "counterexample": "For exponential claims, F_I is exponential, which is not subexponential. Then ψ(u) = ρ e^(−(1−ρ)u/μ), while ρ/(1 − ρ) F̄_I(u) = ρ/(1 − ρ) e^(−u/μ): the two differ by a factor that grows exponentially in u.",
+  "experiment": {
+   "rare": "ruin-pareto-pk"
+  }
+ },
+ {
+  "id": "taildep",
+  "title": "Dependence in extremes",
+  "statement": "\\begin{gathered} \\lambda_U = \\lim_{q \\to 1} \\mathbb P\\!\\left(U_2 > q \\mid U_1 > q\\right) \\\\ \\text{Gaussian copula, } |r| < 1: \\ \\lambda_U = 0; \\qquad \\text{Gumbel copula, } \\theta \\ge 1: \\ \\lambda_U = 2 - 2^{1/\\theta}, \\quad \\tau = 1 - 1/\\theta \\end{gathered}",
+  "assumptions": [
+   "(U_1, U_2) has uniform margins and the copula C, so P(U_1 > q, U_2 > q) = 1 − 2q + C(q, q).",
+   "The limit exists. λ_U depends on the copula only, not on the margins.",
+   "Kendall's τ and the linear correlation summarise the dependence over the whole law. τ depends only on the copula, but the correlation also depends on the margins. λ_U measures only the joint extremes."
+  ],
+  "proof": "For the Gumbel copula, C(q, q) = exp(−(2(−log q)^θ)^(1/θ)) = q^(2^(1/θ)). Then (1 − 2q + q^(2^(1/θ)))/(1 − q) → 2 − 2^(1/θ) as q → 1, by l'Hôpital's rule. For the Gaussian copula, P(Z_2 > z | Z_1 > z) → 0 as z → ∞ when |r| < 1 (Sibuya, 1960). The reason is that Z_2 given Z_1 = z is normal with mean rz, and rz grows more slowly than z.",
+  "reference": "A. J. McNeil, R. Frey and P. Embrechts, Quantitative Risk Management, revised ed., Princeton University Press, 2015, section 7.2.4. M. Sibuya, Ann. Inst. Statist. Math. 11 (1960) 195–210.",
+  "counterexample": "The Gaussian and the Gumbel copulas with τ = 0.5 have the same Kendall's τ. But λ_U = 0 for the Gaussian copula and 2 − √2 = 0.59 for the Gumbel copula. In the catastrophe test, the common event loss also makes the insurers lose together. Thus the copula of the shares changes the probability of a systemic ruin less than λ_U suggests. A tail coefficient of one part of a model is not a property of the whole model.",
+  "experiment": {
+   "rare": "cat-gaussian"
+  }
+ },
+ {
+  "id": "sensitivity",
+  "title": "Tail sensitivity and ruin, in an explicit model",
+  "statement": "\\begin{gathered} X \\sim \\text{Pareto II}(\\sigma, \\alpha): \\quad \\operatorname{VaR}_q = \\sigma\\left((1-q)^{-1/\\alpha} - 1\\right), \\quad \\operatorname{ES}_q = \\frac{\\alpha \\operatorname{VaR}_q + \\sigma}{\\alpha - 1} \\ (\\alpha > 1), \\quad \\operatorname{ES}_q = \\infty \\ (\\alpha \\le 1) \\\\ \\frac{\\partial \\log \\operatorname{ES}_q}{\\partial \\alpha} \\to -\\infty \\ \\text{as } \\alpha \\downarrow 1; \\qquad \\mathbb P(\\text{ruin within } k \\text{ periods}) = 1 - (1-p)^k \\to 1 \\end{gathered}",
+  "assumptions": [
+   "The loss has a Pareto II law with a known tail index α, and the periods are independent with the same ruin probability p > 0.",
+   "The value at risk and the expected shortfall are at the level q. ES_q = E[X | X > VaR_q] is finite only when E X is finite.",
+   "Taleb's arguments about fat tails and ruin are interpretations. The page states only the facts of this model, and it does not present an interpretation as a theorem."
+  ],
+  "proof": "For the Pareto II law, P(X > x) = (1 + x/σ)^(−α), which inverts to VaR_q. Given X > v, X − v is Pareto II with scale σ + v and the same α, so E[X − v | X > v] = (σ + v)/(α − 1), which gives ES_q. Thus log ES_q = log(α VaR_q + σ) − log(α − 1). The first term has a bounded derivative near α = 1, and the derivative of −log(α − 1) is −1/(α − 1), which tends to −∞ as α ↓ 1. The probability of no ruin in k independent periods is (1 − p)^k, which tends to 0 for any p > 0.",
+  "reference": "P. Embrechts, C. Klüppelberg and T. Mikosch, Modelling Extremal Events, Springer, 1997, chapter 6. N. N. Taleb, Statistical Consequences of Fat Tails, STEM Academic Press, 2020 (the interpretation). A. J. McNeil, R. Frey and P. Embrechts, Quantitative Risk Management, 2015, section 2.3.",
+  "counterexample": "A sample mean of Pareto II losses with α = 0.9 is always finite, but E X = ∞. Thus a finite sample gives a finite ES estimate for a law whose ES is infinite. In the opposite direction, a truncation at a largest possible loss makes every moment finite, but no finite sample can show where the truncation is.",
+  "experiment": {
+   "rare": "cat-infinite-mean"
+  }
  }
 ]

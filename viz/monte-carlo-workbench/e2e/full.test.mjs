@@ -15,6 +15,10 @@ const run = (page) => page.evaluate(() => { const r = /** @type {any} */ (window
 const runSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).Workbench.run?.status), states, { timeout: 60_000 });
 /** @param {import("playwright").Page} page @param {RegExp} re */
 const statusMatches = (page, re) => page.waitForFunction((src) => new RegExp(src).test(document.getElementById("run-status")?.textContent ?? ""), re.source, { timeout: 60_000 });
+/** The run of the rare-event lab (group 7). @param {import("playwright").Page} page */
+const rareRun = (page) => page.evaluate(() => { const r = /** @type {any} */ (window).MCRareView.run; return r ? { status: r.status, reps: r.acc?.blocks ?? 0, target: r.c.R } : null; });
+/** @param {import("playwright").Page} page @param {string[]} states */
+const rareSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).MCRareView.run?.status), states, { timeout: 90_000 });
 /** Change the view with a control that adds a Back entry: the method. @param {import("playwright").Page} page */
 const change = (page) => page.locator("#method").selectOption("inverse");
 
@@ -236,6 +240,21 @@ await fullSuite("monte-carlo-workbench", {
     });
     assert.ok(same.equal, "the editor reads the same record from the text that the interview applied");
     assert.match(same.text, /X ~ mixture_poisson\(/, "with the rule c14 off, the finite mixture is the top candidate");
+    // Group 7: the rare-event lab by keyboard: open the tab, step one replication with ".", then run with Space.
+    await s.page.locator('[data-field="nav"][value="rare"]').focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.locator("#rare-autorun").uncheck();
+    await s.page.locator("#rare-reset").click();
+    assert.equal((await rareRun(s.page))?.reps, 0, "Reset run clears the rare-event result");
+    await blur(s.page);
+    await s.page.keyboard.press(".");
+    await rareSettles(s.page, ["paused", "done"]);
+    assert.equal((await rareRun(s.page))?.reps, 1, "the full stop key steps one replication");
+    await s.page.waitForFunction(() => /Paused: the partial result is not complete: 1 of 16 replications/.test(document.getElementById("rare-status")?.textContent ?? ""));
+    await blur(s.page);
+    await s.page.keyboard.press("Space");
+    await rareSettles(s.page, ["done"]);
+    assert.equal((await rareRun(s.page))?.reps, 16, "Space runs every replication");
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
     await settlesTo(() => kitState(s.page), initial, "Enter on the focused Reset button resets the view");
@@ -265,6 +284,18 @@ await fullSuite("monte-carlo-workbench", {
     assert.ok(r && r.n < r.target, "the paused run stopped before its target");
     await statusMatches(page, /Paused: the partial result is not complete/);
     await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#results-table caption")?.textContent ?? ""));
+    // Group 7: a large rare-event run, then Pause: the lab reports the partial result as not complete.
+    await page.locator('[data-field="nav"][value="rare"]').click();
+    await page.locator("#rare-reps").fill("64");
+    await page.locator("#rare-reps").blur();
+    await page.locator("#rare-size").fill("16");
+    await page.locator("#rare-size").blur();
+    await page.waitForFunction(() => /** @type {any} */ (window).MCRareView.run?.status === "running" && /** @type {any} */ (window).MCRareView.run.c.N === 65536);
+    await page.locator("#rare-pause").click();
+    await rareSettles(page, ["paused", "done"]);
+    const rr = await rareRun(page);
+    assert.ok(rr && rr.reps < rr.target, "the paused rare-event run stopped before its last replication");
+    await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#rare-results caption")?.textContent ?? ""));
   }, kitState),
 
   "json-round-trip": (ctx) => jsonRoundTrip(ctx.open, async (page) => {
@@ -290,6 +321,19 @@ await fullSuite("monte-carlo-workbench", {
     await page.locator("#load-model").setInputFiles({ name: model.name, mimeType: "application/json", buffer: Buffer.from(model.text) });
     await page.waitForFunction(() => /model=custom/.test(location.hash) && /Monotonicity\s+checked/.test(document.getElementById("custom-card")?.innerText ?? ""), null, { timeout: 60_000 });
     assert.match(await page.locator("#model-text").textContent() ?? "", /law Wq\(k, lam\) quantile\(u\) = /, "the loaded model holds its law line");
+    // Group 7: the rare-event run record: save it, load it, replay it, and get identical estimates.
+    await page.locator('[data-field="nav"][value="rare"]').click();
+    await page.locator('#rare-list [data-rare-open="ruin-exp-siegmund"]').click();
+    await rareSettles(page, ["done"]);
+    const rare = await saved(page, () => page.locator("#rare-save-run").click());
+    const rdoc = JSON.parse(rare.text);
+    assert.equal(rdoc.format, "monte-carlo-workbench/rare-run");
+    assert.deepEqual([rdoc.record.problem, rdoc.settings.method, rdoc.settings.compare, rdoc.replications], ["ruin", "tilting", "direct", 16]);
+    await page.locator('#rare-list [data-rare-open="sum-exp-splitting"]').click();
+    await rareSettles(page, ["done"]);
+    await page.locator("#rare-load-run").setInputFiles({ name: rare.name, mimeType: "application/json", buffer: Buffer.from(rare.text) });
+    await page.waitForFunction(() => /** @type {any} */ (window).MCRareView.run?.status === "done" && /Replay: \d+ estimates identical, 0 equal up to the last digits, 0 different/.test(document.getElementById("rare-replay")?.textContent ?? ""), null, { timeout: 90_000 });
+    assert.equal((await kitState(page)).r_problem, "ruin");
   }, kitState),
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await change(page); }, "Method: Inverse transform", "#save-beamdswitch, #copy-beamdswitch"),
