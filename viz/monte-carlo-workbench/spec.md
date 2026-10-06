@@ -54,6 +54,16 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - A moment that does not exist on either side, such as the mean of the Cauchy law, shows as "does not exist", not as +∞.
 - The done criteria of groups 1 and 2 hold for the whole folder, and their results stay the same.
 
+## Group 4: what done means
+
+- The constructed laws: finite mixtures (`mixture_F`), compound Poisson sums (`compound_F`), empirical discrete laws (`empirical`), kernel density models (`kde`) and truncated laws (`truncated_F`), for a family F of the catalogue or a custom law, each with its convention, support, limiting cases, moment conditions, transforms, sampling methods and two-way links, a behaviour experiment and three workflows of its own in different domains.
+- Custom laws from one line of the model text: a PDF, a log-PDF, an unnormalised density, a PMF, a finite table, a CDF, a quantile function, an MGF or a characteristic function, with parameters, support, constraints (`where`) and observations (`obs`). Expressions go through the parser, so an input cannot run code.
+- The checks of normalisation, non-negativity, monotonicity, boundaries, parameter constraints and consistency, and of the observations, where they apply; each shows checked, failed or unverified with how the page tested it. A law with a failed check does not run.
+- The sampling label exact, approximate or unavailable for each method, the approximation controls and the numerical error sources on screen, and the alerts: an MGF need not exist, a finite numerical integral does not prove that a moment exists, and numerical checks do not prove that an expression defines a law.
+- A custom law on an unbounded support has unknown moments: the page shows them as unknown, never as numbers.
+- An example of each input kind, and three inputs that fail a check.
+- The done criteria of groups 1 to 3 hold for the whole folder, and their results stay the same.
+
 # The owner's specification
 
 ## Part 1. The workbench connects probability theory to decisions

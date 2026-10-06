@@ -1,20 +1,21 @@
-// The catalogue as data: every law of groups 1 to 3 with each required part, and the censoring mechanism, a behaviour experiment and three
+// The catalogue as data: every law of groups 1 to 4 with each required part, and the censoring mechanism, a behaviour experiment and three
 // workflows of its own; every workflow with its 7 parts and a model that compiles and runs; two-way links between
 // laws; every method with its 6 parts; every theory panel with its 6 parts and a linked experiment that opens; every
 // dataset with its source, date and licence; and a glossary entry for each technical abbreviation of the reader text.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { D, En, L, M, data, recordOf } from "./helpers.mjs";
+import { Co, D, En, L, M, data, recordOf } from "./helpers.mjs";
 
 const DISCRETE = ["bernoulli", "binomial", "categorical", "multinomial", "uniform", "geometric", "negbin", "poisson", "hypergeometric", "zipf"];
 const CONTINUOUS = ["cuniform", "normal", "mvnormal", "exponential", "gamma", "erlang", "beta", "dirichlet", "chisq", "student", "fisher", "logistic", "laplace"];
 const TAILS = ["lognormal", "weibull", "invgauss", "gompertz", "loglogistic", "pareto1", "pareto2", "burr12", "frechet", "cauchy", "levy", "stable", "gev", "gpd", "gumbel", "revweibull"];
-const GROUP = [...DISCRETE, ...CONTINUOUS, ...TAILS, "censoring"];
+const CONSTRUCTED = ["mixture", "compound", "empirical", "kde", "truncated"];
+const GROUP = [...DISCRETE, ...CONTINUOUS, ...TAILS, "censoring", ...CONSTRUCTED];
 
 test("groups 1 to 3 hold their 10 discrete, 13 continuous and 16 positive, heavy-tailed and extreme-value laws, each with every required part and a sampler in the code", () => {
   assert.deepEqual(data.laws.map((/** @type {any} */ l) => l.id), GROUP);
   for (const l of data.laws) {
-    if (l.type === "observation") continue;
+    if (l.type === "observation" || l.type === "constructed") continue;
     const continuous = CONTINUOUS.includes(l.id) || TAILS.includes(l.id);
     assert.equal(l.type, continuous ? "continuous" : "discrete", `${l.id}: type`);
     for (const k of ["name", "convention", continuous ? "pdf" : "pmf", "support"]) assert.ok(l[k]?.length > 3, `${l.id}: ${k}`);
@@ -57,9 +58,10 @@ test("each law has one behaviour experiment and at least three workflows of its 
     assert.ok(exps[0].observe.length > 40, `${id}: the experiment says what to observe`);
     assert.ok(wfs.length >= 3, `${id}: ${wfs.length} workflows`);
     assert.equal(new Set(wfs.map((/** @type {any} */ w) => w.domain)).size, wfs.length, `${id}: workflows in different domains`);
-    for (const w of wfs) assert.ok(id === "censoring" ? recordOf(w.id).censoring !== "none" : recordOf(w.id).variables.some((/** @type {any} */ v) => v.law === id), `${w.id} draws from its own law ${id}`);
+    // A constructed law counts by its outermost constructor: truncated_mixture_geometric is a truncated law.
+    for (const w of wfs) assert.ok(id === "censoring" ? recordOf(w.id).censoring !== "none" : recordOf(w.id).variables.some((/** @type {any} */ v) => v.law === id || Co.catalogueOf(Co.resolve(v.law)) === id), `${w.id} draws from its own law ${id}`);
   }
-  assert.deepEqual([...M.WORKFLOWS, ...M.EXPERIMENTS].sort(), data.models.map((/** @type {any} */ m) => m.id).sort(), "the state's model ids are the catalogue's");
+  assert.deepEqual([...M.WORKFLOWS, ...M.EXPERIMENTS, ...M.INPUTS].sort(), data.models.map((/** @type {any} */ m) => m.id).sort(), "the state's model ids are the catalogue's");
 });
 
 test("each workflow has its 7 parts, a data statement, a decision, and a model that compiles and runs one block", () => {
@@ -72,6 +74,8 @@ test("each workflow has its 7 parts, a data statement, a decision, and a model t
   }
   for (const m of data.models) {
     const c = En.prepare(recordOf(m.id), { seed: 1, method: "independent", overrides: {} });
+    // An example of a custom input that fails a check names the check, and the page refuses to run it with that message.
+    if (m.fails) { assert.ok(!c.ok && c.errors.some((/** @type {string} */ e) => e.toLowerCase().includes(m.fails)), `${m.id} fails its ${m.fails} check: ${c.errors?.join(" ")}`); continue; }
     assert.ok(c.ok, `${m.id}: ${c.errors?.join(" ")}`);
     assert.equal(En.block(c, 0, {}).error, "", `${m.id} runs a block`);
     assert.deepEqual(D.parse(m.dsl, m.id).errors, [], m.id);
@@ -126,9 +130,9 @@ test("each real dataset states its source, date and licence, and its counts or i
   assert.deepEqual([total("horse-kicks"), total("rutherford-geiger"), total("weldon")], [200, 2608, 26306]);
 });
 
-test("the groups list pieces 1 to 3 here and the 7 groups to come, in merge order", () => {
+test("the groups list pieces 1 to 4 here and the 6 groups to come, in merge order", () => {
   assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.piece), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", "here", ...Array(7).fill("to come")]);
+  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", "here", "here", ...Array(6).fill("to come")]);
 });
 
 test("every technical abbreviation of the reader text has a glossary entry", () => {

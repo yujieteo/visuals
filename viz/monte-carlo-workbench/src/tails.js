@@ -826,6 +826,7 @@
   /**
    * @typedef {object} Bound a law with its parameters bound
    * @property {string} label @property {boolean} continuous @property {boolean} numeric the CDF is a numerical approximation
+   * @property {boolean} [atoms] a law of finitely many values that need not be integers (group 4)
    * @property {{ lo: number, hi: number }} support
    * @property {(x: number) => number} cdf @property {(x: number) => number} sf @property {(x: number) => number} mass the PDF, or the PMF of a discrete law
    * @property {(u: number, w: number) => number} quantile the x with F(x) = u, given u and w = 1 − u
@@ -840,9 +841,9 @@
     const continuous = !!law.continuous;
     return {
       label: `${law.name}(${law.params.map((/** @type {any} */ x) => `${x.name} = ${Array.isArray(p[x.name]) ? "[…]" : +Number(p[x.name]).toPrecision(6)}`).join(", ")})`,
-      continuous, numeric: !!law.numeric, support: law.support(p),
+      continuous, numeric: !!law.numeric, support: law.support(p), atoms: !!law.atoms,
       cdf: (x) => law.cdf(x, p), sf: (x) => law.sf(x, p), mass: (x) => (continuous ? law.pdf(x, p) : law.pmf(x, p)),
-      quantile: continuous ? (u, w) => (u <= 0.5 ? law.quantile(u, p) : law.isf(w, p)) : (u) => /** @type {any} */ (dq)(law.id, u, p),
+      quantile: continuous ? (u, w) => (u <= 0.5 ? law.quantile(u, p) : law.isf(w, p)) : (u) => /** @type {any} */ (dq)(law.quantile ? law : law.id, u, p),
       mean: m.mean, exactMean: m.mean !== null && !law.numeric, order: m.order, side: m.side ?? "", tailIndex: law.tailIndex ? law.tailIndex(p) : m.order < Infinity ? m.order : null,
       sum: (n) => sumOf(law, p, n),
     };

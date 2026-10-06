@@ -59,6 +59,51 @@
     return null;
   }
 
+  const KINDS = ["pdf", "logpdf", "density", "pmf", "table", "cdf", "quantile", "mgf", "cf"];
+  const CLAUSES = ["on", "where", "obs", "grid", "probs"];
+
+  /**
+   * A law line: law NAME(p1, p2) KIND(arg) = EXPR, then the clauses on [lo, hi], where CONDITION, obs [values],
+   * probs [probabilities] and grid N in any order, then {unit} and "note". A clause starts at its keyword outside
+   * brackets and quotes. Returns the law record or an error.
+   * @param {string} name @param {string} params @param {string} kind @param {string} arg @param {string} body
+   */
+  function lawLine(name, params, kind, arg, body) {
+    if (!KINDS.includes(kind)) return { error: `"${kind}" is not an input kind of a law line (${KINDS.join(", ")}).` };
+    const t = tail(body);
+    if (t.repeat !== 1) return { error: "a law line takes no repeat." };
+    // The start of each clause keyword at depth 0.
+    const cuts = [];
+    let depth = 0;
+    for (let i = 0; i < t.rest.length; i++) {
+      const ch = t.rest[i];
+      if (ch === "(" || ch === "[") depth++;
+      else if (ch === ")" || ch === "]") depth--;
+      else if (depth === 0 && /\s/.test(ch)) {
+        const w = /^\s+([a-z]+)\b/.exec(t.rest.slice(i));
+        if (w && CLAUSES.includes(w[1])) cuts.push({ at: i, key: w[1], from: i + w[0].length });
+      }
+    }
+    /** @type {any} */
+    const def = { name, params: split(params ?? "", ","), kind, arg, expr: (cuts.length ? t.rest.slice(0, cuts[0].at) : t.rest).trim() };
+    for (let j = 0; j < cuts.length; j++) {
+      const c = cuts[j], value = t.rest.slice(c.from, j + 1 < cuts.length ? cuts[j + 1].at : undefined).trim();
+      if (def[c.key] !== undefined) return { error: `the clause ${c.key} comes twice.` };
+      if (c.key === "on") {
+        const inner = /^\[(.*)\]$/.exec(value), ends = inner ? split(inner[1], ",") : [];
+        if (ends.length !== 2) return { error: "the support is written on [lo, hi], with inf for no bound." };
+        def.on = ends;
+      } else if (c.key === "grid") {
+        if (!/^\d+$/.test(value)) return { error: "grid takes a whole number, such as grid 4096." };
+        def.grid = Number(value);
+      } else def[c.key] = value;
+    }
+    if (!def.expr) return { error: "the law has no expression after =." };
+    if (t.unit) def.unit = t.unit;
+    if (t.note) def.note = t.note;
+    return { def };
+  }
+
   /**
    * Read model text into a record. Returns { record, errors } with each error as "Line n: …".
    * @param {string} text @param {string} [id]
@@ -77,6 +122,11 @@
       let m;
       if ((m = /^([a-z]+):\s*(.*)$/.exec(line)) && TEXT.includes(m[1])) rec[m[1]] = m[2];
       else if ((m = /^focus\s+([A-Za-z][\w]*(?:\[\d+\])?)$/.exec(line))) rec.focus = m[1];
+      else if ((m = /^law\s+([A-Za-z]\w*)\s*(?:\(([^()]*)\))?\s+([a-z]+)\s*\(\s*([A-Za-z]\w*)\s*\)\s*=\s*(.+)$/.exec(line))) {
+        const r = lawLine(m[1], m[2] ?? "", m[3], m[4], m[5]);
+        if (r.error) errors.push(`${at}: ${r.error}`);
+        else (rec.laws ??= []).push(r.def);
+      }
       else if ((m = /^control\s+([A-Za-z]\w*)\s*=\s*(.+)$/.exec(line))) {
         const t = tail(m[2]);
         rec.control = { name: m[1], expr: t.rest, ...(t.note ? { note: t.note } : {}) };
@@ -84,7 +134,7 @@
       else if ((m = /^param\s+([A-Za-z]\w*)\s*=\s*(.+)$/.exec(line))) {
         const t = tail(m[2]);
         rec.parameters.push({ name: m[1], expr: t.rest, unit: t.unit, note: t.note });
-      } else if ((m = /^([A-Za-z]\w*)\s*~\s*([a-z][a-z0-9]*)\s*\((.*)\)(.*)$/.exec(line))) {
+      } else if ((m = /^([A-Za-z]\w*)\s*~\s*([A-Za-z]\w*)\s*\((.*)\)(.*)$/.exec(line))) {
         const t = tail(m[4]);
         if (t.rest) { errors.push(`${at}: "${t.rest.slice(0, 30)}" after the law is not repeat, {unit} or "note".`); return; }
         /** @type {Record<string, string>} */
@@ -135,6 +185,10 @@
     const out = [`title: ${rec.title}`];
     if (rec.problem) out.push(`problem: ${rec.problem}`);
     for (const p of rec.parameters ?? []) out.push(`param ${p.name} = ${p.expr}${end(p)}`);
+    for (const l of rec.laws ?? []) {
+      const clauses = [l.on ? ` on [${l.on[0]}, ${l.on[1]}]` : "", l.probs ? ` probs ${l.probs}` : "", l.where ? ` where ${l.where}` : "", l.obs ? ` obs ${l.obs}` : "", l.grid ? ` grid ${l.grid}` : ""].join("");
+      out.push(`law ${l.name}${l.params?.length ? `(${l.params.join(", ")})` : ""} ${l.kind}(${l.arg}) = ${l.expr}${clauses}${end(l)}`);
+    }
     const vars = new Map((rec.variables ?? []).map((/** @type {any} */ v) => [v.name, v]));
     const defs = new Map((rec.definitions ?? []).map((/** @type {any} */ d) => [d.name, d]));
     const order = rec.order ?? [...(rec.variables ?? []).map((/** @type {any} */ v) => ({ type: "var", name: v.name })), ...(rec.definitions ?? []).map((/** @type {any} */ d) => ({ type: "def", name: d.name }))];

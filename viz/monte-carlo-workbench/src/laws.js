@@ -108,7 +108,7 @@
     const s = law.support(p);
     if (u <= 0) return s.lo;
     if (u >= 1) return s.hi;
-    if (law.continuous) return law.quantile(u, p);
+    if (law.continuous || law.quantile) return law.quantile(u, p);
     const test = u <= 0.5 ? (/** @type {number} */ k) => law.cdf(k, p) >= u : (/** @type {number} */ k) => law.sf(k, p) <= 1 - u;
     return firstTrue(test, s.lo, Math.min(s.hi, 9007199254740991));
   }
@@ -605,5 +605,6 @@
   /** @type {Record<string, any>} */
   const BY_ID = Object.fromEntries(LAWS.map((l) => [l.id, l]));
 
-  return { LAWS, BY_ID, quantile: (/** @type {string} */ id, /** @type {number} */ u, /** @type {Params} */ p) => quantile(BY_ID[id], u, p), poissonDraw, alias };
+  // quantile() takes a law id, or a law object for a law outside BY_ID (a constructed or custom law of group 4).
+  return { LAWS, BY_ID, quantile: (/** @type {any} */ id, /** @type {number} */ u, /** @type {Params} */ p) => quantile(typeof id === "string" ? BY_ID[id] : id, u, p), poissonDraw, alias };
 });

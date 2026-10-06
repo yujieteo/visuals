@@ -7,14 +7,15 @@
  * variance-reduction method and the fit of a real dataset. A run's results are not part of the state: the page
  * keeps them beside it, and the run record saves them.
  */
-/** @param {any} root the global object @param {(En: any, D: any, X: any, L: any, S: any) => any} factory */
+/** @param {any} root the global object @param {(En: any, D: any, X: any, L: any, S: any, Cu: any, Co: any) => any} factory */
 (function (root, factory) {
-  const api = factory(root.MCEngine ?? require("./engine.js"), root.MCDsl ?? require("./dsl.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCSpecial ?? require("./special.js"));
+  const api = factory(root.MCEngine ?? require("./engine.js"), root.MCDsl ?? require("./dsl.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCSpecial ?? require("./special.js"),
+    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.Model = api;
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (
   /** @type {typeof import("./engine.js")} */ En, /** @type {typeof import("./dsl.js")} */ D, /** @type {typeof import("./expr.js")} */ X,
-  /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./special.js")} */ S) {
+  /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co) {
   "use strict";
 
   const SLUG = "monte-carlo-workbench", SCHEMA_VERSION = 1, MAX_SIZE = 22, BINS = 400, CBINS = 100;
@@ -28,7 +29,9 @@
   const EXPERIMENTS = DATA.models.filter((/** @type {any} */ m) => m.kind === "experiment").map((/** @type {any} */ m) => m.id);
   /** @type {string[]} */
   const WORKFLOWS = DATA.models.filter((/** @type {any} */ m) => m.kind === "workflow").map((/** @type {any} */ m) => m.id);
-  const MODEL_IDS = [...WORKFLOWS, ...EXPERIMENTS, "custom"];
+  /** The examples of the custom law inputs of group 4. @type {string[]} */
+  const INPUTS = DATA.models.filter((/** @type {any} */ m) => m.kind === "input").map((/** @type {any} */ m) => m.id);
+  const MODEL_IDS = [...WORKFLOWS, ...EXPERIMENTS, ...INPUTS, "custom"];
   const METHOD_IDS = Object.keys(En.METHODS);
 
   /** @type {Record<string, KitField>} */
@@ -120,6 +123,9 @@ focus N
     return rec.parameters.filter((/** @type {any} */ p) => overrides[p.name] !== undefined).map((/** @type {any} */ p) => `${p.name}=${overrides[p.name]}`).join("; ");
   }
 
+  /** Plain JSON data: every number that is NaN or ±Infinity becomes null. @param {any} v @returns {any} */
+  const plain = (v) => (v === null || v === undefined ? null : JSON.parse(JSON.stringify(v, (_, x) => (typeof x === "number" && !Number.isFinite(x) ? null : x))));
+
   /** A number for JSON: null for NaN and ±Infinity. @param {number | null | undefined} v */
   const safe = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
@@ -134,7 +140,7 @@ focus N
   function windowOf(c, refs) {
     const [name, idx] = En.splitFocus(c.focus);
     const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
-    let lo = Infinity, hi = -Infinity, top = 0, heavy = false, continuous = false;
+    let lo = Infinity, hi = -Infinity, top = 0, heavy = false, continuous = false, realAtoms = false;
     // A continuous focus with an exact law (a variable, or a maximum, minimum, sum or affine function of draws): the
     // window from its quantiles, and for a heavy tail 24 thresholds equally spaced on a log scale past the window, to
     // the 1 − 10^-8 quantile, for the survival and tail plots.
@@ -163,8 +169,10 @@ focus N
           continue;
         }
         // The window holds the support less a mass of about 10^-9 on the left and 10^-6 on the right.
-        lo = Math.min(lo, Math.max(s.lo, L.quantile(m.law.id, 1e-9, m.params)));
-        hi = Math.max(hi, Math.min(s.hi, L.quantile(m.law.id, 1 - 1e-6, m.params)));
+        lo = Math.min(lo, Math.max(s.lo, L.quantile(m.law, 1e-9, m.params)));
+        hi = Math.max(hi, Math.min(s.hi, L.quantile(m.law, 1 - 1e-6, m.params)));
+        // A table or an empirical law with values that are not integers takes bins of real width.
+        if (m.law.isInteger && !m.law.isInteger(m.params)) realAtoms = true;
         top = Math.max(top, s.hi === Infinity ? 1e15 : s.hi);
         if (order < Infinity) heavy = true;
       }
@@ -196,9 +204,10 @@ focus N
       top = 1e15;
     }
     if (heavy) hi = Math.min(hi, lo + BINS - 1);
-    const integer = Number.isInteger(lo) && Number.isInteger(hi);
+    const integer = Number.isInteger(lo) && Number.isInteger(hi) && !realAtoms;
     const span = hi - lo + (integer ? 1 : 0);
-    const width = integer ? Math.max(1, Math.ceil(span / BINS)) : Math.max(span / BINS, 1e-9);
+    // Values that are not integers (a table or an empirical law) take BINS − 1 cells, so the last value has its own bin.
+    const width = integer ? Math.max(1, Math.ceil(span / BINS)) : Math.max(span / (realAtoms ? BINS - 1 : BINS), 1e-9);
     const bins = Math.max(1, Math.ceil(span / width) + (integer ? 0 : 1));
     const thresholds = [];
     for (let t = 10; t <= Math.min(top, 1e15); t *= 10) if (t > lo + bins * width - 1) thresholds.push(t);
@@ -216,7 +225,7 @@ focus N
       const p = En.argsAt(node, c.alternatives[a].values).params;
       if (node.law.check(p).length) return null;
       const order = node.law.moments(p).order, index = node.law.tailIndex ? node.law.tailIndex(p) : order < Infinity ? order : null;
-      return { label: `the ${node.law.name} law`, tailIndex: safe(index), numeric: !!node.law.numeric };
+      return { label: /\blaws?\b|\)$/.test(node.law.name) ? `the ${node.law.name}`.replace("the Mixture", "the mixture").replace("the Truncated", "the truncated").replace("the Compound", "the compound") : `the ${node.law.name} law`, tailIndex: safe(index), numeric: !!node.law.numeric };
     }
     const b = En.focusLaw(c, a);
     return b ? { label: b.label, tailIndex: safe(b.tailIndex), numeric: b.numeric } : null;
@@ -266,7 +275,7 @@ focus N
     if (node?.type === "var" && node.constant) {
       const m = marginalLaw(node, En.argsAt(node, c.alternatives[a].values).params, idx);
       if (!m) return null;
-      if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(L.quantile(m.law.id, u, m.params)) ?? 0) };
+      if (kind === "quantile") return { x: grid, y: grid.map((u) => safe(L.quantile(m.law, u, m.params)) ?? 0) };
       if (m.law.continuous) {
         // The density at the bin centres; the CDF and the survival function at the right edges, as the run's bins.
         const xs = Array.from({ length: win.bins }, (_, k) => win.lo + (k + (kind === "pmf" ? 0.5 : 1)) * win.width);
@@ -277,6 +286,13 @@ focus N
       const xs = [];
       for (let k = 0; k < win.bins && xs.length < BINS; k++) xs.push(win.lo + k * win.width);
       if (kind === "survival") for (const t of win.thresholds) xs.push(t);
+      if (m.law.atoms) {
+        // A law of finitely many values: bin k holds [lo + kw, lo + (k + 1)w), as the run's bins, with P(X < y) = F(y) − P(X = y).
+        const below = (/** @type {number} */ y) => m.law.cdf(y, m.params) - m.law.pmf(y, m.params);
+        const g = kind === "pmf" ? (/** @type {number} */ x) => below(x + win.width) - below(x) : kind === "cdf" ? (/** @type {number} */ x) => below(x + win.width)
+          : (/** @type {number} */ x) => (x >= win.lo + win.bins * win.width ? m.law.sf(x, m.params) : 1 - below(x + win.width));
+        return { x: xs, y: xs.map((x) => safe(g(x)) ?? 0) };
+      }
       const f = kind === "pmf" ? (/** @type {number} */ k) => (win.width === 1 ? m.law.pmf(k, m.params) : m.law.cdf(k + win.width - 1, m.params) - m.law.cdf(k - 1, m.params))
         : kind === "cdf" ? (/** @type {number} */ k) => m.law.cdf(k + win.width - 1, m.params) : (/** @type {number} */ k) => m.law.sf(k >= win.lo + win.bins * win.width ? k : k + win.width - 1, m.params);
       return { x: xs, y: xs.map((k) => safe(f(k)) ?? 0) };
@@ -315,10 +331,20 @@ focus N
     const lines = [];
     /** @param {string} src */
     const t = (src) => { try { return X.tex(X.parse(src)); } catch { return "\\text{(not an expression)}"; } };
+    const customs = Cu.compileAll(rec.laws ?? [], Co.taken).laws;
+    // A law line: its input as an equation, with its parameters and support.
+    const KIND_TEX = /** @type {Record<string, (n: string, a: string) => string>} */ ({ pdf: (n, a) => `f_{${n}}(${a})`, logpdf: (n, a) => `\\log f_{${n}}(${a})`, density: (n, a) => `f_{${n}}(${a}) \\propto`, pmf: (n, a) => `p_{${n}}(${a})`,
+      cdf: (n, a) => `F_{${n}}(${a})`, quantile: (n, a) => `Q_{${n}}(${a})`, mgf: (n, a) => `M_{${n}}(${a})`, cf: (n, a) => `\\varphi_{${n}}(${a})` });
+    for (const l of rec.laws ?? []) {
+      const n = `\\mathrm{${String(l.name).replace(/_/g, "\\_")}}`, a = X.texName(l.arg ?? "x");
+      const on = l.on ? `,\\quad ${a} \\in \\left[${t(l.on[0])}, ${t(l.on[1])}\\right]` : "";
+      if (l.kind === "table") lines.push(`\\mathbb{P}\\left(X_{${n}} = ${t(l.expr)}_j\\right) = ${t(l.probs ?? "0")}_j`);
+      else if (KIND_TEX[l.kind]) lines.push(`${KIND_TEX[l.kind](n, a)}${l.kind === "density" ? "" : " ="} ${t(l.expr)}${on}`);
+    }
     const order = rec.order ?? [...rec.variables.map((/** @type {any} */ v) => ({ type: "var", name: v.name })), ...rec.definitions.map((/** @type {any} */ d) => ({ type: "def", name: d.name }))];
     for (const item of order) {
       if (item.type === "var") {
-        const v = rec.variables.find((/** @type {any} */ x) => x.name === item.name), law = L.BY_ID[v.law];
+        const v = rec.variables.find((/** @type {any} */ x) => x.name === item.name), law = Co.resolve(v.law, customs);
         const args = Object.entries(v.args).map(([k, e]) => `${GREEK[k] ?? X.texName(k)} = ${t(/** @type {string} */ (e))}`).join(",\\ ");
         lines.push(`${X.texName(v.name)}${(v.repeat ?? 1) > 1 ? `_{1..${v.repeat}} \\overset{\\text{i.i.d.}}{\\sim}` : " \\sim"} \\operatorname{${law ? law.name.replace(/ /g, "\\ ") : v.law}}\\left(${args}\\right)`);
       } else {
@@ -363,10 +389,10 @@ focus N
     for (const n of c.nodes) {
       if (n.type !== "var") continue;
       const p = En.argsAt(n, c.alternatives[0].values).params;
-      if (!n.constant || n.law.check(p).length) { out.push({ variable: n.name, law: n.law.id, name: n.law.name, constant: false, methods: null }); continue; }
+      if (!n.constant || n.law.check(p).length) { out.push({ variable: n.name, law: n.law.id, name: n.law.name, catalogue: Co.catalogueOf(n.law), code: n.law.params.map((/** @type {any} */ x) => ({ name: x.name, text: x.text })), constant: false, methods: null }); continue; }
       /** @param {any} s */
-      const show = (s) => ("unavailable" in s ? { label: "Not available", exactness: s.unavailable, acceptance: null } : { label: s.label, exactness: s.exactness, acceptance: safe(s.acceptance) });
-      out.push({ variable: n.name, law: n.law.id, name: n.law.name, constant: true, alternate: n.law.alternate ? n.law.alternate(p) : null, methods: {
+      const show = (s) => ("unavailable" in s ? { label: "Not available", exactness: s.unavailable, acceptance: null, sampling: "unavailable" } : { label: s.label, exactness: s.exactness, acceptance: safe(s.acceptance), sampling: s.sampling ?? (/^exact/.test(s.exactness) ? "exact" : "approximate") });
+      out.push({ variable: n.name, law: n.law.id, name: n.law.name, catalogue: Co.catalogueOf(n.law), code: n.law.params.map((/** @type {any} */ x) => ({ name: x.name, text: x.text })), constant: true, alternate: n.law.alternate ? n.law.alternate(p) : null, methods: {
         independent: show(n.law.reference(p)),
         inverse: show(n.law.inverse(p, failure === "table_cut" ? 0.99 : undefined)),
         rejection: show(n.law.rejection(p, failure === "envelope" ? 0.5 : 1)),
@@ -403,10 +429,11 @@ focus N
     };
     const expected = ds.values.map((/** @type {number} */ v, /** @type {number} */ i) => n * (i === ds.values.length - 1 ? law.sf(v - 1, fitted) : law.pmf(v, fitted)));
     const alternatives = c.alternatives.map((/** @type {any} */ alt) => {
-      const node = c.nodes.find((/** @type {any} */ x) => x.type === "var");
+      const node = c.nodes.find((/** @type {any} */ x) => x.type === "var" && x.law.id === ds.law);
+      if (!node) return null;
       const p = En.argsAt(node, alt.values).params;
       return { label: alt.label, ...test(p, 0) };
-    });
+    }).filter(Boolean);
     return { n, mean, fitted, estimate: ds.law === "poisson" ? mean : mean / ds.trials, fittedTest: test(fitted, 1), expected, alternatives };
   }
 
@@ -510,6 +537,42 @@ focus N
     return used.some((u) => u.design === "control") ? "The control-variate estimator uses a control mean 0.1 standard deviation above the true mean, so its estimate has a bias of 0.1 β σ_C." : "This failure acts on the control-variate method only. Choose that method to see it.";
   }
 
+  /**
+   * The custom laws of a model with their checks: for each law line, each variable that uses it (directly, or as the
+   * family of a constructed law) in each alternative, with its parameter values and the law's report: the checks,
+   * the sampling label of each method, the approximation controls, the error sources and the observations. A law
+   * with no parameters that no variable uses still shows its checks. Computed also when the model has errors, so a
+   * failed check shows beside the error it causes.
+   * @param {any} rec @param {any} c the compiled model, or its partial form after errors
+   */
+  function customOf(rec, c) {
+    const defs = rec.laws ?? [];
+    if (!defs.length) return null;
+    const laws = c?.laws ?? Cu.compileAll(defs, Co.taken).laws;
+    return defs.map((/** @type {any} */ def) => {
+      const law = laws.get(def.name), out = { name: def.name, kind: def.kind, kindName: Cu.KINDS[def.kind] ?? def.kind, arg: def.arg, params: def.params ?? [], uses: /** @type {any[]} */ ([]), note: "" };
+      if (!law) { out.note = "The law line has errors: the model errors list them."; return out; }
+      for (const n of c?.nodes ?? []) {
+        if (n.type !== "var") continue;
+        let base = n.law, via = "";
+        while (base && base !== law && base.base) { via = via || base.name; base = base.base; }
+        if (base !== law) continue;
+        (c.alternatives ?? []).forEach((/** @type {any} */ alt, /** @type {number} */ a) => {
+          const pr = En.argsAt(n, alt.values);
+          if (pr.error) return;
+          // The family of a constructed law takes the parameters of its own names; a mixture's first component stands for the others.
+          const q = Object.fromEntries(law.params.map((/** @type {any} */ x) => [x.name, Array.isArray(pr.params[x.name]) ? pr.params[x.name][0] : pr.params[x.name]]));
+          out.uses.push({ variable: n.name, via, alt: a, label: alt.label, values: q, report: law.report(q) });
+        });
+      }
+      if (!out.uses.length) {
+        if (!law.params.length) out.uses.push({ variable: "", via: "", alt: 0, label: "", values: {}, report: law.report({}) });
+        else out.note = `No variable uses ${def.name}, so the page has no values for its parameters ${law.params.map((/** @type {any} */ x) => x.name).join(", ")} and checks nothing yet.`;
+      }
+      return out;
+    });
+  }
+
   /** The last 24 reference computations, by record and parameter settings, the most recent last. @type {Map<string, { status: any[], refs: any[], win: any }>} */
   const memo = new Map();
 
@@ -528,7 +591,7 @@ focus N
         alternatives: record.alternatives.filter((/** @type {any} */ a) => a.set?.[p.name] !== undefined).length })),
     };
     const c = En.prepare(record, settings);
-    if (textErrors.length || paramErrors.length || !c.ok) return { ok: false, errors: [...textErrors, ...paramErrors.map((e) => `Parameter settings: ${e}`), ...(c.ok ? [] : c.errors)], ...base };
+    if (textErrors.length || paramErrors.length || !c.ok) return { ok: false, errors: [...textErrors, ...paramErrors.map((e) => `Parameter settings: ${e}`), ...(c.ok ? [] : c.errors)], ...base, custom: plain(customOf(record, c)) };
     // The reference values cost most; they depend on the record and the parameter settings only.
     const key = JSON.stringify([record, overrides]);
     let known = memo.get(key);
@@ -559,8 +622,9 @@ focus N
       censoring: (() => { const n = c.nodes.find((/** @type {any} */ x) => x.censoring); return n ? { text: record.censoring, obs: n.name, event: n.name.replace(/_obs$/, "_event") } : null; })(),
       decision: c.decision, variables: c.nodes.filter((/** @type {any} */ n) => n.type === "var").map((/** @type {any} */ n) => n.name), variableTable: variablesOf(c, record),
       dataset: dataset ? { id: dataset.id, fit: dataset.kind === "series" ? seriesFit(dataset) : fitOf(dataset, c) } : null,
+      custom: plain(customOf(record, c)),
     };
   }
 
-  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
+  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, INPUTS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
 });
