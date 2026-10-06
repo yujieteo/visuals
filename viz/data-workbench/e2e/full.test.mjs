@@ -153,11 +153,15 @@ await fullSuite(SLUG, {
 });
 
 const require = createRequire(import.meta.url);
-/** @type {any} */ const Pdf = require("../src/pdf.js");
-/** @type {any} */ const Png = require("../src/png.js");
-/** @type {any} */ const Fonts = require("../src/fonts.js");
-/** @type {any} */ const PDFLib = require("../vendor/pdf-lib/pdf-lib.min.js");
-/** @type {any} */ const fontkit = require("../vendor/fontkit/fontkit.umd.min.js");
+// The page's readers and the vendored bundles load by a computed path: the harness's strict type check reads this
+// file, not the page's modules or minified bundles, which the folder's own checks cover.
+/** @param {string} path @returns {any} */
+const load = (path) => require(fileURLToPath(new URL(`../${path}`, import.meta.url)));
+const Pdf = load("src/pdf.js");
+const Png = load("src/png.js");
+const Fonts = load("src/fonts.js");
+const PDFLib = load("vendor/pdf-lib/pdf-lib.min.js");
+const fontkit = load("vendor/fontkit/fontkit.umd.min.js");
 
 /** The bytes of the file a click downloads. @param {import("playwright").Page} page @param {import("playwright").Locator} button */
 async function download(page, button) {
