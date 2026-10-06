@@ -1,6 +1,6 @@
-<p class="lede">Enter a physical model once. The page checks its dimensions and units, finds its independent dimensionless groups, and writes the model in dimensionless form, all with exact arithmetic. Every step keeps its reason, its status and its source.</p>
+<p class="lede">Enter a physical model once. The page checks its dimensions and units, finds its independent dimensionless groups, writes the model in dimensionless form, and maps where each simple model is accurate. Every step keeps its reason, its status and its source.</p>
 <aside class="callout preview" aria-label="Preview status">
-<p><strong>Preview, piece 2 of 9 of the build plan.</strong> The Dimensionless Number Finder and the Model Nondimensionalizer work now. Piece 3 adds the Regime Map Builder.</p>
+<p><strong>Preview, piece 3 of 9 of the build plan.</strong> The Dimensionless Number Finder, the Model Nondimensionalizer and the Regime Map Builder work now, with the four conduction families of the model catalogue. Piece 4 adds stability, bifurcation, buoyancy and radiation.</p>
 <details id="roadmap"><summary>The 26 model families and the methods still to come</summary><div id="roadmap-body"></div></details>
 </aside>
 <noscript>
@@ -8,6 +8,7 @@
 <h2>Worked example without JavaScript</h2>
 <p>For h, k, ρ, μ, c<sub>p</sub>, U and L, the dimension matrix has rank 4, so 7 − 4 = 3 independent groups exist. The repeating variables ρ, U, L and k give hL/k, μ/(ρUL) and ρc<sub>p</sub>UL/k. An equivalent familiar basis is Nu, Re and Pr. These groups do not give the relation Nu = f(Re, Pr).</p>
 <p>For the slab of half-thickness L, the variables X = x/L, τ = αt/L² and θ = (T − T<sub>∞</sub>)/(T<sub>i</sub> − T<sub>∞</sub>) give θ<sub>τ</sub> = θ<sub>XX</sub>, θ<sub>X</sub> = 0 at X = 0, −θ<sub>X</sub> = Bi θ at X = 1 and θ = 1 at τ = 0, with Bi = hL/k.</p>
+<p>Its solution is θ = Σ C<sub>n</sub> cos(λ<sub>n</sub>X) exp(−λ<sub>n</sub><sup>2</sup> Fo) with λ<sub>n</sub> tan λ<sub>n</sub> = Bi. At Bi = 0.5 and Fo = 0.25, the first mode alone is within 0.7 % of the series, but the lumped model exp(−Bi Fo) is 12 % off. The lumped model is the limit Bi → 0 with Bi·Fo fixed.</p>
 </section>
 </noscript>
 <div class="workbench">
@@ -21,6 +22,10 @@
 <option value="straight-fin">Straight fin with an insulated tip</option>
 <option value="transient-slab">Transient slab with surface convection</option>
 <option value="lumped-body">Lumped body cooled by convection</option>
+<option value="transient-cylinder">Transient long cylinder with surface convection</option>
+<option value="transient-sphere">Transient sphere with surface convection</option>
+<option value="volumetric-source">Slab with a uniform heat source</option>
+<option value="multilayer-wall">Two-layer wall with a contact resistance</option>
 </optgroup>
 <optgroup label="Failure examples">
 <option value="fail-dimensions">Failure: inconsistent dimensions</option>
@@ -57,6 +62,7 @@
 <button type="button" role="tab" id="tab-finder" data-field="tool" value="finder" aria-controls="tool-finder">Dimensionless Number Finder</button>
 <button type="button" role="tab" id="tab-nondim" data-field="tool" value="nondim" aria-controls="tool-nondim">Model Nondimensionalizer</button>
 <button type="button" role="tab" id="tab-regime" data-field="tool" value="regime" aria-controls="tool-regime">Regime Map Builder</button>
+<button type="button" role="tab" id="tab-catalogue" data-field="tool" value="catalogue" aria-controls="tool-catalogue">Model catalogue</button>
 </div>
 <div id="tool-finder" role="tabpanel" aria-labelledby="tab-finder">
 <div id="finder-gate"></div>
@@ -153,7 +159,58 @@
 </details>
 </div>
 </div>
-<div id="tool-regime" role="tabpanel" aria-labelledby="tab-regime" hidden></div>
+<div id="tool-regime" role="tabpanel" aria-labelledby="tab-regime" hidden>
+<div id="regime-gate"></div>
+<div id="regime-main">
+<div id="regime-summary"></div>
+<div class="map-controls" role="group" aria-label="Map controls">
+<label class="field-inline">x-axis <select id="map-x"></select></label>
+<label class="field-inline">y-axis <select id="map-y"></select></label>
+<span class="field-inline"><span class="label" id="lbl-x-scale">x scale</span>
+<span class="seg" role="group" aria-labelledby="lbl-x-scale">
+<button type="button" data-field="x_scale" value="auto">Auto</button>
+<button type="button" data-field="x_scale" value="log">Log</button>
+<button type="button" data-field="x_scale" value="linear">Linear</button>
+</span></span>
+<span class="field-inline" id="y-scale-group"><span class="label" id="lbl-y-scale">y scale</span>
+<span class="seg" role="group" aria-labelledby="lbl-y-scale">
+<button type="button" data-field="y_scale" value="auto">Auto</button>
+<button type="button" data-field="y_scale" value="log">Log</button>
+<button type="button" data-field="y_scale" value="linear">Linear</button>
+</span></span>
+<label class="field-inline">Tolerance <select data-field="tolerance"><option value="1e-1">0.1</option><option value="1e-2">0.01</option><option value="1e-3">0.001</option></select></label>
+<label class="field-inline">Shades from <select id="map-shade"></select></label>
+<fieldset class="field-inline layer-toggles"><legend class="label">Layers</legend><span id="map-layers"></span></fieldset>
+<label class="field-inline wide">Fixed values <input id="map-fixed" type="text" autocomplete="off" spellcheck="false" placeholder="such as Bi=0.5, Fo=0.25"></label>
+</div>
+<figure class="map-figure" aria-labelledby="regime-caption">
+<div id="regime-map" class="map-wrap"></div>
+<figcaption id="regime-caption" class="note"></figcaption>
+</figure>
+<div id="regime-legend"></div>
+<div id="regime-beside"></div>
+<section id="regime-inspect" aria-label="Inspection of the selected point"></section>
+<details class="step-section" id="sec-rm-balance" data-section>
+<summary>Hand calculation 8: dominant balance</summary>
+<div id="regime-balance"></div>
+</details>
+<details class="step-section" id="sec-rm-asymptotic" data-section>
+<summary>Hand calculation 8: asymptotic analysis</summary>
+<div id="regime-asymptotic"></div>
+</details>
+<details class="step-section" id="sec-rm-boundaries" data-section>
+<summary>Boundaries, intersections and limit paths (table view)</summary>
+<div id="regime-table"></div>
+</details>
+<details class="step-section" id="sec-rm-declaration" data-section>
+<summary>Declared model, acceptance and anchor test</summary>
+<div id="regime-declaration"></div>
+</details>
+</div>
+</div>
+<div id="tool-catalogue" role="tabpanel" aria-labelledby="tab-catalogue" hidden>
+<div id="catalogue"></div>
+</div>
 </section>
 <section class="panel" id="panel-trace" aria-labelledby="h-trace">
 <h2 id="h-trace">Derivation and evidence</h2>

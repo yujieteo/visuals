@@ -1,10 +1,14 @@
-"""Independent reference values for the Dimensionless Number Finder and the Model Nondimensionalizer, computed with SymPy.
+"""Independent reference values for the Finder, the Nondimensionalizer and the conduction families, from SymPy and mpmath.
 
 The page's engine is its own exact JavaScript (src/rational.js, src/linalg.js, src/sym.js). This script recomputes,
 for every example of data/examples.json, the dimension matrix of the Pi set, its rank, a kernel basis and the
 determinant of D_R for the example's preferred repeating variables, with SymPy's exact rational matrices. For the
 examples with equations it also substitutes the textbook scales below into every equation and condition, lets
-SymPy apply the chain rule, and divides by the coefficient of the highest derivative of the field. It writes
+SymPy apply the chain rule, and divides by the coefficient of the highest derivative of the field. For the
+conduction families of piece 3 it computes, with mpmath at 30 digits, the eigenvalues of the slab, the long cylinder
+and the sphere (each in its own bracket) and their coefficients by quadrature, the series temperatures, the fin's heat
+flow and profile, and with SymPy the small-Bi series of the first eigenvalue and coefficient, the Taylor series of
+λ tanh λ, the solution of the slab with a source and the linear system of the two-layer wall. It writes
 data/references.json with the versions it used. CI never runs this script: tests compare the page's engine with
 the committed file. Run it again after a change to the examples:
 
@@ -57,8 +61,11 @@ SCALES = {
     "lumped-body": {"t": "rho*c_p*V/(h*A_s)", "T": ("T_inf", "DT_i"), "defs": {"T_i": "DT_i + T_inf"}},
     "fail-zero-temperature-scale": {"x": "L", "t": "L**2/alpha", "T": ("T_inf", "q_v*L**2/k"), "defs": {"alpha": "k/(rho*c_p)", "T_i": "DT_i + T_inf"}},
     "fail-unsupported": {"x": "L", "t": "rho*c_p*L**2/k", "T": ("T_w", "q_0*L**2/k"), "defs": {}},
+    "transient-cylinder": {"r": "R", "t": "R**2/alpha", "T": ("T_inf", "DT_i"), "defs": {"alpha": "k/(rho*c_p)", "T_i": "DT_i + T_inf"}},
+    "transient-sphere": {"r": "R", "t": "R**2/alpha", "T": ("T_inf", "DT_i"), "defs": {"alpha": "k/(rho*c_p)", "T_i": "DT_i + T_inf"}},
+    "volumetric-source": {"x": "L", "T": ("T_inf", "DT_ref"), "defs": {}},
 }
-HATS = {"x": "X", "t": "tau"}
+HATS = {"x": "X", "r": "X", "t": "tau"}
 
 
 class Plain(sympy.printing.str.StrPrinter):
@@ -81,7 +88,7 @@ def nondimensional(ex):
     """The dimensionless form of every equation and condition of one example, as plain text for the page's parser."""
     spec = SCALES[ex["id"]]
     names = {v["symbol"] for v in ex["variables"]} | {"Delta_T", "DT_i"}
-    coords = [c for c in ("x", "t") if c in spec]
+    coords = [c for c in ("x", "r", "t") if c in spec]
     X = {c: sympy.Symbol(HATS[c]) for c in coords}
     theta = sympy.Function("theta")(*[X[c] for c in coords])
     local = {n: sympy.Symbol(n) for n in names}
@@ -89,6 +96,7 @@ def nondimensional(ex):
     local["T"] = T
     local["d"] = lambda f, *vs: sympy.diff(f, *vs)
     local["exp"] = sympy.exp
+    local["R"] = sympy.Symbol("R")
     off, sc = (sympy.sympify(z, locals=local) for z in spec["T"])
     scales = {c: sympy.sympify(spec[c], locals=local) for c in coords}
     defs = {sympy.Symbol(k): sympy.sympify(v, locals=local) for k, v in spec["defs"].items()}
@@ -112,6 +120,118 @@ def nondimensional(ex):
         dimless = sympy.expand(sympy.simplify(expr / factor))
         out.append({"id": item["id"], "factor": Plain().doprint(factor), "dimensionless": Plain().doprint(dimless)})
     return {"example": ex["id"], "scales": {c: str(scales[c]) for c in coords} | {"T": f"{spec['T'][0]} + ({spec['T'][1]})*theta"}, "definitions": spec["defs"], "forms": out}
+
+
+mpmath.mp.dps = 30
+GEOMS = {"slab": 0, "cylinder": 1, "sphere": 2}
+
+
+def mode(geom, lam, X):
+    if geom == "slab":
+        return mpmath.cos(lam * X)
+    if geom == "cylinder":
+        return mpmath.besselj(0, lam * X)
+    return mpmath.sinc(lam * X)
+
+
+def eigen(geom, Bi, n):
+    """The first n eigenvalues, each by mpmath's bisection-type solver in its own bracket, and the coefficients
+    C_k = int X^j f_k dX / int X^j f_k^2 dX by quadrature (independent of the closed forms on the page)."""
+    j = GEOMS[geom]
+    out = []
+    for k in range(1, n + 1):
+        if Bi == "inf":
+            lam = {"slab": (k - mpmath.mpf(1) / 2) * mpmath.pi, "cylinder": mpmath.besseljzero(0, k), "sphere": k * mpmath.pi}[geom]
+        else:
+            B = mpmath.mpf(Bi)
+            if geom == "slab":
+                f, a, b = (lambda l: l * mpmath.sin(l) - B * mpmath.cos(l)), (k - 1) * mpmath.pi, (k - mpmath.mpf(1) / 2) * mpmath.pi
+            elif geom == "cylinder":
+                f, a, b = (lambda l: l * mpmath.besselj(1, l) - B * mpmath.besselj(0, l)), (mpmath.besseljzero(1, k - 1) if k > 1 else mpmath.mpf(0)), mpmath.besseljzero(0, k)
+            else:
+                f, a, b = (lambda l: l * mpmath.cos(l) - (1 - B) * mpmath.sin(l)), (k - 1) * mpmath.pi + (mpmath.mpf("1e-20") if k == 1 else 0), k * mpmath.pi
+            lam = mpmath.findroot(f, (a, b), solver="anderson")
+        w = lambda X: X ** j
+        C = mpmath.quad(lambda X: w(X) * mode(geom, lam, X), [0, 1]) / mpmath.quad(lambda X: w(X) * mode(geom, lam, X) ** 2, [0, 1])
+        out.append((lam, C))
+    return out
+
+
+def theta(geom, Bi, Fo, X, modes):
+    return mpmath.fsum(C * mode(geom, lam, X) * mpmath.exp(-lam ** 2 * Fo) for lam, C in modes)
+
+
+def small_bi(geom):
+    """C_1 and lambda_1^2/((j+1)Bi) = 1 - sum mu_k Bi^k as series in Bi, from SymPy's series of the eigenvalue equation."""
+    j = GEOMS[geom]
+    s, B = sympy.symbols("s B", positive=True)
+    lam = sympy.sqrt(s)
+    order = 5
+    bi_of_s = {"slab": lam * sympy.tan(lam), "cylinder": lam * sympy.besselj(1, lam) / sympy.besselj(0, lam), "sphere": 1 - lam * sympy.cot(lam)}[geom]
+    ser = sympy.series(bi_of_s, s, 0, order).removeO()
+    # Revert the series: s = a1 B + a2 B^2 + ... with ser(s) = B, coefficient by coefficient.
+    a = sympy.symbols(f"a1:{order}")
+    s_of_b = sum(a[i] * B ** (i + 1) for i in range(order - 1))
+    eq = sympy.expand(sympy.series(ser.subs(s, s_of_b), B, 0, order).removeO() - B)
+    sol = {}
+    for i in range(order - 1):
+        c = sympy.expand(eq.coeff(B, i + 1).subs(sol))
+        sol[a[i]] = sympy.solve(c, a[i])[0]
+    s_b = sympy.expand(s_of_b.subs(sol))
+    ratio = sympy.expand(s_b / ((j + 1) * B))
+    mu = [str(-ratio.coeff(B, k)) for k in range(1, 4)]
+    c_of_s = {"slab": 4 * sympy.sin(lam) / (2 * lam + sympy.sin(2 * lam)), "cylinder": (2 / lam) * sympy.besselj(1, lam) / (sympy.besselj(0, lam) ** 2 + sympy.besselj(1, lam) ** 2),
+              "sphere": 4 * (sympy.sin(lam) - lam * sympy.cos(lam)) / (2 * lam - sympy.sin(2 * lam))}[geom]
+    c_ser = sympy.series(c_of_s, s, 0, order).removeO()
+    c_b = sympy.expand(sympy.series(c_ser.subs(s, s_b), B, 0, 4).removeO())
+    return {"geometry": geom, "C1": [str(c_b.coeff(B, k)) for k in range(4)], "mu": mu}
+
+
+def conduction(examples):
+    modes = []
+    for geom in GEOMS:
+        for Bi in [0.1, 1, 10, "inf"]:
+            m = eigen(geom, Bi, 6)
+            modes.append({"geometry": geom, "Bi": Bi, "lambda": [float(l) for l, _ in m], "C": [float(c) for _, c in m]})
+    temps = []
+    for geom in GEOMS:
+        for Bi in [0.1, 1, 10]:
+            m = eigen(geom, Bi, 40)
+            for Fo in [0.01, 0.1, 0.5, 2]:
+                xs = [0, 0.5, 1]
+                temps.append({"geometry": geom, "Bi": Bi, "Fo": Fo, "X": xs, "theta": [float(theta(geom, Bi, Fo, mpmath.mpf(x), m)) for x in xs]})
+    series = [small_bi(g) for g in GEOMS]
+    # The slab with a source: theta'' + Gamma = 0, theta'(0) = 0, -theta'(1) = Bi theta(1), at Gamma = 1/5, Bi = 1/2.
+    X = sympy.Symbol("X")
+    th = sympy.Function("theta")
+    G, Bi = sympy.Rational(1, 5), sympy.Rational(1, 2)
+    sol = sympy.dsolve(th(X).diff(X, 2) + G, th(X), ics={th(X).diff(X).subs(X, 0): 0}).rhs
+    c = [s_ for s_ in sol.free_symbols if s_ != X]
+    sol = sol.subs(c[0], sympy.solve(-sol.diff(X).subs(X, 1) - Bi * sol.subs(X, 1), c[0])[0]) if c else sol
+    source = {"Gamma": "1/5", "Bi": "1/2", "values": [[str(x), str(sympy.nsimplify(sol.subs(X, x)))] for x in [sympy.Integer(0), sympy.Rational(1, 2), sympy.Integer(1)]]}
+    # The two-layer wall of the example: unknown face and interface temperatures and the heat flux, in exact rationals.
+    ex = next(e for e in examples if e["id"] == "multilayer-wall")
+    val = {v["symbol"]: sympy.Rational(v["value"]) for v in ex["variables"] if v.get("value")}
+    T = {k: val[k] + sympy.Rational(27315, 100) for k in ("T_inf1", "T_inf2")}
+    t0, t1, t2, t3, q = sympy.symbols("t0 t1 t2 t3 q")
+    eqs = [q - val["h_1"] * (T["T_inf1"] - t0), q - val["k_1"] * (t0 - t1) / val["L_1"], q - (t1 - t2) / val["R_c"], q - val["k_2"] * (t2 - t3) / val["L_2"], q - val["h_2"] * (t3 - T["T_inf2"])]
+    r = sympy.solve(eqs, [t0, t1, t2, t3, q])
+    wall = {"q": str(r[q]), "nodes": [str(r[t0]), str(r[t1]), str(r[t2]), str(r[t3]), str(T["T_inf2"])]}
+    # The fin at lambda^2 = 11/32 (the example), insulated tip.
+    lam = mpmath.sqrt(mpmath.mpf(11) / 32)
+    fin = {"lambda": float(lam), "Q": float(lam * mpmath.tanh(lam)), "efficiency": float(mpmath.tanh(lam) / lam),
+           "profile": [[x, float(mpmath.cosh(lam * (1 - x)) / mpmath.cosh(lam))] for x in [0, 0.25, 0.5, 0.75, 1]]}
+    lsym = sympy.Symbol("lambda")
+    ts = sympy.series(lsym * sympy.tanh(lsym), lsym, 0, 10).removeO()
+    fin["series"] = [str(ts.coeff(lsym, 2 * k)) for k in range(5)]
+    xs = [0.001, 0.3, 1, 2.5, 5, 9.9, 12, 19.7, 24.9, 25.1, 30, 47.3, 100, 333.3]
+    special = {"J0": [[x, float(mpmath.besselj(0, x))] for x in xs], "J1": [[x, float(mpmath.besselj(1, x))] for x in xs],
+               "erf": [[x, float(mpmath.erf(x))] for x in [0.01, 0.5, 0.79, 0.81, 1.5, 3]],
+               "erfc": [[x, float(mpmath.erfc(x))] for x in [0.01, 0.5, 0.79, 0.81, 1.5, 3, 5, 10, 25]],
+               "erfcx": [[x, float(mpmath.exp(x * x) * mpmath.erfc(x))] for x in [0, 0.5, 0.79, 0.81, 3, 10, 100, 10000]],
+               "j0zeros": [float(mpmath.besseljzero(0, k)) for k in range(1, 6)], "j1zeros": [float(mpmath.besseljzero(1, k)) for k in range(1, 6)]}
+    return {"settings": {"digits": 30, "roots": "mpmath.findroot(anderson) in the bracket of each mode", "coefficients": "mpmath.quad of the weighted mode integrals", "series": "40 modes"},
+            "modes": modes, "temperatures": temps, "smallBi": series, "source": source, "multilayer": wall, "fin": fin, "special": special}
 
 
 def main():
@@ -163,9 +283,10 @@ def main():
         "settings": {"arithmetic": "sympy.Rational (exact)", "kernel": "sympy.Matrix.nullspace", "rank": "sympy.Matrix.rank"},
         "cases": out,
         "nondimensional": nondim,
+        "conduction": conduction(examples),
     }
     (HERE / "data" / "references.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"wrote data/references.json: {len(out)} cases and {len(nondim)} nondimensionalizations, sympy {sympy.__version__}")
+    print(f"wrote data/references.json: {len(out)} cases, {len(nondim)} nondimensionalizations and the conduction references, sympy {sympy.__version__}, mpmath {mpmath.__version__}")
 
 
 if __name__ == "__main__":

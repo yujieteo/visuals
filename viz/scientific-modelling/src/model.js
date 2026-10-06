@@ -1,37 +1,52 @@
 /* Scientific Modelling: the page's model for the shared kit (scripts/kit/kit.js). The kit's state is the view:
  * the example, the tool, the researcher's repeating set, the row-reduction step, the basis shown and the detail
  * level, all in the URL. The model record itself (src/record.js) is the researcher's, kept in this browser and in
- * the model JSON; it also holds the scales the researcher chose. derive(state, data, record) interprets the
- * record's current version, runs the Finder and the Nondimensionalizer on the confirmed version, marks the results
- * that a later edit invalidates, and returns plain data that the view, the Markdown report and the beamdswitch deck
- * all read, so the three outputs show the same values and statuses.
+ * the model JSON; it also holds the scales the researcher chose and the declared model it follows. derive(state,
+ * data, record) interprets the record's current version, runs the Finder, the Nondimensionalizer and the regime
+ * analyses of its declared model (src/regime.js) on the confirmed version, marks the results that a later edit
+ * invalidates, and returns plain data that the view, the Markdown report and the beamdswitch deck all read, so the
+ * three outputs show the same values and statuses. The map's own view (axes, scales, fixed values, tolerance, point
+ * and boundary) and the catalogue's selected declaration are in the URL too.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"), require("./sym.js"));
-  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N, root.SM.S);
-})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N, S) {
+    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"), require("./sym.js"),
+      require("./regime.js"));
+  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N, root.SM.S, root.SM.RM);
+})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N, S, RM) {
   "use strict";
 
   const SLUG = "scientific-modelling";
   const SCHEMA_VERSION = 1;
-  const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent",
-    "fail-conditions", "fail-entry", "fail-unsupported"];
-  const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Failure: inconsistent dimensions", "Failure: zero scale",
-    "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors", "Failure: unsupported analysis"];
+  const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "transient-cylinder", "transient-sphere", "volumetric-source", "multilayer-wall",
+    "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported"];
+  const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Transient cylinder", "Transient sphere", "Volumetric source", "Multilayer wall",
+    "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors",
+    "Failure: unsupported analysis"];
   const MAX_STEP = 60;
 
   /** The view state (§5): every field is in the URL when it differs from its default. */
   const FIELDS = {
     example: { type: "enum", default: EXAMPLE_IDS[0], values: EXAMPLE_IDS, label: "Example" },
-    tool: { type: "enum", default: "finder", values: ["finder", "nondim", "regime"], label: "Tool" },
+    tool: { type: "enum", default: "finder", values: ["finder", "nondim", "regime", "catalogue"], label: "Tool" },
     repeating: { type: "string", default: "", label: "Repeating variables (symbols, comma-separated; empty for the automatic set)" },
     step: { type: "integer", default: 0, min: 0, max: MAX_STEP, step: 1, label: "Row-reduction step" },
     basis: { type: "enum", default: "familiar", values: ["familiar", "direct", "kernel"], label: "Basis shown" },
     detail: { type: "enum", default: "short", values: ["short", "full"], label: "Derivation detail" },
+    map_x: { type: "string", default: "", label: "Regime map: the parameter on the x-axis (empty for the declared default)" },
+    map_y: { type: "string", default: "", label: "Regime map: the parameter on the y-axis (empty for the declared default, none for a 1D diagram)" },
+    x_scale: { type: "enum", default: "auto", values: ["auto", "log", "linear"], label: "Regime map: scale of the x-axis" },
+    y_scale: { type: "enum", default: "auto", values: ["auto", "log", "linear"], label: "Regime map: scale of the y-axis" },
+    fixed: { type: "string", default: "", label: "Regime map: fixed parameter values, such as Bi=0.5, Fo=0.25 (empty for the record's values)" },
+    tolerance: { type: "enum", default: "1e-2", values: ["1e-1", "1e-2", "1e-3"], label: "Regime map: tolerance of the approximation error" },
+    layers: { type: "string", default: "approximation,balance,limits", label: "Regime map: the layers shown (approximation, balance, limits)" },
+    shade: { type: "string", default: "", label: "Regime map: the layer whose measure shades the map (empty for the first approximation)" },
+    point: { type: "string", default: "", label: "Regime map: the inspected point as x,y (empty for the record's point)" },
+    pick: { type: "string", default: "", label: "Regime map: the inspected boundary, as layer:index" },
+    family: { type: "string", default: "", label: "Model catalogue: the declared model shown (empty for the record's or the first)" },
   };
   const EXAMPLES = EXAMPLE_IDS.map((id, i) => ({ id, label: EXAMPLE_LABELS[i], state: { example: id } }));
-  const TOOLS = { finder: "Dimensionless Number Finder", nondim: "Model Nondimensionalizer", regime: "Regime Map Builder" };
+  const TOOLS = { finder: "Dimensionless Number Finder", nondim: "Model Nondimensionalizer", regime: "Regime Map Builder", catalogue: "Model catalogue" };
   const BASES = { familiar: "familiar basis", direct: "repeating-variable basis", kernel: "row-reduced basis" };
 
   /** The data the engine reads, from the page's dataset (raw.json). */
@@ -159,6 +174,13 @@
     else if (nondim && !nondim.ready && nondim.reason !== "blocked" && (nondim.reason !== "no-equations" || interpBase.calcs.find((c) => c.id === "nondimensionalize")?.intended)) {
       add({ id: "r-nd-unresolved", kind: "nondim", title: `Nondimensionalization: ${nondim.message}`, status: "unresolved", inputs: interpBase.equations.map((e) => e.id).concat((base.scales ?? []).map((x) => x.id)), next: nondim.next, steps: [], evidence: ["spec-6"] });
     }
+    // The regime analyses of the declared model (spec sections 8 to 10): they read the Nondimensionalizer's result.
+    const regime = interpBase && nondim ? RM.derive(state, data, { interp: interpBase, nd: nondim, base }) : null;
+    for (const r of RM.results(regime)) add(r);
+    if (regime && !regime.ready && regime.reason !== "no-declaration" && regime.reason !== "blocked") {
+      add({ id: "r-rm-unresolved", kind: "regime", title: `Regime map: ${regime.message}${regime.problems?.length ? ` ${regime.problems.slice(0, 3).join(" ")}` : ""}`, status: "unresolved",
+        inputs: ["purpose", ...interpBase.equations.map((e) => e.id), ...interpBase.conditions.map((c) => c.id), ...(base.scales ?? []).map((x) => x.id)], next: regime.next, steps: ["s-rm-declaration"], evidence: ["spec-10"] });
+    }
     // Calculations the record asks for that this piece cannot run, or that a failed check blocks.
     for (const c of interp.calcs) {
       if (c.ready || (!c.available && !c.intended)) continue;
@@ -183,7 +205,7 @@
     return {
       title: rec.title, origin: rec.origin, version: rec.version, confirmed, confirmedVersion: rec.confirmed ? rec.confirmed.version : null,
       edited: rec.version > 1 || rec.origin !== state.example, tool: state.tool, toolName: TOOLS[state.tool], basis: state.basis, basisName: BASES[state.basis],
-      interp: plainInterp(interp), finder, nondim, results, counts, changes, steps, shownStep, zeroNote, basisGroups,
+      interp: plainInterp(interp), finder, nondim, regime, catalogue: RM.catalogue(data, state.family || rec.purpose?.declaration || "", state.tool === "catalogue" ? (id) => standard(data, D, id) : null), results, counts, changes, steps, shownStep, zeroNote, basisGroups,
       reference: ref ? { versions: data.references.versions, rank: ref.rank, groups: ref.groups, det: ref.det_DR } : null,
       history: rec.history, previousVersion: rec.previous ? rec.previous.version : null,
       previousDiff: rec.previous ? R.diff(rec.previous.inputs, current) : null,
@@ -259,6 +281,13 @@
       for (const h of hidden) add({ id: `r-nd-hidden-${h.id}`, kind: "hidden", title: `${h.label} does not enter the dimensionless model: it cancels from every equation and condition, and no scale contains it.`, status: "unresolved", inputs: [h.id, ...nd.inputs], steps: ["s-nd-parameters"], evidence: ["spec-6"],
         next: `Check whether ${h.label} belongs in the model. A parameter that cancels has no effect on the solution.` });
     } else add({ id: "r-nd-enters", kind: "hidden", title: `Each of the ${nd.enters.length} physical parameters enters a scale, an offset, a coefficient or a condition, so no scale hides a parameter.`, status: "exact", inputs: nd.inputs, steps: ["s-nd-parameters"], evidence: ["spec-6"] });
+  }
+
+  /** The confirmed standard example of a declaration, for its acceptance checks in the catalogue. */
+  function standard(data, D, id) {
+    const rec = R.fromExample(D, id);
+    const interp = C.interpret(R.inputs(rec), D);
+    return { interp, nd: N.nondimensionalize(interp, { scales: rec.scales ?? [], finder: null, groups: D.groups.groups, confirmed: {} }), base: R.inputs(rec) };
   }
 
   /** The plain label of a group: its familiar name when it has one (the confirmed one first), else its formula. */

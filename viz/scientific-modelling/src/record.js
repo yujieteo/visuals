@@ -150,6 +150,7 @@
     if (!Number.isInteger(doc.version) || doc.version < 1) fail("The version must be a positive integer.");
     if (!isText(doc.title, 300)) fail("The title must be text of at most 300 characters.");
     if (!doc.purpose || !isText(doc.purpose.question ?? "") || !CALCULATIONS.includes(doc.purpose.calculation)) fail("The purpose needs a question and one of the known calculations.");
+    if (doc.purpose && doc.purpose.declaration !== undefined && (!isText(doc.purpose.declaration, 60) || !/^[a-z0-9-]*$/.test(doc.purpose.declaration))) fail("The declared model must be the id of a catalogue entry, such as slab-convection.");
     const ids = new Set(), symbols = new Set();
     const list = (key, kinds, check) => {
       if (!Array.isArray(doc[key])) { fail(`${key} must be a list.`); return; }

@@ -21,7 +21,7 @@
     { id: "bifurcation", name: "Bifurcation analysis", piece: 4, equations: true },
   ];
   const EQ_CALCS = CALCS.filter((c) => c.equations).map((c) => c.id);
-  const CURRENT_PIECE = 2;
+  const CURRENT_PIECE = 3;
 
   /** TeX commands a variable's own TeX may use: letters, accents and fonts. Anything else (a link, a style, a
    * package load) is refused, because an imported record must not add behaviour to the page. */
@@ -270,13 +270,17 @@
     const derivCoords = new Set(equations.filter((e) => e.ast && MODEL_KINDS.includes(e.kind)).flatMap((e) => E.derivatives(e.ast).flatMap((d) => Object.keys(d.order))));
     model.type = !equations.length ? "variable list" : derivCoords.size >= 2 ? "PDE" : derivCoords.size === 1 ? "ODE" : "algebraic";
 
-    // Conditions: a field with derivative order p in a coordinate needs p conditions in that coordinate.
+    // Conditions: a field with derivative order p in a coordinate needs p conditions in that coordinate. An interface
+    // condition couples the fields on its two sides, so each of its n fields counts it as 1/n of a condition.
     model.conditionCount = [];
+    const fieldsIn = (c) => c.symbols.filter((s) => model.orders[s]).length || 1;
     for (const [field, orders] of Object.entries(model.orders)) {
       for (const [x, p] of Object.entries(orders)) {
         const isTime = isTimeVar(x);
-        const given = conditions.filter((c) => c.atVar === x && c.symbols.includes(field));
-        const places = [...new Set(given.map((c) => c.at.replace(/\s+/g, " ").trim()))];
+        const touching = conditions.filter((c) => c.atVar === x && c.symbols.includes(field));
+        const sum = touching.reduce((s, c) => s + (c.kind === "interface" ? 1 / fieldsIn(c) : 1), 0);
+        const given = { length: Math.round(sum * 1000) / 1000 };
+        const places = [...new Set(touching.map((c) => c.at.replace(/\s+/g, " ").trim()))];
         model.conditionCount.push({ field, coordinate: x, order: p, needed: p, given: given.length, kind: isTime ? "initial" : "boundary", places });
         const noun = isTime ? (p === 1 ? "initial condition" : "initial conditions") : (p === 1 ? "boundary condition" : "boundary conditions");
         if (given.length < p) {
@@ -325,8 +329,8 @@
         addIssue({ code: "unsupported-analysis", subject: [calc.id], message: `${calc.name} of a custom PDE is outside the supported set, also after the later pieces. Piece 4 adds it for declared model families and for custom finite ODE systems.`,
           next: "Write the model as a finite ODE system, such as a lumped body. Or use a declared model family, such as buoyancy convection, after piece 4. The Finder result stays valid.", blocks: [calc.id] });
       } else {
-        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `Piece ${calc.piece} of the build plan adds ${calc.name.toLowerCase()}. This preview runs the Finder and the Nondimensionalizer.`,
-          next: "Use the Finder and the Nondimensionalizer now. The model keeps the intended calculation for the later piece.", blocks: [calc.id] });
+        addIssue({ code: "planned-analysis", subject: [calc.id], severity: "warning", message: `Piece ${calc.piece} of the build plan adds ${calc.name.toLowerCase()}. This preview runs the Finder, the Nondimensionalizer, and the regime analyses of the declared conduction models.`,
+          next: "Use the Finder, the Nondimensionalizer or the Regime Map Builder now. The model keeps the intended calculation for the later piece.", blocks: [calc.id] });
       }
     }
 
