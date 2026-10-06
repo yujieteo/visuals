@@ -148,7 +148,8 @@ def items_html(texts):
 
 def table_head(columns):
     """Header cells from (label, numeric) pairs; numeric columns are right-aligned."""
-    return "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(h)}</th>' for h, n in columns)
+    numeric = ' class="n"'
+    return "".join(f'<th scope="col"{numeric if n else ""}>{escape(h)}</th>' for h, n in columns)
 
 
 def refs_html(raw):
