@@ -320,7 +320,7 @@ step n]** with its evidence.
 | 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | built |
 | 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | built |
 | 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | built |
-| 7 | Phones, speed and acceptance: touch tests, the 1 million row benchmark, phone limits, "Measure this device", the section 13 table | to come |
+| 7 | Phones, speed and acceptance: touch tests, the 1 million row benchmark, phone limits, "Measure this device", the section 13 table | built |
 
 ### Architecture [Choice]
 
@@ -625,7 +625,8 @@ Where the plan left a choice or changed:
 
 ### Resource policy [Choice] (step 1)
 
-- Budget: 2 GiB on a desktop; 512 MiB on a phone, provisional until step 7 measures phones; 1 GiB on another
+- Budget: 2 GiB on a desktop; 512 MiB on a phone (**[Changed in step 7]** kept: emulated phones run with the
+  computer's memory, so only a real phone's measurement can change it); 1 GiB on another
   device; at most a quarter of `navigator.deviceMemory` where the browser reports it. The person may choose a
   smaller budget before the engine starts; the engine's memory limit is the budget.
 - Estimate: **[Changed in step 1]** the plan's 1.5 × the CSV size and the Parquet size before compression
@@ -650,7 +651,9 @@ Where the plan left a choice or changed:
   events a figure, PNG canvases of at most 16.7 megapixels.
 - [Target] first figures within 10 s and complete processing within 2 min for 1M rows × 50 columns (250 MB) on the
   reference device (Apple M5, 16 GB, Chrome stable). Step 1 measured, in Node with the pinned engine on that
-  machine: 1,000,000 rows × 15 columns (89 MiB CSV) imported in 0.7 s and profiled in 20 s.
+  machine: 1,000,000 rows × 15 columns (89 MiB CSV) imported in 0.7 s and profiled in 20 s. **[Measured in step 7]**
+  The first-figure target is met for Parquet and missed for CSV; the 2-minute target is missed by 6 to 11 times
+  (section "Phones, speed and acceptance", VISU-47 carries it on).
 
 ### Timelines, publication figures, export, mobile [Choice] (steps 2, 4, 5, 7)
 
@@ -774,6 +777,75 @@ Where the plan left a choice or changed:
   viewer with pinch zoom; the SQL editor as a plain text area; the file input accepts .csv and .parquet; downloads
   through a blob link.
 
+### Phones, speed and acceptance [Choice] (step 7)
+
+- Speed: **[Changed in step 7]** every chart and test query parsed the text of a CSV column again (about 0.15 s a
+  query at 100,000 rows). Before a table's charts, the gallery now makes its typed copy (`Charts.stagePlan`): each Q
+  field as a finite DOUBLE and each C field as its value as read, NULL where missing or not read; T and L fields keep
+  their text, which timelines show as written. Charts, edits and the statistics read the copy through
+  `Charts.readOf` and `Charts.source`; the figures are the same bytes and the statistics the same values
+  (tests/speed-engine.test.mjs). At 100,000 rows × 50 columns the 1,908 charts took 84 s instead of 450 s. The copy
+  is estimated at 9 bytes a number and 17 a text value a row, plus up to 1 MiB a column, and is made only within
+  three quarters of the budget less the tables; otherwise the queries read the table, more slowly, and the log says
+  so. An import drops every copy first and the charts read the tables until they are generated again.
+- First figures: **[Changed in step 7]** while a new table is profiled, each column's own single-column charts are
+  drawn as soon as it is profiled, until 6 are valid; the whole run then keeps them (the same signature) and times
+  its first figure from them. The statistics wait for the whole run.
+- The desktop benchmark (`tools/bench_data.mjs`, seed 20261006, written at test time and never committed): a table of
+  50 columns (an identifier, 2 dates, a label, 20 measures, 26 categories: 1,908 candidates and 1,015 tested
+  hypotheses), 1,000,000 rows, 249.5 MB as CSV and 58.7 MB as Parquet. Measured on 2026-10-06 on the reference device
+  (Apple M5, 16 GB), memory budget 2 GiB:
+
+  | Where | File | Read | Profile | Typed copy | First figure | Every chart | Statistics | All |
+  | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | Node 24.21, the pinned engine (tests/speed-engine.test.mjs, `DW_BENCH_ROWS=1000000`) | CSV | 2.4 s | 62.0 s | 6.0 s | 70.5 s | 409.5 s | 292.0 s | 772.0 s |
+  | Chromium (Playwright 1.63, e2e/step7.mjs, `DW_BENCH_FILES`) | CSV | – | – | – | 27.8 s | 546.9 s | 302.5 s | 849.4 s |
+  | Chromium (Playwright 1.63, e2e/step7.mjs, `DW_BENCH_FILES`) | Parquet | – | – | – | 2.9 s | 894.3 s | 388.3 s | 1,282.6 s |
+
+  The Node run draws no figure before profiling ends, so its first figure follows the whole profile; the page's
+  first figures come while it profiles. The Parquet table (852 MiB by the preflight's estimate) leaves too little of
+  the budget for a typed copy, so its charts read the table. [Target] first figures within 10 s: met for Parquet,
+  missed for CSV (the first column the grammar charts is the third, after an identifier and a date are profiled).
+  [Target] complete within 2 minutes: missed, by 6 to 11 times. The plan's remedy, DuckDB-WASM's multithreaded build
+  behind a cross-origin-isolation service worker, and scans shared by several charts are VISU-47.
+- Memory of the target table, with the pinned engine: the CSV holds 592 MB against its estimate of 624 MB (0.95);
+  the Parquet file 558 MB against 893 MB (0.62). Both import whole under the desktop budget.
+- "Measure this device" (`src/measure.js`, `src/limits.js`): before any import, tables of the planted example of
+  10,000, 100,000, 250,000, 500,000 and 1,000,000 rows, each checked against the budget like an import, then read,
+  profiled, copied, charted and tested, timed phase by phase, and dropped; the ladder stops at the first rung that
+  does not fit, reaches the memory limit, fails or takes over 2 minutes, or at Cancel. The result holds the device as
+  the browser reports it (class, screen, cores, reported memory, user agent) and no data; it is shown, copied as
+  Markdown and saved as JSON. The captain's run on his phone becomes the real-phone row of `limits.json`.
+- Published limits: `limits.json`, embedded in the page's "7. Limits" section and published beside it, holds the
+  benchmark rows above and each tested device's ladder. Emulated phones are Playwright's Pixel 7 (Chromium, its CPU
+  slowed 4 times through the DevTools protocol) and iPhone 15 (WebKit, not slowed): their screens, touch and
+  user agents, and the phone budget the page gives them, but the computer's memory and, for WebKit, its speed; each
+  row says "emulated". Measured on 2026-10-06:
+
+  | Device | Browser | Budget | Largest table completed | Its time | Stopped because |
+  | --- | --- | ---: | ---: | ---: | --- |
+  | Apple M5, 16 GB (the reference device) | Chromium of Playwright 1.63 | 2048 MiB | 1,000,000 rows | 77.2 s | every rung completed |
+  | Apple M5, 16 GB (the reference device) | WebKit of Playwright 1.63 | 2048 MiB | 1,000,000 rows | 103.8 s | every rung completed |
+  | Pixel 7, emulated: its screen, touch and phone budget, CPU slowed 4 times, the M5's memory | Chromium of Playwright 1.63 | 512 MiB | 500,000 rows | 54.4 s | 1,000,000 rows: the engine reached its 512 MiB memory budget |
+  | iPhone 15, emulated: its screen, touch and phone budget, the M5's CPU and memory | WebKit of Playwright 1.63 | 512 MiB | 500,000 rows | 43.0 s | 1,000,000 rows: the engine reached its 512 MiB memory budget |
+  | A real phone | – | – | – | – | Not measured yet: the result of Measure this device on a real phone goes here. |
+
+  On the emulated phones the 1,000,000-row table passes the preflight (its estimate, 235 MiB, fits the 256 MiB the
+  budget leaves for tables) and then reaches the 512 MiB limit while it is profiled: the page then says so and
+  offers a sample or fewer columns (Resource policy), so a phone's published limit is 500,000 rows of 15 columns.
+
+- Phones: every control and disclosure is at least 44 CSS pixels tall on a touch screen, in pixels rather than rem
+  (a phone's root font can be under 16 px); WebKit's native select ignores a minimum height, so selects are drawn by
+  the page with an arrow on touch screens.
+- Final version: the preview callout and its list of steps to come are gone; report.md, the deck and manifest.json
+  (`preview: null`) no longer call the page a preview.
+- Acceptance: `acceptance.json` names, for each row of section 13, the tests that are its evidence; `node
+  tools/acceptance.mjs` runs each file once, the browser checks in each browser project, and passes a row only when
+  every piece of evidence passed (browser evidence in every project it names) and none failed. Run on 2026-10-06 on
+  the reference device: 16 of 16 rows pass, with the browser checks in chromium-desktop, webkit-desktop,
+  chromium-mobile and webkit-mobile (7 min). Firefox would not start on that machine ("Could not find profile
+  folder"); CI's firefox-desktop job runs the same browser checks.
+
 ### Verification fixtures (step 1 part)
 
 - Data integrity: `examples/messy.csv` (a byte-order mark, a quoted line break, a short and a long row, thousands
@@ -883,6 +955,25 @@ Where the plan left a choice or changed:
   its diagnostics, a refused DELETE, a query's result analysed as its own table with its own charts and family
   (its specifications citing records t1 and t2, read through get_transforms and get_candidates), and its package
   reopened in a fresh page, the derived table made again from its SQL and reproduced.
+
+### Verification fixtures (step 7 part)
+
+- tests/speed-engine.test.mjs: the typed copy gives the same outcome, reason and SVG for every candidate (of the
+  50-column table, every single-column chart and every seventh other) and the same statistics, on the planted
+  example, the messy CSV with every correction approved and the benchmark table; its types and its memory estimate;
+  the benchmark, 10,000 rows by default.
+- tests/measure-engine.test.mjs: the ladder through the whole pipeline with every phase timed and no table left
+  behind; a rung that does not fit the budget refused before it is read; the memory limit and Cancel each stopping
+  the ladder with its reason; the Markdown carrying the whole result; limits.json stating each entry's device,
+  browser, how it ran, its table, times and budget, emulated rows labelled.
+- e2e/step7.mjs in every browser project, by touch on the phones: a CSV chosen, imported, a column opened, a
+  correction approved, a figure opened full size and zoomed to 200% (it scrolls in its frame, which allows a pinch),
+  the findings, a SQL query, and the package downloaded, complete, with every valid figure in three formats and the
+  approval in the report; every control at least 44 px tall on the phones and nothing wider than the screen;
+  "Measure this device" with Cancel during its second rung, its saved result (the phone class and its 512 MiB budget
+  on the phones), no table kept; Cancel while the planted example's charts are drawn, which keeps the figures done,
+  marks the rest incomplete "you cancelled", writes a package whose manifest is incomplete with the charts as
+  remaining work, and then draws the rest to 155 valid.
 
 ### Built-in examples (step 1)
 

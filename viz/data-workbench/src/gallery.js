@@ -87,6 +87,8 @@
       const api = await app.ensureEngine();
       const { classes, plan, ctx } = Charts.prepare({ name: table.name, rowColumn: table.imported.rowColumn, rows: table.imported.rows, sample: table.sample,
         columns: columnsOf(table), additive: additiveOf(table), records: table.lineage ?? [] });
+      ctx.stage = await stage(api, table, ctx);
+      if (store.stop) return;
       const st = stateOf(table.name) ?? { filter: { kind: "all", outcome: "valid" }, shown: PAGE, candidates: seeds.get(table.name) ?? [] };
       seeds.delete(table.name);
       const old = new Map(st.candidates.map((c) => [c.id, c]));
@@ -105,11 +107,13 @@
         return fresh;
       });
       for (const [id, prev] of old) if (!st.candidates.some((c) => c.id === id)) forget(prev);
-      // The first run of a table is timed from the start of its import: the time to first figures a person waits.
-      Object.assign(st, { plan, classes, ctx, status: "generating", reason: "", timing: { begun: st.timing ? null : table.begun ?? null, start: now(), first: null, done: null } });
+      // The first run of a table is timed from the start of its import: the time to first figures a person waits. The
+      // first figures drawn while it was profiled (early) are this run's first figures, and keep their time.
+      const early = st.status === "early" ? st.timing : null;
+      Object.assign(st, { plan, classes, ctx, status: "generating", reason: "", timing: early ? { ...early, start: now(), done: null } : { begun: st.timing ? null : table.begun ?? null, start: now(), first: null, done: null } });
       charts.set(table.name, st);
       // Figures kept from the last run show at once: they are the first figures of this one.
-      if (st.candidates.some((c) => c.outcome === "valid")) st.timing.first = now();
+      if (!early?.first && st.candidates.some((c) => c.outcome === "valid")) st.timing.first = now();
       const todo = st.candidates.filter((c) => c.outcome === "pending");
       let done = 0, last = 0;
       for (const cand of todo) {
@@ -162,12 +166,106 @@
       if (url) { stale.push(url); pictures.delete(key); }
     }
 
-    /** Forget a removed table's charts. */
+    /** Forget a removed table's charts, and its typed copy. */
     function drop(name) {
       const st = stateOf(name);
       if (st) for (const c of st.candidates) forget(c);
       charts.delete(name);
+      unstage(name);
     }
+
+    /* ---------- first figures while profiling (step 7) ---------- */
+
+    /* The single-column charts drawn while a new table is still being profiled, at most this many valid ones: the
+     * first figures a person sees. The rest wait for the whole run, which reads the typed copy and is faster. */
+    const EARLY = 6;
+
+    /**
+     * Draw the single-column charts of a column just profiled, while the import's profiling goes on, until EARLY are
+     * valid. They are the same candidates, specifications and figures the whole run makes (the same signature), so
+     * that run keeps them; until it starts the gallery shows them as first figures, without an accounting.
+     */
+    async function early(table, col) {
+      if (!table.begun || col.failed || !app.store.tables.includes(table)) return;
+      let st = stateOf(table.name);
+      if (st && st.status !== "early") return;
+      if (st && st.candidates.filter((c) => c.outcome === "valid").length >= EARLY) return;
+      const { classes, plan, ctx } = Charts.prepare({ name: table.name, rowColumn: table.imported.rowColumn, rows: table.imported.rows, sample: table.sample,
+        columns: columnsOf(table), additive: additiveOf(table), records: table.lineage ?? [] });
+      const mine = plan.candidates.filter((c) => c.fields.length === 1 && c.fields[0] === col.name);
+      if (!mine.length) return;
+      const api = await app.ensureEngine();
+      if (!st) {
+        st = { filter: { kind: "all", outcome: "valid" }, shown: PAGE, candidates: [], timing: { begun: table.begun, start: now(), first: null, done: null } };
+        charts.set(table.name, st);
+      }
+      Object.assign(st, { plan, classes, ctx, status: "early", reason: "" });
+      for (const c of mine) {
+        if (store.stop) return;
+        const cand = { ...c, sig: signature(c, ctx), outcome: "pending", reason: "", spec: ChartSpec.make(c, ctx), edited: false, svg: null, version: 1, desc: "" };
+        st.candidates.push(cand);
+        await computeOne(api, st, cand);
+        if (cand.outcome === "pending") { st.candidates.pop(); return; }
+        if (cand.outcome === "valid" && !st.timing.first) st.timing.first = now();
+        app.refresh();
+      }
+    }
+
+    /* ---------- the typed copy (step 7) ---------- */
+
+    /** @type {Map<string, { table: string, bytes: number }>} each table's typed copy, by table name */
+    const stages = new Map();
+
+    /**
+     * Make a table's typed copy of its measures and categories (Charts.stagePlan), which its charts, edits and
+     * statistics then read: built once, it spares every query the parsing of text. It is made only when it fits what
+     * the budget leaves (app.room(), less the other tables' copies); otherwise, or when making it fails, the queries
+     * read the table itself, more slowly, with the same results.
+     */
+    async function stage(api, table, ctx) {
+      await dropStage(api, table.name);
+      const plan = Charts.stagePlan(ctx, `__dw_stage_${table.name}`);
+      if (!plan) return null;
+      const room = (app.room?.() ?? 0) - [...stages.values()].reduce((a, x) => a + x.bytes, 0);
+      if (plan.bytes > room) {
+        app.note({ kind: "charts", table: table.name, text: `Charts of ${table.name} read the table itself: a typed copy of its measures and categories (about ${app.bytes(plan.bytes)}) does not fit what the memory budget leaves, so each chart parses the text again, more slowly.` });
+        return null;
+      }
+      app.progress(`Charts of ${table.name}: a typed copy of ${fmtInt(Object.keys(plan.stage.fields).length)} measures and categories, read once`, 0, 0);
+      try {
+        await api.query(plan.sql);
+      } catch (error) {
+        await api.query(`DROP TABLE IF EXISTS "${plan.stage.table.replace(/"/g, '""')}"`).catch(() => {});
+        if (!app.cancelled(error) && !store.stop) app.note({ kind: "charts", table: table.name, text: `Charts of ${table.name} read the table itself: its typed copy could not be made (${app.message(error)}).` });
+        return null;
+      }
+      stages.set(table.name, { table: plan.stage.table, bytes: plan.bytes });
+      return plan.stage;
+    }
+
+    /** Drop a table's typed copy, as part of the work that runs now. */
+    async function dropStage(api, name) {
+      const x = stages.get(name);
+      if (!x) return;
+      stages.delete(name);
+      const st = stateOf(name);
+      if (st?.ctx) st.ctx.stage = null;
+      await api.query(`DROP TABLE IF EXISTS "${x.table.replace(/"/g, '""')}"`).catch(() => {});
+    }
+
+    /** Drop a table's typed copy as its own piece of work (the table is removed). */
+    function unstage(name) {
+      if (!stages.has(name)) return;
+      app.exclusive(async () => dropStage(await app.ensureEngine(), name));
+    }
+
+    /** Drop every typed copy, inside the work that runs now (an import needs the room); charts read the tables until they are generated again. */
+    async function release(api) {
+      for (const name of [...stages.keys()]) await dropStage(api, name);
+    }
+
+    /** The memory the typed copies are estimated to hold. */
+    const staged = () => [...stages.values()].reduce((a, x) => a + x.bytes, 0);
 
     /** The SVG of a valid candidate: kept from its drawing, or computed and drawn again (large scatter plots). */
     async function svgOf(st, cand, spec = cand.spec) {
@@ -228,6 +326,15 @@
       const counts = Grammar.accounting(st.candidates, sum(st.plan.overflow));
       const t = st.timing;
       const secs = (ms) => `${(ms / 1000).toFixed(1)} s`;
+      if (st.status === "early") {
+        out.push(h("p", { class: "note", "data-early": "" }, h("strong", { text: `First figures: ${plural(counts.valid, "chart", "charts")} of single columns. ` }),
+          table.status === "profiling" ? "They are drawn while the other columns are profiled; every candidate follows, with its accounting, once profiling is done." : "Profiling stopped before every column was profiled; the charts can use the profiled columns."));
+        if (table.status !== "profiling") out.push(h("p", { class: "actions" }, h("button", { type: "button", class: "primary", disabled: !!store.busy, onclick: () => generate(table), text: "Generate the charts" })));
+        if (t.first) out.push(h("p", { class: "note", "data-timing": "", text: `First figure ${secs(t.first - (t.begun ?? t.start))} after the start of the import, on this device.` }));
+        out.push(gallery(table, st));
+        view.replaceChildren(...out);
+        return;
+      }
       out.push(h("p", { class: "accounting", "data-accounting": st.status },
         h("strong", { text: `${plural(counts.total, "candidate", "candidates")} of grammar v${Grammar.VERSION}: ` }),
         `${fmtInt(counts.valid)} valid, ${fmtInt(counts.excluded)} excluded, ${fmtInt(counts.failed)} failed, ${fmtInt(counts.incomplete)} incomplete`,
@@ -654,7 +761,7 @@
       seeds.set(name, edits.map((e) => ({ id: e.id, edited: true, spec: e.spec, version: 0, svg: null })));
     }
 
-    return { generate, draw, drop, summary, candidates, bind, thumb, open, seed, state: stateOf };
+    return { generate, early, draw, drop, release, staged, summary, candidates, bind, thumb, open, seed, state: stateOf };
   }
 
   return { mount };

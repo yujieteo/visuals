@@ -130,11 +130,11 @@
       measures: { shape: {}, levels: {}, counts: {}, periods: {} }, sentinels, rows: subset ? null : ctx.rows,
       independence: { repeated: [], serial: [], checked: [] }, status: "running", reason: "", study: { ...NO_STUDY },
     };
-    const field = (name) => ctx.fields[name];
+    const field = (name) => Charts.readOf(ctx, name);
     const rel = (cols, req) => {
       const columns = { ...cols }, require = [...req];
       if (subset) { columns.s = ChartSql.category(field(subset.field)).label; require.push("s"); }
-      const r = ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns, require });
+      const r = ChartSql.relation({ table: Charts.source(ctx), rowColumn: ctx.rowColumn, columns, require });
       return subset ? StatSql.within(r, subset.level) : r;
     };
     const meas = (name) => StatSql.usable(ChartSql.measure({ ...field(name), log: false }), sentinels[name] ?? []);

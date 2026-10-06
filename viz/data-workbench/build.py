@@ -36,7 +36,7 @@ from style_guide import THEME_SCRIPT  # noqa: E402
 
 MODULES = ("sql", "infer", "preflight", "sha256", "stats", "examples", "profile", "engine", "report", "grammar", "chartspec", "chartsql", "render",
            "charts", "statsql", "family", "rank", "figure", "fonts", "pdf", "png", "publish", "gallery", "findings", "zip", "package", "project",
-           "exporter", "sqlcheck", "algebra", "transform", "query", "app")
+           "exporter", "sqlcheck", "algebra", "transform", "query", "measure", "limits", "app")
 # The page reads nothing from the network itself; the engine's worker, started from runtime/, reads the engine and
 # the Parquet extension from the same folder. Inline scripts and styles are the page's own.
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src data: blob:; "
@@ -105,12 +105,15 @@ def data_block(raw, downloads):
             "renderer": {"file": "beamdswitch.html", "sha256": tested["downloads"][0]["sha256"]}}
     data = {"examples": examples, "files": files, "pieces": pieces, "step": raw["preview"]["piece"],
             "engine": {"duckdb": downloads["duckdb"], "duckdbWasm": downloads["duckdb_wasm"], "platform": downloads["platform"]},
-            "beamdswitch": beam, "build": {"page_sha256": UNSET, "rule": "SHA-256 of index.html with this value written as 64 zeros"}}
+            "limits": json.loads(read("limits.json")), "beamdswitch": beam, "build": {"page_sha256": UNSET, "rule": "SHA-256 of index.html with this value written as 64 zeros"}}
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
 
 
 def pieces_html(raw):
+    """The steps still to come, for a preview's callout; the last step has none."""
     preview = raw["preview"]
+    if preview["piece"] >= preview["of"]:
+        return ""
     items = [f'<li><strong>{html.escape(p["title"])}.</strong> {html.escape(p["what"])}</li>'
              for p in preview["pieces"] if p["n"] > preview["piece"]]
     return f'<ol start="{preview["piece"] + 1}">\n' + "\n".join(items) + "\n</ol>"
@@ -148,7 +151,7 @@ def page():
     body = read("src/body.html")
     for name, value in {"PIECES": pieces_html(raw), "EXAMPLES": examples_html(raw), "LICENCES": licences_html(manifest, raw),
                         "DUCKDB": html.escape(downloads["duckdb"]), "DUCKDB_WASM": html.escape(downloads["duckdb_wasm"])}.items():
-        if f"@@{name}@@" not in body:
+        if f"@@{name}@@" not in body and not (name == "PIECES" and not value):
             fail(f"src/body.html has no @@{name}@@")
         body = body.replace(f"@@{name}@@", value)
     client = ("/* DuckDB-WASM's browser client, vendor/duckdb-wasm/duckdb-browser.cjs unchanged, run as a CommonJS module whose one\n"

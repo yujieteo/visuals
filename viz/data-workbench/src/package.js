@@ -249,8 +249,8 @@
       if (others.length) out.push(`### Not valid in ${md(t.name)}`, "", ...others.map((c) => `- ${c.outcome}: \`${c.id}\`. ${md(c.reason)}`), "");
     }
     out.push("## Conversion log", "", ...(run.log.length ? run.log.map((line, i) => `${i + 1}. ${md(line)}`) : ["Nothing was converted."]), "");
-    out.push("## Remaining work", "", ...(done.remaining.length ? done.remaining.map((r) => `- ${md(r)}`) : ["None: the package is complete."]), "",
-      `This workbench is a preview; steps still to come: ${run.pieces.map((p) => md(p.title)).join("; ") || "none"}.`, "");
+    out.push("## Remaining work", "", ...(done.remaining.length ? done.remaining.map((r) => `- ${md(r)}`) : ["None: the package is complete."]), "");
+    if (run.pieces.length) out.push(`This workbench is a preview; steps still to come: ${run.pieces.map((p) => md(p.title)).join("; ")}.`, "");
     return out.join("\n");
   }
 
@@ -407,7 +407,7 @@
         included: run.sources ? sourcePath(t.name, t.snapshot.file.name) : null })),
       seeds: run.seeds,
       transformations: "transforms.json", statisticalMethods: "stats.json",
-      preview: { step: run.step, stepsToCome: run.pieces.map((p) => p.title) },
+      preview: run.pieces.length ? { step: run.step, stepsToCome: run.pieces.map((p) => p.title) } : null,
       files: listed,
     });
   }

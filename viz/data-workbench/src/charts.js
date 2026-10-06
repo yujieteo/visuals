@@ -12,9 +12,9 @@
  * every point up to 50,000, else a seeded sample of 50,000; timelines of 500 events a figure, in time order.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar.js"), require("./chartspec.js"), require("./chartsql.js"), require("./render.js"), require("./stats.js"));
-  else root.DWCharts = factory(root.DWGrammar, root.DWChartSpec, root.DWChartSql, root.DWRender, root.DWStats);
-})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, ChartSql, Render, Stats) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar.js"), require("./chartspec.js"), require("./chartsql.js"), require("./render.js"), require("./stats.js"), require("./sql.js"));
+  else root.DWCharts = factory(root.DWGrammar, root.DWChartSpec, root.DWChartSql, root.DWRender, root.DWStats, root.DWSql);
+})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, ChartSql, Render, Stats, Sql) {
   "use strict";
 
   const SCATTER_MAX = 50000;
@@ -75,11 +75,53 @@
    * A field of the table as the SQL reads it.
    * @typedef {{ name: string, cls: string, reading: any, textSource: boolean, type: string, precision: string | null, levels: number,
    *   ordered: boolean, zone: string, logRule: boolean, min: number | null, unit: string, additive: boolean }} TableField
-   * @typedef {{ table: string, rowColumn: string, rows: number, sample: any, records?: string[], fields: Record<string, TableField> }} Context
+   * @typedef {{ table: string, rows: number, fields: Record<string, { reading: any, textSource: boolean }> }} Stage
+   * @typedef {{ table: string, rowColumn: string, rows: number, sample: any, records?: string[], fields: Record<string, TableField>, stage?: Stage | null }} Context
    */
 
+  /* ---------- the typed copy the queries read ---------- */
+
+  /**
+   * The typed copy of a table's measures and categories (step 7): each Q field as a finite DOUBLE and each C field as
+   * its value as read, NULL where the value is missing or does not read, built once so that every chart and test reads
+   * typed values instead of parsing text again. Time and label fields keep their text, which timelines show as
+   * written. A query reads the copy's column with the reading "source": the same values, rows and NULLs as reading the
+   * table (tests/speed-engine.test.mjs). Returns null when the table has no Q or C field.
+   * @param {Context} ctx @param {string} name the copy's table name
+   * @returns {{ sql: string, stage: Stage, bytes: number } | null}
+   */
+  function stagePlan(ctx, name) {
+    const cols = [], fields = {};
+    let bytes = 8;
+    // Measured with the pinned engine (tests/speed-engine.test.mjs): about 9 bytes a number and 17 a text value
+    // a row, and up to 1 MiB a column for the engine's blocks, which a small table does not fill.
+    for (const f of Object.values(ctx.fields)) {
+      const x = Sql.ident(f.name), typed = `(${Sql.typed(f.name, f.reading)})`, ok = Sql.valued(f.name, f.textSource);
+      if (f.cls === "Q") {
+        cols.push(`CASE WHEN ${ok} AND isfinite(CAST(${typed} AS DOUBLE)) THEN CAST(${typed} AS DOUBLE) END AS ${x}`);
+        bytes += 9;
+      } else if (f.cls === "C") {
+        cols.push(`CASE WHEN ${ok} THEN ${typed} END AS ${x}`);
+        bytes += 17;
+      } else if (f.cls === "T" || f.cls === "L") {
+        cols.push(x);
+        bytes += 17;
+        continue;
+      } else continue;
+      fields[f.name] = { reading: { kind: "source" }, textSource: false };
+    }
+    if (!Object.keys(fields).length) return null;
+    return { sql: `CREATE OR REPLACE TEMP TABLE ${Sql.ident(name)} AS SELECT ${Sql.ident(ctx.rowColumn)}, ${cols.join(", ")} FROM ${Sql.ident(ctx.table)}`,
+      stage: { table: name, rows: ctx.rows, fields }, bytes: bytes * ctx.rows + 2 ** 20 * (cols.length + 1) };
+  }
+
+  /** The table a query reads: the typed copy when there is one. @param {Context} ctx */
+  const source = (ctx) => ctx.stage?.table ?? ctx.table;
+  /** A field as a query reads it: from the typed copy when it holds the field. @param {Context} ctx @param {string} name */
+  const readOf = (ctx, name) => (ctx.stage?.fields[name] ? { ...ctx.fields[name], ...ctx.stage.fields[name] } : ctx.fields[name]);
+
   const step = (spec, id) => spec.transform.find((/** @type {any} */ t) => t.id === id);
-  const fieldOf = (ctx, spec, channel) => ctx.fields[spec.encoding[channel].field];
+  const fieldOf = (ctx, spec, channel) => readOf(ctx, spec.encoding[channel].field);
   const isLog = (spec, channel) => spec.scale[channel]?.type === "log10";
 
   /** Panels by facet level, in the facet's level order; one panel without a facet. */
@@ -100,13 +142,13 @@
    * @param {(sql: string) => Promise<any[]>} query @param {any} spec @param {Context} ctx
    */
   async function compute(query, spec, ctx) {
-    const facetField = spec.layout.facet ? ctx.fields[spec.layout.facet.field] : null;
+    const facetField = spec.layout.facet ? readOf(ctx, spec.layout.facet.field) : null;
     const columns = {}, require = [];
     if (facetField) {
       columns.f = ChartSql.category(facetField).label;
       require.push("f");
     }
-    const rel = (cols, req, either) => ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns: { ...columns, ...cols }, require: [...require, ...req], either });
+    const rel = (cols, req, either) => ChartSql.relation({ table: source(ctx), rowColumn: ctx.rowColumn, columns: { ...columns, ...cols }, require: [...require, ...req], either });
     const facts = { rows: ctx.rows, used: 0, left: 0, sample: ctx.sample ?? null, scatterSample: null, notes: /** @type {string[]} */ ([]), period: null, levelsOther: null };
     /** The facet levels present, in their order. */
     let facetLevels = null;
@@ -383,7 +425,7 @@
     const kind = Grammar.KIND[spec.kind];
     const columns = {}, require = [], either = [], checked = [];
     if (spec.layout.facet) {
-      columns.f = ChartSql.category(ctx.fields[spec.layout.facet.field]).label;
+      columns.f = ChartSql.category(readOf(ctx, spec.layout.facet.field)).label;
       require.push("f");
     }
     kind.channels.forEach((channel, i) => {
@@ -393,7 +435,7 @@
       if (spec.kind === "interval-timeline" && channel !== "label") either.push(alias); else require.push(alias);
       if (f.cls !== "L") checked.push({ alias, name: f.name });
     });
-    const rel = ChartSql.relation({ table: ctx.table, rowColumn: ctx.rowColumn, columns, require, either });
+    const rel = ChartSql.relation({ table: source(ctx), rowColumn: ctx.rowColumn, columns, require, either });
     const n = (await query(ChartSql.countUpTo(rel, 5)))[0].n;
     if (!n) return "No row has a value present for every field of the chart.";
     if (n < 5) return `Only ${n} row${n === 1 ? " has" : "s have"} a value present for every field of the chart: the ranking needs at least 5.`;
@@ -422,5 +464,5 @@
     return { outcome: "valid", reason: "", data, drawn: Render.render(spec, data) };
   }
 
-  return { SCATTER_MAX, prepare, evaluate, rejection, tQuantile, tCdf, meanInterval, fdBins, floorPeriod, nextPeriod, periodsBetween, choosePeriod, compute, fieldInfo };
+  return { SCATTER_MAX, stagePlan, source, readOf, prepare, evaluate, rejection, tQuantile, tCdf, meanInterval, fdBins, floorPeriod, nextPeriod, periodsBetween, choosePeriod, compute, fieldInfo };
 });
