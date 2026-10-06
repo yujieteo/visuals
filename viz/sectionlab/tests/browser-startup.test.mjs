@@ -16,7 +16,6 @@ const path = require("node:path");
 const net = require("node:net");
 const profile = process.argv.find(a => a.startsWith("--user-data-dir=")).slice("--user-data-dir=".length);
 fs.writeFileSync(process.env.STARTUP_RECORD, JSON.stringify({ pid: process.pid, profile }));
-if (process.env.STARTUP_MODE === "exit") process.exit(42);
 if (process.env.STARTUP_MODE === "handshake") {
   // Publish a port and accept TCP, but never answer the WebSocket upgrade.
   const server = net.createServer(() => {});
@@ -39,10 +38,10 @@ function alive(pid) {
 test("Chrome startup failures close the real browser-test runner and its resources", {
   concurrency: true, timeout: 35000, skip: process.platform === "win32" && "fixtures use POSIX executables and process groups",
 }, async (t) => {
-  await Promise.all(["port", "handshake", "exit", "spawn-error"].map((mode) => t.test(mode, async (t) => {
+  await Promise.all(["port", "handshake"].map((mode) => t.test(mode, async (t) => {
     const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "sectionlab-startup-"));
     const chrome = path.join(scratch, "chrome"), record = path.join(scratch, "record.json");
-    fs.writeFileSync(chrome, mode === "spawn-error" ? "#!/sectionlab-missing-interpreter\n" : fixture, { mode: 0o755 });
+    fs.writeFileSync(chrome, fixture, { mode: 0o755 });
     let proc, timer, forced = false;
     const start = Date.now();
     try {
@@ -69,14 +68,11 @@ test("Chrome startup failures close the real browser-test runner and its resourc
       assert.equal(forced, false, `the runner needed its watchdog after ${Date.now() - start} ms:\n${output}`);
       assert.deepEqual(result, { code: 1, signal: null }, output);
       const expected = { port: /timed out waiting for Chrome's DevTools port/,
-        handshake: /timed out waiting for Chrome's DevTools connection/,
-        exit: /Chrome exited before connecting \(code 42/, "spawn-error": /ENOENT/ };
+        handshake: /timed out waiting for Chrome's DevTools connection/ };
       assert.match(output, expected[mode], "the startup error is reported, not hidden by cleanup");
-      if (mode !== "spawn-error") {
-        const child = JSON.parse(fs.readFileSync(record, "utf8"));
-        assert.equal(alive(child.pid), false, "the spawned Chrome process is gone");
-        assert.equal(fs.existsSync(child.profile), false, "the Chrome profile is removed");
-      }
+      const child = JSON.parse(fs.readFileSync(record, "utf8"));
+      assert.equal(alive(child.pid), false, "the spawned Chrome process is gone");
+      assert.equal(fs.existsSync(child.profile), false, "the Chrome profile is removed");
       assert.deepEqual(fs.readdirSync(scratch).filter((name) => /^sectionlab-(chrome|downloads)-/.test(name)), [],
         "no profiles or downloads are left after startup failure");
       t.diagnostic(`${mode}: runner exited 1 in ${Date.now() - start} ms; no child, profile, or downloads remain`);

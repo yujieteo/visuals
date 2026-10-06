@@ -42,20 +42,12 @@ async function launch(chrome) {
     "--no-default-browser-check", "--disable-gpu", "--disable-extensions", "about:blank"];
   if (process.platform === "linux") args.push("--no-sandbox");
   const proc = spawn(chrome, args, { stdio: "ignore" });
-  let processError;
-  const stopped = new Promise((resolve) => {
-    proc.once("error", (err) => { processError = err; resolve(); });
-    proc.once("exit", (code, signal) => {
-      processError = new Error(`Chrome exited before connecting (code ${code}, signal ${signal})`);
-      resolve();
-    });
-  });
+  const stopped = new Promise((resolve) => { proc.once("error", resolve); proc.once("exit", resolve); });
   const portFile = path.join(profile, "DevToolsActivePort");
   const deadline = Date.now() + 20000; // one startup budget, including the WebSocket handshake
   let ws;
   try {
     const [port, wsPath] = await until("Chrome's DevTools port", () => {
-      if (processError) throw processError;
       if (!fs.existsSync(portFile)) return false;
       const lines = fs.readFileSync(portFile, "utf8").trim().split("\n");
       return lines.length === 2 && lines;
@@ -65,7 +57,6 @@ async function launch(chrome) {
     try {
       await Promise.race([
         new Promise((ok, bad) => { ws.onopen = ok; ws.onerror = bad; }),
-        stopped.then(() => { throw processError; }),
         new Promise((_, bad) => {
           timer = setTimeout(() => bad(new Error("timed out waiting for Chrome's DevTools connection")), Math.max(0, deadline - Date.now()));
         }),

@@ -64,11 +64,10 @@ Chrome has one 20-second startup budget for publishing its DevTools port and con
 its WebSocket. A startup failure kills and reaps the spawned Chrome, removes its profile
 and downloads, and closes the page server before reporting the error.
 `tests/browser-startup.test.mjs` runs that same browser test in isolated child runners
-with disposable Chrome stand-ins: no port, a stalled WebSocket handshake, an early
-process exit and a spawn error. It checks a nonzero runner exit without its 25-second
-watchdog, no surviving Chrome process, and no leftover profile or downloads. The two
-timeout cases run concurrently, so this regression takes about 20 seconds and needs no
-installed Chrome.
+with disposable Chrome stand-ins: no port and a stalled WebSocket handshake. It checks
+a nonzero runner exit without its 25-second watchdog, no surviving Chrome process, and
+no leftover profile or downloads. The two cases run concurrently, so this regression
+takes about 20 seconds and needs no installed Chrome.
 
 `tests/file-paths.test.mjs` copies the page and its test helpers into a temporary
 folder whose name contains spaces, `%`, `#` and Unicode. It checks the decoded
