@@ -148,7 +148,7 @@ test("the failure experiments: the light family has unbounded weights, a nominal
 });
 
 test("weight accounting: every change of measure of the catastrophe test has E_g[f/g] = 1, 3 seeds", () => {
-  for (const [law, q, params] of /** @type {[string, any, string][]} */ ([["exponential", { tilt: 1.3, nu: 2.4 }, "M=200"], ["exponential", { r: 0.8, nu: 2.4 }, "M=200"], ["pareto2", { r: 0.9 }, "M=200"], ["pareto2", { mix: { beta: 0.1, r: 0.2 } }, "M=200"], ["weibull", { mix: { beta: 0.2, r: 0.3 } }, "M=200"], ["pareto2", { v: 2, nu: 2.4 }, "M=3"], ["weibull", { v: 1.5 }, "M=4"]])) {
+  for (const [law, q, params] of /** @type {[string, any, string][]} */ ([["exponential", { tilt: 1.3, nu: 2.4 }, "M=200"], ["exponential", { r: 0.8, nu: 2.4 }, "M=200"], ["pareto2", { r: 0.9 }, "M=200"], ["pareto2", { mix: { beta: 0.1, r: 0.2 } }, "M=200"], ["weibull", { mix: { beta: 0.2, r: 0.3 } }, "M=200"], ["pareto2", { v: 2 }, "M=3; T=0.5; nu=1; eta=0"], ["weibull", { v: 1.5 }, "M=4; k=0.8; T=0.5; nu=1; eta=0"]])) {
     const c = Ra.prepare({ problem: "cat", law, copula: "clayton", params }, { method: "direct" });
     for (const seed of SEEDS) {
       const rng = Rng.stream(seed, "test/lr", 0, 0);
@@ -157,6 +157,12 @@ test("weight accounting: every change of measure of the catastrophe test has E_g
       for (let i = 0; i < N; i++) { const w = Math.exp(Ra.catPath(c, rng, q, c.cat.policies).logLR); s += w; s2 += w * w; }
       const m = s / N, se = Math.sqrt((s2 / N - m * m) / N);
       assert.ok(Math.abs(m - 1) <= 6 * se, `${law} ${JSON.stringify(q)} seed ${seed}: mean weight ${m} (se ${se})`);
+    }
+  }
+  for (const [law, params, infinite] of /** @type {[string, string, boolean][]} */ ([["pareto2", "M=3", false], ["weibull", "M=4; k=0.8", false], ["weibull", "M=4; k=0.5", true], ["weibull", "M=0; k=0.8", true]])) {
+    for (const d of run({ problem: "cat", law, copula: "clayton", params }, { method: "ce", seed: 1, size: 8, reps: 2, failure: "light_family" }).acc.methods[0].diags[0].policies) {
+      assert.equal(d.family, "exponential");
+      assert.equal(d.infiniteVariance, infinite, `${law} ${params}: the light family has ${infinite ? "infinite" : "finite"} weight variance`);
     }
   }
 });

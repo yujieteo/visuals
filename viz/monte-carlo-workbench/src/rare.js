@@ -969,7 +969,7 @@
         const x = c.trunc ? -q.v * Math.log1p(-rng.uniform() * FMv) : q.v * exp1(rng);
         S[e] = x;
         H[e] = hazardOf(c, x);
-        logLR += c.sev.logpdf(x) - (c.trunc ? Math.log(c.trunc.FM) : 0) + Math.log(q.v) + x / q.v - Math.log(FMv);
+        logLR += c.sev.logpdf(x) - (c.trunc ? Math.log(c.trunc.FM) : 0) + Math.log(q.v) + x / q.v + Math.log(FMv);
       } else {
         const r = q.r && !q.mix ? q.r : 1, rr = e === chosen ? q.mix.r : r;
         const h = exp1(rng) / rr;
@@ -1109,7 +1109,7 @@
       path.push({ gamma, q: { ...q } });
       if (gamma >= top) break;
     }
-    return { q, work, diag: { path, final: q, reached, family: light ? "exponential" : "hazard", infiniteVariance: light && !c.trunc } };
+    return { q, work, diag: { path, final: q, reached, family: light ? "exponential" : "hazard", infiniteVariance: light && (!c.trunc || (c.sev.id === "weibull" && c.sev.p.k <= 0.5)) } };
   }
 
   /**
