@@ -13,6 +13,8 @@ test("every catalogue model: each estimate is within 5.5 standard errors of its 
   // expectation comes from the exact variance, not the sample variance: a rare large loss (as in the sensor vote)
   // makes the sample variance far too small in a short run. Quantities with an infinite variance are skipped.
   for (const m of data.models) {
+    // An example of a custom input that fails a check has no run (catalogue.test.mjs checks its message).
+    if (m.fails) continue;
     const rec = recordOf(m.id);
     const blocks = ["uniform-birthday-ids", "uniform-randomised-response", "zipf-dictionary"].includes(m.id) ? 4 : 16;
     // The references and the exact variances depend on the model only, so the 3 seeds share them.

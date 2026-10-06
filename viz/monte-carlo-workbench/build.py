@@ -29,7 +29,7 @@ from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
 DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits"]
-ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "engine", "dsl"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "engine", "dsl"]
 PAGE = ["plots", "model", "report", "pool", "view"]
 
 
@@ -55,7 +55,12 @@ def static_parts(cat):
         models = [m for m in cat["models"] if m["law"] == law["id"]]
         items = "".join(f"<li>{'Behaviour experiment' if m['kind'] == 'experiment' else e(m['domain'])}: {e(m['title'])}</li>" for m in models)
         rows.append(f"<li><strong>{e(law['name'])}</strong>: {e(law['convention'])}<ul>{items}</ul></li>")
-    listing = f'<details><summary>{len(cat["laws"])} laws, {sum(m["kind"] == "experiment" for m in cat["models"])} behaviour experiments and {sum(m["kind"] == "workflow" for m in cat["models"])} workflows</summary><ul>{"".join(rows)}</ul></details>'
+    inputs = [m for m in cat["models"] if m["kind"] == "input"]
+    if inputs:
+        items = "".join(f"<li>{e(m['title'])}</li>" for m in inputs)
+        rows.append("<li><strong>Custom law inputs</strong>: a line of the model text defines a law by a PDF, a log-PDF, an unnormalised density, a PMF, "
+                    f"a finite table, a CDF, a quantile function, an MGF or a characteristic function, and the page checks it.<ul>{items}</ul></li>")
+    listing = f'<details><summary>{len(cat["laws"])} laws, {sum(m["kind"] == "experiment" for m in cat["models"])} behaviour experiments, {sum(m["kind"] == "workflow" for m in cat["models"])} workflows and {len(inputs)} examples of custom inputs</summary><ul>{"".join(rows)}</ul></details>'
     datasets = "<ul>" + "".join(f"<li>{e(d['title'])}: {e(d['source'])} {e(d['licence'])}</li>" for d in cat["datasets"]) + "</ul>"
     lim = cat["limits"].get("measured")
     if lim:

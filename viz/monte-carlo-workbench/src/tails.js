@@ -826,6 +826,8 @@
   /**
    * @typedef {object} Bound a law with its parameters bound
    * @property {string} label @property {boolean} continuous @property {boolean} numeric the CDF is a numerical approximation
+   * @property {boolean} [atoms] a law of finitely many values that need not be integers (group 4)
+   * @property {boolean} [mixed] a continuous law on [0, ∞) with an atom P(X = 0) = F(0), such as a compound Poisson law (group 4)
    * @property {{ lo: number, hi: number }} support
    * @property {(x: number) => number} cdf @property {(x: number) => number} sf @property {(x: number) => number} mass the PDF, or the PMF of a discrete law
    * @property {(u: number, w: number) => number} quantile the x with F(x) = u, given u and w = 1 − u
@@ -840,9 +842,9 @@
     const continuous = !!law.continuous;
     return {
       label: `${law.name}(${law.params.map((/** @type {any} */ x) => `${x.name} = ${Array.isArray(p[x.name]) ? "[…]" : +Number(p[x.name]).toPrecision(6)}`).join(", ")})`,
-      continuous, numeric: !!law.numeric, support: law.support(p),
+      continuous, mixed: !!law.mixed, numeric: !!law.numeric, support: law.support(p), atoms: !!law.atoms,
       cdf: (x) => law.cdf(x, p), sf: (x) => law.sf(x, p), mass: (x) => (continuous ? law.pdf(x, p) : law.pmf(x, p)),
-      quantile: continuous ? (u, w) => (u <= 0.5 ? law.quantile(u, p) : law.isf(w, p)) : (u) => /** @type {any} */ (dq)(law.id, u, p),
+      quantile: continuous ? (u, w) => (u <= 0.5 ? law.quantile(u, p) : law.isf(w, p)) : (u) => /** @type {any} */ (dq)(law.quantile ? law : law.id, u, p),
       mean: m.mean, exactMean: m.mean !== null && !law.numeric, order: m.order, side: m.side ?? "", tailIndex: law.tailIndex ? law.tailIndex(p) : m.order < Infinity ? m.order : null,
       sum: (n) => sumOf(law, p, n),
     };
@@ -852,7 +854,7 @@
   function maxOf(b, n) {
     const powF = (/** @type {number} */ x) => { const F = b.cdf(x); return F >= 1 ? 1 : Math.exp(n * Math.log1p(-b.sf(x))); };
     return {
-      label: `the maximum of ${n} draws of ${b.label}`, continuous: b.continuous, numeric: b.numeric, support: b.support,
+      label: `the maximum of ${n} draws of ${b.label}`, continuous: b.continuous, mixed: b.mixed, numeric: b.numeric, support: b.support,
       cdf: powF, sf: (x) => (b.sf(x) <= 0 ? 0 : -Math.expm1(n * Math.log1p(-b.sf(x)))),
       mass: b.continuous ? (x) => { const d = b.mass(x); return d === 0 ? 0 : n * Math.exp((n - 1) * Math.log1p(-b.sf(x))) * d; } : (x) => powF(x) - powF(x - 1),
       // F_M(x) ≥ u ⟺ F(x) ≥ u^{1/n}; 1 − u^{1/n} = −expm1(log(u)/n), with log u from the more precise of u and w.
@@ -866,7 +868,7 @@
   function minOf(b, n) {
     const powS = (/** @type {number} */ x) => { const s = b.sf(x); return s <= 0 ? 0 : Math.exp(n * Math.log1p(-b.cdf(x))); };
     return {
-      label: `the minimum of ${n} draws of ${b.label}`, continuous: b.continuous, numeric: b.numeric, support: b.support,
+      label: `the minimum of ${n} draws of ${b.label}`, continuous: b.continuous, mixed: b.mixed, numeric: b.numeric, support: b.support,
       cdf: (x) => 1 - powS(x), sf: powS,
       mass: b.continuous ? (x) => { const d = b.mass(x); return d === 0 ? 0 : n * Math.exp((n - 1) * Math.log1p(-b.cdf(x))) * d; } : (x) => powS(x - 1) - powS(x),
       quantile: (u, w) => { const lw = w <= 0.5 ? Math.log(w) : Math.log1p(-u), cv = Math.exp(lw / n), v = -Math.expm1(lw / n); return b.quantile(v, cv); },
@@ -877,7 +879,7 @@
 
   /** a·Y + c for a continuous law of Y. @param {Bound} b @param {number} a @param {number} c @returns {Bound | null} */
   function affineOf(b, a, c) {
-    if (!b.continuous || !(a !== 0) || !Number.isFinite(a) || !Number.isFinite(c)) return null;
+    if (!b.continuous || b.mixed || !(a !== 0) || !Number.isFinite(a) || !Number.isFinite(c)) return null;
     if (a === 1 && c === 0) return b;
     const pos = a > 0, map = (/** @type {number} */ y) => (y - c) / a;
     const lo = a * (pos ? b.support.lo : b.support.hi) + c, hi = a * (pos ? b.support.hi : b.support.lo) + c;

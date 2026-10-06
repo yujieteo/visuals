@@ -143,6 +143,10 @@
    {
     "to": "uniform",
     "relation": "equal weights"
+   },
+   {
+    "to": "empirical",
+    "relation": "an empirical law of the labels 1 … k"
    }
   ],
   "type": "discrete"
@@ -288,6 +292,14 @@
    {
     "to": "exponential",
     "relation": "⌊E⌋ of an exponential value E, and pX converges to Exponential(1) as p → 0"
+   },
+   {
+    "to": "compound",
+    "relation": "geometric terms give the Pólya–Aeppli law"
+   },
+   {
+    "to": "truncated",
+    "relation": "truncated below, it is a shifted geometric law"
    }
   ],
   "type": "discrete"
@@ -338,6 +350,10 @@
    {
     "to": "gamma",
     "relation": "a Poisson count with a gamma rate is negative binomial"
+   },
+   {
+    "to": "mixture",
+    "relation": "the negative binomial law is a gamma mixture of Poisson laws, and a finite mixture is the discrete form of it"
    }
   ],
   "type": "discrete"
@@ -392,6 +408,18 @@
    {
     "to": "erlang",
     "relation": "P(N(t) < k) = P(Erlang(k, λ) > t)"
+   },
+   {
+    "to": "mixture",
+    "relation": "a finite mixture of Poisson laws, with a variance above its mean"
+   },
+   {
+    "to": "compound",
+    "relation": "the number of terms of a compound Poisson sum"
+   },
+   {
+    "to": "truncated",
+    "relation": "the zero-truncated Poisson law"
    }
   ],
   "type": "discrete"
@@ -622,6 +650,14 @@
    {
     "to": "stable",
     "relation": "the stable law with α = 2 is N(δ, 2γ²)"
+   },
+   {
+    "to": "mixture",
+    "relation": "a finite mixture of normal laws"
+   },
+   {
+    "to": "kde",
+    "relation": "the kernel of the kernel density model"
    }
   ]
  },
@@ -2188,6 +2224,268 @@
    {
     "to": "exponential",
     "relation": "with exponential T, the maximum likelihood estimate of the rate from censored data is the number of events divided by the total time observed"
+   },
+   {
+    "to": "truncated",
+    "relation": "truncation removes the values outside the limit, and censoring keeps a bound for them"
+   }
+  ]
+ },
+ {
+  "id": "mixture",
+  "name": "Finite mixture",
+  "type": "constructed",
+  "convention": "With probability w_j, X comes from the law F with the parameters θ_j, for j = 1, …, k. The model text names the family: mixture_poisson(w = [0.7, 0.3], lambda = [2, 9]). Each parameter of F is a vector with one entry for each component, or one number that all components share. The weights add to 1. The page does not show the component of a draw. Θ_F is the parameter domain of F.",
+  "pmf": "\\mathbb{P}(X \\in A) = \\sum_{j=1}^{k} w_j\\, \\mathbb{P}_{\\theta_j}(X \\in A), \\quad p(x) = \\sum_j w_j\\, p_{\\theta_j}(x) \\ \\text{or} \\ f(x) = \\sum_j w_j\\, f_{\\theta_j}(x)",
+  "params": [
+   {
+    "name": "w",
+    "tex": "w",
+    "domain": "w_j \\ge 0, \\ \\sum_{j=1}^{k} w_j = 1, \\ 1 \\le k \\le 20"
+   },
+   {
+    "name": "θ",
+    "tex": "\\theta_j",
+    "domain": "\\theta_j \\in \\Theta_F \\ (w_j > 0)"
+   }
+  ],
+  "support": "\\bigcup_{j:\\, w_j > 0} \\operatorname{supp} F_{\\theta_j}",
+  "limits": [
+   "k = 1, or one weight equal to 1, gives the law F itself.",
+   "Components with the same parameters merge: their weights add.",
+   "A Poisson component with λ = 0 is a point mass at 0, so mixture_poisson(w = [w0, 1 − w0], lambda = [0, λ]) is the zero-inflated Poisson law.",
+   "A mixture over a continuous law of the parameter is not a finite mixture. An example is the gamma mixture of Poisson laws, the negative binomial law.",
+   "Different weights and parameters can give the same mixture law. The labels of the components can change places, so the data identify the components only up to a permutation."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}X = \\sum_j w_j \\mu_j",
+   "variance": "\\operatorname{Var}X = \\sum_j w_j \\sigma_j^2 + \\sum_j w_j (\\mu_j - \\mathbb{E}X)^2",
+   "existence": "E|X|^r is finite if and only if E|X|^r is finite for every component with a positive weight. The variance is the mean of the component variances plus the variance of the component means (the law of total variance). Thus a mixture of Poisson laws has a variance at least its mean, and above it when the component means differ."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\sum_j w_j G_j(z)",
+   "mgf": "M(t) = \\sum_j w_j M_j(t), \\ \\text{finite where every } M_j(t) \\text{ with } w_j > 0 \\text{ is finite}",
+   "cf": "\\varphi(t) = \\sum_j w_j \\varphi_j(t)"
+  },
+  "links": [
+   {
+    "to": "poisson",
+    "relation": "a mixture of Poisson laws with different means has a variance above its mean"
+   },
+   {
+    "to": "negbin",
+    "relation": "the gamma mixture of Poisson laws, a mixture over infinitely many components"
+   },
+   {
+    "to": "normal",
+    "relation": "a mixture of normal laws can give several modes and heavier shoulders"
+   },
+   {
+    "to": "kde",
+    "relation": "a kernel density model is the equal-weight mixture of normal laws centred at the data"
+   }
+  ]
+ },
+ {
+  "id": "compound",
+  "name": "Compound Poisson",
+  "type": "constructed",
+  "convention": "S = Y_1 + … + Y_N, with N ~ Poisson(freq) and Y_1, Y_2, … i.i.d. from the law F of a term, independent of N. S = 0 when N = 0. The model text names the law of the terms, and λ is freq. Thus compound_geometric(freq = 12, p = 0.4) has geometric terms. compound_poisson(freq = 3, lambda = 2) has Poisson terms: the Neyman type A law. The terms take values in [0, ∞). Integer terms give a law on {0, 1, 2, …}. Continuous terms give a law on [0, ∞) with an atom at 0.",
+  "pmf": "\\mathbb{P}(S = 0) = e^{-\\lambda(1 - f_0)}, \\quad \\mathbb{P}(S = s) = \\frac{\\lambda}{s} \\sum_{j=1}^{s} j\\, f_j\\, \\mathbb{P}(S = s - j) \\ \\ (\\text{Panjer, terms on } \\{0, 1, 2, \\dots\\})",
+  "params": [
+   {
+    "name": "freq",
+    "tex": "\\lambda",
+    "domain": "0 \\le \\lambda \\le 1000"
+   },
+   {
+    "name": "θ",
+    "tex": "\\theta",
+    "domain": "\\theta \\in \\Theta_F, \\ Y \\ge 0"
+   }
+  ],
+  "support": "\\{0, 1, 2, \\dots\\} \\ \\text{or} \\ [0, \\infty)",
+  "limits": [
+   "Terms equal to 1 give S = N, the Poisson law itself.",
+   "freq = 0 gives the point mass at 0.",
+   "Poisson terms give the Neyman type A law, and geometric terms give the Pólya–Aeppli law.",
+   "As λ = freq → ∞, (S − λE[Y])/√(λE[Y²]) converges in law to N(0, 1) when E[Y²] < ∞.",
+   "With a subexponential term law, P(S > x) ~ λ P(Y > x) as x → ∞: one large term makes a large total."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}S = \\lambda\\, \\mathbb{E}Y",
+   "variance": "\\operatorname{Var}S = \\lambda\\, \\mathbb{E}[Y^2]",
+   "existence": "For λ > 0, E[S^r] is finite if and only if E[Y^r] is finite. Thus a term law with a heavy tail gives S the same tail order. The MGF of S is finite exactly where the MGF of Y is finite."
+  },
+  "transforms": {
+   "pgf": "G_S(z) = \\exp\\left(\\lambda (G_Y(z) - 1)\\right)",
+   "mgf": "M_S(t) = \\exp\\left(\\lambda (M_Y(t) - 1)\\right)",
+   "cf": "\\varphi_S(t) = \\exp\\left(\\lambda (\\varphi_Y(t) - 1)\\right)"
+  },
+  "links": [
+   {
+    "to": "poisson",
+    "relation": "the number of terms is Poisson, and terms equal to 1 give the Poisson law"
+   },
+   {
+    "to": "geometric",
+    "relation": "geometric terms give the Pólya–Aeppli law of clustered counts"
+   }
+  ]
+ },
+ {
+  "id": "empirical",
+  "name": "Empirical discrete law",
+  "type": "constructed",
+  "convention": "The law that puts the mass w_i / Σw on each observed value x_i. Equal weights (w = 1) give each of n observations the mass 1/n. Counts as weights give the same law for grouped data. Equal values add their masses. A draw from it is a draw with replacement from the data, which is the resampling step of the ordinary bootstrap. The parameter w is a weight for each value, or one number for equal weights.",
+  "pmf": "\\mathbb{P}(X = x) = \\frac{\\sum_{i:\\, x_i = x} w_i}{\\sum_{i=1}^{n} w_i}",
+  "params": [
+   {
+    "name": "x",
+    "tex": "x",
+    "domain": "x_1, \\dots, x_n \\in \\mathbb{R}, \\ 1 \\le n \\le 5000"
+   },
+   {
+    "name": "w",
+    "tex": "w",
+    "domain": "w_i \\ge 0, \\ \\textstyle\\sum_i w_i > 0"
+   }
+  ],
+  "support": "\\{x_i : w_i > 0\\}",
+  "limits": [
+   "One distinct value gives a point mass.",
+   "With n i.i.d. observations of a law F, the empirical CDF converges to F uniformly, almost surely (Glivenko–Cantelli).",
+   "The law gives no value outside [min x_i, max x_i], so it says nothing about the tail beyond the data.",
+   "On the integers 1 … k, the empirical law is a categorical law with p_j = w_j / Σw."
+  ],
+  "moments": {
+   "mean": "\\bar x_w = \\frac{\\sum_i w_i x_i}{\\sum_i w_i}",
+   "variance": "\\frac{\\sum_i w_i (x_i - \\bar x_w)^2}{\\sum_i w_i}",
+   "existence": "All moments exist: the law has finitely many values. The variance divides by Σw, not Σw − 1. It is the variance of this law, not an unbiased estimate for the law that made the data. A finite variance here does not show that the law of the data has one."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\sum_i \\frac{w_i}{\\sum w}\\, z^{x_i} \\ (\\text{integer } x_i \\ge 0)",
+   "mgf": "M(t) = \\sum_i \\frac{w_i}{\\sum w}\\, e^{t x_i}, \\ t \\in \\mathbb{R}",
+   "cf": "\\varphi(t) = \\sum_i \\frac{w_i}{\\sum w}\\, e^{i t x_i}"
+  },
+  "links": [
+   {
+    "to": "categorical",
+    "relation": "the empirical law on the labels 1 … k is a categorical law"
+   },
+   {
+    "to": "kde",
+    "relation": "the kernel density model spreads each value of the empirical law with a normal kernel"
+   }
+  ]
+ },
+ {
+  "id": "kde",
+  "name": "Kernel density model",
+  "type": "constructed",
+  "convention": "X = x_J + hZ: J picks an observation with probability w_J / Σw, and Z ~ N(0, 1) is independent of J. The bandwidth h is the standard deviation of the Gaussian kernel. The density is the kernel density estimate of the data, which the model uses as a law. The parameter w is a weight for each value, or one number for equal weights.",
+  "pdf": "f(x) = \\sum_{i=1}^{n} \\frac{w_i}{\\sum w}\\, \\frac{1}{h}\\, \\phi\\!\\left(\\frac{x - x_i}{h}\\right), \\quad x \\in \\mathbb{R}",
+  "params": [
+   {
+    "name": "x",
+    "tex": "x",
+    "domain": "x_1, \\dots, x_n \\in \\mathbb{R}, \\ 1 \\le n \\le 5000"
+   },
+   {
+    "name": "w",
+    "tex": "w",
+    "domain": "w_i \\ge 0, \\ \\textstyle\\sum_i w_i > 0"
+   },
+   {
+    "name": "h",
+    "tex": "h",
+    "domain": "h > 0"
+   }
+  ],
+  "support": "\\mathbb{R}",
+  "limits": [
+   "h → 0 gives the empirical law of the data.",
+   "One observation gives N(x_1, h²).",
+   "As h → ∞, the law spreads without bound, and its standardised law tends to N(0, 1).",
+   "Let the data be i.i.d. from a density f, with h → 0 and nh → ∞. Then the estimate converges to f at each point of continuity. The mean squared error is smallest for h of the order n^(−1/5).",
+   "Silverman's rule of thumb gives h = 0.9 min(s, IQR/1.34) n^(−1/5)."
+  ],
+  "moments": {
+   "mean": "\\bar x_w",
+   "variance": "s_w^2 + h^2, \\quad s_w^2 = \\frac{\\sum_i w_i (x_i - \\bar x_w)^2}{\\sum_i w_i}",
+   "existence": "All moments exist, and the MGF is finite for all real t: the law is a finite mixture of normal laws. The kernel adds h² to the variance, so a large bandwidth spreads the law. Values outside the range of the data, and negative values for positive data, have a positive probability."
+  },
+  "transforms": {
+   "mgf": "M(t) = e^{h^2 t^2 / 2} \\sum_i \\frac{w_i}{\\sum w}\\, e^{t x_i}",
+   "cf": "\\varphi(t) = e^{-h^2 t^2 / 2} \\sum_i \\frac{w_i}{\\sum w}\\, e^{i t x_i}"
+  },
+  "links": [
+   {
+    "to": "empirical",
+    "relation": "the limit h → 0 of the kernel density model"
+   },
+   {
+    "to": "normal",
+    "relation": "each kernel is N(x_i, h²)"
+   },
+   {
+    "to": "mixture",
+    "relation": "an equal-weight finite mixture of normal laws"
+   }
+  ]
+ },
+ {
+  "id": "truncated",
+  "name": "Truncated law",
+  "type": "constructed",
+  "convention": "X has the law F conditioned on lower ≤ X ≤ upper. The model text names F: truncated_poisson(lambda = 2, lower = 1, upper = inf). Values outside [lower, upper] do not occur at all: no record of them exists. The kept mass Z = P_F(lower ≤ X ≤ upper) must be positive.",
+  "pmf": "f_t(x) = \\frac{f(x)}{Z}\\, \\mathbf{1}\\{\\ell \\le x \\le u\\}, \\quad F_t(x) = \\frac{F(x) - F(\\ell^-)}{Z}, \\quad Z = F(u) - F(\\ell^-)",
+  "params": [
+   {
+    "name": "lower",
+    "tex": "\\ell",
+    "domain": "\\ell \\in [-\\infty, \\infty)"
+   },
+   {
+    "name": "upper",
+    "tex": "u",
+    "domain": "u \\in (-\\infty, \\infty], \\ \\ell \\le u, \\ Z > 0"
+   },
+   {
+    "name": "θ",
+    "tex": "\\theta",
+    "domain": "\\theta \\in \\Theta_F"
+   }
+  ],
+  "support": "\\operatorname{supp} F \\cap [\\ell, u]",
+  "limits": [
+   "lower = −∞ and upper = ∞ give F itself.",
+   "The zero-truncated Poisson law has the mean λ/(1 − e^(−λ)).",
+   "A geometric law truncated below at b is b plus a geometric law: the geometric law has no memory.",
+   "Truncation differs from censoring. Censoring keeps a bound for each value outside the limit. Truncation keeps no record of it."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}_t X = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[X\\, \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]",
+   "variance": "\\mathbb{E}_t X^2 - (\\mathbb{E}_t X)^2",
+   "existence": "A bounded interval [lower, upper] keeps all moments. An unbounded side keeps the tail order of F on that side, so a heavy right tail stays heavy after truncation from below."
+  },
+  "transforms": {
+   "pgf": "G_t(z) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[z^X \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]",
+   "mgf": "M_t(t) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[e^{tX} \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right], \\ \\text{finite for all } t \\ \\text{on a bounded interval}",
+   "cf": "\\varphi_t(t) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[e^{itX} \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]"
+  },
+  "links": [
+   {
+    "to": "poisson",
+    "relation": "the zero-truncated Poisson law of counts that are at least 1"
+   },
+   {
+    "to": "geometric",
+    "relation": "truncation from below gives a shifted geometric law, because the law has no memory"
+   },
+   {
+    "to": "censoring",
+    "relation": "censoring keeps a bound for each value outside the limit, and truncation keeps no record"
    }
   ]
  }

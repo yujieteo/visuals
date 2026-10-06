@@ -146,6 +146,10 @@
     {
      "to": "uniform",
      "relation": "equal weights"
+    },
+    {
+     "to": "empirical",
+     "relation": "an empirical law of the labels 1 … k"
     }
    ],
    "type": "discrete"
@@ -291,6 +295,14 @@
     {
      "to": "exponential",
      "relation": "⌊E⌋ of an exponential value E, and pX converges to Exponential(1) as p → 0"
+    },
+    {
+     "to": "compound",
+     "relation": "geometric terms give the Pólya–Aeppli law"
+    },
+    {
+     "to": "truncated",
+     "relation": "truncated below, it is a shifted geometric law"
     }
    ],
    "type": "discrete"
@@ -341,6 +353,10 @@
     {
      "to": "gamma",
      "relation": "a Poisson count with a gamma rate is negative binomial"
+    },
+    {
+     "to": "mixture",
+     "relation": "the negative binomial law is a gamma mixture of Poisson laws, and a finite mixture is the discrete form of it"
     }
    ],
    "type": "discrete"
@@ -395,6 +411,18 @@
     {
      "to": "erlang",
      "relation": "P(N(t) < k) = P(Erlang(k, λ) > t)"
+    },
+    {
+     "to": "mixture",
+     "relation": "a finite mixture of Poisson laws, with a variance above its mean"
+    },
+    {
+     "to": "compound",
+     "relation": "the number of terms of a compound Poisson sum"
+    },
+    {
+     "to": "truncated",
+     "relation": "the zero-truncated Poisson law"
     }
    ],
    "type": "discrete"
@@ -625,6 +653,14 @@
     {
      "to": "stable",
      "relation": "the stable law with α = 2 is N(δ, 2γ²)"
+    },
+    {
+     "to": "mixture",
+     "relation": "a finite mixture of normal laws"
+    },
+    {
+     "to": "kde",
+     "relation": "the kernel of the kernel density model"
     }
    ]
   },
@@ -2191,6 +2227,268 @@
     {
      "to": "exponential",
      "relation": "with exponential T, the maximum likelihood estimate of the rate from censored data is the number of events divided by the total time observed"
+    },
+    {
+     "to": "truncated",
+     "relation": "truncation removes the values outside the limit, and censoring keeps a bound for them"
+    }
+   ]
+  },
+  {
+   "id": "mixture",
+   "name": "Finite mixture",
+   "type": "constructed",
+   "convention": "With probability w_j, X comes from the law F with the parameters θ_j, for j = 1, …, k. The model text names the family: mixture_poisson(w = [0.7, 0.3], lambda = [2, 9]). Each parameter of F is a vector with one entry for each component, or one number that all components share. The weights add to 1. The page does not show the component of a draw. Θ_F is the parameter domain of F.",
+   "pmf": "\\mathbb{P}(X \\in A) = \\sum_{j=1}^{k} w_j\\, \\mathbb{P}_{\\theta_j}(X \\in A), \\quad p(x) = \\sum_j w_j\\, p_{\\theta_j}(x) \\ \\text{or} \\ f(x) = \\sum_j w_j\\, f_{\\theta_j}(x)",
+   "params": [
+    {
+     "name": "w",
+     "tex": "w",
+     "domain": "w_j \\ge 0, \\ \\sum_{j=1}^{k} w_j = 1, \\ 1 \\le k \\le 20"
+    },
+    {
+     "name": "θ",
+     "tex": "\\theta_j",
+     "domain": "\\theta_j \\in \\Theta_F \\ (w_j > 0)"
+    }
+   ],
+   "support": "\\bigcup_{j:\\, w_j > 0} \\operatorname{supp} F_{\\theta_j}",
+   "limits": [
+    "k = 1, or one weight equal to 1, gives the law F itself.",
+    "Components with the same parameters merge: their weights add.",
+    "A Poisson component with λ = 0 is a point mass at 0, so mixture_poisson(w = [w0, 1 − w0], lambda = [0, λ]) is the zero-inflated Poisson law.",
+    "A mixture over a continuous law of the parameter is not a finite mixture. An example is the gamma mixture of Poisson laws, the negative binomial law.",
+    "Different weights and parameters can give the same mixture law. The labels of the components can change places, so the data identify the components only up to a permutation."
+   ],
+   "moments": {
+    "mean": "\\mathbb{E}X = \\sum_j w_j \\mu_j",
+    "variance": "\\operatorname{Var}X = \\sum_j w_j \\sigma_j^2 + \\sum_j w_j (\\mu_j - \\mathbb{E}X)^2",
+    "existence": "E|X|^r is finite if and only if E|X|^r is finite for every component with a positive weight. The variance is the mean of the component variances plus the variance of the component means (the law of total variance). Thus a mixture of Poisson laws has a variance at least its mean, and above it when the component means differ."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\sum_j w_j G_j(z)",
+    "mgf": "M(t) = \\sum_j w_j M_j(t), \\ \\text{finite where every } M_j(t) \\text{ with } w_j > 0 \\text{ is finite}",
+    "cf": "\\varphi(t) = \\sum_j w_j \\varphi_j(t)"
+   },
+   "links": [
+    {
+     "to": "poisson",
+     "relation": "a mixture of Poisson laws with different means has a variance above its mean"
+    },
+    {
+     "to": "negbin",
+     "relation": "the gamma mixture of Poisson laws, a mixture over infinitely many components"
+    },
+    {
+     "to": "normal",
+     "relation": "a mixture of normal laws can give several modes and heavier shoulders"
+    },
+    {
+     "to": "kde",
+     "relation": "a kernel density model is the equal-weight mixture of normal laws centred at the data"
+    }
+   ]
+  },
+  {
+   "id": "compound",
+   "name": "Compound Poisson",
+   "type": "constructed",
+   "convention": "S = Y_1 + … + Y_N, with N ~ Poisson(freq) and Y_1, Y_2, … i.i.d. from the law F of a term, independent of N. S = 0 when N = 0. The model text names the law of the terms, and λ is freq. Thus compound_geometric(freq = 12, p = 0.4) has geometric terms. compound_poisson(freq = 3, lambda = 2) has Poisson terms: the Neyman type A law. The terms take values in [0, ∞). Integer terms give a law on {0, 1, 2, …}. Continuous terms give a law on [0, ∞) with an atom at 0.",
+   "pmf": "\\mathbb{P}(S = 0) = e^{-\\lambda(1 - f_0)}, \\quad \\mathbb{P}(S = s) = \\frac{\\lambda}{s} \\sum_{j=1}^{s} j\\, f_j\\, \\mathbb{P}(S = s - j) \\ \\ (\\text{Panjer, terms on } \\{0, 1, 2, \\dots\\})",
+   "params": [
+    {
+     "name": "freq",
+     "tex": "\\lambda",
+     "domain": "0 \\le \\lambda \\le 1000"
+    },
+    {
+     "name": "θ",
+     "tex": "\\theta",
+     "domain": "\\theta \\in \\Theta_F, \\ Y \\ge 0"
+    }
+   ],
+   "support": "\\{0, 1, 2, \\dots\\} \\ \\text{or} \\ [0, \\infty)",
+   "limits": [
+    "Terms equal to 1 give S = N, the Poisson law itself.",
+    "freq = 0 gives the point mass at 0.",
+    "Poisson terms give the Neyman type A law, and geometric terms give the Pólya–Aeppli law.",
+    "As λ = freq → ∞, (S − λE[Y])/√(λE[Y²]) converges in law to N(0, 1) when E[Y²] < ∞.",
+    "With a subexponential term law, P(S > x) ~ λ P(Y > x) as x → ∞: one large term makes a large total."
+   ],
+   "moments": {
+    "mean": "\\mathbb{E}S = \\lambda\\, \\mathbb{E}Y",
+    "variance": "\\operatorname{Var}S = \\lambda\\, \\mathbb{E}[Y^2]",
+    "existence": "For λ > 0, E[S^r] is finite if and only if E[Y^r] is finite. Thus a term law with a heavy tail gives S the same tail order. The MGF of S is finite exactly where the MGF of Y is finite."
+   },
+   "transforms": {
+    "pgf": "G_S(z) = \\exp\\left(\\lambda (G_Y(z) - 1)\\right)",
+    "mgf": "M_S(t) = \\exp\\left(\\lambda (M_Y(t) - 1)\\right)",
+    "cf": "\\varphi_S(t) = \\exp\\left(\\lambda (\\varphi_Y(t) - 1)\\right)"
+   },
+   "links": [
+    {
+     "to": "poisson",
+     "relation": "the number of terms is Poisson, and terms equal to 1 give the Poisson law"
+    },
+    {
+     "to": "geometric",
+     "relation": "geometric terms give the Pólya–Aeppli law of clustered counts"
+    }
+   ]
+  },
+  {
+   "id": "empirical",
+   "name": "Empirical discrete law",
+   "type": "constructed",
+   "convention": "The law that puts the mass w_i / Σw on each observed value x_i. Equal weights (w = 1) give each of n observations the mass 1/n. Counts as weights give the same law for grouped data. Equal values add their masses. A draw from it is a draw with replacement from the data, which is the resampling step of the ordinary bootstrap. The parameter w is a weight for each value, or one number for equal weights.",
+   "pmf": "\\mathbb{P}(X = x) = \\frac{\\sum_{i:\\, x_i = x} w_i}{\\sum_{i=1}^{n} w_i}",
+   "params": [
+    {
+     "name": "x",
+     "tex": "x",
+     "domain": "x_1, \\dots, x_n \\in \\mathbb{R}, \\ 1 \\le n \\le 5000"
+    },
+    {
+     "name": "w",
+     "tex": "w",
+     "domain": "w_i \\ge 0, \\ \\textstyle\\sum_i w_i > 0"
+    }
+   ],
+   "support": "\\{x_i : w_i > 0\\}",
+   "limits": [
+    "One distinct value gives a point mass.",
+    "With n i.i.d. observations of a law F, the empirical CDF converges to F uniformly, almost surely (Glivenko–Cantelli).",
+    "The law gives no value outside [min x_i, max x_i], so it says nothing about the tail beyond the data.",
+    "On the integers 1 … k, the empirical law is a categorical law with p_j = w_j / Σw."
+   ],
+   "moments": {
+    "mean": "\\bar x_w = \\frac{\\sum_i w_i x_i}{\\sum_i w_i}",
+    "variance": "\\frac{\\sum_i w_i (x_i - \\bar x_w)^2}{\\sum_i w_i}",
+    "existence": "All moments exist: the law has finitely many values. The variance divides by Σw, not Σw − 1. It is the variance of this law, not an unbiased estimate for the law that made the data. A finite variance here does not show that the law of the data has one."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\sum_i \\frac{w_i}{\\sum w}\\, z^{x_i} \\ (\\text{integer } x_i \\ge 0)",
+    "mgf": "M(t) = \\sum_i \\frac{w_i}{\\sum w}\\, e^{t x_i}, \\ t \\in \\mathbb{R}",
+    "cf": "\\varphi(t) = \\sum_i \\frac{w_i}{\\sum w}\\, e^{i t x_i}"
+   },
+   "links": [
+    {
+     "to": "categorical",
+     "relation": "the empirical law on the labels 1 … k is a categorical law"
+    },
+    {
+     "to": "kde",
+     "relation": "the kernel density model spreads each value of the empirical law with a normal kernel"
+    }
+   ]
+  },
+  {
+   "id": "kde",
+   "name": "Kernel density model",
+   "type": "constructed",
+   "convention": "X = x_J + hZ: J picks an observation with probability w_J / Σw, and Z ~ N(0, 1) is independent of J. The bandwidth h is the standard deviation of the Gaussian kernel. The density is the kernel density estimate of the data, which the model uses as a law. The parameter w is a weight for each value, or one number for equal weights.",
+   "pdf": "f(x) = \\sum_{i=1}^{n} \\frac{w_i}{\\sum w}\\, \\frac{1}{h}\\, \\phi\\!\\left(\\frac{x - x_i}{h}\\right), \\quad x \\in \\mathbb{R}",
+   "params": [
+    {
+     "name": "x",
+     "tex": "x",
+     "domain": "x_1, \\dots, x_n \\in \\mathbb{R}, \\ 1 \\le n \\le 5000"
+    },
+    {
+     "name": "w",
+     "tex": "w",
+     "domain": "w_i \\ge 0, \\ \\textstyle\\sum_i w_i > 0"
+    },
+    {
+     "name": "h",
+     "tex": "h",
+     "domain": "h > 0"
+    }
+   ],
+   "support": "\\mathbb{R}",
+   "limits": [
+    "h → 0 gives the empirical law of the data.",
+    "One observation gives N(x_1, h²).",
+    "As h → ∞, the law spreads without bound, and its standardised law tends to N(0, 1).",
+    "Let the data be i.i.d. from a density f, with h → 0 and nh → ∞. Then the estimate converges to f at each point of continuity. The mean squared error is smallest for h of the order n^(−1/5).",
+    "Silverman's rule of thumb gives h = 0.9 min(s, IQR/1.34) n^(−1/5)."
+   ],
+   "moments": {
+    "mean": "\\bar x_w",
+    "variance": "s_w^2 + h^2, \\quad s_w^2 = \\frac{\\sum_i w_i (x_i - \\bar x_w)^2}{\\sum_i w_i}",
+    "existence": "All moments exist, and the MGF is finite for all real t: the law is a finite mixture of normal laws. The kernel adds h² to the variance, so a large bandwidth spreads the law. Values outside the range of the data, and negative values for positive data, have a positive probability."
+   },
+   "transforms": {
+    "mgf": "M(t) = e^{h^2 t^2 / 2} \\sum_i \\frac{w_i}{\\sum w}\\, e^{t x_i}",
+    "cf": "\\varphi(t) = e^{-h^2 t^2 / 2} \\sum_i \\frac{w_i}{\\sum w}\\, e^{i t x_i}"
+   },
+   "links": [
+    {
+     "to": "empirical",
+     "relation": "the limit h → 0 of the kernel density model"
+    },
+    {
+     "to": "normal",
+     "relation": "each kernel is N(x_i, h²)"
+    },
+    {
+     "to": "mixture",
+     "relation": "an equal-weight finite mixture of normal laws"
+    }
+   ]
+  },
+  {
+   "id": "truncated",
+   "name": "Truncated law",
+   "type": "constructed",
+   "convention": "X has the law F conditioned on lower ≤ X ≤ upper. The model text names F: truncated_poisson(lambda = 2, lower = 1, upper = inf). Values outside [lower, upper] do not occur at all: no record of them exists. The kept mass Z = P_F(lower ≤ X ≤ upper) must be positive.",
+   "pmf": "f_t(x) = \\frac{f(x)}{Z}\\, \\mathbf{1}\\{\\ell \\le x \\le u\\}, \\quad F_t(x) = \\frac{F(x) - F(\\ell^-)}{Z}, \\quad Z = F(u) - F(\\ell^-)",
+   "params": [
+    {
+     "name": "lower",
+     "tex": "\\ell",
+     "domain": "\\ell \\in [-\\infty, \\infty)"
+    },
+    {
+     "name": "upper",
+     "tex": "u",
+     "domain": "u \\in (-\\infty, \\infty], \\ \\ell \\le u, \\ Z > 0"
+    },
+    {
+     "name": "θ",
+     "tex": "\\theta",
+     "domain": "\\theta \\in \\Theta_F"
+    }
+   ],
+   "support": "\\operatorname{supp} F \\cap [\\ell, u]",
+   "limits": [
+    "lower = −∞ and upper = ∞ give F itself.",
+    "The zero-truncated Poisson law has the mean λ/(1 − e^(−λ)).",
+    "A geometric law truncated below at b is b plus a geometric law: the geometric law has no memory.",
+    "Truncation differs from censoring. Censoring keeps a bound for each value outside the limit. Truncation keeps no record of it."
+   ],
+   "moments": {
+    "mean": "\\mathbb{E}_t X = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[X\\, \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]",
+    "variance": "\\mathbb{E}_t X^2 - (\\mathbb{E}_t X)^2",
+    "existence": "A bounded interval [lower, upper] keeps all moments. An unbounded side keeps the tail order of F on that side, so a heavy right tail stays heavy after truncation from below."
+   },
+   "transforms": {
+    "pgf": "G_t(z) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[z^X \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]",
+    "mgf": "M_t(t) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[e^{tX} \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right], \\ \\text{finite for all } t \\ \\text{on a bounded interval}",
+    "cf": "\\varphi_t(t) = \\frac{1}{Z}\\, \\mathbb{E}_F\\left[e^{itX} \\mathbf{1}\\{\\ell \\le X \\le u\\}\\right]"
+   },
+   "links": [
+    {
+     "to": "poisson",
+     "relation": "the zero-truncated Poisson law of counts that are at least 1"
+    },
+    {
+     "to": "geometric",
+     "relation": "truncation from below gives a shifted geometric law, because the law has no memory"
+    },
+    {
+     "to": "censoring",
+     "relation": "censoring keeps a bound for each value outside the limit, and truncation keeps no record"
     }
    ]
   }
@@ -3246,7 +3544,7 @@
    "reason": "Free taxis pass at random times, independently of each other, at a constant rate. These times form a Poisson process, so the wait for the next taxi is exponential. The law has no memory: after 5 minutes at the rank, the rest of the wait has the same law as at the start.",
    "inputs": "The taxi rates of 0.2, 0.6 and 1.5 a minute and the walks of 0, 4 and 8 minutes are illustrative values. The appointment starts in 15 minutes and the ride takes 6 minutes, so 9 minutes remain for the walk and the wait.",
    "dependence": "None: the taxis at each place form a Poisson process with a constant rate. A rate that changes in the hour, or taxis that come in groups after a train, break this assumption.",
-   "method": "Independent draws by inversion of the survival function. The estimators are a fraction and a sample mean. The alternatives use the same uniform numbers, so the paired differences are precise.",
+   "method": "Independent draws by inversion of the survival function. The estimators are a fraction and a sample mean. The alternatives use the same uniform numbers, so the paired differences have a smaller variance.",
    "diagnostics": "Exact references: P(late) = e^(−λ(9 − walk)) gives 0.1653, 0.0498 and 0.2231. The mean time walk + 1/λ is exact by linearity: 5.00, 5.67 and 8.67 minutes. Other candidate models: a Poisson process with a rate that changes in the hour, and a ride time with a random delay.",
    "interpretation": "The rank gives the shortest mean time, 5 minutes, but P(late) is about 0.17, above the limit 0.1. The main road meets the limit with P(late) about 0.05 and a mean time of 5.67 minutes. With the station, P(late) is about 0.22, because the 8-minute walk uses most of the time. Reject the model if taxis come in groups, or if the rate at the rank is lower at this hour.",
    "data": {
@@ -3268,7 +3566,7 @@
    "reason": "The service works as a single queue with Poisson arrivals and exponential service times. In such a queue the response time is exponential. The law has no memory. A request that has waited 400 ms has the same law for the rest of its wait as a new request. So a timeout helps only against the requests that the service loses.",
    "inputs": "A mean response time of 250 ms and a loss probability of 0.02 are illustrative values. So is the cost of a cached result, equal to 2000 ms of user wait. The latency target is a wait of at most 1.5 s in 99 % of page views.",
    "dependence": "None: the response time and the loss are independent, and the requests are independent. A load peak breaks this assumption, because it makes slow answers and lost requests more frequent at the same time.",
-   "method": "Independent draws: R by inversion of the survival function, and the loss as a Bernoulli value. The estimators are fractions and sample means. The alternatives use the same draws, so the paired differences are precise.",
+   "method": "Independent draws: R by inversion of the survival function, and the loss as a Bernoulli value. The estimators are fractions and sample means. The alternatives use the same draws, so the paired differences have a smaller variance.",
    "diagnostics": "Quadrature reference values for every quantity, over R and the 2 values of the loss. P(timeout) = 0.02 + 0.98 e^(−τ/250) gives 0.218, 0.038 and 0.020. Other candidate models: a gamma or a log-normal response time with a heavier tail. Other candidate design: a second attempt after the timeout.",
    "interpretation": "A 400 ms timeout cuts the wait, but 22 % of requests give a cached result, so its expected cost is about 639 ms. A 2000 ms timeout has the least cost, about 326 ms, but 2.2 % of page views wait more than 1.5 s. The 1000 ms timeout meets the target with a cost of about 336 ms. Reject the model if the response time has a heavier tail than the exponential law.",
    "data": {
@@ -3345,7 +3643,7 @@
    "reason": "A repair is a sequence of phases: travel, diagnosis, parts and the fix. If each phase is exponential with the same rate, the total time is Erlang. When the phases differ in size, a gamma law with a shape that is not an integer is a flexible fit.",
    "inputs": "A shape of 2.5 and a scale of 1.6 hours (a mean repair time of 4 hours) are illustrative values. So are the fees 420, 300 and 220, a fixed penalty of 500 and 100 for each hour late. The provider accepts late repairs in at most 10 % of calls.",
    "dependence": "None: the repair times of different calls are independent. A shortage of spare parts or of staff makes several repairs late at the same time.",
-   "method": "Independent draws by the Marsaglia–Tsang method. The estimators are a fraction and sample means of quantities with finite moments. The alternatives use the same draws, so the paired differences are precise.",
+   "method": "Independent draws by the Marsaglia–Tsang method. The estimators are a fraction and sample means of quantities with finite moments. The alternatives use the same draws, so the paired differences have a smaller variance.",
    "diagnostics": "Quadrature reference values for every quantity. P(late) is 0.186, 0.075 and 0.029, and the expected margin is 287.1, 247.1 and 200.2. Other candidate models: a log-normal repair time, and a mixture for the calls that wait for parts.",
    "interpretation": "The 6-hour guarantee has the largest margin, 287, but 18.6 % of repairs are late, above the limit 10 %. The 8-hour guarantee meets the limit with 7.5 % late repairs and a margin of 247. Reject the model if some repairs wait days for parts, because the gamma tail is then too light.",
    "data": {
@@ -3378,7 +3676,7 @@
    "reason": "A board in use fails at a constant rate, so its life is exponential. A cold spare does not age while it is off, and the switch is perfect. The station life is then the sum of k i.i.d. exponential lives: the Erlang(k, λ) law.",
    "inputs": "A failure rate of 0.0005 an hour gives a mean board life of 2000 hours. This rate, the 3000 hours to the next visit and the costs are illustrative values. A board costs 40 thousand currency units, and a station failure costs 500 thousand. The operator needs a survival probability of at least 0.9.",
    "dependence": "None: the board lives are independent. A switch that can fail, or spares that age while they are off, break the Erlang model.",
-   "method": "Independent draws as the sum of k exponential phases: X = −Σ log(U_i)/λ. The estimators are a fraction and sample means. The alternatives use the same streams, so the paired differences are precise.",
+   "method": "Independent draws as the sum of k exponential phases: X = −Σ log(U_i)/λ. The estimators are a fraction and sample means. The alternatives use the same streams, so the paired differences have a smaller variance.",
    "diagnostics": "Exact references for P(survive) and E[T] = k/λ from the Erlang law, and a quadrature reference for the cost. P(survive) = P(N < k) for a Poisson count N with the mean λt = 1.5: 0.809, 0.934 and 0.981. Other candidate models: a warm standby with spares that age at a lower rate, and an imperfect switch.",
    "interpretation": "2 spares give a survival probability of about 0.81, below 0.9. 3 spares meet the target with 0.934 and give the least expected cost, about 192.8 thousand. 4 spares give an expected cost of 209.3 thousand, because the extra board costs more than the risk it removes. Reject the model if the failure rate grows with age, or if the switch can fail.",
    "data": {
@@ -4005,7 +4303,7 @@
    "reason": "A response time is the product of many independent factors: queue lengths, cache misses and retries. The log of a product is a sum, so the response time is near lognormal. The lognormal law is a standard model of the body of server latency. A second copy cuts the slow requests, because two independent copies are rarely both slow.",
    "inputs": "A median response time of 40 ms and σ = 0.8 for the log response time are illustrative values. The latency target is at most 0.3 % of requests above 250 ms. There is no data.",
    "dependence": "The two copies go to two servers and are independent. A load peak on all servers breaks this assumption, because then both copies are slow together. The second copy also adds load, which this model does not feed back into the response time.",
-   "method": "Independent draws of R1 and R2. The estimators are fractions and sample means. The alternatives use the same draws, so the paired differences are precise.",
+   "method": "Independent draws of R1 and R2. The estimators are fractions and sample means. The alternatives use the same draws, so the paired differences have a smaller variance.",
    "diagnostics": "The extra load P(R1 > d) has an exact reference from the lognormal survival function: 0.306, 0.126, 0.049 and 0.022 for the 4 delays. The late fraction has a quadrature reference: it is P(R1 > 250) P(R2 > 250 − d) for d < 250. With no second copy, P(R1 > 250) = 0.011. Other candidate models: a gamma or Weibull response time, and a lognormal body with a Pareto tail for rare stalls.",
    "interpretation": "A delay of 150 ms meets the target with the least extra load. About 4.9 % of requests get a second copy, and about 0.14 % of requests are late. A delay of 200 ms gives 0.43 % late requests, which misses the target. A delay of 60 ms doubles the load of 30 % of requests for a small gain. Reject the model if the slow requests of the two servers occur together, or if the measured tail is heavier than the lognormal tail.",
    "data": {
@@ -4027,7 +4325,7 @@
    "reason": "The clearance of a drug differs between patients by factors: body size, liver function and enzyme genes. Population pharmacokinetics models such factors as a lognormal law of the clearance. Then the concentration dose/(24·CL) is also lognormal, because 1/CL is lognormal.",
    "inputs": "A median clearance of 5 L/h and a standard deviation 0.35 of the log clearance are illustrative values. The window 2–6 mg/L is also illustrative. The dose is in mg/day, so the dose rate is dose/24 in mg/h. There is no data.",
    "dependence": "None: one patient, one clearance. The model ignores the change of the clearance with time and with other drugs.",
-   "method": "Independent draws of CL. The estimators are fractions of replicates. The alternatives use the same draws, so the paired differences are precise.",
+   "method": "Independent draws of CL. The estimators are fractions of replicates. The alternatives use the same draws, so the paired differences have a smaller variance.",
    "diagnostics": "Each probability reads only CL, so the page computes a quadrature reference. The exact value is a normal probability: for example, P(C > 6) = P(Z > (log(5) − log(dose/144))/0.35). It gives 0.047 for 400 mg/day. Other candidate models: a gamma law of the clearance, and a covariate model with the body weight.",
    "interpretation": "400 mg/day puts about 88 % of patients in the window, with about 4.7 % above the toxic limit. 500 mg/day puts about 15 % above the toxic limit, which breaks the constraint. 300 mg/day is safe, but about 26 % of patients are below the window. Reject the model if the lognormal law does not fit the skewness of measured concentrations, or if a covariate explains much of the clearance.",
    "data": {
@@ -4049,7 +4347,7 @@
    "reason": "Occupational exposures between shifts are close to lognormal, with a geometric standard deviation of about 2 to 3. Hygiene standards and their statistical tools use this model. The geometric mean is the natural statistic, because the log values are normal.",
    "inputs": "Exposures are fractions of the limit, so the limit is 1. The geometric standard deviation 2.5 is illustrative. A bad workplace has 10 % of shifts above the limit: its true geometric mean is 0.309. A good workplace has 1 % of shifts above the limit: its true geometric mean is 0.119. The rule must pass a bad workplace in at most 5 % of surveys. There is no data.",
    "dependence": "The 6 shifts are independent in this model. Shifts of the same worker or the same week are often correlated. Then the geometric mean of the sample varies more, and a bad workplace passes more often.",
-   "method": "Independent draws of 6 exposures for each workplace. The estimators are fractions of replicates. The alternatives use the same draws, so the paired differences are precise.",
+   "method": "Independent draws of 6 exposures for each workplace. The estimators are fractions of replicates. The alternatives use the same draws, so the paired differences have a smaller variance.",
    "diagnostics": "The page gives no reference, because the variables repeat. An exact check exists: the log of the sample geometric mean is N(log g, (log 2.5)²/6). It gives P(a bad workplace passes) = 0.0013, 0.027, 0.122 and 0.286 for c = 0.10, 0.15, 0.20 and 0.25. P(a good workplace passes) is 0.321, 0.732, 0.917 and 0.976. The estimate of P(one shift above the limit) in the bad workplace is about 0.10, as designed. Other candidate models: a gamma law of the exposure, and a random worker effect. Other candidate rule: an upper tolerance limit for the 95th percentile.",
    "interpretation": "c = 0.15 is the largest of the 4 constants that meets the 5 % limit. A bad workplace passes in about 2.6 % of surveys, and a good workplace passes in about 73 %. c = 0.20 passes a bad workplace in about 12 % of surveys. Six measurements cannot separate the two workplaces better. Reject the model if the log exposures are not near normal, or if the shifts of one worker show a strong correlation.",
    "data": {
@@ -5319,6 +5617,532 @@
     "size": 14
    },
    "dsl": "title: Values below the detection limit and the mean concentration\nproblem: A laboratory measures a trace metal in 20 groundwater samples. Values below the limit of detection (LOD) are reported only as \"below LOD\". The estimate replaces them by f·LOD. Choose the factor f with the least mean squared error of the mean concentration.\nparam mu = 0 \"lognormal μ of the concentration\"\nparam sigma = 1 \"lognormal σ of the concentration\"\nparam LOD = 1.5 {µg/L} \"limit of detection\"\nparam f = 0.5 \"substitution factor\"\nparam action = 2.5 {µg/L} \"action level for the mean concentration\"\nparam true_mean = exp(mu + sigma*sigma/2) {µg/L} \"true mean concentration, exact\"\nX ~ lognormal(mu = mu, sigma = sigma) repeat 20 {µg/L} \"concentration in each sample\"\ncensoring: left X by LOD\nmean estimate = mean(if(X_event, X_obs, f*LOD)) {µg/L} \"substitution estimate of the mean\"\nmean bias = mean(if(X_event, X_obs, f*LOD)) - true_mean {µg/L} \"bias of the estimate\"\nmean mse = pow(mean(if(X_event, X_obs, f*LOD)) - true_mean, 2) {(µg/L)²} \"squared error of the estimate\"\nprob flag = mean(if(X_event, X_obs, f*LOD)) > action \"the estimate passes the action level\"\nprob flag_full = mean(X) > action \"the mean of the full data passes the action level\"\nalt \"f = 0\": f = 0\nalt \"f = 0.5 (LOD/2)\": f = 0.5\nalt \"f = 0.71 (LOD/√2)\": f = 0.7071\nalt \"f = 1\": f = 1\nminimise mse\nfocus X_obs\n"
+  },
+  {
+   "id": "exp-mixture",
+   "law": "mixture",
+   "kind": "experiment",
+   "title": "A mixture of two Poisson laws",
+   "observe": "With the weights 0.7 and 0.3 and the means 2 and 9, E[X] = 4.1 but Var X = 14.39, more than 3 times the mean. One Poisson law with mean 4.1 has the variance 4.1. The PMF has two modes, near 2 and near 9. P(X ≥ 10) = 0.124, but a Poisson law with mean 4.1 gives about 0.0095. Equal weights give the mean 5.5 and the variance 17.75. A count with a variance above its mean can come from a mixture. But overdispersion alone does not prove a finite mixture: a gamma mixture (the negative binomial law) also has it.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A mixture of two Poisson laws\nproblem: Counts come from one of two groups, but the group is not observed. The law of a count is then a finite mixture of two Poisson laws. Compare its mean, its variance and its shape with one Poisson law.\nparam w1 = 0.7 \"weight of the first group\"\nparam l1 = 2 {events} \"mean count of the first group\"\nparam l2 = 9 {events} \"mean count of the second group\"\nX ~ mixture_poisson(w = [w1, 1 - w1], lambda = [l1, l2]) {events} \"a count from an unknown group\"\nmean m = X {events} \"E[X] = w1 λ1 + w2 λ2\"\nmean spread = (X - (w1*l1 + (1 - w1)*l2))^2 \"Var X\"\nprob big = X >= 10 \"P(X ≥ 10)\"\nalt \"Weights 0.7 and 0.3\": w1 = 0.7\nalt \"Weights 0.5 and 0.5\": w1 = 0.5\nfocus X\n"
+  },
+  {
+   "id": "mixture-call-centre",
+   "law": "mixture",
+   "kind": "workflow",
+   "domain": "Customer service",
+   "title": "How many agents for calls on normal and promotion days?",
+   "decision": "Decision: the number of agents for each 15-minute interval. Estimated quantity: P(more calls than the agents handle) and the expected cost of the agents and of the calls that wait.",
+   "reason": "On a normal day the calls of an interval are Poisson. On a promotion day the rate is higher. The plan does not know the day type in advance. Thus the law of the calls is a mixture of two Poisson laws, with the fraction of promotion days as a weight.",
+   "inputs": "80 % normal days with 22 calls and 20 % promotion days with 40 calls in 15 minutes are illustrative values. So are the costs: 30 for one agent for 15 minutes and 12 for each call that waits. One agent handles 3 calls in 15 minutes. There is no data.",
+   "dependence": "Calls in one interval are independent given the day type. Intervals of the same day share the day type, so the overload of consecutive intervals is dependent. This model looks at one interval only.",
+   "method": "Independent draws: the alias method picks the day type, then a Poisson count. The estimators are a fraction and a sample mean. The alternatives use the same draws, so the paired differences have a smaller variance.",
+   "diagnostics": "Exact references by enumeration of the mixture: P(overload) = 0.430, 0.220, 0.142 and 0.068 for 8, 10, 12 and 14 agents. Other candidate models: one Poisson law with the mean rate 25.6, and a negative binomial law fitted to the variance. The Poisson law gives P(N > 36) = 0.020 for 12 agents, so it hides the risk of the promotion days.",
+   "interpretation": "12 agents meet the overload limit of 15 % at the least cost, about 372 for each interval. 10 agents cost less but overload 22 % of the intervals, mostly on promotion days. Reject the model if the plan knows the day type in advance. Then use a Poisson law for each day type, which needs fewer agents on normal days.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many agents for calls on normal and promotion days?\nproblem: A call centre takes calls in 15-minute intervals. On most days the call rate is normal, but on some days a promotion runs, and the staff plan does not know which days. Each agent handles 3 calls in 15 minutes. Find the number of agents.\nparam pnormal = 0.8 \"fraction of normal days\"\nparam rnormal = 22 {calls} \"mean calls in 15 minutes on a normal day\"\nparam rpromo = 40 {calls} \"mean calls in 15 minutes on a promotion day\"\nparam agents = 10 {agents}\nparam per = 3 {calls} \"calls one agent handles in 15 minutes\"\nparam wage = 30 {currency units} \"cost of one agent for 15 minutes\"\nparam lost = 12 {currency units} \"cost of one call that waits too long\"\nN ~ mixture_poisson(w = [pnormal, 1 - pnormal], lambda = [rnormal, rpromo]) {calls} \"calls in one interval\"\nwaiting := max(N - per*agents, 0) {calls}\nprob overload = N > per*agents \"an interval with more calls than the agents handle\"\nmean cost = wage*agents + lost*waiting {currency units}\nalt \"8 agents\": agents = 8\nalt \"10 agents\": agents = 10\nalt \"12 agents\": agents = 12\nalt \"14 agents\": agents = 14\nminimise cost\nrequire overload <= 0.15\nfocus N\n"
+  },
+  {
+   "id": "mixture-bird-survey",
+   "law": "mixture",
+   "kind": "workflow",
+   "domain": "Wildlife monitoring",
+   "title": "Which alarm threshold for a decline in seabird nests?",
+   "decision": "Decision: the threshold t below which the total count of 40 plots triggers a decline alarm. Estimated quantity: P(false alarm), the probability of an alarm in a year with no decline.",
+   "reason": "A plot is either empty, because it has no suitable ground, or it holds a Poisson number of nests. The count of a plot then has a zero-inflated Poisson law. This is a mixture of a point mass at 0 (Poisson with λ = 0) and a Poisson law.",
+   "inputs": "35 % empty plots and a mean of 4.2 nests on an occupied plot are illustrative values. The survey has 40 plots. The alarm limit of 5 % false alarms is a policy choice. There is no data.",
+   "dependence": "The 40 plots are independent. Plots near each other can share a colony. Then the counts are positively dependent, and the total varies more than this model says.",
+   "method": "Independent draws of 40 counts, each by the alias method and a Poisson draw. The estimator is a fraction of replicates. The total of 40 plots has no enumeration here, so the page shows no reference value.",
+   "diagnostics": "The total has the mean 40 × 0.65 × 4.2 = 109.2 and the variance 40 × 6.74 = 270. The CLT then gives P(total < 80) ≈ 0.04, close to the simulated 0.033. Other candidate models: a negative binomial law for each plot, and a model with dependence between plots.",
+   "interpretation": "t = 80 keeps false alarms near 3 %. t = 90 gives about 11 % false alarms. A higher threshold finds a real decline sooner. Thus the choice is a balance between an early alarm and fewer false alarms. Reject the model if the fraction of empty plots changes between years. Then a drop of the total can come from the habitat and not from the birds.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 14
+   },
+   "dsl": "title: Which alarm threshold for a decline in seabird nests?\nproblem: A survey counts nests on 40 plots each year. A plot is empty, or it holds a Poisson number of nests. The office declares a decline when the total is below a threshold t. Find the highest threshold with few false alarms.\nparam pempty = 0.35 \"probability that a plot is empty\"\nparam lam = 4.2 {nests} \"mean nests on an occupied plot\"\nparam t = 90 {nests} \"alarm threshold for the total\"\nN ~ mixture_poisson(w = [pempty, 1 - pempty], lambda = [0, lam]) repeat 40 {nests} \"nests on each of 40 plots\"\ntotal := sum(N) {nests}\nprob false_alarm = total < t \"an alarm in a year with no decline\"\nmean empty = count(N, 0) {plots} \"plots with no nest\"\nalt \"t = 80\": t = 80\nalt \"t = 90\": t = 90\nalt \"t = 100\": t = 100\nmean threshold = t {nests} \"the alarm threshold\"\nmaximise threshold\nrequire false_alarm <= 0.05\nfocus total\n"
+  },
+  {
+   "id": "mixture-supplier-lots",
+   "law": "mixture",
+   "kind": "workflow",
+   "domain": "Incoming inspection",
+   "title": "Which acceptance number for parts from two suppliers?",
+   "decision": "Decision: the acceptance number c: a lot goes to full inspection when the sample of 50 parts has more than c defective parts. Estimated quantity: the fraction of lots sent to full inspection, and the expected defective parts that pass, for each lot.",
+   "reason": "Lots come from two suppliers with different defect rates, and the lot label does not name the supplier. Given the supplier, the defective parts in a sample of 50 are binomial. The count is then a mixture of two binomial laws.",
+   "inputs": "70 % of lots from supplier A with a defect rate of 1 % and 30 % from supplier B with 6 % are illustrative values. Each defective part of the sample stands for 20 parts of the lot. The inspection team can take at most 20 % of the lots. There is no data.",
+   "dependence": "Parts in one lot are independent given the supplier. A process fault that damages a run of parts breaks this assumption.",
+   "method": "Independent draws: the alias method picks the supplier, then a binomial count. The estimators are a fraction and a sample mean. Exact references come from the enumeration of the sample count.",
+   "diagnostics": "Exact references: the full-inspection fraction is 0.306, 0.185 and 0.107 for c = 1, 2 and 3. Other candidate models: one binomial law with the mean rate 2.5 %, and a beta-binomial law if the defect rate varies within each supplier. The binomial law gives too few lots with many defects.",
+   "interpretation": "c = 2 meets the 20 % limit of the team, with about 10 defective parts that pass for each lot. c = 1 passes fewer defects but needs the team for 31 % of the lots. Reject the model if the inspector can identify the supplier of a lot. Then use one plan for each supplier.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which acceptance number for parts from two suppliers?\nproblem: Lots of parts come from two suppliers with different defect rates, and the label of a lot does not name the supplier. The inspector tests 50 parts of each lot and sends the lot to full inspection when more than c parts are defective. Find c.\nparam wA = 0.7 \"fraction of lots from supplier A\"\nparam pA = 0.01 \"defect rate of supplier A\"\nparam pB = 0.06 \"defect rate of supplier B\"\nparam c = 2 {parts} \"acceptance number\"\nparam scale = 20 \"parts of the lot for each part of the sample\"\nD ~ mixture_binomial(w = [wA, 1 - wA], n = 50, p = [pA, pB]) {parts} \"defective parts in the sample\"\nprob full = D > c \"fraction of lots sent to full inspection\"\nmean escaped = scale*D*(D <= c) {parts} \"defective parts that pass, for each lot\"\nalt \"c = 1\": c = 1\nalt \"c = 2\": c = 2\nalt \"c = 3\": c = 3\nminimise escaped\nrequire full <= 0.2\nfocus D\n"
+  },
+  {
+   "id": "exp-compound",
+   "law": "compound",
+   "kind": "experiment",
+   "title": "Clusters of events: the compound Poisson law",
+   "observe": "3 clusters of mean 2 give E[S] = 6 and Var S = 3 × E[Y²] = 3 × 6 = 18. This is three times the variance of a Poisson law with mean 6. P(S = 0) = exp(−3(1 − e^(−2))) = 0.0747, against e^(−6) = 0.0025 for the Poisson law. 6 clusters of mean 1 give the same mean but the variance 12. The total varies more when events come in larger clusters. Panjer's recursion gives the law of S, exact up to round-off and a cut mass below 10^-12.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Clusters of events: the compound Poisson law\nproblem: Events come in clusters. The number of clusters is Poisson, and each cluster holds a Poisson number of events. The total has a compound Poisson law (Neyman type A). Compare it with a Poisson law of the same mean.\nparam clusters = 3 {clusters} \"mean number of clusters\"\nparam size = 2 {events} \"mean events in one cluster\"\nS ~ compound_poisson(freq = clusters, lambda = size) {events} \"total events\"\nmean m = S {events} \"E[S] = freq · λ\"\nmean spread = (S - clusters*size)^2 \"Var S = freq · E[Y²]\"\nprob none = S == 0 \"P(S = 0)\"\nalt \"3 clusters of mean 2\": clusters = 3; size = 2\nalt \"6 clusters of mean 1\": clusters = 6; size = 1\nfocus S\n"
+  },
+  {
+   "id": "compound-retail-demand",
+   "law": "compound",
+   "kind": "workflow",
+   "domain": "Retail inventory",
+   "title": "How much stock of a product for one day?",
+   "decision": "Decision: the stock of one product at the start of the day. Estimated quantity: P(a shortage) and the expected cost of the units left and of the units that customers cannot buy.",
+   "reason": "Customers come at random, so their number is Poisson. Each customer takes a random number of units, possibly none, and the numbers are independent. The total is a compound Poisson sum with geometric terms.",
+   "inputs": "12 customers a day and a geometric number of units with p = 0.4 (a mean of 1.5 units) are illustrative values. So are the costs: 1 for each unit left and 6 for each unit not sold. There is no data.",
+   "dependence": "Customers act independently. A promotion or a group of customers that buy together breaks this assumption.",
+   "method": "Independent draws: a Poisson number of customers, then their geometric numbers of units. The estimators are a fraction and a sample mean. Exact references come from Panjer's recursion.",
+   "diagnostics": "Exact references: P(D > 30) = 0.083 and P(D > 35) = 0.034. E[D] = 18 and Var D = 12 × E[Y²] = 12 × 6 = 72, much above the mean. Other candidate models: a Poisson law of units with mean 18, and a negative binomial law of customers on busy days. The Poisson law gives P(D > 30) = 0.003, so it gives too little stock.",
+   "interpretation": "35 units meet the 5 % shortage limit with the least cost, about 18.3 a day. 30 units cost less but give shortages on 8 % of days. Reject the model if the units of one customer depend on the stock on the shelf.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How much stock of a product for one day?\nproblem: Customers come to a shop at random, and each customer takes a random number of units of one product, possibly none. Find the stock at the start of the day.\nparam visits = 12 {customers} \"mean customers in one day\"\nparam pbuy = 0.4 \"success probability of the geometric number of units\"\nparam stock = 30 {units}\nparam hold = 1 {currency units} \"cost of one unit left at the end of the day\"\nparam lostsale = 6 {currency units} \"cost of one unit that a customer cannot buy\"\nD ~ compound_geometric(freq = visits, p = pbuy) {units} \"units that customers ask for in one day\"\nprob stockout = D > stock \"a day with a shortage\"\nmean cost = hold*max(stock - D, 0) + lostsale*max(D - stock, 0) {currency units}\nalt \"25 units\": stock = 25\nalt \"30 units\": stock = 30\nalt \"35 units\": stock = 35\nalt \"40 units\": stock = 40\nminimise cost\nrequire stockout <= 0.05\nfocus D\n"
+  },
+  {
+   "id": "compound-blood-bank",
+   "law": "compound",
+   "kind": "workflow",
+   "domain": "Hospital supply",
+   "title": "How many units of blood to keep for one day?",
+   "decision": "Decision: the stock of red-cell units at the start of the day. Estimated quantity: P(a shortage) and the expected units not used in the day.",
+   "reason": "Patients who need a transfusion come at random, and each needs 1 to 5 units with a fixed law. The units of one day are a compound Poisson sum with categorical terms.",
+   "inputs": "9 patients a day and the unit probabilities 0.35, 0.3, 0.2, 0.1 and 0.05 for 1 to 5 units are illustrative values. The shortage limit of 2 % of days is a policy choice. There is no data.",
+   "dependence": "Patients are independent. A major accident brings many patients together and breaks this assumption.",
+   "method": "Independent draws: a Poisson number of patients, then their units by the alias method. The estimators are a fraction and a sample mean. Exact references come from Panjer's recursion.",
+   "diagnostics": "Exact references: P(U > 35) = 0.028 and P(U > 40) = 0.0076. E[U] = 9 × 2.2 = 19.8. Other candidate models: a negative binomial number of patients for days with surgery lists, and a mixture for days with a major accident.",
+   "interpretation": "40 units meet the 2 % limit with about 20 units not used in the day. 35 units give a shortage on about 2.8 % of days. Reject the model if units expire within the period of the plan. Then the unused units are also a cost.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many units of blood to keep for one day?\nproblem: Patients who need a transfusion come at random, and each patient needs 1 to 5 units of red cells. Find the stock of units at the start of the day that makes a shortage rare.\nparam patients = 9 {patients} \"mean patients in one day\"\nparam stock = 35 {units}\nU ~ compound_categorical(freq = patients, p = [0.35, 0.3, 0.2, 0.1, 0.05]) {units} \"units needed in one day\"\nprob shortage = U > stock \"a day with too few units\"\nmean spare = max(stock - U, 0) {units} \"units not used in the day\"\nalt \"30 units\": stock = 30\nalt \"35 units\": stock = 35\nalt \"40 units\": stock = 40\nalt \"45 units\": stock = 45\nminimise spare\nrequire shortage <= 0.02\nfocus U\n"
+  },
+  {
+   "id": "compound-data-transfer",
+   "law": "compound",
+   "kind": "workflow",
+   "domain": "Network capacity",
+   "title": "Which link capacity for bursts of file transfers?",
+   "decision": "Decision: the capacity of a link for one minute of file transfers. Estimated quantity: P(the data of one minute pass the capacity), and the mean data in one minute.",
+   "reason": "Transfers start at random times, so their number is Poisson. Transfer sizes have a heavy tail: a few transfers are very large. A zeta law of the size in MB with s = 2.5 has a finite mean and an infinite variance. Thus the total is a compound Poisson sum with a heavy tail.",
+   "inputs": "50 transfers a minute and the zeta exponent 2.5 are illustrative values. The limit of 1 % of minutes above the capacity is a policy choice. There is no data.",
+   "dependence": "Transfers are independent. A backup that starts many transfers at once breaks this assumption.",
+   "method": "Independent draws: a Poisson number of transfers, then their sizes by the zeta sampler. The estimators are a fraction and a sample mean. The references come from Panjer's recursion. The tail beyond 4,096 MB is one mass at the end of the table.",
+   "diagnostics": "Panjer references: P(V > 200) = 0.023, P(V > 300) = 0.0085 and P(V > 500) = 0.0031. E[V] = 50 ζ(1.5)/ζ(2.5) = 97.4 MB, but Var V is infinite, so the mean has no CLT interval. Far in the tail, P(V > x) ≈ 50 P(Y > x): one large transfer makes a large minute. Other candidate models: a lognormal size law, with all moments, and a Pareto size law with another tail index.",
+   "interpretation": "300 MB is the smallest capacity of the four that meets the 1 % limit. A capacity near twice the mean is not enough here, because the heavy tail and not the mean sets the risk. Reject the model if the measured tail of the sizes is lighter, or if transfers start together.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which link capacity for bursts of file transfers?\nproblem: File transfers start at random times. The size of one transfer has a heavy tail. The total data in one minute is a compound Poisson sum. Find the link capacity that the total rarely passes.\nparam starts = 50 {transfers} \"mean transfers in one minute\"\nparam s = 2.5 \"exponent of the zeta law of a transfer size\"\nparam cap = 200 {MB} \"link capacity for one minute\"\nV ~ compound_zipf(freq = starts, s = s, N = inf) {MB} \"data in one minute\"\nprob over = V > cap \"a minute above the capacity\"\nmean volume = V {MB}\nalt \"150 MB\": cap = 150\nalt \"200 MB\": cap = 200\nalt \"300 MB\": cap = 300\nalt \"500 MB\": cap = 500\nmean link = cap {MB} \"the link capacity\"\nminimise link\nrequire over <= 0.01\nfocus V\n"
+  },
+  {
+   "id": "exp-empirical",
+   "law": "empirical",
+   "kind": "experiment",
+   "title": "An empirical law gives no value above its largest observation",
+   "observe": "The 20 values have the mean 1.6805, so E[X] = 1.6805 exactly for the empirical law. The exponential law that made the data has the mean 2. P(X > 4.12) = 0: the empirical law never gives a value above the largest observation, but the exponential law gives P(X > 4.12) = 0.127. P(X > 3) = 0.15 for the empirical law and 0.223 for the exponential law. Draws with replacement from the data say nothing about the tail beyond the data.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: An empirical law gives no value above its largest observation\nproblem: Resampling from 20 observed values gives the empirical law. Its mean is the sample mean, and its tail ends at the largest value. Compare it with the exponential law that made the data.\nX ~ empirical(x = [2.96, 0.15, 0.98, 2.12, 1.7, 4.12, 3.71, 0.72, 1.29, 3.34, 1.34, 0.16, 2.51, 1.43, 1.02, 2.41, 0.31, 0.64, 0.69, 2.01], w = 1) \"one of the 20 values, each with probability 1/20\"\nmean m = X \"the sample mean\"\nprob above = X > 4.12 \"P(X > the largest observation)\"\nprob big = X > 3 \"P(X > 3)\"\nfocus X\n"
+  },
+  {
+   "id": "empirical-radioactive-counts",
+   "law": "empirical",
+   "kind": "workflow",
+   "domain": "Nuclear physics",
+   "title": "Which buffer for the counts of a detector?",
+   "decision": "Decision: the number of places in the buffer of a counter for each interval of 7.5 s. Estimated quantity: P(the count of an interval is larger than the buffer), and the expected particles lost.",
+   "reason": "The counts of Rutherford and Geiger give the law of a count directly, with no Poisson assumption. The empirical law puts on each count its observed fraction of the 2,608 intervals.",
+   "inputs": "The 2,608 counts of Rutherford and Geiger (1910), the real dataset of this page. The overflow limit of 1 % of intervals is a design choice.",
+   "dependence": "The intervals are independent. The empirical law uses the counts as a sample of one law. Thus it assumes that the source and the detector did not change during the experiment.",
+   "method": "Independent draws from the empirical law by the alias method. The estimators are a fraction and a sample mean. Exact references come from the enumeration of the 15 values.",
+   "diagnostics": "Exact references: P(N > 8) = 0.0165, P(N > 9) = 0.0061 and P(N > 10) = 0.0023. The data panel tests the Poisson law against the same counts. Other candidate models: the Poisson law with the mean 3.87, which gives P(N > 9) = 0.0066.",
+   "interpretation": "9 places meet the 1 % limit. The empirical law and the Poisson law agree closely here. The empirical law cannot give a count above 14, the largest count of the data. Thus it is not valid for a buffer that must take rarer counts. Reject the empirical law for a design limit far in the tail, and use a model with a tail there.",
+   "data": {
+    "kind": "real",
+    "dataset": "rutherford-geiger"
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which buffer for the counts of a detector?\nproblem: A counter stores the alpha particles of each interval of 7.5 s in a buffer of b places. Use the counts of Rutherford and Geiger directly as the law of a count, with no Poisson assumption, and find the smallest buffer that overflows in at most 1 % of the intervals.\nparam b = 10 {particles} \"places in the buffer\"\nN ~ empirical(x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], w = [57, 203, 383, 525, 532, 408, 273, 139, 45, 27, 10, 4, 0, 1, 1]) {particles} \"particles in one interval\"\nprob overflow = N > b \"an interval with more particles than places\"\nmean lost = max(N - b, 0) {particles}\nalt \"8 places\": b = 8\nalt \"9 places\": b = 9\nalt \"10 places\": b = 10\nmean places = b {particles} \"the buffer size\"\nminimise places\nrequire overflow <= 0.01\nfocus N\n"
+  },
+  {
+   "id": "empirical-dice-game",
+   "law": "empirical",
+   "kind": "workflow",
+   "domain": "Games of chance",
+   "title": "What stake for a dice bet with real dice?",
+   "decision": "Decision: the stake of a bet that pays 10 when 12 dice show at least 7 fives or sixes. Estimated quantity: the mean profit of the house for each bet, and P(a win).",
+   "reason": "Real dice are not exactly fair. Weldon's 26,306 throws of 12 dice give the law of the number of fives and sixes directly. The empirical law of these throws needs no assumption of fair dice.",
+   "inputs": "Weldon's throws of 12 dice, the real dataset of this page. The prize of 10 and the margin of 0.05 for each bet are illustrative values.",
+   "dependence": "Throws are independent. The empirical law assumes that new dice behave like Weldon's dice.",
+   "method": "Independent draws from the empirical law by the alias method. The estimators are a fraction and a sample mean. Exact references come from the enumeration of the 13 values.",
+   "diagnostics": "Exact reference: P(K ≥ 7) = 0.0706 with Weldon's dice, against 0.0664 for fair dice (Binomial(12, 1/3)). The data panel tests the fair-dice binomial law against the throws. Other candidate models: Binomial(12, 0.3377), with the success probability of the data, which gives P(K ≥ 7) = 0.0709.",
+   "interpretation": "A stake of 0.8 gives the house a mean profit of about 0.094 for each bet. A stake of 0.7 is below the expected payout of 0.706 with these dice, so the house loses. With fair dice the stake 0.7 would give a profit of 0.036, so the bias of real dice changes the decision. Reject the empirical law if the dice in use differ from Weldon's dice.",
+   "data": {
+    "kind": "real",
+    "dataset": "weldon"
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: What stake for a dice bet with real dice?\nproblem: A game pays 10 when 12 dice show at least 7 fives or sixes. Weldon's throws give the law of the number of fives and sixes with real dice, which are not exactly fair. Find the smallest stake that gives the house a mean profit of at least 0.05 for each bet.\nparam stake = 0.8 {currency units}\nparam prize = 10 {currency units}\nK ~ empirical(x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], w = [185, 1149, 3265, 5475, 6114, 5194, 3067, 1331, 403, 105, 14, 4, 0]) {dice} \"fives and sixes among 12 dice\"\nprob win = K >= 7 \"the player wins\"\nmean profit = stake - prize*(K >= 7) {currency units} \"profit of the house for one bet\"\nalt \"Stake 0.7\": stake = 0.7\nalt \"Stake 0.8\": stake = 0.8\nalt \"Stake 0.9\": stake = 0.9\nmean price = stake {currency units} \"the stake\"\nminimise price\nrequire profit >= 0.05\nfocus K\n"
+  },
+  {
+   "id": "empirical-party-sizes",
+   "law": "empirical",
+   "kind": "workflow",
+   "domain": "Restaurant operations",
+   "title": "How many meals to prepare for 60 bookings?",
+   "decision": "Decision: the number of meals to prepare for an evening with 60 bookings. Estimated quantity: P(more guests than meals), and the expected meals not served.",
+   "reason": "Party sizes have no standard law: groups of 2 and 4 are common, and groups of 8 are rare. The sizes of 400 past parties give the empirical law of one party with no parametric form.",
+   "inputs": "400 past party sizes, which are synthetic, and 60 bookings for the evening. The shortage limit of 5 % of evenings is a policy choice.",
+   "dependence": "Parties are independent. Bookings of a large event, which come together, break this assumption.",
+   "method": "Independent draws of 60 party sizes by the alias method. The estimators are a fraction and a sample mean. The total of 60 parties has no enumeration here, so the page shows no reference value.",
+   "diagnostics": "The empirical law has the mean 3.14 and the variance 2.32. The total of 60 parties then has the mean 188.6 and the standard deviation 11.8. The CLT gives P(T > 210) ≈ 0.035, close to the simulated value. Other candidate models: a shifted Poisson law of the party size, which gives too few parties of 2 and 4.",
+   "interpretation": "210 meals meet the 5 % limit, with about 22 meals not served. Reject the model if the bookings of the evening differ from the past parties, such as a holiday with more families.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: 400 draws of a categorical law of the sizes 1, 2, 3, 4, 5, 6 and 8. Their probabilities are 0.08, 0.42, 0.14, 0.22, 0.06, 0.05 and 0.03. The page's generator drew them with the seed 7 and the stream name \"party\". These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 14
+   },
+   "dsl": "title: How many meals to prepare for 60 bookings?\nproblem: A restaurant has 60 bookings for one evening. The sizes of 400 past parties give an empirical law of the size of one party. Find the number of meals to prepare.\nparam prep = 210 {meals}\nX ~ empirical(x = [1, 2, 3, 4, 5, 6, 8], w = [24, 163, 56, 101, 27, 16, 13]) repeat 60 {guests} \"size of each of 60 parties\"\nT := sum(X) {guests} \"guests in the evening\"\nprob short = T > prep \"an evening with too few meals\"\nmean waste = max(prep - T, 0) {meals} \"meals not served\"\nalt \"200 meals\": prep = 200\nalt \"210 meals\": prep = 210\nalt \"220 meals\": prep = 220\nalt \"230 meals\": prep = 230\nminimise waste\nrequire short <= 0.05\nfocus T\n"
+  },
+  {
+   "id": "exp-kde",
+   "law": "kde",
+   "kind": "experiment",
+   "title": "The bandwidth of a kernel density model",
+   "observe": "The 30 values come from two groups near 2 and 6. With h = 0.2 the density follows each value and shows many small peaks, and P(3.5 < X < 4.5) = 0.045. With h = 0.6 the two groups show as two modes. With h = 1.5 the gap between them fills: P(3.5 < X < 4.5) = 0.127. The variance is s² + h²: 4.00, 4.32 and 6.21 for the three bandwidths. Silverman's rule gives h ≈ 0.91 here: it assumes a normal shape, so it smooths two groups too much.",
+   "settings": {
+    "size": 16,
+    "params": "h=0.6"
+   },
+   "dsl": "title: The bandwidth of a kernel density model\nproblem: A kernel density model puts a normal law of standard deviation h on each observation. Compare a small, a medium and a large bandwidth h for 30 values from two groups.\nparam h = 0.6 \"bandwidth\"\nX ~ kde(x = [1.81, 1.07, 2.57, 1.82, 4.23, 2.8, 4.9, 5.25, 2.95, 6.37, 1.6, 1.9, 5.54, 4.78, 2.3, 1.86, 6.41, 6.35, 6.69, 1.36, 3.42, 5.61, 5.95, 5.55, 5.52, 1.96, 1.26, 6.25, 6.94, 6.29], w = 1, h = h) \"a value of the kernel density model\"\nmean v = (X - 4.043667)^2 \"Var X = s² + h², with the sample mean 4.043667\"\nprob gap = X > 3.5 and X < 4.5 \"P(3.5 < X < 4.5), between the groups\"\nalt \"h = 0.2\": h = 0.2\nalt \"h = 0.6\": h = 0.6\nalt \"h = 1.5\": h = 1.5\nfocus X\n"
+  },
+  {
+   "id": "kde-battery-sizing",
+   "law": "kde",
+   "kind": "workflow",
+   "domain": "Household energy",
+   "title": "Which battery for the daily electricity use of a house?",
+   "decision": "Decision: the capacity of a home battery that stores solar energy for the evening. Estimated quantity: P(an evening needs energy from the grid), and the expected daily cost of the battery and the grid energy.",
+   "reason": "The evening use of one house has no standard law: it has two levels, for days at home and days away. A kernel density model of 60 measured evenings follows that shape with no parametric form.",
+   "inputs": "60 evening uses, which are synthetic. A battery costs 450 for each kWh of capacity, for a life of 3,650 days, and grid energy costs 0.3 for each kWh. Both are illustrative values. The limit of 10 % of evenings with grid energy is a policy choice. The bandwidth is 0.9 kWh.",
+   "dependence": "Evenings are independent and have the same law. Winter evenings use more energy, so a model for each season is better.",
+   "method": "Independent draws from the kernel density model: a measured value, then a normal kernel. The estimators are a fraction and a sample mean. The references come from the CDF of the kernel density model and from adaptive quadrature.",
+   "diagnostics": "References: P(U > 10) = 0.135 and P(U > 12) = 0.0185. The kernel puts a mass of about 2.5 × 10^-5 below 0 kWh, which a use cannot have. A truncated kernel density model removes that mass. Other candidate models: a mixture of two gamma laws, and the empirical law, which never gives a use above 12 kWh.",
+   "interpretation": "12 kWh is the smallest battery of the three that meets the 10 % limit, at about 1.48 a day. 10 kWh costs less but needs the grid on 13.5 % of evenings. Reject the model if the use changes with the season or with a new appliance.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: 60 evening uses of the law max(0.5, m + 1.4 Z) kWh, rounded to 0.1 kWh. Here m = 5.5 with probability 0.6 and m = 9.5 otherwise, and Z is standard normal. The page's generator drew them with the seed 7 and the stream name \"kwh\". These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which battery for the daily electricity use of a house?\nproblem: A house stores solar energy in a battery for the evening. Sixty days of evening use give a kernel density model of the use of one evening. Find the battery capacity.\nparam cap = 10 {kWh} \"battery capacity\"\nparam price = 450 {currency units} \"cost of 1 kWh of capacity for the planning period\"\nparam grid = 0.3 {currency units} \"cost of 1 kWh from the grid\"\nparam days = 3650 {days} \"days in the planning period\"\nU ~ kde(x = [10, 10.2, 6.3, 9.4, 3.7, 3.7, 10.1, 8.2, 6.2, 6.6, 6.2, 6.9, 6.3, 5.4, 9.3, 4.9, 6.1, 9.1, 11.1, 7.5, 5.1, 8.7, 5, 5.6, 7.3, 4.7, 6.4, 10.2, 8, 5.5, 3.6, 4.6, 9.1, 5.8, 12, 6.7, 9.1, 5.1, 6.5, 6.1, 2.7, 7.3, 9.8, 4.6, 11.6, 5.9, 4, 7.8, 3.5, 9.9, 6.9, 4.8, 8, 5.9, 8.1, 10.2, 9.5, 8.9, 4.8, 8.9], w = 1, h = 0.9) {kWh} \"use in one evening\"\nprob short = U > cap \"an evening that needs the grid\"\nmean cost = price*cap/days + grid*max(U - cap, 0) {currency units per day}\nalt \"8 kWh\": cap = 8\nalt \"10 kWh\": cap = 10\nalt \"12 kWh\": cap = 12\nminimise cost\nrequire short <= 0.1\nfocus U\n"
+  },
+  {
+   "id": "kde-bus-timetable",
+   "law": "kde",
+   "kind": "workflow",
+   "domain": "Public transport",
+   "title": "Which timetable time for a bus journey?",
+   "decision": "Decision: the scheduled journey time of a bus route. Estimated quantity: P(a late arrival) and the expected delay.",
+   "reason": "Journey times have a long right tail: traffic makes some journeys much longer. A kernel density model of 50 measured journeys keeps that shape with no parametric form.",
+   "inputs": "50 journey times, which are synthetic, and the bandwidth 1.2 min. The limit of 5 % late arrivals is a policy choice.",
+   "dependence": "Journeys are independent. Journeys at the same hour share the traffic, so a model for each hour is better.",
+   "method": "Independent draws from the kernel density model. The estimators are a fraction and a sample mean. The references come from the CDF of the kernel density model and from adaptive quadrature.",
+   "diagnostics": "References: P(J > 38) = 0.090 and P(J > 41) = 0.0138. The longest measured journey is 41.1 min, so the 41-minute schedule rests on the tail of the kernel and not on data. Other candidate models: a lognormal law fitted to the times, and a gamma law. Each gives another tail beyond the data.",
+   "interpretation": "41 minutes meets the 5 % limit with a mean delay of about 0.01 min. 38 minutes gives 9 % late arrivals. Reject the model if the journeys of the new timetable differ from the measured journeys. Also reject it if the tail beyond the data matters more than this limit.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: 50 journey times of the law 33 exp(0.12 Z) min, Z standard normal, rounded to 0.1 min. The page's generator drew them with the seed 7 and the stream name \"bus\". These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which timetable time for a bus journey?\nproblem: A bus company sets the scheduled journey time of a route. Fifty measured journeys give a kernel density model of the journey time. Find the shortest scheduled time with few late arrivals.\nparam T = 38 {min} \"scheduled journey time\"\nJ ~ kde(x = [32.7, 31.2, 36.7, 35.4, 27.7, 35.3, 31.9, 32.4, 26.5, 32.9, 30.9, 30, 34.1, 27.1, 28.4, 34.6, 36.1, 41.1, 31.1, 30.8, 35.2, 32.8, 38.9, 30.7, 30.3, 35.4, 37.1, 35.3, 27.4, 30.6, 29.8, 32.4, 33.3, 28.8, 31.1, 31.5, 30.1, 35.9, 33.8, 33.1, 31.4, 39.3, 38.7, 38.3, 28.2, 30.1, 30.7, 32.8, 31.2, 30.6], w = 1, h = 1.2) {min} \"journey time\"\nprob late = J > T \"a late arrival\"\nmean delay = max(J - T, 0) {min}\nalt \"35 min\": T = 35\nalt \"38 min\": T = 38\nalt \"41 min\": T = 41\nmean scheduled = T {min} \"the scheduled time\"\nminimise scheduled\nrequire late <= 0.05\nfocus J\n"
+  },
+  {
+   "id": "kde-shaft-tolerance",
+   "law": "kde",
+   "kind": "workflow",
+   "domain": "Machining",
+   "title": "Which offset for a machine that turns shafts?",
+   "decision": "Decision: the offset of the tool of a lathe. Estimated quantity: P(a shaft is out of the tolerance 20 ± 0.01 mm).",
+   "reason": "The diameters come from two spindles with different centres, so their law is wide and flat at the top. A kernel density model of 60 measured shafts follows that shape. An offset moves every diameter by the same amount.",
+   "inputs": "60 diameters, which are synthetic, and the bandwidth 0.0015 mm. The offsets of ±0.002 mm are the steps of the tool adjustment.",
+   "dependence": "Shafts are independent. Tool wear moves the diameters with time, so the model holds for a short run only.",
+   "method": "Independent draws from the kernel density model of the moved data. The estimator is a fraction. The references come from adaptive quadrature over the quantile function.",
+   "diagnostics": "Quadrature references: P(out) = 0.050, 0.049 and 0.082 for the offsets −0.002, 0 and 0.002 mm. Other candidate models: a mixture of two normal laws, one for each spindle, and one normal law, which hides the two modes.",
+   "interpretation": "The offset 0 gives the fewest shafts out of tolerance, about 4.9 %, but −0.002 mm is almost the same. An offset of the tool cannot remove a spread from two spindles. Only a separate adjustment of each spindle can do that. Reject the model if the measurement error is not small against 0.0015 mm.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: 60 diameters of the law c + 0.004 Z mm, rounded to 0.001 mm. Here c = 20.004 or 19.996 with equal probability, and Z is standard normal. The page's generator drew them with the seed 7 and the stream name \"shaft\". These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Which offset for a machine that turns shafts?\nproblem: A lathe turns shafts with a diameter tolerance of 20 ± 0.01 mm. Sixty measured shafts give a kernel density model. An offset moves every diameter by the same amount. Find the offset with the fewest shafts out of tolerance.\nparam delta = 0 {mm} \"offset of the tool\"\nparam lo = 19.99 {mm}\nparam hi = 20.01 {mm}\nD ~ kde(x = [19.994, 20.002, 19.996, 19.996, 20, 19.996, 19.997, 20.008, 20.001, 20.012, 19.995, 20.002, 20.002, 20.002, 19.996, 20, 20.002, 20, 20, 20.006, 20.007, 20.007, 20.001, 20.005, 20.002, 20.005, 19.995, 20.002, 20, 19.996, 20.005, 20.001, 20, 19.999, 19.989, 19.997, 19.997, 20.005, 20.006, 19.996, 19.997, 20.007, 19.991, 20.006, 20.009, 19.993, 20.006, 20.005, 20, 19.997, 20.004, 19.998, 20.001, 19.993, 20.002, 20.002, 20.01, 19.997, 20.005, 20.007] + delta, w = 1, h = 0.0015) {mm} \"diameter of a shaft\"\nprob out = D < lo or D > hi \"a shaft out of tolerance\"\nmean m = D {mm}\nalt \"Offset −0.002 mm\": delta = -0.002\nalt \"No offset\": delta = 0\nalt \"Offset 0.002 mm\": delta = 0.002\nminimise out\nfocus D\n"
+  },
+  {
+   "id": "exp-truncated",
+   "law": "truncated",
+   "kind": "experiment",
+   "title": "Truncation at 0 lifts the mean",
+   "observe": "The zero-truncated Poisson law with λ = 2 has E[X] = 2/(1 − e^(−2)) = 2.313 and P(X = 1) = 0.313. For λ = 0.5 the mean rises from 0.5 to 1.271, and 77 % of the records show exactly 1 event. Rejection sampling draws a Poisson count and keeps it when it is at least 1. The acceptance probability is P(X ≥ 1) = 0.865 for λ = 2 and 0.393 for λ = 0.5. A study that sees only cases with at least one event overestimates the rate when it uses the untruncated mean.",
+   "settings": {
+    "size": 16,
+    "method": "rejection"
+   },
+   "dsl": "title: Truncation at 0 lifts the mean\nproblem: Records keep only the cases with at least one event. The count then has the zero-truncated Poisson law. Compare its mean with the Poisson mean, and draw it by rejection: draw from the Poisson law and keep the draws that are at least 1.\nparam lam = 2 {events} \"mean of the Poisson law before truncation\"\nX ~ truncated_poisson(lambda = lam, lower = 1, upper = inf) {events} \"a count of at least 1\"\nmean m = X {events} \"E[X] = λ/(1 − e^(−λ))\"\nprob one = X == 1 \"P(X = 1)\"\nalt \"λ = 2\": lam = 2\nalt \"λ = 0.5\": lam = 0.5\nfocus X\n"
+  },
+  {
+   "id": "truncated-outbreak-clusters",
+   "law": "truncated",
+   "kind": "workflow",
+   "domain": "Public health",
+   "title": "How many cases can one tracing team take?",
+   "decision": "Decision: the number of cases one contact-tracing team can take. Estimated quantity: P(a reported cluster is larger than the team capacity), and the expected cases for a second team.",
+   "reason": "Cluster sizes of an infection vary much: most clusters are small and a few are large. A negative binomial law with a small shape parameter r (a large overdispersion) is a standard model of this. The office hears about a cluster only when it has at least 2 cases. Thus the reported sizes have the negative binomial law truncated below at 2.",
+   "inputs": "r = 0.5 and p = 0.2 (a mean of 2 cases before truncation) are illustrative values. The limit of 10 % of clusters above the capacity is a policy choice. There is no data.",
+   "dependence": "Clusters are independent. A super-spreading event links clusters. This model has no such links.",
+   "method": "Independent draws of the negative binomial law kept when they are at least 2. The estimators are fractions and sample means. Exact references come from the enumeration of the truncated law.",
+   "diagnostics": "Exact references: the mean reported size is 4.87, P(C > 10) = 0.076 and P(C > 15) = 0.021. Other candidate models: the zero-truncated negative binomial law if the office also hears about single cases. A Poisson law gives too few large clusters.",
+   "interpretation": "A capacity of 10 cases meets the 10 % limit. About 7.6 % of reported clusters need a second team. Reject the model if the rule for reports changes, or if the reported sizes show more large clusters than the truncated negative binomial law gives.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many cases can one tracing team take?\nproblem: A health office hears about a cluster of infections only when it has at least 2 cases. Cluster sizes vary much. One team traces the contacts of one cluster. Find the team capacity that is rarely too small.\nparam r = 0.5 \"dispersion of the cluster sizes\"\nparam p = 0.2 \"success probability of the negative binomial law\"\nparam cap = 15 {cases} \"cases one team can trace\"\nC ~ truncated_negbin(r = r, p = p, lower = 2, upper = inf) {cases} \"size of a reported cluster\"\nprob overload = C > cap \"a cluster larger than the team capacity\"\nmean size = C {cases}\nmean extra = max(C - cap, 0) {cases} \"cases for a second team\"\nalt \"10 cases\": cap = 10\nalt \"15 cases\": cap = 15\nalt \"20 cases\": cap = 20\nalt \"30 cases\": cap = 30\nmean team = cap {cases} \"the team capacity\"\nminimise team\nrequire overload <= 0.1\nfocus C\n"
+  },
+  {
+   "id": "truncated-burn-in",
+   "law": "truncated",
+   "kind": "workflow",
+   "domain": "Electronics reliability",
+   "title": "How long a burn-in for a batch with weak units?",
+   "decision": "Decision: the length b of the burn-in run before the factory ships a module. Estimated quantity: P(a shipped module fails within the warranty of 1,000 cycles), and the expected cost of the burn-in and the claims.",
+   "reason": "A batch holds a few weak units with a high failure rate and many strong units with a low one. The cycles to failure are a mixture of two geometric laws. A shipped module has survived b cycles, so its life has that mixture truncated below at b.",
+   "inputs": "10 % weak units with a failure probability of 0.02 in each cycle and strong units with 0.0005 are illustrative values. So are the costs: 0.02 for each burn-in cycle and 40 for each warranty claim. There is no data.",
+   "dependence": "Units fail independently. This assumption is false if the burn-in damages strong units.",
+   "method": "Independent draws of the mixture, kept when they are at least b. The estimators are a fraction and a sample mean. Exact references come from the enumeration of the truncated mixture.",
+   "diagnostics": "Exact references: P(claim) = 0.454 with no burn-in, 0.418 after 50 cycles and 0.397 after 150 cycles. A geometric law alone has no memory, so with one component a burn-in changes nothing. The mixture makes the burn-in useful. Other candidate models: a Weibull life with a shape below 1, and a three-component mixture with a wear-out phase.",
+   "interpretation": "50 cycles give the least cost, about 17.7 for each module: they remove most weak units. Longer burn-in costs more than the claims it saves, because the strong units fail at a constant rate. Reject the model if units fail more often as they age, because then a burn-in uses up life.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How long a burn-in for a batch with weak units?\nproblem: A batch of power modules holds a few weak units that fail early. The factory runs every module for b cycles before shipping and scraps the modules that fail. A shipped module has survived b cycles. Find b.\nparam weak = 0.1 \"fraction of weak units\"\nparam pweak = 0.02 \"failure probability of a weak unit in each cycle\"\nparam pstrong = 0.0005 \"failure probability of a strong unit in each cycle\"\nparam b = 50 {cycles} \"burn-in length\"\nparam W = 1000 {cycles} \"warranty after shipping\"\nparam cburn = 0.02 {currency units} \"cost of one burn-in cycle\"\nparam claim = 40 {currency units} \"cost of one warranty claim\"\nL ~ truncated_mixture_geometric(w = [weak, 1 - weak], p = [pweak, pstrong], lower = b, upper = inf) {cycles} \"cycles to failure of a shipped module\"\nprob fails = L < b + W \"a warranty claim\"\nmean cost = cburn*b + claim*(L < b + W) {currency units}\nalt \"No burn-in\": b = 0\nalt \"50 cycles\": b = 50\nalt \"150 cycles\": b = 150\nalt \"300 cycles\": b = 300\nminimise cost\nfocus L\n"
+  },
+  {
+   "id": "truncated-fish-length",
+   "law": "truncated",
+   "kind": "workflow",
+   "domain": "Fisheries management",
+   "title": "Which minimum legal length for a fish?",
+   "decision": "Decision: the minimum legal length of a fish that an angler may keep. Estimated quantity: the mean weight of a kept fish, and the fraction of kept fish of 35 cm or more.",
+   "reason": "Anglers keep only fish at or above the minimum length, so the kept lengths have the length law truncated below at that minimum. A kernel density model of measured lengths gives the length law with no parametric form.",
+   "inputs": "The 80 lengths are synthetic. The weight is 0.0125 L³ grams for a length L in cm. The market grade is a mean weight of 450 g. Both values are illustrative. The kernel bandwidth is 1.5 cm.",
+   "dependence": "Fish are independent. A length law that changes with the season or the place breaks this assumption.",
+   "method": "Independent draws from the kernel density model. The page keeps a draw when it is at least the minimum length. The estimators are a sample mean and a fraction. The references come from adaptive quadrature over the numerical quantile function.",
+   "diagnostics": "Quadrature references: the mean kept weight is 442 g, 500 g and 572 g for the minimum lengths 28, 30 and 32 cm. Other candidate models: a lognormal length law fitted to the data, and a gamma law. Each gives a different upper tail, and so a different mean weight.",
+   "interpretation": "30 cm is the smallest minimum length that meets the grade, with a mean kept weight of about 500 g. 28 cm keeps more fish but misses the grade. Reject the model if the data come from a gear that does not catch small fish, because then the data are also truncated.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: 80 lengths of the law 30 exp(0.15 Z) cm, Z standard normal, rounded to 1 cm. The page's generator drew them with the seed 7 and the stream name \"fish\". These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Which minimum legal length for a fish?\nproblem: Anglers may keep a fish only if its length is at least the minimum legal length. The kept fish then have the length law truncated at that minimum. Find the smallest minimum length that keeps the mean weight of a kept fish above the market grade.\nparam minlen = 30 {cm} \"minimum legal length\"\nparam a = 0.0125 {g/cm³} \"weight coefficient: weight = a L³\"\nparam grade = 450 {g} \"market grade of the mean weight\"\nL ~ truncated_kde(x = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41], w = [1, 1, 1, 3, 3, 1, 9, 2, 10, 11, 6, 8, 4, 5, 2, 4, 1, 3, 1, 2, 1, 1], h = 1.5, lower = minlen, upper = inf) {cm} \"length of a kept fish\"\nweight := a*L^3 {g}\nmean mw = weight {g} \"mean weight of a kept fish\"\nprob big = L >= 35 \"kept fish of 35 cm or more\"\nalt \"28 cm\": minlen = 28\nalt \"30 cm\": minlen = 30\nalt \"32 cm\": minlen = 32\nmean minimum = minlen {cm} \"the minimum legal length\"\nminimise minimum\nrequire mw >= 450\nfocus L\n"
+  },
+  {
+   "id": "input-pdf",
+   "law": "custom",
+   "kind": "input",
+   "title": "A PDF on a bounded interval",
+   "observe": "All checks pass. The page draws values by the inverse transform of a tabulated CDF, so the draws are approximate. The largest CDF error is about 5 × 10^-8 here. Rejection sampling uses the uniform proposal with an envelope from the grid maximum times 1.1. It is approximate too, because a grid can miss a higher peak. The references are numerical: E[X] = 0.5 and P(X > 0.8) = 0.104.",
+   "settings": {
+    "size": 16,
+    "plot": "pmf"
+   },
+   "dsl": "title: A PDF on a bounded interval\nproblem: The fraction of a working day that a machine runs has the density 6x(1 − x) on [0, 1]. Give it as a PDF and let the page check it, tabulate it and sample it.\nlaw Run pdf(x) = 6*x*(1 - x) on [0, 1] \"fraction of the day in operation\"\nX ~ Run() \"fraction of one day\"\nmean m = X \"E[X] = 1/2\"\nprob high = X > 0.8 \"P(X > 0.8) = 0.104\"\nfocus X\n"
+  },
+  {
+   "id": "input-logpdf",
+   "law": "custom",
+   "kind": "input",
+   "title": "A log-PDF on the real line",
+   "observe": "exp of the log-PDF integrates to 1 on the real line, through a map of (0, 1) onto the line. The constraint s > 0 holds. P(X > 3) = 1/(1 + e^2) = 0.1192 for s = 1.5. The support has no bound, so the page does not know whether the moments exist. It shows them as unknown.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A log-PDF on the real line\nproblem: Give the logistic law with scale s by its log-density, which avoids an overflow of e^x in the density. The page checks that exp of the log-PDF integrates to 1.\nparam s = 1.5 \"scale of the logistic law\"\nlaw Lg(s) logpdf(x) = -x/s - 2*log(1 + exp(-x/s)) - log(s) where s > 0 \"logistic log-density\"\nX ~ Lg(s = s)\nprob big = X > 3 \"P(X > 3) = 1/(1 + e^(3/s))\"\nfocus X\n"
+  },
+  {
+   "id": "input-density",
+   "law": "custom",
+   "kind": "input",
+   "title": "An unnormalised density",
+   "observe": "The page computes Z = ∫e^(−x⁴) dx = Γ(1/4)/2 ≈ 1.8128 by Simpson's rule and divides by it. Normalisation shows the value of Z and the difference between 4,096 and 2,048 cells. The moments exist for this law. But the page cannot show that from an expression on a support with no bound. Thus E[X²] has no reference, and the page makes no claim that the variance is finite.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: An unnormalised density\nproblem: The density of e^(−x⁴) is known only up to a constant. Give it as an unnormalised density. The page computes the normalising constant Z = Γ(1/4)/2 ≈ 1.8128 by quadrature.\nlaw Q4 density(x) = exp(-x^4) \"a density with a flat top and light tails\"\nX ~ Q4()\nprob out = X > 1 \"P(X > 1)\"\nmean sq = X^2 \"E[X²] = Γ(3/4)/Γ(1/4) ≈ 0.338\"\nfocus X\n"
+  },
+  {
+   "id": "input-pmf",
+   "law": "custom",
+   "kind": "input",
+   "title": "A PMF whose sum the page cannot finish",
+   "observe": "The sum of 6/(π²k²) for k ≤ 65,536 is 1 − 9.3 × 10^-6. The page cannot sum the rest of the series, so the normalisation stays unverified. The draws are approximate: the table holds 65,536 values, and no draw comes from the rest of the mass. This law has an infinite mean, which the page does not claim either way.",
+   "settings": {
+    "size": 16,
+    "plot": "survival",
+    "yscale": "log"
+   },
+   "dsl": "title: A PMF whose sum the page cannot finish\nproblem: The law p(k) = 6/(π²k²) on k = 1, 2, … adds to 1, because the sum of 1/k² is π²/6. But the terms fall slowly, so 65,536 terms leave a mass of about 9 × 10^-6. The page marks the normalisation as unverified and samples from the table.\nlaw Z2 pmf(k) = 6/(pi^2*k^2) on [1, inf] \"the zeta law with s = 2\"\nK ~ Z2()\nprob big = K > 10 \"P(K > 10)\"\nfocus K\n"
+  },
+  {
+   "id": "input-table",
+   "law": "custom",
+   "kind": "input",
+   "title": "A finite table: a loaded die",
+   "observe": "A finite table needs no approximation: the checks are exact sums, and independent sampling, the inverse transform and rejection sampling are all exact. P(K = 6) = 0.25 and E[K] = 3.75. A table with probabilities that do not add to 1, or with a value twice, fails a check.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A finite table: a loaded die\nproblem: A die shows 6 more often than the other faces. Give its law as a finite table of values and probabilities.\nlaw Die table(k) = [1, 2, 3, 4, 5, 6] probs [0.15, 0.15, 0.15, 0.15, 0.15, 0.25] \"a loaded die\"\nK ~ Die()\nprob six = K == 6 \"P(K = 6) = 0.25\"\nmean m = K \"E[K] = 3.75\"\nfocus K\n"
+  },
+  {
+   "id": "input-cdf",
+   "law": "custom",
+   "kind": "input",
+   "title": "A CDF: the largest of three uniform values",
+   "observe": "The page checks that F starts at 0, ends at 1 and does not decrease on the grid. It also checks that F(Q(u)) = u, which shows no jump at the grid points. The page draws values by bisection on F, approximate to a relative width of 10^-12. E[X] = 3/4 and P(X < 1/2) = 1/8.",
+   "settings": {
+    "size": 16,
+    "plot": "cdf"
+   },
+   "dsl": "title: A CDF: the largest of three uniform values\nproblem: The largest of 3 independent uniform values on [0, 1] has the CDF x³. Give the CDF. The page samples by bisection on F.\nlaw Max3 cdf(x) = x^3 on [0, 1]\nX ~ Max3()\nmean m = X \"E[X] = 3/4\"\nprob low = X < 0.5 \"P(X < 1/2) = 1/8\"\nfocus X\n"
+  },
+  {
+   "id": "input-quantile",
+   "law": "custom",
+   "kind": "input",
+   "title": "A quantile function: exact sampling",
+   "observe": "With the quantile function, X = Q(U) is exact sampling: the page labels independent sampling and the inverse transform exact. It checks that Q does not decrease on a grid of u. Left-continuity between grid points stays unverified. P(X > 4) = exp(−2^1.5) = 0.0591.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A quantile function: exact sampling\nproblem: The Weibull law with shape k and scale λ has the quantile function λ(−log(1 − u))^(1/k). With a quantile function, X = Q(U) is an exact sampler.\nparam k = 1.5 \"shape\"\nparam lam = 2 \"scale\"\nlaw Wq(k, lam) quantile(u) = lam*(-log(1 - u))^(1/k) where k > 0 and lam > 0\nX ~ Wq(k = k, lam = lam)\nprob long = X > 4 \"P(X > 4) = exp(−(4/λ)^k)\"\nfocus X\n"
+  },
+  {
+   "id": "input-mgf",
+   "law": "custom",
+   "kind": "input",
+   "title": "An MGF: the gamma law with shape 2",
+   "observe": "M(0) = 1, M is finite near 0, positive and convex on a grid. The page evaluates φ(t) = M(it) and inverts it by the Gil-Pelaez formula. The mean 2 and the variance 2 from finite differences of M agree with the inverted law. That M is the MGF of a law stays unverified: no finite test decides it. P(X > 4) = 5e^(−4) = 0.0916.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: An MGF: the gamma law with shape 2\nproblem: Give the gamma law with shape 2 and scale θ by its MGF (1 − θt)^(−2) for t < 1/θ. The page inverts φ(t) = M(it) numerically and compares the moments.\nparam theta = 1 \"scale\"\nlaw Gm(k, th) mgf(t) = (1 - t*th)^(-k) on [0, inf] where k > 0 and th > 0\nX ~ Gm(k = 2, th = theta)\nprob big = X > 4 \"P(X > 4) = 5e^(−4) ≈ 0.0916 for θ = 1\"\nfocus X\n"
+  },
+  {
+   "id": "input-cf",
+   "law": "custom",
+   "kind": "input",
+   "title": "A characteristic function with no MGF: the Cauchy law",
+   "observe": "φ(0) = 1, and φ(−t) is the conjugate of φ(t). The Cauchy law has no MGF and no mean, so an MGF input could not give it. The inverted CDF covers [−141, 141] and holds all but about 0.005 of the mass. Thus the boundary check stays unverified, and the tail of the draws is too light. P(X > 10) is 0.0294 in the table, against 0.0317 for the law.",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A characteristic function with no MGF: the Cauchy law\nproblem: The Cauchy law has the CF e^(−|t|). Its MGF is infinite for every t ≠ 0, and it has no mean. The page inverts the CF, and it states the mass that its table does not hold.\nlaw Cy cf(t) = exp(-abs(t)) \"the standard Cauchy law\"\nX ~ Cy()\nprob far = X > 10 \"P(X > 10) = 1/2 − arctan(10)/π ≈ 0.0317\"\nfocus X\n"
+  },
+  {
+   "id": "input-pdf-fails",
+   "law": "custom",
+   "kind": "input",
+   "title": "A density that does not integrate to 1",
+   "observe": "Normalisation fails: ∫x dx = 1/2 on [0, 1]. The value is the same on 4,096 and 2,048 cells, so the difference is not a quadrature error. All three methods are unavailable, and the model shows the error instead of a run. Write density(x) = x to let the page divide by 1/2.",
+   "fails": "normalisation",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A density that does not integrate to 1\nproblem: The function x on [0, 1] is non-negative, but its integral is 1/2. As a PDF it fails the normalisation check, so the page does not sample it. As density(x), the same expression is valid.\nlaw Half pdf(x) = x on [0, 1]\nX ~ Half()\nmean m = X\nfocus X\n"
+  },
+  {
+   "id": "input-cdf-fails",
+   "law": "custom",
+   "kind": "input",
+   "title": "A CDF that decreases",
+   "observe": "Monotonicity fails: F decreases on (0.198, 0.302) and (0.698, 0.802), where the slope 1 + 0.4π cos(4πx) is below 0. F(0) = 0 and F(1) = 1, so the boundary checks alone do not find the error. The page does not sample this input.",
+   "fails": "monotonicity",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A CDF that decreases\nproblem: The function x + 0.1 sin(4πx) on [0, 1] starts at 0 and ends at 1, but it decreases on (0.198, 0.302) and (0.698, 0.802). The monotonicity check fails, so it is not a CDF.\nlaw Wavy cdf(x) = x + 0.1*sin(4*pi*x) on [0, 1]\nX ~ Wavy()\nmean m = X\nfocus X\n"
+  },
+  {
+   "id": "input-mgf-fails",
+   "law": "custom",
+   "kind": "input",
+   "title": "A function that is not an MGF: cos t",
+   "observe": "M(0) = 1, and M is finite and positive near 0, but the convexity check fails: M″(t) = −cos t < 0. An MGF is convex because M″(t) = E[X² e^(tX)] ≥ 0. cos t is the CF of the fair ±1 variable, and its MGF is cosh t.",
+   "fails": "monotonicity",
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A function that is not an MGF: cos t\nproblem: cos t equals 1 at t = 0 and is finite everywhere, but it is the CF of a fair ±1 variable, not an MGF. An MGF is convex, and cos t is concave near 0. The convexity check fails. The MGF of the fair ±1 variable is cosh t.\nlaw Cs mgf(t) = cos(t)\nX ~ Cs()\nmean m = X\nfocus X\n"
   }
  ],
  "methods": [
@@ -5329,7 +6153,7 @@
    "estimator": "\\hat\\theta_n = \\frac{1}{n} \\sum_{i=1}^{n} g(X_i), \\quad X_i \\ \\text{i.i.d. from the model}",
    "estimatorText": "The sample mean of the quantity over n independent replicates. For an event, it is the fraction of replicates with the event. Each value comes from the reference sampler of its law, which the law card names.",
    "assumptions": [
-    "The sampler of each law draws exactly from that law, up to floating-point round-off.",
+    "The sampler of each law draws exactly from that law, up to floating-point round-off. A sampler labelled approximate (a tabulated custom law, say) adds a numerical error that the interval does not include.",
     "Replicates use different streams, so they are independent.",
     "E|g(X)| < ∞ for consistency, and Var g(X) < ∞ for the CLT interval."
    ],
@@ -6170,6 +6994,94 @@
   {
    "term": "single big jump",
    "definition": "The behaviour of a subexponential law: a sum passes a high level because one value passes it, not because many values are large."
+  },
+  {
+   "term": "finite mixture",
+   "definition": "A law that draws a component j with probability w_j, then a value from the law of that component. The data do not show the component."
+  },
+  {
+   "term": "component",
+   "definition": "One of the laws of a finite mixture, with its weight and its parameters."
+  },
+  {
+   "term": "zero-inflated law",
+   "definition": "A mixture of a point mass at 0 and a count law, for data with more zeros than the count law gives."
+  },
+  {
+   "term": "compound Poisson law",
+   "definition": "The law of S = Y_1 + … + Y_N, with a Poisson number N of i.i.d. terms Y_i that are independent of N."
+  },
+  {
+   "term": "Panjer recursion",
+   "definition": "A recursion that computes P(S = s) of a compound Poisson sum with integer terms from the smaller values, with no enumeration of N."
+  },
+  {
+   "term": "empirical law",
+   "definition": "The discrete law that gives each observed value its fraction of the data, or of the weights."
+  },
+  {
+   "term": "kernel density model",
+   "definition": "The law with the density that a kernel density estimate gives: the data values, each spread by a kernel. Here the kernel is normal with standard deviation h."
+  },
+  {
+   "term": "bandwidth",
+   "definition": "The scale h of the kernel of a kernel density model. A small h follows the data closely, and a large h smooths it."
+  },
+  {
+   "term": "truncated law",
+   "definition": "The law of X conditioned on lower ≤ X ≤ upper. The values outside the interval do not occur and leave no record."
+  },
+  {
+   "term": "custom law",
+   "definition": "A law that one line of the model text defines by an expression. The input is a PDF, a log-PDF, an unnormalised density, a PMF, a finite table, a CDF, a quantile function, an MGF or a CF."
+  },
+  {
+   "term": "unnormalised density",
+   "definition": "A function g ≥ 0 with a finite positive integral Z. The density is g/Z, and the page computes Z by quadrature."
+  },
+  {
+   "term": "log-PDF",
+   "definition": "The logarithm of a density. It avoids the overflow or underflow of the density itself far from the mode."
+  },
+  {
+   "term": "normalisation",
+   "definition": "The condition that a law has total mass 1: ∫f = 1, Σp = 1, F(∞) = 1, M(0) = 1 or φ(0) = 1."
+  },
+  {
+   "term": "checked",
+   "definition": "A check status: the page tested the condition by the method it states, on a grid or by a sum, and the condition held there. It is evidence, not a proof."
+  },
+  {
+   "term": "failed",
+   "definition": "A check status: the page found a value where the condition does not hold. The page does not use a law with a failed check in a run."
+  },
+  {
+   "term": "unverified",
+   "definition": "A check status: the page has no test that decides the condition here, or its test did not settle."
+  },
+  {
+   "term": "approximate sampling",
+   "definition": "A sampler that draws from a numerical approximation of the law, such as a tabulated CDF. The page states its approximation controls and error sources. The interval of an estimate does not include this error."
+  },
+  {
+   "term": "exact sampling",
+   "definition": "A sampler that draws from the law itself, up to floating-point round-off."
+  },
+  {
+   "term": "Gil-Pelaez formula",
+   "definition": "The inversion F(x) = 1/2 − (1/π) ∫_0^∞ Im[e^(−itx) φ(t)]/t dt of a CF at a point of continuity of F."
+  },
+  {
+   "term": "Simpson's rule",
+   "definition": "A quadrature rule that integrates a quadratic through 3 points of each cell. Its error falls as the fourth power of the cell width for a smooth integrand."
+  },
+  {
+   "term": "Kolmogorov–Smirnov distance",
+   "definition": "The largest difference between the empirical CDF of observations and the CDF of a law. Its p-value is asymptotic and assumes a continuous law."
+  },
+  {
+   "term": "bootstrap",
+   "definition": "Resampling from the empirical law of the data to estimate the variability of a statistic. Group 10 states its conditions."
   }
  ],
  "datasets": [
@@ -6580,7 +7492,7 @@
    "piece": 4,
    "id": "constructed",
    "title": "Constructed laws and custom inputs",
-   "status": "to come",
+   "status": "here",
    "content": "Finite mixtures, compound Poisson, empirical and kernel density models, truncated laws, and custom PDF, PMF, CDF, quantile, MGF and characteristic function inputs with their checks."
   },
   {

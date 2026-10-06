@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -50,7 +50,7 @@
   let expected = null;
 
   function engineSource() {
-    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-tails", "src-laws", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
+    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-tails", "src-laws", "src-custom", "src-constructed", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
   }
   function getPool() {
     if (!pool) pool = Pool.createPool({ source: engineSource(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: En });
@@ -137,9 +137,10 @@
   function drawNav(s) {
     for (const id of ["examples", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
     const list = matches(s.q);
-    const byLaw = data.laws.map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
+    // The custom input examples of group 4 come last, under their own heading.
+    const byLaw = [...data.laws, { id: "custom", name: "Custom law inputs" }].map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
     $("example-list").innerHTML = byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
-      `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
+      `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : m.kind === "input" ? `Input${m.fails ? ", fails" : ""}` : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
       : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`;
     $("law-list").innerHTML = data.laws.map((/** @type {any} */ l) => `<li><button type="button" class="link" data-open="exp-${esc(l.id)}">${esc(l.name)}</button></li>`).join("");
     $("method-list").innerHTML = data.methods.map((/** @type {any} */ m) => `<li><button type="button" class="link" data-method="${esc(m.id)}">${esc(m.name)}</button></li>`).join("");
@@ -151,11 +152,11 @@
   /** @param {Record<string, any>} s @param {any} d */
   function drawHeader(s, d) {
     const entry = data.models.find((/** @type {any} */ m) => m.id === s.model);
-    $("model-kind").textContent = entry ? `${entry.kind === "experiment" ? "Behaviour experiment" : `Workflow · ${entry.domain}`} · ${data.laws.find((/** @type {any} */ l) => l.id === entry.law)?.name} law` : "Custom model from the editor";
+    $("model-kind").textContent = entry ? (entry.kind === "input" ? "Custom law input · an example of the checks" : `${entry.kind === "experiment" ? "Behaviour experiment" : `Workflow · ${entry.domain}`} · ${data.laws.find((/** @type {any} */ l) => l.id === entry.law)?.name} law`) : "Custom model from the editor";
     $("model-title").textContent = d.model.title;
     $("model-problem").textContent = d.model.problem;
     const ds = entry?.data?.kind === "real" ? data.datasets.find((/** @type {any} */ x) => x.id === entry.data.dataset) : null;
-    $("model-data").textContent = ds ? `Real data: ${ds.title}. Source: ${ds.source} ${ds.licence}` : entry?.data?.text ?? (entry ? "Synthetic: the parameters define the model that makes the data. They are illustrative values." : "Custom model: the reader states its parameters and data.");
+    $("model-data").textContent = ds ? `Real data: ${ds.title}. Source: ${ds.source} ${ds.licence}` : entry?.data?.text ?? (entry?.kind === "input" ? "An input example: the law line states the law, and the page checks it. There is no data." : entry ? "Synthetic: the parameters define the model that makes the data. They are illustrative values." : "Custom model: the reader states its parameters and data.");
     $("model-errors").hidden = d.ok;
     $("model-errors").innerHTML = d.ok ? "" : `<p>The model has ${d.errors.length} ${d.errors.length === 1 ? "error" : "errors"}, so the page does not run it:</p><ul>${d.errors.map((/** @type {string} */ e) => `<li>${esc(e)}</li>`).join("")}</ul>`;
   }
@@ -348,7 +349,7 @@ ${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "com
     const parts = entry?.kind === "workflow" ? [["Decision and estimated quantity", entry.decision], ["Reason for the law", entry.reason], ["Parameters, units, data and assumptions", entry.inputs], ["Dependence or process model", entry.dependence], ["Method and estimator", entry.method]] : [];
     $("panel-assumptions").innerHTML = `${parts.map(([h, t]) => `<h4>${esc(h)}</h4><p>${esc(t)}</p>`).join("")}${entry?.kind === "experiment" ? `<h4>What the experiment shows</h4><p>${esc(entry.observe)}</p>` : ""}
 <h4>Assumptions of ${esc(method.name.toLowerCase())}</h4><ul>${method.assumptions.map((/** @type {string} */ a) => `<li>${esc(a)}</li>`).join("")}</ul>
-<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>none</dd><dt>Dynamics</dt><dd>none: no time</dd><dt>Observation</dt><dd>${esc(d.observation ?? "complete")}</dd><dt>Censoring</dt><dd>${d.censoring ? `${esc(d.censoring.text)}: the model observes <span class="mono">${esc(d.censoring.obs)}</span> and the event indicator <span class="mono">${esc(d.censoring.event)}</span>. An estimator that reads only these names sees what a real study sees.` : "none"}</dd><dt>Truncation, selection</dt><dd>none in this group</dd></dl>`;
+<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>none</dd><dt>Dynamics</dt><dd>none: no time</dd><dt>Observation</dt><dd>${esc(d.observation ?? "complete")}</dd><dt>Censoring</dt><dd>${d.censoring ? `${esc(d.censoring.text)}: the model observes <span class="mono">${esc(d.censoring.obs)}</span> and the event indicator <span class="mono">${esc(d.censoring.event)}</span>. An estimator that reads only these names sees what a real study sees.` : "none"}</dd><dt>Truncation</dt><dd>${d.samplers?.some((/** @type {any} */ x) => /^truncated_/.test(x.law)) ? "a truncated law: the values outside [lower, upper] do not occur and leave no record" : "none"}</dd><dt>Selection</dt><dd>none in this group</dd></dl>`;
     const m0 = sm?.[0];
     /** @type {string[]} */
     const diag = [];
@@ -369,7 +370,7 @@ ${cov.length ? `<br>${q.status.variance === "infinite" && !mixed ? "Block covera
     const sampler = En.METHODS[s.method].sampler === "reference" ? "independent" : En.METHODS[s.method].sampler;
     const samp = d.samplers.map((/** @type {any} */ x) => {
       const m = x.methods?.[sampler];
-      return `<li><span class="mono">${esc(x.variable)}</span>, ${esc(x.name)}: ${m ? `${esc(m.label)}. <em>${esc(m.exactness)}</em>${m.acceptance !== null ? `, theoretical acceptance 1/M = ${fmt(m.acceptance)}` : ""}` : "its parameters change between replicates, so the page sets up its sampler for each draw."}</li>`;
+      return `<li><span class="mono">${esc(x.variable)}</span>, ${esc(x.name)}: ${m ? `${esc(m.label)}. <em>${esc(m.exactness)}</em> ${sampling(m.sampling)}${m.acceptance !== null ? `, theoretical acceptance 1/M = ${fmt(m.acceptance)}` : ""}` : "its parameters change between replicates, so the page sets up its sampler for each draw."}</li>`;
     }).join("");
     const fit = d.dataset?.fit;
     const ds = d.dataset ? data.datasets.find((/** @type {any} */ x) => x.id === d.dataset.id) : null;
@@ -412,11 +413,16 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
   /** @param {Record<string, any>} s @param {any} d */
   function drawCards(s, d) {
     const entry = data.models.find((/** @type {any} */ m) => m.id === s.model);
-    const lawId = entry?.law ?? (d.ok ? d.samplers[0]?.law : null) ?? "poisson";
+    const lawId = entry?.law ?? (d.samplers?.[0]?.catalogue ?? d.samplers?.[0]?.law) ?? (d.custom ? "custom" : "poisson");
     const key = JSON.stringify([lawId, s.method, s.streams, s.model, s.params, s.failure, customVersion]);
     if ($("law-card").dataset.key === key) return;
     $("law-card").dataset.key = key;
-    const l = data.laws.find((/** @type {any} */ x) => x.id === lawId), code = Laws.BY_ID[lawId];
+    const l = data.laws.find((/** @type {any} */ x) => x.id === lawId);
+    // A law of the catalogue has its code in MCLaws; a constructed law of group 4 names its code parameters through
+    // the variable that uses it, because they depend on the family (mixture_poisson has w and lambda).
+    const used = d.samplers?.find((/** @type {any} */ x) => x.catalogue === lawId);
+    const code = Laws.BY_ID[lawId] ?? (used ? { params: used.code, name: used.name } : l?.type === "constructed" ? { params: l.params.map((/** @type {any} */ p) => ({ name: p.name, text: "see the law line" })), name: l.name } : null);
+    if (!l) { $("law-card").innerHTML = customCard(); $("method-card").innerHTML = methodCard(data.methods.find((/** @type {any} */ x) => x.id === s.method)); return; }
     if (!code) { $("law-card").innerHTML = observationCard(l); return; }
     $("law-card").innerHTML = `<h2>The ${esc(l.name)} law</h2><p>${esc(l.convention)}</p><div class="formula" data-tex="${esc(l.pdf ?? l.pmf)}"></div>
 <div class="cols"><div><h3>Parameters and support</h3><ul>${l.params.map((/** @type {any} */ p) => `<li><span data-tex="${esc(p.domain)}"></span></li>`).join("")}<li>Support: <span data-tex="${esc(l.support)}"></span></li></ul>
@@ -424,7 +430,7 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 <div><h3>Transforms</h3><dl class="readout">${Object.entries({ pgf: "PGF", lt: "Laplace transform", mgf: "MGF", cf: "CF" }).filter(([k]) => l.transforms[k]).map(([k, label]) => `<dt>${label}</dt><dd><span data-tex="${esc(l.transforms[k])}"></span></dd>`).join("")}</dl>
 <h3>Limiting and special cases</h3><ul>${l.limits.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
 <h3>Linked laws</h3><ul>${l.links.map((/** @type {any} */ x) => `<li><button type="button" class="link" data-open="exp-${esc(x.to)}">${esc(data.laws.find((/** @type {any} */ y) => y.id === x.to).name)}</button>: ${esc(x.relation)}</li>`).join("")}</ul></div></div>
-<h3>Parameters of the code</h3><ul>${code.params.map((/** @type {any} */ p) => `<li><span class="mono">${esc(p.name)}</span>: ${esc(p.text)}</li>`).join("")}</ul>
+<h3>Parameters of the code${used && !Laws.BY_ID[lawId] ? `: ${esc(used.name)}` : ""}</h3><ul>${code.params.map((/** @type {any} */ p) => `<li><span class="mono">${esc(p.name)}</span>: ${esc(p.text)}</li>`).join("")}</ul>
 <h3>Sampling methods</h3>${samplersOfLaw(d, lawId)}
 <p><button type="button" data-open="exp-${esc(l.id)}">Open the behaviour experiment</button> Workflows: ${data.models.filter((/** @type {any} */ m) => m.kind === "workflow" && m.law === l.id).map((/** @type {any} */ m) => `<button type="button" class="link" data-open="${esc(m.id)}">${esc(m.title)}</button>`).join(", ")}.</p>`;
     $("method-card").innerHTML = methodCard(data.methods.find((/** @type {any} */ x) => x.id === s.method));
@@ -450,6 +456,57 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 <p class="note">Probability plot: each observed maximum against the fitted quantile at its Gringorten plotting position (i − 0.44)/(n + 0.12). Points on the diagonal agree with the fit. The return levels use the fitted parameters as exact values: they omit the uncertainty of the fit, which group 10 adds.</p>`;
   }
 
+  /** The label exact, approximate or unavailable of a sampler (group 4). @param {string} [kind] */
+  const sampling = (kind) => (kind ? `<span class="tag sampling-${esc(kind)}">${esc(kind === "exact" ? "exact sampling" : kind === "approximate" ? "approximate sampling" : "sampling unavailable")}</span>` : "");
+
+  /**
+   * The checks of the custom laws of the model (group 4): for each law line and each variable and alternative that
+   * use it, each condition with its status (checked, failed or unverified) and how the page tested it, the sampling
+   * label of each method, the approximation controls, the numerical error sources and the observations. The alerts
+   * stay on the card: an MGF need not exist, and numerical checks do not prove a law.
+   * @param {Record<string, any>} s @param {any} d
+   */
+  function drawCustom(s, d) {
+    const box = $("custom-card");
+    box.hidden = !d.custom;
+    if (!d.custom) { box.dataset.key = ""; return; }
+    const key = JSON.stringify([s.model, s.params, s.alt, customVersion]);
+    if (box.dataset.key === key) return;
+    box.dataset.key = key;
+    const STATUS = /** @type {Record<string, string>} */ ({ checked: "checked", failed: "failed", unverified: "unverified" });
+    const parts = d.custom.map((/** @type {any} */ law) => {
+      // The alternative of the plots, else the first use: a law used by several variables shows each one.
+      const uses = law.uses.filter((/** @type {any} */ u) => !u.label || u.alt === Math.min(s.alt, d.alternatives?.length ?? s.alt) - 1);
+      const shown = uses.length ? uses : law.uses.slice(0, 1);
+      const transform = law.kind === "mgf" || law.kind === "cf";
+      return `<h3><span class="mono">${esc(law.name)}</span>: custom ${esc(law.kindName)}${law.params.length ? ` with the parameters <span class="mono">${esc(law.params.join(", "))}</span>` : ""}</h3>
+${law.note ? `<p class="note">${esc(law.note)}</p>` : ""}${shown.map((/** @type {any} */ u) => {
+        const r = u.report, values = Object.entries(u.values ?? {}).map(([k, v]) => `${k} = ${fmt(/** @type {number} */ (v))}`).join(", ");
+        const obs = r.observations;
+        return `<p class="note">${u.variable ? `For <span class="mono">${esc(u.variable)}</span>${u.via ? ` (the family of ${esc(u.via)})` : ""}${u.component ? `, component ${u.component}` : ""}${u.label && (d.alternatives?.length ?? 1) > 1 ? ` in ${esc(u.label)}` : ""}${values ? `, with ${esc(values)}` : ""}.` : "No variable uses this law; it has no parameters, so the page checks it as it stands."}</p>
+<div class="table-scroll"><table class="checks"><caption>Checks of the input</caption><thead><tr><th scope="col">Condition</th><th scope="col">Status</th><th scope="col">How the page tested it</th></tr></thead><tbody>
+${r.checks.map((/** @type {any} */ c) => `<tr><th scope="row">${esc(c.label)}</th><td><span class="status status-${esc(c.status)}">${esc(STATUS[c.status] ?? c.status)}</span></td><td>${esc(c.how)}</td></tr>`).join("")}</tbody></table></div>
+${r.errors.length ? `<p class="bad-text">The page does not sample this law: ${esc(r.errors[0])}</p>` : ""}
+<dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${sampling(r.sampling[m])}</dd>`).join("")}</dl>
+${r.controls.length ? `<h4>Approximation controls</h4><ul>${r.controls.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+${r.sources.length ? `<h4>Numerical error sources</h4><ul>${r.sources.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+${r.numeric && !r.numeric.bounded ? `<p>The support is not bounded, so the page does not show a mean or a variance for this law: a finite numerical integral does not prove that a moment exists.</p>` : ""}
+${obs && obs.D !== null ? `<p>Observations: ${count(obs.n)} values, Kolmogorov–Smirnov distance D = ${fmt(obs.D)} to the law, asymptotic p = ${fmt(obs.p)}. ${tag("observation")} A p-value measures the fit of these values to this law. It does not prove the law${law.kind === "pmf" || law.kind === "table" ? ", and for a discrete law this p-value is conservative" : ""}.</p>` : ""}`;
+      }).join("")}${transform ? `<p class="note">${law.kind === "mgf" ? "This input is an MGF. The page uses it through φ(t) = M(it), which needs M finite on an interval around 0." : "A CF exists for every law. The MGF of this law need not exist."}</p>` : ""}`;
+    }).join("");
+    box.innerHTML = `<h2 id="custom-head">Custom laws: checks and sampling</h2>
+<div class="callout" role="note"><p><strong>Alert.</strong> ${Cu.ALERTS.map((/** @type {string} */ a) => esc(a)).join(" ")}</p></div>
+<p class="note">Status: <span class="status status-checked">checked</span> the page tested the condition by the stated method, and it held there. <span class="status status-failed">failed</span> the page found a value where it does not hold; the law is not used in a run. <span class="status status-unverified">unverified</span> the page has no test that decides it here.</p>
+${parts}`;
+  }
+
+  /** The card of the custom laws when the law card has no catalogue entry: what the inputs are and how the page checks them. */
+  function customCard() {
+    return `<h2>Custom law inputs</h2><p>A line of the model text defines a law by one of nine inputs: a PDF, a log-PDF, an unnormalised density, a PMF, a finite table, a CDF, a quantile function, an MGF or a characteristic function (CF). The line states its parameters, its support, its constraints and observations, and the variables name the law as any other law. The card "Custom laws: checks and sampling" above shows the checks of this model.</p>
+<ul class="syntax"><li><code>law Sev(a) pdf(x) = a*x^(-a - 1) on [1, inf] where a > 1 obs [1.3, 2.2]</code></li><li><code>law Die table(k) = [1, 2, 3] probs [0.2, 0.3, 0.5]</code></li><li><code>law C cf(t) = exp(-abs(t))</code>: in a CF, i is the imaginary unit</li></ul>
+<p>Examples: ${data.models.filter((/** @type {any} */ m) => m.kind === "input").map((/** @type {any} */ m) => `<button type="button" class="link" data-open="${esc(m.id)}">${esc(m.title)}</button>`).join(", ")}.</p>`;
+  }
+
   /** The card of one method of the library. @param {any} m */
   function methodCard(m) {
     return `<h2>${esc(m.name)}</h2><p class="label">${esc(m.family)}</p><div class="formula" data-tex="${esc(m.estimator)}"></div><p>${esc(m.estimatorText)}</p>
@@ -473,9 +530,9 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 
   /** The samplers of a law at the parameters of the first variable of this model that uses it. @param {any} d @param {string} lawId */
   function samplersOfLaw(d, lawId) {
-    const v = d.ok ? d.samplers.find((/** @type {any} */ x) => x.law === lawId && x.methods) : null;
+    const v = d.ok ? d.samplers.find((/** @type {any} */ x) => (x.law === lawId || x.catalogue === lawId) && x.methods) : null;
     if (!v) return '<p class="note">This model sets the parameters of this law from other variables, so each draw sets up its own sampler. Open the behaviour experiment to see the samplers.</p>';
-    return `<p class="note">At the parameters of <span class="mono">${esc(v.variable)}</span> in this model:</p><dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${esc(v.methods[m].label)}. <em>${esc(v.methods[m].exactness)}</em></dd>`).join("")}</dl>${v.alternate ? `<p class="note">${esc(v.alternate)}</p>` : ""}`;
+    return `<p class="note">At the parameters of <span class="mono">${esc(v.variable)}</span> in this model:</p><dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${esc(v.methods[m].label)}. <em>${esc(v.methods[m].exactness)}</em> ${sampling(v.methods[m].sampling)}</dd>`).join("")}</dl>${v.alternate ? `<p class="note">${esc(v.alternate)}</p>` : ""}`;
   }
 
   /* ---------- draw ---------- */
@@ -497,6 +554,7 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
     drawParams(s, d);
     drawControls(s, d);
     drawModelViews(s, d);
+    drawCustom(s, d);
     drawCards(s, d);
     drawRun(s, d);
   }

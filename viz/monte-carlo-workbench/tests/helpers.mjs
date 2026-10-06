@@ -13,6 +13,10 @@ export const X = require("../src/expr.js");
 export const C = require("../src/continuous.js");
 /** @type {typeof import("../src/laws.js")} */
 export const L = require("../src/laws.js");
+/** @type {typeof import("../src/custom.js")} */
+export const Cu = require("../src/custom.js");
+/** @type {typeof import("../src/constructed.js")} */
+export const Co = require("../src/constructed.js");
 /** @type {typeof import("../src/engine.js")} */
 export const En = require("../src/engine.js");
 /** @type {typeof import("../src/dsl.js")} */

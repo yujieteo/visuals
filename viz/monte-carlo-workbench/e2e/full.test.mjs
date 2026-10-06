@@ -89,6 +89,38 @@ await fullSuite("monte-carlo-workbench", {
     } finally {
       await cens.close();
     }
+    // Group 4: a custom input example shows its checks with their statuses, its sampling labels and the alerts; an
+    // input that fails a check shows the failed check and no run; a constructed workflow shows its law card.
+    const input = await ctx.open("#model=input-mgf");
+    try {
+      await runSettles(input.page, ["done"]);
+      const card = await input.page.locator("#custom-card").innerText();
+      assert.match(card, /An MGF need not exist/);
+      assert.match(card, /Numerical checks do not prove/);
+      assert.match(card, /Existence near 0\s+checked/);
+      assert.match(card, /An MGF of a law\s+unverified/);
+      assert.match(card, /approximate sampling/);
+    } finally {
+      await input.close();
+    }
+    const fails = await ctx.open("#model=input-pdf-fails");
+    try {
+      assert.match(await fails.page.locator("#custom-card").innerText(), /Normalisation\s+failed/);
+      assert.match(await fails.page.locator("#model-errors").innerText(), /∫f = 0\.5, not 1/);
+      assert.equal(await fails.page.evaluate(() => /** @type {any} */ (window).Workbench.run), null, "no run of a law that fails a check");
+    } finally {
+      await fails.close();
+    }
+    const mix = await ctx.open("#model=mixture-call-centre");
+    try {
+      await runSettles(mix.page, ["done"]);
+      const law = await mix.page.locator("#law-card").innerText();
+      assert.match(law, /The Finite mixture law/);
+      assert.match(law, /Parameters of the code: Mixture of Poisson laws/);
+      assert.ok(await mix.page.locator("#custom-card").isHidden(), "no custom-law card without a law line");
+    } finally {
+      await mix.close();
+    }
   }),
 
   "back-forward": (ctx) => using(ctx.open, async (s) => {
@@ -163,6 +195,15 @@ await fullSuite("monte-carlo-workbench", {
     await page.waitForFunction(() => /** @type {any} */ (window).Workbench.run?.status === "done" && /identical/.test(document.getElementById("replay-status")?.textContent ?? ""), null, { timeout: 60_000 });
     assert.match(await page.locator("#replay-status").innerText(), /Replay: 2 estimates identical, 0 equal up to the last digits, 0 different/);
     assert.equal((await kitState(page)).model, "custom");
+    // Group 4: a model record with a custom law line saves and loads with the law, and the page checks it again.
+    await page.locator('#example-list [data-open="input-quantile"]').click();
+    await runSettles(page, ["done"]);
+    const model = await saved(page, () => page.locator("#save-model").click());
+    const rec = JSON.parse(model.text);
+    assert.equal(rec.laws[0].kind, "quantile");
+    await page.locator("#load-model").setInputFiles({ name: model.name, mimeType: "application/json", buffer: Buffer.from(model.text) });
+    await page.waitForFunction(() => /model=custom/.test(location.hash) && /Monotonicity\s+checked/.test(document.getElementById("custom-card")?.innerText ?? ""), null, { timeout: 60_000 });
+    assert.match(await page.locator("#model-text").textContent() ?? "", /law Wq\(k, lam\) quantile\(u\) = /, "the loaded model holds its law line");
   }, kitState),
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await change(page); }, "Method: Inverse transform", "#save-beamdswitch, #copy-beamdswitch"),

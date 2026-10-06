@@ -30,6 +30,7 @@
     pow: [2, 2], min: [1, 32], max: [1, 32], pmin: [2, 2], pmax: [2, 2], if: [3, 3], sum: [1, 1], mean: [1, 1],
     prod: [1, 1], len: [1, 1], count: [2, 2], distinct: [1, 1], maxcount: [1, 1], any: [1, 1], all: [1, 1], normalize: [1, 1],
     median: [1, 1], quantile: [2, 2], hill: [2, 2], km: [3, 3],
+    sin: [1, 1], cos: [1, 1], tan: [1, 1], atan: [1, 1], lgamma: [1, 1],
   });
   const BINARY = /** @type {Record<string, [number, boolean]>} */ ({
     "||": [1, false], "&&": [2, false], "<": [4, false], "<=": [4, false], ">": [4, false], ">=": [4, false], "==": [4, false],
@@ -184,9 +185,20 @@
     "<": (x, y) => +(x < y), "<=": (x, y) => +(x <= y), ">": (x, y) => +(x > y), ">=": (x, y) => +(x >= y),
     "==": (x, y) => +(x === y), "!=": (x, y) => +(x !== y), "&&": (x, y) => +(x !== 0 && y !== 0), "||": (x, y) => +(x !== 0 || y !== 0),
   });
+  /** log Γ(x) for x > 0 (Lanczos, g = 7, 9 terms), and NaN outside its domain, as Math.log gives for x < 0. @param {number} x @returns {number} */
+  function lgamma(x) {
+    if (!(x > 0)) return NaN;
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    const L = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    let a = L[0];
+    const t = x + 6.5;
+    for (let i = 1; i < 9; i++) a += L[i] / (x - 1 + i);
+    return 0.9189385332046728 + (x - 0.5) * Math.log(t) - t + Math.log(a);
+  }
   const UNARY = /** @type {Record<string, (x: number) => number>} */ ({ "-": (x) => -x, "+": (x) => x, "!": (x) => +(x === 0) });
   const MATH1 = /** @type {Record<string, (x: number) => number>} */ ({
     abs: Math.abs, sqrt: Math.sqrt, exp: Math.exp, log: Math.log, log1p: Math.log1p, floor: Math.floor, ceil: Math.ceil, round: Math.round,
+    sin: Math.sin, cos: Math.cos, tan: Math.tan, atan: Math.atan, lgamma,
   });
 
   /** @param {string} fn @param {Value[]} v @returns {Value} */
@@ -331,7 +343,7 @@
   /* ---------- TeX ---------- */
 
   const TEX_OP = /** @type {Record<string, string>} */ ({ "<": "<", "<=": "\\le", ">": ">", ">=": "\\ge", "==": "=", "!=": "\\ne", "&&": "\\wedge", "||": "\\vee", "+": "+", "-": "-", "*": "\\cdot" });
-  const TEX_FN = /** @type {Record<string, string>} */ ({ exp: "\\exp", log: "\\log", min: "\\min", max: "\\max" });
+  const TEX_FN = /** @type {Record<string, string>} */ ({ exp: "\\exp", log: "\\log", min: "\\min", max: "\\max", sin: "\\sin", cos: "\\cos", tan: "\\tan", atan: "\\arctan", lgamma: "\\ln\\Gamma" });
 
   /** A model name in TeX: one letter in italic, a longer name upright, a part after "_" as a subscript. @param {string} name */
   function texName(name) {

@@ -8,14 +8,16 @@
  * enumeration of a discrete support, or adaptive quadrature over the quantile functions of continuous laws. Every
  * function is pure: the page, its workers and the tests run the same code.
  */
-/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any, T: any) => any} factory */
+/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any, T: any, Cu: any, Co: any) => any} factory */
 (function (root, factory) {
-  const api = factory(root.MCRng ?? require("./rng.js"), root.MCSpecial ?? require("./special.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCTails ?? require("./tails.js"));
+  const api = factory(root.MCRng ?? require("./rng.js"), root.MCSpecial ?? require("./special.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCTails ?? require("./tails.js"),
+    root.MCCustom ?? require("./custom.js"), root.MCConstructed ?? require("./constructed.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MCEngine = api;
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (
   /** @type {typeof import("./rng.js")} */ R, /** @type {typeof import("./special.js")} */ S,
-  /** @type {typeof import("./expr.js")} */ E, /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./tails.js")} */ T) {
+  /** @type {typeof import("./expr.js")} */ E, /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./tails.js")} */ T,
+  /** @type {typeof import("./custom.js")} */ Cu, /** @type {typeof import("./constructed.js")} */ Co) {
   "use strict";
 
   const FORMAT = "monte-carlo-workbench/model", VERSION = 1;
@@ -62,6 +64,7 @@
    * @property {QuantRec[]} quantities @property {AltRec[]} alternatives @property {DecisionRec} decision
    * @property {string} [focus] @property {string} [initial] @property {string} [dynamics] @property {string} [observation]
    * @property {string} [censoring] @property {string} [truncation] @property {string} [selection]
+   * @property {any[]} [laws] the custom law lines of group 4 (custom.js)
    * @property {{ name: string, expr: string, note?: string }} [control] the control variate of the control-variate method
    */
   /**
@@ -77,7 +80,7 @@
       format: FORMAT, version: VERSION, id: String(rec.id ?? "custom"), title: String(rec.title ?? "Untitled model"), problem: String(rec.problem ?? ""),
       parameters: rec.parameters ?? [], variables: rec.variables ?? [], definitions: rec.definitions ?? [], quantities: rec.quantities ?? [],
       alternatives: rec.alternatives?.length ? rec.alternatives : [{ label: "As stated", set: {} }],
-      decision: rec.decision ?? { objective: null, constraints: [] }, focus: rec.focus, control: rec.control,
+      decision: rec.decision ?? { objective: null, constraints: [] }, focus: rec.focus, control: rec.control, laws: rec.laws ?? [],
       ...Object.fromEntries(TEXT_FIELDS.map((k) => [k, rec[k] ?? (k === "observation" ? "complete: each replicate observes every variable" : "none")])),
     };
   }
@@ -136,6 +139,9 @@
       const b = expr(src, `Parameter ${p.name}`, visible);
       if (b) params.push({ name: p.name, slot: /** @type {number} */ (slots.get(p.name)), fn: b.fn, src, reads: b.reads });
     }
+    // The custom laws of the model (group 4): each law line compiles to a law that the variables can name.
+    const custom = Cu.compileAll(rec.laws ?? [], Co.taken);
+    errors.push(...custom.errors);
     /** @type {any[]} */
     const nodes = [];
     let draws = 0;
@@ -154,9 +160,9 @@
         const v = varsByName.get(item.name);
         if (!v) { errors.push(`The order lists "${item.name}", which is not a variable.`); continue; }
         const visible = new Map(slots);
-        const law = L.BY_ID[v.law];
+        const law = Co.resolve(v.law, custom.laws);
         if (!declare(v.name, "var", `Variable ${v.name}`)) continue;
-        if (!law) { errors.push(`Variable ${v.name}: "${String(v.law).slice(0, 30)}" is not a law of this group (${L.LAWS.map((l) => l.id).join(", ")}).`); continue; }
+        if (!law) { errors.push(`Variable ${v.name}: "${String(v.law).slice(0, 40)}" is not a law of this page: a law of the catalogue (${L.LAWS.map((l) => l.id).join(", ")}, empirical, kde), mixture_, truncated_ or compound_ before one of them, or a law line of the model.`); continue; }
         const repeat = v.repeat ?? 1;
         if (!Number.isInteger(repeat) || repeat < 1 || repeat > LIMITS.repeat) { errors.push(`Variable ${v.name}: repeat ${repeat} is not an integer in [1, ${LIMITS.repeat}].`); continue; }
         /** @type {Record<string, any>} */
@@ -178,6 +184,8 @@
         }
         for (const extra of Object.keys(v.args ?? {})) if (!law.params.some((/** @type {any} */ ps) => ps.name === extra)) errors.push(`Variable ${v.name}: the ${law.name} law has no argument ${extra}.`);
         draws += repeat * (law.dim ? 8 : 1);
+        // A custom law tabulates its input once for each parameter value, so its arguments read parameters only.
+        if (law.constantArgs && !constant) errors.push(`Variable ${v.name}: the arguments of the custom law ${law.name} read only parameters, because the page tabulates the law once for each parameter value.`);
         nodes.push({ type: "var", name: v.name, slot: slots.get(v.name), law, args, repeat, constant, reads, random, index: nodes.length, unit: v.unit ?? "" });
       } else if (item.type === "def") {
         const d = defsByName.get(item.name);
@@ -234,25 +242,32 @@
       }
       alternatives.push({ label: String(alt.label ?? `Alternative ${alternatives.length + 1}`), values: env });
     }
+    let compoundDraws = 0;
     for (const n of nodes) {
       if (n.type !== "var" || !n.constant) continue;
+      let most = 0, family = n.law;
+      while (family.base && family.catalogue !== "compound") family = family.base;
       for (const alt of alternatives) {
         const p = argsAt(n, alt.values);
         const bad = p.error ? [p.error] : n.law.check(p.params);
         for (const msg of bad) errors.push(`Variable ${n.name} in "${alt.label}": ${msg}`);
+        // A compound Poisson draw (also inside a mixture or a truncated law) sums about freq terms: count them in the draws of one replicate.
+        if (!bad.length && family.catalogue === "compound") most = Math.max(most, Math.ceil(Math.max(.../** @type {number[]} */ ([p.params.freq].flat()))));
       }
+      compoundDraws += n.repeat * most;
     }
+    if (compoundDraws && draws + compoundDraws > LIMITS.drawsPerReplicate) errors.push(`One replicate draws about ${draws + compoundDraws} values with the terms of its compound Poisson laws. The limit is ${LIMITS.drawsPerReplicate}.`);
     const method = settings.method ?? "independent", compare = settings.compare ?? "none", failure = settings.failure ?? "none";
     const streams = settings.streams ?? "common", strata = settings.strata ?? 4, stratify = settings.stratify ?? "";
     if (!METHODS[method]) errors.push(`The method "${String(method).slice(0, 20)}" is not part of this page.`);
     if (compare !== "none" && !METHODS[compare]) errors.push(`The comparison method "${String(compare).slice(0, 20)}" is not part of this page.`);
     if (streams !== "common" && streams !== "separate") errors.push(`The streams setting "${String(streams).slice(0, 20)}" is not common or separate.`);
     if (!Number.isInteger(strata) || strata < 1 || strata > MAX_STRATA) errors.push(`The number of strata is 2^s with s an integer from 1 to ${MAX_STRATA}.`);
-    if (errors.length) return { ok: false, errors };
+    if (errors.length) return { ok: false, errors, nodes, alternatives, laws: custom.laws }; // the nodes and alternatives let the page show the checks of a custom law that failed
     const designs = new Set([method, compare].filter((m) => METHODS[m]).map((m) => METHODS[m].design));
 
     const focusName = rec.focus && slots.has(String(rec.focus).replace(/\[\d+\]$/, "")) ? String(rec.focus) : nodes.find((n) => n.type === "var")?.name ?? nodes[0]?.name;
-    const compiled = { ok: true, record: rec, settings: { seed: settings.seed >>> 0, method, compare, failure, overrides, streams, strata, stratify }, slots, kinds, params, nodes, quantities, alternatives, focus: focusName,
+    const compiled = { ok: true, laws: custom.laws, record: rec, settings: { seed: settings.seed >>> 0, method, compare, failure, overrides, streams, strata, stratify }, slots, kinds, params, nodes, quantities, alternatives, focus: focusName,
       decision: rec.decision ?? { objective: null, constraints: [] }, control: /** @type {any} */ (null), stratify: /** @type {any} */ (null), errors: [] };
 
     // The control variate: an expression of the model whose mean the page computes exactly, for each alternative.
@@ -356,6 +371,8 @@
       }
       if ((m?.[1] === "sum " || m?.[1] === "mean ") && terms.has(name)) return { mean: null, sd: null, why: `sum() or mean() of ${name} and ${name} itself are not independent terms` };
       const mo = n.law.moments(p), r = n.repeat, scale = m?.[1] === "mean " ? 1 / r : 1;
+      // A custom law on an unbounded support has moments the page does not know (order null): not infinite, unknown.
+      if (mo.mean === null && (mo.order === null || Number.isNaN(mo.order))) return { mean: null, sd: null, why: `the page does not know whether the mean of ${name} exists` };
       if (mo.mean === null) return { mean: null, sd: null, why: `the mean of ${name} is infinite`, infinite: true };
       mean += k * scale * r * mo.mean;
       variance = variance === null || mo.variance === null ? null : variance + k * k * scale * scale * r * mo.variance;
@@ -822,9 +839,13 @@
       if (!parents.length) {
         const p = argsAt(n, c.alternatives[0].values).params, s = n.law.support(p), mo = n.law.moments(p);
         order = mo.order;
-        cls = bounded(s) ? (n.law.continuous ? "bounded" : "finite") : order === Infinity ? "light" : "heavy";
+        // A custom law on an unbounded support has an order the page does not know (null): its class is unknown.
+        cls = bounded(s) ? (n.law.continuous ? "bounded" : "finite") : order === null || Number.isNaN(order) ? "unknown" : order === Infinity ? "light" : "heavy";
+        if (cls === "unknown") order = Infinity;
         for (const alt of c.alternatives.slice(1)) {
           const q = argsAt(n, alt.values).params, o2 = n.law.moments(q).order;
+          if (o2 === null || Number.isNaN(o2)) { if (!bounded(n.law.support(q))) cls = "unknown"; continue; }
+          if (cls === "unknown") continue;
           if (o2 < order) { order = o2; cls = "heavy"; }
           if (!bounded(n.law.support(q)) && (cls === "finite" || cls === "bounded")) cls = o2 === Infinity ? "light" : "heavy";
         }
@@ -1003,7 +1024,7 @@
         if (t.op === "^") return polynomial(t.a, c) && fixed(t.b, c);
         return polynomial(t.a, c) && polynomial(t.b, c);
       case "call":
-        if (["exp", "log", "log1p", "pow", "prod"].includes(t.fn)) return t.args.every((/** @type {any} */ a) => fixed(a, c));
+        if (["exp", "log", "log1p", "pow", "prod", "tan", "lgamma"].includes(t.fn)) return t.args.every((/** @type {any} */ a) => fixed(a, c));
         return t.args.every((/** @type {any} */ a) => polynomial(a, c));
       case "idx": return polynomial(t.a, c) && polynomial(t.i, c);
       case "arr": return t.items.every((/** @type {any} */ a) => polynomial(a, c));
@@ -1169,6 +1190,16 @@
         }
         return out;
       }
+      if (law.atoms) {
+        // A law of finitely many values (an empirical law or a table): a sum over its values, which need not be integers.
+        const at = law.atoms(p);
+        for (let j = 0; j < at.x.length; j++) {
+          env[node.slot] = at.x[j];
+          const sub = walk(i + 1, depth);
+          for (let d = 0; d < D; d++) out[d] += at.p[j] * sub[d];
+        }
+        return out;
+      }
       const s = law.support(p);
       let mass = 0;
       for (let k = s.lo; k <= s.hi; k++) {
@@ -1235,6 +1266,8 @@
   /** The bound law of a variable with constant parameters, and its number of copies. @param {any} c @param {any} n @param {Value[]} env */
   function boundVar(c, n, env) {
     if (n?.type !== "var" || !n.constant || n.law.dim) return null;
+    // The exact law of a maximum, minimum or sum assumes integer or continuous values, not the values of a table.
+    if (n.law.atoms && n.repeat > 1) return null;
     const pr = argsAt(n, env);
     return pr.error || n.law.check(pr.params).length ? null : { b: T.bind(n.law, pr.params, L.quantile), law: n.law, p: pr.params, n: n.repeat };
   }
@@ -1293,6 +1326,8 @@
     const lawOf = (t) => (t.t === "id" ? nameLaw(c, t.name, env) : null);
     /** The value of E[t] for an indicator comparison or a name. @param {any} t @param {number} k @param {boolean} mean */
     const value = (t, k, mean) => {
+      // An expression of the parameters alone, such as a decision variable that an objective reads, is its own mean.
+      if (mean && fixed(t, c)) { const v = E.compile(t, c.slots)(env); return typeof v === "number" && Number.isFinite(v) ? v : null; }
       if (mean && t.t === "id") {
         const m = lawOf(t);
         if (!m || status[k].mean !== "finite") return null;
@@ -1307,8 +1342,12 @@
       const v = E.compile(side, c.slots)(env);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
       if (m.numeric) numeric[k] = true;
+      // A continuous law with an atom at 0: P(X = 0) = F(0), and every other point has probability 0.
+      if (m.mixed) { const z = v === 0 ? m.cdf(0) : 0; return op === "<" ? m.cdf(v) - z : op === "<=" ? m.cdf(v) : op === ">" ? m.sf(v) : op === ">=" ? m.sf(v) + z : op === "==" ? z : 1 - z; }
       // A continuous law gives every single point probability 0, so P(X < v) = P(X ≤ v) = F(v).
       if (m.continuous) return op === "<" || op === "<=" ? m.cdf(v) : op === ">" || op === ">=" ? m.sf(v) : op === "==" ? 0 : 1;
+      // A law of finitely many values that need not be integers: P(X < v) = F(v) − P(X = v), and so on.
+      if (m.atoms) return op === "<" ? m.cdf(v) - m.mass(v) : op === "<=" ? m.cdf(v) : op === ">" ? m.sf(v) : op === ">=" ? m.sf(v) + m.mass(v) : op === "==" ? m.mass(v) : 1 - m.mass(v);
       switch (op) {
         case "<": return m.cdf(Math.ceil(v) - 1);
         case "<=": return m.cdf(Math.floor(v));
@@ -1416,6 +1455,15 @@
         const errs = node.law.check(pr.params);
         if (errs.length) throw new E.ExprError(`Variable ${node.name}: ${errs[0]}`);
         if (node.law.id === "multinomial") return compositions(pr.params, (x, p) => { env[node.slot] = x; return walk(i + 1, w * p); });
+        if (node.law.atoms) {
+          const at = node.law.atoms(pr.params);
+          for (let j = 0; j < at.x.length; j++) {
+            env[node.slot] = at.x[j];
+            if (!walk(i + 1, w * at.p[j])) return false;
+          }
+          return true;
+        }
+        if (node.law.continuous) { reason = `Variable ${node.name} has a continuous law, so the page does not enumerate it.`; return false; }
         const s = node.law.support(pr.params);
         let mass = 0;
         for (let k = s.lo; k <= s.hi; k++) {
