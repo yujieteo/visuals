@@ -1281,8 +1281,8 @@
       ],
       "scales": [
         { "id": "s-y", "for": "v-y", "scale": "b", "offset": "0", "symbol": "Y", "reason": "The half-gap is the length scale, so Y = y/b runs from 0 at the centre plane to 1 at the wall." },
-        { "id": "s-u", "for": "v-u", "scale": "u_m", "offset": "0", "symbol": "U", "reason": "The mean velocity is the velocity scale." },
-        { "id": "s-T", "for": "v-DT", "scale": "q_w*b/k", "offset": "0", "symbol": "theta", "reason": "The wall heat flux sets the temperature difference across the half-gap." }
+        { "id": "s-u", "for": "v-u", "scale": "u_m", "offset": "0", "symbol": "U", "reason": "The mean velocity is the velocity scale, so the mean of U over the half-gap is 1." },
+        { "id": "s-T", "for": "v-DT", "scale": "q_w*b/k", "offset": "0", "symbol": "theta", "reason": "The wall heat flux sets the temperature difference across the half-gap: kΔT/b = q_w." }
       ],
       "preferred": ["v-b", "v-um", "v-rho"],
       "evidence": [{ "id": "ev-channel", "source": "lienhard-flow", "claim": "Plane Poiseuille flow has a parabolic profile and f·Re = 96 with the hydraulic diameter 4b." }]
@@ -1325,7 +1325,7 @@
       ],
       "scales": [
         { "id": "s-rho", "for": "v-rho", "scale": "p_0/(R_g*T_0)", "offset": "0", "symbol": "Dn", "reason": "The stagnation density ρ₀ = p₀/(R_gT₀)." },
-        { "id": "s-u", "for": "v-u", "scale": "(R_g*T_0)^(1/2)", "offset": "0", "symbol": "V", "reason": "The speed √(R_gT₀) of the reservoir state." },
+        { "id": "s-u", "for": "v-u", "scale": "(R_g*T_0)^(1/2)", "offset": "0", "symbol": "V", "reason": "The velocity scale √(R_gT₀) = a₀/√γ, from the reservoir temperature." },
         { "id": "s-T", "for": "v-T", "scale": "T_0", "offset": "0", "symbol": "Th", "reason": "The stagnation temperature." },
         { "id": "s-p", "for": "v-p", "scale": "p_0", "offset": "0", "symbol": "Pn", "reason": "The stagnation pressure." }
       ],
@@ -1408,7 +1408,7 @@
         { "id": "s-x", "for": "v-x", "scale": "L", "offset": "0", "symbol": "X", "reason": "The distance of the station from the leading edge." },
         { "id": "s-y", "for": "v-y", "scale": "(nu*L/U)^(1/2)", "offset": "0", "symbol": "Y", "reason": "The inner scale: the thickness at which viscosity balances inertia." },
         { "id": "s-u", "for": "v-u", "scale": "U", "offset": "0", "symbol": "Uh", "reason": "The outer speed." },
-        { "id": "s-v", "for": "v-v", "scale": "U*(nu/(U*L))^(1/2)", "offset": "0", "symbol": "Vh", "reason": "The inner scale of v: continuity with the inner thickness." }
+        { "id": "s-v", "for": "v-v", "scale": "U*(nu/(U*L))^(1/2)", "offset": "0", "symbol": "Vh", "reason": "The scale V of v, from continuity: V = Uδ/L." }
       ],
       "preferred": ["v-rho", "v-U", "v-L"],
       "evidence": [{ "id": "ev-blasius", "source": "lienhard-flow", "claim": "The Blasius solution gives f''(0) = 0.332 and c_f = 0.664/√Re_x." }]
@@ -1435,7 +1435,7 @@
       "equations": [
         { "id": "e-laplace", "kind": "governing", "text": "d(phi,x,x) + d(phi,y,y) = 0", "domain": "outside the airfoil" }
       ],
-      "geometry": { "domain": "The plane outside a Joukowski airfoil of chord c. The far-field boundary is a square of half-width X_f. The declared solver (a conformal map) holds the airfoil surface and its sharp trailing edge. A curved surface is not a condition at x = constant", "coordinates": "x along the stream, y normal to it. The chord makes the angle α with the stream", "lengths": ["v-c"], "interfaces": "The airfoil surface" },
+      "geometry": { "domain": "The plane outside a Joukowski airfoil of chord c. The far-field boundary is a square of half-width X_f. The conformal map gives the exact airfoil surface and trailing edge. The surface has a curve, so it is not a line x = constant", "coordinates": "x along the stream, y normal to it. The chord makes the angle α with the stream", "lengths": ["v-c"], "interfaces": "The airfoil surface" },
       "conditions": [
         { "id": "c-left", "kind": "boundary", "text": "d(phi,x) = U", "at": "x = -X_f" },
         { "id": "c-right", "kind": "boundary", "text": "d(phi,x) = U", "at": "x = X_f" },
@@ -1459,9 +1459,9 @@
       "id": "fail-nozzle-shock",
       "label": "Failure: shock in the nozzle",
       "group": "failure",
-      "failure": "A back pressure between the design ratio and the first critical ratio puts a shock in the nozzle or the jet. A shock needs a separate declaration.",
+      "failure": "A back pressure between the exit-shock ratio and the first critical ratio puts a normal shock in the nozzle. A shock needs a separate declaration.",
       "title": "Failure: a back pressure in the shock range of the nozzle",
-      "purpose": { "question": "Which flow does the nozzle carry when the back pressure is 0.3 of the reservoir pressure?", "observable": "v-mdot", "calculation": "regime-map", "declaration": "nozzle-air" },
+      "purpose": { "question": "Which flow does the nozzle carry when the back pressure is 0.7 of the reservoir pressure?", "observable": "v-mdot", "calculation": "regime-map", "declaration": "nozzle-air" },
       "variables": "nozzle-flow",
       "equations": "nozzle-flow",
       "geometry": "nozzle-flow",
@@ -1469,7 +1469,7 @@
       "assumptions": "nozzle-flow",
       "scales": "nozzle-flow",
       "evidence": "nozzle-flow",
-      "overrides": { "v-pb": { "value": "3e5" } },
+      "overrides": { "v-pb": { "value": "7e5" } },
       "preferred": ["v-p0", "v-T0", "v-Rg", "v-At"]
     },
     {

@@ -333,7 +333,7 @@
         tex: [`D_h=${pipe ? "2R" : "4b"},\\qquad f=\\frac{8\\tau_w}{\\rho u_m^{2}},\\qquad \\tau_w=\\frac{\\mu u_m}{${Ls}}\\left|U'(1)\\right|,\\qquad Re=\\frac{\\rho u_m D_h}{\\mu}`,
           `f\\,Re=8\\left|U'(1)\\right|\\frac{D_h}{${Ls}}=${Q.tex(fRe)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-energy", item: 7, title: "The temperature profile under a uniform wall heat flux",
-        reason: "With a uniform wall heat flux, the temperature rises linearly along the flow at every point of the section. Axial conduction is then zero. The heat that enters at the wall must leave with the flow, and this energy balance fixes S.",
+        reason: "With a uniform wall heat flux, the temperature rises linearly along the flow at every point of the section. Net axial conduction is then zero. The heat that enters at the wall must leave with the flow, and this energy balance fixes S.",
         tex: [`${lap("\\theta")}=S\\,U,\\qquad \\theta'(0)=0,\\qquad \\theta'(1)=1,\\qquad \\frac{\\partial^{2}T}{\\partial x^{2}}=0`,
           `S=\\frac{\\rho c_p\\beta u_m${Ls}}{q_w}=\\left(\\int_0^1 U\\,${dA}\\right)^{-1}=${Q.tex(Sd)},\\qquad \\theta=${P.tex(Theta, rv)}+\\text{const}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-nusselt", item: 8, title: "Nusselt number of the fully developed flow",
@@ -385,7 +385,7 @@
         x: { label: pipe ? "r/R" : "y/b", min: -1, max: 1 }, y: { label: "ratio", min: 0 },
         series: [{ label: "u/u_m", points: prof.map((r) => [r, P.atFloat(Ud, Math.abs(r))]) },
           { label: "(T − T_w)/(T_m − T_w)", points: prof.map((r) => [r, thetaRel(r)]), dash: true }] },
-      { id: "convergence", title: "Finite-volume convergence of Nu", caption: "The error of the finite-volume Nu falls by about 4 when N doubles: second order.",
+      { id: "convergence", title: "Finite-volume convergence of Nu", caption: "When N doubles, the error of the finite-volume Nu decreases by a factor of about 4: second order.",
         x: { label: "cells N", log: true }, y: { label: "|Nu_N − Nu|", log: true },
         series: [{ label: "error", points: grid.map((g) => [g.n, g.errNu]), markers: true }] },
     ];
@@ -449,6 +449,8 @@
     const eps = v.Ae / v.At;
     const sub = gs.mach(eps, "sub"), sup = gs.mach(eps, "sup");
     const p1 = gs.pRatio(sub.x), p3 = gs.pRatio(sup.x);
+    // A normal shock at the exit (NASA, normal shock waves): p₂/p₁ = (2γM² − (γ − 1))/(γ + 1).
+    const p2 = p3 * (2 * g * sup.x * sup.x - (g - 1)) / (g + 1);
     const pb = v.pb / v.p0;
     const near = (a, b) => Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b));
     let regime, mdot, Me, branch, Astar;
@@ -460,8 +462,8 @@
       mdot = v.p0 * v.Ae * Math.sqrt(g / (v.R * v.T0)) * gs.flux(Me);
       branch = "sub";
     } else if (near(pb, p1)) { regime = "choked-subsonic"; Me = sub.x; Astar = v.At; mdot = mdotMax; branch = "sub"; }
-    else if (pb > p3 && !near(pb, p3)) { regime = "shock"; Me = null; Astar = v.At; mdot = mdotMax; branch = null; }
-    else { regime = near(pb, p3) ? "design" : "underexpanded"; Me = sup.x; Astar = v.At; mdot = mdotMax; branch = "sup"; }
+    else if (pb > p2 && !near(pb, p2)) { regime = "shock"; Me = null; Astar = v.At; mdot = mdotMax; branch = null; }
+    else { regime = near(pb, p3) ? "design" : pb > p3 ? "overexpanded" : "underexpanded"; Me = sup.x; Astar = v.At; mdot = mdotMax; branch = "sup"; }
 
     // The flow along the declared nozzle, X = x/L in [0, 1], throat at X = 1/2.
     const area = (X) => (X <= 0.5 ? v.At + (v.Ai - v.At) * (1 - 2 * X) ** 2 : v.At + (v.Ae - v.At) * (2 * X - 1) ** 2);
@@ -499,17 +501,17 @@
         tex: ["\\frac{\\dot m\\sqrt{RT_0}}{p_0A}=\\sqrt{\\gamma}\\;M\\left(1+\\frac{\\gamma-1}{2}M^{2}\\right)^{-\\frac{\\gamma+1}{2(\\gamma-1)}}\\equiv F(M)",
           "-\\frac{1}{\\gamma-1}-\\frac12=-\\frac{\\gamma+1}{2(\\gamma-1)}"], evidence: ["nasa-choking"] },
       { id: "s-fam-sonic", item: 8, title: "Sonic condition and the mass-flow maximum",
-        reason: "The derivative of F has the sign of 1 − M². Thus F has one maximum, at M = 1. The throat is the only place where the flow can pass M = 1, because dA = 0 there.",
+        reason: "The derivative of F has the sign of 1 − M². Thus F has one maximum, at M = 1. M = 1 needs dA/dx = 0, so the flow can pass M = 1 only at the throat.",
         tex: ["\\frac{\\mathrm dF}{\\mathrm dM}=\\sqrt{\\gamma}\\left(1+\\frac{\\gamma-1}{2}M^{2}\\right)^{-\\frac{\\gamma+1}{2(\\gamma-1)}-1}\\left(1-M^{2}\\right)",
           "\\frac{\\mathrm dA}{A}=\\left(M^{2}-1\\right)\\frac{\\mathrm du}{u}",
           `\\frac{A}{A^{*}}=\\frac{1}{M}\\left[\\frac{2}{\\gamma+1}\\left(1+\\frac{\\gamma-1}{2}M^{2}\\right)\\right]^{\\frac{\\gamma+1}{2(\\gamma-1)}},\\qquad \\frac{T^{*}}{T_0}=\\frac{2}{\\gamma+1}=${texNum(tStar)}`], evidence: ["nasa-choking"] },
       { id: "s-fam-branches", item: 9, title: "The two branches of the area–Mach relation",
         reason: "A/A* has its only minimum, 1, at M = 1. Thus each area ratio above 1 has exactly two solutions: one subsonic and one supersonic. The branches meet at a fold at M = 1.",
         tex: [`\\frac{A_e}{A_t}=${texNum(eps)}:\\qquad M_{e,\\mathrm{sub}}=${texNum(sub.x)},\\quad M_{e,\\mathrm{sup}}=${texNum(sup.x)}`,
-          `\\frac{p_{e,\\mathrm{sub}}}{p_0}=${texNum(p1)},\\qquad \\frac{p_{e,\\mathrm{sup}}}{p_0}=${texNum(p3)}`], evidence: ["nasa-choking"] },
+          `\\frac{p_{e,\\mathrm{sub}}}{p_0}=${texNum(p1)},\\qquad \\frac{p_{e,\\mathrm{sup}}}{p_0}=${texNum(p3)},\\qquad \\frac{p_{\\mathrm{exit\\,shock}}}{p_0}=\\frac{p_{e,\\mathrm{sup}}}{p_0}\\,\\frac{2\\gamma M_{e,\\mathrm{sup}}^{2}-(\\gamma-1)}{\\gamma+1}=${texNum(p2)}`], evidence: ["nasa-choking", "nasa-normal-shock"] },
       { id: "s-fam-regime", item: 8, title: "The back pressure selects the flow",
-        reason: "Above the first critical ratio the flow is subsonic everywhere. Below it the throat is sonic and the mass flow is at its maximum. Between the two critical ratios, shocks occur, and this model does not describe them.",
-        tex: [`\\frac{p_b}{p_0}=${texNum(pb)}:\\quad ${regime === "subsonic" ? "\\frac{p_b}{p_0}>\\frac{p_{e,\\mathrm{sub}}}{p_0}" : regime === "shock" ? "\\frac{p_{e,\\mathrm{sup}}}{p_0}<\\frac{p_b}{p_0}<\\frac{p_{e,\\mathrm{sub}}}{p_0}" : regime === "no-flow" ? "p_b\\ge p_0" : "\\frac{p_b}{p_0}\\le\\frac{p_{e,\\mathrm{sup}}}{p_0}"}`,
+        reason: "Above the first critical ratio the flow is subsonic everywhere. Below it the throat is sonic and the mass flow is at its maximum. Between the first critical ratio and the exit-shock ratio, a normal shock stands in the nozzle, and this model does not describe it. Below the exit-shock ratio the flow in the nozzle is isentropic up to the exit, and any shock or expansion is in the jet.",
+        tex: [`\\frac{p_b}{p_0}=${texNum(pb)}:\\quad ${regime === "subsonic" ? "\\frac{p_b}{p_0}>\\frac{p_{e,\\mathrm{sub}}}{p_0}" : regime === "shock" ? "\\frac{p_{\\mathrm{exit\\,shock}}}{p_0}<\\frac{p_b}{p_0}<\\frac{p_{e,\\mathrm{sub}}}{p_0}" : regime === "overexpanded" ? "\\frac{p_{e,\\mathrm{sup}}}{p_0}<\\frac{p_b}{p_0}\\le\\frac{p_{\\mathrm{exit\\,shock}}}{p_0}" : regime === "no-flow" ? "p_b\\ge p_0" : "\\frac{p_b}{p_0}\\le\\frac{p_{e,\\mathrm{sup}}}{p_0}"}`,
           `\\dot m_{\\max}=\\frac{p_0A_t}{\\sqrt{RT_0}}\\sqrt{\\gamma}\\left(\\frac{2}{\\gamma+1}\\right)^{\\frac{\\gamma+1}{2(\\gamma-1)}}=${texNum(mdotMax)}\\ \\mathrm{kg/s}`], evidence: ["nasa-choking"] },
       { id: "s-fam-numerics", item: 10, title: "Numerical procedure: bisection on each branch",
         reason: "For each station the page solves A/A* = f(M) by bisection on the branch that the regime selects. Then it computes ρuA and the total enthalpy at each station.",
@@ -517,7 +519,7 @@
     );
     if (exact) {
       checks.push({ id: "energy-mach", status: coefOk ? "exact" : "unresolved", passed: coefOk, title: `With c_p = γR/(γ − 1), the energy equation gives T₀/T = 1 + ${Q.str(Q.div(Q.sub(gx, Q.ONE), q(2)))}·M² exactly for γ = ${Q.str(gx)}.`, tex: `\\frac{\\gamma R}{2c_p}=\\frac{\\gamma-1}{2}=${Q.tex(Q.div(Q.sub(gx, Q.ONE), q(2)))}`, evidence: ["nasa-choking"], steps: ["s-fam-isentropic"] });
-      checks.push({ id: "exponent", status: expOk ? "exact" : "unresolved", passed: expOk, title: `The exponents of the mass flux add exactly: −1/(γ − 1) − 1/2 = −(γ + 1)/(2(γ − 1)) = −${Q.str(nx)} for γ = ${Q.str(gx)}. Thus ρuA is the same at every station.`, tex: `-\\frac{\\gamma+1}{2(\\gamma-1)}=${Q.tex(Q.neg(nx))}`, evidence: [], steps: ["s-fam-massflow"] });
+      checks.push({ id: "exponent", status: expOk ? "exact" : "unresolved", passed: expOk, title: `The exponents of the mass flux add exactly: −1/(γ − 1) − 1/2 = −(γ + 1)/(2(γ − 1)) = −${Q.str(nx)} for γ = ${Q.str(gx)}. Thus the mass-flux parameter is F(M) = √γ M(1 + M²/5)^(−${Q.str(nx)}).`, tex: `-\\frac{\\gamma+1}{2(\\gamma-1)}=${Q.tex(Q.neg(nx))}`, evidence: [], steps: ["s-fam-massflow"] });
       checks.push({ id: "sonic", status: polyOk ? "exact" : "unresolved", passed: polyOk, title: "The numerator of dF/dM is exactly 1 − M². Thus M = 1 is the only stationary point, and it is a maximum: the sonic condition.", tex: "1+\\frac{\\gamma-1}{2}M^{2}-\\frac{\\gamma+1}{2(\\gamma-1)}\\,M\\,(\\gamma-1)M=1-M^{2}", evidence: ["nasa-choking"], steps: ["s-fam-sonic"] });
       checks.push({ id: "critical", status: "exact", passed: true, title: `At M = 1: A/A* = 1 and T*/T₀ = 2/(γ + 1) = ${qText(Q.div(q(2), Q.add(gx, Q.ONE)))} exactly.`, tex: `\\frac{T^{*}}{T_0}=${Q.tex(Q.div(q(2), Q.add(gx, Q.ONE)))}`, evidence: [], steps: ["s-fam-sonic"] });
       if (phi2) checks.push({ id: "phi", status: "exact", passed: Math.abs(Math.sqrt(N(phi2)) - phi) <= 1e-14 * phi, title: `The squared choked mass-flow parameter is exactly ${Q.str(phi2)}, so ṁ√(RT₀)/(p₀A_t) = ${fmt(Math.sqrt(N(phi2)), 8)}.`, tex: `\\left(\\frac{\\dot m\\sqrt{RT_0}}{p_0A_t}\\right)^{2}=\\gamma\\left(\\frac{2}{\\gamma+1}\\right)^{\\frac{\\gamma+1}{\\gamma-1}}=${Q.tex(phi2)}`, evidence: ["nasa-choking"], steps: ["s-fam-regime"] });
@@ -538,10 +540,11 @@
       "choked-subsonic": `p_b/p₀ = ${fmt(pb)} is the first critical ratio. The throat is sonic, and the flow is subsonic after it.`,
       design: `p_b/p₀ = ${fmt(pb)} is the design ratio. The flow is isentropic and supersonic from the throat to the exit, with M_e = ${fmt(Me)}.`,
       underexpanded: `p_b/p₀ = ${fmt(pb)} is below the design ratio ${fmt(p3)}. The flow in the nozzle is isentropic and supersonic after the throat, with M_e = ${fmt(Me)}. The jet expands further outside the nozzle. The quasi-1D model does not describe the jet.`,
-      shock: `p_b/p₀ = ${fmt(pb)} is between the design ratio ${fmt(p3)} and the first critical ratio ${fmt(p1)}. Shocks occur in the nozzle or in the jet. This declaration does not include shocks.`,
+      overexpanded: `p_b/p₀ = ${fmt(pb)} is between the design ratio ${fmt(p3)} and the exit-shock ratio ${fmt(p2)}. The flow in the nozzle is isentropic and supersonic up to the exit, with M_e = ${fmt(Me)}. Oblique shocks form in the jet outside the nozzle. The quasi-1D model does not describe the jet.`,
+      shock: `p_b/p₀ = ${fmt(pb)} is between the exit-shock ratio ${fmt(p2)} and the first critical ratio ${fmt(p1)}. A normal shock stands in the diverging part of the nozzle. This declaration does not include shocks.`,
     }[regime];
     checks.push(regime === "shock" || regime === "no-flow"
-      ? { id: "regime", status: "unresolved", passed: false, title: regimeText, evidence: ["nasa-choking"], steps: ["s-fam-regime"], next: regime === "shock" ? "Shocks need a separate declaration. The choked mass flow upstream of the shock stays valid. Or select a back pressure outside the shock range." : "Lower the back pressure below p₀." }
+      ? { id: "regime", status: "unresolved", passed: false, title: regimeText, evidence: ["nasa-choking"], steps: ["s-fam-regime"], next: regime === "shock" ? "To include the shock, use a separate declaration. The choked mass flow upstream of the shock stays valid. Alternatively, set p_b/p₀ outside the shock range." : "Lower the back pressure below p₀." }
       : { id: "regime", status: "evidence", passed: true, title: regimeText, evidence: ["nasa-choking"], steps: ["s-fam-regime"] });
     if (regime !== "subsonic" && regime !== "no-flow") {
       checks.push({ id: "choked", status: "evidence", passed: true, title: `The throat is sonic, so the mass flow is the choked value ṁ = ${fmt(mdotMax)} kg/s. A lower back pressure does not increase it.`, evidence: ["nasa-choking"], steps: ["s-fam-regime"] });
@@ -553,22 +556,23 @@
       { id: "phi", label: "Choked mass-flow parameter", tex: "\\dot m_{\\max}\\sqrt{RT_0}/(p_0A_t)", value: phi, unit: "" },
       { id: "p1", label: "First critical pressure ratio", tex: "p_{e,\\mathrm{sub}}/p_0", value: p1, unit: "" },
       { id: "p3", label: "Design pressure ratio", tex: "p_{e,\\mathrm{sup}}/p_0", value: p3, unit: "" },
+      { id: "p2", label: "Exit-shock pressure ratio", tex: "p_{\\mathrm{exit\\,shock}}/p_0", value: p2, unit: "" },
       { id: "pstar", label: "Critical pressure ratio", tex: "p^{*}/p_0", value: pStar, unit: "" },
       { id: "rhostar", label: "Critical density ratio", tex: "\\rho^{*}/\\rho_0", value: rhoStar, unit: "" },
       ...(Me != null ? [{ id: "Me", label: "Exit Mach number", tex: "M_e", value: Me, unit: "" }, { id: "Te", label: "Exit temperature", tex: "T_e", value: exitT, unit: "K" }, { id: "ue", label: "Exit velocity", tex: "u_e", value: exitU, unit: "m/s" }] : []),
     ];
     const Ms = Array.from({ length: 121 }, (_, i) => 0.02 + i * 0.025);
     const figures = [
-      { id: "nozzle", title: "Mach number and pressure along the nozzle", caption: regime === "shock" ? "The page draws the flow up to the throat. After the throat a shock occurs, which this declaration does not include." : "M and p/p₀ against x/L. The throat is at x/L = 0.5.",
+      { id: "nozzle", title: "Mach number and pressure along the nozzle", caption: regime === "shock" ? "The page draws the flow up to the throat. After the throat a normal shock stands in the nozzle, which this declaration does not include." : "M and p/p₀ against x/L. The throat is at x/L = 0.5.",
         x: { label: "x/L", min: 0, max: 1 }, y: { label: "M, p/p₀, A/A_t", min: 0 },
         series: [{ label: "A/A_t", points: stations.map((s) => [s.X, s.A]), dash: true }, { label: "M", points: stations.filter((s) => s.M != null).map((s) => [s.X, s.M]) }, { label: "p/p₀", points: stations.filter((s) => s.p != null).map((s) => [s.X, s.p]) }],
         vlines: [{ x: 0.5, label: "throat" }] },
       { id: "flux", title: "Mass-flow parameter against the Mach number", caption: "F(M)/F(1) has its only maximum at M = 1: the sonic condition.",
         x: { label: "M", min: 0, max: 3 }, y: { label: "F(M)/F(1)", min: 0, max: 1.05 },
         series: [{ label: "F/F(1)", points: Ms.map((M) => [M, gs.flux(M) / gs.flux(1)]) }], vlines: [{ x: 1, label: "M = 1" }] },
-      { id: "backpressure", title: "Back-pressure ratio and the flow regime", caption: "The two critical ratios divide the back-pressure axis. The shock range needs a separate declaration.",
+      { id: "backpressure", title: "Back-pressure ratio and the flow regime", caption: "The first critical ratio and the exit-shock ratio divide the back-pressure axis. The shock range needs a separate declaration.",
         kind: "bands", x: { label: "p_b/p₀", min: 0, max: 1 },
-        bands: [{ from: 0, to: p3, label: "supersonic exit", state: "ok" }, { from: p3, to: p1, label: "shocks: separate declaration", state: "unresolved" }, { from: p1, to: 1, label: "subsonic", state: "ok" }],
+        bands: [{ from: 0, to: p2, label: "isentropic to the exit", state: "ok" }, { from: p2, to: p1, label: "shock in the nozzle: separate declaration", state: "unresolved" }, { from: p1, to: 1, label: "subsonic", state: "ok" }],
         marks: [{ x: Math.min(1, pb), label: `p_b/p₀ = ${fmt(pb, 4)}` }] },
     ];
     return { steps, checks, outputs, figures, regime, table: stations.filter((s, i) => i % 6 === 0).map((s) => ({ "x/L": fmt(s.X, 3), "A/A_t": fmt(s.A, 4), M: s.M == null ? "shock range" : fmt(s.M, 5), "p/p₀": s.p == null ? "" : fmt(s.p, 5) })),
@@ -653,7 +657,7 @@
     if (exactOut) {
       const inOk = Boolean(up && given.inflow === up.inflow && given.outflow === up.outflow);
       checks.push({ id: "characteristics", status: inOk ? "exact" : "unresolved", passed: inOk,
-        title: `Boundary data: the inflow is ${exactOut.sup ? "supercritical" : "subcritical"}, because Fr₁² = ${qText(exactOut.fr2)} (exact sign of Fr₁² − 1). Thus the flow needs ${up ? up.inflow : "?"} condition${up && up.inflow === 1 ? "" : "s"} at x = 0 and ${up ? up.outflow : "?"} at x = L. The model gives ${given.inflow} and ${given.outflow}.${jumpOk && down ? ` A jump forms only when the outflow holds the subcritical conjugate depth h₂: that adds ${down.outflow} condition at x = L.` : ""}`,
+        title: `Boundary data: the inflow is ${exactOut.sup ? "supercritical" : "subcritical"}, because Fr₁² = ${qText(exactOut.fr2)} (the page calculates the sign of Fr₁² − 1 exactly). Thus the flow needs ${up ? up.inflow : "?"} condition${up && up.inflow === 1 ? "" : "s"} at x = 0 and ${up ? up.outflow : "?"} at x = L. The model gives ${given.inflow} and ${given.outflow}.${jumpOk && down ? ` A jump forms only if the outflow depth is h₂. Then the flow needs ${down.outflow} more condition at x = L.` : ""}`,
         evidence: ["swashes"], steps: ["s-fam-characteristics"], next: inOk ? "" : "Give one condition for each characteristic that enters the reach." });
       checks.push({ id: "critical", status: P.isZero(exactOut.crit) ? "exact" : "unresolved", passed: P.isZero(exactOut.crit), title: "With q²/g = h_c³, E(h_c) = h_c + h_c/2 = (3/2) h_c exactly, and dE/dh = 1 − Fr² is 0 there.", tex: "E(h_c)=h_c+\\frac{h_c^{3}}{2h_c^{2}}=\\tfrac32h_c", evidence: ["apsley-rvf"], steps: ["s-fam-energy"] });
       checks.push({ id: "alternate", status: QS.isZero(exactOut.altE) && Q.isZero(exactOut.cubicRem) ? "exact" : "unresolved", passed: QS.isZero(exactOut.altE),
@@ -661,8 +665,8 @@
       if (altF) checks.push({ id: "alternate-float", status: "numerical", passed: Math.abs(altF.x - hAltExact) <= tol.root * hAltExact,
         title: `Bisection gives the alternate depth ${fmt(altF.x, 10)} m, which agrees with the exact value within ${fmt(Math.abs(altF.x - hAltExact) / hAltExact, 2)} (relative).`, tolerance: `relative difference ≤ ${tol.root}`, evidence: [], steps: ["s-fam-energy"] });
       checks.push({ id: "momentum", status: QS.isZero(exactOut.momentum) && QS.isZero(exactOut.rPoly) ? "exact" : "unresolved", passed: QS.isZero(exactOut.momentum),
-        title: `The conjugate depth h₂ = ${fmt(h2, 8)} m keeps the momentum function exactly: M(h₁) − M(h₂) = 0 in the field with √${Q.str(exactOut.disc)}.`, tex: `h_2=${QS.tex(exactOut.h2)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
-      checks.push({ id: "loss", status: exactOut.lossOk ? "exact" : "unresolved", passed: exactOut.lossOk, title: `The energy loss E₁ − E₂ equals (h₂ − h₁)³/(4h₁h₂) exactly: ΔE = ${fmt(dE, 6)} m.`, tex: `\\Delta E=${QS.tex(exactOut.dE)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
+        title: `The conjugate depth h₂ = ${fmt(h2, 8)} m has the same momentum function as h₁: M(h₁) − M(h₂) = 0. The page calculates it exactly as a + b√d, with d = ${Q.str(exactOut.disc)}.`, tex: `h_2=${QS.tex(exactOut.h2)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
+      checks.push({ id: "loss", status: exactOut.lossOk ? "exact" : "unresolved", passed: exactOut.lossOk, title: `The head-loss identity E₁ − E₂ = (h₂ − h₁)³/(4h₁h₂) holds exactly for the conjugate root: ΔE = ${fmt(dE, 6)} m.${dE < 0 ? " This is an energy gain, so the root is not a physical jump." : ""}`, tex: `\\Delta E=${QS.tex(exactOut.dE)}`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
       if (jumpOk) {
         checks.push({ id: "admissible", status: QS.sign(exactOut.dE) > 0 && exactOut.sub2 ? "exact" : "unresolved", passed: QS.sign(exactOut.dE) > 0 && exactOut.sub2,
           title: `The jump is admissible: it loses energy (ΔE > 0, exact sign), and it goes from supercritical to subcritical flow (Fr₂² = ${fmt(Fr2sq, 6)} < 1, exact sign).`, evidence: ["apsley-rvf"], steps: ["s-fam-jump"] });
@@ -674,7 +678,7 @@
     } else {
       checks.push({ id: "exact-inputs", status: "unresolved", passed: false, title: "g, q or h₁ has no exact value, so the page cannot check the jump exactly.", next: "Enter g, q and h₁ as decimals or fractions.", evidence: [], steps: ["s-fam-jump"] });
     }
-    if (jumpOk) checks.push({ id: "position", status: "unresolved", passed: null, limitation: true, title: "This model does not fix the position of the jump: on a flat bed with no friction, every position conserves mass and momentum.", evidence: ["apsley-rvf"], steps: ["s-fam-jump"], next: "Bed friction or a bed slope fixes the position. That needs a separate declaration." });
+    if (jumpOk) checks.push({ id: "position", status: "unresolved", passed: null, limitation: true, title: "This model does not fix the position of the jump. On a flat bed with no friction, a jump at any position conserves mass and momentum.", evidence: ["apsley-rvf"], steps: ["s-fam-jump"], next: "Bed friction or a bed slope fixes the position. That needs a separate declaration." });
 
     const outputs = [
       { id: "Fr1", label: "Upstream Froude number", tex: "Fr_1", value: Math.sqrt(Fr1sq), unit: "" },
@@ -764,7 +768,7 @@
         tex: ["\\frac{\\partial u}{\\partial x}+\\frac{\\partial v}{\\partial y}=0,\\qquad u\\frac{\\partial u}{\\partial x}+v\\frac{\\partial u}{\\partial y}=\\nu\\frac{\\partial^{2}u}{\\partial y^{2}}",
           "u(x,0)=v(x,0)=0,\\qquad u(x,\\infty)=U,\\qquad u(0,y)=U"], evidence: ["mit-16110"] },
       { id: "s-fam-similarity", item: 7, title: "Similarity variable",
-        reason: "The plate has no length of its own, so the solution depends on one combined variable. Every term of the momentum equation then has the same power of x, and the equation becomes an ordinary differential equation.",
+        reason: "A semi-infinite plate has no length scale, so the solution depends on one combined variable. Every term of the momentum equation then has the same power of x, and the equation becomes an ordinary differential equation.",
         tex: ["\\eta=y\\sqrt{\\frac{U}{\\nu x}},\\qquad \\psi=\\sqrt{\\nu U x}\\,f(\\eta),\\qquad u=Uf',\\qquad v=\\frac12\\sqrt{\\frac{\\nu U}{x}}\\left(\\eta f'-f\\right)",
           "f'''+\\tfrac12ff''=0,\\qquad f(0)=f'(0)=0,\\qquad f'(\\infty)=1"], evidence: ["lienhard-flow"] },
       { id: "s-fam-shooting", item: 10, title: "Numerical procedure: shooting",
@@ -772,7 +776,7 @@
         tex: [`f''(0)=${s.toFixed(10)}\\quad(h=0.025,\\ \\eta_{\\max}=12)`,
           `\\delta_{99}=${fmt(at99, 5)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\delta^{*}=${fmt(dstar, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad \\theta=${fmt(theta, 6)}\\frac{x}{\\sqrt{Re_x}},\\qquad H=${fmt(H, 5)}`], evidence: ["lienhard-flow"] },
       { id: "s-fam-validity", item: 8, title: "Validity: the estimated remainder",
-        reason: "The first correction to the boundary-layer solution comes from the displacement of the outer flow. Its relative size is about δ*/x. This is an estimate of the remainder, not a proved error bound.",
+        reason: "Corrections of relative order Re_x^(−1/2), about δ*/x, come from the leading edge and from the displacement of the outer flow. This is an estimate of the remainder, not a proved error bound.",
         tex: [`Re_x=\\frac{Ux}{\\nu}=${texNum(Re)},\\qquad \\frac{\\delta^{*}}{x}=\\frac{${fmt(dstar, 5)}}{\\sqrt{Re_x}}=${texNum(remainder, 3)}`], evidence: ["mit-16110"] },
     ];
     const checks = [
@@ -781,7 +785,7 @@
     ];
     if (ref) checks.push({ id: "reference", status: "numerical", passed: Math.abs(s - ref.value) <= tol.reference, title: `f''(0) = ${s.toFixed(10)} agrees with the mpmath reference ${ref.value.toFixed(12)} within ${fmt(Math.abs(s - ref.value), 2)}.`, tolerance: `|difference| ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
     checks.push({ id: "step", status: "numerical", passed: Math.abs(ord - 4) <= tol.order && Math.abs(conv[1].s - conv[2].s) <= tol.reference,
-      title: `Step convergence: halving the step from 0.1 to 0.025 changes f''(0) at order ${fmt(ord, 3)} (Runge–Kutta: 4). The last change is ${fmt(Math.abs(conv[1].s - conv[2].s), 2)}.`, tolerance: `|order − 4| ≤ ${tol.order}, last change ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
+      title: `Step convergence: the steps 0.1, 0.05 and 0.025 change f''(0) at order ${fmt(ord, 3)} (Runge–Kutta: 4). The last change is ${fmt(Math.abs(conv[1].s - conv[2].s), 2)}.`, tolerance: `|order − 4| ≤ ${tol.order}, last change ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
     checks.push({ id: "domain", status: "numerical", passed: Math.abs(dom[2].s - dom[1].s) <= tol.reference, title: `Domain convergence: η_max = 10, 12 and 14 give f''(0) values that differ by ${fmt(Math.abs(dom[0].s - dom[1].s), 2)} and ${fmt(Math.abs(dom[2].s - dom[1].s), 2)}.`, tolerance: `change from 12 to 14 ≤ ${tol.reference}`, evidence: [], steps: ["s-fam-shooting"] });
     checks.push({ id: "momentum-integral", status: "numerical", passed: Math.abs(theta - 2 * s) <= tol.integral, title: `Momentum integral: with dp/dx = 0, dθ/dx = c_f/2 needs ∫f'(1 − f')dη = 2f''(0). The two sides are ${fmt(theta, 9)} and ${fmt(2 * s, 9)}.`, tolerance: `|difference| ≤ ${tol.integral}`, evidence: ["lienhard-flow"], steps: ["s-fam-shooting"] });
     checks.push(remainder <= tol.remainder
@@ -957,7 +961,7 @@
         tex: ["\\frac{|V|}{U}=\\left|2\\sin\\psi+G\\right|,\\qquad G=\\frac{\\Gamma}{2\\pi aU},\\qquad C_p=1-\\left(2\\sin\\psi+G\\right)^{2}",
           `\\frac{1}{\\pi}\\oint C_p\\cos\\psi\\,\\mathrm d\\psi=0,\\qquad \\frac{1}{\\pi}\\oint C_p\\sin\\psi\\,\\mathrm d\\psi=${Q.tex(liftG[1])}G\\;\\Rightarrow\\;L'=\\rho U\\Gamma`], evidence: ["mit-1601-f18"] },
       { id: "s-fam-joukowski", item: 8, title: "Joukowski airfoil and the Kutta condition",
-        reason: "The Joukowski map turns a circle through ζ = b into an airfoil with a sharp trailing edge. The Kutta condition puts a stagnation point at that edge, and this fixes the circulation.",
+        reason: "The Joukowski map turns a circle through ζ = b into an airfoil with a sharp trailing edge. The Kutta condition puts the rear stagnation point of the circle flow at ζ = b. The flow then leaves the cusped trailing edge smoothly, and this fixes the circulation.",
         tex: ["z=\\zeta+\\frac{b^{2}}{\\zeta},\\qquad \\zeta_0=b\\left(-\\varepsilon+\\mathrm i\\,2m(1+\\varepsilon)\\right),\\qquad \\Gamma=4\\pi Ua\\sin(\\alpha+\\beta)",
           `\\beta=${texNum(deg(J.beta), 4)}^{\\circ},\\qquad \\frac{t}{c}=${texNum(tc, 4)},\\qquad C_l=\\frac{2\\Gamma}{Uc}=${texNum(clJ)}`], evidence: ["mit-18354"] },
       { id: "s-fam-thin", item: 8, title: "Thin-airfoil theory",
@@ -982,10 +986,10 @@
       { id: "flat-plate", status: "numerical", passed: Math.max(...flat) <= 1e-10, title: `The lumped-vortex method gives the flat-plate lift 2πα for 8 and for 32 panels, with differences ${flat.map((e) => fmt(e, 2)).join(" and ")}.`, tolerance: "≤ 1e-10", evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
       { id: "panels-lift", status: "numerical", passed: Math.max(...panErr.map((p) => p.cl)) <= 1e-10, title: `With the parabolic camber line, the lumped-vortex lift agrees with thin-airfoil theory for 16 to 128 panels. The largest relative difference is ${fmt(Math.max(...panErr.map((p) => p.cl)), 2)}.`, tolerance: "relative difference ≤ 1e-10", evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
       { id: "panels-moment", status: "numerical", passed: panErr[3].cm <= tol.panel && Math.abs(ordPan - 2) <= tol.order, title: `The lumped-vortex moment about the quarter chord converges to −πm at order ${fmt(ordPan, 3)} (expected 2). At 128 panels the difference is ${fmt(panErr[3].cm, 2)}.`, tolerance: `difference ≤ ${tol.panel} at 128 panels, |order − 2| ≤ ${tol.order}`, evidence: ["mit-1601-f04"], steps: ["s-fam-panels"] },
-      { id: "overlap", status: "numerical", passed: Math.abs(ordPath - 2) <= tol.order, title: `Overlapping approximations: along (α, m) = s(α₀, m₀), the difference between thin-airfoil theory and the exact circular arc falls at order ${fmt(ordPath, 3)} in s (expected 2).`, tolerance: `|order − 2| ≤ ${tol.order}`, evidence: [], steps: ["s-fam-limits"] },
+      { id: "overlap", status: "numerical", passed: Math.abs(ordPath - 2) <= tol.order, title: `Overlapping approximations: let α and m decrease together in proportion to s. The difference between thin-airfoil theory and the exact circular arc then decreases at order ${fmt(ordPath, 3)} in s (expected 2).`, tolerance: `|order − 2| ≤ ${tol.order}`, evidence: [], steps: ["s-fam-limits"] },
       thinErr <= tol.approximation
         ? { id: "approximation", status: "numerical", passed: true, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is inside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The error reaches the tolerance at α = ${fmt(deg(aBound.x), 4)}° for this camber.` : ""}`, tolerance: `relative difference ≤ ${tol.approximation}`, evidence: [], steps: ["s-fam-limits"] }
-        : { id: "approximation", status: "unresolved", passed: false, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is outside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The approximation boundary for this camber is at α = ${fmt(deg(aBound.x), 4)}°.` : ""}`, evidence: [], steps: ["s-fam-limits"], next: "Use a smaller angle of attack, or use the exact Joukowski result. Large angles also bring flow separation, which this model cannot show." },
+        : { id: "approximation", status: "unresolved", passed: false, title: `At α = ${fmt(deg(alpha), 4)}°, thin-airfoil theory differs from the exact circular arc by ${fmt(thinErr * 100, 3)} %, which is outside the declared tolerance ${tol.approximation * 100} %.${aBound ? ` The approximation boundary for this camber is at α = ${fmt(deg(aBound.x), 4)}°.` : ""}`, evidence: [], steps: ["s-fam-limits"], next: "Use a smaller angle of attack. For larger angles, read the exact Joukowski result. At large angles the flow separates, and this model cannot show separation." },
       { id: "viscous", status: "evidence", passed: true, title: "Viscous limits: potential flow gives no drag and does not predict separation or stall. The Kutta condition stands for the effect of viscosity at the sharp trailing edge. The results apply to attached flow at high Reynolds number.", evidence: ["nasa-foilinc", "sydney-cylinder"], steps: ["s-fam-limits"] },
     ];
     const outputs = [
@@ -1122,7 +1126,7 @@
   function nozzleImpl(decl) {
     const params = decl.domain.parameters;
     const g = gas(1.4);
-    const crit = (eps) => ({ p1: g.pRatio(g.mach(eps, "sub").x), p3: g.pRatio(g.mach(eps, "sup").x) });
+    const crit = (eps) => { const ms = g.mach(eps, "sup").x, p3 = g.pRatio(ms); return { p1: g.pRatio(g.mach(eps, "sub").x), p3, p2: p3 * (2 * 1.4 * ms * ms - 0.4) / 2.4 }; };
     const run = (ctx) => {
       const { v } = values(ctx, { p0: "p_0", T0: "T_0", R: "R_g", At: "A_t", Ae: "A_e", Ai: "A_i", pb: "p_b" });
       const lack = missing(v, ["p0", "T0", "R", "At", "Ae", "pb"]);
@@ -1134,14 +1138,14 @@
         criterion: "p_b/p₀ against the first critical ratio p_e,sub/p₀: below it the throat is sonic and the subsonic and supersonic branches of the area–Mach relation meet there (the fold at M = 1)", steps: ["s-st-fold"], evidence: ["nasa-choking"],
         thresholds: () => ({ curves: [{ value: 1, label: "The first critical ratio: the throat becomes sonic" }], regions: [{ id: "choked", label: "Choked: the throat is sonic and ṁ is at its maximum", lo: 0, hi: 1 }, { id: "subsonic", label: "Subsonic everywhere: ṁ is below the maximum", lo: 1, hi: null }] }) },
       { id: "design", kind: "balance", boundary: "balance-crossover", title: "Exit pressure against back pressure", measure: "sup", scale: "log", status: "exact", hue: "design",
-        criterion: "p_b/p₀ against the design ratio p_e,sup/p₀: the isentropic exit pressure equals the back pressure on the curve", steps: ["s-rm-map"], evidence: ["nasa-choking"],
-        thresholds: () => ({ curves: [{ value: 1, label: "Design: the exit pressure equals the back pressure" }], regions: [{ id: "under", label: "Underexpanded: the jet expands further outside the nozzle", lo: 0, hi: 1 }, { id: "over", label: "Above the design ratio", lo: 1, hi: null }] }) },
+        criterion: "p_b/p₀ against the design ratio p_e,sup/p₀: on the curve the isentropic exit pressure equals the back pressure. Above it, up to the exit-shock ratio, oblique shocks form in the jet", steps: ["s-rm-map"], evidence: ["nasa-choking"],
+        thresholds: () => ({ curves: [{ value: 1, label: "Design: the exit pressure equals the back pressure" }], regions: [{ id: "under", label: "Underexpanded: the jet expands further outside the nozzle", lo: 0, hi: 1 }, { id: "over", label: "Overexpanded: oblique shocks in the jet", lo: 1, hi: null }] }) },
     ];
     return { id: decl.id, params, axes: { x: "eps", y: "pb" }, approximations: [], layers,
       evaluate: (p) => {
         if (!(p.eps > 1) || !(p.pb > 0 && p.pb < 1)) return { ok: false, reason: "The area ratio must be above 1, and the back-pressure ratio between 0 and 1." };
-        const { p1, p3 } = crit(p.eps);
-        if (p.pb > p3 * (1 + 1e-12) && p.pb < p1 * (1 - 1e-12)) return { ok: false, reason: "Shock range: a shock stands in the nozzle or in the jet. Shocks need a separate declaration." };
+        const { p1, p3, p2 } = crit(p.eps);
+        if (p.pb > p2 * (1 + 1e-12) && p.pb < p1 * (1 - 1e-12)) return { ok: false, reason: "Shock range: a normal shock stands in the nozzle. Shocks need a separate declaration." };
         return { ok: true, values: { sub: p.pb / p1, sup: p.pb / p3 } };
       },
       limits: () => [],
@@ -1154,10 +1158,10 @@
           { id: "Me", tex: "M_e", label: "exit Mach number", value: num(Me) }, { id: "m", tex: "\\Phi", label: "mass-flow parameter ṁ√(R_gT₀)/(p₀A_t)", value: num(phi) }],
           checks: [], reconstruction: ctx?.reconstruct ? [ctx.reconstruct("m", phi)].filter(Boolean) : [] };
       },
-      derived: (p) => { const { p1, p3 } = crit(p.eps); return [{ id: "p1", tex: "p_{e,\\mathrm{sub}}/p_0", label: "first critical ratio", value: num(p1) }, { id: "p3", tex: "p_{e,\\mathrm{sup}}/p_0", label: "design ratio", value: num(p3) }, { id: "phi", tex: "\\Phi_{\\max}", label: "choked mass-flow parameter", value: num(Math.sqrt(1.4) * Math.pow(5 / 6, 3)) }]; },
+      derived: (p) => { const { p1, p3, p2 } = crit(p.eps); return [{ id: "p2", tex: "p_{\\mathrm{exit\\,shock}}/p_0", label: "exit-shock ratio", value: num(p2) }, { id: "p1", tex: "p_{e,\\mathrm{sub}}/p_0", label: "first critical ratio", value: num(p1) }, { id: "p3", tex: "p_{e,\\mathrm{sup}}/p_0", label: "design ratio", value: num(p3) }, { id: "phi", tex: "\\Phi_{\\max}", label: "choked mass-flow parameter", value: num(Math.sqrt(1.4) * Math.pow(5 / 6, 3)) }]; },
       constraints: () => ["The declaration fixes γ = 7/5 (air)."],
       exactBoundaries: () => [{ layer: "choking", text: "The throat is sonic for every p_b/p₀ below the first critical ratio; the mass flow is then (ṁ√(R_gT₀)/(p₀A_t))² = 21875/46656 exactly." }],
-      analysis: () => ({ note: "The back pressure and the area ratio select the flow. Between the design ratio and the first critical ratio a shock occurs, and the map shows that region as unresolved.",
+      analysis: () => ({ note: "The back pressure and the area ratio select the flow. Between the exit-shock ratio and the first critical ratio a normal shock stands in the nozzle, and the map shows that region as unresolved.",
         balance: noBalance("Dominant balance does not apply: every term of the quasi-one-dimensional equations is of order 1."),
         asymptotic: noAsymptotic("The quasi-one-dimensional model is the declared model; it has no small parameter of its own.") }),
       acceptance: (ctx) => { const out = run(ctx); return out.lack ? [{ id: "values", title: `The record has no value for ${out.lack.join(", ")}`, passed: false, status: "exact", detail: "Enter the values of the standard example." }] : out.checks.filter(isCheck).map(acceptOf); },
@@ -1191,7 +1195,7 @@
       constraints: (p) => (p.F < 1 ? ["The inflow is subcritical: no hydraulic jump is possible, and the conjugate root is not a physical depth."] : []),
       exactBoundaries: () => [{ layer: "critical", text: "Fr₁² = 1 exactly: at the critical depth dE/dh = 1 − Fr² = 0." }],
       analysis: () => ({ note: "Fr₁ decides the flow: a supercritical inflow can jump to its subcritical conjugate depth, a subcritical inflow cannot.",
-        balance: noBalance("Dominant balance does not apply: the steady long-wave equations keep every term."),
+        balance: noBalance("Dominant balance does not apply: the steady long-wave equations include all terms of the model."),
         asymptotic: noAsymptotic("The shallow-water equations are the declared long-wave model; the page computes no correction to it.") }),
       acceptance: (ctx) => { const out = run(ctx); return out.lack ? [{ id: "values", title: `The record has no value for ${out.lack.join(", ")}`, passed: false, status: "exact", detail: "Enter the values of the standard example." }] : out.checks.filter(isCheck).map(acceptOf); },
       stability: (p, ctx) => { const out = run(ctx); return out.lack ? null : panel(decl, out, { kind: "bifurcation", step: "s-st-fold", heading: "Hand calculation 9: the two depth branches, the critical depth and the jump", concept: "branches of the steady depths: the subcritical and supercritical depths of one specific energy meet at a fold at the critical depth", point: { F: num(p.F) }, tableTitle: "Depths" }); } };

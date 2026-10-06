@@ -3,7 +3,7 @@
 The page's engine is its own JavaScript. This script recomputes, with other software:
 
   internal  P, S, f·Re and Nu of the fully developed pipe and channel flows with a uniform wall heat flux (SymPy)
-  nozzle    the exit Mach numbers on both branches, the critical pressure ratios and the choked mass-flow parameter
+  nozzle    the exit Mach numbers on both branches, the critical and exit-shock pressure ratios and the choked mass-flow parameter
             of air (γ = 7/5) for the exit area ratio of the standard example (mpmath, 30 digits; SymPy for the square)
   jump      the conjugate depth, the head loss and the alternate depth of the standard example (SymPy, exact radicals)
   blasius   f''(0), the 99 % thickness and the displacement and momentum thicknesses of the Blasius solution
@@ -51,7 +51,8 @@ def nozzle(eps):
     sub = mpmath.findroot(lambda M: ar(M) - eps, (mpmath.mpf("0.01"), mpmath.mpf("0.999")), solver="bisect")
     sup = mpmath.findroot(lambda M: ar(M) - eps, (mpmath.mpf("1.001"), mpmath.mpf(20)), solver="bisect")
     phi2 = sympy.Rational(7, 5) * sympy.Rational(5, 6) ** 6
-    return {"gamma": "7/5", "eps": float(eps), "M_sub": float(sub), "M_sup": float(sup), "p1": float(pr(sub)), "p3": float(pr(sup)),
+    p2 = pr(sup) * (2 * g * sup**2 - (g - 1)) / (g + 1)
+    return {"gamma": "7/5", "eps": float(eps), "M_sub": float(sub), "M_sup": float(sup), "p1": float(pr(sub)), "p3": float(pr(sup)), "p2": float(p2),
             "phi": float(mpmath.sqrt(g) * (2 / (g + 1)) ** ((g + 1) / (2 * (g - 1)))), "phi2": str(phi2)}
 
 

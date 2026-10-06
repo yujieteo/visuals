@@ -84,6 +84,8 @@ test("internal viscous flow: P, S, f·Re and Nu are exact rationals and equal Sy
   }
 });
 
+const out0 = () => FL.compute["compressible-nozzle"]({ v: { gamma: 1.4, R: 287, p0: 1e6, T0: 300, At: 1e-3, Ai: 3e-3, Ae: 2e-3, pb: 8e4 }, x: { gamma: Q.q(7n, 5n) }, tolerances: TOL });
+
 test("anchor test 3, the compressible nozzle: the conservation derivation, the sonic condition, the choked mass flow and conservation along the nozzle", () => {
   const d = derive("nozzle-flow");
   const acc = d.regime.acceptance;
@@ -99,8 +101,14 @@ test("anchor test 3, the compressible nozzle: the conservation derivation, the s
   const g = FL.gas(1.4);
   assert.ok(rel(g.mach(2, "sub").x, REF.nozzle.M_sub) <= 1e-12 && rel(g.mach(2, "sup").x, REF.nozzle.M_sup) <= 1e-12);
   assert.ok(rel(g.pRatio(g.mach(2, "sub").x), REF.nozzle.p1) <= 1e-12 && rel(g.pRatio(g.mach(2, "sup").x), REF.nozzle.p3) <= 1e-12);
+  const p2 = out0().outputs.find((o) => o.id === "p2").value;
+  assert.ok(rel(p2, REF.nozzle.p2) <= 1e-12, `the exit-shock ratio ${p2}`);
+  // Between the design ratio and the exit-shock ratio the nozzle flow is isentropic: an overexpanded jet, not a failure.
+  const over = FL.compute["compressible-nozzle"]({ v: { gamma: 1.4, R: 287, p0: 1e6, T0: 300, At: 1e-3, Ai: 3e-3, Ae: 2e-3, pb: 3e5 }, x: { gamma: Q.q(7n, 5n) }, tolerances: TOL });
+  assert.equal(over.regime, "overexpanded");
+  assert.equal(over.checks.find((c) => c.id === "regime").status, "evidence");
   // The mass flow: choked, from p₀, T₀ and A_t only; the record's back pressure gives a supersonic exit.
-  const out = FL.compute["compressible-nozzle"]({ v: { gamma: 1.4, R: 287, p0: 1e6, T0: 300, At: 1e-3, Ai: 3e-3, Ae: 2e-3, pb: 8e4 }, x: { gamma: Q.q(7n, 5n) }, tolerances: TOL });
+  const out = out0();
   const mdot = out.outputs.find((o) => o.id === "mdot").value;
   assert.ok(rel(mdot, 1e6 * 1e-3 * REF.nozzle.phi / Math.sqrt(287 * 300)) <= 1e-12, "ṁ = p₀A_tΦ/√(R_gT₀)");
   assert.equal(out.regime, "underexpanded");
@@ -110,7 +118,7 @@ test("anchor test 3, the compressible nozzle: the conservation derivation, the s
   const shock = derive("fail-nozzle-shock");
   const regime = byId(shock, "r-st-fl-regime");
   assert.equal(regime.status, "unresolved");
-  assert.match(regime.title, /Shocks occur/);
+  assert.match(regime.title, /A normal shock stands in the diverging part of the nozzle/);
   assert.match(regime.next, /separate declaration/);
   assert.equal(byId(shock, "r-st-fl-choked").status, "evidence", "the choked mass flow upstream of the shock stays a result");
   assert.ok(shock.regime.unresolved.count > 0 && shock.regime.unresolved.reasons.some((r) => /Shock range/.test(r.reason)));

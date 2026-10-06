@@ -6528,7 +6528,7 @@
             "scale": "u_m",
             "offset": "0",
             "symbol": "U",
-            "reason": "The mean velocity is the velocity scale."
+            "reason": "The mean velocity is the velocity scale, so the mean of U over the half-gap is 1."
           },
           {
             "id": "s-T",
@@ -6536,7 +6536,7 @@
             "scale": "q_w*b/k",
             "offset": "0",
             "symbol": "theta",
-            "reason": "The wall heat flux sets the temperature difference across the half-gap."
+            "reason": "The wall heat flux sets the temperature difference across the half-gap: kΔT/b = q_w."
           }
         ],
         "preferred": [
@@ -6783,7 +6783,7 @@
             "scale": "(R_g*T_0)^(1/2)",
             "offset": "0",
             "symbol": "V",
-            "reason": "The speed √(R_gT₀) of the reservoir state."
+            "reason": "The velocity scale √(R_gT₀) = a₀/√γ, from the reservoir temperature."
           },
           {
             "id": "s-T",
@@ -7226,7 +7226,7 @@
             "scale": "U*(nu/(U*L))^(1/2)",
             "offset": "0",
             "symbol": "Vh",
-            "reason": "The inner scale of v: continuity with the inner thickness."
+            "reason": "The scale V of v, from continuity: V = Uδ/L."
           }
         ],
         "preferred": [
@@ -7385,7 +7385,7 @@
           }
         ],
         "geometry": {
-          "domain": "The plane outside a Joukowski airfoil of chord c. The far-field boundary is a square of half-width X_f. The declared solver (a conformal map) holds the airfoil surface and its sharp trailing edge. A curved surface is not a condition at x = constant",
+          "domain": "The plane outside a Joukowski airfoil of chord c. The far-field boundary is a square of half-width X_f. The conformal map gives the exact airfoil surface and trailing edge. The surface has a curve, so it is not a line x = constant",
           "coordinates": "x along the stream, y normal to it. The chord makes the angle α with the stream",
           "lengths": [
             "v-c"
@@ -7481,10 +7481,10 @@
         "id": "fail-nozzle-shock",
         "label": "Failure: shock in the nozzle",
         "group": "failure",
-        "failure": "A back pressure between the design ratio and the first critical ratio puts a shock in the nozzle or the jet. A shock needs a separate declaration.",
+        "failure": "A back pressure between the exit-shock ratio and the first critical ratio puts a normal shock in the nozzle. A shock needs a separate declaration.",
         "title": "Failure: a back pressure in the shock range of the nozzle",
         "purpose": {
-          "question": "Which flow does the nozzle carry when the back pressure is 0.3 of the reservoir pressure?",
+          "question": "Which flow does the nozzle carry when the back pressure is 0.7 of the reservoir pressure?",
           "observable": "v-mdot",
           "calculation": "regime-map",
           "declaration": "nozzle-air"
@@ -7498,7 +7498,7 @@
         "evidence": "nozzle-flow",
         "overrides": {
           "v-pb": {
-            "value": "3e5"
+            "value": "7e5"
           }
         },
         "preferred": [
@@ -8884,6 +8884,13 @@
         "url": "https://www.grc.nasa.gov/www/k-12/BGP/mflchk.html",
         "read": "2026-10-06",
         "supports": "The mass flow rate ṁ = (Ap_t/√T_t)√(γ/R) M (1 + (γ − 1)M²/2)^(−(γ+1)/(2(γ−1))) (eq. 10). Its derivative is 0 only at M = 1, the maximum (eqs. 14 to 19). Choking at the throat, the smallest area."
+      },
+      {
+        "id": "nasa-normal-shock",
+        "title": "NASA Glenn Research Center: Normal shock wave equations",
+        "url": "https://www.grc.nasa.gov/www/k-12/airplane/normal.html",
+        "read": "2026-10-06",
+        "supports": "The static pressure ratio across a normal shock, p₁/p₀ = (2γM² − (γ − 1))/(γ + 1), with M the upstream Mach number."
       },
       {
         "id": "lienhard-flow",
@@ -15321,7 +15328,7 @@
               "source": "nasa-choking"
             },
             {
-              "text": "No shock in the nozzle: the back pressure is outside the shock range, else the declaration does not apply.",
+              "text": "No normal shock in the nozzle: the back pressure is below the exit-shock ratio or above the first critical ratio.",
               "source": "nasa-choking"
             }
           ]
@@ -15338,7 +15345,7 @@
         "methods": {
           "dominant-balance": {
             "applies": false,
-            "reason": "The quasi-one-dimensional equations keep every term: inertia, pressure and the change of area are all of order 1 in the nozzle."
+            "reason": "The quasi-one-dimensional equations include all terms of the model: inertia, pressure and the change of area are all of order 1 in the nozzle."
           },
           "asymptotic": {
             "applies": false,
@@ -15354,7 +15361,7 @@
           }
         },
         "limitations": [
-          "No shocks: the back-pressure range between the design ratio and the first critical ratio needs a separate declaration.",
+          "No normal shock in the nozzle: the back-pressure range between the exit-shock ratio and the first critical ratio needs a separate declaration.",
           "No friction and no heat transfer at the walls.",
           "Air with γ = 7/5 only. Another gas needs another declaration.",
           "The model does not describe the jet outside the exit."
@@ -15576,7 +15583,7 @@
         "methods": {
           "dominant-balance": {
             "applies": false,
-            "reason": "The declared steady equations keep every term of the long-wave model. The long-wave limit itself is an assumption, not a computed balance."
+            "reason": "The declared steady equations include all terms of the long-wave model. The long-wave limit itself is an assumption, not a computed balance."
           },
           "asymptotic": {
             "applies": false,
@@ -15608,7 +15615,7 @@
         },
         "solver": {
           "method": "Exact arithmetic in rationals and in the quadratic field Q(√d). Bisection for the alternate depth.",
-          "discretization": "None: the steady model is algebraic between the conservation laws.",
+          "discretization": "None: the model solves algebraic equations, not differential equations.",
           "convergence": "Bisection to 1e-15 relative width.",
           "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
         }
@@ -16209,21 +16216,21 @@
         "title": "A flow front over a dry bed",
         "needs": "a dry front (h = 0)",
         "family": "free-surface-flow",
-        "next": "Use the declared model shallow-water with water over the whole reach. A front over a dry bed needs a declaration with a moving wet–dry boundary."
+        "next": "Use the model shallow-water when water covers the whole reach. A front over a dry bed needs a declaration with a moving wet–dry boundary."
       },
       {
         "id": "turbulent-boundary-layer",
         "title": "A turbulent boundary layer",
         "needs": "turbulence",
         "family": "boundary-layers",
-        "next": "Use the declared model blasius for a laminar layer. A turbulent layer needs a declaration with a turbulence closure."
+        "next": "Use the model blasius for a laminar layer. A turbulent layer needs a declaration with a turbulence closure."
       },
       {
         "id": "airfoil-stall",
         "title": "An airfoil at stall",
         "needs": "flow separation and a viscous model",
         "family": "external-aerodynamic-flow",
-        "next": "Use the declared model joukowski-airfoil at small angles with attached flow. Stall needs a declaration with a viscous boundary layer and separation."
+        "next": "Use the model joukowski-airfoil at small angles with attached flow. Stall needs a declaration with a viscous boundary layer and separation."
       }
     ]
   },
@@ -21679,6 +21686,7 @@
       "M_sup": 2.1971981216521863,
       "p1": 0.9371625024322054,
       "p3": 0.09393264573284488,
+      "p2": 0.5134007279957163,
       "phi": 0.6847314563772704,
       "phi2": "21875/46656"
     },
