@@ -8943,6 +8943,67 @@
    "experiment": {
     "rare": "cat-infinite-mean"
    }
+  },
+  {
+   "id": "markov",
+   "title": "Ergodic averages and the Markov chain CLT",
+   "statement": "\\begin{gathered} P \\text{ Harris ergodic with } \\pi P = \\pi, \\ \\pi|g| < \\infty \\ \\Longrightarrow \\ \\bar g_n = \\frac1n \\sum_{i=1}^{n} g(X_i) \\to \\pi(g) \\ \\text{a.s., from any start} \\\\ \\text{geometric ergodicity}, \\ \\pi|g|^{2+\\delta} < \\infty \\ \\Longrightarrow \\ \\sqrt n\\,(\\bar g_n - \\pi g) \\Rightarrow N(0, \\sigma_g^2), \\quad \\sigma_g^2 = \\operatorname{Var}_\\pi g \\Bigl(1 + 2\\sum_{k \\ge 1} \\rho_k\\Bigr) = \\operatorname{Var}_\\pi g \\cdot \\tau, \\quad \\mathrm{ESS} = n / \\tau \\end{gathered}",
+   "assumptions": [
+    "The kernel P keeps π stationary. Metropolis–Hastings and each coordinate update of the Gibbs sweep satisfy detailed balance, so the sweep keeps π stationary. In Hamiltonian Monte Carlo, the leapfrog map with a momentum flip keeps volume and is its own inverse. With the Metropolis step, the chain keeps π stationary.",
+    "The chain is φ-irreducible, aperiodic and Harris recurrent, so it is Harris ergodic.",
+    "For the central limit theorem: geometric ergodicity and π|g|^(2+δ) < ∞ for some δ > 0, or a reversible chain with π g² < ∞ and a finite asymptotic variance."
+   ],
+   "proof": "For the ergodic theorem, Nummelin's splitting gives regeneration times. The sums of g between regenerations are i.i.d., and the strong law of large numbers applies to them. For the central limit theorem, solve the Poisson equation ĝ − Pĝ = g − π g. Then the sum of g(X_i) − π g is a martingale plus the remainder ĝ(X₀) − ĝ(X_n), which is small compared with √n. The martingale central limit theorem applies. The variance of the martingale increments is Var_π g (1 + 2 Σ ρ_k).",
+   "reference": "G. O. Roberts and J. S. Rosenthal, General state space Markov chains and MCMC algorithms, Probability Surveys 1 (2004) 20–71. G. L. Jones, On the Markov chain central limit theorem, Probability Surveys 1 (2004) 299–320. C. J. Geyer, Practical Markov chain Monte Carlo, Statistical Science 7 (1992) 473–483. A. Vehtari, A. Gelman, D. Simpson, B. Carpenter and P.-C. Bürkner, Rank-normalization, folding, and localization: an improved R-hat, Bayesian Analysis 16 (2021) 667–718.",
+   "counterexample": "A random walk on two modes 11 units apart is ergodic, so the theorem holds. But the expected time to cross between the modes is far longer than any run. Chains that start in one mode agree with each other: split R-hat is near 1 and the ESS is large. But the estimate of P(x₁ + x₂ > 0) is near 0, and the exact value is 0.7. A theorem about n → ∞ says nothing about the n of one run, and the ESS is a diagnostic, not a proof of convergence.",
+   "experiment": {
+    "chains": "chain-two-modes",
+    "settings": {
+     "c_method": "metropolis",
+     "c_compare": "smc",
+     "c_start": "one_point"
+    }
+   }
+  },
+  {
+   "id": "particles",
+   "title": "Importance weights, resampling and the unbiased likelihood",
+   "statement": "\\begin{gathered} \\hat Z_T = \\prod_{t=1}^{T} \\sum_{i=1}^{N} W_{t-1}^i\\, g_t(x_t^i), \\qquad \\mathbb E\\,\\hat Z_T = p(y_{1:T}) \\ \\text{for every } N \\ge 1 \\\\ \\mathrm{ESS}_t = \\Bigl(\\sum_i W_t^i\\Bigr)^2 \\Big/ \\sum_i (W_t^i)^2 \\in [1, N] \\end{gathered}",
+   "assumptions": [
+    "The particles move with the transition law f of the model, and g_t(x) = p(y_t | x_t = x) is the observation density.",
+    "The resampling scheme has no bias: given the weights, the expected number of copies of particle i is N W_i. Multinomial, stratified, systematic and residual resampling have this property.",
+    "E Ẑ_T = p(y_{1:T}) needs only these conditions. Error bounds for the filter law that do not grow with T need more: bounded potentials g_t and a mixing transition. Then the relative variance of Ẑ_T grows linearly in T."
+   ],
+   "proof": "Let F_t be the history of the particle system up to time t. The resampling has no bias. Thus, given F_(t−1), each new particle comes from the mixture Σ_i W_(t−1)^i f(· | x_(t−1)^i). Thus E[Σ_i W_(t−1)^i g_t(x_t^i) | F_(t−1)] = Σ_i W_(t−1)^i ∫ f(x | x_(t−1)^i) g_t(x) dx. By induction on t, E[Ẑ_t Σ_i W_t^i φ(x_t^i)] = ∫ φ(x) p(x_t = x, y_(1:t)) dx for every bounded φ. Take φ = 1 at t = T. The result is p(y_(1:T)).",
+   "reference": "P. Del Moral, Feynman–Kac Formulae: Genealogical and Interacting Particle Systems with Applications, Springer, 2004. C. Andrieu, A. Doucet and R. Holenstein, Particle Markov chain Monte Carlo methods, Journal of the Royal Statistical Society B 72 (2010) 269–342. A. Kong, J. S. Liu and W. H. Wong, Sequential imputations and Bayesian missing data problems, Journal of the American Statistical Association 89 (1994) 278–288. N. Chopin and O. Papaspiliopoulos, An Introduction to Sequential Monte Carlo, Springer, 2020.",
+   "counterexample": "Without resampling the estimator is still unbiased, but the variance of the weights grows about exponentially in T. After a few steps, one particle has almost all the weight, and the ESS is near 1. In most runs Ẑ is far below p(y_(1:T)). The mean is right only because rare runs give very large values. Also log Ẑ has a negative bias for every scheme, because log is concave.",
+   "experiment": {
+    "chains": "tank-level",
+    "settings": {
+     "c_method": "particle",
+     "c_resample": "none",
+     "c_plot": "weights"
+    }
+   }
+  },
+  {
+   "id": "rqmc",
+   "title": "Randomised quasi-Monte Carlo: no bias and a smaller variance",
+   "statement": "\\begin{gathered} \\Bigl|\\frac1n \\sum_{i} f(u_i) - \\int_{[0,1)^d} f\\Bigr| \\le V_{\\mathrm{HK}}(f)\\, D_n^*(u_1, \\dots, u_n) \\quad \\text{(Koksma–Hlawka)} \\\\ \\text{scrambled } (t, m, d)\\text{-net in base 2}, \\ n = 2^m: \\ \\mathbb E \\hat I = I, \\quad \\operatorname{Var} \\hat I \\le 2^t 3^d \\, \\frac{\\sigma^2}{n}, \\quad \\operatorname{Var} \\hat I = o(1/n) \\ \\text{for } f \\in L^2 \\end{gathered}",
+   "assumptions": [
+    "The points are the first 2^m points of a Sobol sequence, a (t, m, d)-net in base 2, with Owen's nested uniform scramble. Owen (2003) shows that Matoušek's random linear scramble with a digital shift, which this page uses, has the same variance.",
+    "f is square-integrable on the unit cube. σ² is its variance: the variance of independent sampling with one point.",
+    "For smooth f, with the condition that Owen (1997) states, Var Î = O(n^(−3) (log n)^(d−1)). A jump that is not parallel to the axes removes this rate."
+   ],
+   "proof": "Expand f in base-2 Haar wavelets, grouped by the resolution k = (k_1, …, k_d) in each coordinate. The scramble makes each point uniform, so Î has no bias, and it makes the contributions of different groups uncorrelated. Thus Var Î = Σ_k Γ_k σ_k² / n, where σ_k² is the variance of f in group k. The net property gives Γ_k = 0 for groups with |k| ≤ m − t, and Γ_k ≤ 2^t 3^d for all k. The groups with Γ_k ≠ 0 carry a variance that tends to 0, so n Var Î → 0.",
+   "reference": "A. B. Owen, Monte Carlo variance of scrambled net quadrature, SIAM Journal on Numerical Analysis 34 (1997) 1884–1910. A. B. Owen, Scrambled net variance for integrals of smooth functions, Annals of Statistics 25 (1997) 1541–1562. J. Matoušek, On the L2-discrepancy for anchored boxes, Journal of Complexity 14 (1998) 527–556. A. B. Owen, Variance with alternative scramblings of digital nets, ACM Transactions on Modeling and Computer Simulation 13 (2003) 363–378. S. Joe and F. Y. Kuo, Constructing Sobol sequences with better two-dimensional projections, SIAM Journal on Scientific Computing 30 (2008) 2635–2654.",
+   "counterexample": "The indicator that a sum of 8 uniforms is above 5 jumps along a slanted plane, so V_HK = ∞ and the Koksma–Hlawka bound is empty. The scrambled points still have no bias and a smaller variance. But the variance ratio against independent points is about 5, against more than 10,000 for the smooth peak. Without randomisation the points give one deterministic value, and repeated runs cannot estimate its error.",
+   "experiment": {
+    "chains": "qmc-sum",
+    "settings": {
+     "c_plot": "rate"
+    }
+   }
   }
  ],
  "glossary": [
@@ -9944,11 +10005,11 @@
   },
   {
    "term": "effective sample size",
-   "definition": "(Σ w)² / Σ w² for the weights w of a sample. It is a diagnostic of the weights, not a proof that an estimate is accurate."
+   "definition": "For a Markov chain, n / τ: the number of independent draws that give the same variance of the mean. For weights w, (Σ w)² / Σ w². In both cases it is a diagnostic, not a proof that an estimate is accurate or that a chain has converged."
   },
   {
    "term": "ESS",
-   "definition": "Effective sample size: (Σ w)² / Σ w² for the weights w."
+   "definition": "Effective sample size: n / τ for a Markov chain, or (Σ w)² / Σ w² for the weights w. A diagnostic, not a proof of convergence."
   },
   {
    "term": "relative error",
@@ -10069,6 +10130,186 @@
   {
    "term": "one-big-jump principle",
    "definition": "For a subexponential law, a large sum most likely comes from one large term, not by many moderate terms."
+  },
+  {
+   "term": "detailed balance",
+   "definition": "π(x) P(x, y) = π(y) P(y, x) for all x and y. A kernel with detailed balance keeps π stationary."
+  },
+  {
+   "term": "Harris ergodic",
+   "definition": "A Markov chain that is φ-irreducible, aperiodic and Harris recurrent: its averages converge almost surely to the expectations under π from every start."
+  },
+  {
+   "term": "geometric ergodicity",
+   "definition": "The distance between the law of X_n and π decreases at least as fast as C(x) r^n for some r < 1."
+  },
+  {
+   "term": "MCMC",
+   "definition": "Markov chain Monte Carlo: estimates from the draws of a Markov chain whose stationary law is the target law."
+  },
+  {
+   "term": "Metropolis–Hastings",
+   "definition": "A Markov chain that proposes a move and accepts it with the probability min(1, π(y) q(y, x) / (π(x) q(x, y))). It needs π only up to a constant."
+  },
+  {
+   "term": "random walk proposal",
+   "definition": "A proposal y = x + h s ⊙ Z with Z standard normal. The step h is in units of the scale s of each coordinate."
+  },
+  {
+   "term": "acceptance rate",
+   "definition": "The fraction of the proposals that a Metropolis–Hastings or Hamiltonian chain accepts."
+  },
+  {
+   "term": "Gibbs sampler",
+   "definition": "A Markov chain that draws each coordinate in turn from its full conditional law."
+  },
+  {
+   "term": "full conditional law",
+   "definition": "The law of one coordinate given all the other coordinates."
+  },
+  {
+   "term": "HMC",
+   "definition": "Hamiltonian Monte Carlo: a Markov chain that follows the Hamiltonian dynamics of −log π with a random momentum, then accepts or rejects the end point."
+  },
+  {
+   "term": "leapfrog",
+   "definition": "A numerical integrator of the Hamiltonian dynamics: a half step of the momentum, a full step of the position, a half step of the momentum. It keeps volume and is reversible."
+  },
+  {
+   "term": "divergent transition",
+   "definition": "A Hamiltonian proposal whose energy error is above 1,000 or not finite: the leapfrog path became unstable. It is a signal of bias."
+  },
+  {
+   "term": "energy error",
+   "definition": "The change of the Hamiltonian H along the leapfrog path. The exact dynamics keep H constant."
+  },
+  {
+   "term": "warm-up",
+   "definition": "The first iterations of each chain, which the page discards so that the start point has less effect."
+  },
+  {
+   "term": "autocorrelation",
+   "definition": "The correlation ρ_k between g(X_i) and g(X_(i+k)) in a stationary chain."
+  },
+  {
+   "term": "integrated autocorrelation time",
+   "definition": "τ = 1 + 2 Σ ρ_k: the factor by which the variance of a chain average exceeds that of an average of independent draws."
+  },
+  {
+   "term": "split R-hat",
+   "definition": "The square root of the ratio of the pooled variance to the mean variance within the halves of the chains. A value above 1.01 shows that the chains disagree."
+  },
+  {
+   "term": "MCSE",
+   "definition": "Monte Carlo standard error: the standard deviation of an estimate that comes from the finite run."
+  },
+  {
+   "term": "Geyer's initial monotone sequence",
+   "definition": "An estimate of τ from sums of pairs of autocorrelations, stopped when a pair is negative and made non-increasing."
+  },
+  {
+   "term": "SMC",
+   "definition": "Sequential Monte Carlo: a population of weighted particles that the method reweights, resamples and moves through a sequence of laws."
+  },
+  {
+   "term": "tempering",
+   "definition": "A path of laws π_β ∝ q^(1 − β) π^β from a simple law q at β = 0 to the target π at β = 1."
+  },
+  {
+   "term": "evidence",
+   "definition": "The normalising constant Z = ∫ p(y | θ) p(θ) dθ of a posterior law: the probability of the data under a model."
+  },
+  {
+   "term": "Bayes factor",
+   "definition": "The ratio Z₁ / Z₀ of the evidence of two models. With prior odds, it gives the posterior odds."
+  },
+  {
+   "term": "importance weight",
+   "definition": "The ratio of the target density to the density that made a particle. A weighted mean of the particles estimates an expectation under the target."
+  },
+  {
+   "term": "weight degeneracy",
+   "definition": "A state in which a few particles have almost all the weight, so the weight ESS is near 1."
+  },
+  {
+   "term": "resampling",
+   "definition": "A step that replaces the weighted particles by N particles drawn with probabilities equal to their normalised weights. Each new particle has the weight 1/N."
+  },
+  {
+   "term": "systematic resampling",
+   "definition": "Resampling with one uniform U and the N points (i + U)/N: each particle gets ⌊N W_i⌋ or ⌈N W_i⌉ copies."
+  },
+  {
+   "term": "particle filter",
+   "definition": "Sequential Monte Carlo for a state-space model: the particles follow the dynamics, and the observations weight them."
+  },
+  {
+   "term": "state-space model",
+   "definition": "A hidden Markov process x_t with observations y_t that depend only on x_t."
+  },
+  {
+   "term": "Kalman filter",
+   "definition": "The exact filter of a linear state-space model with normal noise. The filter law is normal, and the filter updates its mean and its variance at each time."
+  },
+  {
+   "term": "grid filter",
+   "definition": "A filter that computes the filter law on a fixed grid of states. It is a numerical approximation for a model with a state of low dimension."
+  },
+  {
+   "term": "genealogy",
+   "definition": "The ancestral lines of the particles back through the resampling steps."
+  },
+  {
+   "term": "path degeneracy",
+   "definition": "The ancestral lines of the particles merge into few lines at early times, so the paths share their early states."
+  },
+  {
+   "term": "posterior predictive probability",
+   "definition": "The probability of a future event under the model, averaged over the posterior law of the parameters."
+  },
+  {
+   "term": "logistic regression",
+   "definition": "A model in which the log odds of a probability are a linear function of the inputs."
+  },
+  {
+   "term": "QMC",
+   "definition": "Quasi-Monte Carlo: an integral estimate with points that fill the unit cube more evenly than independent points."
+  },
+  {
+   "term": "RQMC",
+   "definition": "Randomised quasi-Monte Carlo: quasi-Monte Carlo points with a randomisation that makes each point uniform. Each estimate then has no bias, and independent randomisations give an interval."
+  },
+  {
+   "term": "Sobol sequence",
+   "definition": "A digital sequence in base 2. Its first 2^m points are a (t, m, d)-net. This page uses the direction numbers of Joe and Kuo."
+  },
+  {
+   "term": "digital net",
+   "definition": "A set of 2^m points such that each elementary box of volume 2^(t−m) holds exactly 2^t points."
+  },
+  {
+   "term": "scramble",
+   "definition": "A random permutation of the digits of the points that keeps the net property and makes each point uniform."
+  },
+  {
+   "term": "digital shift",
+   "definition": "The bitwise exclusive or of each point with one random vector of bits."
+  },
+  {
+   "term": "Koksma–Hlawka inequality",
+   "definition": "|error| ≤ V_HK(f) D*_n: the error of an equal-weight rule is at most the variation of f times the star discrepancy of the points."
+  },
+  {
+   "term": "Brownian bridge",
+   "definition": "A construction of a Brownian path that sets the end point first, then the mid-points of each interval. The first coordinates then carry most of the variance."
+  },
+  {
+   "term": "effective dimension",
+   "definition": "The number of coordinates that carry most of the variance of an integrand."
+  },
+  {
+   "term": "geometric Asian option",
+   "definition": "An option whose payoff depends on the geometric average of the asset price at fixed dates."
   }
  ],
  "datasets": [
@@ -10451,6 +10692,91 @@
    "licence": "Public domain: NOAA distributes the GHCN-Daily data of U.S. stations without restriction, as a work of the U.S. federal government.",
    "law": "gev",
    "param": "xi"
+  },
+  {
+   "id": "challenger-orings",
+   "kind": "trials",
+   "title": "Thermal distress of the field-joint O-rings on 23 Space Shuttle flights before 28 January 1986",
+   "unit": "O-rings with thermal distress, of 6, at each launch temperature in °F",
+   "source": "Report of the Presidential Commission on the Space Shuttle Challenger Accident (1986), as tabulated by S. R. Dalal, E. B. Fowlkes and B. Hoadley, Risk analysis of the Space Shuttle: pre-Challenger prediction of failure, Journal of the American Statistical Association 84 (1989) 945–957; the same table is the UCI Challenger O-ring data set (D. Draper, 1993).",
+   "date": "1986",
+   "licence": "Public domain: a work of the United States government.",
+   "flights": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+   ],
+   "values": [
+    66,
+    70,
+    69,
+    68,
+    67,
+    72,
+    73,
+    70,
+    57,
+    63,
+    70,
+    78,
+    67,
+    53,
+    67,
+    75,
+    70,
+    81,
+    76,
+    79,
+    75,
+    76,
+    58
+   ],
+   "counts": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    1
+   ],
+   "atRisk": 6
   }
  ],
  "groups": [
@@ -10507,7 +10833,7 @@
    "piece": 8,
    "id": "mcmc",
    "title": "Markov chains, sequential and quasi-Monte Carlo",
-   "status": "to come",
+   "status": "here",
    "content": "Metropolis–Hastings, Gibbs, Hamiltonian Monte Carlo, sequential Monte Carlo, particle filters and randomised quasi-Monte Carlo."
   },
   {
@@ -10669,6 +10995,37 @@
     {
      "setting": "sum, pareto2, subset, 2^12 x 16",
      "seconds": 0.21
+    }
+   ]
+  },
+  "chains": {
+   "date": "2026-10-07",
+   "runs": 32,
+   "chain": 16,
+   "particles": 14,
+   "points": 18,
+   "seconds": 180,
+   "how": "Measured on 7 October 2026 in headless Chromium with 4 workers, 32 independent runs each: Hamiltonian Monte Carlo on the O-ring model with 2^17 iterations in each chain, 2.7 s with 10 leapfrog steps and 36 s with 200; the sequential sampler with 65,536 particles and 20 moves, 15 s; the particle filter with 16,384 particles over 100 days, 2.4 s; scrambled Sobol points, 2^18 points in 16 dimensions, 1.7 s. An ordinary laptop is about 4 times slower, so the heaviest setting takes about 2.5 minutes, and the time limit of 180 s pauses a longer run.",
+   "runs_measured": [
+    {
+     "setting": "oring, hmc, L = 10, 2^16 x 32",
+     "seconds": 2.7
+    },
+    {
+     "setting": "oring, hmc, L = 200, 2^16 x 32",
+     "seconds": 35.8
+    },
+    {
+     "setting": "balance, smc, 20 moves, 2^16 x 32",
+     "seconds": 14.7
+    },
+    {
+     "setting": "volatility, particle, 2^14 x 32",
+     "seconds": 2.4
+    },
+    {
+     "setting": "asian, rqmc, 2^18 x 32",
+     "seconds": 1.7
     }
    ]
   }
@@ -17474,6 +17831,1056 @@
     "size": 12,
     "reps": 8,
     "observe": "A truncation at M = 60 removes the largest events. The probability of a systemic ruin falls from about 0.04 to 0.03, and the layer meets the target with a wide margin. No finite sample of the past shows whether such a bound exists."
+   }
+  ]
+ },
+ "chains": {
+  "examples": [
+   {
+    "id": "chain-correlated",
+    "kind": "experiment",
+    "family": "target",
+    "model": "normal2",
+    "title": "A normal law with correlation 0.95: random walk, Gibbs sweep and Hamiltonian paths",
+    "problem": "The target is a bivariate normal law with unit variances and correlation ρ. The page knows its density up to a constant, and every result has an exact value. Thus you can check each sampler and each diagnostic.",
+    "params": [
+     {
+      "name": "rho",
+      "value": 0.95,
+      "note": "the correlation of x₁ and x₂, strictly between −1 and 1"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "mean_x1",
+      "name": "E[x₁]",
+      "note": "the mean of the first coordinate"
+     },
+     {
+      "id": "sum_gt_2",
+      "name": "P(x₁ + x₂ > 2)",
+      "note": "the probability that the sum is above 2"
+     },
+     {
+      "id": "product",
+      "name": "E[x₁x₂]",
+      "note": "the mean of the product, which is ρ"
+     }
+    ],
+    "settings": {
+     "c_method": "metropolis",
+     "c_compare": "hmc",
+     "c_size": 12,
+     "c_runs": 4,
+     "c_step": 1,
+     "c_eps": 0.2,
+     "c_leap": 10,
+     "c_start": "dispersed",
+     "c_plot": "trace"
+    },
+    "observe": "The random walk takes small steps along the narrow ridge of the law, so its autocorrelation decays slowly and its effective sample size is small. Hamiltonian Monte Carlo follows the ridge with the gradient and gives a much larger effective sample size from the same number of draws. Set rho = 0.995 and choose the Gibbs sweep. Each coordinate then moves by about √(1 − ρ²) in each sweep, so the chain mixes slowly.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: ρ fully states the target law. No data."
+    }
+   },
+   {
+    "id": "chain-two-modes",
+    "kind": "experiment",
+    "family": "target",
+    "model": "mixture",
+    "title": "Two modes far apart: a large effective sample size and a wrong estimate",
+    "problem": "The target is a mixture of two normal laws with identity covariance and means (−b, −b) and (b, b). The mode at (b, b) has the weight w. Between the modes, the density is about e^(−b²) times its value at a mode.",
+    "params": [
+     {
+      "name": "b",
+      "value": 4,
+      "note": "the distance of each mode from 0 along each coordinate"
+     },
+     {
+      "name": "w",
+      "value": 0.7,
+      "note": "the weight of the mode at (b, b)"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "upper",
+      "name": "P(x₁ + x₂ > 0)",
+      "note": "the probability of the upper mode's half plane"
+     },
+     {
+      "id": "mean_x1",
+      "name": "E[x₁]",
+      "note": "the mean of the first coordinate, b(2w − 1)"
+     }
+    ],
+    "settings": {
+     "c_method": "metropolis",
+     "c_compare": "smc",
+     "c_size": 12,
+     "c_runs": 4,
+     "c_step": 1,
+     "c_start": "one_point",
+     "c_resample": "systematic",
+     "c_ess": 0.5,
+     "c_schedule": "adaptive",
+     "c_moves": 5,
+     "c_plot": "trace"
+    },
+    "observe": "Every chain starts at (−b, −b) and stays in that mode. The chains agree, so split R-hat is near 1 and the effective sample size is large. But the estimate of P(x₁ + x₂ > 0) is near 0, and the exact value is 0.7. No diagnostic of the chains can show a mode that no chain visited. Sequential Monte Carlo starts from a wide law and finds both modes with their weights. Set the start to dispersed: then the chains start in different modes, and split R-hat becomes large.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: b and w fully state the target law. No data."
+    }
+   },
+   {
+    "id": "chain-funnel",
+    "kind": "experiment",
+    "family": "target",
+    "model": "funnel",
+    "title": "Neal's funnel: divergent transitions in the neck",
+    "problem": "The target is Neal's funnel: v is N(0, s²), and x given v is N(0, e^v). For small v the law of x is very narrow, and for large v it is very wide. One step size cannot suit both regions.",
+    "params": [
+     {
+      "name": "s",
+      "value": 3,
+      "note": "the standard deviation of v"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "neck",
+      "name": "P(v < −3)",
+      "note": "the probability of the narrow neck"
+     },
+     {
+      "id": "mean_v",
+      "name": "E[v]",
+      "note": "the mean of v, which is 0"
+     }
+    ],
+    "settings": {
+     "c_method": "hmc",
+     "c_compare": "metropolis",
+     "c_size": 12,
+     "c_runs": 4,
+     "c_step": 1.5,
+     "c_eps": 0.5,
+     "c_leap": 10,
+     "c_start": "dispersed",
+     "c_plot": "scatter"
+    },
+    "observe": "With the leapfrog step 0.5, the leapfrog paths become unstable in the neck. The energy error becomes very large there, and the page counts these divergent transitions: more than 1,000 here. The chains seldom enter the neck. Thus the estimate of P(v < −3) is below the exact Φ(−1) = 0.159, and the estimate of E[v] has a bias. A divergent transition is a signal of bias. Its absence does not prove that there is no bias.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: s fully states the target law. No data."
+    }
+   },
+   {
+    "id": "balance-bias",
+    "kind": "workflow",
+    "family": "target",
+    "model": "balance",
+    "domain": "Laboratory measurement",
+    "title": "Recalibrate a laboratory balance from 12 weighings of a reference mass",
+    "problem": "A laboratory weighs a 500 g reference mass 12 times on one balance. The bias μ − 500 g and the scatter σ of the balance are unknown. The posterior law of (μ, σ) has no closed form, but the full conditional laws are a normal law and an inverse gamma law.",
+    "params": [
+     {
+      "name": "mu0",
+      "value": 500,
+      "unit": "g",
+      "note": "the prior mean of μ: the nominal mass"
+     },
+     {
+      "name": "tau0",
+      "value": 1,
+      "unit": "g",
+      "note": "the prior standard deviation of μ"
+     },
+     {
+      "name": "a0",
+      "value": 2,
+      "note": "the shape of the inverse gamma prior of σ²"
+     },
+     {
+      "name": "b0",
+      "value": 1,
+      "unit": "g²",
+      "note": "the scale of the inverse gamma prior of σ²"
+     },
+     {
+      "name": "c",
+      "value": 0.5,
+      "unit": "g",
+      "note": "the bias that requires a recalibration"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "bias_prob",
+      "name": "P(μ − 500 g > c | y)",
+      "note": "the posterior probability of a bias above c"
+     },
+     {
+      "id": "bias",
+      "name": "E[μ − 500 g | y]",
+      "unit": "g",
+      "note": "the posterior mean of the bias"
+     },
+     {
+      "id": "sigma",
+      "name": "E[σ | y]",
+      "unit": "g",
+      "note": "the posterior mean of the scatter"
+     }
+    ],
+    "rule": {
+     "quantity": "bias_prob",
+     "op": ">=",
+     "value": 0.9,
+     "yes": "Recalibrate the balance.",
+     "no": "Keep the balance in service."
+    },
+    "settings": {
+     "c_method": "gibbs",
+     "c_compare": "metropolis",
+     "c_size": 12,
+     "c_runs": 4,
+     "c_step": 1.5,
+     "c_leap": 10,
+     "c_start": "dispersed",
+     "c_plot": "trace"
+    },
+    "decision": "Decision: recalibrate the balance, or keep it in service. Recalibrate when P(μ − 500 g > 0.5 g | y) ≥ 0.9. Estimated quantity: that posterior probability, with the posterior means of the bias and of σ.",
+    "reason": "The weighings are sums of many small independent errors, so a normal model is reasonable. The semi-conjugate priors make each full conditional law a standard law. Thus the Gibbs sweep draws each full conditional law exactly, and it has no step size to tune.",
+    "inputs": "y: 12 weighings in g. Prior: μ ~ N(500 g, (1 g)²) and σ² ~ inverse gamma(2, 1 g²), independent. The chain moves on (μ, log σ). The prior values are illustrative.",
+    "dependence": "Given μ and σ, the weighings are independent. A drift during the series, or a temperature effect, would make them dependent. This model does not include it.",
+    "method": "The Gibbs sweep draws μ from its normal full conditional law and σ² from its inverse gamma full conditional law. Each chain discards its warm-up and averages the indicator of μ − 500 g > 0.5 g. The comparison is a random-walk Metropolis–Hastings chain on the same target.",
+    "diagnostics": "Read split R-hat, the effective sample size and the autocorrelation of each series. Compare the estimate with the numerical reference by quadrature. Other candidate models: a Student t error law for weighings far from the others, or a model with a linear drift in time.",
+    "interpretation": "With these data the posterior probability is about 0.95, so the rule says recalibrate. The prior of μ has its centre at zero bias. Thus the data, not the prior, make the probability larger than 0.9. Reject the model when the residuals show a trend in time, or when one result is far from the others.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: 12 weighings drawn from N(500.6 g, (0.7 g)²) with the page's generator (Philox4x32-10, seed 8) and rounded to 0.01 g. They are illustrative values, not calibrated evidence.",
+     "generator": {
+      "kind": "normal",
+      "seed": 8,
+      "n": 12,
+      "decimals": 2,
+      "params": {
+       "mean": 500.6,
+       "sd": 0.7
+      }
+     },
+     "y": [
+      502.07,
+      501.06,
+      500.89,
+      501.23,
+      500.64,
+      501.11,
+      500.41,
+      500.95,
+      500.85,
+      499.74,
+      500.12,
+      501.05
+     ]
+    }
+   },
+   {
+    "id": "balance-evidence",
+    "kind": "workflow",
+    "family": "target",
+    "model": "balance",
+    "domain": "Model choice",
+    "title": "Does the balance have a bias at all? The evidence of two models",
+    "problem": "Model 0 says that the balance has no bias: μ = 500 g. Model 1 gives μ a normal prior. With prior odds 1 to 1, the posterior probability of model 1 is Z₁ / (Z₀ + Z₁), where Z is the evidence of a model. Z₀ has a closed form. Sequential Monte Carlo estimates Z₁.",
+    "params": [
+     {
+      "name": "mu0",
+      "value": 500,
+      "unit": "g",
+      "note": "the nominal mass; model 0 fixes μ at this value"
+     },
+     {
+      "name": "tau0",
+      "value": 1,
+      "unit": "g",
+      "note": "the prior standard deviation of μ in model 1"
+     },
+     {
+      "name": "a0",
+      "value": 2,
+      "note": "the shape of the inverse gamma prior of σ²"
+     },
+     {
+      "name": "b0",
+      "value": 1,
+      "unit": "g²",
+      "note": "the scale of the inverse gamma prior of σ²"
+     },
+     {
+      "name": "c",
+      "value": 0.5,
+      "unit": "g",
+      "note": "the bias that requires a recalibration"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "post_m1",
+      "name": "P(model 1 | y)",
+      "note": "the posterior probability of a bias, with prior odds 1 to 1"
+     },
+     {
+      "id": "log_z",
+      "name": "log Z₁",
+      "note": "the log evidence of model 1"
+     },
+     {
+      "id": "bias_prob",
+      "name": "P(μ − 500 g > c | y, model 1)",
+      "note": "the posterior probability of a bias above c in model 1"
+     }
+    ],
+    "rule": {
+     "quantity": "post_m1",
+     "op": ">=",
+     "value": 0.95,
+     "yes": "Send the balance for service.",
+     "no": "Do not send the balance for service yet."
+    },
+    "settings": {
+     "c_method": "smc",
+     "c_compare": "none",
+     "c_size": 11,
+     "c_runs": 8,
+     "c_resample": "systematic",
+     "c_ess": 0.5,
+     "c_schedule": "adaptive",
+     "c_moves": 5,
+     "c_plot": "weights"
+    },
+    "decision": "Decision: send the balance for service when P(model 1 | y) ≥ 0.95, with prior odds 1 to 1. Estimated quantity: the posterior probability of model 1, from the evidence Z₁.",
+    "reason": "Markov chain Monte Carlo gives draws from a posterior law, but no direct estimate of its normalising constant. The sequential sampler moves its particles from a wide reference law to the posterior law, and the product of its mean incremental weights estimates Z₁.",
+    "inputs": "The 12 weighings of the balance workflow, in g, and the same priors. The reference law of the sampler is N(500 g, (2 g)²) for μ and N(0, 1) for log σ. The prior values are illustrative.",
+    "dependence": "Given μ and σ, the weighings are independent. The evidence depends strongly on the prior of μ: when the prior is already wide, a wider prior lowers Z₁. Always give the prior with a Bayes factor.",
+    "method": "Geometric tempering from the reference law to the posterior law. The adaptive schedule chooses each step so that the weight ESS falls to half of its value. Then the sampler resamples and moves each particle with 5 random-walk Metropolis steps. The estimate of Z₁ is the product of the mean incremental weights.",
+    "diagnostics": "Read the weight ESS at each step and the number of steps. Then read the distinct ancestors and the spread of log Z₁ over the runs. Compare with the numerical reference by quadrature. Other candidate models: model 1 with a wider or narrower prior of μ, or a Student t error law.",
+    "interpretation": "The evidence of model 1 is about 177 times that of model 0. Thus P(model 1 | y) is about 0.994, and the rule says send the balance for service. The estimate of Z₁ has no bias for a fixed schedule. The adaptive schedule adds a small bias that decreases with the number of particles. Reject the comparison when the result changes much for a reasonable change of the prior of μ.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: the 12 weighings of the balance workflow, drawn from N(500.6 g, (0.7 g)²) with seed 8. They are illustrative values, not calibrated evidence.",
+     "generator": {
+      "kind": "normal",
+      "seed": 8,
+      "n": 12,
+      "decimals": 2,
+      "params": {
+       "mean": 500.6,
+       "sd": 0.7
+      }
+     },
+     "y": [
+      502.07,
+      501.06,
+      500.89,
+      501.23,
+      500.64,
+      501.11,
+      500.41,
+      500.95,
+      500.85,
+      499.74,
+      500.12,
+      501.05
+     ]
+    }
+   },
+   {
+    "id": "oring-launch",
+    "kind": "workflow",
+    "family": "target",
+    "model": "oring",
+    "domain": "Engineering risk",
+    "title": "O-ring distress at a launch temperature of 31 °F",
+    "problem": "Before 28 January 1986, 23 Space Shuttle flights recorded the number of field-joint O-rings, of 6, with thermal distress, and the launch temperature. A logistic regression gives the probability of distress for each O-ring as a function of the temperature. The forecast for the launch was 31 °F, far below every earlier launch.",
+    "params": [
+     {
+      "name": "sa",
+      "value": 5,
+      "note": "the prior standard deviation of α, the log odds at 70 °F"
+     },
+     {
+      "name": "sb",
+      "value": 2.5,
+      "note": "the prior standard deviation of β, the change of the log odds for each 10 °F"
+     },
+     {
+      "name": "t0",
+      "value": 31,
+      "unit": "°F",
+      "note": "the launch temperature of the forecast"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "pred_t0",
+      "name": "P(at least 1 of 6 O-rings with distress at t₀ | data)",
+      "note": "the posterior predictive probability"
+     },
+     {
+      "id": "p_t0",
+      "name": "E[p(t₀) | data]",
+      "note": "the posterior mean of the probability of distress for one O-ring"
+     },
+     {
+      "id": "slope_neg",
+      "name": "P(β < 0 | data)",
+      "note": "the posterior probability that a colder launch gives more distress"
+     }
+    ],
+    "rule": {
+     "quantity": "pred_t0",
+     "op": ">=",
+     "value": 0.5,
+     "yes": "Delay the launch.",
+     "no": "The model alone does not require a delay."
+    },
+    "settings": {
+     "c_method": "hmc",
+     "c_compare": "metropolis",
+     "c_size": 12,
+     "c_runs": 4,
+     "c_step": 1.5,
+     "c_eps": 0.3,
+     "c_leap": 10,
+     "c_start": "dispersed",
+     "c_plot": "scatter"
+    },
+    "decision": "Decision: delay the launch, or not. Delay it when the posterior predictive probability of distress in at least 1 of the 6 field-joint O-rings at 31 °F is at least 0.5. Estimated quantity: that probability.",
+    "reason": "Each flight gives a count of the 6 O-rings with distress. The standard model is a binomial law with a probability that depends on the temperature. The posterior law of (α, β) is smooth on the whole plane, so Hamiltonian Monte Carlo applies. Its full conditional laws are not standard laws, so the page has no Gibbs sweep for it.",
+    "inputs": "Temperatures in °F and counts of distressed O-rings from 23 flights. Model: k_i ~ binomial(6, p_i) with logit p_i = α + β (t_i − 70 °F)/10 °F. Priors: α ~ N(0, 5²) and β ~ N(0, 2.5²). They are weakly informative after Gelman and others (2008), with normal laws in place of Cauchy laws and the scale 5 for α in place of 10.",
+    "dependence": "The model treats the 6 O-rings of one flight as independent given the temperature. The O-rings of one flight share the same conditions, so the counts can have overdispersion. A beta-binomial law would allow it.",
+    "method": "Hamiltonian Monte Carlo with 10 leapfrog steps of size 0.3 in units of the scale of each coordinate. The estimate averages the predictive probability 1 − (1 − p(t₀))⁶ over the draws after the warm-up. The comparison is a random-walk Metropolis–Hastings chain.",
+    "diagnostics": "Read split R-hat, the effective sample size, the acceptance rate and the divergent transitions. Compare with the numerical reference by quadrature on a grid. Other candidate models: a probit link, a complementary log-log link, a beta-binomial law for overdispersion, or a model with the leak-check pressure.",
+    "interpretation": "The estimate is about 0.96. But 31 °F is 22 °F below the coldest earlier launch (53 °F). Thus the value comes from the logistic form of the model, not from data at that temperature. A different link function gives a different value. Distress is not failure. Reject the model for a decision when its forecast depends on the link function. This analysis uses information after the event. The engineers in 1986 did not do it.",
+    "data": {
+     "kind": "real",
+     "dataset": "challenger-orings",
+     "text": "Real data: thermal distress of the field-joint O-rings on 23 flights before 28 January 1986."
+    }
+   },
+   {
+    "id": "tank-level",
+    "kind": "workflow",
+    "family": "filter",
+    "model": "level",
+    "domain": "Process control",
+    "title": "Start a transfer pump before a tank overflows",
+    "problem": "An ultrasonic sensor reads the water level of a tank every 10 minutes, with noise. The level rises by about 0.4 cm in each interval, with random changes. Find the law of the present level, given the 60 readings, and the probability that it is above 80 cm.",
+    "params": [
+     {
+      "name": "d",
+      "value": 0.4,
+      "unit": "cm",
+      "note": "the mean rise of the level in one interval"
+     },
+     {
+      "name": "sx",
+      "value": 0.6,
+      "unit": "cm",
+      "note": "the standard deviation of the random change in one interval"
+     },
+     {
+      "name": "sy",
+      "value": 1.2,
+      "unit": "cm",
+      "note": "the standard deviation of the sensor noise"
+     },
+     {
+      "name": "m0",
+      "value": 50,
+      "unit": "cm",
+      "note": "the mean of the initial level"
+     },
+     {
+      "name": "s0",
+      "value": 2,
+      "unit": "cm",
+      "note": "the standard deviation of the initial level"
+     },
+     {
+      "name": "h",
+      "value": 80,
+      "unit": "cm",
+      "note": "the level at which the pump must run"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "level_T",
+      "name": "E[x_T | y₁, …, y_T]",
+      "unit": "cm",
+      "note": "the filter mean of the present level"
+     },
+     {
+      "id": "above",
+      "name": "P(x_T > h | y₁, …, y_T)",
+      "note": "the probability that the present level is above h"
+     },
+     {
+      "id": "loglik",
+      "name": "log p(y₁, …, y_T)",
+      "note": "the log likelihood of the readings"
+     }
+    ],
+    "rule": {
+     "quantity": "above",
+     "op": ">=",
+     "value": 0.2,
+     "yes": "Start the pump now.",
+     "no": "Wait for the next reading."
+    },
+    "settings": {
+     "c_method": "particle",
+     "c_compare": "none",
+     "c_size": 9,
+     "c_runs": 16,
+     "c_resample": "systematic",
+     "c_ess": 0.5,
+     "c_plot": "filter"
+    },
+    "decision": "Decision: start the transfer pump now when P(x_T > 80 cm | readings) ≥ 0.2, or wait for the next reading. Estimated quantity: that filter probability.",
+    "reason": "The level changes by many small inflows and outflows, so a random walk with drift and normal noise is a simple model. For this linear model with normal noise, the Kalman filter gives the exact answer. Thus you can check the particle filter before you use it on a model with no exact filter.",
+    "inputs": "y: 60 readings in cm. Model: x_t = x_(t−1) + d + sx ε_t and y_t = x_t + sy η_t with independent standard normal ε and η, and x₀ ~ N(m0, s0²). The parameters are illustrative.",
+    "dependence": "The level is a Markov process, and each reading depends only on the present level. Foam or a tilted float makes the sensor errors dependent in time. This model does not include it.",
+    "method": "A bootstrap particle filter with 512 particles: each particle moves with the dynamics and takes the density of the reading as its weight. The filter resamples with the systematic scheme when the weight ESS falls below N/2. Each of 16 independent runs gives one estimate.",
+    "diagnostics": "Read the weight ESS at each time, the number of resampling steps and the number of distinct ancestors. Compare with the exact Kalman filter. Other candidate models: a model with a pump schedule, or a sensor law with a heavy tail for false echoes.",
+    "interpretation": "The exact probability is about 0.22, so the rule says start the pump, but the margin is small. With 512 particles, the filter estimate has a bias of order 1/N, about +0.015 here. The spread of independent runs cannot show a bias. Only the comparison with the Kalman filter shows it. 4,096 particles remove most of it. Reject the model when the innovations y_t − E[y_t | earlier readings] show a trend or outliers.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: 60 readings made by the level model with the stated parameters and the page's generator (Philox4x32-10, seed 11), rounded to 0.1 cm. They are illustrative values, not calibrated evidence.",
+     "generator": {
+      "kind": "level",
+      "seed": 11,
+      "n": 60,
+      "decimals": 1,
+      "params": {
+       "d": 0.4,
+       "sx": 0.6,
+       "sy": 1.2,
+       "m0": 50,
+       "s0": 2
+      }
+     }
+    }
+   },
+   {
+    "id": "volatility",
+    "kind": "workflow",
+    "family": "filter",
+    "model": "sv",
+    "domain": "Finance",
+    "title": "Reduce a position when the daily volatility is high",
+    "problem": "A desk holds a position in one asset. The daily return in % is σ_t η_t, and log σ_t² follows a stationary autoregression: a stochastic volatility model. Find the law of the present volatility σ_T, given 100 daily returns.",
+    "params": [
+     {
+      "name": "mu",
+      "value": 0,
+      "note": "the stationary mean of x_t = log σ_t²"
+     },
+     {
+      "name": "phi",
+      "value": 0.95,
+      "note": "the persistence of x_t, strictly between −1 and 1"
+     },
+     {
+      "name": "s",
+      "value": 0.3,
+      "note": "the standard deviation of the change of x_t in one day"
+     },
+     {
+      "name": "c",
+      "value": 1,
+      "unit": "%",
+      "note": "the daily volatility that requires a smaller position"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "vol_T",
+      "name": "E[σ_T | returns]",
+      "unit": "%",
+      "note": "the filter mean of the present daily volatility"
+     },
+     {
+      "id": "above",
+      "name": "P(σ_T > c | returns)",
+      "note": "the probability that the present volatility is above c"
+     },
+     {
+      "id": "loglik",
+      "name": "log p(returns)",
+      "note": "the log likelihood of the returns"
+     }
+    ],
+    "rule": {
+     "quantity": "above",
+     "op": ">=",
+     "value": 0.1,
+     "yes": "Halve the position.",
+     "no": "Keep the position."
+    },
+    "settings": {
+     "c_method": "particle",
+     "c_compare": "none",
+     "c_size": 10,
+     "c_runs": 16,
+     "c_resample": "systematic",
+     "c_ess": 0.5,
+     "c_plot": "genealogy"
+    },
+    "decision": "Decision: halve the position when P(σ_T > 1 % | returns) ≥ 0.1, or keep it. Estimated quantity: that filter probability.",
+    "reason": "Daily returns show volatility clusters: large changes follow large changes. In the stochastic volatility model the observation depends on the state through a non-linear function, so the Kalman filter is not exact. A particle filter applies to any model whose dynamics it can simulate and whose observation density it can compute.",
+    "inputs": "y: 100 daily returns in %. Model: x_t = mu + phi (x_(t−1) − mu) + s ε_t, y_t = exp(x_t / 2) η_t, with x₀ from the stationary law. The parameters are illustrative, not estimates from market data.",
+    "dependence": "The volatility is a Markov process. Given the volatility, the returns are independent with a normal law. Real returns also have a heavier tail and a leverage effect: a negative return raises the next volatility. This model has neither.",
+    "method": "A bootstrap particle filter with 1,024 particles and systematic resampling when the weight ESS falls below N/2. The reference is a point-mass filter on 601 grid points, a numerical approximation.",
+    "diagnostics": "Read the weight ESS over time and the genealogy of the particles. After many resampling steps, the particles of the last day have few distinct ancestors on the first days. Compare with the grid filter. Other candidate models: a GARCH(1, 1) model, or a model with a Student t law for η.",
+    "interpretation": "The probability is about 0.05, so the rule says keep the position. The filter estimates the present volatility well, but the genealogy shows that the particle paths of the early days come from few ancestors. Thus a smoothing estimate of an early volatility needs another method. Reject the model when the standardised returns y_t / E[σ_t | y_(1:t−1)] have a heavier tail than the normal law.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: 100 daily returns made by the volatility model with the stated parameters and the page's generator (Philox4x32-10, seed 12), rounded to 0.001 %. They are illustrative values, not calibrated evidence.",
+     "generator": {
+      "kind": "sv",
+      "seed": 12,
+      "n": 100,
+      "decimals": 3,
+      "params": {
+       "mu": 0,
+       "phi": 0.95,
+       "s": 0.3
+      }
+     }
+    }
+   },
+   {
+    "id": "qmc-peak",
+    "kind": "experiment",
+    "family": "integral",
+    "model": "peak",
+    "title": "A smooth integrand in 4 dimensions: scrambled Sobol points against independent points",
+    "problem": "The integrand is Genz's product peak, f(u) = ∏ 1 / (a⁻² + (u_j − 1/2)²) on [0, 1)^d. It is smooth, and its integral has a closed form.",
+    "params": [
+     {
+      "name": "d",
+      "value": 4,
+      "note": "the dimension, an integer from 1 to 21"
+     },
+     {
+      "name": "a",
+      "value": 3,
+      "note": "the inverse width of the peak"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "integral",
+      "name": "∫ f(u) du",
+      "note": "the integral over the unit cube"
+     }
+    ],
+    "settings": {
+     "c_method": "rqmc",
+     "c_compare": "none",
+     "c_size": 14,
+     "c_runs": 16,
+     "c_scramble": "lms_shift",
+     "c_plot": "rate"
+    },
+    "observe": "The error of independent sampling decreases as n^(−1/2). The error of the scrambled Sobol points decreases much faster for this smooth integrand. At n = 16,384 its variance is more than 10,000 times smaller. Set the randomisation to none. Then every run gives the same value, and the spread of the runs says nothing about the error.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: d and a fully state the integrand. No data."
+    }
+   },
+   {
+    "id": "qmc-sum",
+    "kind": "experiment",
+    "family": "integral",
+    "model": "sum",
+    "title": "A discontinuous integrand in 8 dimensions: the gain becomes small",
+    "problem": "The integrand is the indicator that a sum of d uniforms is above c. Its integral is the tail of the Irwin–Hall law. The indicator jumps along a plane that is not parallel to any axis.",
+    "params": [
+     {
+      "name": "d",
+      "value": 8,
+      "note": "the dimension, an integer from 1 to 21"
+     },
+     {
+      "name": "c",
+      "value": 5,
+      "note": "the threshold of the sum, in [0, d]"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "prob",
+      "name": "P(U₁ + … + U_d > c)",
+      "note": "the tail probability of the sum"
+     }
+    ],
+    "settings": {
+     "c_method": "rqmc",
+     "c_compare": "none",
+     "c_size": 14,
+     "c_runs": 16,
+     "c_scramble": "lms_shift",
+     "c_plot": "rate"
+    },
+    "observe": "The scrambled points still have no bias, and their variance is still smaller than that of independent points. But the ratio of the variances is about 5, not more than 10,000: the jump of the integrand removes most of the gain. The Koksma–Hlawka bound gives nothing here, because the variation of the indicator is infinite.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: d and c fully state the integrand. No data."
+    }
+   },
+   {
+    "id": "asian-option",
+    "kind": "workflow",
+    "family": "integral",
+    "model": "asian",
+    "domain": "Finance",
+    "title": "Check a quote for an average-price option with 16 dates",
+    "problem": "A dealer quotes 6.50 for a call option on the geometric average of a share price at 16 equally spaced dates in one year. Under the Black–Scholes model the price is an integral over 16 dimensions. For the geometric average it also has a closed form, so you can check each method.",
+    "params": [
+     {
+      "name": "S0",
+      "value": 100,
+      "note": "the share price now"
+     },
+     {
+      "name": "K",
+      "value": 100,
+      "note": "the strike price"
+     },
+     {
+      "name": "r",
+      "value": 0.03,
+      "note": "the risk-free rate, continuously compounded, for each year"
+     },
+     {
+      "name": "sigma",
+      "value": 0.25,
+      "note": "the volatility for each year"
+     },
+     {
+      "name": "T",
+      "value": 1,
+      "unit": "years",
+      "note": "the maturity"
+     },
+     {
+      "name": "m",
+      "value": 16,
+      "note": "the number of dates: 2, 4, 8 or 16"
+     }
+    ],
+    "quantities": [
+     {
+      "id": "price",
+      "name": "e^(−rT) E[max(G − K, 0)]",
+      "note": "the price of the option, with G the geometric average"
+     },
+     {
+      "id": "itm",
+      "name": "P(G > K)",
+      "note": "the risk-neutral probability that the option pays"
+     }
+    ],
+    "rule": {
+     "quantity": "price",
+     "op": ">=",
+     "value": 6.5,
+     "yes": "Accept the quote of 6.50: it is not above the model price.",
+     "no": "Refuse the quote of 6.50: it is above the model price."
+    },
+    "settings": {
+     "c_method": "rqmc",
+     "c_compare": "none",
+     "c_size": 14,
+     "c_runs": 16,
+     "c_scramble": "lms_shift",
+     "c_path": "bridge",
+     "c_plot": "rate"
+    },
+    "decision": "Decision: accept the quote of 6.50 when it is at most the model price. Otherwise, refuse it. Estimated quantity: the price e^(−rT) E[max(G − K, 0)].",
+    "reason": "A price is an expectation of a function of normal increments, so it is an integral over the unit cube after the inverse normal transform. The payoff is continuous, and the Brownian bridge puts most of the variance in the first coordinates, where the Sobol points are best.",
+    "inputs": "S0 = 100, K = 100, r = 3 % a year, σ = 25 % a year, T = 1 year and 16 equally spaced dates. The parameters are illustrative, not market data.",
+    "dependence": "The log price is a Brownian motion with drift, so the increments are independent and normal. A model with stochastic volatility or jumps would change the price, and the closed form would no longer hold.",
+    "method": "Randomised quasi-Monte Carlo: 16 independent randomisations of 16,384 scrambled Sobol points. The Brownian bridge sets the end point from the first coordinate, then the mid-points. The interval comes from the spread of the 16 randomisations.",
+    "diagnostics": "Read the variance ratio against independent sampling and the error at each n on the rate plot. Set the path to standard, so that each coordinate is one time step: the gain becomes smaller. Other candidate models: a Heston model or a jump-diffusion model, which need their own reference.",
+    "interpretation": "The exact price is about 6.41, so the quote of 6.50 is about 0.09 above it, and the rule says refuse it. The interval of the randomised points is dozens of times narrower than that of independent points with the same n. Reject the model when the market prices of plain options show a volatility smile.",
+    "data": {
+     "kind": "synthetic",
+     "text": "Synthetic: the parameters are illustrative values, not calibrated evidence. No data."
+    }
+   }
+  ],
+  "methods": [
+   {
+    "id": "metropolis",
+    "name": "Metropolis–Hastings",
+    "family": "Markov chains",
+    "estimator": "\\hat\\theta_n = \\frac{1}{n}\\sum_{i=1}^{n} g(X_i), \\quad X_{i+1} = \\begin{cases} Y & \\text{with probability } \\min\\!\\left(1, \\frac{\\pi(Y)}{\\pi(X_i)}\\right) \\\\ X_i & \\text{otherwise} \\end{cases}, \\quad Y = X_i + h\\, s \\odot Z",
+    "estimatorText": "The chain proposes a random-walk step Y and accepts it with the probability min(1, π(Y)/π(X)). Only the ratio of densities enters, so the method needs π only up to a constant. The estimate is the mean of g over the draws after the warm-up.",
+    "assumptions": [
+     "The target π has a density, known up to a constant, that is positive where the chain must go.",
+     "The proposal is symmetric, so the acceptance probability has no proposal ratio. The chain then satisfies detailed balance with respect to π.",
+     "The chain is irreducible and aperiodic, so the ergodic theorem applies. A central limit theorem needs more, such as geometric ergodicity and a finite moment of g of order 2 + δ."
+    ],
+    "settings": [
+     "The step h in units of the scale s of each coordinate. The page does not tune it.",
+     "2^size warm-up iterations, which the page discards, then 2^size draws in each chain.",
+     "R independent chains from dispersed points or from one point."
+    ],
+    "suitable": {
+     "example": "balance-bias",
+     "settings": {
+      "c_method": "metropolis",
+      "c_compare": "none"
+     },
+     "text": "The posterior law of the balance has one mode and no strong correlation. A random walk with the step 1.5 mixes well: split R-hat is near 1, and the interval of the 4 chains holds the reference."
+    },
+    "failure": {
+     "example": "chain-two-modes",
+     "settings": {
+      "c_method": "metropolis",
+      "c_compare": "none",
+      "c_start": "one_point"
+     },
+     "text": "With two modes far apart and every chain started in one mode, no chain crosses to the other mode. The diagnostics look good, but the estimate of P(x₁ + x₂ > 0) is near 0, not 0.7."
+    },
+    "comparison": {
+     "with": "hmc",
+     "example": "chain-correlated",
+     "settings": {
+      "c_method": "metropolis",
+      "c_compare": "hmc"
+     },
+     "text": "On the correlated normal law, Hamiltonian Monte Carlo gives an effective sample size many times larger for the same number of draws. Each of its draws costs 10 gradients, so compare the effective sample size for each second, not for each draw."
+    }
+   },
+   {
+    "id": "gibbs",
+    "name": "Gibbs sampler",
+    "family": "Markov chains",
+    "estimator": "x_1^{(i+1)} \\sim \\pi(x_1 \\mid x_2^{(i)}), \\quad x_2^{(i+1)} \\sim \\pi(x_2 \\mid x_1^{(i+1)}), \\quad \\hat\\theta_n = \\frac{1}{n}\\sum_{i=1}^{n} g(x^{(i)})",
+    "estimatorText": "Each sweep draws each coordinate from its full conditional law given the other coordinates. The sweep accepts every draw. The estimate is the mean of g over the sweeps after the warm-up.",
+    "assumptions": [
+     "Each full conditional law is a standard law that the page can sample exactly.",
+     "The chain is irreducible: the full conditional laws connect every region of positive density.",
+     "Strong dependence between the coordinates makes each move small, so the chain mixes slowly."
+    ],
+    "settings": [
+     "A systematic sweep: x₁, then x₂.",
+     "2^size warm-up sweeps, then 2^size draws in each chain, and R independent chains.",
+     "The page offers the Gibbs sweep only where it has the full conditional laws: the correlated normal law, the two modes and the balance."
+    ],
+    "suitable": {
+     "example": "balance-bias",
+     "settings": {
+      "c_method": "gibbs",
+      "c_compare": "none"
+     },
+     "text": "In the balance model, μ given σ is normal and σ² given μ is inverse gamma. The Gibbs sweep needs no step size, and its effective sample size is close to the number of draws."
+    },
+    "failure": {
+     "example": "chain-correlated",
+     "settings": {
+      "c_method": "gibbs",
+      "c_compare": "none",
+      "c_params": "rho=0.995"
+     },
+     "text": "With ρ = 0.995 each full conditional law has the standard deviation √(1 − ρ²) ≈ 0.1. The chain moves along the ridge in tiny steps, so the effective sample size is a small fraction of the draws."
+    },
+    "comparison": {
+     "with": "metropolis",
+     "example": "balance-bias",
+     "settings": {
+      "c_method": "gibbs",
+      "c_compare": "metropolis"
+     },
+     "text": "On the balance model, the Gibbs sweep gives an effective sample size about 10 times that of the random walk. It also has no step to tune."
+    }
+   },
+   {
+    "id": "hmc",
+    "name": "Hamiltonian Monte Carlo",
+    "family": "Markov chains",
+    "estimator": "H(x, p) = -\\log \\pi(x) + \\tfrac12 p^{\\top} M^{-1} p, \\quad (x', p') = \\Phi^{\\varepsilon}_{L}(x, p), \\quad \\text{accept with } \\min\\!\\left(1, e^{H(x, p) - H(x', p')}\\right)",
+    "estimatorText": "Each iteration draws a momentum p and follows L leapfrog steps of the Hamiltonian dynamics with the gradient of log π. It accepts the end point with the Metropolis probability. The leapfrog map with a momentum flip keeps volume and is its own inverse. With the Metropolis step, the chain keeps π invariant. The estimate is the mean of g over the draws after the warm-up.",
+    "assumptions": [
+     "log π is differentiable on the whole space. A target with a boundary needs a change of variables first, as log σ in the balance model.",
+     "The step ε suits every region of the target. Where the curvature is much larger than 1/ε², the leapfrog path is unstable.",
+     "The page counts a divergent transition when the energy error is above 1,000 or not finite, and rejects that proposal. A divergent transition is a signal of bias."
+    ],
+    "settings": [
+     "The step ε in units of the scale of each coordinate (mass M = diag(1/s²)), with a random change of ±10 % in each iteration.",
+     "L leapfrog steps, from 1 to 200.",
+     "2^size warm-up iterations, then 2^size draws in each chain, and R independent chains."
+    ],
+    "suitable": {
+     "example": "oring-launch",
+     "settings": {
+      "c_method": "hmc",
+      "c_compare": "none"
+     },
+     "text": "The posterior law of the O-ring regression is smooth and has correlated coordinates. Hamiltonian Monte Carlo accepts about 98 % of its proposals, and its effective sample size is close to the number of draws."
+    },
+    "failure": {
+     "example": "chain-funnel",
+     "settings": {
+      "c_method": "hmc",
+      "c_compare": "none",
+      "c_eps": 0.5
+     },
+     "text": "In Neal's funnel the leapfrog step 0.5 is too large for the neck. More than 1,000 transitions diverge, the chains avoid the neck, and the estimate of P(v < −3) is too small."
+    },
+    "comparison": {
+     "with": "metropolis",
+     "example": "oring-launch",
+     "settings": {
+      "c_method": "hmc",
+      "c_compare": "metropolis"
+     },
+     "text": "On the O-ring regression the random walk has an effective sample size about 10 times smaller. Hamiltonian Monte Carlo needs a gradient. The random walk needs only the density."
+    }
+   },
+   {
+    "id": "smc",
+    "name": "Sequential Monte Carlo sampler",
+    "family": "Sequential inference",
+    "estimator": "\\pi_\\beta \\propto q^{1-\\beta}\\, \\pi^{\\beta}, \\quad w_k^i \\propto W_{k-1}^i \\left(\\frac{\\pi(x^i)}{q(x^i)}\\right)^{\\beta_k - \\beta_{k-1}}, \\quad \\hat Z = \\prod_k \\sum_i W_{k-1}^i \\left(\\frac{\\pi(x^i)}{q(x^i)}\\right)^{\\beta_k - \\beta_{k-1}}, \\quad \\hat\\theta = \\sum_i W^i g(x^i)",
+    "estimatorText": "N particles start from a wide normal law q. The sampler raises β from 0 to 1 in steps. At each step it reweights the particles and resamples them when the weights become uneven. Then it moves them with Metropolis steps that keep π_β invariant. The weighted mean at β = 1 estimates E_π g, and the product of the mean incremental weights estimates the normalising constant Z.",
+    "assumptions": [
+     "q covers the target: π/q is finite where π has mass. A narrow q misses a mode, and no later step can find it.",
+     "Each step is small enough that the weights stay usable. The weight ESS shows the spread of the weights; it does not show whether a mode is missing.",
+     "With a fixed schedule, Ẑ has no bias. With the adaptive schedule, the steps depend on the particles, and the bias tends to 0 as N grows."
+    ],
+    "settings": [
+     "N = 2^size particles and R independent runs.",
+     "The adaptive schedule: each step multiplies the weight ESS by the threshold. The fixed schedule: K equal steps of β.",
+     "The resampling scheme, the ESS threshold and the number of Metropolis moves after each step."
+    ],
+    "suitable": {
+     "example": "chain-two-modes",
+     "settings": {
+      "c_method": "smc",
+      "c_compare": "none"
+     },
+     "text": "The wide law q puts particles near both modes, and tempering keeps them with their correct weights. The estimate of P(x₁ + x₂ > 0) is near 0.7, and the interval of log Ẑ contains the exact value log 2π."
+    },
+    "failure": {
+     "example": "balance-evidence",
+     "settings": {
+      "c_method": "smc",
+      "c_schedule": "fixed",
+      "c_temps": 1,
+      "c_moves": 0
+     },
+     "text": "With one fixed step and no moves, the sampler is plain importance sampling from the wide law q to the narrow posterior law. The weight ESS falls to about 2 % of N. The spread of log Ẑ over the runs is about 3 times that of the adaptive schedule."
+    },
+    "comparison": {
+     "with": "metropolis",
+     "example": "chain-two-modes",
+     "settings": {
+      "c_method": "smc",
+      "c_compare": "metropolis",
+      "c_start": "one_point"
+     },
+     "text": "On the two modes, the random walk from one point stays in one mode, and the sampler finds both. The sampler also estimates Z directly, and a Markov chain does not."
+    }
+   },
+   {
+    "id": "particle",
+    "name": "Particle filter",
+    "family": "Sequential inference",
+    "estimator": "x_t^i \\sim f(\\cdot \\mid x_{t-1}^{a^i}), \\quad W_t^i \\propto W_{t-1}^i\\, g(y_t \\mid x_t^i), \\quad \\hat p(y_{1:T}) = \\prod_{t=1}^{T} \\sum_{i=1}^{N} W_{t-1}^i\\, g(y_t \\mid x_t^i), \\quad \\widehat{E}[h(x_t) \\mid y_{1:t}] = \\sum_i W_t^i h(x_t^i)",
+    "estimatorText": "The bootstrap filter moves each particle with the state dynamics f and weights it with the density g of the observation. When the weights become uneven, it resamples: each particle gets an expected number of copies in proportion to its weight. The weighted particles estimate the filter law at each time, and the product of the weighted mean densities estimates the likelihood.",
+    "assumptions": [
+     "The page can simulate the dynamics and compute the observation density.",
+     "The resampling scheme has no bias: particle i gets N W_i copies in expectation. Then the estimate of the likelihood has no bias for each N, but its log has a negative bias.",
+     "Each step adds uncertainty. Without resampling, the weights degenerate, and after resampling, the paths share their early ancestors."
+    ],
+    "settings": [
+     "N = 2^size particles and R independent runs.",
+     "The resampling scheme: multinomial, stratified, systematic, residual or none.",
+     "The ESS threshold τ: the filter resamples when the weight ESS is below τN."
+    ],
+    "suitable": {
+     "example": "tank-level",
+     "settings": {
+      "c_method": "particle"
+     },
+     "text": "In the tank model the filter resamples when the weight ESS falls below N/2, so the weights never degenerate for long. The estimates agree with the exact Kalman filter, up to a bias of order 1/N that 4,096 particles make small."
+    },
+    "failure": {
+     "example": "tank-level",
+     "settings": {
+      "c_method": "particle",
+      "c_resample": "none"
+     },
+     "text": "Without resampling, the filter is sequential importance sampling of whole paths. After a few readings, one particle has almost all the weight. The weight ESS is near 1, and in most runs the likelihood estimate is far below the exact value."
+    },
+    "comparison": {
+     "with": "independent",
+     "example": "tank-level",
+     "settings": {
+      "c_method": "particle",
+      "c_resample": "none"
+     },
+     "text": "Without resampling, the filter draws independent paths from the dynamics and weights each one by its likelihood: independent sampling with importance weights. Resampling stops the weight degeneracy, at the cost of shared ancestors."
+    }
+   },
+   {
+    "id": "rqmc",
+    "name": "Randomised quasi-Monte Carlo",
+    "family": "Integration",
+    "estimator": "\\hat I = \\frac{1}{n}\\sum_{i=0}^{n-1} f(\\tilde u_i), \\quad \\tilde u_i = L \\, u_i \\oplus e, \\quad \\bar I = \\frac{1}{R}\\sum_{r=1}^{R} \\hat I_r",
+    "estimatorText": "The first n = 2^m Sobol points fill the unit cube more evenly than independent points. A random linear scramble L and a random digital shift e make each point uniform. They keep the even spread, and each estimate has no bias. R independent randomisations give an interval from their spread.",
+    "assumptions": [
+     "The quantity is an integral of f over [0, 1)^d, with f square-integrable. Then the variance is o(1/n).",
+     "The gain is largest for a smooth f with a low effective dimension. A jump that is not parallel to the axes removes most of it.",
+     "Without randomisation, the points give one deterministic value with no error estimate."
+    ],
+    "settings": [
+     "n = 2^size points, a power of 2, so each prefix of length 2^k is a digital net.",
+     "The randomisation: a linear scramble with a digital shift, a digital shift only, or none.",
+     "R independent randomisations, and for the option the path construction: standard or Brownian bridge."
+    ],
+    "suitable": {
+     "example": "asian-option",
+     "settings": {
+      "c_method": "rqmc"
+     },
+     "text": "With the Brownian bridge, most of the variance of the option payoff is in the first coordinates. The variance of the scrambled estimate is more than 1,000 times smaller than that of independent points."
+    },
+    "failure": {
+     "example": "qmc-sum",
+     "settings": {
+      "c_method": "rqmc"
+     },
+     "text": "The indicator of a sum above a threshold jumps along a slanted plane. The variance ratio against independent points falls to about 5."
+    },
+    "comparison": {
+     "with": "independent",
+     "example": "qmc-peak",
+     "settings": {
+      "c_method": "rqmc"
+     },
+     "text": "Each run also computes the estimate with independent uniforms and the same n. The rate plot shows both errors: independent points give n^(−1/2), and the scrambled points are much faster for the smooth peak."
+    }
    }
   ]
  }

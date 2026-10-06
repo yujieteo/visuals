@@ -4,7 +4,8 @@
 // cancel of a large run, which must not report a partial result as complete, the round trip of the run record (save
 // it, load it, replay it, and get identical estimates), and the variance-reduction methods of group 2: a link to a
 // stratified run with its gain, and the common-random-numbers card that switches to separate streams; and group 3:
-// the tail plot of a heavy tail, the GEV fit of the rainfall series, and the observed names of a censored model.
+// the tail plot of a heavy tail, the GEV fit of the rainfall series, and the observed names of a censored model. The
+// labs of groups 7 and 8 get the same checks: keyboard Step and Run, a paused large run, and the run record round trip.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 import { kitState } from "../../../e2e/lib/kit.js";
@@ -19,6 +20,10 @@ const statusMatches = (page, re) => page.waitForFunction((src) => new RegExp(src
 const rareRun = (page) => page.evaluate(() => { const r = /** @type {any} */ (window).MCRareView.run; return r ? { status: r.status, reps: r.acc?.blocks ?? 0, target: r.c.R } : null; });
 /** @param {import("playwright").Page} page @param {string[]} states */
 const rareSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).MCRareView.run?.status), states, { timeout: 90_000 });
+/** The run of the Markov chain, sequential and quasi-Monte Carlo lab (group 8). @param {import("playwright").Page} page */
+const labRun = (page) => page.evaluate(() => { const r = /** @type {any} */ (window).MCChainView.run; return r ? { status: r.status, runs: r.acc?.blocks ?? 0, target: r.c.settings?.runs ?? 0 } : null; });
+/** @param {import("playwright").Page} page @param {string[]} states */
+const labSettles = (page, states) => page.waitForFunction((s) => s.includes(/** @type {any} */ (window).MCChainView.run?.status), states, { timeout: 90_000 });
 /** Change the view with a control that adds a Back entry: the method. @param {import("playwright").Page} page */
 const change = (page) => page.locator("#method").selectOption("inverse");
 
@@ -255,6 +260,24 @@ await fullSuite("monte-carlo-workbench", {
     await s.page.keyboard.press("Space");
     await rareSettles(s.page, ["done"]);
     assert.equal((await rareRun(s.page))?.reps, 16, "Space runs every replication");
+    // Group 8: the lab by keyboard: open the tab, step one chain with ".", then run every chain with Space.
+    await s.page.locator('[data-field="nav"][value="chains"]').focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.locator("#chain-autorun").uncheck();
+    await s.page.locator("#chain-reset").click();
+    assert.equal((await labRun(s.page))?.runs, 0, "Reset run clears the lab result");
+    await blur(s.page);
+    await s.page.keyboard.press(".");
+    await labSettles(s.page, ["paused", "done"]);
+    assert.equal((await labRun(s.page))?.runs, 1, "the full stop key steps one chain");
+    await s.page.waitForFunction(() => /Paused: the partial result is not complete: 1 of 4 independent runs/.test(document.getElementById("chain-status")?.textContent ?? ""));
+    await blur(s.page);
+    await s.page.keyboard.press("Space");
+    await labSettles(s.page, ["done"]);
+    assert.equal((await labRun(s.page))?.runs, 4, "Space runs every chain");
+    await s.page.locator('#chain-plots button[value="acf"]').focus();
+    await s.page.keyboard.press("Enter");
+    assert.equal((await kitState(s.page)).c_plot, "acf", "Enter on a focused figure button shows that figure");
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
     await settlesTo(() => kitState(s.page), initial, "Enter on the focused Reset button resets the view");
@@ -296,6 +319,18 @@ await fullSuite("monte-carlo-workbench", {
     const rr = await rareRun(page);
     assert.ok(rr && rr.reps < rr.target, "the paused rare-event run stopped before its last replication");
     await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#rare-results caption")?.textContent ?? ""));
+    // Group 8: a large lab run, then Pause: the lab reports the partial result as not complete.
+    await page.locator('[data-field="nav"][value="chains"]').click();
+    await page.locator("#chain-runs").fill("32");
+    await page.locator("#chain-runs").blur();
+    await page.locator("#chain-size").fill("16");
+    await page.locator("#chain-size").blur();
+    await page.waitForFunction(() => /** @type {any} */ (window).MCChainView.run?.status === "running" && /** @type {any} */ (window).MCChainView.run.c.settings.size === 16);
+    await page.locator("#chain-pause").click();
+    await labSettles(page, ["paused", "done"]);
+    const lr = await labRun(page);
+    assert.ok(lr && lr.runs < lr.target, "the paused lab run stopped before its last chain");
+    await page.waitForFunction(() => /Partial: the run is not complete/.test(document.querySelector("#chain-results caption")?.textContent ?? ""));
   }, kitState),
 
   "json-round-trip": (ctx) => jsonRoundTrip(ctx.open, async (page) => {
@@ -334,6 +369,19 @@ await fullSuite("monte-carlo-workbench", {
     await page.locator("#rare-load-run").setInputFiles({ name: rare.name, mimeType: "application/json", buffer: Buffer.from(rare.text) });
     await page.waitForFunction(() => /** @type {any} */ (window).MCRareView.run?.status === "done" && /Replay: \d+ estimates identical, 0 equal up to the last digits, 0 different/.test(document.getElementById("rare-replay")?.textContent ?? ""), null, { timeout: 90_000 });
     assert.equal((await kitState(page)).r_problem, "ruin");
+    // Group 8: the lab run record: save it, load it, replay it, and get identical estimates.
+    await page.locator('[data-field="nav"][value="chains"]').click();
+    await page.locator('#chain-list [data-chain-open="tank-level"]').click();
+    await labSettles(page, ["done"]);
+    const lab = await saved(page, () => page.locator("#chain-save-run").click());
+    const ldoc = JSON.parse(lab.text);
+    assert.equal(ldoc.format, "monte-carlo-workbench/lab-run");
+    assert.deepEqual([ldoc.example, ldoc.settings.method, ldoc.runs, ldoc.results[0].markovChain, typeof ldoc.results[0].weightDegeneracy.minEss], ["tank-level", "particle", 16, null, "number"]);
+    await page.locator('#chain-list [data-chain-open="qmc-sum"]').click();
+    await labSettles(page, ["done"]);
+    await page.locator("#chain-load-run").setInputFiles({ name: lab.name, mimeType: "application/json", buffer: Buffer.from(lab.text) });
+    await page.waitForFunction(() => /** @type {any} */ (window).MCChainView.run?.status === "done" && /Replay: 3 estimates identical, 0 equal up to the last digits, 0 different/.test(document.getElementById("chain-replay")?.textContent ?? ""), null, { timeout: 90_000 });
+    assert.equal((await kitState(page)).c_example, "tank-level");
   }, kitState),
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await change(page); }, "Method: Inverse transform", "#save-beamdswitch, #copy-beamdswitch"),

@@ -31,4 +31,7 @@ const rare = data.rare;
 section("Rare events: problems", rare.problems.map((/** @type {any} */ p) => [p.title, p.statement, p.decision, p.reason, p.inputs, p.dependence, p.diagnostics, p.interpretation, p.data]));
 section("Rare events: methods", rare.methods.map((/** @type {any} */ m) => [m.estimatorText, m.assumptions, m.settings, m.suitable.text, m.failure.text, m.comparison.text]));
 section("Rare events: examples", rare.presets.map((/** @type {any} */ p) => [p.title, p.observe]));
+const lab = data.chains;
+section("Lab: examples", lab.examples.map((/** @type {any} */ x) => [x.title, x.problem, x.observe ?? "", x.decision ?? "", x.reason ?? "", x.inputs ?? "", x.dependence ?? "", x.method ?? "", x.diagnostics ?? "", x.interpretation ?? "", x.data.text, x.params.map((/** @type {any} */ p) => p.note), x.quantities.map((/** @type {any} */ q) => q.note)]));
+section("Lab: methods", lab.methods.map((/** @type {any} */ m) => [m.estimatorText, m.assumptions, m.settings, m.suitable.text, m.failure.text, m.comparison.text]));
 process.stdout.write(`${out.join("\n")}\n`);
