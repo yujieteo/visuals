@@ -517,6 +517,296 @@
       "scales": [],
       "preferred": ["v-k", "v-L", "v-E", "v-Tw"],
       "evidence": []
+    },
+    {
+      "id": "rayleigh-benard",
+      "label": "Rayleigh–Bénard convection",
+      "group": "standard",
+      "title": "Rayleigh–Bénard convection between no-slip plates: onset and the steady roll branch",
+      "purpose": {"question": "At which Rayleigh number does a layer heated from below start to convect, and how much heat do the steady rolls carry above onset?", "observable": "v-q", "calculation": "bifurcation", "declaration": "boussinesq-box"},
+      "variables": [
+        {"id": "v-q", "symbol": "q", "meaning": "Mean heat flux through the layer", "quantity": "heat-flux", "unit": "W/m^2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the fluid", "quantity": "thermal-conductivity", "phase": "fluid", "unit": "W/(m*K)", "value": "0.026", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-H", "symbol": "H", "meaning": "Depth of the layer", "quantity": "length", "unit": "m", "value": "0.02", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Width of the cell", "quantity": "length", "unit": "m", "value": "0.02", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-g", "symbol": "g", "meaning": "Gravity", "quantity": "gravity", "unit": "m/s^2", "value": "9.81", "kind": "constant", "domain": "positive", "pi": true},
+        {"id": "v-beta", "symbol": "beta", "tex": "\\beta", "meaning": "Thermal expansion coefficient, 1/T for an ideal gas at 300 K", "quantity": "thermal-expansion", "unit": "1/K", "value": "1/300", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-nu", "symbol": "nu", "tex": "\\nu", "meaning": "Kinematic viscosity of the model fluid", "quantity": "kinematic-viscosity", "unit": "m^2/s", "value": "2e-5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-kappa", "symbol": "kappa", "tex": "\\kappa", "meaning": "Thermal diffusivity of the model fluid", "quantity": "thermal-diffusivity", "unit": "m^2/s", "value": "2e-5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-DT", "symbol": "DT", "tex": "\\Delta T", "meaning": "Temperature drop across the layer, T_h − T_c", "quantity": "temperature-difference", "unit": "K", "value": "8", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Th", "symbol": "T_h", "meaning": "Temperature of the lower plate", "quantity": "absolute-temperature", "unit": "K", "value": "304", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-Tc", "symbol": "T_c", "meaning": "Temperature of the upper plate", "quantity": "absolute-temperature", "unit": "K", "value": "296", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-psi", "symbol": "psi", "tex": "\\psi", "meaning": "Stream function: u = ∂ψ/∂z, w = −∂ψ/∂x", "quantity": "stream-function", "unit": "m^2/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-omega", "symbol": "omega", "tex": "\\omega", "meaning": "Vorticity ∂u/∂z − ∂w/∂x", "quantity": "vorticity", "unit": "1/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-T", "symbol": "T", "meaning": "Fluid temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Horizontal distance from the left wall", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-z", "symbol": "z", "meaning": "Height above the lower plate", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": false}
+      ],
+      "equations": [
+        {"id": "e-vort", "kind": "governing", "text": "d(omega,t) + d(psi,z)*d(omega,x) - d(psi,x)*d(omega,z) = nu*(d(omega,x,x) + d(omega,z,z)) - g*beta*d(T,x)", "domain": "0 < x < L, 0 < z < H"},
+        {"id": "e-omega", "kind": "constitutive", "text": "omega = d(psi,x,x) + d(psi,z,z)"},
+        {"id": "e-heat", "kind": "governing", "text": "d(T,t) + d(psi,z)*d(T,x) - d(psi,x)*d(T,z) = kappa*(d(T,x,x) + d(T,z,z))", "domain": "0 < x < L, 0 < z < H"},
+        {"id": "e-DT", "kind": "definition", "text": "DT = T_h - T_c"}
+      ],
+      "geometry": {"domain": "A two-dimensional cell of depth H and width L = H between horizontal plates; the cell holds one roll of a periodic layer of period 2H", "coordinates": "x from the left wall (x = 0) to the right wall (x = L), z from the lower plate (z = 0) to the upper plate (z = H), and time t", "lengths": ["v-H", "v-L"], "interfaces": "No-slip isothermal plates at z = 0 and z = H; stress-free insulating side walls at x = 0 and x = L"},
+      "conditions": [
+        {"id": "c-bot-psi", "kind": "boundary", "text": "psi = 0", "at": "z = 0"},
+        {"id": "c-bot-slip", "kind": "boundary", "text": "d(psi,z) = 0", "at": "z = 0"},
+        {"id": "c-bot-T", "kind": "boundary", "text": "T = T_h", "at": "z = 0"},
+        {"id": "c-top-psi", "kind": "boundary", "text": "psi = 0", "at": "z = H"},
+        {"id": "c-top-slip", "kind": "boundary", "text": "d(psi,z) = 0", "at": "z = H"},
+        {"id": "c-top-T", "kind": "boundary", "text": "T = T_c", "at": "z = H"},
+        {"id": "c-left-psi", "kind": "boundary", "text": "psi = 0", "at": "x = 0"},
+        {"id": "c-left-stress", "kind": "boundary", "text": "d(psi,x,x) = 0", "at": "x = 0"},
+        {"id": "c-left-T", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0"},
+        {"id": "c-right-psi", "kind": "boundary", "text": "psi = 0", "at": "x = L"},
+        {"id": "c-right-stress", "kind": "boundary", "text": "d(psi,x,x) = 0", "at": "x = L"},
+        {"id": "c-right-T", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = L"},
+        {"id": "c-init-psi", "kind": "initial", "text": "psi = 0", "at": "t = 0"},
+        {"id": "c-init-T", "kind": "initial", "text": "T = T_h - DT*z/H", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-bous", "kind": "physical", "text": "The Boussinesq approximation holds: βΔT = 8/300 ≪ 1, and the properties are constant.", "source": "spec-10"},
+        {"id": "a-2d", "kind": "physical", "text": "The flow is two-dimensional. The stress-free insulating side walls hold exactly the mirror-symmetric rolls of a periodic layer of period 2L.", "source": "spec-10"},
+        {"id": "a-fluid", "kind": "physical", "text": "A model fluid with ν = κ, so Pr = 1, the value of Wen, Goluskin and Doering (2022).", "source": "wgd-2022"},
+        {"id": "a-diff", "kind": "mathematical", "text": "T_h is above T_c.", "relation": "DT != 0", "source": "spec-10"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "H", "offset": "0", "symbol": "X", "reason": "The depth is the length scale of both coordinates, so the cell is 0 < X < Γ, 0 < Z < 1."},
+        {"id": "s-z", "for": "v-z", "scale": "H", "offset": "0", "symbol": "Z", "reason": "The depth is the length scale."},
+        {"id": "s-t", "for": "v-t", "scale": "H^2/kappa", "offset": "0", "symbol": "tau", "reason": "The thermal diffusion time across the layer."},
+        {"id": "s-psi", "for": "v-psi", "scale": "kappa", "offset": "0", "symbol": "Psi", "reason": "The thermal diffusion velocity κ/H times the depth H."},
+        {"id": "s-omega", "for": "v-omega", "scale": "kappa/H^2", "offset": "0", "symbol": "Omega", "reason": "The stream function scale over H²."},
+        {"id": "s-T", "for": "v-T", "scale": "DT", "offset": "T_c", "symbol": "theta", "reason": "θ = (T − T_c)/ΔT runs from 1 at the lower plate to 0 at the upper plate."}
+      ],
+      "preferred": ["v-H", "v-kappa", "v-nu", "v-DT", "v-k"],
+      "evidence": [
+        {"id": "ev-wgd", "source": "wgd-2022", "claim": "Steady rolls between no-slip plates at Pr = 1: onset near Ra_c ≈ 1708 and Nu of rolls of period 2 (Table 1S)."}
+      ]
+    },
+    {
+      "id": "enclosure-convection",
+      "label": "Natural convection in an enclosure",
+      "group": "standard",
+      "title": "Natural convection in a water-filled enclosure heated from below: base state and onset",
+      "purpose": {"question": "Is the conductive state of a thin water layer in a cell of aspect ratio 2.5 stable, and which roll pattern starts first?", "observable": "v-q", "calculation": "stability", "declaration": "boussinesq-box"},
+      "variables": [
+        {"id": "v-q", "symbol": "q", "meaning": "Mean heat flux through the layer", "quantity": "heat-flux", "unit": "W/m^2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of water at 300 K", "quantity": "thermal-conductivity", "phase": "fluid", "unit": "W/(m*K)", "value": "0.6103", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-H", "symbol": "H", "meaning": "Depth of the layer", "quantity": "length", "unit": "m", "value": "0.004", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-L", "symbol": "L", "meaning": "Width of the cell", "quantity": "length", "unit": "m", "value": "0.01", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-g", "symbol": "g", "meaning": "Gravity", "quantity": "gravity", "unit": "m/s^2", "value": "9.81", "kind": "constant", "domain": "positive", "pi": true},
+        {"id": "v-beta", "symbol": "beta", "tex": "\\beta", "meaning": "Thermal expansion coefficient of water at 300 K", "quantity": "thermal-expansion", "unit": "1/K", "value": "2.75e-4", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-nu", "symbol": "nu", "tex": "\\nu", "meaning": "Kinematic viscosity of water at 300 K", "quantity": "kinematic-viscosity", "unit": "m^2/s", "value": "8.568e-7", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-kappa", "symbol": "kappa", "tex": "\\kappa", "meaning": "Thermal diffusivity of water at 300 K", "quantity": "thermal-diffusivity", "unit": "m^2/s", "value": "1.465e-7", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-DT", "symbol": "DT", "tex": "\\Delta T", "meaning": "Temperature drop across the layer, T_h − T_c", "quantity": "temperature-difference", "unit": "K", "value": "3/2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Th", "symbol": "T_h", "meaning": "Temperature of the lower plate", "quantity": "absolute-temperature", "unit": "K", "value": "300.75", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-Tc", "symbol": "T_c", "meaning": "Temperature of the upper plate", "quantity": "absolute-temperature", "unit": "K", "value": "299.25", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-psi", "symbol": "psi", "tex": "\\psi", "meaning": "Stream function: u = ∂ψ/∂z, w = −∂ψ/∂x", "quantity": "stream-function", "unit": "m^2/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-omega", "symbol": "omega", "tex": "\\omega", "meaning": "Vorticity ∂u/∂z − ∂w/∂x", "quantity": "vorticity", "unit": "1/s", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-T", "symbol": "T", "meaning": "Fluid temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false},
+        {"id": "v-x", "symbol": "x", "meaning": "Horizontal distance from the left wall", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-z", "symbol": "z", "meaning": "Height above the lower plate", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": false}
+      ],
+      "equations": "rayleigh-benard",
+      "geometry": {"domain": "A two-dimensional water cell of depth H = 4 mm and width L = 10 mm between horizontal plates", "coordinates": "x from the left wall, z from the lower plate, and time t", "lengths": ["v-H", "v-L"], "interfaces": "No-slip isothermal plates; stress-free insulating side walls"},
+      "conditions": "rayleigh-benard",
+      "assumptions": [
+        {"id": "a-bous", "kind": "physical", "text": "The Boussinesq approximation holds: βΔT ≈ 4×10⁻⁴ ≪ 1, and the properties are those of water at 300 K.", "source": "lienhard-2024"},
+        {"id": "a-2d", "kind": "physical", "text": "The flow is two-dimensional, and the side walls are stress-free and insulating (an idealization of the cell).", "source": "spec-10"},
+        {"id": "a-diff", "kind": "mathematical", "text": "T_h is above T_c.", "relation": "DT != 0", "source": "spec-10"}
+      ],
+      "scales": "rayleigh-benard",
+      "preferred": ["v-H", "v-kappa", "v-nu", "v-DT", "v-k"],
+      "evidence": [
+        {"id": "ev-water", "source": "lienhard-2024", "claim": "Saturated water at 300 K: k = 0.6103 W/(m·K), α = 1.465×10⁻⁷ m²/s, ν = 8.568×10⁻⁷ m²/s, β = 2.75×10⁻⁴ K⁻¹ (Table A.3)."}
+      ]
+    },
+    {
+      "id": "lumped-radiation",
+      "label": "Lumped body with radiation",
+      "group": "standard",
+      "title": "A heated copper cube in a vacuum chamber: nonlinear radiation balance, equilibrium and stability",
+      "purpose": {"question": "At which temperature does a heated copper cube settle in a vacuum chamber, is that equilibrium stable, and how fast does the cube approach it?", "observable": "v-T", "calculation": "stability", "declaration": "lumped-radiation"},
+      "variables": [
+        {"id": "v-T", "symbol": "T", "meaning": "Temperature of the cube", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": true},
+        {"id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": true},
+        {"id": "v-Ti", "symbol": "T_i", "meaning": "Initial temperature", "quantity": "absolute-temperature", "unit": "K", "value": "900", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Te", "symbol": "T_e", "meaning": "Temperature of the chamber walls", "quantity": "absolute-temperature", "unit": "K", "value": "300", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-Q", "symbol": "Q", "meaning": "Electrical heating", "quantity": "heat-flow", "unit": "W", "value": "2", "kind": "parameter", "domain": "nonnegative", "pi": true},
+        {"id": "v-eps", "symbol": "eps", "tex": "\\varepsilon", "meaning": "Emissivity of the oxidized surface (an assumed value)", "quantity": "emissivity", "unit": "1", "value": "4/5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-sigma", "symbol": "sigma", "tex": "\\sigma", "meaning": "Stefan–Boltzmann constant (CODATA 2018, 10 digits)", "quantity": "stefan-boltzmann", "unit": "W/(m^2*K^4)", "value": "5.670374419e-8", "kind": "constant", "domain": "positive", "pi": true},
+        {"id": "v-V", "symbol": "V", "meaning": "Volume: a cube of side 1 cm", "quantity": "volume", "unit": "m^3", "value": "1e-6", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-As", "symbol": "A_s", "meaning": "Surface area of the cube", "quantity": "area", "unit": "m^2", "value": "6e-4", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-rho", "symbol": "rho", "tex": "\\rho", "meaning": "Density of pure copper", "quantity": "density", "unit": "kg/m^3", "value": "8954", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity of pure copper", "quantity": "specific-heat", "unit": "J/(kg*K)", "value": "384", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-C", "symbol": "C", "tex": "\\rho c_p", "meaning": "Volumetric heat capacity ρc_p", "quantity": "volumetric-heat-capacity", "unit": "J/(m^3*K)", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of pure copper", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "value": "398", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-energy", "kind": "governing", "text": "rho*c_p*V*d(T,t) = Q - eps*sigma*A_s*(T^4 - T_e^4)", "domain": "t > 0"},
+        {"id": "e-C", "kind": "definition", "text": "C = rho*c_p"}
+      ],
+      "geometry": {"domain": "A copper cube with a side of 1 cm, small compared with the chamber", "coordinates": "Time t only", "lengths": [], "interfaces": "The cube's surface, in radiative exchange with the chamber walls at T_e"},
+      "conditions": [
+        {"id": "c-initial", "kind": "initial", "text": "T = T_i", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-uniform", "kind": "physical", "text": "The temperature of the cube is uniform: the radiation Biot number is far below 0.1.", "source": "lienhard-2024"},
+        {"id": "a-grey", "kind": "physical", "text": "The surface is grey and diffuse, and the chamber is large and at a uniform temperature.", "source": "lienhard-2024"},
+        {"id": "a-vacuum", "kind": "physical", "text": "There is no convection: the chamber is evacuated.", "source": "spec-10"}
+      ],
+      "scales": [
+        {"id": "s-T", "for": "v-T", "scale": "T_e", "offset": "0", "symbol": "theta", "reason": "Radiation needs absolute temperatures, so θ = T/T_e with the chamber temperature as the reference."},
+        {"id": "s-t", "for": "v-t", "scale": "C*V/(eps*sigma*A_s*T_e^3)", "offset": "0", "symbol": "tau", "reason": "The radiative time scale: heat capacity over εσA_sT_e³."}
+      ],
+      "preferred": ["v-Te", "v-sigma", "v-As", "v-C"],
+      "evidence": [
+        {"id": "ev-copper", "source": "lienhard-2024", "claim": "Pure copper: ρ = 8954 kg/m³, c_p = 384 J/(kg·K), k = 398 W/(m·K) (Table A.1)."},
+        {"id": "ev-sigma", "source": "nist-sigma", "claim": "σ = 5.670374419…×10⁻⁸ W m⁻² K⁻⁴, exact in the SI."}
+      ]
+    },
+    {
+      "id": "surface-radiation",
+      "label": "Surface radiation",
+      "group": "standard",
+      "title": "Radiation in a long duct: crossed-string view factors, reciprocity and the radiosity network",
+      "purpose": {"question": "How much heat does a hot floor radiate to a cold ceiling across a long duct with reradiating side walls?", "observable": "v-q1", "calculation": "regime-map", "declaration": "surface-radiation"},
+      "variables": [
+        {"id": "v-q1", "symbol": "q_1", "meaning": "Net radiative heat flux of the floor", "quantity": "heat-flux", "phase": "floor", "unit": "W/m^2", "kind": "parameter", "domain": "real", "pi": true},
+        {"id": "v-sigma", "symbol": "sigma", "tex": "\\sigma", "meaning": "Stefan–Boltzmann constant (CODATA 2018, 10 digits)", "quantity": "stefan-boltzmann", "unit": "W/(m^2*K^4)", "value": "5.670374419e-8", "kind": "constant", "domain": "positive", "pi": true},
+        {"id": "v-T1", "symbol": "T_1", "meaning": "Temperature of the floor", "quantity": "absolute-temperature", "phase": "floor", "unit": "K", "value": "600", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-T2", "symbol": "T_2", "meaning": "Temperature of the ceiling", "quantity": "absolute-temperature", "phase": "ceiling", "unit": "K", "value": "300", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-e1", "symbol": "eps_1", "tex": "\\varepsilon_1", "meaning": "Emissivity of the floor", "quantity": "emissivity", "phase": "floor", "unit": "1", "value": "4/5", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-e2", "symbol": "eps_2", "tex": "\\varepsilon_2", "meaning": "Emissivity of the ceiling", "quantity": "emissivity", "phase": "ceiling", "unit": "1", "value": "1/2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-F12", "symbol": "F_12", "tex": "F_{12}", "meaning": "View factor from the floor to the ceiling", "quantity": "view-factor", "phase": "floor to ceiling", "unit": "1", "value": "1/2", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-F1R", "symbol": "F_1R", "tex": "F_{1R}", "meaning": "View factor from the floor to the side walls", "quantity": "view-factor", "phase": "floor to side walls", "unit": "1", "kind": "parameter", "domain": "positive", "pi": false},
+        {"id": "v-J1", "symbol": "J_1", "meaning": "Radiosity of the floor", "quantity": "heat-flux", "phase": "floor", "unit": "W/m^2", "kind": "field", "domain": "positive", "pi": false},
+        {"id": "v-J2", "symbol": "J_2", "meaning": "Radiosity of the ceiling", "quantity": "heat-flux", "phase": "ceiling", "unit": "W/m^2", "kind": "field", "domain": "positive", "pi": false},
+        {"id": "v-JR", "symbol": "J_R", "meaning": "Radiosity of the side walls", "quantity": "heat-flux", "phase": "side walls", "unit": "W/m^2", "kind": "field", "domain": "positive", "pi": false}
+      ],
+      "equations": [
+        {"id": "e-floor", "kind": "governing", "text": "(sigma*T_1^4 - J_1)*eps_1/(1 - eps_1) = F_12*(J_1 - J_2) + F_1R*(J_1 - J_R)"},
+        {"id": "e-ceiling", "kind": "governing", "text": "(sigma*T_2^4 - J_2)*eps_2/(1 - eps_2) = F_12*(J_2 - J_1) + F_1R*(J_2 - J_R)"},
+        {"id": "e-walls", "kind": "governing", "text": "0 = (J_R - J_1) + (J_R - J_2)"},
+        {"id": "e-F1R", "kind": "definition", "text": "F_1R = 1 - F_12"},
+        {"id": "e-q1", "kind": "definition", "text": "q_1 = (sigma*T_1^4 - J_1)*eps_1/(1 - eps_1)"}
+      ],
+      "geometry": {"domain": "A long duct of width W = 4 and height H = 3 (in any one length unit): floor, ceiling and two side walls", "coordinates": "None: the radiosity network has no coordinate", "lengths": [], "interfaces": "Four grey diffuse surfaces", "width": "4", "height": "3"},
+      "conditions": [],
+      "assumptions": [
+        {"id": "a-e1", "kind": "mathematical", "text": "The floor is not black: ε₁ < 1.", "relation": "1 - eps_1 != 0", "source": "lienhard-2024"},
+        {"id": "a-e2", "kind": "mathematical", "text": "The ceiling is not black: ε₂ < 1.", "relation": "1 - eps_2 != 0", "source": "lienhard-2024"},
+        {"id": "a-grey", "kind": "physical", "text": "Grey diffuse surfaces with a uniform temperature and radiosity on each.", "source": "lienhard-2024"},
+        {"id": "a-rerad", "kind": "physical", "text": "The side walls are adiabatic, so they reradiate all that they absorb. Floor and ceiling have the same width, so the side walls see both with the same view factor, and it divides out of their balance.", "source": "lienhard-2024"}
+      ],
+      "scales": [
+        {"id": "s-J1", "for": "v-J1", "scale": "sigma*T_1^4", "offset": "0", "symbol": "j_1", "reason": "The emissive power of the floor scales every radiosity."},
+        {"id": "s-J2", "for": "v-J2", "scale": "sigma*T_1^4", "offset": "0", "symbol": "j_2", "reason": "The same scale for every radiosity."},
+        {"id": "s-JR", "for": "v-JR", "scale": "sigma*T_1^4", "offset": "0", "symbol": "j_R", "reason": "The same scale for every radiosity."}
+      ],
+      "preferred": ["v-sigma", "v-T1"],
+      "evidence": [
+        {"id": "ev-network", "source": "lienhard-2024", "claim": "Radiosity networks of grey surfaces, view factor reciprocity and summation, and the string rule for two-dimensional view factors."}
+      ]
+    },
+    {
+      "id": "convection-radiation",
+      "label": "Convection and radiation",
+      "group": "standard",
+      "title": "A heated plate in still air: the full nonlinear balance and its linearization",
+      "purpose": {"question": "How hot does an electrically heated plate become when it loses heat by convection and by radiation, and when is a linear radiation coefficient accurate?", "observable": "v-T", "calculation": "regime-map", "declaration": "convection-radiation"},
+      "variables": [
+        {"id": "v-T", "symbol": "T", "meaning": "Surface temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": true},
+        {"id": "v-Tinf", "symbol": "T_inf", "meaning": "Temperature of the air and the surroundings", "quantity": "absolute-temperature", "unit": "K", "value": "300", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-h", "symbol": "h", "meaning": "Convection coefficient (an assumed constant)", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "value": "10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-eps", "symbol": "eps", "tex": "\\varepsilon", "meaning": "Emissivity of the painted surface (an assumed value)", "quantity": "emissivity", "unit": "1", "value": "9/10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-sigma", "symbol": "sigma", "tex": "\\sigma", "meaning": "Stefan–Boltzmann constant (CODATA 2018, 10 digits)", "quantity": "stefan-boltzmann", "unit": "W/(m^2*K^4)", "value": "5.670374419e-8", "kind": "constant", "domain": "positive", "pi": true},
+        {"id": "v-qs", "symbol": "q_s", "meaning": "Supplied heat flux", "quantity": "heat-flux", "unit": "W/m^2", "value": "500", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-balance", "kind": "governing", "text": "q_s = h*(T - T_inf) + eps*sigma*(T^4 - T_inf^4)"}
+      ],
+      "geometry": {"domain": "A flat plate, per unit area", "coordinates": "None: the balance is algebraic", "lengths": [], "interfaces": "The plate's surface, exposed to air and to large surroundings at T_∞"},
+      "conditions": [],
+      "assumptions": [
+        {"id": "a-h", "kind": "physical", "text": "h is constant: it does not change with the temperature.", "source": "spec-10"},
+        {"id": "a-sur", "kind": "physical", "text": "The surroundings are large and at the air temperature T_∞.", "source": "lienhard-2024"}
+      ],
+      "scales": [
+        {"id": "s-T", "for": "v-T", "scale": "T_inf", "offset": "0", "symbol": "theta", "reason": "Radiation needs absolute temperatures, so θ = T/T_∞."}
+      ],
+      "preferred": ["v-Tinf", "v-h", "v-sigma"],
+      "evidence": [
+        {"id": "ev-hrad", "source": "lienhard-2024", "claim": "The radiation heat transfer coefficient h_rad = 4σT_m³ε and its condition (ΔT/T_m)²/4 ≪ 1 (equations 2.28 to 2.31)."}
+      ]
+    },
+    {
+      "id": "custom-ignition",
+      "label": "Custom ODE: ignition",
+      "group": "standard",
+      "title": "Custom ODE system: thermal ignition of a lumped reactive body, folds and hysteresis",
+      "purpose": {"question": "For which heat-release numbers does the dimensionless balance have two stable temperatures, and where do they appear and vanish?", "observable": "v-theta", "calculation": "bifurcation", "analysis": {"control": "v-Da", "range": "0.2..0.6", "control2": "v-eps", "range2": "0.15..0.3"}},
+      "variables": [
+        {"id": "v-theta", "symbol": "theta", "tex": "\\theta", "meaning": "Dimensionless temperature rise; its value is the search box", "quantity": "fraction", "unit": "1", "value": "0..40", "kind": "field", "domain": "real", "pi": true},
+        {"id": "v-t", "symbol": "t", "meaning": "Dimensionless time", "quantity": "fraction", "unit": "1", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-Da", "symbol": "Da", "tex": "Da", "meaning": "Heat-release number (control parameter)", "quantity": "fraction", "unit": "1", "value": "0.3", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-eps", "symbol": "eps", "tex": "\\varepsilon", "meaning": "Inverse activation number (second control parameter)", "quantity": "fraction", "unit": "1", "value": "1/5", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-balance", "kind": "governing", "text": "d(theta,t) = Da*exp(theta/(1 + eps*theta)) - theta", "domain": "t > 0"}
+      ],
+      "geometry": {"domain": "None: a lumped model", "coordinates": "Time t only", "lengths": [], "interfaces": "None"},
+      "conditions": [
+        {"id": "c-initial", "kind": "initial", "text": "theta = 0", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-custom", "kind": "mathematical", "text": "A custom system: the page analyses the equation as entered and makes no physical claim about it.", "source": "spec-8"},
+        {"id": "a-eps", "kind": "mathematical", "text": "1 + εθ is positive in the search box.", "relation": "1 + eps*theta != 0", "source": "spec-8"}
+      ],
+      "scales": [],
+      "preferred": [],
+      "evidence": []
+    },
+    {
+      "id": "custom-lorenz",
+      "label": "Custom ODE: Lorenz system",
+      "group": "standard",
+      "title": "Custom ODE system: the Lorenz equations, a pitchfork and a Hopf point",
+      "purpose": {"question": "Where do the equilibria of the Lorenz equations appear and lose stability as r grows, and how do they change?", "observable": "v-x", "calculation": "bifurcation", "analysis": {"control": "v-r", "range": "0.2..30"}},
+      "variables": [
+        {"id": "v-x", "symbol": "x", "meaning": "First amplitude; its value is the search box", "quantity": "fraction", "unit": "1", "value": "-20..20", "kind": "field", "domain": "real", "pi": true},
+        {"id": "v-y", "symbol": "y", "meaning": "Second amplitude; its value is the search box", "quantity": "fraction", "unit": "1", "value": "-20..20", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-z", "symbol": "z", "meaning": "Third amplitude; its value is the search box", "quantity": "fraction", "unit": "1", "value": "-1..40", "kind": "field", "domain": "real", "pi": false},
+        {"id": "v-t", "symbol": "t", "meaning": "Dimensionless time", "quantity": "fraction", "unit": "1", "kind": "coordinate", "domain": "nonnegative", "pi": false},
+        {"id": "v-s", "symbol": "s", "tex": "\\sigma", "meaning": "Lorenz's σ", "quantity": "fraction", "unit": "1", "value": "10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-r", "symbol": "r", "tex": "r", "meaning": "Lorenz's r (control parameter)", "quantity": "fraction", "unit": "1", "value": "10", "kind": "parameter", "domain": "positive", "pi": true},
+        {"id": "v-b", "symbol": "b", "tex": "b", "meaning": "Lorenz's b", "quantity": "fraction", "unit": "1", "value": "8/3", "kind": "parameter", "domain": "positive", "pi": true}
+      ],
+      "equations": [
+        {"id": "e-x", "kind": "governing", "text": "d(x,t) = s*(y - x)"},
+        {"id": "e-y", "kind": "governing", "text": "d(y,t) = r*x - y - x*z"},
+        {"id": "e-z", "kind": "governing", "text": "d(z,t) = x*y - b*z"}
+      ],
+      "geometry": {"domain": "None: three amplitudes", "coordinates": "Time t only", "lengths": [], "interfaces": "None"},
+      "conditions": [
+        {"id": "c-x", "kind": "initial", "text": "x = 1", "at": "t = 0"},
+        {"id": "c-y", "kind": "initial", "text": "y = 1", "at": "t = 0"},
+        {"id": "c-z", "kind": "initial", "text": "z = 1", "at": "t = 0"}
+      ],
+      "assumptions": [
+        {"id": "a-custom", "kind": "mathematical", "text": "A custom system: the page analyses the equations as entered and makes no physical claim about them.", "source": "spec-8"}
+      ],
+      "scales": [
+        {"id": "s-x", "for": "v-x", "scale": "1", "offset": "0", "symbol": "X", "reason": "The amplitudes are already dimensionless."},
+        {"id": "s-y", "for": "v-y", "scale": "1", "offset": "0", "symbol": "Y", "reason": "The amplitudes are already dimensionless."},
+        {"id": "s-z", "for": "v-z", "scale": "1", "offset": "0", "symbol": "Z", "reason": "The amplitudes are already dimensionless."},
+        {"id": "s-t", "for": "v-t", "scale": "1", "offset": "0", "symbol": "tau", "reason": "The time is already dimensionless."}
+      ],
+      "preferred": [],
+      "evidence": []
     }
   ]
 }

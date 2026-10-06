@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the Scientific Modelling page: one offline index.html and its raw.json.
 
-Reads data/ (examples, quantities, familiar groups, sources, the build roadmap, the declared model catalogue and the
-references of SymPy and mpmath), src/ (the engine modules, the views, body.html and style.css), beamdswitch.js (the
+Reads data/ (examples, quantities, familiar groups, sources, the build roadmap, the declared model catalogue, the
+references of SymPy and mpmath, and the reference data of the stability analyses), src/ (the engine modules, the views, body.html and style.css), beamdswitch.js (the
 site's template, unchanged) and the shared kit of scripts/ (the shell, the state and export runtime, the style tokens
 and the vendored MathJax 4.1.3 with its Fira font), and writes:
 
@@ -10,8 +10,9 @@ and the vendored MathJax 4.1.3 with its Fira font), and writes:
   index.html   the kit's shell with every script, style, datum and font inlined; no runtime request
 
 The engine modules are classic scripts that the tests load with require(), in this order: rational, linalg,
-units, expr, sym, record, check, finder, nondim, special, heat, asymptotic, declare, conduction, regime, model,
-report; then regimeview.js and view.js, which run only in the browser.
+units, expr, sym, record, check, finder, nondim, special, heat, asymptotic, declare, conduction, numerics,
+convection, radiation, ode, regime, stability, model, stabreport, report; then regimeview.js, stabview.js and view.js, which run
+only in the browser.
 
 Usage:
     python3 build.py            # write raw.json and index.html
@@ -29,9 +30,9 @@ sys.path.insert(0, str(HERE.parents[1] / "scripts"))
 import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
-DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references"]
+DATA = ["examples", "quantities", "groups", "sources", "roadmap", "catalogue", "references", "stability"]
 MODULES = ["rational", "linalg", "units", "expr", "sym", "record", "check", "finder", "nondim", "special", "heat", "asymptotic", "declare", "conduction",
-           "regime", "model", "report", "regimeview", "view"]
+           "numerics", "convection", "radiation", "ode", "regime", "stability", "model", "stabreport", "report", "regimeview", "stabview", "view"]
 SUBJECT = "Engineering modelling"
 
 

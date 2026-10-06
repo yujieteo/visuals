@@ -1,15 +1,16 @@
 /* Scientific Modelling: the Regime Map Builder (spec section 9), version 1. It reads the record's declared model
  * (src/declare.js), checks the Nondimensionalizer's dimensionless equations against it, and then draws a 1D diagram
  * or a 2D slice of the declared parameter space: the researcher chooses the axes, linear or logarithmic scales and the
- * fixed parameters. A family module (src/conduction.js; piece 4 adds its own to IMPLS) evaluates one point at a time.
+ * fixed parameters. A family module (src/conduction.js, and src/convection.js and src/radiation.js of piece 4) evaluates
+ * one point at a time; a module of piece 4 also gives the stability and bifurcation analysis at the record's point.
  * This engine samples the grid, finds each boundary between two resolved points only (never across an unresolved
  * point), builds the regions of each layer, the points where no approximation meets the tolerance, the unresolved
  * points with their reasons, the intersections of boundaries, the limit paths, and the inspection of a point or a
  * boundary with its dimensional reconstruction.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js")]);
-  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD]);
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js")]);
+  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD]);
 })(typeof self !== "undefined" ? self : this, function (Q, E, S, SF, D, IMPLS) {
   "use strict";
 
@@ -171,7 +172,7 @@
     const m = D.match(decl, interp, nd);
     if (!m.ok) return { ready: false, reason: "mismatch", declaration: summaryOf(decl), problems: m.problems, message: "The record's dimensionless model does not equal the declared model.", next: m.next };
     const tipCond = m.conditions.find((c) => c.of === "tip");
-    const options = { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated" };
+    const options = { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated", geometry: base.geometry ?? {}, references: data.stability ?? null };
     const impl = implement(decl, options);
     if (!impl) return { ready: false, reason: "no-solver", declaration: summaryOf(decl), message: `Piece ${decl.piece} of the build plan adds the solver of ${decl.title}.`, next: "Use the Finder and the Nondimensionalizer now." };
 
@@ -270,12 +271,12 @@
     const reasons = new Map();
     for (const n of nodes) if (!n.ok) reasons.set(n.reason, (reasons.get(n.reason) ?? 0) + 1);
     const approxLayers = layers.filter((l) => l.kind === "approximation");
-    const gapFlags = nodes.map((n, i) => n.ok && approxLayers.every((l) => { const r = l.regions.find((x) => x.id === "meets"); return twoD ? r.mask[i] !== "1" : l.series[i] === null || l.series[i] > tol; }));
+    const gapFlags = nodes.map((n, i) => n.ok && approxLayers.length > 0 && approxLayers.every((l) => { const r = l.regions.find((x) => x.id === "meets"); return twoD ? r.mask[i] !== "1" : l.series[i] === null || l.series[i] > tol; }));
     const pack = (flags) => (twoD ? { mask: flags.map((b) => (b ? "1" : "0")).join(""), count: flags.filter(Boolean).length } : { intervals: intervals(flags, xs), count: flags.filter(Boolean).length });
     const unresolved = { ...pack(unresolvedFlags), reasons: [...reasons.entries()].map(([reason, count]) => ({ reason, count })) };
     const gap = pack(gapFlags);
     // In 1D the gap is the resolved range less the union of the refined intervals where an approximation holds.
-    if (!twoD) {
+    if (!twoD && approxLayers.length) {
       const covered = approxLayers.flatMap((l) => l.regions.find((r) => r.id === "meets").intervals).concat(unresolved.intervals).sort((a, b) => a[0] - b[0]);
       const out = [];
       let at = xs[0];
@@ -333,6 +334,7 @@
       record: recordOnMap ? [num(recordPoint[x]), y ? num(recordPoint[y]) : null] : null,
       point: inspection, boundary, notices,
       analysis: impl.analysis(), acceptance: impl.acceptance(ictx), boundaryTypes: BOUNDARIES, layerKinds: LAYER_KINDS,
+      stability: impl.stability ? JSON.parse(JSON.stringify(impl.stability(recordPoint, { ...ictx, atRecord: recordOnMap }))) : null,
       exactBoundaries: impl.exactBoundaries ? impl.exactBoundaries(tol) : null,
       inputs: [...new Set([...Object.values(m.roles).map((r) => r.id), ...m.equations.map((e) => e.record), ...m.conditions.map((c) => c.record), "purpose", "geometry", ...(base.scales ?? []).map((s) => s.id)])],
     };
@@ -463,7 +465,7 @@
       const { interp, nd, base } = run(decl.acceptance.example);
       const m = D.match(decl, interp, nd);
       const tipCond = m.conditions.find((c) => c.of === "tip");
-      const impl = m.ok ? implement(decl, { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated" }) : null;
+      const impl = m.ok ? implement(decl, { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated", geometry: base.geometry ?? {}, references: data.stability ?? null }) : null;
       out = !m.ok ? { ok: false, checks: [], problems: m.problems } : !impl ? { ok: false, checks: [], problems: ["No solver."] }
         : (() => { const checks = impl.acceptance(inspectContext(decl, m, interp, nd, data, D.point(decl, m, interp, nd))); return { ok: checks.every((c) => c.passed), checks, problems: [] }; })();
     } catch (e) {
@@ -492,7 +494,8 @@
     for (const c of rg.acceptance) out.push({ id: `r-rm-accept-${c.id}`, kind: "acceptance", title: `${c.title}: ${c.passed ? "passed" : "failed"}. ${c.detail}`, status: c.passed ? c.status : "unresolved", tolerance: c.tolerance ?? null, inputs, steps: ["s-rm-acceptance"], evidence: ["spec-10", "spec-11"], next: c.passed ? "" : "Check the declaration's solver and its reference values." });
     for (const l of rg.layers) {
       const n = l.curves.length;
-      out.push({ id: `r-rm-layer-${l.id}`, kind: l.kind, title: `${l.title}: ${n} ${l.boundary === "approximation" ? "approximation" : "balance-crossover"} boundar${n === 1 ? "y" : "ies"} on the map. Criterion: ${l.criterion}.`,
+      const type = { approximation: "approximation", stability: "stability", bifurcation: "bifurcation" }[l.boundary] ?? "balance-crossover";
+      out.push({ id: `r-rm-layer-${l.id}`, kind: l.kind, title: `${l.title}: ${n} ${type} boundar${n === 1 ? "y" : "ies"} on the map. Criterion: ${l.criterion}.`,
         status: l.status, tolerance: l.kind === "approximation" ? String(rg.tolerance) : null, inputs, steps: l.steps, evidence: l.evidence });
     }
     if (rg.unresolved.count) out.push({ id: "r-rm-unresolved", kind: "unresolved", title: `${rg.unresolved.count} points of the map are unresolved: ${rg.unresolved.reasons.map((r) => r.reason).join(" ")}`, status: "unresolved", inputs, steps: ["s-rm-map"], evidence: ["spec-9"], next: "Read the map only where it is resolved. A later solver or a wider declaration can resolve these points." });

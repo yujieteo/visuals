@@ -397,7 +397,7 @@
     }
     if (state.tool === "finder") renderFinder(state, d);
     else if (state.tool === "nondim") renderNondim(state, d);
-    else if (state.tool === "regime") RegimeView.render(state, d);
+    else if (state.tool === "regime") { RegimeView.render(state, d); StabView.render(state, d); }
     else RegimeView.catalogue(state, d);
     renderTrace(d, state);
     if (state.detail !== lastDetail) {
@@ -514,6 +514,13 @@
         const d = Model.derive(st, DATA, active(st.example));
         return out(d.catalogue);
       } },
+    { name: "get_stability", description: "Return the stability and bifurcation analysis of the current confirmed record (hand calculation 9): for a declared model of piece 4, the exact base-state, perturbation and symmetry checks, the growth rates and modes, the neutral curve, the branch with its comparison data, the amplitude equation and the classification; for a custom ODE system, the equilibria with their eigenvalues, the branches with their folds, branch points and Hopf points, the regions of multiple stable states and the search coverage. Each result has its status and tolerance.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: RO,
+      execute: async () => {
+        const d = app.derived;
+        if (!d.stability) return out({ error: "The current record has no confirmed version. Confirm its interpretation first." });
+        return out({ version: d.version, confirmed: d.confirmed, stability: d.stability, results: d.results.filter((/** @type {any} */ r) => r.id.startsWith("r-st-")), statuses: R.STATUS });
+      } },
   ];
   /** The regime map of the current record with some view fields changed, without changing the page. @param {Record<string, any>} patch */
   function regimeFor(patch) {
@@ -567,6 +574,7 @@
     app = a;
     renderRoadmap();
     RegimeView.bind(app, { esc, ti, td, chip, sourceLink, data: DATA });
+    StabView.bind(app, { esc, ti, td, chip, sourceLink });
     $("confirm").addEventListener("click", () => {
       const ex = app.state.example;
       store[ex] = R.confirm(active(ex));

@@ -1929,6 +1929,1288 @@
         "convergence": "None needed for the closed form.",
         "reproducibility": "Plain JavaScript in double precision."
       }
+    },
+    {
+      "id": "boussinesq-box",
+      "family": "buoyancy-convection",
+      "title": "Boussinesq layer in a box heated from below",
+      "piece": 4,
+      "model": {
+        "summary": "A two-dimensional cell of depth H and width L between no-slip isothermal plates at T_h (below) and T_c (above), with stress-free insulating side walls, in the Boussinesq approximation. The stream function ψ and the vorticity ω carry the flow. The box holds exactly the mirror-symmetric rolls of a periodic layer of period 2L.",
+        "roles": [
+          {
+            "id": "psi",
+            "quantity": "stream-function",
+            "kind": "field",
+            "meaning": "stream function"
+          },
+          {
+            "id": "omega",
+            "quantity": "vorticity",
+            "kind": "field",
+            "meaning": "vorticity"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "x",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "horizontal coordinate"
+          },
+          {
+            "id": "z",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "vertical coordinate"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          },
+          {
+            "id": "H",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "depth of the layer"
+          },
+          {
+            "id": "L",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "width of the cell"
+          },
+          {
+            "id": "g",
+            "quantity": "gravity",
+            "kind": "parameter",
+            "meaning": "gravity"
+          },
+          {
+            "id": "beta",
+            "quantity": "thermal-expansion",
+            "kind": "parameter",
+            "meaning": "thermal expansion coefficient"
+          },
+          {
+            "id": "nu",
+            "quantity": "kinematic-viscosity",
+            "kind": "parameter",
+            "meaning": "kinematic viscosity"
+          },
+          {
+            "id": "kappa",
+            "quantity": "thermal-diffusivity",
+            "kind": "parameter",
+            "meaning": "thermal diffusivity"
+          },
+          {
+            "id": "T_h",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "temperature of the lower plate"
+          },
+          {
+            "id": "T_c",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "temperature of the upper plate"
+          },
+          {
+            "id": "DT",
+            "quantity": "temperature-difference",
+            "kind": "parameter",
+            "meaning": "temperature drop T_h − T_c"
+          }
+        ],
+        "equations": [
+          {
+            "id": "vort",
+            "kind": "governing",
+            "text": "d(omega,t) + d(psi,z)*d(omega,x) - d(psi,x)*d(omega,z) = nu*(d(omega,x,x) + d(omega,z,z)) - g*beta*d(T,x)",
+            "domain": "0 < x < L, 0 < z < H"
+          },
+          {
+            "id": "omega",
+            "kind": "constitutive",
+            "text": "omega = d(psi,x,x) + d(psi,z,z)"
+          },
+          {
+            "id": "heat",
+            "kind": "governing",
+            "text": "d(T,t) + d(psi,z)*d(T,x) - d(psi,x)*d(T,z) = kappa*(d(T,x,x) + d(T,z,z))",
+            "domain": "0 < x < L, 0 < z < H"
+          }
+        ],
+        "closures": [
+          "Boussinesq: the density changes only in the buoyancy term, ρ = ρ_0[1 − β(T − T_c)].",
+          "Newtonian viscosity and Fourier conduction with constant ν and κ.",
+          "u = ∂ψ/∂z, w = −∂ψ/∂x, so the flow is incompressible."
+        ],
+        "geometry": "A two-dimensional cell 0 < x < L, 0 < z < H. Γ = L/H. The plates are horizontal; gravity points down, −z.",
+        "conditions": [
+          {
+            "id": "bottom-psi",
+            "kind": "boundary",
+            "text": "psi = 0",
+            "at": "z = 0",
+            "meaning": "no flow through the lower plate"
+          },
+          {
+            "id": "bottom-slip",
+            "kind": "boundary",
+            "text": "d(psi,z) = 0",
+            "at": "z = 0",
+            "meaning": "no slip at the lower plate"
+          },
+          {
+            "id": "bottom-T",
+            "kind": "boundary",
+            "text": "T = T_h",
+            "at": "z = 0",
+            "meaning": "lower plate at T_h"
+          },
+          {
+            "id": "top-psi",
+            "kind": "boundary",
+            "text": "psi = 0",
+            "at": "z = H",
+            "meaning": "no flow through the upper plate"
+          },
+          {
+            "id": "top-slip",
+            "kind": "boundary",
+            "text": "d(psi,z) = 0",
+            "at": "z = H",
+            "meaning": "no slip at the upper plate"
+          },
+          {
+            "id": "top-T",
+            "kind": "boundary",
+            "text": "T = T_c",
+            "at": "z = H",
+            "meaning": "upper plate at T_c"
+          },
+          {
+            "id": "left-psi",
+            "kind": "boundary",
+            "text": "psi = 0",
+            "at": "x = 0",
+            "meaning": "no flow through the left wall"
+          },
+          {
+            "id": "left-stress",
+            "kind": "boundary",
+            "text": "d(psi,x,x) = 0",
+            "at": "x = 0",
+            "meaning": "no shear stress at the left wall"
+          },
+          {
+            "id": "left-T",
+            "kind": "boundary",
+            "text": "d(T,x) = 0",
+            "at": "x = 0",
+            "meaning": "insulating left wall"
+          },
+          {
+            "id": "right-psi",
+            "kind": "boundary",
+            "text": "psi = 0",
+            "at": "x = L",
+            "meaning": "no flow through the right wall"
+          },
+          {
+            "id": "right-stress",
+            "kind": "boundary",
+            "text": "d(psi,x,x) = 0",
+            "at": "x = L",
+            "meaning": "no shear stress at the right wall"
+          },
+          {
+            "id": "right-T",
+            "kind": "boundary",
+            "text": "d(T,x) = 0",
+            "at": "x = L",
+            "meaning": "insulating right wall"
+          },
+          {
+            "id": "init-psi",
+            "kind": "initial",
+            "text": "psi = 0",
+            "at": "t = 0",
+            "meaning": "fluid at rest"
+          },
+          {
+            "id": "init-T",
+            "kind": "initial",
+            "text": "T = T_h - DT*z/H",
+            "at": "t = 0",
+            "meaning": "the conductive profile"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "x",
+              "offset": "0",
+              "scale": "H",
+              "tex": "X"
+            },
+            {
+              "symbol": "Z",
+              "of": "z",
+              "offset": "0",
+              "scale": "H",
+              "tex": "Z"
+            },
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "H^2/kappa",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "Psi",
+              "of": "psi",
+              "offset": "0",
+              "scale": "kappa",
+              "tex": "\\Psi"
+            },
+            {
+              "symbol": "Omega",
+              "of": "omega",
+              "offset": "0",
+              "scale": "kappa/H^2",
+              "tex": "\\Omega"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_c",
+              "scale": "DT",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [],
+          "parameters": [
+            {
+              "id": "Ra",
+              "tex": "Ra",
+              "def": "g*beta*DT*H^3/(nu*kappa)",
+              "solve": "DT",
+              "meaning": "Rayleigh number"
+            },
+            {
+              "id": "Pr",
+              "tex": "Pr",
+              "def": "nu/kappa",
+              "solve": "nu",
+              "meaning": "Prandtl number"
+            },
+            {
+              "id": "Gamma",
+              "tex": "\\Gamma",
+              "def": "L/H",
+              "solve": "L",
+              "meaning": "aspect ratio of the cell"
+            }
+          ],
+          "equations": [
+            {
+              "of": "vort",
+              "text": "d(Omega,tau) + d(Psi,Z)*d(Omega,X) - d(Psi,X)*d(Omega,Z) = Pr*(d(Omega,X,X) + d(Omega,Z,Z)) - Pr*Ra*d(theta,X)"
+            },
+            {
+              "of": "omega",
+              "text": "Omega = d(Psi,X,X) + d(Psi,Z,Z)"
+            },
+            {
+              "of": "heat",
+              "text": "d(theta,tau) + d(Psi,Z)*d(theta,X) - d(Psi,X)*d(theta,Z) = d(theta,X,X) + d(theta,Z,Z)"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "bottom-psi",
+              "text": "Psi = 0",
+              "at": "Z = 0"
+            },
+            {
+              "of": "bottom-slip",
+              "text": "d(Psi,Z) = 0",
+              "at": "Z = 0"
+            },
+            {
+              "of": "bottom-T",
+              "text": "theta = 1",
+              "at": "Z = 0"
+            },
+            {
+              "of": "top-psi",
+              "text": "Psi = 0",
+              "at": "Z = 1"
+            },
+            {
+              "of": "top-slip",
+              "text": "d(Psi,Z) = 0",
+              "at": "Z = 1"
+            },
+            {
+              "of": "top-T",
+              "text": "theta = 0",
+              "at": "Z = 1"
+            },
+            {
+              "of": "left-psi",
+              "text": "Psi = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "left-stress",
+              "text": "d(Psi,X,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "left-T",
+              "text": "d(theta,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "right-psi",
+              "text": "Psi = 0",
+              "at": "X = Gamma"
+            },
+            {
+              "of": "right-stress",
+              "text": "d(Psi,X,X) = 0",
+              "at": "X = Gamma"
+            },
+            {
+              "of": "right-T",
+              "text": "d(theta,X) = 0",
+              "at": "X = Gamma"
+            },
+            {
+              "of": "init-psi",
+              "text": "Psi = 0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "init-T",
+              "text": "theta = 1 - Z",
+              "at": "tau = 0"
+            }
+          ]
+        },
+        "stability": {
+          "base": {
+            "theta": "1 - Z",
+            "Psi": "0",
+            "Omega": "0"
+          },
+          "perturb": [
+            "theta",
+            "Psi",
+            "Omega"
+          ],
+          "symmetry": {
+            "coordinate": "X",
+            "image": "Gamma - X",
+            "signs": {
+              "Psi": -1,
+              "Omega": -1,
+              "theta": 1
+            },
+            "text": "the reflection X → Γ − X with Ψ → −Ψ and Ω → −Ω"
+          }
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Gamma",
+            "tex": "\\Gamma",
+            "label": "aspect ratio L/H",
+            "min": 0.3,
+            "max": 6,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Ra",
+            "tex": "Ra",
+            "label": "Rayleigh number gβΔTH³/(νκ)",
+            "min": 300,
+            "max": 30000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Pr",
+            "tex": "Pr",
+            "label": "Prandtl number ν/κ",
+            "min": 0.1,
+            "max": 100,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The Boussinesq approximation holds: βΔT ≪ 1, and the properties are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The flow is two-dimensional. Stress-free insulating side walls make the box hold exactly the mirror-symmetric rolls of a periodic layer of period 2L.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The plates are no-slip and isothermal, as in Wen, Goluskin and Doering (2022).",
+            "source": "wgd-2022"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared equations and the 14 conditions.",
+          "Exact check of the conductive base state θ = 1 − Z, Ψ = Ω = 0 in every equation and condition.",
+          "Exact perturbation equations: the order-ε part of the substitution.",
+          "Exact check of the reflection symmetry X → Γ − X, Ψ → −Ψ, Ω → −Ω."
+        ],
+        "numerical": [
+          "Growth rates σ of each box mode a = nπ/Γ, with the eigenmode and its residual.",
+          "The neutral curve Ra(a) of the unbounded layer and its minimum (Ra_c, a_c).",
+          "The steady roll branch by Newton's method and continuation in Ra, with Nu, Re and a resolution check.",
+          "The amplitude equation at onset, and the stability of the rolls to disturbances of the same period and symmetry."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "At onset viscous diffusion balances the buoyancy torque, and the quadratic advection terms are of second order in the amplitude."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "The weakly nonlinear expansion in ε = Ra/Ra_c − 1 gives the amplitude equation of the rolls."
+        },
+        "stability": {
+          "applies": true,
+          "reason": "The conductive state is a steady solution, and its linear temporal stability decides the onset of convection."
+        },
+        "bifurcation": {
+          "applies": true,
+          "reason": "Rolls branch from the conductive state at onset; continuation follows the branch and the amplitude equation classifies the pitchfork."
+        }
+      },
+      "limitations": [
+        "Two-dimensional states in the box only. Three-dimensional convection, turbulence and the cavity heated from the side need separate declarations.",
+        "Stress-free insulating side walls are an idealization: rigid side walls raise the onset.",
+        "The roll branch is validated for Ra ≤ 10⁴ against Wen, Goluskin and Doering (2022) at Pr = 1. The page does not compute it above 10⁴.",
+        "Stability of the rolls covers disturbances of the same period and mirror symmetry only."
+      ],
+      "acceptance": {
+        "example": "rayleigh-benard",
+        "reference": "Ra_c and a_c of the unbounded layer from the independent SciPy script (tools/stability_references.py), and Ra_c ≈ 1708 with the period 2.016 (Wen, Goluskin and Doering 2022). Nu of steady rolls at Pr = 1 and period 2 from their Table 1S, at 15 values of Ra up to 10⁴.",
+        "tolerance": "1e-7 relative for Ra_c, 1e-4 for a_c, 1e-4 relative for Nu, 1e-5 relative between two resolutions.",
+        "checks": [
+          "Ra_c converges between 16 and 24 nodes.",
+          "Ra_c and a_c agree with the SciPy reference.",
+          "At the critical point the largest growth rate is real and 0.",
+          "Nu of the roll branch agrees with Table 1S.",
+          "Nu at Ra = 10⁴ converges in the resolution.",
+          "The amplitude equation gives a supercritical pitchfork."
+        ]
+      },
+      "solver": {
+        "method": "Chebyshev collocation in z on a basis that meets the wall conditions (W = (1 − ξ²)²p, Θ = (1 − ξ²)q), so each eigenproblem is standard; Hessenberg QR for the eigenvalues; Fourier modes in x (ψ odd, θ even) for the rolls; Newton's method with continuation in Ra; Lyapunov–Schmidt reduction of the discrete system for the amplitude equation.",
+        "discretization": "16 interior nodes for the linear analysis and 14 for the map. 8 Fourier modes × 16 nodes for the rolls, with 32 points in x for the products.",
+        "convergence": "Ra_c to 1e-9 between 16 and 24 nodes. Nu to 1e-5 between 8 × 16 and 10 × 20. Newton stops at a row-scaled residual of 1e-11.",
+        "reproducibility": "Plain JavaScript in double precision. The reference script pins NumPy and SciPy."
+      }
+    },
+    {
+      "id": "lumped-radiation",
+      "family": "radiation",
+      "title": "Lumped body with grey radiation to an enclosure",
+      "piece": 4,
+      "model": {
+        "summary": "A body of uniform temperature, heat capacity ρc_pV and surface A_s with emissivity ε, heated at Q and exchanging grey radiation with a large enclosure at T_e.",
+        "roles": [
+          {
+            "id": "rho",
+            "quantity": "density",
+            "kind": "parameter",
+            "meaning": "density",
+            "optional": true
+          },
+          {
+            "id": "c_p",
+            "quantity": "specific-heat",
+            "kind": "parameter",
+            "meaning": "specific heat capacity",
+            "optional": true
+          },
+          {
+            "id": "C",
+            "quantity": "volumetric-heat-capacity",
+            "kind": "parameter",
+            "meaning": "volumetric heat capacity ρc_p",
+            "optional": true
+          },
+          {
+            "id": "V",
+            "quantity": "volume",
+            "kind": "parameter",
+            "meaning": "volume"
+          },
+          {
+            "id": "A_s",
+            "quantity": "area",
+            "kind": "parameter",
+            "meaning": "surface area"
+          },
+          {
+            "id": "eps",
+            "quantity": "emissivity",
+            "kind": "parameter",
+            "meaning": "emissivity of the surface"
+          },
+          {
+            "id": "sigma",
+            "quantity": "stefan-boltzmann",
+            "kind": "parameter",
+            "meaning": "Stefan–Boltzmann constant"
+          },
+          {
+            "id": "Q",
+            "quantity": "heat-flow",
+            "kind": "parameter",
+            "meaning": "supplied heat"
+          },
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the body, for the radiation Biot number"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the body"
+          },
+          {
+            "id": "T_i",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "initial temperature"
+          },
+          {
+            "id": "T_e",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "temperature of the enclosure"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          }
+        ],
+        "equations": [
+          {
+            "id": "energy",
+            "kind": "governing",
+            "text": "rho*c_p*V*d(T,t) = Q - eps*sigma*A_s*(T^4 - T_e^4)",
+            "domain": "t > 0"
+          }
+        ],
+        "closures": [
+          "Grey diffuse exchange of a small body with a large enclosure: the net loss is εσA_s(T⁴ − T_e⁴) (Lienhard, section 10.4)."
+        ],
+        "geometry": "Any shape that is small compared with the enclosure. The radiation Biot number uses L_c = V/A_s.",
+        "conditions": [
+          {
+            "id": "initial",
+            "kind": "initial",
+            "text": "T = T_i",
+            "at": "t = 0",
+            "meaning": "the initial temperature"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "C*V/(eps*sigma*A_s*T_e^3)",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "0",
+              "scale": "T_e",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "C",
+              "def": "rho*c_p"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "q",
+              "tex": "q",
+              "def": "Q/(eps*sigma*A_s*T_e^4)",
+              "solve": "Q",
+              "meaning": "supplied heat over the enclosure emission"
+            },
+            {
+              "id": "theta_i",
+              "tex": "\\theta_i",
+              "def": "T_i/T_e",
+              "solve": "T_i",
+              "meaning": "initial temperature ratio"
+            },
+            {
+              "id": "tau_r",
+              "tex": "\\tau",
+              "def": "eps*sigma*A_s*T_e^3*t/(C*V)",
+              "solve": "t",
+              "coordinate": "tau",
+              "meaning": "dimensionless time"
+            },
+            {
+              "id": "Bi_r",
+              "tex": "Bi_{r}",
+              "def": "4*eps*sigma*T_e^3*V/(A_s*k)",
+              "solve": "k",
+              "meaning": "radiation Biot number at T_e"
+            }
+          ],
+          "equations": [
+            {
+              "of": "energy",
+              "text": "d(theta,tau) = q + 1 - theta^4"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "initial",
+              "text": "theta = theta_i",
+              "at": "tau = 0"
+            }
+          ]
+        },
+        "stability": {
+          "base": {
+            "theta": "theta_s"
+          },
+          "relation": "q = theta_s^4 - 1",
+          "perturb": [
+            "theta"
+          ],
+          "skipConditions": [
+            "initial"
+          ],
+          "jacobian": {
+            "field": "theta",
+            "rhs": "q + 1 - theta^4",
+            "expected": "-4*theta^3"
+          }
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "tau_r",
+            "tex": "\\tau",
+            "label": "dimensionless time εσA_sT_e³t/(ρc_pV)",
+            "min": 0.001,
+            "max": 10,
+            "log": true,
+            "kind": "coordinate"
+          },
+          {
+            "id": "theta_i",
+            "tex": "\\theta_i",
+            "label": "initial temperature ratio T_i/T_e",
+            "min": 0.3,
+            "max": 5,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "q",
+            "tex": "q",
+            "label": "supplied heat Q/(εσA_sT_e⁴)",
+            "min": 0,
+            "max": 20,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "Bi_r",
+            "tex": "Bi_{r}",
+            "label": "radiation Biot number 4εσT_e³L_c/k",
+            "min": 1e-07,
+            "max": 1,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The temperature is uniform in the body: the radiation Biot number stays below 0.1 (Lienhard, section 1.3).",
+            "source": "lienhard-2024"
+          },
+          {
+            "text": "The surface is grey and diffuse, and the enclosure is large and at a uniform T_e.",
+            "source": "lienhard-2024"
+          },
+          {
+            "text": "Temperatures are absolute.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives θ_τ = q + 1 − θ⁴ and θ(0) = θ_i.",
+          "Exact perturbation equation and the exact derivative f′(θ) = −4θ³."
+        ],
+        "numerical": [
+          "The equilibrium (1 + q)^{1/4}, the closed-form transient by Brent's method, and a Dormand–Prince check.",
+          "The error of the linearized decay and of emission-only cooling at each point of the map."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "Emission θ⁴ competes with absorption and supply 1 + q: far above the equilibrium emission controls the cooling."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "Near the equilibrium a regular expansion in θ_i − θ* gives the linearized decay with h_rad = 4εσT_e³θ*³."
+        },
+        "stability": {
+          "applies": true,
+          "reason": "The equilibrium is a steady state; its eigenvalue −4θ*³ decides linear stability, and the strictly decreasing balance gives global attraction."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "f(θ) = q + 1 − θ⁴ decreases strictly for θ > 0, so the one equilibrium never loses stability and no branch splits."
+        }
+      },
+      "limitations": [
+        "Uniform temperature only: a large radiation Biot number needs a spatial model.",
+        "A grey diffuse surface and a large isothermal enclosure; view factors to a finite enclosure need the surface-radiation model."
+      ],
+      "acceptance": {
+        "example": "lumped-radiation",
+        "reference": "The equilibrium (1 + q)^{1/4} and the closed form τ = G(θ_i) − G(θ), G(θ) = ln|(θ − a)/(θ + a)|/(4a³) − arctan(θ/a)/(2a³), checked against an mpmath reference (tools/stability_references.py).",
+        "tolerance": "1e-12 for the equilibrium, 1e-8 for the transient.",
+        "checks": [
+          "The equilibrium satisfies the balance.",
+          "The closed form agrees with the Dormand–Prince integration.",
+          "The eigenvalue −4θ*³ is negative."
+        ]
+      },
+      "solver": {
+        "method": "Closed form for the transient (Brent's method on G), and the Dormand–Prince 5(4) integrator as a check.",
+        "discretization": "None for the closed form. The map has 41 × 31 points.",
+        "convergence": "Brent to 1e-15; Dormand–Prince with rtol 1e-11, atol 1e-13.",
+        "reproducibility": "Plain JavaScript in double precision."
+      }
+    },
+    {
+      "id": "surface-radiation",
+      "family": "radiation",
+      "title": "Grey duct with reradiating side walls",
+      "piece": 4,
+      "model": {
+        "summary": "A long duct with a grey floor 1 at T_1, a grey ceiling 2 at T_2 and reradiating (adiabatic) side walls R. The radiosity balance of each surface gives the net exchange.",
+        "roles": [
+          {
+            "id": "J_1",
+            "quantity": "heat-flux",
+            "kind": "field",
+            "phase": "floor",
+            "meaning": "radiosity of the floor"
+          },
+          {
+            "id": "J_2",
+            "quantity": "heat-flux",
+            "kind": "field",
+            "phase": "ceiling",
+            "meaning": "radiosity of the ceiling"
+          },
+          {
+            "id": "J_R",
+            "quantity": "heat-flux",
+            "kind": "field",
+            "phase": "side walls",
+            "meaning": "radiosity of the side walls"
+          },
+          {
+            "id": "sigma",
+            "quantity": "stefan-boltzmann",
+            "kind": "parameter",
+            "meaning": "Stefan–Boltzmann constant"
+          },
+          {
+            "id": "T_1",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "phase": "floor",
+            "meaning": "temperature of the floor"
+          },
+          {
+            "id": "T_2",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "phase": "ceiling",
+            "meaning": "temperature of the ceiling"
+          },
+          {
+            "id": "eps_1",
+            "quantity": "emissivity",
+            "kind": "parameter",
+            "phase": "floor",
+            "meaning": "emissivity of the floor"
+          },
+          {
+            "id": "eps_2",
+            "quantity": "emissivity",
+            "kind": "parameter",
+            "phase": "ceiling",
+            "meaning": "emissivity of the ceiling"
+          },
+          {
+            "id": "F_12",
+            "quantity": "view-factor",
+            "kind": "parameter",
+            "phase": "floor to ceiling",
+            "meaning": "view factor from the floor to the ceiling"
+          },
+          {
+            "id": "F_1R",
+            "quantity": "view-factor",
+            "kind": "parameter",
+            "phase": "floor to side walls",
+            "meaning": "view factor from the floor to the side walls",
+            "optional": true
+          },
+          {
+            "id": "q_1",
+            "quantity": "heat-flux",
+            "kind": "parameter",
+            "phase": "floor",
+            "meaning": "net radiative flux of the floor",
+            "optional": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "floor",
+            "kind": "governing",
+            "text": "(sigma*T_1^4 - J_1)*eps_1/(1 - eps_1) = F_12*(J_1 - J_2) + F_1R*(J_1 - J_R)"
+          },
+          {
+            "id": "ceiling",
+            "kind": "governing",
+            "text": "(sigma*T_2^4 - J_2)*eps_2/(1 - eps_2) = F_12*(J_2 - J_1) + F_1R*(J_2 - J_R)"
+          },
+          {
+            "id": "walls",
+            "kind": "governing",
+            "text": "0 = (J_R - J_1) + (J_R - J_2)"
+          }
+        ],
+        "closures": [
+          "Grey diffuse surfaces with uniform radiosity on each surface (Lienhard, section 10.4).",
+          "Floor and ceiling have the same width, so F_21 = F_12, F_2R = F_1R and F_R1 = F_R2."
+        ],
+        "geometry": "A long duct of width W and height H. The crossed-string rule gives F_12 = (√(W² + H²) − H)/W (Lienhard, problem 10.14). The record's geometry holds width and height.",
+        "conditions": [],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "j_1",
+              "of": "J_1",
+              "offset": "0",
+              "scale": "sigma*T_1^4",
+              "tex": "j_{1}"
+            },
+            {
+              "symbol": "j_2",
+              "of": "J_2",
+              "offset": "0",
+              "scale": "sigma*T_1^4",
+              "tex": "j_{2}"
+            },
+            {
+              "symbol": "j_R",
+              "of": "J_R",
+              "offset": "0",
+              "scale": "sigma*T_1^4",
+              "tex": "j_{R}"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "F_1R",
+              "def": "1 - F_12"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "eps_1",
+              "tex": "\\varepsilon_1",
+              "def": "eps_1",
+              "solve": "eps_1",
+              "meaning": "emissivity of the floor"
+            },
+            {
+              "id": "eps_2",
+              "tex": "\\varepsilon_2",
+              "def": "eps_2",
+              "solve": "eps_2",
+              "meaning": "emissivity of the ceiling"
+            },
+            {
+              "id": "theta_2",
+              "tex": "\\theta_2",
+              "def": "T_2/T_1",
+              "solve": "T_2",
+              "meaning": "absolute temperature ratio"
+            },
+            {
+              "id": "F_12",
+              "tex": "F_{12}",
+              "def": "F_12",
+              "solve": "F_12",
+              "meaning": "view factor from the floor to the ceiling"
+            }
+          ],
+          "equations": [
+            {
+              "of": "floor",
+              "text": "1 - j_1 = (1 - eps_1)/eps_1*(F_12*(j_1 - j_2) + (1 - F_12)*(j_1 - j_R))"
+            },
+            {
+              "of": "ceiling",
+              "text": "theta_2^4 - j_2 = (1 - eps_2)/eps_2*(F_12*(j_2 - j_1) + (1 - F_12)*(j_2 - j_R))"
+            },
+            {
+              "of": "walls",
+              "text": "0 = 2*j_R - j_1 - j_2"
+            }
+          ],
+          "conditions": []
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "eps_1",
+            "tex": "\\varepsilon_1",
+            "label": "emissivity of the floor",
+            "min": 0.05,
+            "max": 0.95,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "eps_2",
+            "tex": "\\varepsilon_2",
+            "label": "emissivity of the ceiling",
+            "min": 0.05,
+            "max": 0.95,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "theta_2",
+            "tex": "\\theta_2",
+            "label": "temperature ratio T_2/T_1",
+            "min": 0,
+            "max": 0.95,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "F_12",
+            "tex": "F_{12}",
+            "label": "view factor floor to ceiling",
+            "min": 0.05,
+            "max": 0.95,
+            "log": false,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "Grey diffuse surfaces, each with a uniform temperature and radiosity.",
+            "source": "lienhard-2024"
+          },
+          {
+            "text": "The side walls are adiabatic: they reradiate all that they absorb.",
+            "source": "lienhard-2024"
+          },
+          {
+            "text": "The duct is long, so the end walls do not take part (two-dimensional view factors).",
+            "source": "lienhard-2024"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared radiosity balances.",
+          "Exact crossed-string view factors, reciprocity and summation for a rational √(W² + H²).",
+          "The exact rational solution of the network, its closed form and the energy balance."
+        ],
+        "numerical": [
+          "The error of the black-surface model at each point of the map, and the dimensional flux with σ."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The surface resistances of the network compete with its space resistance: exact ratios."
+        },
+        "asymptotic": {
+          "applies": false,
+          "reason": "The network is linear and has a closed form, so no expansion is needed."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The model is a steady linear network in the radiosities, with no time derivative."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The network is linear, so its solution is unique and no branch splits."
+        }
+      },
+      "limitations": [
+        "Two-dimensional view factors of a long duct. Finite ducts and other shapes need their own view factors.",
+        "Grey diffuse surfaces only; spectral or specular surfaces need a separate declaration.",
+        "No participating medium: radiation in a medium is a piece 8 family."
+      ],
+      "acceptance": {
+        "example": "surface-radiation",
+        "reference": "Exact rationals: F_12 = 1/2, F_1R = 1/2, F_R1 = 1/3 for W = 4, H = 3, and the net flux q_1/(σT_1⁴) = 45/124 for ε_1 = 4/5, ε_2 = 1/2, T_2/T_1 = 1/2 (SymPy, tools/stability_references.py).",
+        "tolerance": "Exact.",
+        "checks": [
+          "Crossed-string view factors, reciprocity and summation.",
+          "The radiosity solution equals the closed form of the network.",
+          "The floor gives what the ceiling takes."
+        ]
+      },
+      "solver": {
+        "method": "Exact Gaussian elimination in rationals (src/linalg.js) for the network; the closed form for the map.",
+        "discretization": "None.",
+        "convergence": "None needed.",
+        "reproducibility": "BigInt rationals; the map in double precision."
+      }
+    },
+    {
+      "id": "convection-radiation",
+      "family": "radiation",
+      "title": "Surface with a supplied flux, convection and radiation",
+      "piece": 4,
+      "model": {
+        "summary": "A surface heated at the flux q_s loses heat by convection with h to a fluid at T_∞ and by grey radiation to surroundings at T_∞.",
+        "roles": [
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "surface temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "temperature of the fluid and the surroundings"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "convection coefficient"
+          },
+          {
+            "id": "eps",
+            "quantity": "emissivity",
+            "kind": "parameter",
+            "meaning": "emissivity of the surface"
+          },
+          {
+            "id": "sigma",
+            "quantity": "stefan-boltzmann",
+            "kind": "parameter",
+            "meaning": "Stefan–Boltzmann constant"
+          },
+          {
+            "id": "q_s",
+            "quantity": "heat-flux",
+            "kind": "parameter",
+            "meaning": "supplied heat flux"
+          }
+        ],
+        "equations": [
+          {
+            "id": "balance",
+            "kind": "governing",
+            "text": "q_s = h*(T - T_inf) + eps*sigma*(T^4 - T_inf^4)"
+          }
+        ],
+        "closures": [
+          "Newton's law of cooling with constant h.",
+          "Grey exchange with large surroundings at T_∞ (Lienhard, section 2.3)."
+        ],
+        "geometry": "A flat surface; the balance is per unit area.",
+        "conditions": [],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "0",
+              "scale": "T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [],
+          "parameters": [
+            {
+              "id": "Q",
+              "tex": "Q",
+              "def": "q_s/(h*T_inf)",
+              "solve": "q_s",
+              "meaning": "supplied flux over hT_∞"
+            },
+            {
+              "id": "N_r",
+              "tex": "N_{r}",
+              "def": "eps*sigma*T_inf^3/h",
+              "solve": "h",
+              "meaning": "radiation ratio"
+            }
+          ],
+          "equations": [
+            {
+              "of": "balance",
+              "text": "Q = theta - 1 + N_r*(theta^4 - 1)"
+            }
+          ],
+          "conditions": []
+        },
+        "stability": {
+          "jacobian": {
+            "field": "theta",
+            "rhs": "theta - 1 + N_r*(theta^4 - 1)",
+            "expected": "1 + 4*N_r*theta^3"
+          }
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "N_r",
+            "tex": "N_{r}",
+            "label": "radiation ratio εσT_∞³/h",
+            "min": 0.001,
+            "max": 100,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Q",
+            "tex": "Q",
+            "label": "supplied flux q_s/(hT_∞)",
+            "min": 0.001,
+            "max": 100,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "h is constant and does not depend on the temperature.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The surroundings are large and at the fluid temperature T_∞.",
+            "source": "lienhard-2024"
+          },
+          {
+            "text": "Temperatures are absolute.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives Q = θ − 1 + N_r(θ⁴ − 1).",
+          "The exact derivative dQ/dθ = 1 + 4N_rθ³ > 0 and the exact identity T⁴ − T_∞⁴ = 4T_m³ΔT[1 + (ΔT/2T_m)²]."
+        ],
+        "numerical": [
+          "The root θ by Brent's method, and the errors of the linearized and mean-temperature models at each point of the map."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "Radiation and convection compete through N_r and θ: the ratio of the two fluxes is exact at the solution."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "A regular expansion in Q gives the linearization limit θ − 1 = Q/(1 + 4N_r)."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The balance is steady and algebraic. It has one root, because the loss increases monotonically with θ."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The root is unique for every Q > 0, so no branch splits."
+        }
+      },
+      "limitations": [
+        "Constant h: a temperature-dependent natural-convection coefficient needs a correlation (piece 7).",
+        "Surroundings at the fluid temperature; other surroundings need a separate temperature ratio."
+      ],
+      "acceptance": {
+        "example": "convection-radiation",
+        "reference": "The root of the full balance by Brent's method, checked against mpmath (tools/stability_references.py), and the linearization limit.",
+        "tolerance": "1e-12 for the root.",
+        "checks": [
+          "The root satisfies the full balance.",
+          "The linearization error goes to 0 like Q."
+        ]
+      },
+      "solver": {
+        "method": "Brent's method on the monotone balance.",
+        "discretization": "None. The map has 41 × 31 points.",
+        "convergence": "Brent to 1e-15.",
+        "reproducibility": "Plain JavaScript in double precision."
+      }
     }
   ]
 }

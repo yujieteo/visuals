@@ -12,8 +12,10 @@
   const SVG = "http://www.w3.org/2000/svg";
   /** The hue of each group of approximations, in fixed order; a fifth group and later ones are muted, with labels. */
   const HUES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
-  const LAYER_KINDS = ["approximation", "balance", "limits"];
-  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", limits: "Limit paths" };
+  const LAYER_KINDS = ["approximation", "balance", "stability", "bifurcation", "limits"];
+  const KIND_NAMES = { approximation: "Approximation error", balance: "Balances", stability: "Stability", bifurcation: "Bifurcations", limits: "Limit paths" };
+  /** The line of a boundary: a stability boundary is solid, a bifurcation boundary dashed, both in the text colour. @param {any} l */
+  const lineStyle = (l) => (l.kind === "stability" ? { stroke: "var(--fg)", dash: null } : l.kind === "bifurcation" ? { stroke: "var(--fg)", dash: "6 4" } : null);
   /** @type {any} */
   let H = null;
   /** @type {any} */
@@ -189,8 +191,9 @@
         const picked = state.pick === c.id;
         const g = el("g", { class: "curve", "data-pick": c.id });
         g.append(el("path", { d, fill: "none", stroke: "transparent", "stroke-width": 14 }));
-        g.append(el("path", { d, fill: "none", class: l.kind === "balance" ? "ref" : "series", stroke: l.kind === "balance" ? null : hue[l.id],
-          "stroke-width": picked ? 3.5 : l.kind === "balance" ? 1.5 : secondary(rg.layers, l) ? 1.5 : 2.5 }));
+        const ls = lineStyle(l);
+        g.append(el("path", { d, fill: "none", class: l.kind === "balance" ? "ref" : "series", stroke: l.kind === "balance" ? null : ls ? ls.stroke : hue[l.id], "stroke-dasharray": ls?.dash ?? null,
+          "stroke-width": picked ? 3.5 : l.kind === "balance" ? 1.5 : ls ? 2 : secondary(rg.layers, l) ? 1.5 : 2.5 }));
         lines.append(g);
         if (c.points.length >= 4) label(c.points, l.title);
       }
@@ -268,11 +271,14 @@
     const W = Math.max(300, Math.round(host.clientWidth || 640));
     const kinds = shownKinds(state);
     const hue = hues(rg.layers);
-    const shown = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind));
+    // Errors and term ratios share the logarithmic axis; stability and bifurcation layers are strips of their regions.
+    const shown = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "approximation" || l.kind === "balance"));
+    const regionRows = rg.layers.filter((/** @type {any} */ l) => kinds.includes(l.kind) && (l.kind === "stability" || l.kind === "bifurcation"));
     const box = { l: W < 480 ? 54 : 72, r: 18, t: 12, w: 0, h: Math.round(Math.min(300, Math.max(200, W * 0.42))) };
     box.w = W - box.l - box.r;
     const strip = 30, stripTop = box.t + box.h + 66;
-    const rows = [...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation"), { id: "gap", title: "No approximation meets the tolerance" }, ...(rg.unresolved.count ? [{ id: "unresolved", title: "Unresolved" }] : [])];
+    const rows = [...rg.layers.filter((/** @type {any} */ l) => l.kind === "approximation"), ...(rg.approximations.length ? [{ id: "gap", title: "No approximation meets the tolerance" }] : []),
+      ...regionRows.map((/** @type {any} */ l) => ({ id: l.id, title: l.title, layer: l })), ...(rg.unresolved.count ? [{ id: "unresolved", title: "Unresolved" }] : [])];
     const Hh = stripTop + rows.length * strip + 8;
     const svg = el("svg", { class: "chart map-svg", viewBox: `0 0 ${W} ${Hh}`, width: W, height: Hh, role: "img", tabindex: 0,
       "aria-label": `1D regime diagram of ${rg.declaration.title} along ${uniLabel(rg.axes.x.tex)}: the error of each approximation and the ratio of each balance, and below it the intervals where each approximation meets the tolerance. Arrow keys move the inspected point.` });
@@ -293,7 +299,8 @@
       const pts = l.series.map((/** @type {number | null} */ v, /** @type {number} */ i) => (v === null ? null : [sx.map(rg.grid.xs[i]), clampY(v)]));
       let d = "", pen = false;
       for (const p of pts) { if (!p) { pen = false; continue; } d += `${pen ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`; pen = true; }
-      g.append(el("path", { d, fill: "none", class: l.kind === "balance" ? "ref" : "series", stroke: l.kind === "balance" ? null : hue[l.id], "stroke-width": l.kind === "balance" ? 1.5 : secondary(rg.layers, l) ? 1.5 : 2 }));
+      const ls = lineStyle(l);
+      g.append(el("path", { d, fill: "none", class: l.kind === "balance" ? "ref" : "series", stroke: l.kind === "balance" ? null : ls ? ls.stroke : hue[l.id], "stroke-dasharray": ls?.dash ?? null, "stroke-width": l.kind === "balance" ? 1.5 : secondary(rg.layers, l) ? 1.5 : 2 }));
       const last = pts.filter(Boolean).at(-1);
       if (last) {
         let y = Math.max(box.t + 12, last[1] - 4);
@@ -305,11 +312,24 @@
     svg.append(g);
     // The strips: where each approximation meets the tolerance, where none does, and the unresolved intervals.
     const s = el("g", { class: "strips" });
-    svg.append(el("text", { x: box.l, y: stripTop - 4, class: "axis-title" }, `Where each approximation meets the tolerance ${rg.tolerance}`));
+    svg.append(el("text", { x: box.l, y: stripTop - 4, class: "axis-title" }, rg.approximations.length ? `Where each approximation meets the tolerance ${rg.tolerance}` : "The regions of the stability and bifurcation layers"));
     rows.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
       const y = stripTop + i * strip + 14;
       s.append(el("text", { x: box.l, y: y - 3, class: "direct-label strip-label" }, r.title));
       s.append(el("rect", { x: box.l, y, width: box.w, height: strip - 18, fill: "var(--surface)" }));
+      if (r.layer) {
+        // Each region of a stability or bifurcation layer: the first and last in their hues, the others muted, with labels.
+        r.layer.regions.forEach((/** @type {any} */ reg, /** @type {number} */ k) => {
+          const fill = k === 0 ? "var(--c1)" : k === r.layer.regions.length - 1 ? "var(--c2)" : "var(--faint)";
+          for (const [a, b] of reg.intervals ?? []) {
+            const x0 = sx.map(a), x1 = sx.map(b);
+            const rect = el("rect", { x: x0, y, width: Math.max(2, x1 - x0), height: strip - 18, rx: 2, fill, "fill-opacity": 0.45 });
+            rect.append(el("title", {}, reg.label));
+            s.append(rect);
+          }
+        });
+        return;
+      }
       const iv = r.id === "gap" ? rg.gap.intervals : r.id === "unresolved" ? rg.unresolved.intervals : r.regions.find((/** @type {any} */ x) => x.id === "meets").intervals;
       for (const [a, b] of iv) {
         const x0 = sx.map(a), x1 = sx.map(b);
@@ -416,7 +436,7 @@
         ${blocked.map((/** @type {any} */ i) => `<p>${esc(i.message)} <span class="next">Next: ${esc(i.next)}</span></p>`).join("")}
         ${(r.problems ?? []).length ? `<ul class="issue-list">${r.problems.map((/** @type {string} */ p) => `<li>${chip("unresolved")} ${esc(p)}</li>`).join("")}</ul>` : ""}
         ${r.next ? `<p class="next">Next: ${esc(r.next)}</p>` : ""}
-        <p>Standard examples with a declared model: ${["transient-slab", "transient-cylinder", "transient-sphere", "lumped-body", "volumetric-source", "multilayer-wall", "straight-fin"].map((id) => `<button type="button" data-load-example="${id}">${esc(Model.EXAMPLES.find((/** @type {any} */ e) => e.id === id)?.label ?? id)}</button>`).join(" ")}</p></div>`;
+        <p>Standard examples with a declared model: ${["transient-slab", "transient-cylinder", "transient-sphere", "lumped-body", "volumetric-source", "multilayer-wall", "straight-fin", "rayleigh-benard", "enclosure-convection", "lumped-radiation", "surface-radiation", "convection-radiation"].map((id) => `<button type="button" data-load-example="${id}">${esc(Model.EXAMPLES.find((/** @type {any} */ e) => e.id === id)?.label ?? id)}</button>`).join(" ")}</p></div>`;
       main.hidden = true;
       return;
     }
@@ -430,7 +450,7 @@
     byId("regime-summary").innerHTML = [
       `<p class="summary-line"><strong>${esc(rg.declaration.title)}</strong>. ${chip("exact")} The record's dimensionless model equals the declared model.</p>`,
       `<ul class="model-list">${rg.match.equations.map((/** @type {any} */ e) => `<li>${td(texOfPlain(e.text))}<span class="ids">${esc(e.record)}</span></li>`).join("")}${rg.match.conditions.map((/** @type {any} */ c) => `<li>${td(`${texOfPlain(c.text)}\\quad\\text{at }${texOfPlain(c.at)}`)}<span class="ids">${esc(c.record)}</span></li>`).join("")}</ul>`,
-      `<p>${chip(accOk ? acc[0]?.status ?? "exact" : "unresolved")} ${accOk ? `The declaration's ${acc.length} acceptance checks pass on this record.` : `${acc.filter((/** @type {any} */ c) => !c.passed).length} acceptance checks fail.`} ${meets.length ? `At the inspected point, ${meets.length === 1 ? "this approximation meets" : "these approximations meet"} the tolerance ${rg.tolerance}: ${esc(meets.map((/** @type {any} */ l) => l.title.toLowerCase()).join(", "))}.` : `At the inspected point, no approximation meets the tolerance ${rg.tolerance}.`}</p>`,
+      `<p>${chip(accOk ? acc[0]?.status ?? "exact" : "unresolved")} ${accOk ? `The declaration's ${acc.length} acceptance checks pass on this record.` : `${acc.filter((/** @type {any} */ c) => !c.passed).length} acceptance checks fail.`} ${!rg.approximations.length ? "This model has no approximation layers: the map shows its stability and bifurcation layers." : meets.length ? `At the inspected point, ${meets.length === 1 ? "this approximation meets" : "these approximations meet"} the tolerance ${rg.tolerance}: ${esc(meets.map((/** @type {any} */ l) => l.title.toLowerCase()).join(", "))}.` : `At the inspected point, no approximation meets the tolerance ${rg.tolerance}.`}</p>`,
       ...rg.notices.map((/** @type {string} */ n) => `<div class="callout warn"><p>${esc(n)}</p></div>`),
     ].join("\n");
 
@@ -466,7 +486,7 @@
         /** @type {Map<string, string[]>} */
         const by = new Map();
         for (const l of ls) by.set(l.criterion, [...(by.get(l.criterion) ?? []), l.title]);
-        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">${b.piece > 3 ? `piece ${b.piece} adds it` : "none for this model"}</span>`}</td></tr>`;
+        return `<tr><td>${esc(b.name)}</td><td>${esc(b.criterion)}</td><td>${ls.length ? [...by].map(([c, names]) => `<strong>${esc(names.join(", "))}:</strong> ${esc(c)}`).join("<br>") : `<span class="muted">${b.piece > 4 ? `piece ${b.piece} adds it` : "none for this model"}</span>`}</td></tr>`;
       }).join("")}</tbody></table></div>`;
 
     // Beside the map: the fixed parameters, the derived parameters, assumptions, geometry and conditions.
