@@ -1,9 +1,11 @@
 /* Scientific Modelling: the report. report(state, derived, data) turns the derived data of one model version into
  * the plain-data report that the site's beamdswitch template (Beamdswitch.deck) writes as a narrated deck and the
  * kit writes as the Markdown record. It reads the same derived values and statuses as the page, so the three
- * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 7), with
- * every row operation and every substitution: an exported derivation is never cut short. Narration is plain spoken prose in ASD-STE100,
- * with no symbols; equations stay in the frame bodies.
+ * outputs agree. The Method section holds the complete hand calculation (spec section 12, items 1 to 8), with
+ * every row operation, every substitution and every order of each asymptotic expansion: an exported derivation is
+ * never cut short. The regime map is large numerical data, so the report gives its aggregates and the get_regime_map
+ * tool gives every point. Narration is plain spoken prose in ASD-STE100, with no symbols; equations stay in the
+ * frame bodies.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory(require("./record.js"), require("./model.js"));
@@ -62,7 +64,16 @@
     const one = `In order, they are ${and(names)}.`;
     if (names.length <= 3 && one.split(" ").length <= 22) return one;
     const head = names.length <= 3 ? 1 : 2;
-    return `${head === 1 ? `The first is ${names[0]}` : `The first two are ${and(names.slice(0, 2))}`}. ${names.length - head === 1 ? `The other is ${names[head]}` : `The others are ${and(names.slice(head))}`}.`;
+    // The rest in sentences of at most two names, so that no sentence of the narration is long.
+    const rest = names.slice(head), parts = [];
+    for (let i = 0; i < rest.length; i += 2) parts.push(rest.slice(i, i + 2));
+    const lead = (p, i) => {
+      if (i < parts.length - 1) return "Then come";
+      if (parts.length === 1) return p.length === 1 ? "The other is" : "The others are";
+      return p.length === 1 ? "The last is" : "The last are";
+    };
+    const tail = parts.map((p, i) => `${lead(p, i)} ${and(p)}.`).join(" ");
+    return `${head === 1 ? `The first is ${names[0]}` : `The first two are ${and(names.slice(0, 2))}`}. ${tail}`;
   }
 
   /** @param {Record<string, any>} state @param {any} d @param {any} data */
@@ -220,12 +231,90 @@
       });
     }
 
+    /* ---------- method: the regime analyses (hand calculation item 8) ---------- */
+    const rg = d.regime;
+    const rgOk = rg && rg.ready;
+    if (d.confirmedVersion !== null && rg && !rg.ready && rg.reason !== "no-declaration" && rg.reason !== "blocked") {
+      method.push({ title: "The regime analyses cannot run on this version", body: [cell(rg.message), ...(rg.problems ?? []).map((x) => `- ${cell(x)}`), "", `**Next:** ${cell(rg.next)}`].join("\n"),
+        narration: "The record names a declared model, but its dimensionless model is not the declared one. The report lists each difference and the next action." });
+    }
+    if (rgOk) {
+      const an = rg.analysis;
+      method.push({
+        title: `Hand calculation 8: the declared model, ${rg.declaration.title}`,
+        body: [`${cell(rg.declaration.summary)}`, "", `The Nondimensionalizer's result equals the declared dimensionless model exactly (canonical forms). ${status("exact")}`, "",
+          "| Record item | Declared dimensionless form |", "| --- | --- |",
+          ...rg.match.equations.map((e) => `| ${e.record} | ${m(e.tex)} |`), ...rg.match.conditions.map((c) => `| ${c.record} | ${m(`${c.tex}\\quad\\text{at }${c.atTex}`)} |`), "",
+          "| Parameter | Meaning | Domain | Record value |", "| --- | --- | --- | --- |",
+          ...rg.params.map((p) => `| ${m(p.tex)} | ${cell(p.label)} | ${p.min} to ${p.max} | ${p.exact ?? (p.record === null ? "none" : p.record)} |`)].join("\n"),
+        narration: `The record follows the declared model of the ${say(rg.declaration.title).toLowerCase()}. Its dimensionless equations and conditions are the declared ones, exactly. The table gives the domain of each parameter and its value in the record.`,
+      });
+      method.push({
+        title: "Hand calculation 8: dominant balance",
+        body: [cell(an.balance.intro), "",
+          "| Term | Meaning | Estimate | Why |", "| --- | --- | --- | --- |", ...an.balance.terms.map((t) => `| ${m(t.tex)} | ${cell(t.label)} | ${m(t.scale)} | ${cell(t.why)} |`), "",
+          ...an.balance.balances.flatMap((b) => [`**${cell(b.title)}** when ${m(b.when)}. ${cell(b.derivation)}`, "",
+            `- Reduced model: ${m(b.reduced)}. Neglected: ${cell(b.neglected)}.${b.assumptions.length ? ` Assumes: ${cell(b.assumptions.join(" "))}` : ""}`,
+            `- Residual in the full equations: ${m(b.residual.tex)}, ${cell(b.residual.order)}. ${status(b.residual.status)}. ${cell(b.residual.note ?? "")}`, ""]),
+          "**Balance crossovers:**", "", ...an.balance.crossovers.map((c) => `- ${m(c.criterion)}: ${cell(c.text)} ${status(c.status)}.`), "", cell(an.balance.note)].join("\n"),
+        narration: `${an.balance.estimated ? `The dominant balance compares the terms with their estimated scales.` : "The dominant balance compares exact terms."} It gives ${n(an.balance.balances.length, "candidate balance", "candidate balances")}, each with a reduced model, the neglected terms and the residual in the full equations. Where the terms are equal, the map draws a balance crossover. It is not a transition.`,
+      });
+      method.push({
+        title: "Hand calculation 8: asymptotic analysis",
+        body: [...(an.note ? [cell(an.note), ""] : []), ...an.asymptotic.limits.flatMap((L) => [
+          `**${m(L.parameter)}**: ${cell(L.path)}${L.coupled ? ", a coupled limit" : ""}. Kind: ${cell(L.kind.charAt(0).toLowerCase() + L.kind.slice(1))}. Fixed: ${cell(L.fixed)}.`, "", dm(L.setup), "",
+          ...L.orders.map((o) => `${o.n}. Order ${o.n}: ${m(o.equation)}${o.conditions.length ? `, ${o.conditions.map(m).join(", ")}` : ""}${o.particular && o.particular !== "0" ? `. Particular part ${m(o.particular)}` : ""}${o.solvability ? `. Solvability ${m(o.solvability)}: ${cell(o.solvabilityWhy)}` : ""}${o.matching ? `. Matching ${m(o.matching)}` : ""}${o.why ? `. ${cell(o.why)}` : ""}. Result ${m(o.result)}${o.checks ? `. ${status(o.checks.equation && o.checks.surface && o.checks.solvability ? "exact" : "unresolved")}: the result satisfies its equation, conditions and solvability condition` : ""}.`),
+          "", ...(L.heatFlow ? [`Base heat flow: ${m(L.heatFlow)}.`] : []),
+          `- Order and conditions: ${cell(L.orderLoss)}`,
+          ...(L.inner ? [`- Inner region ${m(L.inner.variable)}: ${m(L.inner.equation)}, ${m(L.inner.solution)}; matching ${m(L.inner.matching)}. ${cell(L.inner.why)}`] : []),
+          ...(L.residual ? [`- Residual of the truncated sum: ${m(L.residual.tex)}, ${cell(L.residual.order)}. ${status(L.residual.status)}.`] : []),
+          ...(L.crossCheck ? [`- ${status("exact")}: ${cell(L.crossCheck.text)}`] : []),
+          `- Error. Formal: ${cell(L.error.formal)} Estimated remainder: ${cell(L.error.estimated)} Proved bound: ${cell(L.error.proved ?? "none for this limit.")}`,
+          `- Validity: ${cell(L.validity)}`, ""]),
+          `**Overlap.** ${cell(an.asymptotic.overlap)}`, "", `**Gaps.** ${cell(an.asymptotic.gaps)}`].join("\n"),
+        narration: `The asymptotic analysis takes ${n(an.asymptotic.limits.length, "limit", "limits")}. For each one it states the limit path, the equations and conditions of each order, the solvability conditions and any inner region with its matching. ${an.asymptotic.limits.some((L) => L.coupled) ? "Some limits need a coupled change of two parameters, and the frame says which. " : ""}It keeps a formal expansion, an estimated remainder and a proved bound apart.`,
+      });
+    }
+
     /* ---------- results ---------- */
     const results = [];
+    if (rgOk) {
+      const xy = rg.axes.y ? `${rg.axes.x.id} and ${rg.axes.y.id}` : rg.axes.x.id;
+      results.push({
+        title: `Regime map of ${rg.declaration.title}: ${rg.axes.y ? "a 2D slice" : "a 1D diagram"} in ${xy}`,
+        body: [`Axes: ${m(rg.axes.x.tex)} from ${rg.axes.x.min} to ${rg.axes.x.max} (${rg.axes.x.log ? "logarithmic" : "linear"})${rg.axes.y ? `, ${m(rg.axes.y.tex)} from ${rg.axes.y.min} to ${rg.axes.y.max} (${rg.axes.y.log ? "logarithmic" : "linear"})` : ""}. The map has ${rg.grid.xs.length}${rg.axes.y ? ` × ${rg.grid.ys.length}` : ""} points. Tolerance ${rg.tolerance}.`, "",
+          `Fixed: ${rg.fixed.length ? rg.fixed.map((x) => `${m(x.tex)} = ${x.value} (${x.source})`).join(", ") : "none"}. Derived at the inspected point: ${rg.derived.map((x) => `${m(x.tex)} = ${x.value}`).join(", ")}.`, "",
+          "| Layer | Boundary type | Criterion | Status | Boundaries | Regions |", "| --- | --- | --- | --- | --- | --- |",
+          ...rg.layers.map((l) => `| ${cell(l.title)} | ${l.boundary} | ${cell(l.criterion)} | ${STATUS[l.status]} | ${l.curves.length ? l.curves.map((c) => (rg.axes.y ? `${count(c.points.length, "point", "points")} with ${rg.axes.x.id} from ${Math.min(...c.points.map((q) => q[0]))} to ${Math.max(...c.points.map((q) => q[0]))}` : `${rg.axes.x.id} = ${c.points[0][0]}`)).join(", ") : "none"} | ${l.regions.map((r) => `${cell(r.label)}: ${r.intervals ? r.intervals.map((iv) => `${iv[0]} to ${iv[1]}`).join(", ") || "none" : count(r.count, "point", "points")}`).join(". ")}. |`), "",
+          `**Unresolved:** ${rg.unresolved.count} points${rg.unresolved.reasons.length ? `: ${rg.unresolved.reasons.map((r) => `${r.count} because ${cell(r.reason)}`).join(" ")}` : ""}. No boundary crosses an unresolved point.`,
+          `**No approximation meets the tolerance:** ${rg.gap.count} points${rg.gap.intervals ? ` (${rg.gap.intervals.map((iv) => `${iv[0]} to ${iv[1]}`).join(", ") || "none"})` : ""}.`,
+          `**Intersections:** ${rg.intersections.length ? "" : "none."}`, ...rg.intersections.map((x) => `- ${cell(x.aLabel)} and ${cell(x.bLabel)} at (${x.x}, ${x.y}).`), "",
+          "**Limit paths:**", ...rg.limits.map((L) => `- ${cell(L.label)}${L.coupled ? ", a coupled limit" : ""}. ${cell(L.note)}`), "",
+          ...(rg.exactBoundaries ? ["", `**Exact boundaries at the tolerance ${rg.tolerance}:** ${Object.entries(rg.exactBoundaries).map(([k, v]) => `${k}: ${rg.axes.x.id} = ${v}`).join(", ")}. ${status("exact")}.`] : []),
+          "", "Every boundary point of the map is in the page's table view and in the get_regime_map tool."].join("\n"),
+        narration: `The map has ${n(rg.layers.reduce((sum, l) => sum + l.curves.length, 0), "boundary", "boundaries")} in ${n(rg.layers.length, "layer", "layers")}. ${rg.unresolved.count ? `It shows ${n(rg.unresolved.count, "unresolved point", "unresolved points")} and does not draw a boundary across them. ` : ""}${rg.gap.count ? "In part of the map no approximation meets the tolerance, so only the full solution is accurate there. " : ""}Each boundary states its type and its criterion.`,
+      });
+      const pt = rg.point;
+      const det = pt.detail ?? {};
+      results.push({
+        title: `The inspected point: ${Object.entries(pt.p).filter(([k]) => rg.params.some((q) => q.id === k)).map(([k, v]) => `${k} = ${v}`).join(", ")}`,
+        body: [pt.ok ? "" : `${status("unresolved")}: ${cell(pt.reason)}`,
+          "| Layer | Value | Here |", "| --- | --- | --- |", ...pt.layers.map((l) => `| ${cell(l.title)} | ${l.value ?? "unresolved"} | ${l.kind === "approximation" ? (l.meets ? "meets the tolerance" : "does not meet it") : cell(l.region ?? "")} |`), "",
+          `**Applicable reduced models:** ${pt.reduced.length ? pt.reduced.map((r) => `${cell(r.label)} ${m(r.tex)}`).join(", ") : "none: only the full solution is accurate here"}.`, "",
+          ...(det.values ?? []).map((v) => `- ${m(v.tex)} = ${v.exact ?? v.value}: ${cell(v.label)}`),
+          ...(det.checks ?? []).map((c) => `- ${status(c.passed ? c.status : "unresolved")}: ${cell(c.title)}. ${cell(c.detail)}`), "",
+          "**Dimensional reconstruction.** The record's other variables keep their values. Temperatures are in K.", "",
+          ...((det.reconstruction ?? []).length ? det.reconstruction.map((r) => `- ${m(r.tex)} = ${r.exact ?? r.value} ${cell(r.unit ?? "")}: ${cell(r.label)}`) : ["- The record has no values for this point."])].join("\n"),
+        narration: pt.ok ? `At the inspected point, ${pt.reduced.length ? `${n(pt.reduced.length, "approximation meets", "approximations meet")} the tolerance` : "no approximation meets the tolerance"}. The frame gives the value of each layer, the checks at the point, and the dimensional values that the point means for this record.` : "The inspected point is unresolved, and the frame says why.",
+      });
+    }
     if (ndOk) {
       const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
       const spokenParams = (ps) => {
-        const named = ps.filter((p) => p.names[0]).map((p) => `the ${p.names[0].name.split(",")[0]}`);
+        // A name that two parameters share is said once, with its count: "the two Biot numbers".
+        const counts = new Map();
+        for (const p of ps.filter((x) => x.names[0])) { const nm = p.names[0].name.split(",")[0]; counts.set(nm, (counts.get(nm) ?? 0) + 1); }
+        const named = [...counts].map(([nm, k]) => (k === 1 ? `the ${nm}` : `the ${words(k)} ${nm.replace(/number$/, "numbers")}`));
         const unnamed = ps.filter((p) => !p.names[0]).length;
         const parts = [...named, ...(unnamed ? [unnamed === 1 ? "a group with no familiar name" : `${words(unnamed)} groups with no familiar name`] : [])];
         return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0];
@@ -252,7 +341,7 @@
           "", "**Where each physical parameter enters:**", "",
           ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join(", "))}`),
         ].join("\n"),
-        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `${pi.rank === pi.m ? `The model uses all ${words(pi.m)} Pi groups.` : `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups. The others do not appear in the model, and the frame says why.`}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
+        narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `${pi.rank === pi.m ? `The model uses all ${words(pi.m)} Pi groups.` : `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups. ${pi.m - pi.rank === 1 ? "The other one does not appear" : "The others do not appear"} in the model, and the frame says why.`}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
       });
     }
     if (ok) {
@@ -295,7 +384,7 @@
     results.push({
       title: unresolved.length ? `${count(unresolved.length, "unresolved result", "unresolved results")}` : "No unresolved result",
       body: unresolved.length ? unresolved.map(resultLine).join("\n") : "The Finder ran every requested calculation.",
-      narration: unresolved.length ? `The report keeps ${n(unresolved.length, "unresolved result", "unresolved results")} visible. Each one names the failed check, or the later piece of the build plan that adds the calculation.` : "The Finder ran every requested calculation.",
+      narration: unresolved.length ? `The report keeps ${n(unresolved.length, "unresolved result", "unresolved results")} visible. ${unresolved.length === 1 ? "It names" : "Each one names"} the failed check, or the later piece of the build plan that adds the calculation.` : "The Finder ran every requested calculation.",
     });
 
     /* ---------- checks and takeaway ---------- */
@@ -314,6 +403,20 @@
         narration: `${nd.checks.every((c) => c.passed) ? `All ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.` : `Not all ${words(nd.checks.length)} exact checks of the Nondimensionalizer pass.`} ${nd.checks.find((c) => c.id === "x-nd-reverse")?.passed ? "The reverse substitution gives back each dimensional equation and condition." : "The reverse substitution does not give back every dimensional form, and the frame names the failed check."}${nd.checks.find((c) => c.id === "x-nd-coefficients")?.passed ? " Each coefficient is dimensionless." : ""}`,
       });
     }
+    if (rgOk) {
+      const acc = rg.acceptance;
+      const anchor = rg.declaration.id === "slab-convection";
+      checks.push({
+        title: `Acceptance checks of the declared model${anchor ? " and anchor test 1" : ""}`,
+        body: [...acc.map((c) => `- ${status(c.passed ? c.status : "unresolved")}: ${c.passed ? "passed" : "FAILED"}. ${cell(c.title)}. ${cell(c.detail)}${c.tolerance ? ` Tolerance ${c.tolerance}.` : ""}`),
+          ...(anchor ? ["", "**Anchor test 1, transient slab conduction (section 11):**", "",
+            `- Hand derivation: hand calculations 6 and 7 above, with the reverse substitution. ${status(nd && nd.ready ? "exact" : "unresolved")}.`,
+            `- Dimensionless conditions: ${rg.match.conditions.map((c) => m(`${c.tex}\\ \\text{at}\\ ${c.atTex}`)).join(", ")}. ${status("exact")}.`,
+            `- Reference temperature solution: the series of modes against mpmath within 10^-9. ${status(acc.every((c) => c.passed) ? "numerical" : "unresolved")}.`,
+            `- Approximation error map: the regime map above, with ${rg.layers.filter((l) => l.kind === "approximation").length} approximations at the tolerance ${rg.tolerance}. ${status("numerical")}.`] : [])].join("\n"),
+        narration: `${acc.every((c) => c.passed) ? `All ${words(acc.length)} acceptance checks of the declared model pass on this record.` : "Some acceptance checks of the declared model fail, and the frame names them."}${anchor ? " Anchor test one has its four required results: the hand derivation, the dimensionless conditions, the reference temperature solution and the approximation error map." : ""}`,
+      });
+    }
     checks.push({
       title: "Results with their statuses and evidence",
       body: [...d.results.map(resultLine), "", "Status counts: " + Object.entries(d.counts).map(([k, n]) => `${STATUS[k]}: ${n}`).join(", ") + ".", "",
@@ -327,16 +430,17 @@
       : d.confirmedVersion === null ? "Confirm the interpretation to run the Finder. The checks before analysis already ran." : `The Finder is blocked. ${cell(it.issues.find((i) => (f?.blockedBy ?? []).includes(i.id))?.next ?? "")}`;
     const indep = ndOk ? nd.parameters.filter((p) => p.role === "parameter" && p.independent) : [];
     const ndKey = ndOk ? ` The dimensionless model has ${count(indep.length, "independent parameter", "independent parameters")}${indep.length ? `: ${indep.map((p) => m(p.names[0] ? `${p.names[0].tex}=${p.tex}` : p.tex)).join(", ")}` : ""}${nd.checks.every((c) => c.passed) ? ", and the reverse substitution recovers every equation and condition." : "."}` : "";
+    const rgKey = rgOk ? ` For the declared model, ${rg.point.reduced.length ? `${rg.point.reduced.map((r) => r.label.toLowerCase()).join(", ")} ${rg.point.reduced.length > 1 ? "meet" : "meets"}` : "no approximation meets"} the tolerance ${rg.tolerance} at the inspected point.` : "";
     checks.push({
       title: "Takeaway",
-      key: `${key}${ndKey}`,
+      key: `${key}${ndKey}${rgKey}`,
       narration: ok ? `The Pi variables give ${n(f.m, "algebraically independent group", "algebraically independent groups")}. ${f.constraints.items.length ? `A relation fixes some of them, so only ${words(f.constraints.free)} can vary. ` : ""}The group that contains the quantity of interest is a function of the other groups. Data or a solved model must supply that function.`
         : "The Finder did not run on this version. The report names the reason and the next action.",
     });
 
     return {
       meta: { title: TITLE, subtitle: `${d.title}: model version ${d.version}${d.confirmed ? "" : " (not confirmed)"}`, voice: "bf_emma" },
-      narration: `This report comes from the Dimensionless Number Finder and the Model Nondimensionalizer, for model version ${d.version}. All arithmetic in it is exact.`,
+      narration: `This report comes from the Dimensionless Number Finder, the Model Nondimensionalizer and the Regime Map Builder, for model version ${d.version}. The algebra is exact, and each numerical result states its tolerance.`,
       setup, method, results, checks,
     };
   }

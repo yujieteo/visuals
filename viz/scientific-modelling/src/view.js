@@ -89,6 +89,7 @@
       input("purpose.question", rec.purpose.question, "Research question", "wide"),
       select("purpose.observable", ["", ...vars.map((/** @type {any} */ v) => v.id)], rec.purpose.observable ?? "", "Quantity of interest", ["none", ...vars.map((/** @type {any} */ v) => v.symbol)]),
       select("purpose.calculation", R.CALCULATIONS, rec.purpose.calculation, "Intended calculation"),
+      select("purpose.declaration", ["", ...DATA.catalogue.declarations.map((/** @type {any} */ x) => x.id)], rec.purpose.declaration ?? "", "Declared model", ["none", ...DATA.catalogue.declarations.map((/** @type {any} */ x) => x.title)]),
       input("preferred", rec.preferred.map(symbolOf).join(", "), "Preferred reference variables", "wide"),
       `</div></fieldset>`,
       `<fieldset><legend>Variables</legend>`,
@@ -113,7 +114,7 @@
       `<fieldset><legend>Scales</legend><p class="syntax">A scale you enter here replaces the suggested scale of its variable, such as <code>L^2/alpha</code> for t. "Use this scale" in the Nondimensionalizer fills these rows.</p>`,
       ...rec.scales.map((/** @type {any} */ c) => `<div class="item"><div class="grid">${select(`scales.${c.id}.for`, ["", ...vars.filter((/** @type {any} */ v) => v.kind === "coordinate" || v.kind === "field").map((/** @type {any} */ v) => v.id)], c.for ?? "", `Variable of ${c.id}`, ["none", ...vars.filter((/** @type {any} */ v) => v.kind === "coordinate" || v.kind === "field").map((/** @type {any} */ v) => v.symbol)])}${input(`scales.${c.id}.scale`, c.scale ?? "", "Scale, such as L^2/alpha")}${input(`scales.${c.id}.offset`, c.offset ?? "", "Offset, such as T_inf")}${input(`scales.${c.id}.symbol`, c.symbol ?? "", "Dimensionless symbol")}${input(`scales.${c.id}.reason`, c.reason ?? "", "Reason", "wide")}<button type="button" data-remove="scales.${esc(c.id)}">Remove ${esc(c.id)}</button></div></div>`),
       `<button type="button" data-add="scales">Add a scale</button></fieldset>`,
-      `<fieldset><legend>Geometry</legend><div class="grid">${input("geometry.domain", rec.geometry.domain ?? "", "Domain", "wide")}${input("geometry.coordinates", rec.geometry.coordinates ?? "", "Coordinates", "wide")}${input("geometry.interfaces", rec.geometry.interfaces ?? "", "Interfaces", "wide")}</div></fieldset>`,
+      `<fieldset><legend>Geometry</legend><div class="grid">${input("geometry.domain", rec.geometry.domain ?? "", "Domain", "wide")}${input("geometry.coordinates", rec.geometry.coordinates ?? "", "Coordinates", "wide")}${input("geometry.interfaces", rec.geometry.interfaces ?? "", "Interfaces", "wide")}${select("geometry.shape", ["", "slab", "cylinder", "sphere", "cube"], rec.geometry.shape ?? "", "Shape (for the lumped body)", ["not stated", "slab", "long cylinder", "sphere", "cube"])}</div></fieldset>`,
       `<fieldset><legend>Assumptions</legend>`,
       ...rec.assumptions.map((/** @type {any} */ a) => `<div class="item"><div class="grid">${select(`assumptions.${a.id}.kind`, KIND_OPTIONS.assumption, a.kind, `Kind of ${a.id}`)}${input(`assumptions.${a.id}.text`, a.text, "Assumption", "wide")}${input(`assumptions.${a.id}.relation`, a.relation ?? "", "Relation, such as T_i - T_inf != 0")}${input(`assumptions.${a.id}.source`, a.source ?? "", "Source id")}<button type="button" data-remove="assumptions.${esc(a.id)}">Remove ${esc(a.id)}</button></div></div>`),
       `<button type="button" data-add="assumptions">Add an assumption</button></fieldset>`,
@@ -349,16 +350,6 @@
     $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>${ref ? `<p>${chip(ref.status)} ${esc(ref.title)} <span class="note">The script tools/references.py computed it once.</span></p>` : `<p class="note">No SymPy reference covers this model version. The exact checks above still apply.</p>`}`;
   }
 
-  /** @param {any} d @param {string} tool */
-  function renderLater(d, tool) {
-    const piece = 3;
-    const calc = d.interp.calcs.find((/** @type {any} */ c) => c.id === "regime-map");
-    const needs = calc.blockedBy.map((/** @type {string} */ id) => d.interp.issues.find((/** @type {any} */ i) => i.id === id)).filter(Boolean);
-    const brings = ["1D diagrams and 2D slices with linear or logarithmic axes", "layers for balances, approximation error, stability and bifurcations", "the inspection of a point, with its dimensional values"];
-    $(`tool-${tool}`).innerHTML = `<div class="callout"><p><strong>Piece ${piece} of the build plan adds the ${esc(Model.TOOLS[tool])}.</strong> It will read this same model.</p><p>It adds:</p><ul class="plain-list">${brings.map((/** @type {string} */ b) => `<li>${esc(b)}</li>`).join("")}</ul></div>
-      <h3>This model now</h3>${needs.length ? `<p>${chip("unresolved")} Before it can run on this model, fix these checks:</p><ul class="issue-list">${needs.map((/** @type {any} */ i) => `<li>${esc(i.message)}<span class="next">Next: ${esc(i.next)}</span></li>`).join("")}</ul>` : `<p>The record passes the checks that the ${esc(Model.TOOLS[tool])} needs.</p>`}`;
-  }
-
   /** @param {any} d @param {Record<string, any>} state */
   function renderTrace(d, state) {
     const f = d.finder;
@@ -389,7 +380,8 @@
       const meth = rm.methods.filter((/** @type {any} */ x) => x.piece === p.n).map((/** @type {any} */ x) => x.name);
       return `<div><h4>Piece ${p.n}: ${esc(p.title)}</h4><ul>${[...meth.map((/** @type {string} */ x) => `<li>Method: ${esc(x)}</li>`), ...fam.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`)].join("") || "<li>The release checks of every family</li>"}</ul></div>`;
     }).join("");
-    $("roadmap-body").innerHTML = `<p>${rm.families.length} model families arrive in pieces 3 to 9. Until then, the page lists them here and offers none of them as a result.</p><div class="roadmap-grid">${byPiece}</div>`;
+    const built = rm.families.filter((/** @type {any} */ x) => x.piece <= rm.current).length;
+    $("roadmap-body").innerHTML = `<p>${built} of the ${rm.families.length} model families work now: the Model catalogue tab shows their declared models. The others arrive in pieces ${rm.current + 1} to 9, and the page offers none of them as a result until then.</p><div class="roadmap-grid">${byPiece}</div>`;
   }
 
   let lastDetail = "";
@@ -399,13 +391,14 @@
     renderStatus(d);
     renderInterpretation(d);
     renderIssues(d);
-    for (const t of ["finder", "nondim", "regime"]) {
+    for (const t of ["finder", "nondim", "regime", "catalogue"]) {
       $(`tab-${t}`).setAttribute("aria-selected", String(state.tool === t));
       $(`tool-${t}`).hidden = state.tool !== t;
     }
     if (state.tool === "finder") renderFinder(state, d);
     else if (state.tool === "nondim") renderNondim(state, d);
-    else renderLater(d, state.tool);
+    else if (state.tool === "regime") RegimeView.render(state, d);
+    else RegimeView.catalogue(state, d);
     renderTrace(d, state);
     if (state.detail !== lastDetail) {
       for (const el of document.querySelectorAll("details[data-section]")) /** @type {HTMLDetailsElement} */ (el).open = state.detail === "full";
@@ -434,6 +427,9 @@
     const doc = { ...R.clone(rec), analyses: d.results, derivation: d.finder && d.finder.ready ? { steps: d.finder.steps, rowReduction: d.finder.rref.steps.map((/** @type {any} */ s) => ({ n: s.n, op: s.op, text: s.text, reason: s.reason, matrix: s.matrix })),
       exponentEquations: d.finder.exponentEquations, groups: d.finder.groups.map((/** @type {any} */ g) => ({ id: g.id, label: g.label, exponents: g.exps, names: g.names.map((/** @type {any} */ n) => n.id), confirmed: g.confirmed })), checks: d.finder.checks } : null,
       nondimensionalization: nondimSummary(d.nondim),
+      regimeMap: d.regime && d.regime.ready ? { declaration: d.regime.declaration.id, match: d.regime.match, axes: d.regime.axes, tolerance: d.regime.tolerance, fixed: d.regime.fixed,
+        layers: d.regime.layers.map((/** @type {any} */ l) => ({ id: l.id, kind: l.kind, boundary: l.boundary, criterion: l.criterion, status: l.status, curves: l.curves.map((/** @type {any} */ c) => ({ id: c.id, label: c.label, points: c.points })) })),
+        unresolved: { points: d.regime.unresolved.count, reasons: d.regime.unresolved.reasons }, point: d.regime.point, acceptance: d.regime.acceptance } : null,
       items: R.ITEMS };
     return `${JSON.stringify(doc, null, 2)}\n`;
   }
@@ -485,7 +481,50 @@
         return out({ version: d.version, confirmed: d.confirmed, results: d.results, statuses: R.STATUS,
           finder: f && f.ready ? { steps: f.steps, rowReduction: f.rref.steps.map((/** @type {any} */ s) => ({ n: s.n, text: s.text, reason: s.reason, matrix: s.matrix })), repeating: f.repeating, exponentEquations: f.exponentEquations, checks: f.checks } : null });
       } },
+    { name: "get_regime_map", description: "Return the Regime Map Builder's map of the current confirmed record: its declared model and the exact match of the dimensionless equations, the axes and scales, the fixed and derived parameters, each layer (approximation error or balance) with its criterion, boundary curves and regions, the unresolved points with their reasons, the points where no approximation meets the tolerance, the intersections, the limit paths and the inspected point. Optional inputs choose another slice without changing the page.",
+      inputSchema: { type: "object", properties: { x: { type: "string" }, y: { type: "string", description: "a parameter id, or none for a 1D diagram" }, fixed: { type: "string", description: "such as Bi=0.5, Fo=0.25" },
+        tolerance: { type: "string", enum: ["1e-1", "1e-2", "1e-3"] } }, additionalProperties: false }, annotations: RO,
+      execute: async (/** @type {any} */ input = {}) => {
+        const rg = regimeFor({ map_x: input.x, map_y: input.y, fixed: input.fixed, tolerance: input.tolerance });
+        if (!rg || !rg.ready) return out(regimeError(rg));
+        return out({ declaration: rg.declaration, match: rg.match, axes: rg.axes, fixed: rg.fixed, derived: rg.derived, tolerance: rg.tolerance,
+          layers: rg.layers.map((/** @type {any} */ l) => ({ id: l.id, kind: l.kind, boundary: l.boundary, title: l.title, criterion: l.criterion, status: R.STATUS[l.status],
+            curves: l.curves.map((/** @type {any} */ c) => ({ id: c.id, label: c.label, points: c.points })), regions: l.regions.map((/** @type {any} */ r) => ({ label: r.label, points: r.count, intervals: r.intervals ?? null })) })),
+          unresolved: { points: rg.unresolved.count, reasons: rg.unresolved.reasons, intervals: rg.unresolved.intervals ?? null }, noApproximation: { points: rg.gap.count, intervals: rg.gap.intervals ?? null },
+          intersections: rg.intersections, limits: rg.limits, point: rg.point, acceptance: rg.acceptance, notices: rg.notices });
+      } },
+    { name: "get_regime_point", description: "Inspect one point of the current record's declared model: the value and region of each layer there, the reduced models that meet the tolerance, the profile, the checks (such as the energy balance) and the dimensional reconstruction of the parameters with the record's other values. Give the parameters by id, such as {\"Bi\": 0.5, \"Fo\": 0.25}; the others keep the record's values.",
+      inputSchema: { type: "object", properties: { parameters: { type: "object", additionalProperties: { type: "number" } }, tolerance: { type: "string", enum: ["1e-1", "1e-2", "1e-3"] } }, required: ["parameters"], additionalProperties: false }, annotations: RO,
+      execute: async (/** @type {any} */ input = {}) => {
+        const first = regimeFor({});
+        if (!first || !first.ready) return out(regimeError(first));
+        const ps = input.parameters && typeof input.parameters === "object" ? input.parameters : {};
+        const ids = first.params.map((/** @type {any} */ p) => p.id).filter((/** @type {string} */ id) => typeof ps[id] === "number");
+        if (!ids.length) return out({ error: `Give at least one parameter of ${first.params.map((/** @type {any} */ p) => p.id).join(", ")}.` });
+        const [x, y] = [ids[0], ids[1] ?? "none"];
+        const fixed = Object.entries(ps).filter(([k]) => k !== x && k !== y).map(([k, v]) => `${k}=${v}`).join(",");
+        const rg = regimeFor({ map_x: x, map_y: y, fixed, tolerance: input.tolerance, point: y === "none" ? String(ps[x]) : `${ps[x]},${ps[y]}` });
+        if (!rg || !rg.ready) return out(regimeError(rg));
+        return out({ declaration: rg.declaration.id, tolerance: rg.tolerance, point: rg.point, notices: rg.notices });
+      } },
+    { name: "get_catalogue", description: "Return the declared model catalogue: every family of the build plan with the piece that brings it, and one declaration (the given id, else the current record's) with its six parts of section 10, the methods table and the acceptance result on its standard example.",
+      inputSchema: { type: "object", properties: { declaration: { type: "string" } }, additionalProperties: false }, annotations: RO,
+      execute: async (/** @type {any} */ input = {}) => {
+        const st = { ...app.state, tool: "catalogue", family: typeof input.declaration === "string" ? input.declaration.slice(0, 60) : app.state.family };
+        const d = Model.derive(st, DATA, active(st.example));
+        return out(d.catalogue);
+      } },
   ];
+  /** The regime map of the current record with some view fields changed, without changing the page. @param {Record<string, any>} patch */
+  function regimeFor(patch) {
+    const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => typeof v === "string"));
+    const st = VisualKit.normalize(Model.FIELDS, { ...app.state, ...clean, pick: "" }).state;
+    return Model.derive(st, DATA, active(st.example)).regime;
+  }
+  /** @param {any} rg */
+  function regimeError(rg) {
+    return { error: !rg ? "Confirm the interpretation first: the Regime Map Builder runs on a confirmed version." : rg.message, problems: rg?.problems ?? [], next: rg?.next ?? "" };
+  }
   /** The Nondimensionalizer's result as the model JSON and an agent read it. @param {any} nd */
   function nondimSummary(nd) {
     if (!nd || !nd.ready) return null;
@@ -515,6 +554,10 @@
     { label: "Show the full derivation", run: () => app.set({ detail: "full" }) },
     { label: "Use the suggested scales", run: () => commit((/** @type {any} */ inp) => { inp.scales = []; }, "Removed your scales; the suggested scales apply.", true) },
     { label: "Show the short view", run: () => app.set({ detail: "short" }) },
+    { label: "Regime map: inspect the record's point", run: () => app.set({ tool: "regime", point: "", pick: "" }) },
+    { label: "Regime map: show the 1D diagram", run: () => app.set({ tool: "regime", map_y: "none" }) },
+    { label: "Regime map: show the declared 2D slice", run: () => app.set({ tool: "regime", map_x: "", map_y: "" }) },
+    ...["1e-1", "1e-2", "1e-3"].map((t) => ({ label: `Regime map: tolerance ${Number(t)}`, run: () => app.set({ tool: "regime", tolerance: t }) })),
     ...Object.entries(Model.TOOLS).map(([id, name]) => ({ label: `Tool: ${name}`, run: () => app.set({ tool: id }) })),
     ...Model.EXAMPLES.map((/** @type {KitExample} */ e) => ({ label: `Example: ${e.label}`, run: () => app.set({ example: e.id }) })),
   ];
@@ -523,6 +566,7 @@
   function bind(a) {
     app = a;
     renderRoadmap();
+    RegimeView.bind(app, { esc, ti, td, chip, sourceLink, data: DATA });
     $("confirm").addEventListener("click", () => {
       const ex = app.state.example;
       store[ex] = R.confirm(active(ex));

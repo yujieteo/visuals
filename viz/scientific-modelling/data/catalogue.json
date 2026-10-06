@@ -1,0 +1,1934 @@
+{
+  "about": "The declared model catalogue of spec section 10, one entry for each declared model of the families built so far. Each entry has the six parts that section 10 requires: model (equations, closures, geometry, conditions and the declared dimensionless form), domain (parameters and assumptions), operations (symbolic and numerical), methods (the four analyses, each with the reason it applies or not) with limitations, acceptance (standard example, reference and tolerance) and solver (method, discretization, convergence and reproducibility). A record names its declared model in purpose.declaration; the page checks the Nondimensionalizer's result against the declared dimensionless form exactly.",
+  "declarations": [
+    {
+      "id": "lumped-convection",
+      "family": "lumped-thermal-models",
+      "title": "Lumped body with convection",
+      "piece": 3,
+      "model": {
+        "summary": "A body whose temperature stays uniform, with heat capacity ρc_pV, cooled through its surface A_s by convection to a fluid at T_∞.",
+        "roles": [
+          {
+            "id": "rho",
+            "quantity": "density",
+            "kind": "parameter",
+            "meaning": "density",
+            "optional": true
+          },
+          {
+            "id": "c_p",
+            "quantity": "specific-heat",
+            "kind": "parameter",
+            "meaning": "specific heat capacity",
+            "optional": true
+          },
+          {
+            "id": "C",
+            "quantity": "volumetric-heat-capacity",
+            "kind": "parameter",
+            "meaning": "volumetric heat capacity ρc_p",
+            "optional": true
+          },
+          {
+            "id": "V",
+            "quantity": "volume",
+            "kind": "parameter",
+            "meaning": "volume"
+          },
+          {
+            "id": "A_s",
+            "quantity": "area",
+            "kind": "parameter",
+            "meaning": "surface area"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "surface heat-transfer coefficient"
+          },
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the body, for the Biot number"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the body"
+          },
+          {
+            "id": "T_i",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "initial temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          }
+        ],
+        "equations": [
+          {
+            "id": "energy",
+            "kind": "governing",
+            "text": "rho*c_p*V*d(T,t) = -h*A_s*(T - T_inf)",
+            "domain": "t > 0"
+          }
+        ],
+        "closures": [
+          "Newton's law of cooling with constant h: the heat flow out of the surface is hA_s(T − T_∞)."
+        ],
+        "geometry": "Any shape. The Biot length is L_c = V/A_s. The comparison with a spatial model uses the shape in the record's geometry: a slab, a long cylinder, a sphere or a cube (the product of three slab solutions).",
+        "conditions": [
+          {
+            "id": "initial",
+            "kind": "initial",
+            "text": "T = T_i",
+            "at": "t = 0",
+            "meaning": "the initial temperature"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "C*V/(h*A_s)",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "T_i - T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "C",
+              "def": "rho*c_p"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "Bi_c",
+              "tex": "Bi_{c}",
+              "def": "h*V/(A_s*k)",
+              "solve": "h",
+              "meaning": "Biot number with L_c = V/A_s"
+            },
+            {
+              "id": "Fo_c",
+              "tex": "Fo_{c}",
+              "def": "k*t*A_s^2/(C*V^2)",
+              "solve": "t",
+              "coordinate": "tau",
+              "meaning": "Fourier number with L_c"
+            }
+          ],
+          "equations": [
+            {
+              "of": "energy",
+              "text": "d(theta,tau) = -theta"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "initial",
+              "text": "theta = 1",
+              "at": "tau = 0"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Bi_c",
+            "tex": "Bi_{c}",
+            "label": "Biot number hL_c/k, L_c = V/A_s",
+            "min": 0.001,
+            "max": 10,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Fo_c",
+            "tex": "Fo_{c}",
+            "label": "Fourier number αt/L_c²",
+            "min": 0.01,
+            "max": 1000,
+            "log": true,
+            "kind": "coordinate"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The temperature is uniform in the body at each time. The comparison with the spatial model tests this assumption.",
+            "source": "spec-10"
+          },
+          {
+            "text": "ρ, c_p, h and T_∞ are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "T_i is not equal to T_∞.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives θ_τ = −θ and θ(0) = 1 with τ = t/(ρc_pV/(hA_s)).",
+          "The exact solution θ = e^{−τ}, checked in canonical form: ∂_τ e^{−τ} + e^{−τ} = 0.",
+          "The lumped model as the leading order of the small-Bi expansion of the spatial model (src/asymptotic.js)."
+        ],
+        "numerical": [
+          "The error of the lumped model against the spatial model of the declared shape, at each point of the map.",
+          "The decay time ρc_pV/(hA_s) and the temperature at the record's time."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The uniform-temperature assumption is a balance: the internal temperature drop is small compared with the drop across the surface film when Bi_c is small."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "The lumped model is the leading order of the outer expansion of the spatial model as Bi → 0 with the slow time fixed: a coupled limit."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The model is linear with one steady state θ = 0, and θ = e^{−τ} decays. A stability analysis adds nothing."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so no branch can split."
+        }
+      },
+      "limitations": [
+        "The spatial comparison covers a slab, a long cylinder, a sphere and a cube. Other shapes need a separate declaration of the spatial model.",
+        "Radiation exchange makes the model nonlinear: piece 4 declares the lumped body with radiation."
+      ],
+      "acceptance": {
+        "example": "lumped-body",
+        "reference": "θ = e^{−τ} (exact) and the decay time ρc_pV/(hA_s) from the record's values (exact). Also the lumped error against the page's slab series at Bi = 0.01, 0.001 and 0.0001 with Bi·Fo = 1.",
+        "tolerance": "Exact for the decay time and the solution. The lumped error must fall with Bi and be below 1e-3 at Bi = 10⁻⁴.",
+        "checks": [
+          "The Nondimensionalizer's equation and condition equal the declared dimensionless model (exact).",
+          "The decay time from the record's values is exact, and θ = e^{−τ} solves θ_τ = −θ with θ(0) = 1 (exact).",
+          "The lumped error against the spatial model goes to 0 as Bi_c goes to 0 at a fixed Bi_c·Fo_c."
+        ]
+      },
+      "solver": {
+        "method": "Closed form θ = e^{−τ}. The spatial comparison uses the series of the declared shape (transient conduction declarations).",
+        "discretization": "None for the lumped model. The comparison uses 21 points in X for the slab, the cylinder and the sphere, and 21 × 21 × 21 points in an octant of the cube.",
+        "convergence": "The same mode count rule as the transient conduction declarations: λ_n²τ ≤ 50.",
+        "reproducibility": "Plain JavaScript in double precision. Exact rationals for the decay time."
+      }
+    },
+    {
+      "id": "slab-convection",
+      "family": "transient-conduction",
+      "title": "Transient conduction in a slab with surface convection",
+      "piece": 3,
+      "geometry": "slab",
+      "model": {
+        "summary": "A slab of half-thickness L with constant properties, uniform initial temperature T_i and convection to a fluid at T_∞ on its surface.",
+        "roles": [
+          {
+            "id": "rho",
+            "quantity": "density",
+            "kind": "parameter",
+            "meaning": "density",
+            "optional": true
+          },
+          {
+            "id": "c_p",
+            "quantity": "specific-heat",
+            "kind": "parameter",
+            "meaning": "specific heat capacity",
+            "optional": true
+          },
+          {
+            "id": "alpha",
+            "quantity": "thermal-diffusivity",
+            "kind": "parameter",
+            "meaning": "thermal diffusivity",
+            "optional": true
+          },
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the solid"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "surface heat-transfer coefficient"
+          },
+          {
+            "id": "L",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "half-thickness"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the solid"
+          },
+          {
+            "id": "T_i",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "uniform initial temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "x",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from the centre plane"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          }
+        ],
+        "equations": [
+          {
+            "id": "heat",
+            "kind": "governing",
+            "text": "rho*c_p*d(T,t) = k*(d(T,x,x))",
+            "domain": "0 < x < L, t > 0"
+          }
+        ],
+        "closures": [
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂x."
+        ],
+        "geometry": "A slab of half-thickness L, symmetric about its centre plane x = 0. Both faces see the same fluid.",
+        "conditions": [
+          {
+            "id": "centre",
+            "kind": "boundary",
+            "text": "d(T,x) = 0",
+            "at": "x = 0",
+            "meaning": "symmetry at the centre"
+          },
+          {
+            "id": "surface",
+            "kind": "boundary",
+            "text": "-k*d(T,x) = h*(T - T_inf)",
+            "at": "x = L",
+            "meaning": "convection to the fluid (Newton's law of cooling)"
+          },
+          {
+            "id": "initial",
+            "kind": "initial",
+            "text": "T = T_i",
+            "at": "t = 0",
+            "meaning": "uniform initial temperature"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "x",
+              "offset": "0",
+              "scale": "L",
+              "tex": "X"
+            },
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "L^2/alpha",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "T_i - T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "alpha",
+              "def": "k/(rho*c_p)"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "Bi",
+              "tex": "Bi",
+              "def": "h*L/k",
+              "solve": "h",
+              "meaning": "Biot number with the half-thickness"
+            },
+            {
+              "id": "Fo",
+              "tex": "Fo",
+              "def": "alpha*t/L^2",
+              "solve": "t",
+              "coordinate": "tau",
+              "meaning": "Fourier number: the dimensionless time"
+            }
+          ],
+          "equations": [
+            {
+              "of": "heat",
+              "text": "d(theta,tau) = d(theta,X,X)"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "centre",
+              "text": "d(theta,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "surface",
+              "text": "-d(theta,X) = Bi*theta",
+              "at": "X = 1"
+            },
+            {
+              "of": "initial",
+              "text": "theta = 1",
+              "at": "tau = 0"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Bi",
+            "tex": "Bi",
+            "label": "Biot number hL/k",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Fo",
+            "tex": "Fo",
+            "label": "Fourier number αt/L²",
+            "min": 0.001,
+            "max": 10,
+            "log": true,
+            "kind": "coordinate"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The density, the specific heat capacity and the conductivity are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "h and T_∞ are constant and the same on all of the surface.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The initial temperature is uniform, and T_i is not equal to T_∞.",
+            "source": "spec-7"
+          },
+          {
+            "text": "Heat flows in x only: the slab is wide compared with its thickness.",
+            "source": "spec-10"
+          },
+          {
+            "text": "There is no heat source in the solid, and radiation is part of h or absent.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
+          "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
+        ],
+        "numerical": [
+          "The exact series of modes cos(λX) with eigenvalues from Brent's method.",
+          "The one-mode, lumped, first-order outer, surface-temperature and short-time approximations, and their error at each point of the map.",
+          "The energy balance d(mean θ)/dτ = −(j + 1) Bi θ(1, τ) at the inspected point."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The model is linear with a unique steady state θ = 0. Each mode decays at the rate λ_n², so a stability analysis adds nothing."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so it has one solution for each Bi. No branch can split."
+        }
+      },
+      "limitations": [
+        "Constant properties only. A conductivity that changes with temperature needs a separate declaration.",
+        "Uniform h and T_∞. A surface condition that changes along the surface needs a 2D or 3D declaration.",
+        "The map uses the declared domain 0.001 ≤ Bi ≤ 1000 and 0.001 ≤ Fo ≤ 10. Where the series needs more than 400 modes, or the temperature excess is below 10⁻¹² of its initial value, the page shows an unresolved region."
+      ],
+      "acceptance": {
+        "example": "transient-slab",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
+        "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
+        "checks": [
+          "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
+          "The eigenvalues, coefficients and temperatures agree with the mpmath reference within the tolerance.",
+          "The series gives θ = 1 inside the solid at the earliest time of the map, within 1e-9 at X ≤ 0.5.",
+          "The small-Bi expansion gives C₁ and λ₁² to order 3 exactly as SymPy's series of the eigenvalue equation.",
+          "The energy balance holds at the example's point within 1e-9."
+        ],
+        "modes": "\\lambda_n\\tan\\lambda_n=Bi,\\quad f_n=\\cos(\\lambda_nX),\\quad C_n=\\frac{4\\sin\\lambda_n}{2\\lambda_n+\\sin 2\\lambda_n}",
+        "lumpedLength": "L_c = V/A_s = L"
+      },
+      "solver": {
+        "method": "Separation of variables: θ = Σ C_n f_n(λ_nX) exp(−λ_n²τ).",
+        "discretization": "No mesh. The error measures use 21 equally spaced points X = 0, 0.05, …, 1.",
+        "convergence": "The series keeps the modes with λ_n²τ ≤ 50, so the first mode left out is below e⁻⁵⁰ times its coefficient. At most 400 modes. Each eigenvalue has its own bracket, and Brent's method stops at 1e-15.",
+        "reproducibility": "Plain JavaScript in double precision. The same inputs give the same numbers on every run. Reference values: mpmath 1.3.0 with 30 digits."
+      }
+    },
+    {
+      "id": "cylinder-convection",
+      "family": "transient-conduction",
+      "title": "Transient conduction in a long cylinder with surface convection",
+      "piece": 3,
+      "geometry": "cylinder",
+      "model": {
+        "summary": "A long cylinder of radius R with constant properties, uniform initial temperature T_i and convection to a fluid at T_∞ on its surface.",
+        "roles": [
+          {
+            "id": "rho",
+            "quantity": "density",
+            "kind": "parameter",
+            "meaning": "density",
+            "optional": true
+          },
+          {
+            "id": "c_p",
+            "quantity": "specific-heat",
+            "kind": "parameter",
+            "meaning": "specific heat capacity",
+            "optional": true
+          },
+          {
+            "id": "alpha",
+            "quantity": "thermal-diffusivity",
+            "kind": "parameter",
+            "meaning": "thermal diffusivity",
+            "optional": true
+          },
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the solid"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "surface heat-transfer coefficient"
+          },
+          {
+            "id": "R",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "radius"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the solid"
+          },
+          {
+            "id": "T_i",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "uniform initial temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "r",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from the centre"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          }
+        ],
+        "equations": [
+          {
+            "id": "heat",
+            "kind": "governing",
+            "text": "rho*c_p*d(T,t) = k*(d(T,r,r) + d(T,r)/r)",
+            "domain": "0 < r < R, t > 0"
+          }
+        ],
+        "closures": [
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂r."
+        ],
+        "geometry": "A long solid cylinder of radius R. The cylinder is long, so the ends have no effect. The temperature depends on r and t only.",
+        "conditions": [
+          {
+            "id": "centre",
+            "kind": "boundary",
+            "text": "d(T,r) = 0",
+            "at": "r = 0",
+            "meaning": "a finite temperature at the centre"
+          },
+          {
+            "id": "surface",
+            "kind": "boundary",
+            "text": "-k*d(T,r) = h*(T - T_inf)",
+            "at": "r = R",
+            "meaning": "convection to the fluid (Newton's law of cooling)"
+          },
+          {
+            "id": "initial",
+            "kind": "initial",
+            "text": "T = T_i",
+            "at": "t = 0",
+            "meaning": "uniform initial temperature"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "r",
+              "offset": "0",
+              "scale": "R",
+              "tex": "X"
+            },
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "R^2/alpha",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "T_i - T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "alpha",
+              "def": "k/(rho*c_p)"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "Bi",
+              "tex": "Bi",
+              "def": "h*R/k",
+              "solve": "h",
+              "meaning": "Biot number with the radius"
+            },
+            {
+              "id": "Fo",
+              "tex": "Fo",
+              "def": "alpha*t/R^2",
+              "solve": "t",
+              "coordinate": "tau",
+              "meaning": "Fourier number: the dimensionless time"
+            }
+          ],
+          "equations": [
+            {
+              "of": "heat",
+              "text": "d(theta,tau) = d(theta,X,X) + d(theta,X)/X"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "centre",
+              "text": "d(theta,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "surface",
+              "text": "-d(theta,X) = Bi*theta",
+              "at": "X = 1"
+            },
+            {
+              "of": "initial",
+              "text": "theta = 1",
+              "at": "tau = 0"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Bi",
+            "tex": "Bi",
+            "label": "Biot number hR/k",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Fo",
+            "tex": "Fo",
+            "label": "Fourier number αt/R²",
+            "min": 0.001,
+            "max": 10,
+            "log": true,
+            "kind": "coordinate"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The density, the specific heat capacity and the conductivity are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "h and T_∞ are constant and the same on all of the surface.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The initial temperature is uniform, and T_i is not equal to T_∞.",
+            "source": "spec-7"
+          },
+          {
+            "text": "Heat flows in r only: the cylinder is long compared with its radius, so the ends have no effect.",
+            "source": "spec-10"
+          },
+          {
+            "text": "There is no heat source in the solid, and radiation is part of h or absent.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
+          "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
+        ],
+        "numerical": [
+          "The exact series of modes J₀(λX) with eigenvalues from Brent's method.",
+          "The one-mode, lumped, first-order outer, surface-temperature and short-time approximations, and their error at each point of the map.",
+          "The energy balance d(mean θ)/dτ = −(j + 1) Bi θ(1, τ) at the inspected point."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The model is linear with a unique steady state θ = 0. Each mode decays at the rate λ_n², so a stability analysis adds nothing."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so it has one solution for each Bi. No branch can split."
+        }
+      },
+      "limitations": [
+        "Constant properties only. A conductivity that changes with temperature needs a separate declaration.",
+        "Uniform h and T_∞. A surface condition that changes along the surface needs a 2D or 3D declaration.",
+        "The map uses the declared domain 0.001 ≤ Bi ≤ 1000 and 0.001 ≤ Fo ≤ 10. Where the series needs more than 400 modes, or the temperature excess is below 10⁻¹² of its initial value, the page shows an unresolved region."
+      ],
+      "acceptance": {
+        "example": "transient-cylinder",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
+        "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
+        "checks": [
+          "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
+          "The eigenvalues, coefficients and temperatures agree with the mpmath reference within the tolerance.",
+          "The series gives θ = 1 inside the solid at the earliest time of the map, within 1e-9 at X ≤ 0.5.",
+          "The small-Bi expansion gives C₁ and λ₁² to order 3 exactly as SymPy's series of the eigenvalue equation.",
+          "The energy balance holds at the example's point within 1e-9."
+        ],
+        "modes": "\\lambda_n\\frac{J_1(\\lambda_n)}{J_0(\\lambda_n)}=Bi,\\quad f_n=J_0(\\lambda_nX),\\quad C_n=\\frac{2}{\\lambda_n}\\frac{J_1(\\lambda_n)}{J_0^2(\\lambda_n)+J_1^2(\\lambda_n)}",
+        "lumpedLength": "L_c = V/A_s = R/2"
+      },
+      "solver": {
+        "method": "Separation of variables: θ = Σ C_n f_n(λ_nX) exp(−λ_n²τ).",
+        "discretization": "No mesh. The error measures use 21 equally spaced points X = 0, 0.05, …, 1.",
+        "convergence": "The series keeps the modes with λ_n²τ ≤ 50, so the first mode left out is below e⁻⁵⁰ times its coefficient. At most 400 modes. Each eigenvalue has its own bracket, and Brent's method stops at 1e-15.",
+        "reproducibility": "Plain JavaScript in double precision. The same inputs give the same numbers on every run. Reference values: mpmath 1.3.0 with 30 digits."
+      }
+    },
+    {
+      "id": "sphere-convection",
+      "family": "transient-conduction",
+      "title": "Transient conduction in a sphere with surface convection",
+      "piece": 3,
+      "geometry": "sphere",
+      "model": {
+        "summary": "A sphere of radius R with constant properties, uniform initial temperature T_i and convection to a fluid at T_∞ on its surface.",
+        "roles": [
+          {
+            "id": "rho",
+            "quantity": "density",
+            "kind": "parameter",
+            "meaning": "density",
+            "optional": true
+          },
+          {
+            "id": "c_p",
+            "quantity": "specific-heat",
+            "kind": "parameter",
+            "meaning": "specific heat capacity",
+            "optional": true
+          },
+          {
+            "id": "alpha",
+            "quantity": "thermal-diffusivity",
+            "kind": "parameter",
+            "meaning": "thermal diffusivity",
+            "optional": true
+          },
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the solid"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "surface heat-transfer coefficient"
+          },
+          {
+            "id": "R",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "radius"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the solid"
+          },
+          {
+            "id": "T_i",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "uniform initial temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "r",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from the centre"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          }
+        ],
+        "equations": [
+          {
+            "id": "heat",
+            "kind": "governing",
+            "text": "rho*c_p*d(T,t) = k*(d(T,r,r) + 2*d(T,r)/r)",
+            "domain": "0 < r < R, t > 0"
+          }
+        ],
+        "closures": [
+          "The equation contains Fourier's law with constant k: q = −k ∂T/∂r."
+        ],
+        "geometry": "A solid sphere of radius R. The temperature depends on r and t only.",
+        "conditions": [
+          {
+            "id": "centre",
+            "kind": "boundary",
+            "text": "d(T,r) = 0",
+            "at": "r = 0",
+            "meaning": "a finite temperature at the centre"
+          },
+          {
+            "id": "surface",
+            "kind": "boundary",
+            "text": "-k*d(T,r) = h*(T - T_inf)",
+            "at": "r = R",
+            "meaning": "convection to the fluid (Newton's law of cooling)"
+          },
+          {
+            "id": "initial",
+            "kind": "initial",
+            "text": "T = T_i",
+            "at": "t = 0",
+            "meaning": "uniform initial temperature"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "r",
+              "offset": "0",
+              "scale": "R",
+              "tex": "X"
+            },
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "R^2/alpha",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "T_i - T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [
+            {
+              "symbol": "alpha",
+              "def": "k/(rho*c_p)"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "Bi",
+              "tex": "Bi",
+              "def": "h*R/k",
+              "solve": "h",
+              "meaning": "Biot number with the radius"
+            },
+            {
+              "id": "Fo",
+              "tex": "Fo",
+              "def": "alpha*t/R^2",
+              "solve": "t",
+              "coordinate": "tau",
+              "meaning": "Fourier number: the dimensionless time"
+            }
+          ],
+          "equations": [
+            {
+              "of": "heat",
+              "text": "d(theta,tau) = d(theta,X,X) + 2*d(theta,X)/X"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "centre",
+              "text": "d(theta,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "surface",
+              "text": "-d(theta,X) = Bi*theta",
+              "at": "X = 1"
+            },
+            {
+              "of": "initial",
+              "text": "theta = 1",
+              "at": "tau = 0"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Bi",
+            "tex": "Bi",
+            "label": "Biot number hR/k",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Fo",
+            "tex": "Fo",
+            "label": "Fourier number αt/R²",
+            "min": 0.001,
+            "max": 10,
+            "log": true,
+            "kind": "coordinate"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The density, the specific heat capacity and the conductivity are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "h and T_∞ are constant and the same on all of the surface.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The initial temperature is uniform, and T_i is not equal to T_∞.",
+            "source": "spec-7"
+          },
+          {
+            "text": "Heat flows in r only: the surface condition is the same at every point.",
+            "source": "spec-10"
+          },
+          {
+            "text": "There is no heat source in the solid, and radiation is part of h or absent.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared dimensionless equation and conditions (canonical forms).",
+          "The small-Bi outer expansion to order 2 in exact rationals, with the solvability condition and the matching constant of each order. The residual is of order Bi³. The cross-check of C₁ and λ₁² goes to order 3.",
+          "Exact checks of the expansion: each order satisfies its equation, its surface condition and its solvability condition."
+        ],
+        "numerical": [
+          "The exact series of modes sin(λX)/(λX) with eigenvalues from Brent's method.",
+          "The one-mode, lumped, first-order outer, surface-temperature and short-time approximations, and their error at each point of the map.",
+          "The energy balance d(mean θ)/dτ = −(j + 1) Bi θ(1, τ) at the inspected point."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The surface condition compares conduction inside the solid with exchange at the surface (Bi). The equation compares the penetration depth with the size of the solid (Fo)."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "Bi → 0 at fixed Bi·Fo gives the lumped model as the leading order of an outer expansion with an initial layer. Bi → ∞ gives the surface-temperature model, and Fo → 0 gives an inner region at the surface."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The model is linear with a unique steady state θ = 0. Each mode decays at the rate λ_n², so a stability analysis adds nothing."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so it has one solution for each Bi. No branch can split."
+        }
+      },
+      "limitations": [
+        "Constant properties only. A conductivity that changes with temperature needs a separate declaration.",
+        "Uniform h and T_∞. A surface condition that changes along the surface needs a 2D or 3D declaration.",
+        "The map uses the declared domain 0.001 ≤ Bi ≤ 1000 and 0.001 ≤ Fo ≤ 10. Where the series needs more than 400 modes, or the temperature excess is below 10⁻¹² of its initial value, the page shows an unresolved region."
+      ],
+      "acceptance": {
+        "example": "transient-sphere",
+        "reference": "The first six eigenvalues and coefficients for Bi = 0.1, 1, 10 and ∞, from mpmath with 30 digits. Also θ at the centre, the middle and the surface at Fo = 0.01, 0.1, 0.5 and 2 for Bi = 0.1, 1 and 10 (tools/references.py).",
+        "tolerance": "1e-9 relative for the eigenvalues and coefficients, 1e-9 absolute for θ.",
+        "checks": [
+          "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
+          "The eigenvalues, coefficients and temperatures agree with the mpmath reference within the tolerance.",
+          "The series gives θ = 1 inside the solid at the earliest time of the map, within 1e-9 at X ≤ 0.5.",
+          "The small-Bi expansion gives C₁ and λ₁² to order 3 exactly as SymPy's series of the eigenvalue equation.",
+          "The energy balance holds at the example's point within 1e-9."
+        ],
+        "modes": "1-\\lambda_n\\cot\\lambda_n=Bi,\\quad f_n=\\frac{\\sin(\\lambda_nX)}{\\lambda_nX},\\quad C_n=\\frac{4(\\sin\\lambda_n-\\lambda_n\\cos\\lambda_n)}{2\\lambda_n-\\sin 2\\lambda_n}",
+        "lumpedLength": "L_c = V/A_s = R/3"
+      },
+      "solver": {
+        "method": "Separation of variables: θ = Σ C_n f_n(λ_nX) exp(−λ_n²τ).",
+        "discretization": "No mesh. The error measures use 21 equally spaced points X = 0, 0.05, …, 1.",
+        "convergence": "The series keeps the modes with λ_n²τ ≤ 50, so the first mode left out is below e⁻⁵⁰ times its coefficient. At most 400 modes. Each eigenvalue has its own bracket, and Brent's method stops at 1e-15.",
+        "reproducibility": "Plain JavaScript in double precision. The same inputs give the same numbers on every run. Reference values: mpmath 1.3.0 with 30 digits."
+      }
+    },
+    {
+      "id": "slab-source",
+      "family": "transient-conduction",
+      "title": "Slab with a uniform heat source, steady state",
+      "piece": 3,
+      "model": {
+        "summary": "A slab of half-thickness L with a uniform volumetric heat source q_v, cooled by convection on both faces. Steady state, constant properties.",
+        "roles": [
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the slab"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "surface heat-transfer coefficient"
+          },
+          {
+            "id": "L",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "half-thickness"
+          },
+          {
+            "id": "q_v",
+            "quantity": "volumetric-heat-source",
+            "kind": "parameter",
+            "meaning": "volumetric heat source"
+          },
+          {
+            "id": "DT_ref",
+            "quantity": "temperature-difference",
+            "kind": "parameter",
+            "meaning": "reference temperature difference, such as the allowed rise"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature of the slab"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "x",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from the centre plane"
+          }
+        ],
+        "equations": [
+          {
+            "id": "heat",
+            "kind": "governing",
+            "text": "k*d(T,x,x) + q_v = 0",
+            "domain": "0 < x < L"
+          }
+        ],
+        "closures": [
+          "Fourier's law with constant k."
+        ],
+        "geometry": "A slab of half-thickness L, symmetric about x = 0, with the same fluid on both faces.",
+        "conditions": [
+          {
+            "id": "centre",
+            "kind": "boundary",
+            "text": "d(T,x) = 0",
+            "at": "x = 0",
+            "meaning": "symmetry at the centre plane"
+          },
+          {
+            "id": "surface",
+            "kind": "boundary",
+            "text": "-k*d(T,x) = h*(T - T_inf)",
+            "at": "x = L",
+            "meaning": "convection to the fluid"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "x",
+              "offset": "0",
+              "scale": "L",
+              "tex": "X"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "DT_ref",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [],
+          "parameters": [
+            {
+              "id": "Bi",
+              "tex": "Bi",
+              "def": "h*L/k",
+              "solve": "h",
+              "meaning": "Biot number with the half-thickness"
+            },
+            {
+              "id": "Gamma",
+              "tex": "\\Gamma",
+              "def": "q_v*L^2/(k*DT_ref)",
+              "solve": "q_v",
+              "meaning": "dimensionless heat source q_vL²/(kΔT)"
+            }
+          ],
+          "equations": [
+            {
+              "of": "heat",
+              "text": "d(theta,X,X) + Gamma = 0"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "centre",
+              "text": "d(theta,X) = 0",
+              "at": "X = 0"
+            },
+            {
+              "of": "surface",
+              "text": "-d(theta,X) = Bi*theta",
+              "at": "X = 1"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "Bi",
+            "tex": "Bi",
+            "label": "Biot number hL/k",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Gamma",
+            "tex": "\\Gamma",
+            "label": "source q_vL²/(kΔT)",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The source q_v, the conductivity, h and T_∞ are constant.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The slab is at steady state.",
+            "source": "spec-10"
+          },
+          {
+            "text": "ΔT is a positive reference scale, such as the allowed temperature rise.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives θ_XX + Γ = 0 with the declared conditions.",
+          "The exact solution θ = Γ(1 − X²)/2 + Γ/Bi in rationals, the heat balance Γ = Bi θ(1), and the exact approximation boundaries."
+        ],
+        "numerical": [
+          "None: every value is an exact rational when the inputs are rational."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The internal temperature drop Γ/2 and the surface excess Γ/Bi compete. Their ratio is Bi/2 exactly."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "Bi → 0 gives a uniform temperature and Bi → ∞ gives a prescribed surface temperature. Each expansion stops after two terms, so each two-term result is exact."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The steady linear model has one solution. A stability analysis needs the transient model and adds nothing for a constant source."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so no branch can split."
+        }
+      },
+      "limitations": [
+        "Steady state only. The declaration of the transient slab gives the time history without a source.",
+        "A source that depends on temperature, such as a reaction, makes the model nonlinear and needs a separate declaration."
+      ],
+      "acceptance": {
+        "example": "volumetric-source",
+        "reference": "θ = Γ(1 − X²)/2 + Γ/Bi (exact, in rationals) and its heat balance. SymPy solves the same boundary-value problem (tools/references.py).",
+        "tolerance": "Exact: rational equality.",
+        "checks": [
+          "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
+          "The solution satisfies the equation and both conditions exactly, and SymPy gives the same polynomial.",
+          "The heat balance: the source Γ leaves through the surface as Bi θ(1) (exact).",
+          "The balance crossover is at Bi = 2 exactly."
+        ]
+      },
+      "solver": {
+        "method": "Closed form, exact rational arithmetic (BigInt).",
+        "discretization": "None.",
+        "convergence": "None needed: the solution is exact.",
+        "reproducibility": "Exact rationals give the same digits on every machine."
+      }
+    },
+    {
+      "id": "multilayer-wall",
+      "family": "multilayer-conduction",
+      "title": "Two-layer plane wall with a contact resistance",
+      "piece": 3,
+      "model": {
+        "summary": "Two plane layers in series with a thermal contact resistance R_c between them, convection to a fluid on each face, steady state.",
+        "roles": [
+          {
+            "id": "k_1",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of layer 1"
+          },
+          {
+            "id": "k_2",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of layer 2"
+          },
+          {
+            "id": "L_1",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "thickness of layer 1"
+          },
+          {
+            "id": "L_2",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "thickness of layer 2"
+          },
+          {
+            "id": "R_c",
+            "quantity": "thermal-contact-resistance",
+            "kind": "parameter",
+            "meaning": "contact resistance per unit area"
+          },
+          {
+            "id": "h_1",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "heat-transfer coefficient at face 1"
+          },
+          {
+            "id": "h_2",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "heat-transfer coefficient at face 2"
+          },
+          {
+            "id": "T_inf1",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature at face 1"
+          },
+          {
+            "id": "T_inf2",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature at face 2"
+          },
+          {
+            "id": "T_1",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature in layer 1"
+          },
+          {
+            "id": "T_2",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "temperature in layer 2"
+          },
+          {
+            "id": "x",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from face 1"
+          }
+        ],
+        "equations": [
+          {
+            "id": "layer-1",
+            "kind": "governing",
+            "text": "d(T_1,x,x) = 0",
+            "domain": "0 < x < L_1"
+          },
+          {
+            "id": "layer-2",
+            "kind": "governing",
+            "text": "d(T_2,x,x) = 0",
+            "domain": "L_1 < x < L_1 + L_2"
+          }
+        ],
+        "closures": [
+          "Fourier's law with a constant conductivity in each layer.",
+          "The contact resistance: the heat flux across the interface is (T_1 − T_2)/R_c."
+        ],
+        "geometry": "Layer 1 on 0 < x < L_1 and layer 2 on L_1 < x < L_1 + L_2. Face 1 is at x = 0 and face 2 at x = L_1 + L_2.",
+        "conditions": [
+          {
+            "id": "face-1",
+            "kind": "boundary",
+            "text": "-k_1*d(T_1,x) = h_1*(T_inf1 - T_1)",
+            "at": "x = 0",
+            "meaning": "convection from fluid 1"
+          },
+          {
+            "id": "flux",
+            "kind": "interface",
+            "text": "k_1*d(T_1,x) = k_2*d(T_2,x)",
+            "at": "x = L_1",
+            "meaning": "continuity of the heat flux"
+          },
+          {
+            "id": "contact",
+            "kind": "interface",
+            "text": "-k_1*d(T_1,x) = (T_1 - T_2)/R_c",
+            "at": "x = L_1",
+            "meaning": "the temperature jump across the contact resistance"
+          },
+          {
+            "id": "face-2",
+            "kind": "boundary",
+            "text": "-k_2*d(T_2,x) = h_2*(T_2 - T_inf2)",
+            "at": "x = L_1 + L_2",
+            "meaning": "convection to fluid 2"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "x",
+              "offset": "0",
+              "scale": "L_1",
+              "tex": "X"
+            },
+            {
+              "symbol": "theta_1",
+              "of": "T_1",
+              "offset": "T_inf2",
+              "scale": "T_inf1 - T_inf2",
+              "tex": "\\theta_{1}"
+            },
+            {
+              "symbol": "theta_2",
+              "of": "T_2",
+              "offset": "T_inf2",
+              "scale": "T_inf1 - T_inf2",
+              "tex": "\\theta_{2}"
+            }
+          ],
+          "definitions": [],
+          "parameters": [
+            {
+              "id": "r_c",
+              "tex": "r_{c}",
+              "def": "R_c*k_1/L_1",
+              "solve": "R_c",
+              "meaning": "contact resistance in units of the resistance of layer 1"
+            },
+            {
+              "id": "kappa",
+              "tex": "\\kappa",
+              "def": "k_2/k_1",
+              "solve": "k_2",
+              "meaning": "conductivity ratio"
+            },
+            {
+              "id": "ell",
+              "tex": "\\ell",
+              "def": "L_2/L_1",
+              "solve": "L_2",
+              "meaning": "thickness ratio"
+            },
+            {
+              "id": "Bi_1",
+              "tex": "Bi_{1}",
+              "def": "h_1*L_1/k_1",
+              "solve": "h_1",
+              "meaning": "Biot number of face 1"
+            },
+            {
+              "id": "Bi_2",
+              "tex": "Bi_{2}",
+              "def": "h_2*L_1/k_1",
+              "solve": "h_2",
+              "meaning": "Biot number of face 2, with L_1 and k_1"
+            }
+          ],
+          "equations": [
+            {
+              "of": "layer-1",
+              "text": "d(theta_1,X,X) = 0"
+            },
+            {
+              "of": "layer-2",
+              "text": "d(theta_2,X,X) = 0"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "face-1",
+              "text": "-d(theta_1,X) = Bi_1*(1 - theta_1)",
+              "at": "X = 0"
+            },
+            {
+              "of": "flux",
+              "text": "d(theta_1,X) = kappa*d(theta_2,X)",
+              "at": "X = 1"
+            },
+            {
+              "of": "contact",
+              "text": "-d(theta_1,X) = (theta_1 - theta_2)/r_c",
+              "at": "X = 1"
+            },
+            {
+              "of": "face-2",
+              "text": "-d(theta_2,X) = Bi_2/kappa*theta_2",
+              "at": "X = 1 + ell"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "r_c",
+            "tex": "r_{c}",
+            "label": "contact resistance R_ck_1/L_1",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "kappa",
+            "tex": "\\kappa",
+            "label": "conductivity ratio k_2/k_1",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "ell",
+            "tex": "\\ell",
+            "label": "thickness ratio L_2/L_1",
+            "min": 0.01,
+            "max": 100,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Bi_1",
+            "tex": "Bi_{1}",
+            "label": "Biot number h_1L_1/k_1",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "Bi_2",
+            "tex": "Bi_{2}",
+            "label": "Biot number h_2L_1/k_1",
+            "min": 0.001,
+            "max": 1000,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "Steady state and constant properties in each layer.",
+            "source": "spec-10"
+          },
+          {
+            "text": "Heat flows in x only: the wall is wide compared with its thickness.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The thermal contact resistance R_c is a declared input per unit area. It is not a mechanical contact model.",
+            "source": "spec-10"
+          },
+          {
+            "text": "T_∞1 is not equal to T_∞2.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives the declared equations and the four conditions.",
+          "The exact solution in rationals: the series resistances, the heat flux, every interface temperature and the jump across the contact.",
+          "Exact checks: the heat flux is the same in each layer and through the contact, and the temperatures close at fluid 2.",
+          "The resistance limits r_c → 0 (perfect contact) and r_c → ∞ (the contact takes all of the temperature difference), with exact error formulas."
+        ],
+        "numerical": [
+          "The map evaluates the exact formulas in double precision."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "The temperature drop across each element is the heat flux times its resistance, so the largest resistance controls the heat flow."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "r_c → 0 and r_c → ∞ are regular limits of the exact solution. Each has a convergent series, in r_c/R₀ or in R₀/r_c."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The steady linear model has one solution."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so no branch can split."
+        }
+      },
+      "limitations": [
+        "The record match accepts two layers only. The resistance sum also applies to more layers.",
+        "Mechanical contact (pressure, roughness) needs a separate structural declaration. R_c is an input here."
+      ],
+      "acceptance": {
+        "example": "multilayer-wall",
+        "reference": "The resistance sum, heat flux and interface temperatures in exact rationals, and SymPy's solution of the same linear system (tools/references.py).",
+        "tolerance": "Exact: rational equality.",
+        "checks": [
+          "The Nondimensionalizer's equations and conditions equal the declared dimensionless model (exact).",
+          "The heat flux is the same in each layer and through the contact (exact).",
+          "The temperature jump across the contact is q R_c (exact), and the temperatures close at fluid 2 (exact).",
+          "SymPy's solution of the linear system gives the same heat flux and temperatures."
+        ]
+      },
+      "solver": {
+        "method": "Series thermal resistances in exact rationals.",
+        "discretization": "None.",
+        "convergence": "None needed.",
+        "reproducibility": "Exact rationals give the same digits on every machine."
+      }
+    },
+    {
+      "id": "fin",
+      "family": "fins-and-extended-surfaces",
+      "title": "Straight fin of constant cross-section",
+      "piece": 3,
+      "model": {
+        "summary": "A straight fin of length L, cross-section A_c and exposed perimeter P, with uniform convection h, a prescribed base temperature and an insulated or convective tip.",
+        "roles": [
+          {
+            "id": "k",
+            "quantity": "thermal-conductivity",
+            "kind": "parameter",
+            "phase": "solid",
+            "meaning": "conductivity of the fin"
+          },
+          {
+            "id": "h",
+            "quantity": "heat-transfer-coefficient",
+            "kind": "parameter",
+            "meaning": "heat-transfer coefficient"
+          },
+          {
+            "id": "P",
+            "quantity": "perimeter",
+            "kind": "parameter",
+            "meaning": "exposed perimeter"
+          },
+          {
+            "id": "A_c",
+            "quantity": "area",
+            "kind": "parameter",
+            "meaning": "cross-sectional area"
+          },
+          {
+            "id": "L",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "fin length"
+          },
+          {
+            "id": "T",
+            "quantity": "absolute-temperature",
+            "kind": "field",
+            "meaning": "fin temperature"
+          },
+          {
+            "id": "T_b",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "base temperature"
+          },
+          {
+            "id": "T_inf",
+            "quantity": "absolute-temperature",
+            "kind": "parameter",
+            "meaning": "fluid temperature"
+          },
+          {
+            "id": "x",
+            "quantity": "length",
+            "kind": "coordinate",
+            "meaning": "distance from the base"
+          }
+        ],
+        "equations": [
+          {
+            "id": "fin",
+            "kind": "governing",
+            "text": "k*A_c*d(T,x,x) - h*P*(T - T_inf) = 0",
+            "domain": "0 < x < L"
+          }
+        ],
+        "closures": [
+          "Fourier's law along the fin with constant k, and Newton's law of cooling on the sides with constant h."
+        ],
+        "geometry": "A straight fin with constant A_c and P. x runs from the base (x = 0) to the tip (x = L).",
+        "conditions": [
+          {
+            "id": "base",
+            "kind": "boundary",
+            "text": "T = T_b",
+            "at": "x = 0",
+            "meaning": "the prescribed base temperature"
+          },
+          {
+            "id": "tip",
+            "kind": "boundary",
+            "text": "d(T,x) = 0",
+            "at": "x = L",
+            "meaning": "an insulated tip",
+            "alternatives": [
+              {
+                "text": "-k*d(T,x) = h*(T - T_inf)",
+                "meaning": "a convective tip with the same h",
+                "sets": {}
+              }
+            ],
+            "sets": {
+              "Bi_t": 0
+            }
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "X",
+              "of": "x",
+              "offset": "0",
+              "scale": "L",
+              "tex": "X"
+            },
+            {
+              "symbol": "theta",
+              "of": "T",
+              "offset": "T_inf",
+              "scale": "T_b - T_inf",
+              "tex": "\\theta"
+            }
+          ],
+          "definitions": [],
+          "parameters": [
+            {
+              "id": "lambda",
+              "tex": "\\lambda",
+              "def": "L*(h*P/(k*A_c))^(1/2)",
+              "solve": "h",
+              "meaning": "fin parameter mL, with m² = hP/(kA_c)"
+            },
+            {
+              "id": "aspect",
+              "tex": "\\frac{PL}{A_c}",
+              "def": "P*L/A_c",
+              "solve": "L",
+              "meaning": "geometry ratio PL/A_c"
+            },
+            {
+              "id": "Bi_t",
+              "tex": "Bi_{t}",
+              "def": "h*L/k",
+              "solve": null,
+              "meaning": "tip Biot number hL/k (0 for an insulated tip)",
+              "derived": "lambda^2/aspect"
+            }
+          ],
+          "equations": [
+            {
+              "of": "fin",
+              "text": "d(theta,X,X) - lambda^2*theta = 0"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "base",
+              "text": "theta = 1",
+              "at": "X = 0"
+            },
+            {
+              "of": "tip",
+              "text": "d(theta,X) = 0",
+              "at": "X = 1",
+              "alternatives": [
+                {
+                  "text": "-d(theta,X) = Bi_t*theta"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "lambda",
+            "tex": "\\lambda",
+            "label": "fin parameter mL",
+            "min": 0.01,
+            "max": 100,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "aspect",
+            "tex": "PL/A_{c}",
+            "label": "geometry ratio PL/A_c",
+            "min": 1,
+            "max": 100000,
+            "log": true,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "Constant conductivity, uniform h and a prescribed base temperature.",
+            "source": "spec-10"
+          },
+          {
+            "text": "The temperature varies along x only. The transverse validity condition needs its own derivation, which the dominant-balance step gives.",
+            "source": "spec-10"
+          },
+          {
+            "text": "ΔT = T_b − T_∞ is not 0.",
+            "source": "spec-10"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check that the Nondimensionalizer gives θ_XX − λ²θ = 0, θ(0) = 1 and the tip condition.",
+          "The small-λ expansion to order λ⁸ in exact rationals, with each order checked against its equation and conditions.",
+          "The large-λ boundary layer at the base and its matching to the outer solution θ = 0."
+        ],
+        "numerical": [
+          "θ(X) = cosh(λ(1 − X))/cosh λ for the insulated tip, Q̇L/(kA_cΔT) = λ tanh λ and η_f = tanh λ/λ, written with e^{−λ} so that no value overflows.",
+          "The base heat flow against the total heat loss of the surface, by Gauss–Legendre quadrature."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": true,
+          "reason": "Conduction along the fin and loss through the surface compete through λ². Conduction across the fin and loss at the surface compete through the transverse Biot number hA_c/(kP)."
+        },
+        "asymptotic": {
+          "applies": true,
+          "reason": "λ → 0 is a regular expansion in λ². λ → ∞ loses the second derivative in the outer region, so a boundary layer of thickness 1/λ forms at the base."
+        },
+        "stability": {
+          "applies": false,
+          "reason": "The steady linear model has one solution."
+        },
+        "bifurcation": {
+          "applies": false,
+          "reason": "The model is linear, so no branch can split."
+        }
+      },
+      "limitations": [
+        "Constant cross-section only. A tapered or annular fin needs a separate declaration.",
+        "The 1D model does not establish the transverse condition hA_c/(kP) ≪ 1. The page shows that estimate as a separate balance."
+      ],
+      "acceptance": {
+        "example": "straight-fin",
+        "reference": "λ tanh λ, tanh λ/λ and the profile at λ = √(11/32) from mpmath with 30 digits, and the Taylor series of λ tanh λ from SymPy (tools/references.py).",
+        "tolerance": "1e-12 relative for the heat flow and the profile. Exact for the series coefficients.",
+        "checks": [
+          "The Nondimensionalizer's equation and conditions equal the declared dimensionless model (exact).",
+          "The base heat flow, the efficiency and the profile agree with mpmath within the tolerance.",
+          "The base heat flow equals the total heat loss of the surface within 1e-12.",
+          "The small-λ expansion gives the Taylor coefficients of λ tanh λ exactly."
+        ]
+      },
+      "solver": {
+        "method": "Closed form with exponentials: θ = [(1 + β)e^{−λX} + (1 − β)e^{−λ(2 − X)}]/[(1 + β) + (1 − β)e^{−2λ}], β = Bi_t/λ.",
+        "discretization": "None. The heat-balance check uses 8 panels of the 20-point Gauss–Legendre rule.",
+        "convergence": "None needed for the closed form.",
+        "reproducibility": "Plain JavaScript in double precision."
+      }
+    }
+  ]
+}

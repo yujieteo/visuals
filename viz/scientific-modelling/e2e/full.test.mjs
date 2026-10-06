@@ -2,8 +2,8 @@
 // and detail level live in the URL fragment through the kit; the model record lives in the page and its own JSON.
 // Besides the shared checks, these drive the main path a researcher takes: confirm the interpretation, step through
 // the row reduction with the keyboard, see the MathJax output in the Fira font, open the Nondimensionalizer, choose
-// another scale as a new version of the model, and compare the page's results with the Markdown record and the
-// deck, all with no request.
+// another scale as a new version of the model, draw and inspect the regime map of a declared model, browse the
+// model catalogue, and compare the page's results with the Markdown record and the deck, all with no request.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 
@@ -13,6 +13,10 @@ const kitState = (page) => page.evaluate(() => /** @type {any} */ (window).Visua
 const choose = (page, id) => page.locator("#example").selectOption(id);
 /** @param {import("playwright").Page} page */
 const nondim = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.nondim);
+/** @param {import("playwright").Page} page */
+const regime = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.derived.regime);
+/** The view fields of the regime map and the catalogue, at their defaults. */
+const MAP_DEFAULTS = { map_x: "", map_y: "", x_scale: "auto", y_scale: "auto", fixed: "", tolerance: "1e-2", layers: "approximation,balance,limits", shade: "", point: "", pick: "", family: "" };
 /** @param {import("playwright").Page} page */
 async function confirm(page) {
   await page.locator("#confirm").click();
@@ -25,7 +29,7 @@ await fullSuite("scientific-modelling", {
     assert.match(await s.page.evaluate(() => location.hash), /example=straight-fin/, "the example is in the URL");
     const link = await ctx.open("#example=transient-slab&basis=direct&step=2&detail=full");
     try {
-      assert.deepEqual(await kitState(link.page), { example: "transient-slab", tool: "finder", repeating: "", step: 2, basis: "direct", detail: "full" });
+      assert.deepEqual(await kitState(link.page), { example: "transient-slab", tool: "finder", repeating: "", step: 2, basis: "direct", detail: "full", ...MAP_DEFAULTS });
       assert.equal(await link.page.locator("#example").inputValue(), "transient-slab");
       assert.equal(await link.page.locator('[data-field="basis"][value="direct"]').getAttribute("aria-pressed"), "true");
       await confirm(link.page);
@@ -42,6 +46,25 @@ await fullSuite("scientific-modelling", {
       assert.match(await tool.page.locator("#nondim-summary").innerText(), /3 dimensionless variables, 1 independent parameter: Bi/);
     } finally {
       await tool.close();
+    }
+    // The regime map's view is in the URL: a 1D diagram at the tolerance 0.001 opens as one.
+    const map = await ctx.open("#example=volumetric-source&tool=regime&map_y=none&tolerance=1e-3");
+    try {
+      await map.page.locator("#regime-gate button[data-confirm]").click();
+      await map.page.waitForSelector("#regime-main:not([hidden]) .map-svg .strips");
+      assert.equal(await map.page.locator("#map-y").inputValue(), "none");
+      assert.equal(await map.page.locator('select[data-field="tolerance"]').inputValue(), "1e-3");
+      const rg = await regime(map.page);
+      assert.deepEqual(rg.exactBoundaries, { uniform: "2/999", "surface-temperature": "1998", source: "2" }, "the exact boundaries at the URL's tolerance");
+    } finally {
+      await map.close();
+    }
+    const cat = await ctx.open("#tool=catalogue&family=fin");
+    try {
+      assert.equal(await cat.page.locator('#catalogue button[data-catalogue="fin"]').getAttribute("aria-pressed"), "true", "the URL's declaration is the one shown");
+      assert.equal(await cat.page.locator("#catalogue .declaration h4").count(), 6, "the six parts of section 10");
+    } finally {
+      await cat.close();
     }
     const stale = await ctx.open("#example=no-such-model");
     try {
@@ -84,6 +107,20 @@ await fullSuite("scientific-modelling", {
     await s.page.keyboard.press("Enter");
     await settlesTo(() => kitState(s.page).then((x) => x.tool), "nondim", "Enter on the focused tab opens the Nondimensionalizer");
     assert.match(await s.page.locator("#nondim-gate").innerText(), /no equation to nondimensionalize/, "a model of variables only names what the Nondimensionalizer needs");
+    // The Regime Map Builder by keyboard: a record without a declared model offers the standard examples; Enter loads
+    // one, Enter confirms it, and the arrow keys on the focused map move the inspected point.
+    await s.page.locator("#tab-regime").focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.locator('#regime-gate button[data-load-example="transient-slab"]').focus();
+    await s.page.keyboard.press("Enter");
+    await settlesTo(() => kitState(s.page).then((x) => [x.example, x.tool]), ["transient-slab", "regime"], "Enter loads the transient slab in the Regime Map Builder");
+    await s.page.locator("#regime-gate button[data-confirm]").focus();
+    await s.page.keyboard.press("Enter");
+    await s.page.waitForSelector("#regime-main:not([hidden]) .map-svg .curve");
+    await s.page.locator(".map-svg").focus();
+    await s.page.keyboard.press("ArrowRight");
+    await settlesTo(() => kitState(s.page).then((x) => x.point !== ""), true, "an arrow key on the focused map moves the inspected point");
+    assert.match(await s.page.locator("#regime-inspect").innerText(), /Inspected point/);
     await blur(s.page);
     await s.page.locator("#reset").focus();
     await s.page.keyboard.press("Enter");
@@ -148,6 +185,15 @@ await fullSuite("scientific-modelling", {
       assert.equal(doc.scales[0].for, "v-x");
       assert.ok(doc.nondimensionalization.equations.some((/** @type {any} */ e) => e.id === "c-surface"), "the model JSON holds the dimensionless forms");
     });
+    // The model JSON keeps the regime map of a declared model with its boundaries.
+    await using(() => ctx.open("#example=transient-sphere&tool=regime"), async (s) => {
+      await s.page.locator("#regime-gate button[data-confirm]").click();
+      await s.page.waitForSelector("#regime-main:not([hidden]) .map-svg .curve");
+      const doc = JSON.parse((await saved(s.page, () => s.page.locator("#save-model").click())).text);
+      assert.equal(doc.regimeMap.declaration, "sphere-convection");
+      assert.ok(doc.regimeMap.layers.find((/** @type {any} */ l) => l.id === "one-mode").curves.length >= 1);
+      assert.ok(doc.regimeMap.unresolved.points > 0, "the unresolved corner of the sphere map is in the file");
+    });
   },
 
   "markdown-export": (ctx) => markdownExport(ctx.open, async (page) => { await choose(page, "straight-fin"); await confirm(page); }, "the complete Pi basis", "#save-beamdswitch, #copy-beamdswitch"),
@@ -177,6 +223,21 @@ await fullSuite("scientific-modelling", {
       assert.match(text, /Hand calculation 6: 2 scales/);
       for (const e of nd.equations) assert.ok(text.includes(e.dimensionlessTex), `${e.id}: ${e.dimensionlessTex}`);
     }
+    // The regime analyses of the transient slab: hand calculation 8 and anchor test 1 in both exports, and the
+    // result lines in the page's order and statuses.
+    await using(() => ctx.open("#example=transient-slab&tool=regime"), async (r) => {
+      await r.page.locator("#regime-gate button[data-confirm]").click();
+      await r.page.waitForSelector("#regime-main:not([hidden]) .map-svg .curve");
+      const chips = await r.page.evaluate(() => [...document.querySelectorAll("#trace .result-list > li > .chip")].map((c) => c.textContent));
+      const deck2 = await saved(r.page, () => r.page.locator("#save-beamdswitch").click());
+      assertBeamdswitchDeck(deck2.text);
+      const record2 = await saved(r.page, () => r.page.locator("#save-markdown").click());
+      for (const text of [record2.text, deck2.text]) {
+        for (const title of ["Hand calculation 8: dominant balance", "Hand calculation 8: asymptotic analysis", "Regime map of Transient conduction in a slab", "Acceptance checks of the declared model and anchor test 1"]) assert.ok(text.includes(title), title);
+        const frame = text.split(/^#{2,3} Results with their statuses and evidence$/m)[1].split(/^#{1,3} /m)[0];
+        assert.deepEqual([...frame.matchAll(/^- \*\*(.+?)\*\*: /gm)].map((m) => m[1]), chips, "the regime results agree with the page");
+      }
+    });
   }),
 
   "dark-mode": (ctx) => assertDarkMode(ctx),
