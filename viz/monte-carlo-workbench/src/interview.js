@@ -237,6 +237,7 @@
     const uses = [...EVIDENCE.filter((n) => t.uses.includes(n)), ...(needC ? ["c"] : [])];
     /** @type {Record<string, number>} */
     const env = {};
+    for (const n of uses) if (given[n] !== undefined) env[n] = n === "lim" ? Math.round(given[n]) : given[n];
     /** @type {string[]} */
     const illustrative = [];
     /** @type {string[]} */
@@ -246,7 +247,11 @@
       let v;
       try {
         if (given[n] !== undefined) v = given[n];
-        else { v = valueOf(n === "c" ? t.c : t.defaults[n], env); illustrative.push(n); }
+        else {
+          const src = n === "c" ? t.c : t.defaults[n];
+          try { v = valueOf(src, env); } catch (e) { if (t.fallback?.[n] === undefined) throw e; v = valueOf(t.fallback[n], env); }
+          illustrative.push(n);
+        }
       } catch (e) {
         errors.push(`The ${LABELS[n]} has no value: ${e instanceof Error ? e.message : String(e)}`);
         continue;

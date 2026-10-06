@@ -143,9 +143,23 @@ test("moment matching: the law of the record has the mean and the variance of th
   const below = Iv.build(data, ev("k=cnt;g=eqv;m=4;lim=10"), "uniform");
   assert.equal(below.ok, false, "a mean below half the limit needs a lower limit below 0");
   assert.match(below.errors[0], /whole or half number with 0 ≤ 2m − n ≤ n/);
+  const narrow = Iv.build(data, ev("k=ext;ge=exc;m=10;sd=2"), "gpd");
+  assert.equal(narrow.ok, false);
+  assert.match(narrow.errors[0], /needs sd at least m\/√11/);
   const light = Iv.build(data, ev("k=siz;gs=pow;pm=zero;m=2;sd=1"), "pareto2");
   assert.equal(light.ok, false);
   assert.match(light.errors[0], /needs sd larger than m/);
+});
+
+test("the discrete uniform template: a default may read a later given value, and a fallback serves when both are missing", () => {
+  const cases = [["k=cnt;g=eqv;lim=20", 10, 20, ["m", "c"]], ["k=cnt;g=eqv;m=4", 4, 8, ["lim", "c"]], ["k=cnt;g=eqv", 5, 10, ["m", "lim", "c"]], ["k=cnt;g=eqv;m=7;lim=10", 7, 10, ["c"]]];
+  for (const [iv, m, lim, illustrative] of cases) {
+    const b = Iv.build(data, ev(/** @type {string} */ (iv)), "uniform");
+    assert.ok(b.ok, `${iv}: ${b.errors?.join(" ")}`);
+    assert.equal(b.moments.mean, m, `${iv}: mean`);
+    assert.equal(b.params.b, lim, `${iv}: upper limit`);
+    assert.deepEqual(b.illustrative, illustrative, `${iv}: illustrative values`);
+  }
 });
 
 test("a run of an interview record meets its evidence mean, for 3 seeds", () => {
