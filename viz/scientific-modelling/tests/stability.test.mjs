@@ -102,11 +102,13 @@ test("Rayleigh–Bénard: the roll branch reproduces Nu of Table 1S, converges, 
   const first = br.points[1];
   const slope = (first.Nu - 1) / ((first.Ra - br.Ran) / br.Ran);
   assert.ok(rel(slope, ae.slope) < 0.05, `${slope} against ${ae.slope}`);
-  // Exchange of stability: near onset the rolls decay at about twice the rate the conductive state grows.
-  const near = br.points[1];
+  // Exchange of stability: at the first point of the branch, close to onset, the rolls decay at twice the rate the
+  // conductive state grows there.
+  const near = br.points[0];
+  assert.ok((near.Ra - br.Ran) / br.Ran < 0.01, "the first point is close to onset");
   const sr = RB.rollStability(br.sys, br.solutions.get(near.Ra), near.Ra);
   const sc = RB.growthRates(16, near.Ra, Math.PI, 1).lead.re;
-  assert.ok(sr.stable && Math.abs(sr.lead.re / sc + 2) < 0.2, `${sr.lead.re} against ${sc}`);
+  assert.ok(sr.stable && Math.abs(sr.lead.re / sc + 2) < 0.05, `${sr.lead.re} against ${sc}`);
 });
 
 test("the Rayleigh–Bénard record: exact base state, perturbation equations and symmetry, then the onset and the branch with their statuses", () => {
@@ -141,6 +143,9 @@ test("the enclosure: onset with three rolls, the base state, and the branch at P
   assert.ok(rel(an.box.Ra, REF.rb.enclosure.modes[2].Ra) < 1e-9);
   assert.ok(an.point.Ra > an.box.Ra && an.lead.re > 0, "the record's Ra is above onset");
   assert.ok(an.branch.ok && an.branch.amplitude.supercritical && an.branch.convergence.rel < 1e-5);
+  // The rolls of three cells carry only the harmonics of 3π/Γ: the result names the box modes the test leaves out.
+  assert.deepEqual(an.branch.rollStability.untested.map((m) => m.n), [1, 2, 4, 5, 7, 8]);
+  assert.match(result(d, "r-st-rolls").title, /roll period 2Γ\/3 .*leaves out box modes 1, 2, 4, 5, 7, 8\. Mode 2 also grows on the conductive state here/);
 });
 
 test("radiation: the lumped body's closed form, equilibrium and eigenvalue, and the exact radiosity network of the duct", () => {

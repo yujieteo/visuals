@@ -642,7 +642,8 @@
       let branch = null;
       if (br.ok) {
         const ae = amplitudeEquation(br.sys);
-        const near = br.points[1] ?? br.points[0];
+        // The first point of the branch is close to onset (amplitude 0.02), where σ_rolls ≈ −2σ_conductive.
+        const near = br.points[0];
         const stabNear = rollStability(br.sys, br.solutions.get(near.Ra), near.Ra);
         const condNear = growthRates(LIN_K, near.Ra, k, p.Pr).lead.re;
         const atRec = p.Ra > bm.Ra && p.Ra <= RA_BRANCH_MAX ? br.points.find((x) => x.Ra === p.Ra) : null;
@@ -655,7 +656,9 @@
           start: br.start, newtonSteps: br.newtonSteps,
           compare: rows.map((r) => { const t = br.targets.find((x) => x.Ra === r.Ra); return { Ra: num(r.Ra), Nu: num(t?.Nu), ref: r.Nu, rel: t ? Math.abs(t.Nu - r.Nu) / r.Nu : null, Re: num(t?.Re), refRe: r.Re, relRe: t ? Math.abs(t.Re - r.Re) / r.Re : null }; }),
           amplitude: { g1: ae.g1, g3: ae.g3, ratio: num(ae.ratio), supercritical: ae.supercritical, slope: num(ae.slope), solvability: ae.solvability, adjointResidual: ae.adjointResidual, branchSlopes: eps.map((e) => ({ eps: num(e.eps), slope: num(e.slope) })) },
-          rollStability: { near: { Ra: num(near.Ra), sigma: num(stabNear?.lead.re), conduction: num(condNear), ratio: num(stabNear ? stabNear.lead.re / condNear : NaN) }, record: stabRec ? { Ra: num(p.Ra), sigma: num(stabRec.lead.re), stable: stabRec.stable } : null },
+          rollStability: { near: { Ra: num(near.Ra), eps: num((near.Ra - br.Ran) / br.Ran), sigma: num(stabNear?.lead.re), conduction: num(condNear), ratio: num(stabNear ? stabNear.lead.re / condNear : NaN) }, record: stabRec ? { Ra: num(p.Ra), sigma: num(stabRec.lead.re), stable: stabRec.stable } : null,
+            // The rolls of mode n carry only the harmonics of nπ/Γ: the test covers the box modes that are multiples of n.
+            n: bm.n, untested: bm.modes.filter((m) => m.n % bm.n !== 0 && m.n <= 3 * bm.n).map((m) => ({ n: m.n, sigma: num(growthRates(LIN_K, p.Ra, m.a, p.Pr).lead.re) })) },
           record: atRec ? { Ra: num(atRec.Ra), Nu: num(atRec.Nu), NuTop: num(atRec.NuTop), Re: num(atRec.Re) } : null,
           convergence: { Ra: num(fine.Ra), coarse: num(coarse.Nu), fine: num(fine.Nu), rel: Math.abs(fine.Nu - coarse.Nu) / fine.Nu, K: FINE.K, M: FINE.M },
           field: atRec ? br.sys.temperature(br.solutions.get(p.Ra)) : br.sys.temperature(br.solutions.get(br.points.at(-1).Ra)),
@@ -663,7 +666,7 @@
         branch.field = { xs: branch.field.xs.map((x) => Number(x.toFixed(4))), zs: branch.field.zs.map((z) => Number((z + 0.5).toFixed(4))), T: branch.field.T.map((r) => r.map((v) => Number((v + 0.5).toFixed(4)))) };
       } else branch = { ok: false, reason: br.reason };
       return {
-        family: "buoyancy-convection", point: { Ra: p.Ra, Gamma: p.Gamma, Pr: p.Pr }, concept: "linear temporal stability of the conductive state to two-dimensional normal modes, and nonlinear steady rolls in the symmetric subspace of the box",
+        family: "buoyancy-convection", point: { Ra: p.Ra, Gamma: p.Gamma, Pr: p.Pr }, concept: `linear temporal stability of the conductive state to two-dimensional normal modes. Nonlinear steady rolls with the period ${bm.n === 1 ? "2Γ of the box" : `2Γ/${bm.n}`} and mirror symmetry`,
         box: { n: bm.n, a: num(bm.a), Ra: num(bm.Ra), modes }, lead: { re: num(lead.lead.re), im: num(lead.lead.im), residual: lead.residual, spectrum: lead.sigma.slice(0, 8).map((e) => ({ re: num(e.re), im: num(e.im) })) },
         shape, curve, critical: crit.map((c) => ({ K: c.K, Ra: num(c.Ra), a: num(c.a) })),
         transversality: { dsigma: num((sp - sm) / (2 * dRa)), second: num(atOnset.sigma[1].re), zero: num(atOnset.lead.re) }, branch,

@@ -255,7 +255,7 @@
         hit.sp.newStable = stable;
         if (hit.sp.classified) {
           hit.sp.label = `Branch point: ${stable ? "supercritical" : "subcritical"} pitchfork`;
-          hit.sp.text += ` The new pair of branches exists for ${mu} ${side > 0 ? ">" : "<"} ${num(hit.sp.mu)} and is ${stable ? "linearly stable" : "unstable"} there, so the pitchfork is ${stable ? "supercritical" : "subcritical"}.`;
+          hit.sp.text += ` The new pair of branches exists for ${mu} ${side > 0 ? ">" : "<"} ${num(hit.sp.mu)}. Near the branch point it is ${stable ? "linearly stable" : "unstable"}, so the pitchfork is ${stable ? "supercritical" : "subcritical"}.`;
         }
         return false;
       });
@@ -435,9 +435,11 @@
 
   /* ---------- two parameters: fold curves, the cusp and the count of stable states ---------- */
 
-  function foldCurves(M, p, mu, mu2, range, range2, folds) {
+  function foldCurves(M, p, mu, mu2, range, range2, folds, box) {
     const n = M.n;
     const s1 = range[1] - range[0], s2 = range2[1] - range2[0];
+    // The state is scaled by the box, so a step of the continuation has the same size in every direction.
+    const sx = box.map(([a, b]) => Math.max(Math.abs(b - a), 1e-9));
     const curves = [];
     for (const fp of folds) {
       const near = (a, b) => {
@@ -451,18 +453,18 @@
       const nv = Math.sqrt(dotv(v0, v0));
       const v0n = v0.map((x) => x / nv);
       // y = (x, v, μ₁ scaled, μ₂ scaled); equations f = 0, J v = 0, v₀·v = 1.
-      const unpack = (y) => ({ x: Array.from(y.subarray(0, n)), v: y.subarray(n, 2 * n), m1: range[0] + y[2 * n] * s1, m2: range2[0] + y[2 * n + 1] * s2 });
+      const unpack = (y) => ({ x: Array.from(y.subarray(0, n), (v, i) => v * sx[i]), v: y.subarray(n, 2 * n), m1: range[0] + y[2 * n] * s1, m2: range2[0] + y[2 * n + 1] * s2 });
       const Fy = (y) => { const u = unpack(y); const q = { ...p, [mu]: u.m1, [mu2]: u.m2 }; return Float64Array.from([...M.F(u.x, q), ...N.matvec(M.J(u.x, q), u.v), dotv(v0n, u.v) - 1]); };
       const Jy = (y) => {
         const u = unpack(y); const q = { ...p, [mu]: u.m1, [mu2]: u.m2 };
         const J = M.J(u.x, q), H = M.H(u.x, q), F1 = M.Fmu(u.x, q, mu), F2 = M.Fmu(u.x, q, mu2), J1 = M.Jmu(u.x, q, mu), J2 = M.Jmu(u.x, q, mu2);
         const rows = [];
-        for (let i = 0; i < n; i++) rows.push(Float64Array.from([...J[i], ...new Array(n).fill(0), F1[i] * s1, F2[i] * s2]));
-        for (let i = 0; i < n; i++) rows.push(Float64Array.from([...Array.from({ length: n }, (_, k) => H[i].reduce((s, row, j) => s + row[k] * u.v[j], 0)), ...J[i], dotv(J1[i], u.v) * s1, dotv(J2[i], u.v) * s2]));
+        for (let i = 0; i < n; i++) rows.push(Float64Array.from([...J[i].map((x, k) => x * sx[k]), ...new Array(n).fill(0), F1[i] * s1, F2[i] * s2]));
+        for (let i = 0; i < n; i++) rows.push(Float64Array.from([...Array.from({ length: n }, (_, k) => H[i].reduce((s, row, j) => s + row[k] * u.v[j], 0) * sx[k]), ...J[i], dotv(J1[i], u.v) * s1, dotv(J2[i], u.v) * s2]));
         rows.push(Float64Array.from([...new Array(n).fill(0), ...v0n, 0, 0]));
         return rows;
       };
-      const y0 = Float64Array.from([...fp.x, ...v0n, (fp.mu - range[0]) / s1, (p[mu2] - range2[0]) / s2]);
+      const y0 = Float64Array.from([...fp.x.map((v, i) => v / sx[i]), ...v0n, (fp.mu - range[0]) / s1, (p[mu2] - range2[0]) / s2]);
       const parts = [-1, 1].map((dir) => N.continuation({ Fy, Jy, y0, range: [0, 1], h: 0.01, hmin: 1e-7, hmax: 0.03, maxSteps: 500, direction: dir, tol: 1e-10 }));
       const pts = [...parts[0].points.slice(1).reverse(), ...parts[1].points].map((pt) => {
         const u = unpack(pt.y);
@@ -528,7 +530,7 @@
     const eq = equilibria(M, sys, p, box, perDim);
     const br = branches(M, sys, p, mu, range, box, eq.list);
     const folds = br.flatMap((b) => b.special.filter((s) => s.kind === "fold"));
-    const two = mu2 && range2 ? { curves: foldCurves(M, p, mu, mu2, range, range2, folds), grid: stableCount(M, sys, p, mu, mu2, range, range2, box) } : null;
+    const two = mu2 && range2 ? { curves: foldCurves(M, p, mu, mu2, range, range2, folds, box), grid: stableCount(M, sys, p, mu, mu2, range, range2, box) } : null;
     // The stable pieces of each branch (stable and monotone in μ), with each end moved to the special point there.
     const sxs = box.map(([u, w]) => Math.max(Math.abs(w - u), 1e-9)), smu = range[1] - range[0];
     const dist = (u, w) => Math.hypot((u.mu - w.mu) / smu, ...u.x.map((v, q) => (v - w.x[q]) / sxs[q]));

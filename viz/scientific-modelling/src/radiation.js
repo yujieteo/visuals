@@ -169,7 +169,7 @@
     const lam = -4 * a ** 3;
     const ts = ctx?.exact?.("C*V/(eps*sigma*A_s*T_e^3)") ?? null;
     const taus = Array.from({ length: 41 }, (_, i) => 3 * (i / 40) / Math.abs(lam) + 0);
-    const sol = N.rk45((t, y) => [p.q + 1 - y[0] ** 4], 0, [p.theta_i], taus.at(-1), { rtol: 1e-10, atol: 1e-12 });
+    const sol = N.rk45((t, y) => [p.q + 1 - y[0] ** 4], 0, [p.theta_i], taus.at(-1), { rtol: 1e-11, atol: 1e-13 });
     return {
       family: "radiation", model: "lumped-radiation", point: { q: p.q, theta_i: p.theta_i }, concept: "linear temporal stability of the equilibrium, and global attraction because the balance decreases strictly",
       equilibrium: { theta: num(a), residual: Math.abs(p.q + 1 - a ** 4), eigenvalue: num(lam), timeConstant: num(1 / Math.abs(lam)), timeConstantSeconds: ts ? num(ts.float / Math.abs(lam)) : null },

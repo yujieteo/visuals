@@ -284,18 +284,21 @@
       "aria-label": `1D regime diagram of ${rg.declaration.title} along ${uniLabel(rg.axes.x.tex)}: the error of each approximation and the ratio of each balance, and below it the intervals where each approximation meets the tolerance. Arrow keys move the inspected point.` });
     defs(svg);
     const sx = scaleOf(rg.axes.x, box.l, box.l + box.w);
-    const ay = { min: 1e-6, max: 1e3, log: true, tex: "", label: "error or term ratio" };
+    // A model without approximation layers draws its ratio-valued stability measures here, such as Ra/Ra_c.
+    const ratios = rg.approximations.length ? [] : regionRows.filter((/** @type {any} */ l) => l.kind === "stability" && l.scale === "log");
+    const ay = rg.approximations.length || !ratios.length ? { min: 1e-6, max: 1e3, log: true, tex: "", label: "error or term ratio" } : { min: 0.01, max: 100, log: true, tex: "", label: "ratio to the neutral value" };
     const sy = scaleOf(ay, box.t + box.h, box.t);
     axes(svg, box, sx, sy, rg.axes.x, ay);
     const clampY = (/** @type {number} */ v) => sy.map(Math.min(ay.max, Math.max(ay.min, v)));
     const refs = el("g");
-    refs.append(el("line", { class: "ref", x1: box.l, x2: box.l + box.w, y1: sy.map(rg.tolerance), y2: sy.map(rg.tolerance) }), el("text", { x: box.l + box.w - 4, y: sy.map(rg.tolerance) - 4, "text-anchor": "end", class: "direct-label" }, `tolerance ${rg.tolerance}`));
-    if (kinds.includes("balance")) refs.append(el("line", { class: "ref", x1: box.l, x2: box.l + box.w, y1: sy.map(1), y2: sy.map(1) }), el("text", { x: box.l + 4, y: sy.map(1) - 4, class: "direct-label" }, "terms equal (ratio 1)"));
+    if (rg.approximations.length) refs.append(el("line", { class: "ref", x1: box.l, x2: box.l + box.w, y1: sy.map(rg.tolerance), y2: sy.map(rg.tolerance) }), el("text", { x: box.l + box.w - 4, y: sy.map(rg.tolerance) - 4, "text-anchor": "end", class: "direct-label" }, `tolerance ${rg.tolerance}`));
+    if (ratios.length) refs.append(el("line", { class: "ref", x1: box.l, x2: box.l + box.w, y1: sy.map(1), y2: sy.map(1) }), el("text", { x: box.l + 4, y: sy.map(1) - 4, class: "direct-label" }, "neutral (ratio 1)"));
+    if (kinds.includes("balance") && rg.layers.some((/** @type {any} */ l) => l.kind === "balance")) refs.append(el("line", { class: "ref", x1: box.l, x2: box.l + box.w, y1: sy.map(1), y2: sy.map(1) }), el("text", { x: box.l + 4, y: sy.map(1) - 4, class: "direct-label" }, "terms equal (ratio 1)"));
     svg.append(refs);
     const g = el("g");
     /** @type {number[]} */
     const taken = [sy.map(rg.tolerance) - 4];
-    for (const l of shown) {
+    for (const l of [...shown, ...ratios]) {
       const pts = l.series.map((/** @type {number | null} */ v, /** @type {number} */ i) => (v === null ? null : [sx.map(rg.grid.xs[i]), clampY(v)]));
       let d = "", pen = false;
       for (const p of pts) { if (!p) { pen = false; continue; } d += `${pen ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`; pen = true; }
