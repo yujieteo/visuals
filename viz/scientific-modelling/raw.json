@@ -9927,6 +9927,1958 @@
           "v-k",
           "v-b"
         ]
+      },
+      {
+        "id": "pool-boiling",
+        "label": "Pool boiling",
+        "group": "standard",
+        "title": "Nucleate pool boiling of water at 1 atm on a copper plate",
+        "purpose": {
+          "question": "Which heat flux does a copper plate 15 K above saturation give in boiling water at 1 atm, and is the point inside the domain of the correlation?",
+          "observable": "v-q",
+          "calculation": "regime-map",
+          "declaration": "rohsenow-water"
+        },
+        "variables": [
+          {
+            "id": "v-q",
+            "symbol": "q",
+            "meaning": "Heat flux from the heater into the water",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of water at 100 °C",
+            "quantity": "dynamic-viscosity",
+            "unit": "Pa*s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\mu",
+            "value": "0.000282"
+          },
+          {
+            "id": "v-hfg",
+            "symbol": "h_fg",
+            "meaning": "Latent heat of vaporization at 100 °C",
+            "quantity": "latent-heat",
+            "unit": "J/kg",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "2257e3"
+          },
+          {
+            "id": "v-g",
+            "symbol": "g",
+            "meaning": "Gravitational acceleration",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "9.8"
+          },
+          {
+            "id": "v-rhof",
+            "symbol": "rho_f",
+            "meaning": "Density of the liquid at 100 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "tex": "\\rho_f",
+            "value": "958.2"
+          },
+          {
+            "id": "v-rhog",
+            "symbol": "rho_g",
+            "meaning": "Density of the saturated vapour at 100 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\rho_g",
+            "value": "0.597"
+          },
+          {
+            "id": "v-Drho",
+            "symbol": "Drho",
+            "meaning": "Density difference between the liquid and the vapour",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta\\rho",
+            "value": "957.603"
+          },
+          {
+            "id": "v-sigma",
+            "symbol": "sigma",
+            "meaning": "Surface tension of water at 100 °C",
+            "quantity": "surface-tension",
+            "unit": "N/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\sigma",
+            "value": "0.0589"
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of water at 100 °C",
+            "quantity": "thermal-conductivity",
+            "unit": "W/(m*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "0.6791"
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of water at 100 °C",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "4220"
+          },
+          {
+            "id": "v-Csf",
+            "symbol": "C_sf",
+            "meaning": "Surface constant of water on copper (Table 9.2)",
+            "quantity": "surface-constant",
+            "unit": "1",
+            "kind": "constant",
+            "domain": "positive",
+            "pi": false,
+            "tex": "C_{sf}",
+            "value": "0.013"
+          },
+          {
+            "id": "v-Tsat",
+            "symbol": "T_sat",
+            "meaning": "Saturation temperature at the pressure of the pool",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "100"
+          },
+          {
+            "id": "v-Tw",
+            "symbol": "T_w",
+            "meaning": "Temperature of the heater surface",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "115"
+          },
+          {
+            "id": "v-DTe",
+            "symbol": "DT_e",
+            "meaning": "Wall superheat above the saturation temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta T_e",
+            "value": "15"
+          },
+          {
+            "id": "v-p",
+            "symbol": "p",
+            "meaning": "Pressure of the pool",
+            "quantity": "pressure",
+            "unit": "Pa",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "101325"
+          },
+          {
+            "id": "v-W",
+            "symbol": "W",
+            "meaning": "Width of the heater",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "0.3"
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-rohsenow",
+            "kind": "closure",
+            "text": "q = mu*h_fg*(g*Drho/sigma)^(1/2)*(k*DT_e/(C_sf*mu*h_fg))^3",
+            "domain": "nucleate pool boiling"
+          },
+          {
+            "id": "e-DTe",
+            "kind": "definition",
+            "text": "DT_e = T_w - T_sat"
+          },
+          {
+            "id": "e-Drho",
+            "kind": "constraint",
+            "text": "Drho = rho_f - rho_g"
+          }
+        ],
+        "geometry": {
+          "domain": "A large horizontal flat heater of width W with side walls, facing up, in a pool of saturated water",
+          "coordinates": "None: the correlation gives one heat flux for the whole heater",
+          "lengths": [],
+          "interfaces": "The heater surface",
+          "fluid": "water",
+          "surface": "copper",
+          "orientation": "horizontal, facing up",
+          "heater": "flat plate with side walls",
+          "pool": "saturated"
+        },
+        "conditions": [],
+        "assumptions": [
+          {
+            "id": "a-fluid",
+            "kind": "physical",
+            "text": "The liquid is water, saturated at the pressure of the pool (no subcooling).",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-surface",
+            "kind": "physical",
+            "text": "The heater surface is copper, clean and well wetted.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "Water properties at 100 °C from Lienhard and Lienhard, Examples 9.2 and 9.5, and k from Table A.3.",
+            "source": "lienhard-2024"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-q",
+            "for": "v-q",
+            "scale": "mu*h_fg*(g*Drho/sigma)^(1/2)",
+            "offset": "0",
+            "symbol": "phi",
+            "reason": "Rohsenow's heat-flux scale μh_fg(g(ρ_f − ρ_g)/σ)^(1/2): the latent heat carried by viscous bubble flow over the capillary length."
+          }
+        ],
+        "preferred": [
+          "v-mu",
+          "v-hfg",
+          "v-sigma",
+          "v-DTe"
+        ],
+        "evidence": [
+          {
+            "id": "ev-rohsenow",
+            "source": "lienhard-2024",
+            "claim": "Rohsenow's correlation (9.4) with Table 9.2, its data in Fig. 9.7, and the peak heat flux (9.11) with its conditions (section 9.3)."
+          }
+        ]
+      },
+      {
+        "id": "fail-boiling-domain",
+        "label": "Failure: boiling outside the correlation's domain",
+        "group": "failure",
+        "failure": "correlation-domain",
+        "title": "Failure example: boiling water at 200 atm on aluminium, 25 K above saturation",
+        "purpose": {
+          "question": "Which heat flux does an aluminium plate 25 K above saturation give in water at 200 atm?",
+          "observable": "v-q",
+          "calculation": "regime-map",
+          "declaration": "rohsenow-water"
+        },
+        "variables": [
+          {
+            "id": "v-q",
+            "symbol": "q",
+            "meaning": "Heat flux from the heater into the water",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of water at 100 °C",
+            "quantity": "dynamic-viscosity",
+            "unit": "Pa*s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\mu",
+            "value": "0.000282"
+          },
+          {
+            "id": "v-hfg",
+            "symbol": "h_fg",
+            "meaning": "Latent heat of vaporization at 100 °C",
+            "quantity": "latent-heat",
+            "unit": "J/kg",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "2257e3"
+          },
+          {
+            "id": "v-g",
+            "symbol": "g",
+            "meaning": "Gravitational acceleration",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "9.8"
+          },
+          {
+            "id": "v-rhof",
+            "symbol": "rho_f",
+            "meaning": "Density of the liquid at 100 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "tex": "\\rho_f",
+            "value": "958.2"
+          },
+          {
+            "id": "v-rhog",
+            "symbol": "rho_g",
+            "meaning": "Density of the saturated vapour at 100 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\rho_g",
+            "value": "0.597"
+          },
+          {
+            "id": "v-Drho",
+            "symbol": "Drho",
+            "meaning": "Density difference between the liquid and the vapour",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta\\rho",
+            "value": "957.603"
+          },
+          {
+            "id": "v-sigma",
+            "symbol": "sigma",
+            "meaning": "Surface tension of water at 100 °C",
+            "quantity": "surface-tension",
+            "unit": "N/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\sigma",
+            "value": "0.0589"
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of water at 100 °C",
+            "quantity": "thermal-conductivity",
+            "unit": "W/(m*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "0.6791"
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of water at 100 °C",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "4220"
+          },
+          {
+            "id": "v-Csf",
+            "symbol": "C_sf",
+            "meaning": "Surface constant for water on aluminium: no value in Table 9.2 (a value entered for the demonstration)",
+            "quantity": "surface-constant",
+            "unit": "1",
+            "kind": "constant",
+            "domain": "positive",
+            "pi": false,
+            "tex": "C_{sf}",
+            "value": "0.013"
+          },
+          {
+            "id": "v-Tsat",
+            "symbol": "T_sat",
+            "meaning": "Saturation temperature at the pressure of the pool",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "100"
+          },
+          {
+            "id": "v-Tw",
+            "symbol": "T_w",
+            "meaning": "Temperature of the heater surface",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "125"
+          },
+          {
+            "id": "v-DTe",
+            "symbol": "DT_e",
+            "meaning": "Wall superheat above the saturation temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta T_e",
+            "value": "25"
+          },
+          {
+            "id": "v-p",
+            "symbol": "p",
+            "meaning": "Pressure of the pool",
+            "quantity": "pressure",
+            "unit": "Pa",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "20265000"
+          },
+          {
+            "id": "v-W",
+            "symbol": "W",
+            "meaning": "Width of the heater",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "0.3"
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-rohsenow",
+            "kind": "closure",
+            "text": "q = mu*h_fg*(g*Drho/sigma)^(1/2)*(k*DT_e/(C_sf*mu*h_fg))^3",
+            "domain": "nucleate pool boiling"
+          },
+          {
+            "id": "e-DTe",
+            "kind": "definition",
+            "text": "DT_e = T_w - T_sat"
+          },
+          {
+            "id": "e-Drho",
+            "kind": "constraint",
+            "text": "Drho = rho_f - rho_g"
+          }
+        ],
+        "geometry": {
+          "domain": "A large horizontal flat heater of width W with side walls, facing up, in a pool of saturated water",
+          "coordinates": "None: the correlation gives one heat flux for the whole heater",
+          "lengths": [],
+          "interfaces": "The heater surface",
+          "fluid": "water",
+          "surface": "aluminium",
+          "orientation": "horizontal, facing up",
+          "heater": "flat plate with side walls",
+          "pool": "saturated"
+        },
+        "conditions": [],
+        "assumptions": [
+          {
+            "id": "a-fluid",
+            "kind": "physical",
+            "text": "The liquid is water, saturated at the pressure of the pool (no subcooling).",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-surface",
+            "kind": "physical",
+            "text": "The heater surface is aluminium, clean and well wetted.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "Water properties at 100 °C from Lienhard and Lienhard, Examples 9.2 and 9.5, and k from Table A.3.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-demo",
+            "kind": "physical",
+            "text": "The property values are those at 1 atm: the example shows the refusals, not a prediction at 200 atm.",
+            "source": "spec-14"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-q",
+            "for": "v-q",
+            "scale": "mu*h_fg*(g*Drho/sigma)^(1/2)",
+            "offset": "0",
+            "symbol": "phi",
+            "reason": "Rohsenow's heat-flux scale μh_fg(g(ρ_f − ρ_g)/σ)^(1/2): the latent heat carried by viscous bubble flow over the capillary length."
+          }
+        ],
+        "preferred": [
+          "v-mu",
+          "v-hfg",
+          "v-sigma",
+          "v-DTe"
+        ],
+        "evidence": [
+          {
+            "id": "ev-rohsenow",
+            "source": "lienhard-2024",
+            "claim": "Rohsenow's correlation (9.4) with Table 9.2, its data in Fig. 9.7, and the peak heat flux (9.11) with its conditions (section 9.3)."
+          }
+        ]
+      },
+      {
+        "id": "film-condensation",
+        "label": "Laminar film condensation",
+        "group": "standard",
+        "title": "Laminar film condensation of steam on a vertical strip (Lienhard Example 8.6)",
+        "purpose": {
+          "question": "How thick is the condensate film at the bottom of a 30 cm strip at 90 °C in steam at 1 atm, and how much heat does the strip remove?",
+          "observable": "v-hm",
+          "calculation": "regime-map",
+          "declaration": "nusselt-film"
+        },
+        "variables": [
+          {
+            "id": "v-delta",
+            "symbol": "delta",
+            "meaning": "Thickness of the liquid film",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": false,
+            "tex": "\\delta"
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance down the wall from its top",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Height of the strip",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "0.3"
+          },
+          {
+            "id": "v-g",
+            "symbol": "g",
+            "meaning": "Gravitational acceleration",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "9.806"
+          },
+          {
+            "id": "v-rhof",
+            "symbol": "rho_f",
+            "meaning": "Density of the liquid at 95 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\rho_f",
+            "value": "961.9"
+          },
+          {
+            "id": "v-rhog",
+            "symbol": "rho_g",
+            "meaning": "Density of the saturated vapour at 100 °C",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "tex": "\\rho_g",
+            "value": "0.60"
+          },
+          {
+            "id": "v-Drho",
+            "symbol": "Drho",
+            "meaning": "Density difference between the liquid and the vapour",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta\\rho",
+            "value": "961.3"
+          },
+          {
+            "id": "v-nu",
+            "symbol": "nu",
+            "meaning": "Kinematic viscosity of the liquid at 95 °C",
+            "quantity": "kinematic-viscosity",
+            "unit": "m^2/s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\nu",
+            "value": "3.091e-7"
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the liquid at 95 °C",
+            "quantity": "thermal-conductivity",
+            "unit": "W/(m*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "0.6773"
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of the liquid at 95 °C",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "4210"
+          },
+          {
+            "id": "v-hfg",
+            "symbol": "h_fg",
+            "meaning": "Latent heat of vaporization at 100 °C",
+            "quantity": "latent-heat",
+            "unit": "J/kg",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "2257e3"
+          },
+          {
+            "id": "v-hfgc",
+            "symbol": "h_fgc",
+            "meaning": "Corrected latent heat for the subcooled film (Lienhard's value for this example)",
+            "quantity": "latent-heat",
+            "unit": "J/kg",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "h'_{fg}",
+            "value": "2281e3"
+          },
+          {
+            "id": "v-Tsat",
+            "symbol": "T_sat",
+            "meaning": "Saturation temperature at 1 atm",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "100"
+          },
+          {
+            "id": "v-Tw",
+            "symbol": "T_w",
+            "meaning": "Wall temperature",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "90"
+          },
+          {
+            "id": "v-DTw",
+            "symbol": "DT_w",
+            "meaning": "Saturation temperature minus the wall temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta T",
+            "value": "10"
+          },
+          {
+            "id": "v-hm",
+            "symbol": "h_m",
+            "meaning": "Mean heat-transfer coefficient over the height",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\bar h"
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-film",
+            "kind": "governing",
+            "text": "g*Drho*h_fgc*delta^3*d(delta,x) = nu*k*DT_w",
+            "domain": "0 < x < L"
+          },
+          {
+            "id": "e-DTw",
+            "kind": "definition",
+            "text": "DT_w = T_sat - T_w"
+          },
+          {
+            "id": "e-Drho",
+            "kind": "constraint",
+            "text": "Drho = rho_f - rho_g"
+          }
+        ],
+        "geometry": {
+          "domain": "A vertical strip of height L in saturated steam at 1 atm",
+          "coordinates": "x down the wall from its top",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The wall, and the free surface of the film"
+        },
+        "conditions": [
+          {
+            "id": "c-top",
+            "kind": "boundary",
+            "text": "delta = 0",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-vapour",
+            "kind": "physical",
+            "text": "Pure saturated steam at rest: no vapour shear and no air in the steam.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "A laminar film with a linear temperature profile; liquid properties at the film temperature 95 °C, ρ_g and h_fg at 100 °C.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-hfg",
+            "kind": "physical",
+            "text": "h′_fg = 2281 kJ/kg is the book's value of eq. (8.61), rounded to four digits.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The values are those of Lienhard and Lienhard, Example 8.6.",
+            "source": "lienhard-2024"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The height of the wall."
+          },
+          {
+            "id": "s-delta",
+            "for": "v-delta",
+            "scale": "(nu*k*DT_w*L/(g*Drho*h_fgc))^(1/4)",
+            "offset": "0",
+            "symbol": "D",
+            "reason": "The balance of conduction and condensation in the film equation: δ⁴ ∝ νkΔT x/(gΔρh′_fg)."
+          }
+        ],
+        "preferred": [
+          "v-L",
+          "v-k",
+          "v-nu",
+          "v-DTw"
+        ],
+        "evidence": [
+          {
+            "id": "ev-film",
+            "source": "lienhard-2024",
+            "claim": "Nusselt's film equations (8.53) to (8.62) and Example 8.6; the laminar–turbulent transition of the film (section 8.5)."
+          }
+        ]
+      },
+      {
+        "id": "hx-parallel",
+        "label": "Parallel-flow heat exchanger",
+        "group": "standard",
+        "title": "Parallel-flow heat exchanger: effectiveness and the heat balance (Lienhard Example 3.5)",
+        "purpose": {
+          "question": "How much heat does a parallel-flow exchanger transfer, and do the two streams lose and gain the same heat?",
+          "observable": "v-Q",
+          "calculation": "regime-map",
+          "declaration": "hx-parallel"
+        },
+        "variables": [
+          {
+            "id": "v-Th",
+            "symbol": "T_h",
+            "meaning": "Temperature of the hot stream",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Tc",
+            "symbol": "T_c",
+            "meaning": "Temperature of the cold stream",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-a",
+            "symbol": "a",
+            "meaning": "Heat-transfer area from the hot inlet",
+            "quantity": "area",
+            "unit": "m^2",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "tex": "U_{HX}",
+            "meaning": "Overall heat-transfer coefficient",
+            "quantity": "overall-heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "value": "500",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-A",
+            "symbol": "A",
+            "meaning": "Total heat-transfer area",
+            "quantity": "area",
+            "unit": "m^2",
+            "value": "30",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Ch",
+            "symbol": "C_h",
+            "meaning": "Capacity rate of the hot stream (the smaller one)",
+            "quantity": "heat-capacity-rate",
+            "unit": "W/K",
+            "value": "10000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "role": "min"
+          },
+          {
+            "id": "v-Cc",
+            "symbol": "C_c",
+            "meaning": "Capacity rate of the cold stream (the larger one)",
+            "quantity": "heat-capacity-rate",
+            "unit": "W/K",
+            "value": "20000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "role": "max"
+          },
+          {
+            "id": "v-Thi",
+            "symbol": "T_h_in",
+            "tex": "T_{h,in}",
+            "meaning": "Inlet temperature of the hot stream",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "value": "150",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Tci",
+            "symbol": "T_c_in",
+            "tex": "T_{c,in}",
+            "meaning": "Inlet temperature of the cold stream",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "value": "40",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-DTin",
+            "symbol": "DT_in",
+            "tex": "\\Delta T_{in}",
+            "meaning": "Inlet temperature of the hot stream minus that of the cold stream",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "110",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Q",
+            "symbol": "Q_dot",
+            "tex": "\\dot Q",
+            "meaning": "Heat flow from the hot stream to the cold stream",
+            "quantity": "heat-flow",
+            "unit": "W",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-hot",
+            "kind": "governing",
+            "text": "C_h*d(T_h,a) = -U*(T_h - T_c)",
+            "domain": "0 < a < A"
+          },
+          {
+            "id": "e-cold",
+            "kind": "governing",
+            "text": "C_c*d(T_c,a) = U*(T_h - T_c)",
+            "domain": "0 < a < A"
+          },
+          {
+            "id": "e-DTin",
+            "kind": "definition",
+            "text": "DT_in = T_h_in - T_c_in"
+          }
+        ],
+        "geometry": {
+          "domain": "A single-pass parallel-flow exchanger with total heat-transfer area A",
+          "coordinates": "a, the area passed by the hot stream from its inlet (a = 0) to its outlet (a = A)",
+          "lengths": [],
+          "interfaces": "The wall between the two streams"
+        },
+        "conditions": [
+          {
+            "id": "c-hot",
+            "kind": "boundary",
+            "text": "T_h = T_h_in",
+            "at": "a = 0"
+          },
+          {
+            "id": "c-cold",
+            "kind": "boundary",
+            "text": "T_c = T_c_in",
+            "at": "a = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-steady",
+            "kind": "physical",
+            "text": "Steady operation with a constant overall coefficient and constant capacity rates, and no phase change.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-loss",
+            "kind": "physical",
+            "text": "No heat loss to the surroundings and no conduction along the flow.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-min",
+            "kind": "physical",
+            "text": "The hot stream has the smaller capacity rate, C_h ≤ C_c.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The values are those of Lienhard and Lienhard, Example 3.5.",
+            "source": "lienhard-2024"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-a",
+            "for": "v-a",
+            "scale": "A",
+            "offset": "0",
+            "symbol": "xi",
+            "reason": "The total area, so ξ = a/A runs from 0 to 1."
+          },
+          {
+            "id": "s-Th",
+            "for": "v-Th",
+            "scale": "DT_in",
+            "offset": "T_c_in",
+            "symbol": "theta_h",
+            "reason": "The inlet difference, from the cold inlet: θ = 1 at the hot inlet and 0 at the cold inlet."
+          },
+          {
+            "id": "s-Tc",
+            "for": "v-Tc",
+            "scale": "DT_in",
+            "offset": "T_c_in",
+            "symbol": "theta_c",
+            "reason": "The same scale for both streams, so θ_h − θ_c is the local difference over ΔT_in."
+          }
+        ],
+        "preferred": [
+          "v-Ch",
+          "v-DTin",
+          "v-A"
+        ],
+        "evidence": [
+          {
+            "id": "ev-hx",
+            "source": "lienhard-2024",
+            "claim": "ε = Q/(C_min(T_h,in − T_c,in)), NTU = UA/C_min and the effectiveness relations of eqs. (3.20) and (3.21); Example 3.5."
+          }
+        ]
+      },
+      {
+        "id": "hx-counterflow",
+        "label": "Counterflow heat exchanger",
+        "group": "standard",
+        "title": "Balanced counterflow heat exchanger: the equal-capacity-rate limit",
+        "purpose": {
+          "question": "How much heat does a counterflow exchanger with equal capacity rates transfer, and does the general effectiveness relation tend to the balanced limit?",
+          "observable": "v-Q",
+          "calculation": "regime-map",
+          "declaration": "hx-counterflow"
+        },
+        "variables": [
+          {
+            "id": "v-Th",
+            "symbol": "T_h",
+            "meaning": "Temperature of the hot stream",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Tc",
+            "symbol": "T_c",
+            "meaning": "Temperature of the cold stream",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-a",
+            "symbol": "a",
+            "meaning": "Heat-transfer area from the hot inlet",
+            "quantity": "area",
+            "unit": "m^2",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "tex": "U_{HX}",
+            "meaning": "Overall heat-transfer coefficient",
+            "quantity": "overall-heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "value": "500",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-A",
+            "symbol": "A",
+            "meaning": "Total heat-transfer area",
+            "quantity": "area",
+            "unit": "m^2",
+            "value": "30",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Ch",
+            "symbol": "C_h",
+            "meaning": "Capacity rate of the hot stream",
+            "quantity": "heat-capacity-rate",
+            "unit": "W/K",
+            "value": "10000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "role": "min"
+          },
+          {
+            "id": "v-Cc",
+            "symbol": "C_c",
+            "meaning": "Capacity rate of the cold stream (equal to that of the hot stream)",
+            "quantity": "heat-capacity-rate",
+            "unit": "W/K",
+            "value": "10000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "role": "max"
+          },
+          {
+            "id": "v-Thi",
+            "symbol": "T_h_in",
+            "tex": "T_{h,in}",
+            "meaning": "Inlet temperature of the hot stream",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "value": "150",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Tci",
+            "symbol": "T_c_in",
+            "tex": "T_{c,in}",
+            "meaning": "Inlet temperature of the cold stream",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "value": "40",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-DTin",
+            "symbol": "DT_in",
+            "tex": "\\Delta T_{in}",
+            "meaning": "Inlet temperature of the hot stream minus that of the cold stream",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "110",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Q",
+            "symbol": "Q_dot",
+            "tex": "\\dot Q",
+            "meaning": "Heat flow from the hot stream to the cold stream",
+            "quantity": "heat-flow",
+            "unit": "W",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-hot",
+            "kind": "governing",
+            "text": "C_h*d(T_h,a) = -U*(T_h - T_c)",
+            "domain": "0 < a < A"
+          },
+          {
+            "id": "e-cold",
+            "kind": "governing",
+            "text": "C_c*d(T_c,a) = -U*(T_h - T_c)",
+            "domain": "0 < a < A"
+          },
+          {
+            "id": "e-DTin",
+            "kind": "definition",
+            "text": "DT_in = T_h_in - T_c_in"
+          }
+        ],
+        "geometry": {
+          "domain": "A single-pass counterflow exchanger with total heat-transfer area A",
+          "coordinates": "a, the area passed by the hot stream from its inlet (a = 0) to its outlet (a = A); the cold stream flows from a = A to a = 0",
+          "lengths": [],
+          "interfaces": "The wall between the two streams"
+        },
+        "conditions": [
+          {
+            "id": "c-hot",
+            "kind": "boundary",
+            "text": "T_h = T_h_in",
+            "at": "a = 0"
+          },
+          {
+            "id": "c-cold",
+            "kind": "boundary",
+            "text": "T_c = T_c_in",
+            "at": "a = A"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-steady",
+            "kind": "physical",
+            "text": "Steady operation with a constant overall coefficient and constant capacity rates, and no phase change.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-loss",
+            "kind": "physical",
+            "text": "No heat loss to the surroundings and no conduction along the flow.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-min",
+            "kind": "physical",
+            "text": "The hot stream has the smaller capacity rate, C_h ≤ C_c (here C_h = C_c).",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The values are those of Lienhard and Lienhard, Example 3.5, with C_c = C_h = 10 000 W/K and counterflow.",
+            "source": "lienhard-2024"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-a",
+            "for": "v-a",
+            "scale": "A",
+            "offset": "0",
+            "symbol": "xi",
+            "reason": "The total area, so ξ = a/A runs from 0 to 1."
+          },
+          {
+            "id": "s-Th",
+            "for": "v-Th",
+            "scale": "DT_in",
+            "offset": "T_c_in",
+            "symbol": "theta_h",
+            "reason": "The inlet difference, from the cold inlet: θ = 1 at the hot inlet and 0 at the cold inlet."
+          },
+          {
+            "id": "s-Tc",
+            "for": "v-Tc",
+            "scale": "DT_in",
+            "offset": "T_c_in",
+            "symbol": "theta_c",
+            "reason": "The same scale for both streams, so θ_h − θ_c is the local difference over ΔT_in."
+          }
+        ],
+        "preferred": [
+          "v-Ch",
+          "v-DTin",
+          "v-A"
+        ],
+        "evidence": [
+          {
+            "id": "ev-hx",
+            "source": "lienhard-2024",
+            "claim": "Eq. (3.21) and its balanced limit ε = NTU/(1 + NTU), eq. (3.23); the constant temperature difference of Example 3.2."
+          }
+        ]
+      },
+      {
+        "id": "absorbing-slab",
+        "label": "Radiation in an absorbing slab",
+        "group": "standard",
+        "title": "Radiation in an absorbing and emitting slab of hot gas between two black walls",
+        "purpose": {
+          "question": "Which net radiative heat flux does a 10 cm layer of hot grey gas at 1000 K send into a black wall at 500 K, and where do the optically thin and thick approximations hold?",
+          "observable": "v-q1",
+          "calculation": "regime-map",
+          "declaration": "absorbing-slab"
+        },
+        "variables": [
+          {
+            "id": "v-ip",
+            "symbol": "i_p",
+            "meaning": "π times the intensity toward x > 0",
+            "quantity": "emissive-power",
+            "unit": "W/m^2",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": false,
+            "tex": "i_+"
+          },
+          {
+            "id": "v-im",
+            "symbol": "i_m",
+            "meaning": "π times the intensity toward x < 0",
+            "quantity": "emissive-power",
+            "unit": "W/m^2",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": false,
+            "tex": "i_-"
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance from wall 1",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Direction cosine of a ray, 0 < μ ≤ 1",
+            "quantity": "direction-cosine",
+            "unit": "1",
+            "kind": "coordinate",
+            "domain": "positive",
+            "pi": false,
+            "tex": "\\mu"
+          },
+          {
+            "id": "v-kappa",
+            "symbol": "kappa_a",
+            "meaning": "Absorption coefficient of the gas",
+            "quantity": "absorption-coefficient",
+            "unit": "1/m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\kappa_a",
+            "value": "10"
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Thickness of the gas layer",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "0.1"
+          },
+          {
+            "id": "v-sigma",
+            "symbol": "sigma",
+            "meaning": "Stefan–Boltzmann constant (CODATA 2018)",
+            "quantity": "stefan-boltzmann",
+            "unit": "W/(m^2*K^4)",
+            "kind": "constant",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\sigma",
+            "value": "5.670374419e-8"
+          },
+          {
+            "id": "v-Tg",
+            "symbol": "T_g",
+            "meaning": "Uniform temperature of the gas",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "1000"
+          },
+          {
+            "id": "v-T1",
+            "symbol": "T_1",
+            "meaning": "Temperature of wall 1 at x = 0",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "500"
+          },
+          {
+            "id": "v-T2",
+            "symbol": "T_2",
+            "meaning": "Temperature of wall 2 at x = L",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "300"
+          },
+          {
+            "id": "v-q1",
+            "symbol": "q_1",
+            "meaning": "Net radiative heat flux into the gas at wall 1 (negative: the wall receives heat)",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-forward",
+            "kind": "governing",
+            "text": "mu*d(i_p,x) = kappa_a*(sigma*T_g^4 - i_p)",
+            "domain": "0 < x < L, 0 < μ ≤ 1"
+          },
+          {
+            "id": "e-backward",
+            "kind": "governing",
+            "text": "-mu*d(i_m,x) = kappa_a*(sigma*T_g^4 - i_m)",
+            "domain": "0 < x < L, 0 < μ ≤ 1"
+          }
+        ],
+        "geometry": {
+          "domain": "A plane layer of grey gas 0 < x < L between two parallel black walls",
+          "coordinates": "x across the layer from wall 1, and the direction cosine μ of a ray",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The two black walls"
+        },
+        "conditions": [
+          {
+            "id": "c-wall1",
+            "kind": "boundary",
+            "text": "i_p = sigma*T_1^4",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-wall2",
+            "kind": "boundary",
+            "text": "i_m = sigma*T_2^4",
+            "at": "x = L"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-grey",
+            "kind": "physical",
+            "text": "The gas is grey and does not scatter: one absorption coefficient for every wavelength.",
+            "source": "beach-1971"
+          },
+          {
+            "id": "a-uniform",
+            "kind": "physical",
+            "text": "The gas temperature is uniform and prescribed: conduction, convection and the heat that the gas loses do not change it.",
+            "source": "beach-1971"
+          },
+          {
+            "id": "a-black",
+            "kind": "physical",
+            "text": "Both walls are black and diffuse.",
+            "source": "beach-1971"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The values are illustrative: τ_L = κ_aL = 1 is one of the optical thicknesses of the reference tables.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The thickness of the layer."
+          },
+          {
+            "id": "s-mu",
+            "for": "v-mu",
+            "scale": "1",
+            "offset": "0",
+            "symbol": "m",
+            "reason": "The direction cosine is already dimensionless; the page keeps it unscaled, so the optical thickness stays visible."
+          },
+          {
+            "id": "s-ip",
+            "for": "v-ip",
+            "scale": "sigma*T_g^4",
+            "offset": "0",
+            "symbol": "j_p",
+            "reason": "Radiation needs absolute temperatures: the blackbody emissive power of the gas is the scale."
+          },
+          {
+            "id": "s-im",
+            "for": "v-im",
+            "scale": "sigma*T_g^4",
+            "offset": "0",
+            "symbol": "j_m",
+            "reason": "The same scale for both directions."
+          }
+        ],
+        "preferred": [
+          "v-L",
+          "v-sigma",
+          "v-Tg"
+        ],
+        "evidence": [
+          {
+            "id": "ev-slab",
+            "source": "beach-1971",
+            "claim": "The heat-flux functions Q_0(0), Q_1(0) and Q_1*(τ_0) of a non-scattering medium at constant temperature between black and grey walls, Table 1, c = 0."
+          }
+        ]
+      },
+      {
+        "id": "melting-front",
+        "label": "Melting front",
+        "group": "standard",
+        "title": "Melting of ice at −10 °C from a wall at 10 °C: the two-phase Neumann solution",
+        "purpose": {
+          "question": "How far has the melting front moved after one hour, and does the energy that enters through the wall equal the latent heat plus the sensible heat?",
+          "observable": "v-s1",
+          "calculation": "regime-map",
+          "declaration": "stefan-melting"
+        },
+        "variables": [
+          {
+            "id": "v-Tl",
+            "symbol": "T_l",
+            "meaning": "Temperature of the liquid (water)",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-Ts",
+            "symbol": "T_s",
+            "meaning": "Temperature of the solid (ice)",
+            "quantity": "absolute-temperature",
+            "unit": "K",
+            "kind": "field",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-s",
+            "symbol": "s",
+            "meaning": "Position of the melting front",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "field",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance from the heated wall",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-t",
+            "symbol": "t",
+            "meaning": "Time",
+            "quantity": "time",
+            "unit": "s",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of both phases (the density of ice; the model neglects the change at melting)",
+            "quantity": "density",
+            "unit": "kg/m^3",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "917"
+          },
+          {
+            "id": "v-cl",
+            "symbol": "c_l",
+            "meaning": "Specific heat capacity of water at 0 °C",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "4220"
+          },
+          {
+            "id": "v-cs",
+            "symbol": "c_s",
+            "meaning": "Specific heat capacity of ice at 0 °C",
+            "quantity": "specific-heat",
+            "unit": "J/(kg*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "solid",
+            "value": "2100"
+          },
+          {
+            "id": "v-kl",
+            "symbol": "k_l",
+            "meaning": "Thermal conductivity of water at 0 °C",
+            "quantity": "thermal-conductivity",
+            "unit": "W/(m*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "fluid",
+            "value": "0.5610"
+          },
+          {
+            "id": "v-ks",
+            "symbol": "k_s",
+            "meaning": "Thermal conductivity of ice at 0 °C",
+            "quantity": "thermal-conductivity",
+            "unit": "W/(m*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "phase": "solid",
+            "value": "2.215"
+          },
+          {
+            "id": "v-ell",
+            "symbol": "ell",
+            "meaning": "Specific latent heat of melting of ice",
+            "quantity": "latent-heat",
+            "unit": "J/kg",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "333300"
+          },
+          {
+            "id": "v-Tw",
+            "symbol": "T_w",
+            "meaning": "Temperature of the heated wall",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "10"
+          },
+          {
+            "id": "v-Tm",
+            "symbol": "T_m",
+            "meaning": "Melting temperature",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "0"
+          },
+          {
+            "id": "v-Ti",
+            "symbol": "T_i",
+            "meaning": "Initial temperature of the ice",
+            "quantity": "absolute-temperature",
+            "unit": "degC",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "-10"
+          },
+          {
+            "id": "v-DTl",
+            "symbol": "DT_l",
+            "meaning": "Superheat of the wall above the melting temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "tex": "\\Delta T_l",
+            "value": "10"
+          },
+          {
+            "id": "v-DTs",
+            "symbol": "DT_s",
+            "meaning": "Subcooling of the ice below the melting temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true,
+            "tex": "\\Delta T_s",
+            "value": "10"
+          },
+          {
+            "id": "v-tr",
+            "symbol": "t_r",
+            "meaning": "Time of the question: one hour",
+            "quantity": "time",
+            "unit": "s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true,
+            "value": "3600"
+          },
+          {
+            "id": "v-xf",
+            "symbol": "x_f",
+            "meaning": "Far end of the solid, far beyond the thermal layer (the model takes it to infinity)",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false,
+            "value": "1"
+          },
+          {
+            "id": "v-s1",
+            "symbol": "s_1",
+            "meaning": "Front position at the time of the question",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "parameter",
+            "domain": "nonnegative",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-liquid",
+            "kind": "governing",
+            "text": "rho*c_l*d(T_l,t) = k_l*d(T_l,x,x)",
+            "domain": "0 < x < s(t), t > 0"
+          },
+          {
+            "id": "e-solid",
+            "kind": "governing",
+            "text": "rho*c_s*d(T_s,t) = k_s*d(T_s,x,x)",
+            "domain": "s(t) < x < x_f, t > 0"
+          },
+          {
+            "id": "e-front",
+            "kind": "governing",
+            "text": "rho*ell*d(s,t) = k_s*d(T_s,x) - k_l*d(T_l,x)",
+            "domain": "at the front x = s(t)"
+          },
+          {
+            "id": "e-DTl",
+            "kind": "definition",
+            "text": "DT_l = T_w - T_m"
+          },
+          {
+            "id": "e-DTs",
+            "kind": "definition",
+            "text": "DT_s = T_m - T_i"
+          }
+        ],
+        "geometry": {
+          "domain": "A half-space of ice x > 0 behind a plane wall at x = 0; water fills 0 < x < s(t)",
+          "coordinates": "x from the wall into the ice, and time t",
+          "lengths": [],
+          "interfaces": "The melting front x = s(t)"
+        },
+        "conditions": [
+          {
+            "id": "c-wall",
+            "kind": "boundary",
+            "text": "T_l = T_w",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-melt-l",
+            "kind": "interface",
+            "text": "T_l = T_m",
+            "at": "x = s"
+          },
+          {
+            "id": "c-melt-s",
+            "kind": "interface",
+            "text": "T_s = T_m",
+            "at": "x = s"
+          },
+          {
+            "id": "c-far",
+            "kind": "boundary",
+            "text": "T_s = T_i",
+            "at": "x = x_f"
+          },
+          {
+            "id": "c-init-s",
+            "kind": "initial",
+            "text": "T_s = T_i",
+            "at": "t = 0"
+          },
+          {
+            "id": "c-init-l",
+            "kind": "initial",
+            "text": "T_l = T_m",
+            "at": "t = 0"
+          },
+          {
+            "id": "c-front0",
+            "kind": "initial",
+            "text": "s = 0",
+            "at": "t = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-const",
+            "kind": "physical",
+            "text": "Constant properties in each phase. Conduction only: the water does not move.",
+            "source": "font-stefan"
+          },
+          {
+            "id": "a-rho",
+            "kind": "physical",
+            "text": "Both phases have the density of ice. Water at 0 °C is 9 % denser (999.8 kg/m³); the model neglects the flow that the change of density causes.",
+            "source": "roscani-tarzia"
+          },
+          {
+            "id": "a-front",
+            "kind": "physical",
+            "text": "The front is sharp and at the melting temperature: no supercooling and no mushy zone.",
+            "source": "font-stefan"
+          },
+          {
+            "id": "a-far",
+            "kind": "mathematical",
+            "text": "The solid is a half-space: x_f is far beyond the thermal layer, and the similarity solution takes x_f → ∞.",
+            "source": "roscani-tarzia"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "Properties of water at 0.01 °C and of ice at 0 °C from Lienhard and Lienhard, Tables A.2 and A.3; latent heat 333.3 kJ/kg (Problem 5.31).",
+            "source": "lienhard-2024"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "(k_l*t_r/(rho*c_l))^(1/2)",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The diffusion length (α_l t_r)^(1/2) of the liquid at the time of the question."
+          },
+          {
+            "id": "s-s",
+            "for": "v-s",
+            "scale": "(k_l*t_r/(rho*c_l))^(1/2)",
+            "offset": "0",
+            "symbol": "S",
+            "reason": "The same length for the front."
+          },
+          {
+            "id": "s-t",
+            "for": "v-t",
+            "scale": "t_r",
+            "offset": "0",
+            "symbol": "tau",
+            "reason": "The time of the question."
+          },
+          {
+            "id": "s-Tl",
+            "for": "v-Tl",
+            "scale": "DT_l",
+            "offset": "T_m",
+            "symbol": "theta_l",
+            "reason": "θ_l = 1 at the wall and 0 at the front."
+          },
+          {
+            "id": "s-Ts",
+            "for": "v-Ts",
+            "scale": "DT_s",
+            "offset": "T_m",
+            "symbol": "theta_s",
+            "reason": "θ_s = 0 at the front and −1 in the undisturbed ice."
+          }
+        ],
+        "preferred": [
+          "v-kl",
+          "v-rho",
+          "v-cl",
+          "v-DTl"
+        ],
+        "evidence": [
+          {
+            "id": "ev-neumann",
+            "source": "roscani-tarzia",
+            "claim": "The two-phase Neumann solution: erf profiles in each phase, s = 2λ(α_l t)^(1/2) and the transcendental equation for λ (eqs. 3.28 to 3.31 with fractional order 1)."
+          }
+        ]
       }
     ]
   },
@@ -10247,6 +12199,23 @@
         "name": "ratio of two lengths",
         "dim": "1",
         "meaning": "length ratio"
+      },
+      {
+        "id": "direction-cosine",
+        "name": "direction cosine of a ray",
+        "dim": "1",
+        "meaning": "direction cosine"
+      },
+      {
+        "id": "surface-constant",
+        "name": "empirical surface constant of a correlation",
+        "dim": "1",
+        "meaning": "material parameter"
+      },
+      {
+        "id": "emissive-power",
+        "name": "emissive power or intensity times π",
+        "dim": "M T^-3"
       }
     ]
   },
@@ -11129,7 +13098,7 @@
         "title": "Lienhard IV and Lienhard V: A Heat Transfer Textbook, 6th edition, version 6.00 (19 April 2024)",
         "url": "https://ahtt.mit.edu/",
         "read": "2026-10-06",
-        "supports": "The lumped model is accurate within about 3 % if Bi < 0.1 (section 1.3). The radiation coefficient h_rad = 4σT_m³ε needs (ΔT/T_m)²/4 ≪ 1 (equations 2.28 to 2.31). View factor reciprocity and summation, the string rule (problem 10.14) and radiosity networks of grey surfaces (section 10.4). Properties of water at 300 K (Table A.3) and of pure copper (Table A.1). Piece 7: the laminar flat-plate correlations Nu_x = 0.332 Re_x^(1/2) Pr^(1/3) for Pr ≥ 0.6, within 2 % of the exact solution (eqn. 6.58), and Nu_L = 0.664 Re_L^(1/2) Pr^(1/3) (eqn. 6.68); the turbulent gas correlation 0.0296 Re_x^0.8 Pr^0.6 (eqn. 6.112); the transition data of section 6.1; the Péclet number (eqn. 6.61); Churchill and Chu's eqns. (8.13a) and (8.13b) with Example 8.1; inclined walls with g cos θ (section 8.4); and Gr/Re² for mixed convection with assisting and opposing flow (eqn. 8.45)."
+        "supports": "The lumped model is accurate within about 3 % if Bi < 0.1 (section 1.3). The radiation coefficient h_rad = 4σT_m³ε needs (ΔT/T_m)²/4 ≪ 1 (equations 2.28 to 2.31). View factor reciprocity and summation, the string rule (problem 10.14) and radiosity networks of grey surfaces (section 10.4). Properties of water at 300 K (Table A.3) and of pure copper (Table A.1). Piece 7: the laminar flat-plate correlations Nu_x = 0.332 Re_x^(1/2) Pr^(1/3) for Pr ≥ 0.6, within 2 % of the exact solution (eqn. 6.58), and Nu_L = 0.664 Re_L^(1/2) Pr^(1/3) (eqn. 6.68); the turbulent gas correlation 0.0296 Re_x^0.8 Pr^0.6 (eqn. 6.112); the transition data of section 6.1; the Péclet number (eqn. 6.61); Churchill and Chu's eqns. (8.13a) and (8.13b) with Example 8.1; inclined walls with g cos θ (section 8.4); and Gr/Re² for mixed convection with assisting and opposing flow (eqn. 8.45). Piece 8: the effectiveness ε = Q/(C_min(T_h,in − T_c,in)), NTU = UA/C_min and the parallel-flow and counterflow relations (eqns. 3.16 to 3.21), the single-stream limit (3.22), the balanced limit NTU/(1 + NTU) (3.23) with Examples 3.2 and 3.5; water at 0.01 °C and ice at 0 °C (Tables A.2 and A.3) and h_sf = 333.3 kJ/kg (Problem 5.31); Nusselt's film (eqns. 8.46 to 8.62), the film Reynolds number and its limits 7 and 400 (eqn. 8.72, Fig. 8.15) and Example 8.6; Rohsenow's correlation (9.4) with Table 9.2, its data from 1 atm to 167.7 atm (Fig. 9.7) and typical errors of 100 % in q and 25 % in ΔT, the Taylor wavelength (9.6a), the peak heat flux (9.11) with its conditions, the Zuber–Kutateladze value (9.12), and Examples 9.2 and 9.5."
       },
       {
         "id": "nist-sigma",
@@ -11312,12 +13281,47 @@
         "url": "https://ocw.mit.edu/courses/1-63-advanced-fluid-dynamics-of-the-environment-fall-2002/49955a0c0c0f8641ddac43bab9d4ec9d_52KHcontin.pdf",
         "read": "2026-10-06",
         "supports": "The gradient Richardson number Ri = −(g/ρ)(dρ/dz)/(dU/dz)² (eqn. 5.2.1), a local ratio of the vertical density gradient to the square of the vertical shear, and the Miles–Howard result that instability needs Ri < 1/4."
+      },
+      {
+        "id": "bannerman-hx",
+        "title": "Bannerman: Heat, Mass and Momentum Transfer, Heat Exchanger Notes (University of Aberdeen)",
+        "url": "https://www.marcusbannerman.co.uk/HMMT/23-Heat-Exchangers.pdf",
+        "read": "2026-10-06",
+        "supports": "The heat-transfer effectiveness ε = Q/Q_max with Q_max = C_min(T_h,in − T_c,in), NTU = UA/C_min and c = C_min/C_max (eqs. 23 to 27), and that ε depends on NTU and c for each flow arrangement. Its table of effectiveness relations is an image; the page takes the relations from Lienhard and Lienhard, eqs. (3.20) and (3.21)."
+      },
+      {
+        "id": "font-stefan",
+        "title": "Font: A one-phase Stefan problem with size-dependent thermal conductivity (preprint, UPC Barcelona, 2018)",
+        "url": "https://upcommons.upc.edu/server/api/core/bitstreams/30970d48-f98c-4241-9c04-4b8cfe0c4c0c/content",
+        "read": "2026-10-06",
+        "supports": "The one-phase Stefan problem (eqs. 2 to 5), its Neumann solution s = 2λt^(1/2) with βπ^(1/2)λ erf(λ)e^(λ²) = 1 (eqs. 7 and 8), the Stefan number written as β = ΔH/(ρc(T_f − T_c)) (the reciprocal of the page's Ste), and a boundary-immobilization (front-fixing) finite-difference scheme (section 4)."
+      },
+      {
+        "id": "roscani-tarzia",
+        "title": "Roscani and Tarzia: A generalized Neumann solution for the two-phase fractional Lamé–Clapeyron–Stefan problem (arXiv:1405.5928)",
+        "url": "https://arxiv.org/abs/1405.5928",
+        "read": "2026-10-06",
+        "supports": "With fractional order 1, the classical two-phase Stefan problem of a half-space with one density (eq. 3.32), the erf and erfc temperatures of each phase, s = 2μλ₁t^(1/2) and the transcendental equation for the coefficient (eqs. 3.28 to 3.31)."
+      },
+      {
+        "id": "beach-1971",
+        "title": "Beach, Özişik and Siewert: Radiative transfer in linearly anisotropic-scattering, conservative and non-conservative slabs with reflective boundaries, Int. J. Heat Mass Transfer 14 (1971) 1551–1565",
+        "url": "https://ces.math.ncsu.edu/pdfversions/40.pdf",
+        "read": "2026-10-06",
+        "supports": "Table 1: the heat-flux functions Q_0(0), Q_1(0) and Q_1*(τ_0) of an absorbing, emitting medium at constant temperature between black and grey walls at τ_0 = 0.1, 1 and 10; for c = 0 and black walls these are 1 − 2E_3(τ_0) and 2E_3(τ_0)."
+      },
+      {
+        "id": "comsol-rosseland",
+        "title": "COMSOL 6.4 Heat Transfer Module: Radiation in participating media, the Rosseland approximation",
+        "url": "https://doc.comsol.com/6.4/doc/com.comsol.help.heat/heat_ug_theory.07.076.html",
+        "read": "2026-10-06",
+        "supports": "The Rosseland approximation q_r = −k_R∇T with k_R = 16n²σT³/(3β_R) holds when the medium is optically thick, τ ≫ 1, and should be validated."
       }
     ]
   },
   "roadmap": {
     "about": "The agreed build plan (spec.md, Agreed decisions): nine pieces in merge order. The page lists what is still to come until piece 9 removes the preview label.",
-    "current": 7,
+    "current": 8,
     "pieces": [
       {
         "n": 1,
@@ -21101,6 +23105,1782 @@
           "convergence": "Not applicable: no discretization.",
           "reproducibility": "Exact rationals (BigInt). No random numbers."
         }
+      },
+      {
+        "id": "rohsenow-water",
+        "family": "boiling-correlations",
+        "title": "Nucleate pool boiling of water: Rohsenow's correlation and the peak heat flux (named correlations)",
+        "piece": 8,
+        "model": {
+          "summary": "Saturated water boils in a pool on a large, upward-facing horizontal plate. In the nucleate regime the heat flux follows Rohsenow's correlation (1952) with the surface constant C_sf of the fluid–surface pair and the Prandtl exponent s = 1 of water; the regime ends at the peak heat flux of Lienhard and Dhir. The declared result type is a named correlation of measured data, not a governing-equation model.",
+          "roles": [
+            {
+              "id": "q",
+              "quantity": "heat-flux",
+              "kind": "field",
+              "meaning": "heat flux from the heater into the boiling water"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity of the liquid at T_sat"
+            },
+            {
+              "id": "h_fg",
+              "quantity": "latent-heat",
+              "kind": "parameter",
+              "meaning": "latent heat of vaporization"
+            },
+            {
+              "id": "g",
+              "quantity": "gravity",
+              "kind": "parameter",
+              "meaning": "gravitational acceleration"
+            },
+            {
+              "id": "Drho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density difference ρ_f − ρ_g"
+            },
+            {
+              "id": "rho_g",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density of the saturated vapour"
+            },
+            {
+              "id": "sigma",
+              "quantity": "surface-tension",
+              "kind": "parameter",
+              "meaning": "surface tension of the liquid"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "thermal conductivity of the liquid"
+            },
+            {
+              "id": "C_sf",
+              "quantity": "surface-constant",
+              "kind": "parameter",
+              "meaning": "surface constant of the fluid–surface pair"
+            },
+            {
+              "id": "DT_e",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "wall superheat T_w − T_sat"
+            },
+            {
+              "id": "p",
+              "quantity": "pressure",
+              "kind": "parameter",
+              "meaning": "pressure of the pool"
+            },
+            {
+              "id": "W",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "width of the heater"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "specific heat capacity of the liquid",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "rohsenow",
+              "kind": "closure",
+              "text": "q = mu*h_fg*(g*Drho/sigma)^(1/2)*(k*DT_e/(C_sf*mu*h_fg))^3",
+              "domain": "nucleate pool boiling"
+            }
+          ],
+          "closures": [
+            "Rohsenow's correlation, c_p(T_w − T_sat)/(h_fg Pr^s) = C_sf [q/(μh_fg)·(σ/(g(ρ_f − ρ_g)))^(1/2)]^(1/3) (Lienhard and Lienhard, eq. 9.4), solved for q. For water s = 1, and c_p/Pr = k/μ, so c_p cancels.",
+            "The peak heat flux of a large flat heater, q_max = 0.149 ρ_g^(1/2) h_fg [g(ρ_f − ρ_g)σ]^(1/4) (Lienhard and Dhir, eq. 9.11), ends the nucleate regime."
+          ],
+          "geometry": "A large, upward-facing horizontal flat heater with side walls, wider than three Taylor wavelengths λ_d1 = 2π√3 [σ/(g(ρ_f − ρ_g))]^(1/2), in a pool of saturated liquid.",
+          "conditions": [],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "phi",
+                "of": "q",
+                "offset": "0",
+                "scale": "mu*h_fg*(g*Drho/sigma)^(1/2)",
+                "tex": "\\phi"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Xb",
+                "tex": "X_b",
+                "def": "k*DT_e/(mu*h_fg)",
+                "solve": "DT_e",
+                "meaning": "Rohsenow's superheat group c_pΔT_e/(h_fg Pr) with s = 1, equal to kΔT_e/(μh_fg)"
+              },
+              {
+                "id": "Cs",
+                "tex": "C_{sf}",
+                "def": "C_sf",
+                "solve": "C_sf",
+                "meaning": "surface constant of the fluid–surface pair (Lienhard and Lienhard, Table 9.2)"
+              },
+              {
+                "id": "Mb",
+                "tex": "M_b",
+                "def": "rho_g^(1/2)*sigma^(3/4)/(mu*(g*Drho)^(1/4))",
+                "solve": "rho_g",
+                "meaning": "the group of the peak heat flux: φ_max = 0.149 M_b"
+              }
+            ],
+            "equations": [
+              {
+                "of": "rohsenow",
+                "text": "phi = Xb^3/Cs^3"
+              }
+            ],
+            "conditions": []
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Xb",
+              "tex": "X_b",
+              "label": "superheat group c_pΔT_e/(h_fg Pr)",
+              "min": 0.001,
+              "max": 0.3,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Cs",
+              "tex": "C_{sf}",
+              "label": "surface constant C_sf",
+              "min": 0.002,
+              "max": 0.03,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Mb",
+              "tex": "M_b",
+              "label": "peak-flux group ρ_g^(1/2)σ^(3/4)/(μ(g(ρ_f − ρ_g))^(1/4))",
+              "min": 1,
+              "max": 1000,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Fluid: water (s = 1.0). The other fluids of Table 9.2 have s = 1.7 and need their own declaration.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Surface: one of the water–surface pairs of Table 9.2, with its C_sf: nickel 0.006, platinum 0.013, copper 0.013, brass 0.006. The page refuses other surfaces.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Pressure: within the data of Rohsenow's comparison for water, 1 atm to 167.7 atm (Fig. 9.7). The page refuses other pressures.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Phase regime: saturated nucleate pool boiling, with the superheat group X_b inside the data of Fig. 9.7 (0.006 to 0.06, read from the figure) and q below the peak heat flux. The page refuses natural convection, transition boiling and film boiling.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Orientation and heater: an upward-facing horizontal flat plate with side walls, wider than 3λ_d1, well wetted, in a saturated pool (Lienhard and Lienhard, section 9.3).",
+              "source": "lienhard-2024"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The Pi calculation of the declared variable set with the Finder, kept apart from the empirical constants C_sf, s, 0.149 and 0.131 and their source.",
+            "The exact cancellation c_p/Pr = k/μ for s = 1, the exact groups X_b and C_sf, and the dimensionless correlation φ = (X_b/C_sf)³."
+          ],
+          "numerical": [
+            "q from the correlation, the heat-transfer coefficient q/ΔT_e, the peak heat flux, the superheat at the peak flux, and the Taylor wavelength, in IEEE double.",
+            "The strict domain checks: fluid, surface, pressure, orientation, heater size and phase regime. A point outside any of them is refused, never extrapolated."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": false,
+            "reason": "The correlation is a fit of measured data, not a balance of terms of a declared equation. Its physical basis (bubble pumping of liquid at the wall) is described but not derived."
+          },
+          "asymptotic": {
+            "applies": false,
+            "reason": "A correlation has no small parameter of a declared model. The page does not extend it toward any limit outside its data."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The peak heat flux is the end of the nucleate regime, which Zuber and Lienhard and Dhir explain by a Helmholtz instability of the vapour jets. The page uses their cited result as an empirical boundary; a stability analysis of the jets needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The boiling curve has a maximum and a minimum heat flux with hysteresis between nucleate and film boiling, but the declared model is the nucleate branch only. The other branches need separate declarations."
+          }
+        },
+        "limitations": [
+          "Rohsenow's correlation has typical errors of 100 % in q and 25 % in ΔT_e (Lienhard and Lienhard, section 9.2). The page shows this band.",
+          "Water only, on the four surfaces of Table 9.2, from 1 atm to 167.7 atm, in saturated nucleate pool boiling on a large horizontal plate.",
+          "Subcooled boiling, flow boiling, transition boiling and film boiling need separate declarations."
+        ],
+        "acceptance": {
+          "example": "pool-boiling",
+          "reference": "Lienhard and Lienhard, Example 9.2: water at 100 °C gives μc_p³(g(ρ_f − ρ_g)/σ)^(1/2)/(h_fg²Pr³) = 3.10 × 10⁻⁷ kW/(m²·K³); Example 9.5: q_max = 1.260 MW/m² on a large flat plate. Table 9.2 for C_sf, Fig. 9.7 for the data range.",
+          "tolerance": "Exact for the groups and the cancellation; relative 1e-2 against the book's three- and four-digit values; the domain checks are exact comparisons.",
+          "checks": [
+            "The correlation and the peak heat flux reproduce Examples 9.2 and 9.5.",
+            "The point lies inside the fluid, surface, pressure and phase limits, and the page refuses a point outside them.",
+            "The Pi groups of the declared variable set come from the Finder, and the empirical constants keep their source."
+          ]
+        },
+        "solver": {
+          "method": "Closed-form evaluation of the named correlations inside their declared domain.",
+          "discretization": "None.",
+          "convergence": "Not applicable.",
+          "reproducibility": "Exact rationals for the groups and the domain checks; IEEE double for the correlation values. No random numbers."
+        }
+      },
+      {
+        "id": "nusselt-film",
+        "family": "condensation",
+        "title": "Laminar film condensation on a vertical wall (Nusselt)",
+        "piece": 8,
+        "model": {
+          "summary": "Saturated, quiescent, pure vapour condenses on a vertical wall at a uniform temperature below saturation. A laminar liquid film flows down under gravity; Nusselt's model neglects the inertia and the convection in the film, so the temperature across the film is linear and the velocity profile is parabolic.",
+          "roles": [
+            {
+              "id": "delta",
+              "quantity": "length",
+              "kind": "field",
+              "meaning": "thickness of the liquid film"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance down the wall from its top"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "height of the wall"
+            },
+            {
+              "id": "g",
+              "quantity": "gravity",
+              "kind": "parameter",
+              "meaning": "gravitational acceleration"
+            },
+            {
+              "id": "rho_f",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density of the liquid"
+            },
+            {
+              "id": "Drho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density difference ρ_f − ρ_g"
+            },
+            {
+              "id": "nu",
+              "quantity": "kinematic-viscosity",
+              "kind": "parameter",
+              "meaning": "kinematic viscosity of the liquid"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "thermal conductivity of the liquid"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "specific heat capacity of the liquid"
+            },
+            {
+              "id": "h_fg",
+              "quantity": "latent-heat",
+              "kind": "parameter",
+              "meaning": "latent heat of vaporization"
+            },
+            {
+              "id": "h_fgc",
+              "quantity": "latent-heat",
+              "kind": "parameter",
+              "meaning": "corrected latent heat h′_fg"
+            },
+            {
+              "id": "DT_w",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "Saturation temperature minus the wall temperature"
+            },
+            {
+              "id": "h_m",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "mean heat-transfer coefficient over the height",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "film",
+              "kind": "governing",
+              "text": "g*Drho*h_fgc*delta^3*d(delta,x) = nu*k*DT_w",
+              "domain": "0 < x < L"
+            }
+          ],
+          "closures": [
+            "The mass flow per unit width of the parabolic film is ṁ = g(ρ_f − ρ_g)δ³/(3ν) (Lienhard and Lienhard, eq. 8.53). The heat that the linear profile conducts to the wall condenses vapour: k(T_sat − T_w)/δ = h′_fg dṁ/dx (eq. 8.54). Together they give the film equation (8.55), written here times δ.",
+            "h′_fg = h_fg[1 + (0.683 − 0.228/Pr)Ja] with Ja = c_p(T_sat − T_w)/h_fg (Sadasivan and Lienhard, eq. 8.61, for Pr ≥ 0.6) is the latent heat corrected for the subcooling of the film."
+          ],
+          "geometry": "A vertical plane wall of height L. The film starts with zero thickness at the top, x = 0.",
+          "conditions": [
+            {
+              "id": "top",
+              "kind": "boundary",
+              "text": "delta = 0",
+              "at": "x = 0",
+              "meaning": "the film starts at the top of the wall"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "D",
+                "of": "delta",
+                "offset": "0",
+                "scale": "(nu*k*DT_w*L/(g*Drho*h_fgc))^(1/4)",
+                "tex": "D"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Pi4",
+                "tex": "\\Pi_4",
+                "def": "g*Drho*h_fgc*L^3/(nu*k*DT_w)",
+                "solve": "DT_w",
+                "meaning": "the film group Π₄ of Lienhard and Lienhard, eq. (8.48), with h′_fg"
+              },
+              {
+                "id": "Ga",
+                "tex": "Ga",
+                "def": "g*Drho*L^3/(rho_f*nu^2)",
+                "solve": "L",
+                "meaning": "the gravity-viscosity group g(ρ_f − ρ_g)L³/(ρ_fν²); with Π₄ it gives the film Reynolds number"
+              },
+              {
+                "id": "Ja",
+                "tex": "Ja",
+                "def": "c_p*DT_w/h_fg",
+                "solve": "DT_w",
+                "meaning": "Jakob number c_p(T_sat − T_w)/h_fg, the sensible-to-latent ratio (Lienhard's convention, eq. 8.48)"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "nu*rho_f*c_p/k",
+                "solve": "k",
+                "meaning": "Prandtl number of the liquid"
+              }
+            ],
+            "equations": [
+              {
+                "of": "film",
+                "text": "D^3*d(D,X) = 1"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "top",
+                "text": "D = 0",
+                "at": "X = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Pi4",
+              "tex": "\\Pi_4",
+              "label": "film group g(ρ_f − ρ_g)h′_fg L³/(νkΔT)",
+              "min": 1000000.0,
+              "max": 1e+18,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Ga",
+              "tex": "Ga",
+              "label": "gravity-viscosity group g(ρ_f − ρ_g)L³/(ρ_fν²)",
+              "min": 1000.0,
+              "max": 1e+16,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Ja",
+              "tex": "Ja",
+              "label": "Jakob number c_p(T_sat − T_w)/h_fg",
+              "min": 0.0001,
+              "max": 0.2,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Pr",
+              "tex": "Pr",
+              "label": "Prandtl number of the liquid",
+              "min": 0.6,
+              "max": 100,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Pure saturated vapour at rest: no vapour shear on the film and no noncondensable gas. As little as 1 % of air by mass can halve h (Lienhard and Lienhard, section 8.5).",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "A laminar film: inertia and convection in the film are small, so the temperature profile is linear and the velocity profile is parabolic. Constant liquid properties at the film temperature, ρ_g and h_fg at T_sat.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Pr ≥ 0.6, the range of the latent-heat correction (8.61). Liquid metals need a separate declaration.",
+              "source": "lienhard-2024"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact groups Π₄, Ga, Ja and Pr in rationals, and the film thickness δ(L)⁴ = 4νk(T_sat − T_w)L/(g(ρ_f − ρ_g)h′_fg) as an exact rational.",
+            "The exact latent-energy balance at the bottom: the heat through the wall, (4/3)kΔT L/δ(L), equals h′_fg times the condensate flow g(ρ_f − ρ_g)δ(L)³/(3ν); their ratio is 1 exactly when δ(L)⁴ has its exact value.",
+            "The exact constant of the mean Nusselt number: Nu_L = (4/3)L/δ(L) = (2√2/3)Π₄^(1/4), so 0.9428 is 2√2/3 rounded."
+          ],
+          "numerical": [
+            "The film thickness by the fourth root, the local and mean heat-transfer coefficients, the heat flow per unit width and the film Reynolds number in IEEE double; the Sadasivan–Lienhard correction against the record's h′_fg."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "In the film, gravity balances viscosity (the parabolic profile) and conduction across the film carries the latent heat of the condensate. Inertia and convection in the film are neglected: their ratio to the kept terms is of order Ja/Pr and Re_c, small in a laminar film."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Nusselt's result is the leading order for Ja → 0. The correction h′_fg brings in the first order in Ja; Sparrow and Gregg's boundary-layer analysis confirms it for Pr ≥ 0.6 (Lienhard and Lienhard, Fig. 8.12)."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The film becomes wavy at Re_c ≈ 7 and turbulent at Re_c ≈ 400. These are instabilities of the film flow, and the page treats them as an empirical boundary from data. A stability analysis of the film needs a separate declaration with the full film equations."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The film equation has one solution δ = (4X)^(1/4) in units of its scale, for each set of values. No branch exists."
+          }
+        },
+        "limitations": [
+          "Laminar films only: above Re_c = Γ_c/μ ≈ 400 the film is turbulent and the page refuses the result; between 7 and 400 ripples raise h by up to about 20 % above Nusselt's value (Lienhard and Lienhard, Fig. 8.15).",
+          "A vertical plane wall; inclined walls, tubes and spheres need the effective gravity of Dhir and Lienhard (eq. 8.63) in a separate declaration.",
+          "No vapour shear, no superheated vapour and no noncondensable gas."
+        ],
+        "acceptance": {
+          "example": "film-condensation",
+          "reference": "Lienhard and Lienhard, Example 8.6: water at 1 atm on a strip 30 cm high at 90 °C, liquid properties at 95 °C, h′_fg = 2281 kJ/kg; δ(L) = 0.104 mm, Nu_L = 3846, q = 8.68 × 10⁴ W/m², Q = 26.1 kW per metre of width and ṁ = 0.0114 kg/(m·s).",
+          "tolerance": "Exact for the groups, δ(L)⁴ and the latent-energy balance; relative 5e-3 against the book's three- and four-digit values.",
+          "checks": [
+            "The latent-energy balance at the bottom of the wall holds exactly.",
+            "The film thickness, the Nusselt number, the heat flux and the condensate flow agree with Example 8.6.",
+            "The film Reynolds number places the film in its regime, and the page refuses a turbulent film."
+          ]
+        },
+        "solver": {
+          "method": "Closed form: δ = (4X)^(1/4) in units of the declared scale; the fourth root in IEEE double; exact rationals for every group and identity.",
+          "discretization": "None: the film equation has an exact solution.",
+          "convergence": "Not applicable: no discretization.",
+          "reproducibility": "Exact rationals (BigInt) and IEEE double. No random numbers."
+        }
+      },
+      {
+        "id": "hx-parallel",
+        "family": "heat-exchangers",
+        "title": "Parallel-flow heat exchanger",
+        "piece": 8,
+        "model": {
+          "summary": "Steady single-pass exchanger in parallel flow: both streams enter at a = 0 and flow in the same direction. The coordinate a is the heat-transfer area passed by the hot stream. The overall coefficient U_HX and the capacity rates C = ṁc_p are constant, and the exchanger loses no heat to its surroundings.",
+          "roles": [
+            {
+              "id": "T_h",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the hot stream"
+            },
+            {
+              "id": "T_c",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the cold stream"
+            },
+            {
+              "id": "a",
+              "quantity": "area",
+              "kind": "coordinate",
+              "meaning": "heat-transfer area from the hot inlet"
+            },
+            {
+              "id": "U",
+              "quantity": "overall-heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "overall heat-transfer coefficient U_HX"
+            },
+            {
+              "id": "A",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "total heat-transfer area"
+            },
+            {
+              "id": "C_h",
+              "quantity": "heat-capacity-rate",
+              "kind": "parameter",
+              "meaning": "capacity rate of the hot stream, the smaller one"
+            },
+            {
+              "id": "C_c",
+              "quantity": "heat-capacity-rate",
+              "kind": "parameter",
+              "meaning": "capacity rate of the cold stream, the larger one or the same"
+            },
+            {
+              "id": "T_h_in",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "inlet temperature of the hot stream"
+            },
+            {
+              "id": "T_c_in",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "inlet temperature of the cold stream"
+            },
+            {
+              "id": "DT_in",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "inlet temperature difference T_h,in − T_c,in"
+            },
+            {
+              "id": "Q",
+              "quantity": "heat-flow",
+              "kind": "parameter",
+              "meaning": "heat flow from the hot stream to the cold stream",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "hot",
+              "kind": "governing",
+              "text": "C_h*d(T_h,a) = -U*(T_h - T_c)",
+              "domain": "0 < a < A"
+            },
+            {
+              "id": "cold",
+              "kind": "governing",
+              "text": "C_c*d(T_c,a) = U*(T_h - T_c)",
+              "domain": "0 < a < A"
+            }
+          ],
+          "closures": [
+            "The local heat flux between the streams is U_HX(T_h − T_c), with a constant overall coefficient. Each stream changes its enthalpy as C dT, with C = ṁc_p constant (Lienhard and Lienhard, section 3.3; Bannerman, Heat exchanger notes, eqs. 23 to 27)."
+          ],
+          "geometry": "A single-pass exchanger with total area A. The coordinate a runs from 0 at the hot inlet to A at the hot outlet.",
+          "conditions": [
+            {
+              "id": "hot-in",
+              "kind": "boundary",
+              "text": "T_h = T_h_in",
+              "at": "a = 0",
+              "meaning": "the hot stream enters at a = 0"
+            },
+            {
+              "id": "cold-in",
+              "kind": "boundary",
+              "text": "T_c = T_c_in",
+              "at": "a = 0",
+              "meaning": "the cold stream enters at a = 0"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "xi",
+                "of": "a",
+                "offset": "0",
+                "scale": "A",
+                "tex": "\\xi"
+              },
+              {
+                "symbol": "theta_h",
+                "of": "T_h",
+                "offset": "T_c_in",
+                "scale": "DT_in",
+                "tex": "\\theta_h"
+              },
+              {
+                "symbol": "theta_c",
+                "of": "T_c",
+                "offset": "T_c_in",
+                "scale": "DT_in",
+                "tex": "\\theta_c"
+              }
+            ],
+            "definitions": [
+              {
+                "symbol": "DT_in",
+                "def": "T_h_in - T_c_in"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "NTU",
+                "tex": "NTU",
+                "def": "U*A/C_h",
+                "solve": "A",
+                "meaning": "number of transfer units U_HX A/C_min, with the hot stream as the stream of C_min"
+              },
+              {
+                "id": "Cr",
+                "tex": "C_r",
+                "def": "C_h/C_c",
+                "solve": "C_c",
+                "meaning": "capacity rate ratio C_min/C_max"
+              }
+            ],
+            "equations": [
+              {
+                "of": "hot",
+                "text": "d(theta_h,xi) = -NTU*(theta_h - theta_c)"
+              },
+              {
+                "of": "cold",
+                "text": "d(theta_c,xi) = NTU*Cr*(theta_h - theta_c)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "hot-in",
+                "text": "theta_h = 1",
+                "at": "xi = 0"
+              },
+              {
+                "of": "cold-in",
+                "text": "theta_c = 0",
+                "at": "xi = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "NTU",
+              "tex": "NTU",
+              "label": "number of transfer units U_HX A/C_min",
+              "min": 0.01,
+              "max": 10,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Cr",
+              "tex": "C_r",
+              "label": "capacity rate ratio C_min/C_max",
+              "min": 0,
+              "max": 1,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady operation. Constant overall coefficient U_HX and constant capacity rates C = ṁc_p, with no phase change in either stream.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "No heat loss to the surroundings and no conduction along the flow direction.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "The declaration names the hot stream as the stream with the smaller capacity rate (C_h ≤ C_c), so NTU = U_HX A/C_h and 0 ≤ C_r = C_h/C_c ≤ 1. For C_h > C_c, exchange the names of the two streams, or the point lies outside the domain.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact groups NTU = U_HX A/C_min and C_r = C_min/C_max in rationals, and the exact identity C_h·(dT_h/da) + C_c·(dT_c/da) = 0 of the two equations (the conserved enthalpy flux).",
+            "The effectiveness ε = Q̇/(C_min ΔT_in) in closed form, ε = (1 − e^{−(1 + C_r)NTU})/(1 + C_r)."
+          ],
+          "numerical": [
+            "The temperature profiles θ_h(ξ) and θ_c(ξ) by fourth-order Runge–Kutta on 25, 50, 100 and 200 steps. The effectiveness from each stream, the heat balance and the order of convergence."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete along the exchanger: the change of the stream temperature and the heat exchanged with the other stream. NTU compares them. For NTU ≪ 1 the streams change little; for NTU ≫ 1 the temperature difference between the streams decays to zero."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The single-stream limit C_r → 0 gives ε = 1 − e^{−NTU} for every arrangement. The limit NTU → ∞ gives ε → 1/(1 + C_r), below 1: parallel flow cannot reach the cold inlet temperature."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declared model is a steady, linear boundary-value problem with one solution for each NTU and C_r. It has no dynamics to destabilize. Flow maldistribution or two-phase instability needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The equations are linear in the temperatures, so the solution is unique and changes smoothly with NTU and C_r. No branch can split."
+          }
+        },
+        "limitations": [
+          "Constant U_HX and constant capacity rates only: a coefficient that changes along the exchanger, or a stream that condenses or boils, needs a separate declaration.",
+          "Single-pass parallel flow only. Shell-and-tube and cross-flow arrangements need their own effectiveness relations.",
+          "No fouling and no heat loss: both change U_HX and the heat balance."
+        ],
+        "acceptance": {
+          "example": "hx-parallel",
+          "reference": "Lienhard and Lienhard, Example 3.5: C_h = 10 000 W/K, C_c = 20 000 W/K, A = 30 m², U = 500 W/(m²·K), inlets 150 °C and 40 °C give NTU = 1.5, C_r = 0.5, ε = 0.596, Q = 655.6 kW, T_h,out = 84.44 °C and T_c,out = 72.78 °C (the book rounds ε to three digits). Eq. (3.20) for ε.",
+          "tolerance": "Exact for the groups and the conservation identity; relative 1e-10 for the Runge–Kutta effectiveness against the closed form at 200 steps; relative 1e-3 against the book's rounded values.",
+          "checks": [
+            "NTU and C_r are exact rationals of the record's values.",
+            "The heat lost by the hot stream equals the heat gained by the cold stream: exact for the closed form, and within 1e-12 in the Runge–Kutta solution.",
+            "The effectiveness, the heat flow and the outlet temperatures agree with Example 3.5."
+          ]
+        },
+        "solver": {
+          "method": "Closed-form effectiveness; classical fourth-order Runge–Kutta for the profiles.",
+          "discretization": "Uniform steps in ξ = a/A: 25, 50, 100 and 200 steps.",
+          "convergence": "The error of the effectiveness against the closed form falls by about 16 for each halving of the step (fourth order), down to rounding.",
+          "reproducibility": "Exact rationals (BigInt) for the groups; IEEE double for the profiles. No random numbers."
+        }
+      },
+      {
+        "id": "hx-counterflow",
+        "family": "heat-exchangers",
+        "title": "Counterflow heat exchanger",
+        "piece": 8,
+        "model": {
+          "summary": "Steady single-pass exchanger in counterflow: the hot stream enters at a = 0 and the cold stream enters at a = A, in the opposite direction. The coordinate a is the heat-transfer area passed by the hot stream. The overall coefficient U_HX and the capacity rates C = ṁc_p are constant, and the exchanger loses no heat to its surroundings.",
+          "roles": [
+            {
+              "id": "T_h",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the hot stream"
+            },
+            {
+              "id": "T_c",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the cold stream"
+            },
+            {
+              "id": "a",
+              "quantity": "area",
+              "kind": "coordinate",
+              "meaning": "heat-transfer area from the hot inlet"
+            },
+            {
+              "id": "U",
+              "quantity": "overall-heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "overall heat-transfer coefficient U_HX"
+            },
+            {
+              "id": "A",
+              "quantity": "area",
+              "kind": "parameter",
+              "meaning": "total heat-transfer area"
+            },
+            {
+              "id": "C_h",
+              "quantity": "heat-capacity-rate",
+              "kind": "parameter",
+              "meaning": "capacity rate of the hot stream, the smaller one"
+            },
+            {
+              "id": "C_c",
+              "quantity": "heat-capacity-rate",
+              "kind": "parameter",
+              "meaning": "capacity rate of the cold stream, the larger one or the same"
+            },
+            {
+              "id": "T_h_in",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "inlet temperature of the hot stream"
+            },
+            {
+              "id": "T_c_in",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "inlet temperature of the cold stream"
+            },
+            {
+              "id": "DT_in",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "inlet temperature difference T_h,in − T_c,in"
+            },
+            {
+              "id": "Q",
+              "quantity": "heat-flow",
+              "kind": "parameter",
+              "meaning": "heat flow from the hot stream to the cold stream",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "hot",
+              "kind": "governing",
+              "text": "C_h*d(T_h,a) = -U*(T_h - T_c)",
+              "domain": "0 < a < A"
+            },
+            {
+              "id": "cold",
+              "kind": "governing",
+              "text": "C_c*d(T_c,a) = -U*(T_h - T_c)",
+              "domain": "0 < a < A"
+            }
+          ],
+          "closures": [
+            "The local heat flux between the streams is U_HX(T_h − T_c), with a constant overall coefficient. Each stream changes its enthalpy as C dT, with C = ṁc_p constant (Lienhard and Lienhard, section 3.3; Bannerman, Heat exchanger notes, eqs. 23 to 27)."
+          ],
+          "geometry": "A single-pass exchanger with total area A. The coordinate a runs from 0 at the hot inlet to A at the hot outlet. The cold stream enters at a = A.",
+          "conditions": [
+            {
+              "id": "hot-in",
+              "kind": "boundary",
+              "text": "T_h = T_h_in",
+              "at": "a = 0",
+              "meaning": "the hot stream enters at a = 0"
+            },
+            {
+              "id": "cold-in",
+              "kind": "boundary",
+              "text": "T_c = T_c_in",
+              "at": "a = A",
+              "meaning": "the cold stream enters at a = A"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "xi",
+                "of": "a",
+                "offset": "0",
+                "scale": "A",
+                "tex": "\\xi"
+              },
+              {
+                "symbol": "theta_h",
+                "of": "T_h",
+                "offset": "T_c_in",
+                "scale": "DT_in",
+                "tex": "\\theta_h"
+              },
+              {
+                "symbol": "theta_c",
+                "of": "T_c",
+                "offset": "T_c_in",
+                "scale": "DT_in",
+                "tex": "\\theta_c"
+              }
+            ],
+            "definitions": [
+              {
+                "symbol": "DT_in",
+                "def": "T_h_in - T_c_in"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "NTU",
+                "tex": "NTU",
+                "def": "U*A/C_h",
+                "solve": "A",
+                "meaning": "number of transfer units U_HX A/C_min, with the hot stream as the stream of C_min"
+              },
+              {
+                "id": "Cr",
+                "tex": "C_r",
+                "def": "C_h/C_c",
+                "solve": "C_c",
+                "meaning": "capacity rate ratio C_min/C_max"
+              }
+            ],
+            "equations": [
+              {
+                "of": "hot",
+                "text": "d(theta_h,xi) = -NTU*(theta_h - theta_c)"
+              },
+              {
+                "of": "cold",
+                "text": "d(theta_c,xi) = -NTU*Cr*(theta_h - theta_c)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "hot-in",
+                "text": "theta_h = 1",
+                "at": "xi = 0"
+              },
+              {
+                "of": "cold-in",
+                "text": "theta_c = 0",
+                "at": "xi = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "NTU",
+              "tex": "NTU",
+              "label": "number of transfer units U_HX A/C_min",
+              "min": 0.01,
+              "max": 10,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Cr",
+              "tex": "C_r",
+              "label": "capacity rate ratio C_min/C_max",
+              "min": 0,
+              "max": 1,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady operation. Constant overall coefficient U_HX and constant capacity rates C = ṁc_p, with no phase change in either stream.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "No heat loss to the surroundings and no conduction along the flow direction.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "The declaration names the hot stream as the stream with the smaller capacity rate (C_h ≤ C_c), so NTU = U_HX A/C_h and 0 ≤ C_r = C_h/C_c ≤ 1. For C_h > C_c, exchange the names of the two streams, or the point lies outside the domain.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact groups NTU = U_HX A/C_min and C_r = C_min/C_max in rationals, and the exact identity C_h·(dT_h/da) − C_c·(dT_c/da) = 0 of the two equations (the conserved enthalpy flux).",
+            "The effectiveness ε = Q̇/(C_min ΔT_in) in closed form, ε = (1 − e^{−(1 − C_r)NTU})/(1 − C_r e^{−(1 − C_r)NTU}), exact in rationals at C_r = 1: ε = NTU/(1 + NTU). The exact power series of ε in 1 − C_r about the balanced exchanger."
+          ],
+          "numerical": [
+            "The temperature profiles θ_h(ξ) and θ_c(ξ) by fourth-order Runge–Kutta on 25, 50, 100 and 200 steps, with the two-point condition met by superposition of two initial-value solutions (the problem is linear). The effectiveness from each stream, the heat balance and the order of convergence."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete along the exchanger: the change of the stream temperature and the heat exchanged with the other stream. NTU compares them. For NTU ≪ 1 the streams change little; for NTU ≫ 1 the temperature difference falls to zero at one end, or stays constant when C_r = 1."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The single-stream limit C_r → 0 gives ε = 1 − e^{−NTU} for every arrangement. The balanced limit C_r → 1 is regular: the series ε = NTU/(1 + NTU) + (1 − C_r)NTU²/(2(1 + NTU)²) + … has exact rational coefficients for a rational NTU."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declared model is a steady, linear boundary-value problem with one solution for each NTU and C_r. It has no dynamics to destabilize. Flow maldistribution or two-phase instability needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The equations are linear in the temperatures, so the solution is unique and changes smoothly with NTU and C_r. No branch can split."
+          }
+        },
+        "limitations": [
+          "Constant U_HX and constant capacity rates only: a coefficient that changes along the exchanger, or a stream that condenses or boils, needs a separate declaration.",
+          "Single-pass counterflow only. Shell-and-tube and cross-flow arrangements need their own effectiveness relations.",
+          "No fouling and no heat loss: both change U_HX and the heat balance."
+        ],
+        "acceptance": {
+          "example": "hx-counterflow",
+          "reference": "Lienhard and Lienhard, eq. (3.21) and its balanced limit eq. (3.23), ε = NTU/(1 + NTU), with Example 3.2: when C_h = C_c the temperature difference between the streams is constant. The example uses the exchanger of Example 3.5 in counterflow with C_c = C_h = 10 000 W/K: ε = 3/5, Q = 660 kW, T_h,out = 84 °C and T_c,out = 106 °C, exactly.",
+          "tolerance": "Exact for the groups, the balanced effectiveness, the outlet temperatures and the series coefficients; relative 1e-10 for the Runge–Kutta effectiveness; relative 1e-6 for the general closed form at C_r = 1 − 10⁻⁴ against the series.",
+          "checks": [
+            "The balanced effectiveness NTU/(1 + NTU) is exact, and the general relation tends to it as C_r → 1.",
+            "The temperature difference between the streams is constant along a balanced exchanger.",
+            "The heat lost by the hot stream equals the heat gained by the cold stream."
+          ]
+        },
+        "solver": {
+          "method": "Closed-form effectiveness, exact rationals at C_r = 1 and an exact rational power series about C_r = 1; classical fourth-order Runge–Kutta for the profiles, with superposition for the two-point condition.",
+          "discretization": "Uniform steps in ξ = a/A: 25, 50, 100 and 200 steps.",
+          "convergence": "The error of the effectiveness against the closed form falls by about 16 for each halving of the step (fourth order), down to rounding.",
+          "reproducibility": "Exact rationals (BigInt) for the groups; IEEE double for the profiles. No random numbers."
+        }
+      },
+      {
+        "id": "absorbing-slab",
+        "family": "radiation-in-a-medium",
+        "title": "Grey absorbing and emitting slab at a uniform temperature between black walls",
+        "piece": 8,
+        "model": {
+          "summary": "A plane layer of a grey, absorbing and emitting, non-scattering medium with absorption coefficient κ_a, thickness L and a uniform prescribed temperature T_g lies between two black walls at T_1 and T_2. The radiative-transfer equation along a ray with direction cosine μ is solved exactly for the forward (μ > 0) and backward (μ < 0) intensities.",
+          "roles": [
+            {
+              "id": "i_p",
+              "quantity": "emissive-power",
+              "kind": "field",
+              "meaning": "π times the intensity toward x > 0"
+            },
+            {
+              "id": "i_m",
+              "quantity": "emissive-power",
+              "kind": "field",
+              "meaning": "π times the intensity toward x < 0"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from wall 1"
+            },
+            {
+              "id": "mu",
+              "quantity": "direction-cosine",
+              "kind": "coordinate",
+              "meaning": "|cos| of the angle between the ray and the x axis"
+            },
+            {
+              "id": "kappa_a",
+              "quantity": "absorption-coefficient",
+              "kind": "parameter",
+              "meaning": "absorption coefficient of the medium"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "thickness of the layer"
+            },
+            {
+              "id": "sigma",
+              "quantity": "stefan-boltzmann",
+              "kind": "parameter",
+              "meaning": "Stefan–Boltzmann constant"
+            },
+            {
+              "id": "T_g",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "uniform temperature of the medium"
+            },
+            {
+              "id": "T_1",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "temperature of wall 1 at x = 0"
+            },
+            {
+              "id": "T_2",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "temperature of wall 2 at x = L"
+            },
+            {
+              "id": "q_1",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "net radiative heat flux into the medium at wall 1",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "forward",
+              "kind": "governing",
+              "text": "mu*d(i_p,x) = kappa_a*(sigma*T_g^4 - i_p)",
+              "domain": "0 < x < L, 0 < μ ≤ 1"
+            },
+            {
+              "id": "backward",
+              "kind": "governing",
+              "text": "-mu*d(i_m,x) = kappa_a*(sigma*T_g^4 - i_m)",
+              "domain": "0 < x < L, 0 < μ ≤ 1"
+            }
+          ],
+          "closures": [
+            "Kirchhoff's law for a grey medium: the emission term is κ_a times the blackbody intensity σT_g⁴/π, and the absorption is κ_a times the intensity. No scattering. The net heat flux is q = 2∫₀¹(i_p − i_m)μ dμ in terms of i = πI, and the angular integrals of e^(−τ/μ) are the exponential integrals E_3 (Beach, Özişik and Siewert, 1971)."
+          ],
+          "geometry": "A plane layer 0 < x < L, unbounded in y and z, between two parallel black walls.",
+          "conditions": [
+            {
+              "id": "wall-1",
+              "kind": "boundary",
+              "text": "i_p = sigma*T_1^4",
+              "at": "x = 0",
+              "meaning": "wall 1 is black: it emits σT_1⁴ and reflects nothing"
+            },
+            {
+              "id": "wall-2",
+              "kind": "boundary",
+              "text": "i_m = sigma*T_2^4",
+              "at": "x = L",
+              "meaning": "wall 2 is black"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "m",
+                "of": "mu",
+                "offset": "0",
+                "scale": "1",
+                "tex": "\\mu"
+              },
+              {
+                "symbol": "j_p",
+                "of": "i_p",
+                "offset": "0",
+                "scale": "sigma*T_g^4",
+                "tex": "j_+"
+              },
+              {
+                "symbol": "j_m",
+                "of": "i_m",
+                "offset": "0",
+                "scale": "sigma*T_g^4",
+                "tex": "j_-"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "tau_L",
+                "tex": "\\tau_L",
+                "def": "kappa_a*L",
+                "solve": "L",
+                "meaning": "optical thickness κ_aL"
+              },
+              {
+                "id": "r_1",
+                "tex": "r_1",
+                "def": "T_1/T_g",
+                "solve": "T_1",
+                "meaning": "temperature ratio T_1/T_g, absolute temperatures"
+              },
+              {
+                "id": "r_2",
+                "tex": "r_2",
+                "def": "T_2/T_g",
+                "solve": "T_2",
+                "meaning": "temperature ratio T_2/T_g, absolute temperatures"
+              }
+            ],
+            "equations": [
+              {
+                "of": "forward",
+                "text": "m*d(j_p,X) = tau_L*(1 - j_p)"
+              },
+              {
+                "of": "backward",
+                "text": "-m*d(j_m,X) = tau_L*(1 - j_m)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "wall-1",
+                "text": "j_p = r_1^4",
+                "at": "X = 0"
+              },
+              {
+                "of": "wall-2",
+                "text": "j_m = r_2^4",
+                "at": "X = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "tau_L",
+              "tex": "\\tau_L",
+              "label": "optical thickness κ_aL",
+              "min": 0.001,
+              "max": 100,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "r_1",
+              "tex": "r_1",
+              "label": "temperature ratio T_1/T_g",
+              "min": 0,
+              "max": 3,
+              "log": false,
+              "kind": "parameter"
+            },
+            {
+              "id": "r_2",
+              "tex": "r_2",
+              "label": "temperature ratio T_2/T_g",
+              "min": 0,
+              "max": 3,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "A grey, non-scattering medium with a uniform and prescribed temperature T_g: the energy equation of the medium is not solved.",
+              "source": "beach-1971"
+            },
+            {
+              "text": "Black, diffuse walls at uniform temperatures. All temperatures are absolute temperatures, and the ratios keep the fourth powers.",
+              "source": "spec-10"
+            },
+            {
+              "text": "The Rosseland approximation q = −(16σT³/(3κ_a)) dT/dx needs an optically thick medium, τ ≫ 1 (COMSOL, Rosseland approximation). The page applies it only where its error is within the stated tolerance.",
+              "source": "comsol-rosseland"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact groups τ_L, r_1 = T_1/T_g and r_2 = T_2/T_g in rationals; the exact solution of each ray equation, i = σT_g⁴ + (i_wall − σT_g⁴)e^(−κ_a s/μ).",
+            "The angular integrals in closed form: the slab emissivity ε_s = 1 − 2E_3(τ_L), the transmissivity 2E_3(τ_L) and the net fluxes at both walls."
+          ],
+          "numerical": [
+            "E_n(x) by its series or its continued fraction, to about 1e-15.",
+            "An independent check: the net fluxes and the absorbed power from Gauss–Legendre quadrature in μ and x of the exact ray solutions, against the closed form."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Along a ray, the change of the intensity balances emission minus absorption. τ_L/μ compares the path with the mean free path 1/κ_a. For τ_L ≪ 1 the wall intensities pass almost unchanged (optically thin); for τ_L ≫ 1 the medium emits as a black body at T_g except within a few mean free paths of each wall (optically thick)."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Thin limit: ε_s = 2τ_L + O(τ_L² ln τ_L). Thick limit: ε_s = 1 − 2E_3(τ_L), with 2E_3(τ_L) < e^(−τ_L). Rosseland diffusion predicts no net flux inside a uniform medium; the exact flux at the mid-plane is 2E_3(τ_L/2)σ(T_1⁴ − T_2⁴), so the page draws where that error is within the tolerance."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declared model is linear in the intensities with a prescribed temperature. It has one solution and no dynamics."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "Linear model with a unique solution for each τ_L, r_1 and r_2: no branches."
+          }
+        },
+        "limitations": [
+          "A prescribed uniform temperature of the medium: radiative equilibrium, or coupling with conduction or convection, needs a separate declaration with the energy equation of the medium.",
+          "Grey and non-scattering only; band models of real gases need a separate declaration.",
+          "Black walls only; grey walls need the radiosity balance of each wall."
+        ],
+        "acceptance": {
+          "example": "absorbing-slab",
+          "reference": "Beach, Özişik and Siewert (1971), Table 1, c = 0, black walls (ε_1 = ε_2 = 1): Q_0(0) = 0.1674, 0.7806 and 1.0000 and Q_1*(τ_0) = 0.8326, 0.2194 and 0.0 at τ_0 = 0.1, 1 and 10. These are the slab emissivity 1 − 2E_3(τ_0) and the transmissivity 2E_3(τ_0).",
+          "tolerance": "Exact for the groups; within half a unit in the last printed digit of the table; relative 1e-10 for the quadrature check.",
+          "checks": [
+            "The page's slab emissivity and transmissivity reproduce Table 1 of Beach, Özişik and Siewert at three optical thicknesses.",
+            "The net fluxes from quadrature of the exact ray solutions equal the closed form.",
+            "The power that the medium absorbs equals the difference of the net wall fluxes."
+          ]
+        },
+        "solver": {
+          "method": "Exact ray solutions; closed-form angular integrals with E_n; Gauss–Legendre quadrature for the independent check.",
+          "discretization": "Check: 40 Gauss–Legendre points in μ and 40 in x.",
+          "convergence": "The quadrature agrees with the closed form to rounding at 40 points; the page shows the agreement at 10, 20 and 40 points.",
+          "reproducibility": "IEEE double; exact rationals for the groups. No random numbers."
+        }
+      },
+      {
+        "id": "stefan-melting",
+        "family": "phase-change",
+        "title": "Melting of a half-space: two-phase Stefan model (Neumann)",
+        "piece": 8,
+        "model": {
+          "summary": "A solid half-space x > 0 starts at the uniform temperature T_i ≤ T_m. At t = 0 the wall x = 0 goes to T_w > T_m, and a liquid layer 0 < x < s(t) grows. Each phase conducts heat with constant properties; both phases have one density; the front x = s(t) is at the melting temperature and moves by the Stefan condition. With T_i = T_m the model is the one-phase Stefan model.",
+          "roles": [
+            {
+              "id": "T_l",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the liquid"
+            },
+            {
+              "id": "T_s",
+              "quantity": "absolute-temperature",
+              "kind": "field",
+              "meaning": "temperature of the solid"
+            },
+            {
+              "id": "s",
+              "quantity": "length",
+              "kind": "field",
+              "meaning": "position of the melting front"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the heated wall"
+            },
+            {
+              "id": "t",
+              "quantity": "time",
+              "kind": "coordinate",
+              "meaning": "time"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density of both phases"
+            },
+            {
+              "id": "c_l",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "specific heat capacity of the liquid"
+            },
+            {
+              "id": "c_s",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "phase": "solid",
+              "meaning": "specific heat capacity of the solid"
+            },
+            {
+              "id": "k_l",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "phase": "fluid",
+              "meaning": "thermal conductivity of the liquid"
+            },
+            {
+              "id": "k_s",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "phase": "solid",
+              "meaning": "thermal conductivity of the solid"
+            },
+            {
+              "id": "ell",
+              "quantity": "latent-heat",
+              "kind": "parameter",
+              "meaning": "specific latent heat of melting"
+            },
+            {
+              "id": "T_w",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "temperature of the heated wall"
+            },
+            {
+              "id": "T_m",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "melting temperature"
+            },
+            {
+              "id": "T_i",
+              "quantity": "absolute-temperature",
+              "kind": "parameter",
+              "meaning": "initial temperature of the solid"
+            },
+            {
+              "id": "DT_l",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "superheat of the wall, T_w − T_m"
+            },
+            {
+              "id": "DT_s",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "subcooling of the solid, T_m − T_i"
+            },
+            {
+              "id": "t_r",
+              "quantity": "time",
+              "kind": "parameter",
+              "meaning": "reference time of the question"
+            },
+            {
+              "id": "x_f",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "far end of the solid (the declared model takes x_f → ∞)"
+            }
+          ],
+          "equations": [
+            {
+              "id": "liquid",
+              "kind": "governing",
+              "text": "rho*c_l*d(T_l,t) = k_l*d(T_l,x,x)",
+              "domain": "0 < x < s(t), t > 0"
+            },
+            {
+              "id": "solid",
+              "kind": "governing",
+              "text": "rho*c_s*d(T_s,t) = k_s*d(T_s,x,x)",
+              "domain": "s(t) < x < x_f, t > 0"
+            },
+            {
+              "id": "front",
+              "kind": "governing",
+              "text": "rho*ell*d(s,t) = k_s*d(T_s,x) - k_l*d(T_l,x)",
+              "domain": "at the front x = s(t)"
+            }
+          ],
+          "closures": [
+            "Fourier conduction in each phase with constant properties. The Stefan condition is the latent-energy balance of the front: the heat that the front receives melts ρℓ ds/dt per unit area (Font, eqs. 2 to 5; Roscani and Tarzia, eq. 3.32 with fractional order 1)."
+          ],
+          "geometry": "A half-space x > 0 with a plane wall at x = 0. The liquid fills 0 < x < s(t) and the solid fills x > s(t).",
+          "conditions": [
+            {
+              "id": "wall",
+              "kind": "boundary",
+              "text": "T_l = T_w",
+              "at": "x = 0",
+              "meaning": "the wall temperature"
+            },
+            {
+              "id": "melt-l",
+              "kind": "interface",
+              "text": "T_l = T_m",
+              "at": "x = s",
+              "meaning": "the liquid is at the melting temperature at the front"
+            },
+            {
+              "id": "melt-s",
+              "kind": "interface",
+              "text": "T_s = T_m",
+              "at": "x = s",
+              "meaning": "the solid is at the melting temperature at the front"
+            },
+            {
+              "id": "far",
+              "kind": "boundary",
+              "text": "T_s = T_i",
+              "at": "x = x_f",
+              "meaning": "the far solid keeps its initial temperature"
+            },
+            {
+              "id": "init-s",
+              "kind": "initial",
+              "text": "T_s = T_i",
+              "at": "t = 0",
+              "meaning": "the solid starts at T_i"
+            },
+            {
+              "id": "init-l",
+              "kind": "initial",
+              "text": "T_l = T_m",
+              "at": "t = 0",
+              "meaning": "the liquid layer has zero thickness at t = 0"
+            },
+            {
+              "id": "front0",
+              "kind": "initial",
+              "text": "s = 0",
+              "at": "t = 0",
+              "meaning": "no liquid at t = 0"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "(k_l*t_r/(rho*c_l))^(1/2)",
+                "tex": "X"
+              },
+              {
+                "symbol": "tau",
+                "of": "t",
+                "offset": "0",
+                "scale": "t_r",
+                "tex": "\\tau"
+              },
+              {
+                "symbol": "S",
+                "of": "s",
+                "offset": "0",
+                "scale": "(k_l*t_r/(rho*c_l))^(1/2)",
+                "tex": "S"
+              },
+              {
+                "symbol": "theta_l",
+                "of": "T_l",
+                "offset": "T_m",
+                "scale": "DT_l",
+                "tex": "\\theta_l"
+              },
+              {
+                "symbol": "theta_s",
+                "of": "T_s",
+                "offset": "T_m",
+                "scale": "DT_s",
+                "tex": "\\theta_s"
+              }
+            ],
+            "definitions": [
+              {
+                "symbol": "DT_l",
+                "def": "T_w - T_m"
+              },
+              {
+                "symbol": "DT_s",
+                "def": "T_m - T_i"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Ste_l",
+                "tex": "Ste_l",
+                "def": "c_l*DT_l/ell",
+                "solve": "DT_l",
+                "meaning": "Stefan number of the liquid, c_l(T_w − T_m)/ℓ"
+              },
+              {
+                "id": "Ste_s",
+                "tex": "Ste_s",
+                "def": "c_s*DT_s/ell",
+                "solve": "DT_s",
+                "meaning": "Stefan number of the solid, c_s(T_m − T_i)/ℓ"
+              },
+              {
+                "id": "kappa",
+                "tex": "\\kappa",
+                "def": "k_s*c_l/(k_l*c_s)",
+                "solve": "k_s",
+                "meaning": "diffusivity ratio α_s/α_l"
+              },
+              {
+                "id": "Xf",
+                "tex": "X_f",
+                "def": "x_f*(rho*c_l/(k_l*t_r))^(1/2)",
+                "solve": "x_f",
+                "meaning": "far end of the solid in units of (α_l t_r)^(1/2)"
+              }
+            ],
+            "equations": [
+              {
+                "of": "liquid",
+                "text": "d(theta_l,tau) = d(theta_l,X,X)"
+              },
+              {
+                "of": "solid",
+                "text": "d(theta_s,tau)/kappa = d(theta_s,X,X)"
+              },
+              {
+                "of": "front",
+                "text": "d(S,tau)/Ste_l = Ste_s*kappa/Ste_l*d(theta_s,X) - d(theta_l,X)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "wall",
+                "text": "theta_l = 1",
+                "at": "X = 0"
+              },
+              {
+                "of": "melt-l",
+                "text": "theta_l = 0",
+                "at": "X = s*(rho*c_l/(k_l*t_r))^(1/2)"
+              },
+              {
+                "of": "melt-s",
+                "text": "theta_s = 0",
+                "at": "X = s*(rho*c_l/(k_l*t_r))^(1/2)"
+              },
+              {
+                "of": "far",
+                "text": "theta_s = -1",
+                "at": "X = Xf"
+              },
+              {
+                "of": "init-s",
+                "text": "theta_s = -1",
+                "at": "tau = 0"
+              },
+              {
+                "of": "init-l",
+                "text": "theta_l = 0",
+                "at": "tau = 0"
+              },
+              {
+                "of": "front0",
+                "text": "S = 0",
+                "at": "tau = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Ste_l",
+              "tex": "Ste_l",
+              "label": "Stefan number of the liquid c_l(T_w − T_m)/ℓ",
+              "min": 0.001,
+              "max": 10,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Ste_s",
+              "tex": "Ste_s",
+              "label": "Stefan number of the solid c_s(T_m − T_i)/ℓ",
+              "min": 0,
+              "max": 2,
+              "log": false,
+              "kind": "parameter"
+            },
+            {
+              "id": "kappa",
+              "tex": "\\kappa",
+              "label": "diffusivity ratio α_s/α_l",
+              "min": 0.1,
+              "max": 100,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Xf",
+              "tex": "X_f",
+              "label": "far end of the solid in units of (α_l t_r)^(1/2)",
+              "min": 1,
+              "max": 1000000.0,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Pure conduction in both phases with constant properties, and one density for both phases (no flow from the change of density).",
+              "source": "roscani-tarzia"
+            },
+            {
+              "text": "A sharp front at the melting temperature, without supercooling and without a mushy zone.",
+              "source": "font-stefan"
+            },
+            {
+              "text": "A half-space: the far end x_f of the solid is far beyond the thermal layer, X_f ≫ 2λ/ν + 8√κ·1, so the similarity solution with x_f → ∞ applies.",
+              "source": "roscani-tarzia"
+            },
+            {
+              "text": "Ste_s = 0 (T_i = T_m) gives the one-phase model of Font, whose group β = ℓ/(c(T_f − T_c)) is the reciprocal of the Stefan number used here.",
+              "source": "font-stefan"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact groups Ste_l, Ste_s and κ = α_s/α_l in rationals, and the exact reduction of the Stefan condition to the dimensionless form with the factor Ste_l.",
+            "The similarity reduction η = x/(2(α_l t)^(1/2)): the erf profiles satisfy the heat equation and both front conditions, and the front condition gives the transcendental equation for λ."
+          ],
+          "numerical": [
+            "λ by bisection on the decreasing function F(λ) to the last bit; erf and erfc to about 1e-15.",
+            "The latent-energy balance by Simpson quadrature of the profiles, against the closed-form energy input.",
+            "An independent transient solution: a front-fixing finite-difference scheme in both phases (backward Euler, central differences), started from a profile that is not the similarity profile, on three meshes."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "The latent heat and the sensible heat compete in the front condition. For Ste_l ≪ 1 the latent heat controls and the liquid profile is nearly linear (quasi-steady); for Ste_l ≫ 1 the sensible heat controls. Ste_s and κ measure how much heat the cold solid takes from the front."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The one-phase small-Stefan limit gives λ² = Ste_l/2 − Ste_l²/6 + O(Ste_l³), the quasi-steady front s² = 2Ste_l α_l t at first order. The page compares it with the exact root."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The declared model is the melting problem with a stable planar front. A supercooled liquid or a solidification front with constitutional supercooling can lose stability: that needs a separate declaration with a curved front."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "F(λ) decreases strictly from +∞ to −∞, so the similarity solution is unique for each Ste_l, Ste_s and κ. No branch exists to follow."
+          }
+        },
+        "limitations": [
+          "One density for both phases: a change of volume at melting needs a separate declaration with the flow it causes.",
+          "A half-space with a fixed wall temperature: a finite slab, a convective wall or a heat flux at the wall breaks the similarity and needs a numerical declaration.",
+          "Pure conduction: natural convection in the melt needs a separate declaration."
+        ],
+        "acceptance": {
+          "example": "melting-front",
+          "reference": "Neumann's similarity solution: Roscani and Tarzia, eqs. (3.28) to (3.31) with fractional order 1; with Ste_s = 0 Font's eq. (8), βπ^(1/2)λ erf(λ)e^(λ²) = 1 with β = 1/Ste_l. An independent root from mpmath (tools/family_references.py).",
+          "tolerance": "Exact for the groups; λ within 1e-12 of mpmath; the latent-energy balance within 1e-9; the transient front within 1e-3 relative on the finest mesh, with second-order convergence.",
+          "checks": [
+            "λ is the root of the transcendental equation and agrees with mpmath.",
+            "The energy that enters through the wall equals the latent heat of the melted layer plus the sensible heat of both phases.",
+            "An independent transient solution moves the front as s = 2λ(α_l t)^(1/2)."
+          ]
+        },
+        "solver": {
+          "method": "Bisection for λ; closed-form similarity profiles; Simpson quadrature for the energy balance; front-fixing finite differences (backward Euler) for the transient check.",
+          "discretization": "Transient check: 20, 40 and 80 intervals in the liquid and twice as many in the solid, with 2 000, 4 000 and 8 000 steps geometric in time from τ = 2.5 × 10⁻⁵ to 1/4 in units of t with X = 2(α_l t)^(1/2).",
+          "convergence": "The front error falls by about 4 for each halving of the mesh (second order in space); the finest error is the stated tolerance.",
+          "reproducibility": "IEEE double precision; no random numbers. The reference script tools/family_references.py pins mpmath."
+        }
       }
     ],
     "separate": [
@@ -27089,6 +30869,353 @@
           "NuRe": 1.2472874971
         }
       ]
+    }
+  },
+  "transfer": {
+    "about": "Piece 8 data: the published reference values of the heat-exchanger, film-condensation, pool-boiling and absorbing-slab examples, the named boiling correlations with their constants, sources and strict domain (fluid, surface, pressure, data range and heater), and the empirical boundaries of the condensate film and of nucleate boiling. The page evaluates a correlation only inside its domain.",
+    "literature": {
+      "ex35": {
+        "source": "lienhard-2024",
+        "where": "Example 3.5",
+        "Ch": 10000,
+        "Cc": 20000,
+        "A": 30,
+        "U": 500,
+        "Thin": 150,
+        "Tcin": 40,
+        "NTU": 1.5,
+        "Cr": 0.5,
+        "eps": 0.596,
+        "Q": 655600,
+        "Thout": 84.44,
+        "Tcout": 72.78,
+        "tolerance": 0.001,
+        "note": "The book rounds ε to three digits and computes Q and the outlet temperatures from the rounded value."
+      },
+      "ex86": {
+        "source": "lienhard-2024",
+        "where": "Example 8.6",
+        "g": 9.806,
+        "rhoF": 961.9,
+        "rhoG": 0.6,
+        "nu": 3.091e-07,
+        "k": 0.6773,
+        "cp": 4210,
+        "Pr": 1.85,
+        "hfg": 2257000,
+        "hfgc": 2281000,
+        "dT": 10,
+        "L": 0.3,
+        "delta": 0.000104,
+        "Nu": 3846,
+        "q": 86800,
+        "Qw": 26050,
+        "mdot": 0.0114,
+        "tolerance": 0.005,
+        "note": "Liquid properties at 95 °C, ρ_g and h_fg at 100 °C; h′_fg from eq. (8.61), rounded to 2281 kJ/kg."
+      },
+      "ex92": {
+        "source": "lienhard-2024",
+        "where": "Example 9.2",
+        "cp": 4220,
+        "Pr": 1.75,
+        "drho": 958,
+        "sigma": 0.0589,
+        "hfg": 2257000,
+        "mu": 0.000282,
+        "g": 9.8,
+        "group": 0.00031,
+        "tolerance": 0.01,
+        "note": "μc_p³(g(ρ_f − ρ_g)/σ)^(1/2)/(h_fg²Pr³) = 3.10 × 10⁻⁷ kW/(m²·K³), that is 3.10 × 10⁻⁴ W/(m²·K³). The book does not state g; 9.8 m/s² reproduces its value."
+      },
+      "ex95": {
+        "source": "lienhard-2024",
+        "where": "Example 9.5",
+        "rhoG": 0.597,
+        "hfg": 2257000,
+        "g": 9.8,
+        "rhoF": 958.2,
+        "rhoG4": 0.6,
+        "sigma": 0.0589,
+        "qmax": 1260000,
+        "tolerance": 0.001,
+        "note": "The book uses ρ_g = 0.597 kg/m³ in the square root and 0.6 kg/m³ in the density difference."
+      },
+      "beach": {
+        "source": "beach-1971",
+        "where": "Table 1, c = 0, ε_1 = ε_2 = 1",
+        "tolerance": 5e-05,
+        "rows": [
+          {
+            "tau": 0.1,
+            "emission": 0.1674,
+            "transmission": 0.8326
+          },
+          {
+            "tau": 1,
+            "emission": 0.7806,
+            "transmission": 0.2194
+          },
+          {
+            "tau": 10,
+            "emission": 1.0,
+            "transmission": 0.0
+          }
+        ],
+        "note": "For a non-scattering medium at constant temperature between black walls, Q_0(0) is the slab emissivity 1 − 2E_3(τ_0) and Q_1*(τ_0) is the transmissivity 2E_3(τ_0)."
+      }
+    },
+    "boiling": {
+      "correlation": {
+        "id": "rohsenow",
+        "name": "Rohsenow's nucleate pool-boiling correlation (1952)",
+        "where": "eqn. (9.4) and Table 9.2",
+        "source": "lienhard-2024",
+        "tex": "\\frac{c_p(T_w-T_{sat})}{h_{fg}Pr^{s}}=C_{sf}\\left[\\frac{q}{\\mu h_{fg}}\\sqrt{\\frac{\\sigma}{g(\\rho_f-\\rho_g)}}\\right]^{1/3}",
+        "data": "Rohsenow compared the correlation with data for water boiling on a 0.61 mm platinum wire from 1 atm to 167.7 atm (Fig. 9.7). Typical errors are 100 % in q and 25 % in ΔT_e (section 9.2)."
+      },
+      "peak": {
+        "id": "lienhard-dhir",
+        "name": "Peak heat flux on a large flat heater (Lienhard and Dhir)",
+        "C": "0.149",
+        "where": "eqn. (9.11)",
+        "source": "lienhard-2024",
+        "tex": "q_{max}=0.149\\,\\rho_g^{1/2}h_{fg}\\left[g(\\rho_f-\\rho_g)\\sigma\\right]^{1/4}",
+        "zuber": {
+          "C": "0.131",
+          "where": "eqn. (9.12)",
+          "text": "The Zuber–Kutateladze constant π/24 ≈ 0.131 is 14 % lower. Lienhard and Lienhard state that eqn. (9.12) cannot be applied directly to any actual heater."
+        },
+        "conditions": "Horizontal flat plates with side walls, no entrained side flow, a well-wetted surface, and a heater larger than about 3λ_d1 (section 9.3)."
+      },
+      "surfaces": [
+        {
+          "fluid": "water",
+          "surface": "nickel",
+          "Csf": "0.006",
+          "s": "1"
+        },
+        {
+          "fluid": "water",
+          "surface": "platinum",
+          "Csf": "0.013",
+          "s": "1"
+        },
+        {
+          "fluid": "water",
+          "surface": "copper",
+          "Csf": "0.013",
+          "s": "1"
+        },
+        {
+          "fluid": "water",
+          "surface": "brass",
+          "Csf": "0.006",
+          "s": "1"
+        }
+      ],
+      "otherFluids": "Table 9.2 also lists CCl₄, benzene, n-pentane, ethyl alcohol, isopropyl alcohol, n-butyl alcohol and K₂CO₃ solutions, all with s = 1.7. They need a declaration of their own.",
+      "pressure": {
+        "fluid": "water",
+        "min": 101325,
+        "max": 16992202.5,
+        "where": "Fig. 9.7",
+        "text": "Rohsenow's data for water span 1 atm to 167.7 atm."
+      },
+      "range": {
+        "measure": "Xb",
+        "lo": 0.006,
+        "hi": 0.06,
+        "where": "Fig. 9.7, read from the figure",
+        "text": "The data of Fig. 9.7 lie between c_pΔT_e/(h_fg Pr) ≈ 0.006 and 0.06."
+      },
+      "uncertainty": {
+        "q": 1.0,
+        "dT": 0.25
+      },
+      "boundaries": {
+        "range": {
+          "measure": "X_b",
+          "source": "lienhard-2024",
+          "where": "Fig. 9.7",
+          "data": "The page reads the data range of Rohsenow's comparison from Fig. 9.7 as 0.006 ≤ c_pΔT_e/(h_fg Pr) ≤ 0.06.",
+          "regions": [
+            {
+              "id": "below",
+              "lo": null,
+              "hi": 0.006,
+              "label": "Below the data: natural convection or isolated bubbles; the page refuses the correlation",
+              "status": "unresolved"
+            },
+            {
+              "id": "data",
+              "lo": 0.006,
+              "hi": 0.06,
+              "label": "Inside the data of Rohsenow's comparison",
+              "status": "evidence"
+            },
+            {
+              "id": "above",
+              "lo": 0.06,
+              "hi": null,
+              "label": "Above the data; the page refuses the correlation",
+              "status": "unresolved"
+            }
+          ]
+        },
+        "regime": {
+          "measure": "q/q_max",
+          "source": "lienhard-2024",
+          "where": "section 9.3",
+          "data": "Nucleate boiling ends at the peak heat flux q_max of eqn. (9.11).",
+          "regions": [
+            {
+              "id": "nucleate",
+              "lo": null,
+              "hi": 1,
+              "label": "Nucleate boiling: below the peak heat flux",
+              "status": "evidence"
+            },
+            {
+              "id": "beyond",
+              "lo": 1,
+              "hi": null,
+              "label": "Beyond the peak heat flux: transition or film boiling needs a separate declaration",
+              "status": "unresolved"
+            }
+          ]
+        }
+      }
+    },
+    "film": {
+      "correction": {
+        "C1": "0.683",
+        "C2": "0.228",
+        "where": "eqn. (8.61)",
+        "prandtlMin": "0.6",
+        "text": "Sadasivan and Lienhard's latent-heat correction for Pr ≥ 0.6."
+      },
+      "boundaries": {
+        "state": {
+          "measure": "Re_c",
+          "source": "lienhard-2024",
+          "where": "section 8.5 and Fig. 8.15",
+          "data": "Re_c = Γ_c/μ. Ripples appear at Re_c ≈ 7 and raise h by up to about 20 % before the laminar–turbulent transition at Re_c ≈ 400 (data of Gregorig, Kern and Turek for water). Many American texts use 4Γ_c/μ instead.",
+          "regions": [
+            {
+              "id": "wavefree",
+              "lo": null,
+              "hi": 7,
+              "label": "Wave-free laminar film: Nusselt's theory agrees with the data",
+              "status": "evidence"
+            },
+            {
+              "id": "rippled",
+              "lo": 7,
+              "hi": 400,
+              "label": "Rippled laminar film: the data lie up to about 20 % above Nusselt's theory",
+              "status": "evidence"
+            },
+            {
+              "id": "turbulent",
+              "lo": 400,
+              "hi": null,
+              "label": "Turbulent film: the declared model does not apply",
+              "status": "unresolved"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "transferrefs": {
+    "about": "Independent reference values for the piece 8 models, from tools/transfer_references.py. CI never runs the script; the tests compare the page's engine with these values.",
+    "versions": {
+      "python": "3.12.13",
+      "sympy": "1.14.0",
+      "mpmath": "1.3.0"
+    },
+    "exchanger": {
+      "NTU": "3/2",
+      "series": [
+        "3/5",
+        "9/50",
+        "9/1000",
+        "-27/2500"
+      ],
+      "parallel_eps": "0.5964005169587571088111882"
+    },
+    "stefan": {
+      "SteL": "422/3333",
+      "SteS": "70/1111",
+      "kappa": "93473/11781",
+      "lambda": "0.1999600484329974580294744",
+      "lambda1": "0.2465408567709414545063173"
+    },
+    "film": {
+      "delta4": "62806029/537546607295000000000000",
+      "delta": "0.00010396718914532938745"
+    },
+    "boiling": {
+      "q": "474058.25798697306318",
+      "qmax": "1259901.8399280867945"
+    },
+    "slab": {
+      "E3": [
+        {
+          "x": 0.001,
+          "E3": "0.4990039154364528764128597"
+        },
+        {
+          "x": 0.01,
+          "E3": "0.4902765641846650922106728"
+        },
+        {
+          "x": 0.1,
+          "E3": "0.4162914579082787612543166"
+        },
+        {
+          "x": 0.5,
+          "E3": "0.2216043642751784573692994"
+        },
+        {
+          "x": 1.0,
+          "E3": "0.1096919671977601368385819"
+        },
+        {
+          "x": 2.0,
+          "E3": "0.03013337979781589318747992"
+        },
+        {
+          "x": 5.0,
+          "E3": "0.0008778008927706382733599278"
+        },
+        {
+          "x": 10.0,
+          "E3": "0.00000354876255308438195998117"
+        },
+        {
+          "x": 30.0,
+          "E3": "2.843074328140327454325598e-15"
+        }
+      ],
+      "boundaries": {
+        "1e-1": {
+          "thin": 0.04502373948912177,
+          "thick": 1.673269083403869,
+          "rosseland": 3.1970473529387973
+        },
+        "1e-2": {
+          "thin": 0.002930937177946534,
+          "thick": 3.499118393011087,
+          "rosseland": 6.981276449947441
+        },
+        "1e-3": {
+          "thin": 0.0002130818071319981,
+          "thick": 5.498701762885367,
+          "rosseland": 10.995628457484043
+        }
+      }
     }
   }
 }

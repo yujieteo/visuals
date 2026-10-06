@@ -15,7 +15,8 @@
 
   const FAMILIES = ["buoyancy-convection", "radiation", "beams-and-columns", "nonlinear-buckling", "vibration",
     "internal-viscous-flow", "compressible-nozzle-flow", "free-surface-flow", "boundary-layers", "external-aerodynamic-flow",
-    "advection-diffusion", "viscous-heat-generation", "thermocapillary-heat-transport", "conjugate-heat-transfer"];
+    "advection-diffusion", "viscous-heat-generation", "thermocapillary-heat-transport", "conjugate-heat-transfer",
+    "heat-exchangers", "phase-change", "condensation", "boiling-correlations", "radiation-in-a-medium"];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(12)) : null);
   const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
   const GREEK = { theta: "θ", theta_s: "θ_s", Psi: "Ψ", Omega: "Ω", eps: "ε" };
@@ -35,6 +36,7 @@
     "s-st-network": { item: 9, title: "Radiation network", reason: "The radiosity balance of each surface is linear in the radiosities. The page solves it exactly in rationals and checks reciprocity, summation and the energy balance.", evidence: ["lienhard-2024"] },
     "s-st-fold": { item: 9, title: "Branches and their fold", reason: "The steady solutions of an algebraic relation form branches. Where the derivative of the relation is 0, two branches meet at a fold; the exact sign of the derivative shows how many solutions each value has.", evidence: ["spec-8"] },
     "s-cv-solution": { item: 10, title: "Declared convection model and reference checks", reason: "The declared solver or the named correlation gives the result at the record's values. Exact checks use rationals; numerical checks state their tolerance; a correlation holds only inside its cited range.", evidence: ["spec-10", "spec-14"] },
+    "s-tr-solution": { item: 10, title: "Declared model of piece 8 and its reference checks", reason: "The declared solver or the named correlation gives the result at the record's values. Exact checks use rationals; numerical checks state their tolerance; a correlation holds only inside its declared domain, and the page refuses it outside.", evidence: ["spec-10", "spec-14"] },
     "s-fl-solution": { item: 10, title: "Declared solution and reference checks", reason: "The declared solver computes the solution at the record's values. Exact checks use rationals; numerical checks state their tolerance and their convergence.", evidence: ["spec-10", "spec-14"] },
     "s-st-ode": { item: 9, title: "Equilibria and continuation of the ODE system", reason: "Newton's method from a grid of seeds finds equilibria; the eigenvalues of the exact Jacobian classify them; pseudo-arclength continuation follows each branch and marks folds, branch points and Hopf points.", evidence: ["spec-8", "farrell-2016"] },
   };
@@ -177,7 +179,8 @@
     return { ready: false, reason: "none", message: "The record does not ask for a stability or bifurcation analysis, and its declared model has none.", next: "" };
   }
   const PIECE7 = ["advection-channel", "couette-heating", "thermocapillary-layer", "mixed-channel", "pipe-wall-temperature", "conjugate-channel", "plate-correlation", "wall-natural-correlation"];
-  const stepsFor = (id) => (PIECE7.includes(id) ? ["s-cv-solution"] : id === "nozzle-air" || id === "shallow-water" ? ["s-st-fold"] : ["pipe-poiseuille", "channel-poiseuille", "blasius", "joukowski-airfoil"].includes(id) ? ["s-fl-solution"] : id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
+  const PIECE8 = ["hx-parallel", "hx-counterflow", "stefan-melting", "nusselt-film", "rohsenow-water", "absorbing-slab"];
+  const stepsFor = (id) => (PIECE8.includes(id) ? ["s-tr-solution"] : PIECE7.includes(id) ? ["s-cv-solution"] : id === "nozzle-air" || id === "shallow-water" ? ["s-st-fold"] : ["pipe-poiseuille", "channel-poiseuille", "blasius", "joukowski-airfoil"].includes(id) ? ["s-fl-solution"] : id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
 
   /* ---------- results ---------- */
 
