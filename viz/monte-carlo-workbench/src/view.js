@@ -50,7 +50,7 @@
   let expected = null;
 
   function engineSource() {
-    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-laws", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
+    return ["src-rng", "src-special", "src-expr", "src-continuous", "src-tails", "src-laws", "src-engine", "src-worker"].map((id) => $(id).textContent).join("\n;\n");
   }
   function getPool() {
     if (!pool) pool = Pool.createPool({ source: engineSource(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: En });
@@ -246,10 +246,11 @@
     if (!d.ok) { $("dist-plot").innerHTML = ""; $("conv-plot").innerHTML = ""; return; }
     const a = d.alt - 1, q = d.quantity - 1, h = sm?.[0]?.hists?.[a] ?? null;
     const ylog = s.yscale === "log";
-    $("dist-plot").innerHTML = P.distribution({ kind: s.plot, ylog, xlabel: d.focus.name, theory: d.focus.theory, empirical: empirical(d, h, s.plot), n: h?.values ?? 0, continuous: d.focus.continuous, width: d.focus.window.width });
+    $("dist-plot").innerHTML = s.plot === "tail" ? P.tail({ xlabel: d.focus.name, theory: d.focus.theory, empirical: empirical(d, h, "survival"), n: h?.values ?? 0, alpha: d.focus.law?.tailIndex })
+      : P.distribution({ kind: s.plot, ylog, xlabel: d.focus.name, theory: d.focus.theory, empirical: empirical(d, h, s.plot), n: h?.values ?? 0, continuous: d.focus.continuous, width: d.focus.window.width });
     $("plot-pmf").textContent = d.focus.continuous ? "PDF" : "PMF";
     const outside = h && h.values ? (h.under + h.over) / h.values : 0, w = d.focus.window, end = w.lo + w.bins * w.width - (d.focus.continuous ? 0 : 1);
-    $("dist-note").textContent = `${d.focus.name}${d.alternatives.length > 1 ? `, ${d.alternatives[a]}` : ""}. ${h ? `${count(h.values)} values, ${(outside * 100).toFixed(2)} % outside the window ${fmt(w.lo)} to ${fmt(end)}${h.max !== null ? `, largest value ${fmt(h.max)}` : ""}.` : "No run yet."} ${d.focus.theory ? "The reference law comes from the law itself or from the enumeration." : d.focus.continuous ? "No reference law: the focus is a function of several variables. A pilot sample of 2,048 replicates sets the window." : "No reference law: the support is too large to enumerate."}`;
+    $("dist-note").textContent = `${d.focus.name}${d.alternatives.length > 1 ? `, ${d.alternatives[a]}` : ""}. ${h ? `${count(h.values)} values, ${(outside * 100).toFixed(2)} % outside the window ${fmt(w.lo)} to ${fmt(end)}${h.max !== null ? `, largest value ${fmt(h.max)}` : ""}.` : "No run yet."} ${s.plot === "tail" ? `${d.focus.law?.tailIndex ? `The law of ${d.focus.name} has a regularly varying tail with index α = ${fmt(d.focus.law.tailIndex)}, so far out the reference line has the slope −α. ` : "A tail that is not regularly varying, such as a lognormal or a light tail, bends down on these axes. "}The plot shows x > 0 only. ` : ""}${d.focus.theory ? `The reference law comes from ${d.focus.law ? `the exact law: ${d.focus.law.label}${d.focus.law.numeric ? ", computed by numerical integration" : ""}` : "the law itself or from the enumeration"}.` : d.focus.continuous ? "No reference law: the focus is a function of several variables. A pilot sample of 2,048 replicates sets the window." : "No reference law: the support is too large to enumerate."}`;
     const ref = d.references[a]?.values[q] ?? null;
     const qd = d.quantities[q], st = qd.status.alts?.[a] ?? qd.status;
     // No band where the variance is infinite: the interval of each block would claim a precision that the law lacks.
@@ -257,7 +258,7 @@
     const trace = run && run.accum.trace.length ? run.accum.trace.map((/** @type {any} */ t) => { const e = t.est[0][a][q]; return { n: t.n, est: e[0], lo: band ? e[1] : null, hi: band ? e[2] : null }; }) : [];
     $("conv-plot").innerHTML = P.convergence({ trace, reference: ref, ylabel: `${qd.name}${qd.unit ? ` [${qd.unit}]` : ""}`, ylog: st.mean === "infinite" && trace.some((/** @type {any} */ t) => t.est > 0) });
     // An infinite mean comes with an infinite variance, so it is tested first: it is the stronger statement.
-    $("conv-note").textContent = st.mean === "infinite" ? "The mean is infinite: the line shows a finite-run observation with no finite limit." : st.variance === "infinite" ? "The variance is infinite: the page draws no interval band, and the estimate converges slowly." : "The band is the 95 % interval after each block.";
+    $("conv-note").textContent = st.mean === "infinite" ? (qd.status.twoSided ? "The mean does not exist: both tails are heavy, so the line wanders with no limit. It shows a finite-run observation." : "The mean is infinite: the line shows a finite-run observation with no finite limit.") : st.variance === "infinite" ? "The variance is infinite: the page draws no interval band, and the estimate converges slowly." : "The band is the 95 % interval after each block.";
   }
 
   /** @param {any} q @param {any} status */
@@ -283,7 +284,7 @@
       const q = m0?.alts[a].quantities[k], st = qd.status.alts?.[a] ?? qd.status;
       const ref = d.references[a].values[k];
       const r = d.references[a], how = r.method === "quadrature" ? "adaptive quadrature over the quantile functions" : "enumeration";
-      const refNote = ref === null ? (st.mean === "infinite" ? "None: the mean is infinite." : r.reason || (r.method === "quadrature" && qd.status.mean !== "finite" ? "None: the page cannot show that the mean exists." : "No reference.")) : r.closed?.[k] ? "closed form" : r.neglected ? `${how}, neglected mass ≤ ${fmt(r.neglected)}` : how;
+      const refNote = ref === null ? (st.mean === "infinite" ? (qd.status.twoSided ? "None: the mean does not exist." : "None: the mean is infinite.") : r.how?.[k] === "" && r.reason === "" ? "No reference: the page has no exact law or quadrature for this quantity." : r.reason || (r.method === "quadrature" && qd.status.mean !== "finite" ? "None: the page cannot show that the mean exists." : "No reference.")) : r.how?.[k] ? r.how[k] : r.closed?.[k] ? "closed form" : r.neglected ? `${how}, neglected mass ≤ ${fmt(r.neglected)}` : how;
       rows.push(`<tr><th scope="row">${esc(label)}</th><td><span class="mono">${esc(qd.name)}</span><br><span class="note">${esc(qd.note)}${qd.unit ? ` [${esc(qd.unit)}]` : ""}</span></td>
 <td class="num">${q ? precise(q.est, q.lo, q.hi)[0] : "–"}${q?.hits !== null && q?.hits !== undefined ? `<br><span class="note">${count(q.hits)} hits</span>` : ""}</td><td class="num">${q ? intervalCell(q, st) : "–"}</td>
 <td class="num">${fmt(ref)}<br><span class="note">${esc(refNote)}</span></td><td>${q ? tag("observation") : ""}${ref !== null ? tag(d.references[a].closed?.[k] ? "theorem" : "numerical") : ""}</td></tr>`);
@@ -347,7 +348,7 @@ ${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "com
     const parts = entry?.kind === "workflow" ? [["Decision and estimated quantity", entry.decision], ["Reason for the law", entry.reason], ["Parameters, units, data and assumptions", entry.inputs], ["Dependence or process model", entry.dependence], ["Method and estimator", entry.method]] : [];
     $("panel-assumptions").innerHTML = `${parts.map(([h, t]) => `<h4>${esc(h)}</h4><p>${esc(t)}</p>`).join("")}${entry?.kind === "experiment" ? `<h4>What the experiment shows</h4><p>${esc(entry.observe)}</p>` : ""}
 <h4>Assumptions of ${esc(method.name.toLowerCase())}</h4><ul>${method.assumptions.map((/** @type {string} */ a) => `<li>${esc(a)}</li>`).join("")}</ul>
-<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>none</dd><dt>Dynamics</dt><dd>none: no time</dd><dt>Observation</dt><dd>complete</dd><dt>Censoring, truncation, selection</dt><dd>none in this group</dd></dl>`;
+<h4>Model fields</h4><dl class="readout"><dt>Initial conditions</dt><dd>none</dd><dt>Dynamics</dt><dd>none: no time</dd><dt>Observation</dt><dd>${esc(d.observation ?? "complete")}</dd><dt>Censoring</dt><dd>${d.censoring ? `${esc(d.censoring.text)}: the model observes <span class="mono">${esc(d.censoring.obs)}</span> and the event indicator <span class="mono">${esc(d.censoring.event)}</span>. An estimator that reads only these names sees what a real study sees.` : "none"}</dd><dt>Truncation, selection</dt><dd>none in this group</dd></dl>`;
     const m0 = sm?.[0];
     /** @type {string[]} */
     const diag = [];
@@ -359,7 +360,7 @@ ${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "com
       const zero = est.some((/** @type {any} */ x) => x.hits === 0);
       const byAlt = (q.status.alts ?? []).some((/** @type {any} */ x) => x.mean !== q.status.mean || x.variance !== q.status.variance)
         ? ` By alternative: ${q.status.alts.map((/** @type {any} */ x, /** @type {number} */ i) => `${esc(d.alternatives[i])}, mean ${x.mean}, variance ${x.variance}`).join("; ")}.` : "";
-      diag.push(`<li><span class="mono">${esc(q.name)}</span>: mean <strong>${q.status.mean}</strong>, variance <strong>${q.status.variance}</strong>${q.status.alts ? " in the worst alternative" : ""}. ${esc(q.status.reason)}${byAlt} ${q.status.mean === "unknown" ? tag("observation") : tag("theorem")}
+      diag.push(`<li><span class="mono">${esc(q.name)}</span>: mean <strong>${q.status.twoSided ? "does not exist" : q.status.mean}</strong>, variance <strong>${q.status.variance}</strong>${q.status.alts ? " in the worst alternative" : ""}. ${esc(q.status.reason)}${byAlt} ${q.status.mean === "unknown" ? tag("observation") : tag("theorem")}
 ${q.status.variance === "infinite" ? `<br>No CLT interval${mixed ? " for an alternative with an infinite variance" : ""}: a finite sample variance would show a precision that the law does not have.` : ""}
 ${zero ? `<br>At least one alternative had 0 hits. The interval is the exact zero-hit bound 1 − 0.05^(1/n) ≈ 3/n = ${fmt(3 / (run?.accum.n || 1))}.` : ""}
 ${cov.length ? `<br>${q.status.variance === "infinite" && !mixed ? "Block coverage of a CLT interval, which is not valid here because the variance is infinite" : "Block coverage of the 95 % interval"}: ${cov.join("; ")}. ${tag("observation")}` : ""}</li>`);
@@ -376,7 +377,7 @@ ${cov.length ? `<br>${q.status.variance === "infinite" && !mixed ? "Block covera
 <h4>Samplers</h4><ul>${samp}</ul>
 ${designDiagnostics(s, d, m0)}
 ${rej && rej.proposals ? `<h4>Rejection</h4><p>${count(rej.accepts)} of ${count(rej.proposals)} proposals accepted (${fmt(rej.accepts / rej.proposals)}). ${rej.violations ? `<strong class="bad-text">${count(rej.violations)} proposals had p/(Mq) > 1: the envelope does not cover the target, so the accepted values do not follow the target law.</strong>` : "No envelope violation."} ${tag("observation")}</p>` : ""}
-${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${fmt(fit.mean)}. Maximum likelihood estimate ${fmt(fit.estimate)}. ${tag("numerical")}</p>
+${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${fmt(fit.mean)}. Maximum likelihood estimate ${fmt(fit.estimate)}. ${tag("numerical")}</p>
 <table><thead><tr><th scope="col">Value</th><th scope="col">Observed</th><th scope="col">Expected, fitted law</th></tr></thead><tbody>${ds.values.map((/** @type {number} */ v, /** @type {number} */ i) => `<tr><td class="num">${v}${i === ds.values.length - 1 ? " or more" : ""}</td><td class="num">${count(ds.counts[i])}</td><td class="num">${fit.expected[i].toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td></tr>`).join("")}</tbody></table>
 <p>Chi-square test against the fitted law: statistic ${fmt(fit.fittedTest.stat)} on ${fit.fittedTest.df} degrees of freedom, p = ${fmt(fit.fittedTest.p)}. ${fit.alternatives.map((/** @type {any} */ x) => `Against ${esc(x.label)}: statistic ${fmt(x.stat)}, p = ${fmt(x.p)}.`).join(" ")} ${tag("numerical")} A p-value measures the fit of this data to one law. It does not prove the law.</p>` : ""}
 <h4>Claim tags</h4><p>${tag("theorem")} follows from a theorem under the stated assumptions. ${tag("numerical")} is a computed value with a stated error source. ${tag("observation")} is what this finite run showed.</p>
@@ -416,10 +417,11 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
     if ($("law-card").dataset.key === key) return;
     $("law-card").dataset.key = key;
     const l = data.laws.find((/** @type {any} */ x) => x.id === lawId), code = Laws.BY_ID[lawId];
+    if (!code) { $("law-card").innerHTML = observationCard(l); return; }
     $("law-card").innerHTML = `<h2>The ${esc(l.name)} law</h2><p>${esc(l.convention)}</p><div class="formula" data-tex="${esc(l.pdf ?? l.pmf)}"></div>
 <div class="cols"><div><h3>Parameters and support</h3><ul>${l.params.map((/** @type {any} */ p) => `<li><span data-tex="${esc(p.domain)}"></span></li>`).join("")}<li>Support: <span data-tex="${esc(l.support)}"></span></li></ul>
 <h3>Moments</h3><dl class="readout"><dt>Mean</dt><dd><span data-tex="${esc(l.moments.mean)}"></span></dd><dt>Variance</dt><dd><span data-tex="${esc(l.moments.variance)}"></span></dd></dl><p>${esc(l.moments.existence)}</p></div>
-<div><h3>Transforms</h3><dl class="readout">${Object.entries({ pgf: "PGF", mgf: "MGF", cf: "CF" }).filter(([k]) => l.transforms[k]).map(([k, label]) => `<dt>${label}</dt><dd><span data-tex="${esc(l.transforms[k])}"></span></dd>`).join("")}</dl>
+<div><h3>Transforms</h3><dl class="readout">${Object.entries({ pgf: "PGF", lt: "Laplace transform", mgf: "MGF", cf: "CF" }).filter(([k]) => l.transforms[k]).map(([k, label]) => `<dt>${label}</dt><dd><span data-tex="${esc(l.transforms[k])}"></span></dd>`).join("")}</dl>
 <h3>Limiting and special cases</h3><ul>${l.limits.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
 <h3>Linked laws</h3><ul>${l.links.map((/** @type {any} */ x) => `<li><button type="button" class="link" data-open="exp-${esc(x.to)}">${esc(data.laws.find((/** @type {any} */ y) => y.id === x.to).name)}</button>: ${esc(x.relation)}</li>`).join("")}</ul></div></div>
 <h3>Parameters of the code</h3><ul>${code.params.map((/** @type {any} */ p) => `<li><span class="mono">${esc(p.name)}</span>: ${esc(p.text)}</li>`).join("")}</ul>
@@ -427,6 +429,25 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
 <p><button type="button" data-open="exp-${esc(l.id)}">Open the behaviour experiment</button> Workflows: ${data.models.filter((/** @type {any} */ m) => m.kind === "workflow" && m.law === l.id).map((/** @type {any} */ m) => `<button type="button" class="link" data-open="${esc(m.id)}">${esc(m.title)}</button>`).join(", ")}.</p>`;
     $("method-card").innerHTML = methodCard(data.methods.find((/** @type {any} */ x) => x.id === s.method));
     $("crn-card").innerHTML = `${methodCard(data.methods.find((/** @type {any} */ x) => x.id === "crn"))}<p class="note">This page uses ${s.streams === "common" ? "common random numbers" : "separate streams"} now. <button type="button" class="link" data-streams="${s.streams === "common" ? "separate" : "common"}">Use ${s.streams === "common" ? "separate streams" : "common random numbers"}</button></p>`;
+  }
+
+  /**
+   * The data panel of a series of annual maxima: the GEV and Gumbel fits with their standard errors, the deviance
+   * test of ξ = 0, return levels, and a probability plot of the data against both fits.
+   * @param {any} ds @param {any} fit
+   */
+  function seriesPanel(ds, fit) {
+    /** @param {number} v @param {number | null} se */
+    const pm = (v, se) => `${fmt(v)}${se === null ? "" : ` ± ${fmt(se)}`}`;
+    const g = fit.gev, u = fit.gumbel;
+    return `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} annual maxima, ${ds.years[0]} to ${ds.years[ds.years.length - 1]}: mean ${fmt(fit.mean)} ${esc(ds.unit.split(",")[0])}, largest ${fmt(fit.max)}. Fits by maximum likelihood, ± one standard error from the observed information. ${tag("numerical")}</p>
+<div class="table-scroll"><table><thead><tr><th scope="col">Law</th><th scope="col">μ</th><th scope="col">σ</th><th scope="col">ξ</th><th scope="col">Log-likelihood</th></tr></thead><tbody>
+<tr><th scope="row">GEV</th><td class="num">${pm(g.mu, g.se[0])}</td><td class="num">${pm(g.sigma, g.se[1])}</td><td class="num">${pm(g.xi, g.se[2])}</td><td class="num">${fmt(g.loglik)}</td></tr>
+<tr><th scope="row">Gumbel</th><td class="num">${pm(u.mu, u.se[0])}</td><td class="num">${pm(u.sigma, u.se[1])}</td><td class="num">0</td><td class="num">${fmt(u.loglik)}</td></tr></tbody></table></div>
+<p>Deviance test of ξ = 0: ${fmt(fit.deviance)} on 1 degree of freedom, p = ${fmt(fit.p)}. ${tag("numerical")} A large p-value does not prove ξ = 0, and the standard error of ξ shows how far the tail can move.</p>
+<table><caption>Return levels: the value that the annual maximum passes with probability 1/T</caption><thead><tr><th scope="col">T [years]</th><th scope="col">GEV fit</th><th scope="col">Gumbel fit</th></tr></thead><tbody>${fit.levels.map((/** @type {any} */ r) => `<tr><td class="num">${r.T}</td><td class="num">${fmt(r.gev)}</td><td class="num">${fmt(r.gumbel)}</td></tr>`).join("")}</tbody></table>
+<div class="plot">${P.probability({ points: fit.plot, xlabel: "fitted quantile", ylabel: `observed maximum` })}</div>
+<p class="note">Probability plot: each observed maximum against the fitted quantile at its Gringorten plotting position (i − 0.44)/(n + 0.12). Points on the diagonal agree with the fit. The return levels use the fitted parameters as exact values: they omit the uncertainty of the fit, which group 10 adds.</p>`;
   }
 
   /** The card of one method of the library. @param {any} m */
@@ -438,11 +459,23 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
 <h3>Comparison with ${esc(METHOD[m.comparison.with].toLowerCase())}</h3><p>${esc(m.comparison.text)} <button type="button" class="link" data-method-open="${esc(m.id)}:comparison">Open it</button></p></div></div>`;
   }
 
+  /** The card of an observation mechanism of the catalogue, such as censoring: no sampler of its own. @param {any} l */
+  function observationCard(l) {
+    return `<h2>${esc(l.name)}</h2><p class="label">Observation mechanism</p><p>${esc(l.convention)}</p><div class="formula" data-tex="${esc(l.pdf)}"></div>
+<div class="cols"><div><h3>Inputs and support</h3><ul>${l.params.map((/** @type {any} */ p) => `<li><span data-tex="${esc(p.domain)}"></span></li>`).join("")}<li>Support: <span data-tex="${esc(l.support)}"></span></li></ul>
+<h3>Moments of the observed value</h3><dl class="readout"><dt>Mean</dt><dd><span data-tex="${esc(l.moments.mean)}"></span></dd><dt>Variance</dt><dd><span data-tex="${esc(l.moments.variance)}"></span></dd></dl><p>${esc(l.moments.existence)}</p></div>
+<div><h3>Transforms</h3><dl class="readout">${Object.entries({ mgf: "MGF", cf: "CF" }).filter(([k]) => l.transforms[k]).map(([k, label]) => `<dt>${label}</dt><dd><span data-tex="${esc(l.transforms[k])}"></span></dd>`).join("")}</dl>
+<h3>Limiting and special cases</h3><ul>${l.limits.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`).join("")}</ul>
+<h3>Linked laws</h3><ul>${l.links.map((/** @type {any} */ x) => `<li><button type="button" class="link" data-open="exp-${esc(x.to)}">${esc(data.laws.find((/** @type {any} */ y) => y.id === x.to).name)}</button>: ${esc(x.relation)}</li>`).join("")}</ul></div></div>
+<h3>In the model text</h3><p>The line <code>censoring: right T by C</code> observes T_obs = min(T, C) and T_event = 1{T ≤ C}; <code>censoring: left T by C</code> observes T_obs = max(T, C) and T_event = 1{T ≥ C}. C is a variable, a parameter or a number.</p>
+<p><button type="button" data-open="exp-${esc(l.id)}">Open the behaviour experiment</button> Workflows: ${data.models.filter((/** @type {any} */ m) => m.kind === "workflow" && m.law === l.id).map((/** @type {any} */ m) => `<button type="button" class="link" data-open="${esc(m.id)}">${esc(m.title)}</button>`).join(", ")}.</p>`;
+  }
+
   /** The samplers of a law at the parameters of the first variable of this model that uses it. @param {any} d @param {string} lawId */
   function samplersOfLaw(d, lawId) {
     const v = d.ok ? d.samplers.find((/** @type {any} */ x) => x.law === lawId && x.methods) : null;
     if (!v) return '<p class="note">This model sets the parameters of this law from other variables, so each draw sets up its own sampler. Open the behaviour experiment to see the samplers.</p>';
-    return `<p class="note">At the parameters of <span class="mono">${esc(v.variable)}</span> in this model:</p><dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${esc(v.methods[m].label)}. <em>${esc(v.methods[m].exactness)}</em></dd>`).join("")}</dl>`;
+    return `<p class="note">At the parameters of <span class="mono">${esc(v.variable)}</span> in this model:</p><dl class="readout">${["independent", "inverse", "rejection"].map((m) => `<dt>${METHOD[m]}</dt><dd>${esc(v.methods[m].label)}. <em>${esc(v.methods[m].exactness)}</em></dd>`).join("")}</dl>${v.alternate ? `<p class="note">${esc(v.alternate)}</p>` : ""}`;
   }
 
   /* ---------- draw ---------- */

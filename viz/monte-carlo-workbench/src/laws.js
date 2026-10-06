@@ -5,13 +5,13 @@
  * for independent sampling, an inverse-transform sampler, and a rejection sampler (or the reason that it has none).
  * A sampler draws from a stream of MCRng. Tests load this file with require().
  */
-/** @param {any} root the global object @param {(S: any, C: any) => any} factory */
+/** @param {any} root the global object @param {(S: any, C: any, T: any) => any} factory */
 (function (root, factory) {
   const S = root.MCSpecial ?? require("./special.js");
-  const api = factory(S, root.MCContinuous ?? require("./continuous.js"));
+  const api = factory(S, root.MCContinuous ?? require("./continuous.js"), root.MCTails ?? require("./tails.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MCLaws = api;
-})(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (/** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./continuous.js")} */ C) {
+})(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (/** @type {typeof import("./special.js")} */ S, /** @type {typeof import("./continuous.js")} */ C, /** @type {typeof import("./tails.js")} */ T) {
   "use strict";
 
   /** @typedef {{ uniform(): number, u32(): number, below(m: number): number, normal(): number }} Rng */
@@ -600,8 +600,8 @@
   }
 
   const DISCRETE = [bernoulli, binomial, categorical, multinomial, uniform, geometric, negbin, poisson, hypergeometric, zipf];
-  /** Every law of the code: the discrete group, then the continuous group. @type {any[]} */
-  const LAWS = [...DISCRETE, ...C.LAWS];
+  /** Every law of the code: the discrete group, the continuous group, then the positive, heavy-tailed and extreme-value group. @type {any[]} */
+  const LAWS = [...DISCRETE, ...C.LAWS, ...T.LAWS];
   /** @type {Record<string, any>} */
   const BY_ID = Object.fromEntries(LAWS.map((l) => [l.id, l]));
 

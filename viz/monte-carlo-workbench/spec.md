@@ -2,7 +2,7 @@
 
 # Monte Carlo Probability Workbench: specification
 
-Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 and 2 are on the page.
+Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 3 are on the page.
 
 ## Agreed decisions
 
@@ -43,6 +43,16 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - Reference values: closed forms, linearity of expectation, and adaptive quadrature over the quantile functions of at most 2 continuous variables within a fixed work budget. A model outside these has no reference, and the page says why.
 - The results of group 1 stay the same: the same estimates, intervals, references and decisions for the same seed.
 - The done criteria of group 1 hold for the whole folder: the builder, the checks, the browser checks at 390, 768 and 1440 px in both themes, the catalogue coverage test, the sampler tests with 3 or more seeds and stated false-failure bounds, and the determinism tests, with 1 and 4 workers, of each method.
+
+## Group 3: what done means
+
+- The 16 positive, heavy-tailed and extreme-value laws (lognormal, Weibull, inverse Gaussian, Gompertz, log-logistic, Pareto I and II, Burr XII, Fréchet, Cauchy, Lévy, the stable laws in Nolan's S0 parameterisation with S1 beside them, GEV, GPD, Gumbel and reverse Weibull), each with its convention, support, limiting cases, moment conditions, transforms, sampling methods and two-way links, a behaviour experiment and three workflows of its own in different domains.
+- Censoring as an observation mechanism of the model record (`censoring: right T by C` and `left T by C`), with its catalogue entry, an experiment and three workflows, and the Kaplan–Meier estimate in the expression language.
+- Tail plots (the survival function on log–log axes, with the slope of a regularly varying tail), and maxima and sums experiments with the exact laws of a maximum, a minimum, a sum of stable values and an affine function of draws as references.
+- The theory panels on regular variation and subexponentiality, on extreme-value limits and domains of attraction, and on threshold exceedances, maxima and sums.
+- A public-domain series of annual maxima of daily rainfall (Fort Collins, NOAA GHCN-Daily) with its GEV and Gumbel fits by maximum likelihood, used by an extreme-value workflow.
+- A moment that does not exist on either side, such as the mean of the Cauchy law, shows as "does not exist", not as +∞.
+- The done criteria of groups 1 and 2 hold for the whole folder, and their results stay the same.
 
 # The owner's specification
 

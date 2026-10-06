@@ -8,14 +8,14 @@
  * enumeration of a discrete support, or adaptive quadrature over the quantile functions of continuous laws. Every
  * function is pure: the page, its workers and the tests run the same code.
  */
-/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any) => any} factory */
+/** @param {any} root the global object @param {(R: any, S: any, E: any, L: any, T: any) => any} factory */
 (function (root, factory) {
-  const api = factory(root.MCRng ?? require("./rng.js"), root.MCSpecial ?? require("./special.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"));
+  const api = factory(root.MCRng ?? require("./rng.js"), root.MCSpecial ?? require("./special.js"), root.MCExpr ?? require("./expr.js"), root.MCLaws ?? require("./laws.js"), root.MCTails ?? require("./tails.js"));
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MCEngine = api;
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function (
   /** @type {typeof import("./rng.js")} */ R, /** @type {typeof import("./special.js")} */ S,
-  /** @type {typeof import("./expr.js")} */ E, /** @type {typeof import("./laws.js")} */ L) {
+  /** @type {typeof import("./expr.js")} */ E, /** @type {typeof import("./laws.js")} */ L, /** @type {typeof import("./tails.js")} */ T) {
   "use strict";
 
   const FORMAT = "monte-carlo-workbench/model", VERSION = 1;
@@ -25,6 +25,12 @@
   const RESERVED = new Set([...Object.keys(E.FUNCTIONS), ...Object.keys(E.CONSTANTS), "and", "or", "not", "P", "E"]);
   const Z95 = 1.959963984540054;
   const TEXT_FIELDS = ["initial", "dynamics", "observation", "censoring", "truncation", "selection"];
+  /**
+   * The censoring mechanism of the model text: "right T by C" observes T_obs = min(T, C) and T_event = 1{T ≤ C};
+   * "left T by C" observes T_obs = max(T, C) and T_event = 1{T ≥ C}. C is an expression: a censoring variable, a
+   * parameter or a number. Element by element when T or C is a vector.
+   */
+  const CENSOR = /^(right|left)\s+([A-Za-z]\w{0,19})\s+by\s+(.+)$/;
   /** Each method of the run: the sampler of every law and the design of the estimator. */
   const METHODS = /** @type {Record<string, { sampler: "reference" | "inverse" | "rejection", design: "plain" | "stratified" | "antithetic" | "control" }>} */ ({
     independent: { sampler: "reference", design: "plain" }, inverse: { sampler: "inverse", design: "plain" }, rejection: { sampler: "rejection", design: "plain" },
@@ -88,7 +94,8 @@
     if (input.format !== undefined && input.format !== FORMAT) errors.push(`The record format is "${String(input.format).slice(0, 40)}", not ${FORMAT}.`);
     if (input.version !== undefined && input.version !== VERSION) errors.push(`The record uses model version ${String(input.version).slice(0, 10)}. This page reads version ${VERSION}.`);
     const rec = complete(input);
-    for (const k of TEXT_FIELDS) if (k !== "observation" && String(rec[/** @type {"initial"} */ (k)]).trim().toLowerCase() !== "none") errors.push(`The ${k} field holds "${String(rec[/** @type {"initial"} */ (k)]).slice(0, 40)}": this group of the workbench has no ${k} mechanism, so the field must be "none".`);
+    const censor = CENSOR.exec(String(rec.censoring ?? "none").trim());
+    for (const k of TEXT_FIELDS) if (k !== "observation" && !(k === "censoring" && censor) && String(rec[/** @type {"initial"} */ (k)]).trim().toLowerCase() !== "none") errors.push(`The ${k} field holds "${String(rec[/** @type {"initial"} */ (k)]).slice(0, 40)}": this group of the workbench has no ${k} mechanism, so the field must be "none".`);
     if (rec.parameters.length > LIMITS.parameters) errors.push(`A model has at most ${LIMITS.parameters} parameters.`);
     if (rec.variables.length > LIMITS.variables) errors.push(`A model has at most ${LIMITS.variables} random variables.`);
     if (rec.quantities.length < 1 || rec.quantities.length > LIMITS.quantities) errors.push(`A model has 1 to ${LIMITS.quantities} quantities to estimate.`);
@@ -137,6 +144,11 @@
     // arguments may read earlier variables and definitions. The record lists them in one order, "order".
     const order = /** @type {any[]} */ (input.order ?? [...rec.variables.map((v) => ({ type: "var", name: v.name })), ...rec.definitions.map((d) => ({ type: "def", name: d.name }))]);
     const varsByName = new Map(rec.variables.map((v) => [v.name, v]));
+    /** @type {{ t: string, names: string[] } | null} */
+    let censorReads = null, censored = false;
+    if (censor) {
+      try { censorReads = { t: censor[2], names: [...E.names(E.parse(censor[3]))] }; } catch (e) { errors.push(`Censoring "${censor[0].slice(0, 40)}": ${e instanceof Error ? e.message : String(e)}`); }
+    }
     for (const item of order) {
       if (item.type === "var") {
         const v = varsByName.get(item.name);
@@ -175,7 +187,11 @@
         const b = expr(d.expr, `Definition ${d.name}`, visible);
         if (b) nodes.push({ type: "def", name: d.name, slot: slots.get(d.name), fn: b.fn, tree: b.tree, reads: b.reads, unit: d.unit ?? "" });
       } else errors.push(`The order holds an item of type "${String(item.type).slice(0, 20)}".`);
+      // The censoring nodes come as soon as T and every name the censoring expression reads exist, so the later
+      // definitions can read T_obs and T_event.
+      if (censorReads && !censored && slots.has(censorReads.t) && censorReads.names.every((r) => slots.has(r))) { censored = true; censorNodes(/** @type {RegExpExecArray} */ (censor), nodes, slots, declare, expr, errors); }
     }
+    if (censor && !censored) errors.push(`Censoring "${censor[0].slice(0, 40)}": the model never defines ${censor[2]} or a name that the censoring expression reads.`);
     if (draws > LIMITS.drawsPerReplicate) errors.push(`One replicate draws ${draws} values. The limit is ${LIMITS.drawsPerReplicate}.`);
     if (order.length !== rec.variables.length + rec.definitions.length) errors.push("The order must list every variable and every definition once.");
 
@@ -349,6 +365,35 @@
       for (const [i, ki] of parts) for (const [j, kj] of parts) if (variance !== null) variance += ki * kj * n.law.covariance(p, i, j);
     }
     return { mean, sd: variance === null ? null : Math.sqrt(Math.max(0, variance)), why: "" };
+  }
+
+  /**
+   * The observation nodes of a censoring mechanism: T_obs and T_event, two definitions placed after T and after every
+   * name the censoring expression reads, so later definitions and the quantities can read them.
+   * @param {RegExpExecArray} m @param {any[]} nodes @param {Map<string, number>} slots
+   * @param {(name: string, kind: "def", where: string) => boolean} declare @param {(src: string, where: string, visible: Map<string, number>) => any} expr @param {string[]} errors
+   */
+  function censorNodes(m, nodes, slots, declare, expr, errors) {
+    const [, side, t, by] = m, where = `Censoring "${m[0].slice(0, 40)}"`;
+    const at = nodes.findIndex((n) => n.name === t);
+    if (at < 0 || nodes[at].type !== "var") { errors.push(`${where}: "${t}" is not a random variable of the model.`); return; }
+    const c = expr(by, where, slots);
+    if (!c) return;
+    let after = at;
+    for (const r of c.reads) {
+      const j = nodes.findIndex((n) => n.name === r);
+      if (j > after) after = j;
+      if (r === t) { errors.push(`${where}: the censoring time cannot read ${t} itself.`); return; }
+    }
+    const [fn, op] = side === "right" ? ["pmin", "<="] : ["pmax", ">="];
+    const made = [];
+    for (const [name, src] of [[`${t}_obs`, `${fn}(${t}, ${by})`], [`${t}_event`, `${t} ${op} (${by})`]]) {
+      if (!declare(name, "def", where)) return;
+      const b = expr(src, where, slots);
+      if (!b) return;
+      made.push({ type: "def", name, slot: slots.get(name), fn: b.fn, tree: b.tree, reads: b.reads, unit: "", censoring: side });
+    }
+    nodes.splice(after + 1, 0, ...made);
   }
 
   /** The parameters of a variable node in an environment. @param {any} node @param {Value[]} env */
@@ -800,6 +845,7 @@
     }
     return c.quantities.map((/** @type {any} */ q) => {
       if (q.kind === "probability") return { mean: "finite", variance: "finite", reason: "An indicator takes only the values 0 and 1, so all its moments exist." };
+      if (q.trees.every(indicator)) return { mean: "finite", variance: "finite", reason: "Each expression is an indicator: it takes only the values 0 and 1, so all its moments exist." };
       const vars = new Set();
       for (const t of q.trees) for (const r of randomReads(t, c)) vars.add(r);
       const classes = [...vars].map((v) => /** @type {any} */ (tails.get(v)) ?? { cls: "unknown", order: Infinity });
@@ -807,10 +853,18 @@
       const growth = q.trees.every((/** @type {any} */ t) => polynomial(t, c));
       if (q.kind === "expectation" && vars.size === 1) {
         const v = /** @type {string} */ ([...vars][0]), t = /** @type {any} */ (tails.get(v));
-        if (t && t.cls === "heavy" && affine(q.trees[0], v, c)) {
-          const o = t.order;
-          return { mean: o > 1 ? "finite" : "infinite", variance: o > 2 ? "finite" : "infinite", reason: `The quantity is an affine function of ${v}, whose moment of order r exists only for r < ${fmtOrder(o)}.` };
+        if (t && t.cls === "heavy" && (affine(q.trees[0], v, c) || clippedAffine(q.trees[0], v, c))) {
+          const o = t.order, both = sideOf(v, c) === "both";
+          return { mean: o > 1 ? "finite" : "infinite", variance: o > 2 ? "finite" : "infinite", twoSided: o <= 1 && both,
+            reason: `The quantity is an affine function of ${v}, whose moment of order r exists only for r < ${fmtOrder(o)}.${o <= 1 && both ? ` Both tails of ${v} are heavy, so E[${v}⁺] = E[${v}⁻] = ∞: the mean does not exist, and it is not +∞ or −∞.` : ""}` };
         }
+      }
+      // An affine function of the maximum, the sum or the mean of the copies of one heavy variable has the tail order of
+      // that variable: the largest copy decides the tail (P(max > x) ~ n P(X > x)), and so does the sum.
+      if (q.kind === "expectation") {
+        const d = derivedTail(q.trees[0], c, tails);
+        if (d) return { mean: d.order > 1 ? "finite" : "infinite", variance: d.order > 2 ? "finite" : "infinite", twoSided: d.order <= 1 && d.both,
+          reason: `The quantity is an affine function of ${d.fn}(${d.v}), which has the tail of ${d.v}: its moment of order r exists only for r < ${fmtOrder(d.order)}.${d.order <= 1 && d.both ? " Both tails are heavy, so the mean does not exist, and it is not +∞ or −∞." : ""}` };
       }
       if (classes.every((t) => t.cls === "finite" || t.cls === "bounded" || t.cls === "light") && growth) return { mean: "finite", variance: "finite", reason: "Every variable it reads has finite moments of all orders, and the expression grows at most as a polynomial." };
       // An affine function of independent variables (or of the components of a vector law) has a mean exactly when
@@ -820,6 +874,7 @@
         if (lin.every((/** @type {any} */ m) => m.mean !== null)) return { mean: "finite", variance: lin.every((/** @type {any} */ m) => m.sd !== null) ? "finite" : "infinite", reason: "The quantity is an affine function of variables with known moments, so linearity gives its mean, and its variance exists exactly when each term has a variance." };
         if (lin.some((/** @type {any} */ m) => m.infinite)) return { mean: "infinite", variance: "infinite", reason: "The quantity is an affine function of variables, and one of them has an infinite mean." };
       }
+      if (q.trees.every((/** @type {any} */ t) => { const b = bounds(t, c); return b[0] && b[1]; })) return { mean: "finite", variance: "finite", reason: "The expression has a lower and an upper bound (a clipped or capped value, an indicator, or a variable with a bounded support), so all its moments exist." };
       return { mean: "unknown", variance: "unknown", reason: "The page cannot show that the moments exist. A variable it reads has a heavy or unknown tail, or the expression grows faster than a polynomial." };
     });
   }
@@ -832,6 +887,76 @@
    * with a light number of trials, which it cannot exceed.
    */
   const SAFE = /** @type {Record<string, string[]>} */ ({ cuniform: ["a", "b"], normal: ["mu", "sigma"], mvnormal: ["mu"], logistic: ["mu", "s"], laplace: ["mu", "b"], gamma: ["k", "theta"], erlang: ["k"], chisq: ["nu"], poisson: ["lambda"], binomial: ["n", "p"] });
+
+  /**
+   * Whether an expression has a lower bound and an upper bound, from its form: a constant, an indicator, a variable
+   * with a bounded support for every alternative, min and pmin with a bounded argument above, max and pmax below,
+   * sums, differences, the mean of a vector, and products of two bounded factors.
+   * @param {any} t @param {any} c @returns {[boolean, boolean]}
+   */
+  function bounds(t, c) {
+    if (fixed(t, c) || indicator(t)) return [true, true];
+    switch (t.t) {
+      case "id": {
+        const n = c.nodes.find((/** @type {any} */ x) => x.name === t.name);
+        if (n?.type === "def") return bounds(n.tree, c);
+        if (n?.type !== "var" || !n.constant) return [false, false];
+        const s = c.alternatives.map((/** @type {any} */ alt) => n.law.support(argsAt(n, alt.values).params));
+        return [s.every((/** @type {any} */ x) => x.lo > -Infinity), s.every((/** @type {any} */ x) => x.hi < Infinity)];
+      }
+      case "un": { const b = bounds(t.a, c); return t.op === "-" ? [b[1], b[0]] : b; }
+      case "bin": {
+        const a = bounds(t.a, c), b = bounds(t.b, c);
+        if (t.op === "+") return [a[0] && b[0], a[1] && b[1]];
+        if (t.op === "-") return [a[0] && b[1], a[1] && b[0]];
+        if (t.op === "*") { const ok = a[0] && a[1] && b[0] && b[1]; return [ok, ok]; }
+        return [false, false];
+      }
+      case "call": {
+        const bs = t.args.map((/** @type {any} */ x) => bounds(x, c));
+        if (t.fn === "min" || t.fn === "pmin") return [bs.every((/** @type {[boolean, boolean]} */ b) => b[0]), bs.some((/** @type {[boolean, boolean]} */ b) => b[1])];
+        if (t.fn === "max" || t.fn === "pmax") return [bs.some((/** @type {[boolean, boolean]} */ b) => b[0]), bs.every((/** @type {[boolean, boolean]} */ b) => b[1])];
+        if (t.fn === "mean" || t.fn === "median" || t.fn === "quantile" || t.fn === "sum" || t.fn === "abs") return t.fn === "abs" ? [true, bs[0][0] && bs[0][1]] : bs[0];
+        if (t.fn === "km") return [true, true];
+        if (t.fn === "if") return [bs[1][0] && bs[2][0], bs[1][1] && bs[2][1]];
+        return [false, false];
+      }
+      default: return [false, false];
+    }
+  }
+
+  /** True when an expression takes only the values 0 and 1: a comparison or a logical operator. @param {any} t */
+  const indicator = (t) => (t.t === "bin" && ["<", "<=", ">", ">=", "==", "!=", "&&", "||"].includes(t.op)) || (t.t === "un" && t.op === "!");
+
+  /** The side of the heavy tail of a variable with constant parameters: "right", "left", "both" or "". @param {string} v @param {any} c */
+  function sideOf(v, c) {
+    const n = c.nodes.find((/** @type {any} */ x) => x.name === v);
+    if (n?.type !== "var" || !n.constant) return "";
+    return c.alternatives.some((/** @type {any} */ alt) => n.law.moments(argsAt(n, alt.values).params).side === "both") ? "both" : n.law.moments(argsAt(n, c.alternatives[0].values).params).side ?? "";
+  }
+
+  /**
+   * The tail order of an affine function of D, where D := max(V), sum(V) or mean(V) of a heavy variable V with constant
+   * parameters. The maximum of a variable whose only heavy tail is on the left is lighter, so it gives null; so does a
+   * minimum, whose moments the page does not decide.
+   * @param {any} t @param {any} c @param {Map<string, any>} tails
+   */
+  function derivedTail(t, c, tails) {
+    const env = c.alternatives[0].values;
+    let core = t;
+    for (let i = 0; i < 8; i++) {
+      const parts = affineParts(core, c, env);
+      if (!parts) return null;
+      if (parts.inner.t === "call") { core = parts.inner; break; }
+      const n = c.nodes.find((/** @type {any} */ x) => x.name === parts.inner.name);
+      if (n?.type !== "def") return null;
+      core = n.tree;
+    }
+    if (core.t !== "call" || !["max", "sum", "mean"].includes(core.fn)) return null;
+    const v = core.args[0].name, tl = tails.get(v), side = sideOf(v, c);
+    if (!tl || tl.cls !== "heavy" || (core.fn === "max" && side === "left")) return null;
+    return { fn: core.fn, v, order: tl.order, both: core.fn !== "max" && side === "both" };
+  }
 
   /** @param {number} o */
   const fmtOrder = (o) => (Number.isInteger(o) ? String(o) : o.toFixed(3).replace(/0+$/, ""));
@@ -886,6 +1011,23 @@
     }
   }
 
+  /**
+   * True when the expression is max or pmax of a fixed value and a + b·v with b > 0, for a variable v whose only
+   * heavy tail is on the right, such as the excess pmax(X − u, 0): it keeps the heavy tail, so it has the tail order of v.
+   * @param {any} t @param {string} v @param {any} c
+   */
+  function clippedAffine(t, v, c) {
+    if (t.t !== "call" || !["max", "pmax"].includes(t.fn) || t.args.length !== 2 || sideOf(v, c) !== "right") return false;
+    const arg = t.args.find((/** @type {any} */ x) => !fixed(x, c));
+    if (!arg || !t.args.some((/** @type {any} */ x) => fixed(x, c)) || !affine(arg, v, c)) return false;
+    const env = c.alternatives[0].values.slice(), slot = c.slots.get(v), f = E.compile(arg, c.slots);
+    env[slot] = 0;
+    const y0 = f(env);
+    env[slot] = 1;
+    const y1 = f(env);
+    return typeof y0 === "number" && typeof y1 === "number" && y1 > y0;
+  }
+
   /** True when the expression is a + b·v with a and b free of random variables. @param {any} t @param {string} v @param {any} c @returns {boolean} */
   function affine(t, v, c) {
     if (fixed(t, c)) return true;
@@ -930,16 +1072,23 @@
     if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && n.law.continuous)) {
       return c.alternatives.map((/** @type {any} */ alt, /** @type {number} */ a) => {
         // Linearity gives the mean of an affine function of independent variables with known means.
-        const closed = closedForm(c, a, status, true).map((v, k) => {
+        const cf = closedForm(c, a, status, true);
+        const closed = cf.values.map((v, k) => {
           const q = c.quantities[k];
           return v !== null || q.kind !== "expectation" || status[k].mean !== "finite" ? v : controlMoments(q.trees[0], c, alt.values).mean;
         });
         const r = closed.every((v) => v !== null) ? { values: closed, reason: "", neglected: 0, marginal: null, method: "closed" } : quadrature(c, status, a, closed);
-        return { ...r, values: r.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (closed[k] !== null ? closed[k] : v)), closed: closed.map((v) => v !== null) };
+        // A quantity that reads the model only through one name with an exact law (a maximum of draws, say) has its
+        // own one-dimensional quadrature, also where the model has repeated variables.
+        const one = c.quantities.map((/** @type {any} */ _, /** @type {number} */ k) => (closed[k] === null && r.values[k] === null ? oneNameRef(c, a, status, k) : null));
+        const values = r.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (closed[k] !== null ? closed[k] : v !== null ? v : one[k]));
+        const reason = values.some((/** @type {number | null} */ v) => v === null) ? r.reason : "";
+        const how = values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (v === null ? "" : closed[k] !== null ? (cf.numeric[k] ? "the law's numerical CDF (an integral)" : "closed form") : r.values[k] !== null ? "adaptive quadrature over the quantile functions" : "quadrature over the exact law of one name"));
+        return { ...r, reason, values, closed: closed.map((v, k) => v !== null && !cf.numeric[k]), how };
       });
     }
     return enumerate(c, status).map((/** @type {any} */ r, /** @type {number} */ a) => {
-      const closed = closedForm(c, a, status);
+      const closed = closedForm(c, a, status).values;
       return { ...r, method: "enumeration", values: r.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (v !== null ? v : closed[k])), closed: closed.map((v) => v !== null) };
     });
   }
@@ -1053,48 +1202,179 @@
   }
 
   /**
-   * Exact values for a model with one scalar variable X of constant parameters and no definitions: P(X op v) from
-   * the CDF, the survival function or the PMF, and E[X] from the law's moments. These need no enumeration, so they
-   * also cover a heavy tail such as the zeta law.
-   * @param {any} c @param {number} a @param {any[]} status @returns {(number | null)[]}
+   * The exact law of one name of the model, or null: a scalar variable with constant parameters, the maximum, the
+   * minimum, the sum or the mean of the i.i.d. copies of such a variable (a sum only for the families closed under
+   * sums), or an affine function of a name with a continuous law. env holds the parameters and the definitions that
+   * read no random variable.
+   * @param {any} c @param {string} name @param {Value[]} env @param {number} [depth] @returns {any}
    */
-  function closedForm(c, a, status, anyModel = false) {
-    const none = c.quantities.map(() => null);
-    const scalar = (/** @type {any} */ n) => n?.type === "var" && n.constant && n.repeat === 1 && !n.law.dim;
-    // The discrete path keeps group 1's rule: one variable and nothing else. With a continuous variable, a variable
-    // with constant parameters has its own law as its marginal law, whatever else the model holds.
-    if (!anyModel && (c.nodes.length !== 1 || !scalar(c.nodes[0]))) return none;
+  function nameLaw(c, name, env, depth = 0) {
+    const node = c.nodes.find((/** @type {any} */ n) => n.name === name);
+    if (!node || depth > 8) return null;
+    if (node.type === "var") { const v = boundVar(c, node, env); return v && v.n === 1 ? v.b : null; }
+    const parts = affineParts(node.tree, c, env);
+    if (!parts) return null;
+    const t = parts.inner;
+    let inner = null;
+    if (t.t === "id") inner = nameLaw(c, t.name, env, depth + 1);
+    else {
+      const v = boundVar(c, c.nodes.find((/** @type {any} */ n) => n.name === t.args[0].name), env);
+      if (!v) return null;
+      if (v.n === 1) inner = v.b;
+      else if (t.fn === "max") inner = T.maxOf(v.b, v.n);
+      else if (t.fn === "min") inner = T.minOf(v.b, v.n);
+      else {
+        const sum = T.sumOf(v.law, v.p, v.n);
+        inner = t.fn === "sum" || !sum ? sum : T.affineOf(sum, 1 / v.n, 0);
+      }
+    }
+    if (!inner) return null;
+    return parts.a === 1 && parts.b === 0 ? inner : T.affineOf(inner, parts.a, parts.b);
+  }
+
+  /** The bound law of a variable with constant parameters, and its number of copies. @param {any} c @param {any} n @param {Value[]} env */
+  function boundVar(c, n, env) {
+    if (n?.type !== "var" || !n.constant || n.law.dim) return null;
+    const pr = argsAt(n, env);
+    return pr.error || n.law.check(pr.params).length ? null : { b: T.bind(n.law, pr.params, L.quantile), law: n.law, p: pr.params, n: n.repeat };
+  }
+
+  /**
+   * t as a·inner + b, where inner is a name that reads a random variable or max, min, sum or mean of a variable, and a
+   * and b read no random variable; null for any other form.
+   * @param {any} t @param {any} c @param {Value[]} env @returns {{ inner: any, a: number, b: number } | null}
+   */
+  function affineParts(t, c, env) {
+    /** @param {any} x */
+    const val = (x) => { const v = E.compile(x, c.slots)(env); return typeof v === "number" && Number.isFinite(v) ? v : null; };
+    if (t.t === "id") return c.kinds.get(t.name) !== "param" && randomReads(t, c).size ? { inner: t, a: 1, b: 0 } : null;
+    if (t.t === "call") return t.args.length === 1 && t.args[0].t === "id" && c.kinds.get(t.args[0].name) === "var" && ["max", "min", "sum", "mean"].includes(t.fn) ? { inner: t, a: 1, b: 0 } : null;
+    if (t.t === "un" && (t.op === "-" || t.op === "+")) { const r = affineParts(t.a, c, env); return r && (t.op === "+" ? r : { inner: r.inner, a: -r.a, b: -r.b }); }
+    if (t.t !== "bin") return null;
+    const fa = fixed(t.a, c), fb = fixed(t.b, c);
+    if (fa === fb) return null;
+    const k = val(fa ? t.a : t.b), r = affineParts(fa ? t.b : t.a, c, env);
+    if (k === null || !r) return null;
+    switch (t.op) {
+      case "+": return { inner: r.inner, a: r.a, b: r.b + k };
+      case "-": return fa ? { inner: r.inner, a: -r.a, b: k - r.b } : { inner: r.inner, a: r.a, b: r.b - k };
+      case "*": return { inner: r.inner, a: r.a * k, b: r.b * k };
+      case "/": return fa || k === 0 ? null : { inner: r.inner, a: r.a / k, b: r.b / k };
+      default: return null;
+    }
+  }
+
+  /** The exact law of the focus name for alternative a (a bound law of tails.js), or null; never a component of a vector. @param {any} c @param {number} a */
+  function focusLaw(c, a) {
+    const [name, idx] = splitFocus(c.focus);
+    return idx ? null : nameLaw(c, name, fixedEnv(c, a));
+  }
+
+  /** The parameters and the definitions that read no random variable, for alternative a. @param {any} c @param {number} a */
+  function fixedEnv(c, a) {
     const env = c.alternatives[a].values.slice();
     for (const n of c.nodes) if (n.type === "def" && fixed(n.tree, c)) env[n.slot] = n.fn(env);
+    return env;
+  }
+
+  /**
+   * Exact values from the law of one name: P(N op v) from the CDF, the survival function or the PMF, E[N] from the
+   * law's moments, and a ratio of two such values. With anyModel false it keeps group 1's rule: a model of one
+   * scalar variable and nothing else. `numeric` marks a value whose CDF is itself a numerical integral (the stable law).
+   * @param {any} c @param {number} a @param {any[]} status @returns {{ values: (number | null)[], numeric: boolean[] }}
+   */
+  function closedForm(c, a, status, anyModel = false) {
+    const none = { values: c.quantities.map(() => null), numeric: c.quantities.map(() => false) };
+    const scalar = (/** @type {any} */ n) => n?.type === "var" && n.constant && n.repeat === 1 && !n.law.dim;
+    if (!anyModel && (c.nodes.length !== 1 || !scalar(c.nodes[0]))) return none;
+    const env = fixedEnv(c, a), numeric = c.quantities.map(() => false);
     const FLIP = /** @type {Record<string, string>} */ ({ "<": ">", "<=": ">=", ">": "<", ">=": "<=", "==": "==", "!=": "!=" });
-    /** The node and its parameters when t names a scalar variable with constant parameters. @param {any} t */
-    const lawOf = (t) => {
-      const node = t.t === "id" ? c.nodes.find((/** @type {any} */ n) => n.name === t.name) : null;
-      if (!scalar(node)) return null;
-      const pr = argsAt(node, env);
-      return pr.error || node.law.check(pr.params).length ? null : { law: node.law, p: pr.params };
-    };
-    return c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
-      const t = q.trees[0];
-      if (q.kind === "expectation" && t.t === "id") { const m = lawOf(t); return m && status[k].mean === "finite" ? m.law.moments(m.p).mean : null; }
-      if (q.kind !== "probability" || t.t !== "bin" || !(t.op in FLIP)) return null;
+    /** @param {any} t */
+    const lawOf = (t) => (t.t === "id" ? nameLaw(c, t.name, env) : null);
+    /** The value of E[t] for an indicator comparison or a name. @param {any} t @param {number} k @param {boolean} mean */
+    const value = (t, k, mean) => {
+      if (mean && t.t === "id") {
+        const m = lawOf(t);
+        if (!m || status[k].mean !== "finite") return null;
+        if (m.mean !== null) { if (!m.exactMean) numeric[k] = true; return m.mean; }
+        return null;
+      }
+      if (t.t !== "bin" || !(t.op in FLIP)) return null;
       let op = t.op, side = t.b, m = lawOf(t.a);
       if (m && fixed(t.b, c)) side = t.b;
       else if ((m = lawOf(t.b)) && fixed(t.a, c)) { side = t.a; op = FLIP[op]; }
       else return null;
-      const { law, p } = m;
       const v = E.compile(side, c.slots)(env);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
+      if (m.numeric) numeric[k] = true;
       // A continuous law gives every single point probability 0, so P(X < v) = P(X ≤ v) = F(v).
-      if (law.continuous) return op === "<" || op === "<=" ? law.cdf(v, p) : op === ">" || op === ">=" ? law.sf(v, p) : op === "==" ? 0 : 1;
+      if (m.continuous) return op === "<" || op === "<=" ? m.cdf(v) : op === ">" || op === ">=" ? m.sf(v) : op === "==" ? 0 : 1;
       switch (op) {
-        case "<": return law.cdf(Math.ceil(v) - 1, p);
-        case "<=": return law.cdf(Math.floor(v), p);
-        case ">": return law.sf(Math.floor(v), p);
-        case ">=": return law.sf(Math.ceil(v) - 1, p);
-        case "==": return law.pmf(v, p);
-        default: return 1 - law.pmf(v, p);
+        case "<": return m.cdf(Math.ceil(v) - 1);
+        case "<=": return m.cdf(Math.floor(v));
+        case ">": return m.sf(Math.floor(v));
+        case ">=": return m.sf(Math.ceil(v) - 1);
+        case "==": return m.mass(v);
+        default: return 1 - m.mass(v);
       }
+    };
+    const values = c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
+      if (q.kind === "expectation") return value(q.trees[0], k, true);
+      if (q.kind === "probability") return value(q.trees[0], k, false);
+      if (!anyModel) return null;
+      const x = value(q.trees[0], k, true), y = value(q.trees[1], k, true);
+      return x === null || y === null || y === 0 ? null : x / y;
+    });
+    return { values, numeric };
+  }
+
+  /**
+   * Reference values by quadrature over the law of one name: a quantity that reads the random variables only through
+   * a name N with an exact law (such as M := max(X) of a repeated variable) is E[g(N)] = ∫ g(Q_N(u)) du. The
+   * definitions between N and the quantity are evaluated at each node. Null for a quantity that reads another random
+   * name, for a law whose CDF is numerical (each quantile would need a root of an integral), and for an integral that
+   * does not converge.
+   * @param {any} c @param {number} a @param {any[]} status @param {number} k
+   */
+  function oneNameRef(c, a, status, k) {
+    const q = c.quantities[k];
+    if (q.kind === "expectation" && status[k].mean !== "finite") return null;
+    if (q.kind === "ratio" && status[k].mean !== "finite") return null;
+    const env = fixedEnv(c, a);
+    for (const n of [...c.nodes].reverse()) {
+      if (n.type === "var" && n.repeat > 1) continue;
+      if (!q.trees.every((/** @type {any} */ t) => through(t, n.name, c))) continue;
+      const law = nameLaw(c, n.name, env);
+      if (!law || law.numeric) continue;
+      // The definitions after N that read it, in model order.
+      const after = c.nodes.slice(c.nodes.indexOf(n) + 1).filter((/** @type {any} */ d) => d.type === "def" && !fixed(d.tree, c) && through(d.tree, n.name, c));
+      /** @param {(e: Value[]) => Value} fn @param {boolean} indicator */
+      const g = (fn, indicator) => (/** @type {number} */ x) => {
+        const e = env.slice();
+        e[n.slot] = x;
+        for (const d of after) e[d.slot] = d.fn(e);
+        const v = scalar(fn(e), q.name);
+        return indicator ? +(v !== 0) : v;
+      };
+      /** @param {(x: number) => number} f */
+      const integral = (f) => T.expectU(f, (u) => law.quantile(u, 1 - u), (v) => law.quantile(1 - v, v));
+      try {
+        if (q.kind === "ratio") { const x = integral(g(q.num, false)), y = integral(g(q.den, false)); return x === null || y === null || y === 0 ? null : x / y; }
+        const v = integral(g(q.fn, q.kind === "probability"));
+        return v === null ? null : q.kind === "probability" ? Math.min(1, Math.max(0, v)) : v;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** True when every random variable that t reads, directly or through definitions, it reads through the name n. @param {any} t @param {string} n @param {any} c @returns {boolean} */
+  function through(t, n, c) {
+    return [...E.names(t)].every((r) => {
+      if (r === n || c.kinds.get(r) === "param") return true;
+      const node = c.nodes.find((/** @type {any} */ x) => x.name === r);
+      return node?.type === "def" && through(node.tree, n, c);
     });
   }
 
@@ -1203,7 +1483,7 @@
         quantities: c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
           const st = status[k].alts?.[a] ?? status[k], s = m.acc[a][k], mu = controlMean(c, design, a, k), iv = interval(q.kind, s, st.variance, design, mu);
           // An infinite mean is the stronger reason: the sample mean then has no finite limit at all.
-          if (st.mean === "infinite" && iv.lo === null) iv.how = "no interval: the mean is infinite, so the sample mean has no finite limit";
+          if (st.mean === "infinite" && iv.lo === null) iv.how = status[k].twoSided ? "no interval: the mean does not exist (both tails are heavy), so the sample mean has no limit" : "no interval: the mean is infinite, so the sample mean has no finite limit";
           const one = design === "antithetic" ? s.ind : s, sd = one.n > 1 ? Math.sqrt(one.m2 / (one.n - 1)) : null;
           const cov = m.cover[a]?.[k];
           return { name: q.name, kind: q.kind, n: one.n, hits: q.kind === "probability" ? s.hits : null, ...iv, sampleSd: q.kind === "probability" ? null : sd,
@@ -1281,5 +1561,5 @@
     return { rows, best: best.a, separated, text: "" };
   }
 
-  return { FORMAT, VERSION, BLOCK, STREAM, REUSE, LIMITS, TEXT_FIELDS, METHODS, MAX_STRATA, QUAD, complete, prepare, block, merge, empty, summary, interval, momentStatus, reference, splitFocus, argsAt, sampleFocus };
+  return { FORMAT, VERSION, BLOCK, STREAM, REUSE, LIMITS, TEXT_FIELDS, METHODS, MAX_STRATA, QUAD, complete, prepare, block, merge, empty, summary, interval, momentStatus, reference, splitFocus, argsAt, sampleFocus, focusLaw };
 });

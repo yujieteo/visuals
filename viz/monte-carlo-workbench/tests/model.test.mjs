@@ -28,8 +28,9 @@ test("the focus window holds almost all the mass of each alternative, in at most
     assert.ok(w.bins >= 1 && w.bins <= 400, `${id}: ${w.bins} bins`);
     if (d.focus.theory && !d.focus.heavy) {
       const pmf = derive({ model: id, plot: "pmf" }).focus.theory;
-      const mass = pmf.y.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
-      assert.ok(mass > 1 - 1e-5, `${id}: the window holds mass ${mass}`);
+      // A continuous window starts at the 10^-4 quantile (0.005 for a heavy tail): the CDF at its right end is the test.
+      const mass = d.focus.continuous ? derive({ model: id, plot: "cdf" }).focus.theory.y[w.bins - 1] : pmf.y.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+      assert.ok(mass > 1 - (d.focus.continuous ? 2e-4 : 1e-5), `${id}: the window holds mass ${mass}`);
     }
   }
 });

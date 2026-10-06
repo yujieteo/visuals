@@ -29,6 +29,7 @@
     abs: [1, 1], sqrt: [1, 1], exp: [1, 1], log: [1, 1], log1p: [1, 1], floor: [1, 1], ceil: [1, 1], round: [1, 1],
     pow: [2, 2], min: [1, 32], max: [1, 32], pmin: [2, 2], pmax: [2, 2], if: [3, 3], sum: [1, 1], mean: [1, 1],
     prod: [1, 1], len: [1, 1], count: [2, 2], distinct: [1, 1], maxcount: [1, 1], any: [1, 1], all: [1, 1], normalize: [1, 1],
+    median: [1, 1], quantile: [2, 2], hill: [2, 2], km: [3, 3],
   });
   const BINARY = /** @type {Record<string, [number, boolean]>} */ ({
     "||": [1, false], "&&": [2, false], "<": [4, false], "<=": [4, false], ">": [4, false], ">=": [4, false], "==": [4, false],
@@ -217,6 +218,14 @@
         if (!(s > 0) || a.some((x) => !(x >= 0))) throw new ExprError("normalize() needs weights that are not negative, with a positive sum.");
         return a.map((x) => x / s);
       }
+      case "median": return sampleQuantile(vec(v[0]), 0.5);
+      case "quantile": {
+        const p = num(v[1], "quantile()");
+        if (!(p >= 0 && p <= 1)) throw new ExprError(`quantile() needs a level in [0, 1], not ${p}.`);
+        return sampleQuantile(vec(v[0]), p);
+      }
+      case "hill": return hill(vec(v[0]), num(v[1], "hill()"));
+      case "km": return kaplanMeier(vec(v[0]), vec(v[1]), num(v[2], "km()"));
       case "if": {
         const c = v[0];
         if (typeof c === "number") return c !== 0 ? v[1] : v[2];
@@ -230,6 +239,46 @@
       }
       default: throw new ExprError(`"${fn}" is not a function of the expression language.`);
     }
+  }
+
+  /** The sample quantile of level p with linear interpolation between order statistics (type 7). @param {number[]} x @param {number} p */
+  function sampleQuantile(x, p) {
+    const s = x.slice().sort((a, b) => a - b), h = (s.length - 1) * p, lo = Math.floor(h);
+    return lo + 1 < s.length ? s[lo] + (h - lo) * (s[lo + 1] - s[lo]) : s[lo];
+  }
+
+  /**
+   * Hill's estimator of the extreme-value index γ = 1/α from the k largest values: the mean of log(X_(n−i+1)/X_(n−k))
+   * for i = 1 … k. It needs 1 ≤ k < n and a positive X_(n−k).
+   * @param {number[]} x @param {number} k
+   */
+  function hill(x, k) {
+    const s = x.slice().sort((a, b) => b - a);
+    if (!Number.isInteger(k) || k < 1 || k >= s.length) throw new ExprError(`hill() needs an integer k from 1 to ${s.length - 1}, not ${k}.`);
+    if (!(s[k] > 0)) throw new ExprError("hill() needs positive values above its threshold X_(n−k).");
+    let sum = 0;
+    for (let i = 0; i < k; i++) sum += Math.log(s[i] / s[k]);
+    return sum / k;
+  }
+
+  /**
+   * The Kaplan–Meier estimate of P(T > t) from observed times y and event indicators d (1: the event, 0: censored).
+   * At a tie, events come before censorings, so a value censored at an event time is still at risk then.
+   * @param {number[]} y @param {number[]} d @param {number} t
+   */
+  function kaplanMeier(y, d, t) {
+    if (y.length !== d.length) throw new ExprError(`km() needs times and event indicators of the same length, not ${y.length} and ${d.length}.`);
+    const order = y.map((_, i) => i).sort((a, b) => y[a] - y[b] || d[b] - d[a]);
+    let atRisk = y.length, S = 1;
+    for (let j = 0; j < order.length;) {
+      const time = y[order[j]];
+      if (time > t) break;
+      let events = 0, all = 0;
+      while (j < order.length && y[order[j]] === time) { events += +(d[order[j]] !== 0); all++; j++; }
+      if (events) S *= 1 - events / atRisk;
+      atRisk -= all;
+    }
+    return S;
   }
 
   /**
