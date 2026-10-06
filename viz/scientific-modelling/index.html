@@ -6034,7 +6034,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   /** An approximation layer. `hue` groups the approximations of one limit, which the view draws in one colour. */
   const approxLayer = (id, title, measure, criterion, steps, hue = id, evidence = ["spec-8", "spec-9"]) => ({
     id, kind: "approximation", boundary: "approximation", title, measure, scale: "log", status: "numerical", criterion, steps, evidence, hue,
-    thresholds: (tol) => ({ curves: [{ value: tol, label: `${title}: error = ${tol}` }], regions: [{ id: "meets", label: `${title} meets the tolerance`, lo: 0, hi: tol }] }),
+    thresholds: (tol) => ({ curves: [{ value: tol, label: `${title}: error = ${tol}` }], regions: [{ id: "meets", label: `${title} meets the tolerance`, lo: 0, hi: tol, closed: true }] }),
   });
   const balanceLayer = (id, title, measure, criterion, low, high, steps, status = "exact") => ({
     id, kind: "balance", boundary: "balance-crossover", title, measure, scale: "log", status, criterion, steps, evidence: ["spec-8"],
@@ -6657,7 +6657,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       { id: "transverse", kind: "balance", boundary: "balance-crossover", title: "Transverse balance", measure: "bal-transverse", scale: "log", status: "proposed", steps, evidence: ["spec-8", "spec-10"],
         criterion: "Bi_⊥/2 with Bi_⊥ = hA_c/(kP) = (λ/(PL/A_c))²: the temperature drop across the fin over its surface excess, for a plate fin",
         thresholds: (tol) => ({ curves: [{ value: tol, label: `transverse estimate = ${tol}` }, { value: 1, label: "transverse drop = surface excess" }],
-          regions: [{ id: "low", label: "The 1D model holds within the tolerance (estimate)", lo: 0, hi: tol }, { id: "band", label: "The transverse drop is not negligible", lo: tol, hi: 1 }, { id: "high", label: "Transverse conduction controls: the 1D model fails", lo: 1, hi: null }] }) },
+          regions: [{ id: "low", label: "The 1D model holds within the tolerance (estimate)", lo: 0, hi: tol, closed: true }, { id: "band", label: "The transverse drop is not negligible", lo: tol, hi: 1 }, { id: "high", label: "Transverse conduction controls: the 1D model fails", lo: 1, hi: null }] }) },
     ];
     const approximations = [
       { id: "short", label: "Short fin", tex: "Q^{*}\\approx\\lambda^{2}" + (convective ? "+\\beta\\lambda" : "") + ",\\ \\eta_f\\approx 1", limit: "λ → 0", why: "Order 0 of the small-λ expansion: the fin stays at the base temperature.", error: "proved: λ² − λ⁴/3 ≤ λ tanh λ ≤ λ² for the insulated tip" },
@@ -6822,6 +6822,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     { id: "bifurcation", name: "Bifurcations", piece: 4 },
   ];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(10)) : null);
+  /** Is v in a region [lo, hi)? A region marked closed also holds its upper end: an error equal to the tolerance meets it. */
+  const inRegion = (r, v) => v >= (r.lo ?? 0) && (r.hi === null || r.hi === undefined || v < r.hi || (r.closed && v === r.hi));
   const WORD = /[A-Za-z][A-Za-z0-9_]*/g;
 
   /** The implementation of a declaration in the first family module that has it. */
@@ -7029,10 +7031,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const layers = impl.layers.map((L) => {
       const th = L.thresholds(tol);
       const measure = nodes.map((n) => (n.ok ? n.values[L.measure] : null));
-      const regionOf = (v) => (v === null || v === undefined ? -1 : th.regions.findIndex((r) => v >= r.lo && (r.hi === null || v < r.hi)));
+      const regionOf = (v) => (v === null || v === undefined ? -1 : th.regions.findIndex((r) => inRegion(r, v)));
       const idx = measure.map(regionOf);
       const regions = th.regions.map((r, k) => {
-        const out = { id: r.id, label: r.label, lo: num(r.lo), hi: r.hi === null ? null : num(r.hi), count: idx.filter((i) => i === k).length };
+        const out = { id: r.id, label: r.label, lo: num(r.lo), hi: r.hi === null ? null : num(r.hi), closed: Boolean(r.closed), count: idx.filter((i) => i === k).length };
         if (twoD) out.mask = idx.map((i) => (i === k ? "1" : "0")).join("");
         else out.intervals = intervals(idx.map((i) => i === k), xs, (a, b) => refine1D(impl, fixed, x, xLog, L, a, b, nodes, xs, r));
         return out;
@@ -7201,7 +7203,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const at = layers.map((l) => {
       if (!ev.ok) return { layer: l.id, title: l.title, kind: l.kind, value: null, region: null };
       const v = ev.values[l.measure];
-      const r = l.regions.find((x) => v >= (x.lo ?? 0) && (x.hi === null || v < x.hi));
+      const r = l.regions.find((x) => inRegion(x, v));
       return { layer: l.id, title: l.title, kind: l.kind, value: num(v), region: r ? r.label : null, meets: l.kind === "approximation" ? v <= tol : null };
     });
     const detail = ev.ok ? impl.inspect(p, ctx) : { ok: false, reason: ev.reason };

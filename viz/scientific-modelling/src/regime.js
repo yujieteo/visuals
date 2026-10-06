@@ -30,6 +30,8 @@
     { id: "bifurcation", name: "Bifurcations", piece: 4 },
   ];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(10)) : null);
+  /** Is v in a region [lo, hi)? A region marked closed also holds its upper end: an error equal to the tolerance meets it. */
+  const inRegion = (r, v) => v >= (r.lo ?? 0) && (r.hi === null || r.hi === undefined || v < r.hi || (r.closed && v === r.hi));
   const WORD = /[A-Za-z][A-Za-z0-9_]*/g;
 
   /** The implementation of a declaration in the first family module that has it. */
@@ -237,10 +239,10 @@
     const layers = impl.layers.map((L) => {
       const th = L.thresholds(tol);
       const measure = nodes.map((n) => (n.ok ? n.values[L.measure] : null));
-      const regionOf = (v) => (v === null || v === undefined ? -1 : th.regions.findIndex((r) => v >= r.lo && (r.hi === null || v < r.hi)));
+      const regionOf = (v) => (v === null || v === undefined ? -1 : th.regions.findIndex((r) => inRegion(r, v)));
       const idx = measure.map(regionOf);
       const regions = th.regions.map((r, k) => {
-        const out = { id: r.id, label: r.label, lo: num(r.lo), hi: r.hi === null ? null : num(r.hi), count: idx.filter((i) => i === k).length };
+        const out = { id: r.id, label: r.label, lo: num(r.lo), hi: r.hi === null ? null : num(r.hi), closed: Boolean(r.closed), count: idx.filter((i) => i === k).length };
         if (twoD) out.mask = idx.map((i) => (i === k ? "1" : "0")).join("");
         else out.intervals = intervals(idx.map((i) => i === k), xs, (a, b) => refine1D(impl, fixed, x, xLog, L, a, b, nodes, xs, r));
         return out;
@@ -409,7 +411,7 @@
     const at = layers.map((l) => {
       if (!ev.ok) return { layer: l.id, title: l.title, kind: l.kind, value: null, region: null };
       const v = ev.values[l.measure];
-      const r = l.regions.find((x) => v >= (x.lo ?? 0) && (x.hi === null || v < x.hi));
+      const r = l.regions.find((x) => inRegion(x, v));
       return { layer: l.id, title: l.title, kind: l.kind, value: num(v), region: r ? r.label : null, meets: l.kind === "approximation" ? v <= tol : null };
     });
     const detail = ev.ok ? impl.inspect(p, ctx) : { ok: false, reason: ev.reason };

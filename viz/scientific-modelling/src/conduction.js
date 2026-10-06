@@ -52,7 +52,7 @@
   /** An approximation layer. `hue` groups the approximations of one limit, which the view draws in one colour. */
   const approxLayer = (id, title, measure, criterion, steps, hue = id, evidence = ["spec-8", "spec-9"]) => ({
     id, kind: "approximation", boundary: "approximation", title, measure, scale: "log", status: "numerical", criterion, steps, evidence, hue,
-    thresholds: (tol) => ({ curves: [{ value: tol, label: `${title}: error = ${tol}` }], regions: [{ id: "meets", label: `${title} meets the tolerance`, lo: 0, hi: tol }] }),
+    thresholds: (tol) => ({ curves: [{ value: tol, label: `${title}: error = ${tol}` }], regions: [{ id: "meets", label: `${title} meets the tolerance`, lo: 0, hi: tol, closed: true }] }),
   });
   const balanceLayer = (id, title, measure, criterion, low, high, steps, status = "exact") => ({
     id, kind: "balance", boundary: "balance-crossover", title, measure, scale: "log", status, criterion, steps, evidence: ["spec-8"],
@@ -675,7 +675,7 @@
       { id: "transverse", kind: "balance", boundary: "balance-crossover", title: "Transverse balance", measure: "bal-transverse", scale: "log", status: "proposed", steps, evidence: ["spec-8", "spec-10"],
         criterion: "Bi_⊥/2 with Bi_⊥ = hA_c/(kP) = (λ/(PL/A_c))²: the temperature drop across the fin over its surface excess, for a plate fin",
         thresholds: (tol) => ({ curves: [{ value: tol, label: `transverse estimate = ${tol}` }, { value: 1, label: "transverse drop = surface excess" }],
-          regions: [{ id: "low", label: "The 1D model holds within the tolerance (estimate)", lo: 0, hi: tol }, { id: "band", label: "The transverse drop is not negligible", lo: tol, hi: 1 }, { id: "high", label: "Transverse conduction controls: the 1D model fails", lo: 1, hi: null }] }) },
+          regions: [{ id: "low", label: "The 1D model holds within the tolerance (estimate)", lo: 0, hi: tol, closed: true }, { id: "band", label: "The transverse drop is not negligible", lo: tol, hi: 1 }, { id: "high", label: "Transverse conduction controls: the 1D model fails", lo: 1, hi: null }] }) },
     ];
     const approximations = [
       { id: "short", label: "Short fin", tex: "Q^{*}\\approx\\lambda^{2}" + (convective ? "+\\beta\\lambda" : "") + ",\\ \\eta_f\\approx 1", limit: "λ → 0", why: "Order 0 of the small-λ expansion: the fin stays at the base temperature.", error: "proved: λ² − λ⁴/3 ≤ λ tanh λ ≤ λ² for the insulated tip" },
