@@ -7,7 +7,7 @@ works offline and from `file://`.
 
 ## Quick start
 
-Python 3 (standard library only) and Node 22. Open any `viz/<slug>/index.html`
+Python 3.9 or later (standard library only) and Node 22. Open any `viz/<slug>/index.html`
 in a browser, then:
 
 ```sh
@@ -17,7 +17,7 @@ python3 scripts/check.py --all         # every visual
 python3 scripts/check.py --toon --changed  # one TOON verdict for agents; full output in build/logs/
 npm run typecheck -- --summary         # every tsc project's errors as one TOON verdict, by code and file
 node e2e/bin/page-axi.js check <slug>  # open the page headless at 3 widths in both themes: one verdict, screenshots in build/page-axi/<slug>/
-python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths, no tracked artifacts
+python3 scripts/check_repo.py          # parse every tracked .py, check visual.json and folder rules, reject home paths and artifacts
 python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
 python3 scripts/sync_template.py <site>/templates/beamdswitch.js  # copy the site's report template into every visual that carries it
@@ -67,8 +67,12 @@ registers, and the deterministic rules of `scripts/rules.py` and
 colour contrast in both themes, and dead or duplicated code
 ([docs/monorepo.md](docs/monorepo.md#checks)). CI runs them only for the
 visuals a change touches, each in its own job, and runs every visual when
-shared tooling changes. `.no-mistakes.yaml` pins the gate's test step to the
-same scoped commands.
+shared tooling changes. On every change, CI also runs the repository check and
+shared tooling's tests on Python 3.9 and 3.12. The repository check parses every
+tracked `.py` file without executing it, so newer syntax in any visual fails
+the Python 3.9 check even when that visual is not selected. Runtime compatibility
+is covered by the shared tooling's tests; visual checks still run on Python 3.12.
+`.no-mistakes.yaml` pins the gate's test step to the same scoped commands.
 
 ## Generated outputs
 

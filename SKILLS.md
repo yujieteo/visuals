@@ -70,6 +70,7 @@ These rules are scripts, so do not check them by reading. `scripts/check.py` run
 | The page requests only its own published files, never `notes.md` | `requests`, and the browser check `network` |
 | Colour tokens meet WCAG contrast in both themes; no control is outlined in `--border` | `contrast` |
 | No unused imports or locals, unreachable code, or names declared twice | `deadcode` (JavaScript, with tsc), `pydead` (Python) |
+| Every tracked `.py` parses on Python 3.9 and 3.12, without executing it | `scripts/check_repo.py` in both CI repository jobs |
 | No `__pycache__`, `*.pyc`, `.DS_Store` or AppleDouble `._*` file is tracked | `scripts/check_repo.py` |
 | No horizontal overflow at 320 px or 390 px; no NaN, Infinity or undefined shown at any input's limits | the browser checks `overflow-320`, `overflow-390`, `numeric-text` |
 | A page's vendored block (`<script data-vendor>`, the embedded MathJax) is the bundle of `scripts/vendor/`, and the vendored files are unchanged | `vendor`, and `scripts/check_repo.py` (`scripts/vendor/mathjax/SOURCES.json`) |
@@ -126,7 +127,7 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 
 ## Change shared tooling
 
-`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck -- --summary`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --toon`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
+`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Keep all Python syntax compatible with 3.9 and the shared tooling working on 3.9 and 3.12; CI runs the repository check and tooling tests on both. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck -- --summary`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --toon`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
 
 ## Rules
 

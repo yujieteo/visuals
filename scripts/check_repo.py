@@ -3,8 +3,9 @@
 
 Every viz/<slug>/ has a visual.json that matches schema/visual.schema.json and names files that exist; no
 file in the working tree, including ignored ones such as .claude/settings.local.json, holds an absolute
-user-home path; Git tracks no build or OS artifact (__pycache__, *.pyc, .DS_Store, AppleDouble ._*) and
-.gitignore keeps them out; and the shared tooling's Python (scripts/, tests/) has no unused import or local
+user-home path; every tracked Python file parses on this interpreter (CI runs Python 3.9 and 3.12);
+Git tracks no build or OS artifact (__pycache__, *.pyc, .DS_Store, AppleDouble ._*) and .gitignore keeps them
+out; and the shared tooling's Python (scripts/, tests/) has no unused import or local
 and no definition made twice; the vendored MathJax files match the SHA-256 list in scripts/vendor/mathjax/SOURCES.json;
 the kit's copied files match scripts/kit/SOURCES.json; and scripts/templates/beamdswitch.js, the copy
 scripts/new_visual.py writes, is the template whose SHA-256 scripts/sync_template.py recorded. Each visual's own checks are scripts/check.py's; the rules are scripts/rules.py.
@@ -67,14 +68,19 @@ def shared_copy_problems(root=ROOT):
 def main():
     by_slug, errors = load()
     errors += [f"{path}: holds an absolute user-home path" for path in home_paths()]
-    errors += rules.artifact_problems(tracked(), (ROOT / ".gitignore").read_text(encoding="utf-8"))
+    paths = tracked()
+    python_paths = [path for path in paths if path.endswith(".py")]
+    errors += rules.python_syntax_problems(ROOT, python_paths)
+    errors += rules.artifact_problems(paths, (ROOT / ".gitignore").read_text(encoding="utf-8"))
     errors += tooling_problems()
     errors += shared_copy_problems()
     if errors:
         print("\n".join(errors), file=sys.stderr)
         sys.exit(1)
-    print(f"verified: {len(by_slug)} visual folder(s), every visual.json valid, no absolute user-home paths, "
-          "no tracked build or OS artifacts, no unused or duplicated tooling Python, vendored files and template copy unchanged")
+    print(f"verified: {len(by_slug)} visual folder(s), every visual.json valid, "
+          f"{len(python_paths)} tracked Python file(s) parse on Python {sys.version_info.major}.{sys.version_info.minor}, "
+          "no absolute user-home paths, no tracked build or OS artifacts, no unused or duplicated tooling Python, "
+          "vendored files and template copy unchanged")
 
 
 if __name__ == "__main__":
