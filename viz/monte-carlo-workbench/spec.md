@@ -2,7 +2,7 @@
 
 # Monte Carlo Probability Workbench: specification
 
-Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 6 are on the page.
+Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 7 are on the page.
 
 ## Agreed decisions
 
@@ -81,6 +81,14 @@ Status: the owner approved the build plan on 5 October 2026. This document is th
 - The interview shows the rule path as a graph and as a table. The reader switches a rule off or picks another candidate, and the ranking changes. The interview returns "insufficient evidence", with the rules that give it, when the support is not known, when a tail decision has no tail fact, when selection depends on the value, when the mechanism and the tail are both unknown, or when no candidate has a score of 2 or more.
 - "Make the model record" writes the chosen candidate as model text, reads it with the editor's parser and applies it as the custom model: the same record that the editor makes. The parameters match the mean and the standard deviation of the evidence where the law permits, and a value that the interview does not have is marked illustrative.
 - The done criteria of groups 1 to 5 hold for the whole folder.
+
+## Group 7: what done means
+
+- The rare-event lab is its own tab ("Rare events"), with the guided pattern of group 6. Its problems, methods and examples are data (`data/rare.json`). Each run is a set of independent replications with one Philox stream each. Adaptive methods use Student t intervals across the replications, and fixed proposals use pooled CLT or Wilson intervals.
+- Direct simulation, valid exponential tilting, multilevel splitting, subset simulation, adaptive importance sampling and the cross-entropy method, each with its estimator, assumptions, settings, a suitable example, a failure example and a comparison. Exponential tilting is refused, with the reason, when the exponential moment E exp(θX) does not exist.
+- The ruin probability uses the Pollaczek–Khinchine representation, so that every method applies. The catastrophe and systemic ruin test has heavy-tailed losses, Hawkes arrivals, copula-linked exposures, a cascade of defaults, capital reserves and control policies. It gives the finite-horizon ruin probability, aggregate-loss quantiles and extreme losses, and the expected shortfall only where it is finite. It compares direct simulation, importance sampling and splitting, has sweeps that show how the decision changes, and keeps the light- and heavy-tailed regimes apart.
+- Theory panels for large deviations and rate functions, the change of measure, Cramér–Lundberg ruin, Pollaczek–Khinchine and subexponential ruin, dependence in extremes, and tail sensitivity related to Taleb. The tail sensitivity is an explicit model, and its interpretation is not presented as a theorem.
+- The done criteria of groups 1 to 6 hold for the whole folder, and their results stay the same.
 
 # The owner's specification
 
