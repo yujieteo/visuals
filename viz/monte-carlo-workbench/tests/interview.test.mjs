@@ -129,7 +129,7 @@ test("moment matching: the law of the record has the mean and the variance of th
     ["lognormal", "k=siz;gs=mul;m=2;sd=1", 2, 1], ["exponential", "k=tim;gt=mem;m=4", 4, 16], ["invgauss", "k=tim;gt=fpt;dr=yes;m=2;sd=1", 2, 1],
     ["beta", "k=pro;gp=unc;m=0.3;sd=0.1", 0.3, 0.01], ["logistic", "k=mea;gm=lgs;m=1;sd=2", 1, 4], ["laplace", "k=mea;gm=dif;m=1;sd=2", 1, 4],
     ["cuniform", "k=pro;gp=lim;m=0.5;sd=0.1", 0.5, 0.01], ["gumbel", "k=ext;ge=max;t=lgt;m=90;sd=25", 90, 625], ["weibull", "k=tim;gt=age;h=inc;m=5", 5, null],
-    ["pareto2", "k=siz;gs=pow;pm=zero;m=2", 2, null], ["gpd", "k=ext;ge=exc;m=3", 3, null], ["uniform", "k=cnt;g=eqv;m=7;lim=10", 7, 4],
+    ["pareto2", "k=siz;gs=pow;pm=zero;m=2", 2, null], ["gpd", "k=ext;ge=exc;m=3", 3, null], ["uniform", "k=cnt;g=eqv;m=6;lim=10", 6, 20 / 3],
     ["pareto2", "k=siz;gs=pow;pm=zero;m=2;sd=3", 2, 9], ["pareto1", "k=siz;gs=pow;pm=min;m=2;sd=3", 2, 9], ["gpd", "k=ext;ge=exc;m=95;sd=30", 95, 900]];
   for (const [id, iv, mean, variance] of cases) {
     const b = Iv.build(data, ev(/** @type {string} */ (iv)), /** @type {string} */ (id));
@@ -142,7 +142,7 @@ test("moment matching: the law of the record has the mean and the variance of th
   assert.match(nofit.errors[0], /variance sd² must be larger than the mean/);
   const below = Iv.build(data, ev("k=cnt;g=eqv;m=4;lim=10"), "uniform");
   assert.equal(below.ok, false, "a mean below half the limit needs a lower limit below 0");
-  assert.match(below.errors[0], /whole or half number with 0 ≤ 2m − n ≤ n/);
+  assert.match(below.errors[0], /has the mean \(a \+ n\)\/2, so the mean m must be a whole or half number from n\/2 to n/);
   const narrow = Iv.build(data, ev("k=ext;ge=exc;m=10;sd=2"), "gpd");
   assert.equal(narrow.ok, false);
   assert.match(narrow.errors[0], /needs sd at least m\/√11/);
@@ -152,11 +152,12 @@ test("moment matching: the law of the record has the mean and the variance of th
 });
 
 test("the discrete uniform template: a default may read a later given value, and a fallback serves when both are missing", () => {
-  const cases = [["k=cnt;g=eqv;lim=20", 10, 20, ["m", "c"]], ["k=cnt;g=eqv;m=4", 4, 8, ["lim", "c"]], ["k=cnt;g=eqv", 5, 10, ["m", "lim", "c"]], ["k=cnt;g=eqv;m=7;lim=10", 7, 10, ["c"]]];
-  for (const [iv, m, lim, illustrative] of cases) {
+  const cases = [["k=cnt;g=eqv;lim=20", 10, 0, 20, ["m", "c"]], ["k=cnt;g=eqv;m=4", 4, 0, 8, ["lim", "c"]], ["k=cnt;g=eqv", 5, 0, 10, ["m", "lim", "c"]], ["k=cnt;g=eqv;m=6;lim=10", 6, 2, 10, ["c"]]];
+  for (const [iv, m, a, lim, illustrative] of cases) {
     const b = Iv.build(data, ev(/** @type {string} */ (iv)), "uniform");
     assert.ok(b.ok, `${iv}: ${b.errors?.join(" ")}`);
     assert.equal(b.moments.mean, m, `${iv}: mean`);
+    assert.equal(b.params.a, a, `${iv}: lower limit`);
     assert.equal(b.params.b, lim, `${iv}: upper limit`);
     assert.deepEqual(b.illustrative, illustrative, `${iv}: illustrative values`);
   }
