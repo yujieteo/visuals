@@ -102,6 +102,18 @@ test("the page's SQL gives the reference statistics: Spearman, Welch's t and ANO
   assert.equal(perm.test, "T6", "a sparse 3 × 3 table takes the permutation test");
   assert.ok(Math.abs(perm.p - ref.permutation[0].p) <= 4 * Math.sqrt(perm.result.mcse ** 2 + ref.permutation[0].se ** 2), `permutation p ${perm.p}`);
   assert.match(perm.note, /T4's rule fails/);
+  const permFam = await family(await load("pe2", csv(["row_level", "col_level"], expand(ref.permutation[0].table))));
+  const permutation = Stats.permutation;
+  let draws = 0;
+  Stats.permutation = (...a) => { draws += 1; return permutation(...a); };
+  try {
+    const again = member(Family.decide(permFam, { independent: "yes" }), "association", ["row_level", "col_level"]);
+    assert.equal(draws, 0, "deciding again draws no new permutation tables");
+    assert.equal(again.test, "T6");
+    assert.equal(again.p, member(permFam, "association", ["row_level", "col_level"]).p);
+  } finally {
+    Stats.permutation = permutation;
+  }
   // A series of one value a month reads as the period means of the mean time series.
   const month = (k) => `${2000 + Math.floor(k / 12)}-${String((k % 12) + 1).padStart(2, "0")}-15`;
   for (const c of [ref.mannKendall[0], ref.mannKendall[1]]) {

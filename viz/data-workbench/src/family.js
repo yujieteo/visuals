@@ -80,6 +80,12 @@
   /** A seed for one permutation test: the first eight hex digits of its hypothesis id. */
   const seedOf = (id) => parseInt(id.slice(1, 9), 16) >>> 0;
 
+  /** The T6 result of a table that T4's rule refuses and Fisher's test does not take, or null; computed once, in the run. */
+  function permutationOf(t, id) {
+    if (t.length < 2 || t[0].length < 2 || (t.length === 2 && t[0].length === 2) || Stats.expectedRule(t).ok) return null;
+    return Stats.permutation(t, { seed: seedOf(id) });
+  }
+
   /** The patterns a chart kind shows: a mean time series shows a trend and a level shift. */
   const patternsOfKind = (kind) => Object.entries(PATTERNS).filter(([, p]) => p.kinds.includes(kind)).map(([id]) => id);
 
@@ -252,7 +258,8 @@
           const lx = await kept(r, "cx", "kx", a), ly = await kept(r, "cy", "ky", b);
           const mapped = `SELECT *, ${ChartSql.kept("cx", lx.levels)} AS gx, ${ChartSql.kept("cy", ly.levels)} AS gy FROM (${r})`;
           const rows = await query(ChartSql.grouped(mapped, { gx: "gx", gy: "gy" }, false));
-          m.measured = { ...crossTable(rows, lx.levels, ly.levels, lx.other, ly.other), merged: [lx.other, ly.other] };
+          const x = crossTable(rows, lx.levels, ly.levels, lx.other, ly.other);
+          m.measured = { ...x, merged: [lx.other, ly.other], permutation: permutationOf(x.table, m.id) };
         } else {
           const key = `${a}\u0000${b}`;
           if (!shared.has(key)) shared.set(key, series(a, b));
@@ -375,7 +382,7 @@
       if (rule.ok) return { status: "tested", result: Stats.chiSquare(t), effect };
       const why = `T4's rule fails (n ${n}, smallest expected count ${fmt(rule.min)}, ${pct(rule.share5)} of expected counts at least 5)`;
       if (t.length === 2 && t[0].length === 2) return { status: "tested", result: Stats.fisher(t), effect, note: `${why}: Fisher's exact test.` };
-      return { status: "tested", result: Stats.permutation(t, { seed: seedOf(m.id) }), effect, note: `${why}: a permutation test.` };
+      return { status: "tested", result: d.permutation, effect, note: `${why}: a permutation test.` };
     }
     const reg = regular(d);
     const need = m.pattern === "trend" ? 12 : 20;
