@@ -19,6 +19,7 @@
 <div class="seg wide" role="group" aria-label="Left panel">
 <button type="button" data-field="nav" value="examples">Examples</button>
 <button type="button" data-field="nav" value="interview">Interview</button>
+<button type="button" data-field="nav" value="rare">Rare events</button>
 <button type="button" data-field="nav" value="editor">Editor</button>
 <button type="button" data-field="nav" value="library">Library</button>
 </div>
@@ -33,6 +34,12 @@
 <select id="iv-example"></select>
 <div id="iv-questions"></div>
 <p class="row"><button type="button" id="iv-clear">Clear the answers</button></p>
+</section>
+<section id="nav-rare" aria-label="Rare events and ruin" hidden>
+<p class="note">The rare-event lab estimates small probabilities: the tail of a sum of claims, the probability of ruin, and a catastrophe test with several insurers. The lab is in the centre panel.</p>
+<label class="label" for="rare-search">Search by decision, phenomenon, law or method</label>
+<input id="rare-search" type="search" placeholder="for example: ruin, Pareto, splitting" autocomplete="off">
+<div id="rare-list"></div>
 </section>
 <section id="nav-editor" aria-label="Expert editor" hidden>
 <label class="label" for="editor-text">Model text</label>
@@ -74,11 +81,108 @@
 <ul id="law-list" class="plain"></ul>
 <h3>Methods</h3>
 <ul id="method-list" class="plain"></ul>
+<h3>Rare-event methods</h3>
+<ul id="rare-method-list" class="plain"></ul>
 <h3>Theory</h3>
 <ul id="theory-list" class="plain"></ul>
 </section>
 </aside>
 <section class="wb-centre" aria-label="Experiment and linked visuals">
+<section id="wb-rare" class="card" aria-labelledby="rare-title" hidden>
+<p class="label" id="rare-kind"></p>
+<h2 id="rare-title"></h2>
+<p id="rare-problem"></p>
+<p id="rare-observe"></p>
+<p id="rare-data" class="note"></p>
+<div id="rare-errors" class="callout bad" role="alert" hidden></div>
+<div class="controls">
+<label>Problem
+<select id="rare-problem-select" data-field="r_problem"><option value="sum">Tail of a sum</option><option value="ruin">Probability of ruin</option><option value="cat">Catastrophe and systemic ruin</option></select></label>
+<label>Jump or loss law
+<select id="rare-law" data-field="r_law"><option value="exponential">Exponential</option><option value="weibull">Weibull, k &lt; 1</option><option value="pareto2">Pareto II (Lomax)</option></select></label>
+<label id="rare-copula-row">Copula of the shares
+<select id="rare-copula" data-field="r_copula"><option value="independent">Independent</option><option value="gaussian">Gaussian</option><option value="gumbel">Gumbel</option><option value="clayton">Clayton</option></select></label>
+</div>
+<div class="controls">
+<label>Method
+<select id="rare-method" data-field="r_method"><option value="direct">Direct simulation</option><option value="tilting">Exponential tilting</option><option value="splitting">Multilevel splitting</option><option value="subset">Subset simulation</option><option value="ais">Adaptive importance sampling</option><option value="ce">Cross-entropy method</option></select></label>
+<label>Compare with
+<select id="rare-compare" data-field="r_compare"><option value="none">No comparison</option><option value="direct">Direct simulation</option><option value="tilting">Exponential tilting</option><option value="splitting">Multilevel splitting</option><option value="subset">Subset simulation</option><option value="ais">Adaptive importance sampling</option><option value="ce">Cross-entropy method</option></select></label>
+<label>Assumption failure
+<select id="rare-failure" data-field="r_failure"><option value="none">None</option><option value="light_family">Light-tailed family (cross-entropy)</option><option value="small_spread">Very small step (subset simulation)</option><option value="nominal_start">Start at the nominal law (adaptive importance sampling)</option></select></label>
+<label>Seed
+<input id="rare-seed" type="number" data-field="seed" min="0" max="4294967295" step="1"></label>
+</div>
+<div class="controls">
+<label>Paths in each replication, log2 N
+<input id="rare-size" type="number" data-field="r_size" min="8" max="16" step="1"></label>
+<label>Replications R
+<input id="rare-reps" type="number" data-field="r_reps" min="2" max="64" step="1"></label>
+<label>Method settings
+<input id="rare-options" type="text" data-field="r_options" spellcheck="false" placeholder="for example: levels=6; p0=0.1"></label>
+</div>
+<details>
+<summary>Parameters of the problem</summary>
+<div id="rare-params" class="params"></div>
+<p class="note">Press Enter or leave the field to apply a value. Method settings: levels (splitting), p0 and spread (subset simulation), rho (cross-entropy), beta and iters (adaptive importance sampling), tilt and arrivals (tilting in the catastrophe test).</p>
+</details>
+<div class="run-row" role="group" aria-label="Run controls of the rare-event lab">
+<button type="button" id="rare-step" aria-keyshortcuts=".">Step</button>
+<button type="button" id="rare-go" class="primary" aria-keyshortcuts="Space">Run</button>
+<button type="button" id="rare-pause" aria-keyshortcuts="Space">Pause</button>
+<button type="button" id="rare-reset">Reset run</button>
+<label class="check"><input type="checkbox" id="rare-autorun" checked> Run on each change</label>
+</div>
+<progress id="rare-progress" max="1" value="0" aria-label="Progress of the rare-event run">0 %</progress>
+<p id="rare-status" role="status" aria-live="polite"></p>
+<h3>Estimates and references</h3>
+<div id="rare-results" class="table-scroll"></div>
+<h3>Decision report</h3>
+<div id="rare-decision" class="table-scroll"></div>
+<figure id="fig-rare-conv">
+<figcaption class="label">Convergence against the work</figcaption>
+<div id="rare-conv" class="plot"></div>
+<p class="row exports"><button type="button" id="rare-conv-svg">Save SVG</button> <button type="button" id="rare-conv-png">Save PNG</button></p>
+</figure>
+<figure id="fig-rare-compare">
+<figcaption class="label">Estimator comparison</figcaption>
+<div id="rare-comparison" class="plot"></div>
+<p class="row exports"><button type="button" id="rare-comparison-svg">Save SVG</button> <button type="button" id="rare-comparison-png">Save PNG</button></p>
+</figure>
+<figure id="fig-rare-stages">
+<figcaption class="label">Levels, stages and weights of the method</figcaption>
+<div id="rare-stages" class="plot"></div>
+<p class="row exports"><button type="button" id="rare-stages-svg">Save SVG</button> <button type="button" id="rare-stages-png">Save PNG</button></p>
+</figure>
+<figure id="fig-rare-tail">
+<figcaption class="label">Tail plot with the references</figcaption>
+<div id="rare-tail" class="plot"></div>
+<p class="row exports"><button type="button" id="rare-tail-svg">Save SVG</button> <button type="button" id="rare-tail-png">Save PNG</button></p>
+</figure>
+<h3>Assumptions</h3>
+<div id="rare-assumptions"></div>
+<h3>Diagnostics</h3>
+<div id="rare-diagnostics"></div>
+<h3>Interpretation and rejection conditions</h3>
+<div id="rare-interpretation"></div>
+<h3>Parameter sweep</h3>
+<div class="controls">
+<label>Parameter <select id="rare-sweep-param" aria-label="Swept parameter of the rare-event lab"></select></label>
+<label>From <input id="rare-from" type="number" data-field="r_from" step="any"></label>
+<label>To <input id="rare-to" type="number" data-field="r_to" step="any"></label>
+<label>Points <input id="rare-points" type="number" data-field="r_points" min="3" max="15" step="1"></label>
+</div>
+<p class="row"><button type="button" id="rare-sweep-run">Run the sweep</button></p>
+<p id="rare-sweep-status" class="note" role="status" aria-live="polite"></p>
+<div id="rare-sweep" class="plot"></div>
+<div id="rare-sweep-table" class="table-scroll"></div>
+<p class="row exports"><button type="button" id="rare-sweep-svg">Save SVG</button> <button type="button" id="rare-sweep-png">Save PNG</button></p>
+<h3>Records</h3>
+<p class="row"><button type="button" id="rare-save-run">Save rare-event run record</button> <label class="btn" for="rare-load-run">Load rare-event run record and replay</label><input type="file" id="rare-load-run" class="visually-hidden" accept="application/json,.json"> <button type="button" id="rare-save-csv">Save rare-event results CSV</button></p>
+<p id="rare-record-status" class="note" role="status" aria-live="polite"></p>
+<p id="rare-replay" class="note" role="status" aria-live="polite"></p>
+<section id="rare-method-card" aria-label="Rare-event method"></section>
+</section>
 <section id="wb-interview" class="card" aria-labelledby="iv-head" hidden>
 <h2 id="iv-head">Guided interview: candidate models</h2>
 <p class="note">The interview is the third way to make a model, after the examples and the editor. It makes the same model record as the editor.</p>
@@ -234,7 +338,7 @@
 </div>
 <section id="panel-theory" aria-label="Theory" hidden>
 <label class="label" for="theory-select">Theory panel</label>
-<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option><option value="ergodicity">Ergodicity, mixing, and time and ensemble averages</option><option value="sklar">Sklar's theorem and copulas</option><option value="mlmc">Multilevel Monte Carlo and discretisation bias</option></select>
+<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option><option value="reduction">Variance reduction</option><option value="tails">Regular variation and subexponentiality</option><option value="extremes">Extreme-value limits and domains of attraction</option><option value="exceedances">Threshold exceedances, maxima and sums</option><option value="ergodicity">Ergodicity, mixing, and time and ensemble averages</option><option value="sklar">Sklar's theorem and copulas</option><option value="mlmc">Multilevel Monte Carlo and discretisation bias</option><option value="ldp">Large deviations and the rate function</option><option value="tilting">Change of measure and exponential tilting</option><option value="ruin">Ruin theory: the Cramér–Lundberg model</option><option value="pk">The Pollaczek–Khinchine formula and subexponential ruin</option><option value="taildep">Dependence in extremes</option><option value="sensitivity">Tail sensitivity and ruin, in an explicit model</option></select>
 <div id="theory-body"></div>
 </section>
 <section id="panel-assumptions" aria-label="Assumptions" hidden></section>

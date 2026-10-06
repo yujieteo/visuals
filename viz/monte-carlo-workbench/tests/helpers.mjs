@@ -35,6 +35,8 @@ export const P = require("../src/plots.js");
 export const Rep = require("../src/report.js");
 /** @type {typeof import("../src/pool.js")} */
 export const Pool = require("../src/pool.js");
+/** @type {typeof import("../src/rare.js")} */
+export const Ra = require("../src/rare.js");
 /** @type {any} */
 export const data = require("../raw.json");
 

@@ -1,0 +1,473 @@
+{
+ "problems": [
+  {
+   "id": "sum",
+   "title": "The tail of a sum of claims",
+   "statement": "An insurer pays claims in one period. There are n claims, and they are independent. Find the probability that the total S_n is above the reserve b.",
+   "decision": "Decision: keep the reserve b, or raise it. Estimated quantity: P(S_n > b), against the largest acceptable probability.",
+   "reason": "A sum of i.i.d. jumps is the simplest model of an aggregate loss. Its tail has an exact value for exponential jumps and a known asymptotic for heavy-tailed jumps. These values let you check each method.",
+   "inputs": "The inputs are n claims, the threshold b in loss units and the jump law. The jump law is one of three laws: exponential (light tail), Weibull with k < 1, or Pareto II. All moments of the Weibull law are finite, but it has no exponential moment. The Pareto II law has only the moments of order r < α. The parameters are illustrative.",
+   "dependence": "The claims are independent and have the same law. Positive dependence between claims, such as a common shock, makes the tail heavier. This model does not show it.",
+   "diagnostics": "Compare the estimate with the exact Erlang tail, or with the Asmussen–Kroese reference for a heavy tail. Read the relative error, the work and the effective sample size of the weights. Other candidate models: a compound Poisson sum with a random number of claims, or a sum with dependent claims.",
+   "interpretation": "For a light tail, a large sum comes from many moderately large claims. Then P(S_n > na) for a fixed a > E X decays exponentially in n. For a heavy tail, it comes from one very large claim, and P(S_n > b) ≈ n P(X > b) for large b. Reject the model when the claims are clearly dependent. Reject it also when a plot of the data shows a tail that the chosen law does not have.",
+   "data": "Synthetic: the jump law and its parameters define the data. They are illustrative values, not calibrated evidence."
+  },
+  {
+   "id": "ruin",
+   "title": "The probability of ruin of an insurer",
+   "statement": "Claims arrive as a Poisson process with rate λ, and the premium income is c per year. Find the probability ψ(u) that the capital, which starts at u, ever goes below 0.",
+   "decision": "Decision: the initial capital u that the insurer holds. Estimated quantity: the probability of ruin ψ(u) over an infinite horizon, against the largest acceptable probability.",
+   "reason": "The Cramér–Lundberg model is the classical model of ruin theory. The Pollaczek–Khinchine formula writes ψ(u) as the probability that a sum of K ladder heights is above u. The number K is geometric, with P(K = k) = (1 − ρ) ρ^k and ρ = λ E[X]/c. Thus the methods for a sum also apply to it. Exponential tilting applies only to exponential claims.",
+   "inputs": "The inputs are the claim rate λ and the premium rate c, each per year, and the capital u in money units. The claims are exponential or Pareto II, with a finite mean. The parameters are illustrative.",
+   "dependence": "The claim sizes are i.i.d. and independent of the Poisson arrivals. The catastrophe test removes these assumptions: it has clustered arrivals, losses that several insurers share, and a finite horizon.",
+   "diagnostics": "For exponential claims, compare the estimate with the exact value ρ exp(−(1 − ρ)u/μ). For Pareto II claims, compare it with the Asmussen–Kroese reference. Other candidate models: a model with a finite horizon, or with a premium that depends on the capital.",
+   "interpretation": "With exponential claims, ψ(u) decays exponentially in u at the adjustment coefficient R. With Pareto II claims, no R exists, and ψ(u) decays as a power of u. Double the capital, and the ruin probability falls only by a factor of about 2^(α−1). When ρ ≥ 1, ruin is certain (ψ(u) = 1), and no capital is enough. Reject the model when the claims arrive in clusters, or when their sizes depend on each other.",
+   "data": "Synthetic: the claim law, the claim rate and the premium define the data. They are illustrative values, not calibrated evidence."
+  },
+  {
+   "id": "cat",
+   "title": "The catastrophe and systemic ruin test",
+   "statement": "Each of K insurers takes a random part of each catastrophe loss in one region for T years. On average, the parts add up to the loss. A systemic ruin is m or more defaults. Choose the cheapest policy that keeps the probability of a systemic ruin at or below the target.",
+   "decision": "Decision: no action, a catastrophe layer ℓ xs d that the insurers buy together, or extra capital for each insurer. Estimated quantity: P(at least m defaults by T) for each policy. The page also estimates the probability of one default and the expected number of defaults. It also estimates the value at risk and the expected shortfall of the total loss, and the probability of an extreme single event.",
+   "reason": "The test joins five parts. Each part can change the probability of ruin. The losses have a heavy tail. The events cluster in time (Hawkes arrivals). The shares depend on each other through a copula. A cascade of defaults can occur. The capital grows only with the premium.",
+   "inputs": "The inputs are the horizon T and K insurers, each with the capital u and the premium c. The arrivals are a Hawkes process with the baseline rate ν, the branching ratio η and the decay δ. The event loss S is exponential, Weibull or Pareto II, with an optional truncation M. The shares are W_j = 2 U_j, with U from a copula with Kendall's τ. The other inputs are the contagion κ, the layer, its loading and the cost of capital. Each insurer loses S W_j / K in an event. The parameters are illustrative.",
+   "dependence": "Each insurer takes a part of the same event loss S, so they lose together. The copula of the shares adds more dependence. A default costs each other insurer κ u, and a further default can follow in the same event (a cascade). The Hawkes arrivals make a cluster of events after each event.",
+   "diagnostics": "No exact reference exists. Direct simulation, importance sampling and splitting must agree within their intervals. The mean number of events must agree with the exact E N(T). Read the effective sample size and the largest weight of each change of measure. Other candidate models: Poisson arrivals (η = 0), independent shares, no cascade, or a truncated loss law.",
+   "interpretation": "The decision follows the tail of the event loss. With light-tailed losses of the same mean, ruin needs many large events, and no action is enough. With heavy-tailed losses, one event can ruin several insurers at once. With these parameters, the layer, which pays for the large events, is then the cheapest policy that meets the target. Reject a result when the methods disagree. Reject it also when a few weights of a change of measure carry most of the estimate. Reject it also when the target is inside the interval of the chosen policy.",
+   "data": "Synthetic: the arrival, loss and share laws define the data. The parameters are illustrative values, not calibrated evidence of any region or insurer."
+  }
+ ],
+ "methods": [
+  {
+   "id": "direct",
+   "name": "Direct simulation",
+   "family": "Direct simulation",
+   "estimator": "\\hat p_N = \\frac{1}{N}\\sum_{i=1}^{N} \\mathbf 1\\{A\\}(X_i), \\qquad \\frac{\\operatorname{sd}(\\hat p_N)}{p} = \\sqrt{\\frac{1 - p}{N p}}",
+   "estimatorText": "The fraction of N independent paths of the nominal model that are in the event A. Its relative error is about 1/√(Np), so a probability of 10^−6 needs about 10^8 paths for a relative error of 10 %.",
+   "assumptions": [
+    "The paths are independent and come from the nominal model.",
+    "N p is large enough for the Wilson interval. With no path in the event, the page shows the exact one-sided bound 1 − 0.05^(1/N) ≈ 3/N."
+   ],
+   "settings": [
+    "N = 2^size paths for each replication, and R replications.",
+    "The interval pools all R N paths, because they are i.i.d."
+   ],
+   "suitable": {
+    "preset": "cat-gaussian",
+    "text": "In the heavy-tailed regime of the catastrophe test, a systemic ruin has a probability of about 0.04. Direct simulation then gives a relative error of about 2 % with 65,536 paths, and it needs no assumption about a change of measure. Here it is also more efficient than the changes of measure, whose weights vary over the many events of a path."
+   },
+   "failure": {
+    "preset": "sum-exp-tilting",
+    "text": "P(S_20 > 50) = 4.8 · 10^−7 for exponential claims. With 524,288 paths, direct simulation sees no path in the event. It then shows only the zero-hit bound 3/N ≈ 6 · 10^−6, which is 12 times the true value."
+   },
+   "comparison": {
+    "with": "tilting",
+    "preset": "sum-exp-tilting",
+    "text": "Exponential tilting draws every path near the event and weights it. With the same work it gives a relative error below 1 %, where direct simulation sees nothing."
+   }
+  },
+  {
+   "id": "tilting",
+   "name": "Exponential tilting",
+   "family": "Rare events",
+   "estimator": "\\hat p = \\frac{1}{N}\\sum_{i=1}^{N} e^{\\,n\\kappa(\\theta) - \\theta S^{(i)}}\\,\\mathbf 1\\{S^{(i)} > b\\}, \\quad S^{(i)} \\sim F_\\theta^{*n}, \\quad dF_\\theta = \\frac{e^{\\theta x}}{\\mathbb E e^{\\theta X}}\\,dF, \\quad \\kappa'(\\theta^*) = \\frac{b}{n}",
+   "estimatorText": "Draw each jump from the tilted law F_θ and weight the path by the likelihood ratio exp(n κ(θ) − θ S), with κ(θ) = log E exp(θX). The tilt θ* makes the mean of the tilted jumps b/n, so the event is typical. For the ruin problem, θ = R solves ρ E exp(θY) = 1, every tilted path reaches u, and the weight is exp(−R S_τ) (Siegmund's algorithm). In the catastrophe test, the page tilts the exponential event losses to a larger mean. It also tilts the baseline rate of the arrivals to a larger rate.",
+   "assumptions": [
+    "E exp(θX) < ∞ for the tilt θ. For a Pareto II law, and for a Weibull law with k < 1, E exp(θX) = ∞ for every θ > 0, so the page refuses the method.",
+    "The jumps are independent. In the catastrophe test the copula acts on the shares, not on the tilted losses, so the likelihood ratio has no copula density.",
+    "The weights have a finite variance: E_θ[w²] < ∞ holds for these tilts."
+   ],
+   "settings": [
+    "The sum: θ* = 1/μ − 1/a with a = b/n, from the large-deviation equation κ'(θ*) = a.",
+    "The ruin problem: θ = R = (1 − ρ)/μ, the adjustment coefficient.",
+    "The catastrophe test: the tilted mean loss is tilt × the nominal mean, and the tilted baseline rate is arrivals × ν (settings tilt and arrivals)."
+   ],
+   "suitable": {
+    "preset": "sum-exp-tilting",
+    "text": "For a sum of exponential claims, tilting with θ* is logarithmically efficient (Sadowsky and Bucklew, 1990). The relative variance grows only as √n, and the relative error as n^(1/4), while p decays as exp(−n I(a)). 524,288 tilted paths give P(S_20 > 50) with a relative error below 1 %."
+   },
+   "failure": {
+    "preset": "sum-pareto-refused",
+    "text": "For Pareto II claims, E exp(θX) is infinite for every θ > 0. No tilted law exists, and the page refuses the method with this reason. A tilt that ignores this condition is not a valid change of measure."
+   },
+   "comparison": {
+    "with": "splitting",
+    "preset": "sum-exp-splitting",
+    "text": "Splitting needs no exponential moment, but on this light-tailed sum it uses about twice the work for a relative error about 10 times larger. Tilting uses the exact structure of the law. Splitting uses only the path."
+   }
+  },
+  {
+   "id": "splitting",
+   "name": "Multilevel splitting",
+   "family": "Rare events",
+   "estimator": "\\hat p = \\prod_{j=1}^{L} \\frac{N_j^{\\mathrm{hit}}}{N}, \\qquad \\mathbb E\\,\\hat p = \\mathbb P(\\tau_L < \\tau_{\\mathrm{end}})",
+   "estimatorText": "Fixed-effort splitting: stage j starts N paths from states that reached level ℓ_(j−1). It draws these states with replacement and counts the paths that reach ℓ_j before they end. The product of the fractions is an unbiased estimate of the probability to reach the last level. See Del Moral (2004) and Cérou, Del Moral, Furon and Guyader (2012). The interval comes from R independent replications.",
+   "assumptions": [
+    "The state is Markov: the future of a path depends only on its present state. Thus a path can restart from a copy of a state.",
+    "The levels form a nested sequence: a path that reaches ℓ_j also reached every lower level.",
+    "The importance function h puts the states in order by their probability to reach the event. A poor h does not make a bias, but it makes a large variance."
+   ],
+   "settings": [
+    "N paths in each stage, and L stages. The page takes L from the reference value so that each stage has a probability of about 0.1, unless the setting levels says otherwise.",
+    "The sum: h(k, s) = s + (n − k) μ, with μ the mean jump (the median when the mean is infinite). The ruin problem: h = s. The catastrophe test: h = number of defaults + the largest used fraction of capital of an insurer that is not in default, with 3m stages."
+   ],
+   "suitable": {
+    "preset": "sum-exp-splitting",
+    "text": "With exponential claims a path reaches the threshold by many moderate steps. Each level is a step of about the same probability. Splitting then gives a relative error of a few per cent, where direct simulation sees no path."
+   },
+   "failure": {
+    "preset": "sum-pareto-splitting",
+    "text": "With Pareto II claims the event comes from one very large claim. With one jump, a path goes past several levels at once. Thus the stages do not divide the probability. For the same work, splitting gives little gain over direct simulation. The panel shows the fraction of paths that enter a stage already past its level."
+   },
+   "comparison": {
+    "with": "ais",
+    "preset": "sum-pareto-splitting",
+    "text": "Adaptive importance sampling makes the one large claim common with the one-big-jump mixture and weights it. It reaches a relative error about 5 times smaller than splitting with about the same work."
+   }
+  },
+  {
+   "id": "subset",
+   "name": "Subset simulation",
+   "family": "Rare events",
+   "estimator": "\\hat p = p_0^{\\,L-1}\\,\\frac{1}{N}\\sum_{i=1}^{N}\\mathbf 1\\{g(Z_i^{(L)}) > b\\}, \\qquad \\gamma_j = \\text{the } (1 - p_0)\\text{-quantile of } g \\text{ at level } j",
+   "estimatorText": "Au and Beck (2001): write the sum as a function g(Z) of the inputs Z. The inputs Z are independent and standard normal. Each level sets the threshold γ_j at the (1 − p0) quantile of g. It keeps the N p0 samples above γ_j as seeds. It grows each seed into a Markov chain by the modified Metropolis algorithm, which stays above γ_j. When γ_j reaches b, the last factor of the product is the fraction of samples above b.",
+   "assumptions": [
+    "The inputs are a fixed number of independent random variables. Thus the page refuses the method for the catastrophe test, because its number of events is random.",
+    "The chains mix within each level. The estimator then has a bias of order 1/N and a variance larger than that of independent levels. The interval comes from R independent replications.",
+    "The geometric count of the ruin problem is cut at k_max, where the mass beyond is below 10^−12."
+   ],
+   "settings": [
+    "N samples for each level and p0 = 0.1 (setting p0).",
+    "The proposal of each component is a normal step with the standard deviation spread = 1. The page accepts or rejects it against the standard normal density. The page keeps the move only if g stays above γ_j."
+   ],
+   "suitable": {
+    "preset": "sum-weibull-subset",
+    "text": "For Weibull claims with k = 0.5 no exponential tilt exists, and the event comes from one or two large claims. Subset simulation needs no change of measure. Its levels find the large claims through the chains, and it gives a relative error of a few per cent."
+   },
+   "failure": {
+    "preset": "sum-subset-spread",
+    "text": "With the step spread = 0.05, the page accepts almost every component proposal, but each chain hardly moves. The samples of a level stay near their seeds, the levels are strongly dependent, and the replications vary much more than with spread = 1."
+   },
+   "comparison": {
+    "with": "ce",
+    "preset": "sum-weibull-subset",
+    "text": "The cross-entropy method fits a hazard-rate twist of the Weibull law. It uses the structure of the law and reaches a smaller relative error with less work. But it depends on the choice of the family, and subset simulation does not."
+   }
+  },
+  {
+   "id": "ais",
+   "name": "Adaptive importance sampling",
+   "family": "Integration",
+   "estimator": "\\hat p = \\frac{1}{N}\\sum_{i=1}^{N} \\frac{f}{q}(X_i)\\,\\mathbf 1\\{A\\}(X_i), \\qquad q = \\beta f + \\frac{1 - \\beta}{K}\\sum_{k=1}^{K} q_k, \\qquad \\frac{f}{q} \\le \\frac{1}{\\beta}",
+   "estimatorText": "A defensive mixture (Hesterberg 1995) of the nominal law f and the one-big-jump proposal (Dupuis, Leder and Wang 2007). With probability 1 − β, one jump chosen at random comes from the hazard-rate twist g_r, and the other jumps come from f. The survival function of g_r is F̄^r. In each step of the adaptation, the page updates r by weighted maximum likelihood. It uses the largest jump of each path in the event. This follows population Monte Carlo (Cappé, Guillin, Marin and Robert 2004). A fresh sample from the last mixture gives the estimate. The weights are at most 1/β, so their variance is finite for any target. The catastrophe test changes one event loss, chosen at random, in the same way.",
+   "assumptions": [
+    "The event comes mostly from one large jump, as for a subexponential law. For a light tail, a large sum needs many moderate jumps, and one twisted jump helps little.",
+    "The first twist gives some paths in the event. The page starts at r = 1/H(x0), with H = −log F̄ the cumulative hazard and x0 the threshold. Thus the twisted jump has the size of the threshold. A start at the nominal law gives no path in a rare event, and then no step can adapt.",
+    "The adaptation uses earlier samples only to choose r. The final sample is independent of them, so the estimate has no bias."
+   ],
+   "settings": [
+    "β = 0.1 (setting beta), 4 adaptation steps (setting iters) of N/4 paths, then N paths.",
+    "The interval comes from R independent replications, each with its own adaptation."
+   ],
+   "suitable": {
+    "preset": "ruin-pareto-pk",
+    "text": "For Pareto II claims, ruin comes from one large ladder height. The one-big-jump mixture makes that jump common and keeps every weight below 1/β = 10. Its work-normalised relative variance is about 50 times smaller than that of splitting."
+   },
+   "failure": {
+    "preset": "sum-ais-nominal",
+    "text": "Started at the nominal law, the adaptation sees no path with S_20 > 60 (p ≈ 6 · 10^−10). It cannot update r, the final mixture is the nominal law, and the estimate is 0 with no interval."
+   },
+   "comparison": {
+    "with": "ce",
+    "preset": "sum-ais-nominal",
+    "text": "The cross-entropy method starts at the nominal law too. But it raises its level step by step through the quantiles of the sum, so it reaches the rare event. Use it when you know no good first proposal."
+   }
+  },
+  {
+   "id": "ce",
+   "name": "Cross-entropy method",
+   "family": "Optimisation",
+   "estimator": "v_t = \\arg\\max_v \\sum_{i:\\,S_i \\ge \\gamma_t} \\frac{f(X_i)}{g_{v_{t-1}}(X_i)} \\log g_v(X_i), \\qquad \\hat p = \\frac{1}{N}\\sum_{i=1}^{N} \\frac{f}{g_{v_T}}(X_i)\\,\\mathbf 1\\{S_i > b\\}",
+   "estimatorText": "Rubinstein (1997), Rubinstein and Kroese (2004): an optimisation of the proposal. Each iteration sets the level γ_t at the (1 − ρ_CE) quantile of the sum under the current proposal. Then it fits the proposal to the elite paths above γ_t by weighted maximum likelihood. This fit minimises the cross-entropy to the zero-variance law. The levels rise until γ_t = b. A fresh sample from the last proposal gives the estimate. The final proposal also shows, within the family, the most likely way that the event happens.",
+   "assumptions": [
+    "The family g_v holds a good proposal. The page uses the hazard-rate twist F̄^r of the jump law. For an exponential law, this twist is the exponential tilt. For a Pareto II law, it gives a heavier tail.",
+    "The weights of the final proposal have a finite variance. A family with a lighter tail than the target breaks this: then f/g has no upper bound and the variance is infinite.",
+    "The interval comes from R independent replications, each with its own adaptation. If the levels do not reach the event within the iteration limit, the page uses the last proposal. The estimate then still has no bias, but it can have a large variance."
+   ],
+   "settings": [
+    "ρ_CE = 0.1 (setting rho), N/4 paths for each iteration, smoothing 0.7, at most 20 iterations (8 for the catastrophe test), then N paths. A level that does not rise doubles the sample size, up to 4N.",
+    "The ruin problem also fits the parameter of the geometric count. The catastrophe test also fits the baseline rate of the arrivals."
+   ],
+   "suitable": {
+    "preset": "sum-weibull-ce",
+    "text": "For Weibull claims with k = 0.5 no exponential tilt exists, but the hazard-rate twist F̄^r does. The cross-entropy method finds r from the nominal law, level by level. It gives a relative error of about 2 % with less work than subset simulation."
+   },
+   "failure": {
+    "preset": "sum-pareto-ce-light",
+    "text": "With an exponential family for Pareto II claims, the weights f/g grow without bound in the tail and their variance is infinite. Most replications give an estimate below the reference, and a few give a very large one. The effective sample size of the weights is small. A diagnostic does not prove convergence."
+   },
+   "comparison": {
+    "with": "ais",
+    "preset": "sum-pareto-ce-light",
+    "text": "Adaptive importance sampling keeps the nominal law in a defensive mixture, so its weights stay below 1/β whatever the family. Its interval is valid where the light family of the cross-entropy method fails."
+   }
+  }
+ ],
+ "presets": [
+  {
+   "id": "sum-exp-tilting",
+   "title": "20 exponential claims above 50: exponential tilting",
+   "problem": "sum",
+   "law": "exponential",
+   "copula": "independent",
+   "params": "n=20; b=50; rate=1; target=0.0001",
+   "method": "tilting",
+   "compare": "direct",
+   "failure": "none",
+   "options": "",
+   "size": 15,
+   "reps": 16,
+   "observe": "Direct simulation sees no path in the event, so it shows only the zero-hit bound. Tilting draws paths near the threshold and weights them, and its interval holds the exact Erlang value 4.8 · 10^−7."
+  },
+  {
+   "id": "sum-exp-splitting",
+   "title": "20 exponential claims above 50: splitting against tilting",
+   "problem": "sum",
+   "law": "exponential",
+   "copula": "independent",
+   "params": "n=20; b=50; rate=1; target=0.0001",
+   "method": "splitting",
+   "compare": "tilting",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "Both intervals hold the exact value. The stages of splitting have fractions near 0.1, and the work of each method shows its cost."
+  },
+  {
+   "id": "sum-pareto-refused",
+   "title": "10 Pareto II claims above 400: the page refuses tilting",
+   "problem": "sum",
+   "law": "pareto2",
+   "copula": "independent",
+   "params": "n=10; b=400; sigma=1; alpha=1.5; target=0.0001",
+   "method": "tilting",
+   "compare": "subset",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "The page refuses exponential tilting and states why: E exp(θX) = ∞ for every θ > 0. Subset simulation is still available, and its interval holds the reference."
+  },
+  {
+   "id": "sum-pareto-splitting",
+   "title": "One big claim: splitting against adaptive importance sampling",
+   "problem": "sum",
+   "law": "pareto2",
+   "copula": "independent",
+   "params": "n=10; b=400; sigma=1; alpha=1.5; target=0.0001",
+   "method": "splitting",
+   "compare": "ais",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 32,
+   "observe": "Many paths enter a stage already past its level: one claim carries them past several levels. Splitting has a relative error about 5 times larger than adaptive importance sampling for about the same work."
+  },
+  {
+   "id": "sum-weibull-subset",
+   "title": "Finite moments, no exponential moment: a Weibull sum",
+   "problem": "sum",
+   "law": "weibull",
+   "copula": "independent",
+   "params": "n=10; b=60; k=0.5; lambda=1; target=0.0001",
+   "method": "subset",
+   "compare": "ce",
+   "failure": "none",
+   "options": "",
+   "size": 11,
+   "reps": 16,
+   "observe": "Every moment of the Weibull law with k = 0.5 is finite, but E exp(θX) is not. Tilting is not available. Subset simulation and the cross-entropy method agree with the reference."
+  },
+  {
+   "id": "sum-weibull-ce",
+   "title": "A Weibull sum: the cross-entropy method",
+   "problem": "sum",
+   "law": "weibull",
+   "copula": "independent",
+   "params": "n=10; b=60; k=0.5; lambda=1; target=0.0001",
+   "method": "ce",
+   "compare": "subset",
+   "failure": "none",
+   "options": "",
+   "size": 11,
+   "reps": 16,
+   "observe": "The cross-entropy method climbs from the nominal law to the event in a few levels. The final twist r < 1 gives the claims a heavier tail. The panel shows the level and the twist of each iteration."
+  },
+  {
+   "id": "sum-pareto-ce-light",
+   "title": "Cross-entropy with a light-tailed family on a heavy tail",
+   "problem": "sum",
+   "law": "pareto2",
+   "copula": "independent",
+   "params": "n=10; b=400; sigma=1; alpha=1.5; target=0.0001",
+   "method": "ce",
+   "compare": "ais",
+   "failure": "light_family",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "The exponential proposals have a lighter tail than the Pareto II claims, so the weights have an infinite variance. Most replications fall below the reference, and the replication interval is not valid. Adaptive importance sampling, with bounded weights, holds the reference."
+  },
+  {
+   "id": "sum-ais-nominal",
+   "title": "Adaptive importance sampling from the nominal law",
+   "problem": "sum",
+   "law": "exponential",
+   "copula": "independent",
+   "params": "n=20; b=60; rate=1; target=0.0001",
+   "method": "ais",
+   "compare": "ce",
+   "failure": "nominal_start",
+   "options": "",
+   "size": 12,
+   "reps": 8,
+   "observe": "No path of the nominal law reaches 60, so no step can adapt, and the estimate is 0. The cross-entropy method climbs to the event through its levels."
+  },
+  {
+   "id": "sum-subset-spread",
+   "title": "Subset simulation with a very small step",
+   "problem": "sum",
+   "law": "weibull",
+   "copula": "independent",
+   "params": "n=10; b=60; k=0.5; lambda=1; target=0.0001",
+   "method": "subset",
+   "compare": "ce",
+   "failure": "small_spread",
+   "options": "",
+   "size": 11,
+   "reps": 16,
+   "observe": "With the step 0.05, the page accepts almost every component proposal, but the chains stay near their seeds. The replications spread more than with the step 1."
+  },
+  {
+   "id": "ruin-exp-siegmund",
+   "title": "Cramér–Lundberg ruin with exponential claims: Siegmund's algorithm",
+   "problem": "ruin",
+   "law": "exponential",
+   "copula": "independent",
+   "params": "lam=1; c=1.25; u=40; rate=1; target=0.001",
+   "method": "tilting",
+   "compare": "direct",
+   "failure": "none",
+   "options": "",
+   "size": 13,
+   "reps": 16,
+   "observe": "The exact value ψ(40) = 0.8 exp(−8) = 2.7 · 10^−4. Siegmund's estimator is at most exp(−Ru), so its relative error stays bounded as u grows. Direct simulation sees few paths in the event."
+  },
+  {
+   "id": "ruin-pareto-pk",
+   "title": "Pollaczek–Khinchine ruin with Pareto II claims",
+   "problem": "ruin",
+   "law": "pareto2",
+   "copula": "independent",
+   "params": "lam=1; c=1.25; u=400; sigma=1.5; alpha=2.5; target=0.001",
+   "method": "ais",
+   "compare": "splitting",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "No adjustment coefficient exists, so the page refuses tilting. ψ(u) is near the Embrechts–Veraverbeke asymptotic ρ/(1 − ρ) F̄_I(u), which decays as a power of u."
+  },
+  {
+   "id": "cat-light",
+   "title": "Catastrophe and systemic ruin: light-tailed losses",
+   "problem": "cat",
+   "law": "exponential",
+   "copula": "gumbel",
+   "params": "",
+   "method": "splitting",
+   "compare": "direct",
+   "failure": "none",
+   "options": "",
+   "size": 11,
+   "reps": 16,
+   "observe": "A systemic ruin has a probability of about 10^−3. All three policies meet the target, so no action is the cheapest choice. Splitting and direct simulation agree. Splitting gives a narrower interval for more work."
+  },
+  {
+   "id": "cat-heavy",
+   "title": "Catastrophe and systemic ruin: heavy-tailed losses",
+   "problem": "cat",
+   "law": "pareto2",
+   "copula": "gumbel",
+   "params": "",
+   "method": "ais",
+   "compare": "splitting",
+   "failure": "none",
+   "options": "",
+   "size": 11,
+   "reps": 16,
+   "observe": "The mean event loss is the same as in the light-tailed regime, but a systemic ruin is more than 30 times more likely. Only the layer meets the target: the decision changes with the tail."
+  },
+  {
+   "id": "cat-gaussian",
+   "title": "Systemic ruin: a Gaussian copula with the same Kendall's τ",
+   "problem": "cat",
+   "law": "pareto2",
+   "copula": "gaussian",
+   "params": "tau=0.7",
+   "method": "direct",
+   "compare": "none",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "The Gaussian copula has no tail dependence. The Gumbel copula with τ = 0.7 has λ_U = 2 − 2^0.3 = 0.77. In 65,536 paths with seed 1, the probability of a systemic ruin was 0.039 with this copula. It was 0.038 with the Gumbel copula and 0.043 with independent shares. Most of the dependence comes from the common event loss. With independent shares, one insurer often gets a large share and defaults. Then the cascade can cause a second default. Thus stronger dependence of the shares lowers the risk a little here. The difference between the two copulas is smaller than the Monte Carlo error."
+  },
+  {
+   "id": "cat-poisson",
+   "title": "Systemic ruin when the events do not cluster: Poisson arrivals",
+   "problem": "cat",
+   "law": "pareto2",
+   "copula": "gumbel",
+   "params": "eta=0; nu=3.333",
+   "method": "direct",
+   "compare": "none",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 16,
+   "observe": "The Poisson arrivals with ν = 3.333 have about the same mean number of events as the Hawkes arrivals, but no clusters. The probability of a systemic ruin is about 0.037, against about 0.040 with clusters."
+  },
+  {
+   "id": "cat-infinite-mean",
+   "title": "An infinite mean loss: no expected shortfall",
+   "problem": "cat",
+   "law": "pareto2",
+   "copula": "gumbel",
+   "params": "alpha=0.9; sigma=0.3; c=3",
+   "method": "direct",
+   "compare": "none",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 8,
+   "observe": "With α = 0.9 the mean event loss is infinite. The value at risk exists, but the expected shortfall is infinite. So the page shows no number for it, and the premium has no safety loading."
+  },
+  {
+   "id": "cat-truncated",
+   "title": "Truncation at the largest possible loss",
+   "problem": "cat",
+   "law": "pareto2",
+   "copula": "gumbel",
+   "params": "M=60",
+   "method": "direct",
+   "compare": "ais",
+   "failure": "none",
+   "options": "",
+   "size": 12,
+   "reps": 8,
+   "observe": "A truncation at M = 60 removes the largest events. The probability of a systemic ruin falls from about 0.04 to 0.03, and the layer meets the target with a wide margin. No finite sample of the past shows whether such a bound exists."
+  }
+ ]
+}
