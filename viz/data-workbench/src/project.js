@@ -2,7 +2,7 @@
  *
  * A project records what makes the package's figures and statistics again from the same files: each table's source
  * (file name, size, SHA-256, or the built-in example), how it was imported (all rows, a seeded sample, some
- * columns), the readings the person chose or approved, the dismissed suggestions, the fields marked additive, the
+ * columns), each derived view or table with the SQL that makes it again, the readings the person chose or approved, the dismissed suggestions, the fields marked additive, the
  * edited charts' specifications, the study details, the highlight count and the publication settings. It also
  * records what came out: the SHA-256 of every SVG figure file and each tested hypothesis's p-values, so a reopened
  * project says which figures and results it reproduced. It never holds a row.
@@ -25,11 +25,11 @@
    * The project document.
    * @param {{ saved: string, build: string, versions: any, highlights: number, publication: any, formats: string[], sources: boolean,
    *   tables: { name: string, source: any, import: any, overrides: any, dismissed: string[], additive: string[], study: any, edits: { id: string, spec: any }[],
-   *   figures: Record<string, string>, results: Record<string, [number | null, number | null]> }[] }} p
+   *   figures: Record<string, string>, results: Record<string, [number | null, number | null]> }[], derived?: any[] }} p
    */
   function make(p) {
     return { format: FORMAT, version: VERSION, saved: p.saved, build: p.build, versions: p.versions, highlights: p.highlights, publication: p.publication,
-      formats: p.formats, sourcesIncluded: p.sources, tables: p.tables };
+      formats: p.formats, sourcesIncluded: p.sources, tables: p.tables, derived: p.derived ?? [] };
   }
 
   /**
@@ -54,6 +54,12 @@
       if (!i || !["full", "sample", "columns"].includes(i.choice)) throw new Error(`How ${t.name} was imported is not recorded.`);
       if (i.choice === "sample" && !(Number.isInteger(i.sample?.rows) && Number.isInteger(i.sample?.seed))) throw new Error(`The sample of ${t.name} has no rows and seed.`);
       if (i.choice === "columns" && !(Array.isArray(i.columns) && i.columns.length)) throw new Error(`The columns kept of ${t.name} are not recorded.`);
+    }
+    for (const d of doc.derived ?? []) {
+      if (!TABLE.test(String(d?.name)) || names.has(d.name)) throw new Error(`The project names a derived object ${JSON.stringify(d?.name)} that is not a new table name.`);
+      names.add(d.name);
+      if ((d.kind !== "view" && d.kind !== "table") || typeof d.sql !== "string") throw new Error(`The derived object ${d.name} has no kind and SQL.`);
+      if (d.analysed && !(d.restore && typeof d.rowColumn === "string")) throw new Error(`The analysed table ${d.name} has no row column or record.`);
     }
     return doc;
   }

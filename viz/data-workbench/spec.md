@@ -319,7 +319,7 @@ step n]** with its evidence.
 | 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | built |
 | 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | built |
 | 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | built |
-| 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | to come |
+| 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | built |
 | 7 | Phones, speed and acceptance: touch tests, the 1 million row benchmark, phone limits, "Measure this device", the section 13 table | to come |
 
 ### Architecture [Choice]
@@ -343,7 +343,8 @@ step n]** with its evidence.
 - No runtime request leaves the folder; the page opens from the site, not from `file://`.
 - WebMCP: `get_metadata`, `get_state`, `get_markdown` (the kit), `get_tables`, `get_profile`, and from step 2
   `get_candidates` (the accounting, each candidate's outcome and reason, one specification by id); step 3 adds
-  `get_findings`. No tool returns rows or plotted points; the page says that an agent the person connects can read
+  `get_findings`; step 6 adds `get_transforms` (the transformation records and the derived views and tables).
+  No tool returns rows or plotted points; the page says that an agent the person connects can read
   what the tools return.
 - Charts (step 2): `src/grammar.js` (classes, candidates, the count), `src/chartspec.js` (the specification, its
   JSON Schema, the rules, edits), `src/chartsql.js` (every chart query), `src/charts.js` (the fixed rules on the
@@ -362,6 +363,10 @@ step n]** with its evidence.
   full-size view). pdf-lib 1.17.1 and @pdf-lib/fontkit 1.1.1 are vendored unchanged in `vendor/` and inlined;
   Liberation Sans 2.1.5 (Regular and Bold, from its release archive pinned by SHA-256) is published beside the page
   in `vendor/liberation-fonts/` with its licence and read on first use.
+- SQL and table algebra (step 6): `src/sqlcheck.js` (the statement whitelist, and what a record reads from a
+  statement without running it), `src/algebra.js` (each visual control's step as one SELECT, the pipeline as a chain
+  of WITH clauses), `src/transform.js` (runs steps and statements, keeps the result with an explicit order, makes
+  each transformation record and the join diagnostics), `src/query.js` (the Query and transform panel).
 
 ### SQL dialect [Choice]
 
@@ -378,6 +383,59 @@ and are counted as conversion failures; visual controls always emit TRY_CAST and
 transformation record has its id, kind, inputs, parameters, SQL, output schema, rows in and out, and for joins the
 unmatched keys per side (a count and up to 20 examples), duplicate-key counts per side and the row multiplication
 factor (flagged above 1). Custom SQL the controls cannot represent is kept verbatim as a custom node. (Step 6.)
+
+**[Built in step 6]** Where the plan left a choice or changed:
+
+- The SQL editor runs every statement of the whitelist, checked all together before any runs: one refused
+  statement runs nothing. Accepted besides SELECT: DuckDB's FROM-first form, VALUES, a parenthesized query, and
+  PIVOT and UNPIVOT inside FROM. Refused with its reason, besides the plan's list: TRUNCATE, MERGE, DETACH, USE,
+  IMPORT, RESET, CHECKPOINT, VACUUM, CALL, DESCRIBE, SHOW, SUMMARIZE, EXPLAIN, CREATE of anything but a view or a
+  table (macros, types, sequences), CREATE TEMP, CREATE TABLE with column definitions, DROP … CASCADE, a WITH
+  clause that leads to INSERT, UPDATE or DELETE (DuckDB runs these), POSITIONAL JOIN (it pairs rows by place,
+  and tables have no order), schema-qualified names, the workbench's own working tables, and any name that is not
+  an imported table, a derived object or a WITH name of the statement. A derived name is lower-case letters,
+  digits and `_` (as an import's), never an import's name; a view cannot be replaced by a table of its name.
+- **[Changed in step 6]** The plan allowed SET from a whitelist. The engine's configuration is locked at start
+  (`lock_configuration`), so every SET fails there ("the configuration has been locked", seen for `threads` and
+  `TimeZone`); the whitelist of SET is empty and SET is refused with that reason.
+- **[Changed in step 6]** "Any URL or file path in table functions" is refused as: a string used as a table
+  (`FROM 'x.csv'`), any function that reads files or runs SQL from text wherever it is called (read_*, *_scan,
+  glob, sniff_csv, the parquet_* functions, `query` and `query_table`, which the pinned engine runs and which would
+  bypass the whitelist), and every table function other than range, generate_series and unnest. The engine's
+  lockdown stays underneath.
+- Visual controls: one step for each operation of section 4 (choose columns, filter, sort, limit, distinct,
+  compute: arithmetic, CASE, TRY_CAST, coalesce, date, text and number functions; the workbench's readings;
+  group and aggregate with HAVING and statistics; inner, left, right, full, cross, semi and anti joins; UNION, UNION
+  ALL, INTERSECT and EXCEPT; window functions with rolling aggregates; pivot; unpivot; a WITH RECURSIVE walk of id
+  and parent columns). Each step's SQL is shown as it is edited; the pipeline is one statement, a chain of WITH
+  clauses, that the editor can open and that passes the whitelist (tests/sql-engine.test.mjs runs every controls
+  fixture again as SQL). Subqueries and CTEs come from the chain and the hierarchy walk; anything else is SQL.
+- The controls' pivot lists the values of its column in the SQL (at most 50, read when the column is chosen), so
+  the result keeps its columns when it runs again; the engine refuses a view over a PIVOT whose values come from
+  the data. A text key joined with a typed key, and set operations of different types, are cast with TRY_CAST and
+  counted. Unpivot of columns of different types writes the values as text.
+- Order: every result is numbered in an explicit order before it is shown or saved: the query's own ORDER BY at
+  its top level, else its row columns (`__row`, carried from an import, and a joined table's as
+  `__row_<table>`), else every column left to right, missing values last. Window functions and sorts break ties by
+  the order in effect.
+- Records: each control step and each statement has one. Conversion failures are counted over the step's input,
+  or for custom SQL over the rows its FROM clause reads (before WHERE); COUNT(*) beside COUNT(column) is counted
+  for each aggregate over a column (custom SQL: after WHERE). Join diagnostics are computed for every control join
+  and for custom SQL joins of two named tables (or WITH names) on key equalities (ON … = … AND …, IS NOT
+  DISTINCT FROM, or USING); a join the readings cannot follow is recorded with the reason. The multiplication
+  factor is pairs ÷ matched rows of the left side, flagged above 1; a semi or anti join never repeats a row.
+  These readings come from a tokenizer, not a parser: a statement they cannot follow still runs, and its record
+  says what was not counted. Records are kept, with ids t1, t2, …, for what makes, analyses or drops a derived
+  object; a run that is only shown keeps its records with the result until it is saved or analysed.
+- Derived objects: a result is saved as a view (its query runs when read) or a table (its rows are kept), or
+  analysed. Analysing makes the selected result a derived table with a row column: the import's `__row` when the
+  result carries it with every value distinct (rows stay traceable to their source lines), else each row's place
+  in the result's order. It is profiled, charted and tested as its own family (step 3: one family per analysed
+  table), and its charts' specifications begin with `{ op: "records", refs: [...] }`, the records that made it
+  and the derived objects it reads. A derived object read by a view cannot be dropped, and an import read by a
+  view cannot be removed, until the view is dropped. The export package's transforms.json holds every record and
+  derived object, report.md lists them, and project.json keeps each one's SQL, so reopening makes them again in
+  order (and analyses the analysed ones) after the imports.
 
 ### Types and semantic roles [Choice] (step 1)
 
@@ -468,7 +526,8 @@ editing and export.
 
 **[Built in step 2]** Version 1 (`src/chartspec.js`, `SCHEMA`): `transform` holds the chart's own operations as
 records with ids (complete, bin, bin2d, box, top, period, aggregate, sample, merge-duplicates, order-check, page);
-step 6 adds references to table transformation records. `edits` lists each change the person made. After the
+**[Built in step 6]** a derived table's charts begin with `records`, the ids of the table transformation records
+that made it. `edits` lists each change the person made. After the
 schema, the rules are checked: each channel's field and class, a log scale only over values above 0, bars from
 zero on a linear axis, a facet of at most 12 levels not already encoded, a sum only of a field the person marked
 additive. Figures are 180 mm wide (the general preset's width) and 110 mm tall (timelines 140 mm), drawn as a scene
@@ -801,6 +860,29 @@ Where the plan left a choice or changed:
   downloaded (474 files: SVG, PDF and PNG of 158 figures, with the JSON files, report, deck and manifest), deck.md
   opened in beamdswitch at the tested commit with every embedded figure drawn on its slide, and the package
   reopened in a fresh page with 158 of 158 SVG figures and 62 of 62 test results matching.
+
+### Verification fixtures (step 6 part)
+
+- tests/fixtures/sql/: `orders.csv` (a missing customer, a missing city, a missing amount, an amount with a
+  thousands separator and one that is not a number, parent ids for a hierarchy) and `customers.csv` (the key c2
+  twice, c3 never ordered, a missing key), imported as the page imports them. `cases.json` holds one fixture per
+  operation of section 4, 36 in all: selection, filtering, null handling, sorting, limits, distinct values,
+  expressions, CASE, casts (TRY_CAST counted; CAST failing the query), coalesce, the readings, grouping with a NULL
+  group, HAVING, inner, left, right, full, cross, semi and anti joins and a join with IS NOT DISTINCT FROM,
+  subqueries, CTEs, a recursive CTE, UNION, UNION ALL, INTERSECT, EXCEPT, row numbers, a rolling mean, lag, date,
+  string, numeric and statistical functions, pivot and unpivot, each with its rows in order, through the controls
+  and as SQL; every result was checked by hand when the fixture was written.
+- tests/sql-engine.test.mjs against the pinned engine: every fixture; the controls' SQL run again as SQL; a join's
+  record (6 and 5 rows, a missing key on each side, 2 and 1 duplicate keys, 6 pairs from 4 matched orders, factor
+  1.5 flagged, c9 and c3 unmatched); the same diagnostics for SQL joins with ON, USING and a WITH name; conversion
+  counts with examples and COUNT(*) beside COUNT(column); the order of results; derived views and tables made, read,
+  refused and dropped; a selected result made a table with its source rows or its place in the result.
+- tests/sqlcheck.test.mjs: the tokenizer (strings, quoted names, dollar quotes, nested comments) and every
+  accepted and refused statement of the whitelist with its reason, and what a record reads from a statement.
+- e2e/full.test.mjs in every browser project: two fixture CSVs imported, a left join built with the controls and
+  its diagnostics, a refused DELETE, a query's result analysed as its own table with its own charts and family
+  (its specifications citing records t1 and t2, read through get_transforms and get_candidates), and its package
+  reopened in a fresh page, the derived table made again from its SQL and reproduced.
 
 ### Built-in examples (step 1)
 

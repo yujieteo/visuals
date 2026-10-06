@@ -14,7 +14,7 @@ Parquet extension, which the site fetches by SHA-256 and publishes in runtime/ b
               (scripts/kit/kit.js), the beamdswitch template, pdf-lib and its fontkit from vendor/ (checked the same
               way), then src/: sql, infer, preflight, sha256, stats, examples, profile, engine, report, grammar,
               chartspec, chartsql, render, charts, statsql, family, rank, figure, fonts, pdf, png, publish, gallery,
-              findings and app, each in a <script id> of its own. The fonts in vendor/liberation-fonts/ are assets
+              findings, zip, package, project, exporter, sqlcheck, algebra, transform, query and app, each in a <script id> of its own. The fonts in vendor/liberation-fonts/ are assets
               beside the page, read when a figure is written.
 
     python3 build.py            # write index.html
@@ -36,7 +36,7 @@ from style_guide import THEME_SCRIPT  # noqa: E402
 
 MODULES = ("sql", "infer", "preflight", "sha256", "stats", "examples", "profile", "engine", "report", "grammar", "chartspec", "chartsql", "render",
            "charts", "statsql", "family", "rank", "figure", "fonts", "pdf", "png", "publish", "gallery", "findings", "zip", "package", "project",
-           "exporter", "app")
+           "exporter", "sqlcheck", "algebra", "transform", "query", "app")
 # The page reads nothing from the network itself; the engine's worker, started from runtime/, reads the engine and
 # the Parquet extension from the same folder. Inline scripts and styles are the page's own.
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src data: blob:; "

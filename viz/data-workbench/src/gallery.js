@@ -86,7 +86,7 @@
       if (!app.store.tables.includes(table)) return;
       const api = await app.ensureEngine();
       const { classes, plan, ctx } = Charts.prepare({ name: table.name, rowColumn: table.imported.rowColumn, rows: table.imported.rows, sample: table.sample,
-        columns: columnsOf(table), additive: additiveOf(table) });
+        columns: columnsOf(table), additive: additiveOf(table), records: table.lineage ?? [] });
       const st = stateOf(table.name) ?? { filter: { kind: "all", outcome: "valid" }, shown: PAGE, candidates: seeds.get(table.name) ?? [] };
       seeds.delete(table.name);
       const old = new Map(st.candidates.map((c) => [c.id, c]));

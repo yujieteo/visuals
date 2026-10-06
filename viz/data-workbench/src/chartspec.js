@@ -69,7 +69,8 @@
       transform: { type: "object", required: ["id", "op"], additionalProperties: false,
         properties: {
           id: { type: "string", pattern: "^[a-z0-9:-]+$" },
-          op: { enum: ["complete", "bin", "bin2d", "box", "top", "period", "aggregate", "sample", "merge-duplicates", "order-check", "page"] },
+          op: { enum: ["records", "complete", "bin", "bin2d", "box", "top", "period", "aggregate", "sample", "merge-duplicates", "order-check", "page"] },
+          refs: { type: "array", minItems: 1, maxItems: 200, items: { type: "string", pattern: "^t[0-9]+$" } },
           fields: { type: "array", items: { type: "string" } }, mode: { enum: ["all", "label-and-either"] },
           channel: { enum: ["x", "y", "x2"] }, method: { enum: ["freedman-diaconis", "set"] }, bins: { oneOf: [{ type: "null" }, { type: "integer", minimum: LIMITS.bins[0], maximum: LIMITS.bins[1] }] },
           cells: { type: "array", items: { type: "integer", minimum: 1, maximum: 40 }, minItems: 2, maxItems: 2 },
@@ -143,7 +144,7 @@
    * additive.
    * @typedef {{ name: string, cls: string, levels: number, logRule: boolean, min: number | null, unit: string,
    *   additive: boolean, precision: string | null, zone: "none" | "utc" | "unknown", ordered: boolean }} FieldInfo
-   * @typedef {{ table: string, rows: number, sample: { rows: number, seed: number, of?: number } | null, fields: Record<string, FieldInfo> }} Context
+   * @typedef {{ table: string, rows: number, sample: { rows: number, seed: number, of?: number } | null, records?: string[], fields: Record<string, FieldInfo> }} Context
    */
 
   const TITLES = {
@@ -206,7 +207,9 @@
       const sc = scaleOf(info, candidate.kind, channel);
       if (sc && channel !== "x2") scales[channel] = sc;
     });
-    const transform = [{ id: "complete", op: "complete", fields: [...candidate.fields], mode: candidate.kind === "interval-timeline" ? "label-and-either" : "all" }];
+    // A derived table's charts start from the transformation records that made the table (src/transform.js).
+    const transform = [...(ctx.records?.length ? [{ id: "records", op: "records", refs: [...ctx.records] }] : []),
+      { id: "complete", op: "complete", fields: [...candidate.fields], mode: candidate.kind === "interval-timeline" ? "label-and-either" : "all" }];
     const count = () => transform.push({ id: "count", op: "aggregate", fn: "count" });
     switch (candidate.kind) {
       case "histogram":

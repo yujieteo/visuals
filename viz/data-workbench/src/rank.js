@@ -405,6 +405,7 @@
   /** One transformation of a chart's specification in words. */
   function transformText(t, spec) {
     switch (t.op) {
+      case "records": return `The table is made by the transformation records ${t.refs.join(", ")}.`;
       case "complete": return t.mode === "label-and-either" ? "Rows with a label and at least one end." : `Rows with a value in ${t.fields.join(", ")}.`;
       case "bin": return t.bins ? `${t.bins} equal bins.` : "Freedman–Diaconis bins, 5 to 100.";
       case "bin2d": return `A ${t.cells[0]} × ${t.cells[1]} grid of cells.`;
