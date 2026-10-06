@@ -42,14 +42,42 @@ async function launch(chrome) {
     "--no-default-browser-check", "--disable-gpu", "--disable-extensions", "about:blank"];
   if (process.platform === "linux") args.push("--no-sandbox");
   const proc = spawn(chrome, args, { stdio: "ignore" });
+  let processError;
+  const stopped = new Promise((resolve) => {
+    proc.once("error", (err) => { processError = err; resolve(); });
+    proc.once("exit", (code, signal) => {
+      processError = new Error(`Chrome exited before connecting (code ${code}, signal ${signal})`);
+      resolve();
+    });
+  });
   const portFile = path.join(profile, "DevToolsActivePort");
+  const deadline = Date.now() + 20000; // one startup budget, including the WebSocket handshake
   let ws;
   try {
-    const [port, wsPath] = (await until("Chrome's DevTools port", () => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").trim().split("\n").length === 2 && fs.readFileSync(portFile, "utf8").trim().split("\n")));
+    const [port, wsPath] = await until("Chrome's DevTools port", () => {
+      if (processError) throw processError;
+      if (!fs.existsSync(portFile)) return false;
+      const lines = fs.readFileSync(portFile, "utf8").trim().split("\n");
+      return lines.length === 2 && lines;
+    }, deadline - Date.now());
     ws = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
-    await new Promise((ok, bad) => { ws.onopen = ok; ws.onerror = bad; });
+    let timer;
+    try {
+      await Promise.race([
+        new Promise((ok, bad) => { ws.onopen = ok; ws.onerror = bad; }),
+        stopped.then(() => { throw processError; }),
+        new Promise((_, bad) => {
+          timer = setTimeout(() => bad(new Error("timed out waiting for Chrome's DevTools connection")), Math.max(0, deadline - Date.now()));
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (err) {
-    proc.kill("SIGKILL"); // a Chrome left running keeps the test process alive until the job times out
+    ws?.close();
+    proc.kill("SIGKILL");
+    await stopped;
+    fs.rmSync(profile, { recursive: true, force: true });
     throw err;
   }
   let id = 0;
@@ -69,7 +97,7 @@ async function launch(chrome) {
   const close = async () => {
     try { await send("Browser.close"); } catch { /* already gone */ }
     ws.close();
-    await new Promise((r) => (proc.exitCode !== null ? r() : proc.once("exit", r)));
+    await stopped;
     fs.rmSync(profile, { recursive: true, force: true });
   };
   return { send, on: (l) => listeners.push(l), close };
@@ -82,9 +110,10 @@ test("in Chrome, the page draws the hand calculations, saves and copies their Ma
 }, async () => {
   assert.ok(chrome, "CI needs Chrome for the end-to-end test; set CHROME_PATH");
   const server = await serve(), origin = `http://127.0.0.1:${server.address().port}`;
-  const downloads = fs.mkdtempSync(path.join(os.tmpdir(), "sectionlab-downloads-"));
-  const b = await launch(chrome);
+  let downloads, b;
   try {
+    downloads = fs.mkdtempSync(path.join(os.tmpdir(), "sectionlab-downloads-"));
+    b = await launch(chrome);
     const errors = [], done = new Set();
     b.on((m) => {
       if (m.method === "Runtime.exceptionThrown") errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
@@ -145,8 +174,11 @@ test("in Chrome, the page draws the hand calculations, saves and copies their Ma
 
     assert.deepEqual(errors, [], "no script errors in the page");
   } finally {
-    await b.close();
-    server.close();
-    fs.rmSync(downloads, { recursive: true, force: true });
+    try {
+      await b?.close();
+    } finally {
+      await new Promise((resolve, reject) => server.close((err) => err ? reject(err) : resolve()));
+      if (downloads) fs.rmSync(downloads, { recursive: true, force: true });
+    }
   }
 });
