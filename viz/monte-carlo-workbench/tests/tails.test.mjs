@@ -111,3 +111,17 @@ test("exact laws of names: the maximum, the minimum, the sum of stable values an
   assert.ok(rel(af.cdf(5 - 2 * 3), b.sf(3), 1e-14) && af.support.hi === 3, "−2X + 5 reverses the tails");
   assert.equal(T.sumOf(L.BY_ID.pareto1, { xm: 1, alpha: 2 }, 3), null, "the Pareto family is not closed under sums");
 });
+
+test("the stable table beyond 10^-4: a power tail on a heavy side, the exact quantile on the light side of β = ±1", () => {
+  for (const [a, b] of [[0.7, 1], [1.5, 1], [0.7, -1], [1.5, -1]]) {
+    const t = T.stableTable(a, b), lo = b === 1 ? -Math.tan((Math.PI * a) / 2) : -Infinity, hi = b === -1 ? Math.tan((Math.PI * a) / 2) : Infinity;
+    for (const v of [1e-5, 1e-7, 1e-10]) {
+      const [u, w] = b === 1 ? [v, 1 - v] : [1 - v, v], x = T.tableQuantile(t, u, w);
+      assert.ok(x >= (a < 1 ? lo : -Infinity) && x <= (a < 1 ? hi : Infinity), `α = ${a}, β = ${b}, ${v}: ${x} is in the support`);
+      const F = b === 1 ? T.stable0(x, a, b, "cdf") : T.stable0(x, a, b, "sf");
+      assert.ok(rel(F, v, 1e-6), `α = ${a}, β = ${b}: the light tail has probability ${F}, not ${v}`);
+    }
+  }
+  const t = T.stableTable(1.5, 0);
+  assert.ok(rel(T.tableQuantile(t, 1e-8, 1 - 1e-8) / T.tableQuantile(t, 1e-6, 1 - 1e-6), Math.pow(100, 1 / 1.5), 1e-12), "β = 0: the left power tail");
+});
