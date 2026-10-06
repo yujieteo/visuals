@@ -395,8 +395,8 @@
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--fg"); ctx.font = "12px system-ui, sans-serif";
     ctx.fillText(`Heights, mean over ${b} × ${b} blocks`, x0, 18);
     ctx.fillText(`Largest avalanche: topplings, ${b} × ${b} blocks`, x1, 18);
-    $("phys-canvas").setAttribute("aria-label", `The lattice of chain 1 at L = ${L} after the run, and its largest avalanche of ${count(size.maxS)} topplings, both as means over ${b} × ${b} blocks`);
-    return `Left: the heights of chain 1 at the end of the run, from 0 (light) to ${top} (blue), as means over ${b} × ${b} blocks. Right: the topplings at each site in the largest avalanche of chain 1 (${count(size.maxS)} topplings), on a log scale. A coarse-grained view keeps the large-scale shape and loses the detail below b.`;
+    $("phys-canvas").setAttribute("aria-label", `The lattice of chain 1 at L = ${L} after the run, and its largest avalanche of ${count(size.footprintSize)} topplings, both as means over ${b} × ${b} blocks`);
+    return `Left: the heights of chain 1 at the end of the run, from 0 (light) to ${top} (blue), as means over ${b} × ${b} blocks. Right: the topplings at each site in the largest avalanche of chain 1 (${count(size.footprintSize)} topplings), on a log scale. A coarse-grained view keeps the large-scale shape and loses the detail below b.`;
   }
 
   /** An empty chart with a message. @param {string} title @param {string} msg */

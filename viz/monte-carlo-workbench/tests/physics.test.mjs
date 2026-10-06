@@ -105,6 +105,13 @@ test("parallel tempering meets the exact Boltzmann probabilities at T_min, and o
   }
 });
 
+test("chains that all give the same value get no interval, not a zero-width one", () => {
+  const { sm, c } = runJob({ kind: "tempering", landscape: "three-wells", tmin: 0.08, tmax: 1, replicas: 8, sweeps: 4096, inner: 8, start: "trap", reps: 8 }, 11);
+  const one = sm.basins.find((/** @type {any} */ b) => b.m === c.land.global).one;
+  assert.deepEqual([one.est, one.lo, one.hi, one.se], [0, null, null, null]);
+  assert.match(one.how, /every one of the 8 chains gave the same value/);
+});
+
 test("the cooling schedules start at T_0, end at their stated values and never rise", () => {
   /** @type {any} */
   const c = Ph.prepare({ kind: "annealing", landscape: "three-wells", t0: 1, tend: 0.05, kappa: 1, steps: 1000, reps: 16 }, { seed: 1 });
@@ -204,6 +211,13 @@ test("the burning test, the abelian property and the refusal of a lattice that k
   const { sm } = runJob({ kind: "sandpile", rule: "btw", boundary: "open", drive: "centre", grains: 1, eps: 0, sizes: [8], drives: 256, chains: 2 }, 5);
   assert.equal(sm.sizes[0].meanS.lo, null);
   assert.ok(sm.fixed);
+});
+
+test("the drawn footprint carries the size of chain 1's own largest avalanche, not the largest over all chains", () => {
+  const { sm } = runJob({ kind: "sandpile", rule: "btw", boundary: "open", drive: "random", grains: 1, eps: 0, sizes: [16], drives: 1024, chains: 8 }, 11);
+  const z = sm.sizes[0];
+  assert.equal(z.footprintSize, z.footprint.reduce((/** @type {number} */ a, /** @type {number} */ v) => a + v, 0));
+  assert.deepEqual([z.footprintSize, z.maxS], [318, 372]);
 });
 
 test("the same seed gives the same run, 1 and 4 workers give the same statistics, and a cancelled run is not complete", async () => {

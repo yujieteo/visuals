@@ -762,6 +762,7 @@
     const mean = xs.reduce((a, b) => a + b, 0) / k;
     if (k < 2) return { est: mean, lo: null, hi: null, se: null, how: "one chain: no interval" };
     const v = xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (k - 1), se = Math.sqrt(v / k), q = tQuantile(0.975, k - 1);
+    if (se === 0) return { est: mean, lo: null, hi: null, se: null, how: `no interval: every one of the ${k} chains gave the same value, so the spread between chains shows no uncertainty, and a bias that every chain shares stays possible` };
     let lo = mean - q * se, hi = mean + q * se, how = `t interval over ${k} independent chains, 95 %`;
     if (probability && (lo < 0 || hi > 1)) { lo = Math.max(0, lo); hi = Math.min(1, hi); how += ", cut to [0, 1]"; }
     return { est: mean, lo, hi, se, how };
@@ -957,7 +958,7 @@
         balance: { added, lostEdge, lostBulk, massChange, exact: added === lostEdge + lostBulk + massChange },
         recurrent: parts[0].recurrent === null ? null : parts.filter((/** @type {any} */ p) => p.recurrent).length, burn: parts[0].burn,
         scales, box, boxFit, nBox: withBox.reduce((a, /** @type {any} */ p) => a + p.nBox, 0), blockVar, varFit,
-        final: first?.final ?? null, footprint: first?.footprint ?? null,
+        final: first?.final ?? null, footprint: first?.footprint ?? null, footprintSize: first?.maxS ?? null,
       };
     });
     const done = sizes.filter((/** @type {any} */ s) => s.chains);
