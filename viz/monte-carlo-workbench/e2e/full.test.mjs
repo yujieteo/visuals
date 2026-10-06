@@ -220,7 +220,7 @@ await fullSuite("monte-carlo-workbench", {
     await s.page.locator("#iv-q-g").selectOption("het");
     await s.page.locator("#iv-q-v").selectOption("gt");
     await s.page.waitForFunction(() => /ranks the negative binomial law first/.test(document.getElementById("iv-status")?.textContent ?? ""));
-    assert.match((await kitState(s.page)).iv, /k=cnt;g=het;v=gt/, "the answers are in the state");
+    assert.match(String((await kitState(s.page)).iv), /k=cnt;g=het;v=gt/, "the answers are in the state");
     await s.page.locator("#iv-rule-c14").focus();
     await s.page.keyboard.press("Space");
     await s.page.waitForFunction(() => /** @type {any} */ (window).MCInterviewView.result()?.off.includes("c14"));
