@@ -1,9 +1,10 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-export const ROOT = new URL("..", import.meta.url).pathname;
+export const ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const L = require("../src/engine.js");
 export const FIXTURES = JSON.parse(fs.readFileSync(new URL("../reference/fixtures.json", import.meta.url), "utf8"));
 export const REFERENCE = JSON.parse(fs.readFileSync(new URL("../reference/reference.json", import.meta.url), "utf8"));
