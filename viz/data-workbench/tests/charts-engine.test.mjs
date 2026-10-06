@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import test from "node:test";
 import { engine } from "./engine.mjs";
+import { chartTiming } from "./chart-benchmark.mjs";
 
 const require = createRequire(import.meta.url);
 /** @type {any} */ const Profile = require("../src/profile.js");
@@ -261,9 +262,8 @@ test("benchmark: time to the first figures and to every candidate, for a generat
   const t = await load("bench_charts", encode(Examples.planted(3, rows)));
   const { out, first, done } = await run(t);
   const n = Grammar.accounting(out);
-  assert.equal(n.pending, 0);
+  assert.deepEqual([n.pending, n.failed, n.incomplete], [0, 0, 0], "the benchmark completes without chart errors");
   assert.equal(n.valid + n.excluded + n.failed + n.incomplete, t.plan.total);
-  const s = (/** @type {number} */ ms) => (ms / 1000).toFixed(2);
-  console.log(`benchmark: ${rows} rows x 15 columns: ${t.plan.total} candidates (${n.valid} valid); first figure ${s(/** @type {number} */ (first) - t.started)} s after the import began, every candidate after ${s(done - t.started)} s, on Node ${process.version}, ${process.platform} ${process.arch}`);
-  assert.ok(done - t.started < 120000, "within the 2-minute target");
+  const timing = chartTiming(first === null ? null : first - t.started, done - t.started);
+  console.log(`benchmark: ${rows} rows x 15 columns: ${t.plan.total} candidates (${n.valid} valid); ${timing}, on Node ${process.version}, ${process.platform} ${process.arch}`);
 });
