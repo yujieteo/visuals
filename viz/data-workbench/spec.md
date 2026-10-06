@@ -958,6 +958,12 @@ Where the plan left a choice or changed:
 
 ### Verification fixtures (step 7 part)
 
+- **[Changed after step 7]** The browser checks share an asynchronous parent suite, which keeps both local
+  target servers alive until registration and every selected child finish. Evidence on 2026-10-07: with a local
+  staged artifact, `E2E_PROJECTS=chromium-desktop`, `E2E_SLUG=data-workbench` and `E2E_ARTIFACT` naming that folder,
+  `node --test --test-name-pattern='charts: every candidate' viz/data-workbench/e2e/full.test.mjs` failed before
+  navigation with `ERR_CONNECTION_REFUSED` before the fix, then passed the charts, findings and publication-file
+  checks alone after it (155 valid candidates, 62 tested hypotheses). The command exited normally after cleanup.
 - tests/speed-engine.test.mjs: the typed copy gives the same outcome, reason and SVG for every candidate (of the
   50-column table, every single-column chart and every seventh other) and the same statistics, on the planted
   example, the messy CSV with every correction approved and the benchmark table; its types and its memory estimate;

@@ -58,7 +58,8 @@ const view = (page) => page.locator("#table-view").innerText();
 // 24 orders: amounts with a thousands separator and an NA marker, and one impossible date among valid ones.
 const csv = ["id,city,amount,when", ...Array.from({ length: 24 }, (_, i) => `${i + 1},${["Oslo", "Lima", "Pune"][i % 3]},${i === 5 ? "NA" : `"${i + 1},${String(100 + i).slice(1)}0"`},${i === 7 ? "2026-02-30" : `2026-01-${String(i + 1).padStart(2, "0")}`}`)].join("\n");
 
-await fullSuite(SLUG, {
+/** @type {Parameters<typeof fullSuite>[1]} */
+const fullChecks = {
   "url-state": (ctx) => using(ctx.open, async (s) => {
     await ready(s.page, "messy");
     assert.deepEqual(await kitState(s.page), { example: "messy", highlights: 6 }, "the example in the URL opens");
@@ -155,7 +156,7 @@ await fullSuite(SLUG, {
     await page.locator('button[value="planted"]').click();
     await ready(page, "planted");
   }),
-});
+};
 
 const require = createRequire(import.meta.url);
 // The page's readers and the vendored bundles load by a computed path: the harness's strict type check reads this
@@ -216,9 +217,14 @@ async function publication(page) {
   await page.locator("#viewer-close").click();
 }
 
-// The resource policy and Cancel in each browser: a CSV larger than a 256 MiB budget allows is refused before it
-// is imported, Cancel while reading keeps nothing, and the import of fewer columns then succeeds.
-if (selected) {
+// Keep both target cleanup hooks in one async parent suite. A filtered-out fullSuite may finish before
+// loadTargets below resolves; the parent waits for registration and every child before closing either server.
+await describe(`${SLUG} full browser checks`, async () => {
+  await fullSuite(SLUG, fullChecks);
+  if (!selected) return;
+
+  // The resource policy and Cancel in each browser: a CSV larger than a 256 MiB budget allows is refused before it
+  // is imported, Cancel while reading keeps nothing, and the import of fewer columns then succeeds.
   const big = join(tmp, "big.csv");
   const lines = ["id,region,amount,note"];
   for (let i = 0; i < 3_000_000; i++) lines.push(`${i + 1},${["North", "South", "East", "West"][i % 4]},${(i % 9973) * 1.25},note number ${i % 100003}`);
@@ -548,4 +554,4 @@ if (selected) {
       step7({ project, browser: () => browser, targets, artifact, tmp, ready, view, Zip, openSession, settle });
     });
   }
-}
+});
