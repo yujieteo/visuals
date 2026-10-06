@@ -11332,6 +11332,452 @@
         "convergence": "The front error falls by about 4 each time the mesh halves (second order in space). The finest error is the stated tolerance.",
         "reproducibility": "IEEE double precision. No random numbers. The reference script tools/family_references.py pins mpmath."
       }
+    },
+    {
+      "id": "typical-section",
+      "family": "fluid-structure-interaction",
+      "title": "Typical airfoil section in pitch and plunge: flutter onset",
+      "piece": 9,
+      "model": {
+        "summary": "A rigid airfoil section of chord 2b moves in plunge h and pitch θ. Linear springs at the elastic axis hold it in an incompressible stream of speed U. Thin-airfoil theory gives the lift and the moment. The time-domain form uses the R. T. Jones approximation of the Wagner function with two lag states. The frequency-domain form uses Theodorsen's function C(k).",
+        "roles": [
+          {
+            "id": "h",
+            "quantity": "displacement",
+            "kind": "field",
+            "meaning": "plunge displacement of the elastic axis, positive down"
+          },
+          {
+            "id": "theta",
+            "quantity": "angle",
+            "kind": "field",
+            "meaning": "pitch angle, positive nose up"
+          },
+          {
+            "id": "lambda_1",
+            "quantity": "speed",
+            "kind": "field",
+            "meaning": "first aerodynamic lag state"
+          },
+          {
+            "id": "lambda_2",
+            "quantity": "speed",
+            "kind": "field",
+            "meaning": "second aerodynamic lag state"
+          },
+          {
+            "id": "t",
+            "quantity": "time",
+            "kind": "coordinate",
+            "meaning": "time"
+          },
+          {
+            "id": "U",
+            "quantity": "speed",
+            "kind": "parameter",
+            "meaning": "free-stream speed"
+          },
+          {
+            "id": "b",
+            "quantity": "length",
+            "kind": "parameter",
+            "meaning": "semichord"
+          },
+          {
+            "id": "m",
+            "quantity": "mass-per-length",
+            "kind": "parameter",
+            "meaning": "mass of the section per unit span"
+          },
+          {
+            "id": "m_a",
+            "quantity": "apparent-mass-per-length",
+            "kind": "parameter",
+            "meaning": "apparent mass of the air per unit span, πρb²"
+          },
+          {
+            "id": "I_theta",
+            "quantity": "inertia-per-length",
+            "kind": "parameter",
+            "meaning": "mass moment of inertia per unit span about the elastic axis"
+          },
+          {
+            "id": "omega_h",
+            "quantity": "angular-frequency",
+            "kind": "parameter",
+            "meaning": "uncoupled plunge frequency √(k_h/m)"
+          },
+          {
+            "id": "omega_theta",
+            "quantity": "angular-frequency",
+            "kind": "parameter",
+            "meaning": "uncoupled pitch frequency √(k_θ/I_θ)"
+          },
+          {
+            "id": "a",
+            "quantity": "length-ratio",
+            "kind": "parameter",
+            "meaning": "elastic axis aft of the mid-chord, in semichords"
+          },
+          {
+            "id": "x_theta",
+            "quantity": "length-ratio",
+            "kind": "parameter",
+            "meaning": "centre of mass aft of the elastic axis, in semichords"
+          },
+          {
+            "id": "theta_0",
+            "quantity": "angle",
+            "kind": "parameter",
+            "meaning": "initial pitch disturbance"
+          }
+        ],
+        "equations": [
+          {
+            "id": "plunge",
+            "kind": "governing",
+            "text": "m*d(h,t,t) + m*b*x_theta*d(theta,t,t) + m*omega_h^2*h + m_a*(d(h,t,t) + U*d(theta,t) - b*a*d(theta,t,t)) + 2*m_a*U/b*((1/2)*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) + lambda_1 + lambda_2) = 0",
+            "domain": "t > 0"
+          },
+          {
+            "id": "pitch",
+            "kind": "governing",
+            "text": "I_theta*d(theta,t,t) + m*b*x_theta*d(h,t,t) + I_theta*omega_theta^2*theta - m_a*b*(a*d(h,t,t) - U*(1/2 - a)*d(theta,t) - b*(1/8 + a^2)*d(theta,t,t)) - 2*m_a*U*(a + 1/2)*((1/2)*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) + lambda_1 + lambda_2) = 0",
+            "domain": "t > 0"
+          },
+          {
+            "id": "lag1",
+            "kind": "governing",
+            "text": "d(lambda_1,t) = 0.0455*U/b*(0.165*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) - lambda_1)",
+            "domain": "t > 0"
+          },
+          {
+            "id": "lag2",
+            "kind": "governing",
+            "text": "d(lambda_2,t) = 0.3*U/b*(0.335*(d(h,t) + U*theta + b*(1/2 - a)*d(theta,t)) - lambda_2)",
+            "domain": "t > 0"
+          }
+        ],
+        "closures": [
+          "Lift L = πρb²(ḧ + Uθ̇ − baθ̈) + 2πρUb q_e and moment M = πρb³(aḧ − U(1/2 − a)θ̇ − b(1/8 + a²)θ̈) + 2πρUb²(a + 1/2)q_e about the elastic axis, with m_a = πρb².",
+          "q_e = (1 − C₁ − C₂)w + λ₁ + λ₂ with the downwash w = ḣ + Uθ + b(1/2 − a)θ̇ at the three-quarter chord, and the R. T. Jones constants C₁ = 0.165, ε₁ = 0.0455, C₂ = 0.335, ε₂ = 0.3, so 1 − C₁ − C₂ = 1/2.",
+          "In the frequency domain, Theodorsen's function C(k) = H₁⁽²⁾(k)/(H₁⁽²⁾(k) + iH₀⁽²⁾(k)) replaces the lag states, with the reduced frequency k = bω/U."
+        ],
+        "geometry": "A rigid two-dimensional thin airfoil of chord 2b. The elastic axis is at ab aft of the mid-chord, the centre of mass at x_θb aft of the elastic axis, so e = a + x_θ.",
+        "conditions": [
+          {
+            "id": "h0",
+            "kind": "initial",
+            "text": "h = 0",
+            "at": "t = 0",
+            "meaning": "no initial plunge"
+          },
+          {
+            "id": "hdot0",
+            "kind": "initial",
+            "text": "d(h,t) = 0",
+            "at": "t = 0",
+            "meaning": "no initial plunge rate"
+          },
+          {
+            "id": "th0",
+            "kind": "initial",
+            "text": "theta = theta_0",
+            "at": "t = 0",
+            "meaning": "the initial pitch disturbance"
+          },
+          {
+            "id": "thdot0",
+            "kind": "initial",
+            "text": "d(theta,t) = 0",
+            "at": "t = 0",
+            "meaning": "no initial pitch rate"
+          },
+          {
+            "id": "l10",
+            "kind": "initial",
+            "text": "lambda_1 = 0",
+            "at": "t = 0",
+            "meaning": "the first lag state is 0 at the start"
+          },
+          {
+            "id": "l20",
+            "kind": "initial",
+            "text": "lambda_2 = 0",
+            "at": "t = 0",
+            "meaning": "the second lag state is 0 at the start"
+          }
+        ],
+        "dimensionless": {
+          "variables": [
+            {
+              "symbol": "tau",
+              "of": "t",
+              "offset": "0",
+              "scale": "1/omega_theta",
+              "tex": "\\tau"
+            },
+            {
+              "symbol": "H",
+              "of": "h",
+              "offset": "0",
+              "scale": "b",
+              "tex": "\\xi"
+            },
+            {
+              "symbol": "Th",
+              "of": "theta",
+              "offset": "0",
+              "scale": "1",
+              "tex": "\\theta"
+            },
+            {
+              "symbol": "l1",
+              "of": "lambda_1",
+              "offset": "0",
+              "scale": "b*omega_theta",
+              "tex": "\\hat\\lambda_1"
+            },
+            {
+              "symbol": "l2",
+              "of": "lambda_2",
+              "offset": "0",
+              "scale": "b*omega_theta",
+              "tex": "\\hat\\lambda_2"
+            }
+          ],
+          "parameters": [
+            {
+              "id": "V",
+              "tex": "V",
+              "def": "U/(b*omega_theta)",
+              "solve": "U",
+              "meaning": "reduced speed U/(bω_θ)"
+            },
+            {
+              "id": "mu",
+              "tex": "\\mu",
+              "def": "m/m_a",
+              "solve": "m",
+              "meaning": "mass ratio m/(πρb²)"
+            },
+            {
+              "id": "r2",
+              "tex": "r^2",
+              "def": "I_theta/(m*b^2)",
+              "solve": "I_theta",
+              "meaning": "squared radius of gyration about the elastic axis"
+            },
+            {
+              "id": "sigma",
+              "tex": "\\sigma",
+              "def": "omega_h/omega_theta",
+              "solve": "omega_h",
+              "meaning": "frequency ratio ω_h/ω_θ"
+            },
+            {
+              "id": "a",
+              "tex": "a",
+              "def": "a",
+              "solve": "a",
+              "meaning": "elastic axis aft of the mid-chord, in semichords"
+            },
+            {
+              "id": "xt",
+              "tex": "x_\\theta",
+              "def": "x_theta",
+              "solve": "x_theta",
+              "meaning": "centre of mass aft of the elastic axis, in semichords"
+            },
+            {
+              "id": "th0",
+              "tex": "\\theta_0",
+              "def": "theta_0",
+              "solve": "theta_0",
+              "meaning": "initial pitch disturbance (rad)"
+            }
+          ],
+          "equations": [
+            {
+              "of": "plunge",
+              "text": "((mu + 1)*d(H,tau,tau) + (mu*xt - a)*d(Th,tau,tau) + mu*sigma^2*H + V*d(Th,tau) + 2*V*((1/2)*(d(H,tau) + V*Th + (1/2 - a)*d(Th,tau)) + l1 + l2))/mu = 0"
+            },
+            {
+              "of": "pitch",
+              "text": "((mu*xt - a)*d(H,tau,tau) + (mu*r2 + 1/8 + a^2)*d(Th,tau,tau) + mu*r2*Th + V*(1/2 - a)*d(Th,tau) - 2*V*(a + 1/2)*((1/2)*(d(H,tau) + V*Th + (1/2 - a)*d(Th,tau)) + l1 + l2))/a = 0"
+            },
+            {
+              "of": "lag1",
+              "text": "d(l1,tau)/(0.0075075*V) = d(H,tau) + V*Th + (1/2 - a)*d(Th,tau) - l1/0.165"
+            },
+            {
+              "of": "lag2",
+              "text": "d(l2,tau)/(0.1005*V) = d(H,tau) + V*Th + (1/2 - a)*d(Th,tau) - l2/0.335"
+            }
+          ],
+          "conditions": [
+            {
+              "of": "h0",
+              "text": "H = 0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "hdot0",
+              "text": "d(H,tau) = 0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "th0",
+              "text": "Th = th0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "thdot0",
+              "text": "d(Th,tau) = 0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "l10",
+              "text": "l1 = 0",
+              "at": "tau = 0"
+            },
+            {
+              "of": "l20",
+              "text": "l2 = 0",
+              "at": "tau = 0"
+            }
+          ]
+        }
+      },
+      "domain": {
+        "parameters": [
+          {
+            "id": "V",
+            "tex": "V",
+            "label": "reduced speed U/(bω_θ)",
+            "min": 0.05,
+            "max": 4,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "mu",
+            "tex": "\\mu",
+            "label": "mass ratio m/(πρb²)",
+            "min": 2,
+            "max": 200,
+            "log": true,
+            "kind": "parameter"
+          },
+          {
+            "id": "r2",
+            "tex": "r^2",
+            "label": "squared radius of gyration",
+            "min": 0.02,
+            "max": 1,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "sigma",
+            "tex": "\\sigma",
+            "label": "frequency ratio ω_h/ω_θ",
+            "min": 0.05,
+            "max": 2,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "a",
+            "tex": "a",
+            "label": "elastic axis position",
+            "min": -0.9,
+            "max": 0.9,
+            "log": false,
+            "kind": "parameter"
+          },
+          {
+            "id": "xt",
+            "tex": "x_\\theta",
+            "label": "centre-of-mass offset",
+            "min": -0.9,
+            "max": 0.9,
+            "log": false,
+            "kind": "parameter"
+          }
+        ],
+        "assumptions": [
+          {
+            "text": "The section is rigid. Linear springs at the elastic axis give the plunge and pitch stiffness, and the structure has no damping of its own.",
+            "source": "gt-flutter"
+          },
+          {
+            "text": "The flow is incompressible, inviscid and attached, with a flat wake: thin-airfoil theory.",
+            "source": "gt-flutter"
+          },
+          {
+            "text": "The motion is small, so the equations are linear in h and θ.",
+            "source": "gt-flutter"
+          },
+          {
+            "text": "r² > x_θ² and det M > 0: the mass matrix with the apparent mass of the air is positive definite.",
+            "source": "gt-flutter"
+          }
+        ]
+      },
+      "operations": {
+        "symbolic": [
+          "Exact check of the four dimensionless equations and the six initial conditions against the record.",
+          "Exact rational checks of the parameter domain and of the mass matrix, and the exact divergence speed V_D² = μr²/(1 + 2a)."
+        ],
+        "numerical": [
+          "Theodorsen's function from J₀, J₁, Y₀ and Y₁: power series up to k = 14, Hankel's expansion above.",
+          "The k method gives the onset. The p–k method gives an approximate modal damping and the frequency at each speed. The damping is exact only at the onset.",
+          "The eigenvalues of the 6 × 6 state matrix A(V) of the Jones model, by Hessenberg reduction and the Francis QR algorithm.",
+          "Brent's method refines the onset of each method. The matrix exponential and RK4 give the response."
+        ]
+      },
+      "methods": {
+        "dominant-balance": {
+          "applies": false,
+          "reason": "Near the onset, the inertial, elastic and aerodynamic terms have the same order. The aerodynamic forces couple the pitch and plunge modes, and this coupling causes flutter. No term is small enough to remove, so the page gives no reduced balance."
+        },
+        "asymptotic": {
+          "applies": false,
+          "reason": "A large-mass-ratio expansion for μ → ∞ exists in the literature, but this declaration does not derive it. The page gives no asymptotic result for this family."
+        },
+        "stability": {
+          "applies": true,
+          "reason": "Linear temporal stability of the equilibrium h = θ = 0: the eigenvalues of A(V), the p–k damping and the roots of the flutter determinant. The onset is the lowest V where a mode has zero damping."
+        },
+        "bifurcation": {
+          "applies": true,
+          "reason": "At the flutter onset a complex pair of eigenvalues crosses Re p = 0 with a nonzero speed: the linearization meets the eigenvalue conditions of a Hopf bifurcation. A classification as supercritical or subcritical needs nonlinear terms. This declaration has none, so the page keeps the classification unresolved."
+        }
+      },
+      "limitations": [
+        "No compressibility: the model has no Mach number and no shocks. Transonic flutter needs a separate declaration.",
+        "No stall: stall flutter makes the equations nonlinear and needs a separate declaration.",
+        "Linear: above the onset the linear response grows without limit. The page gives no oscillation amplitude.",
+        "Two degrees of freedom: no control surface, no higher wing modes and no finite-span effects. No structural damping."
+      ],
+      "acceptance": {
+        "example": "flutter",
+        "reference": "The Georgia Tech typical-section Example 1 (a = −1/5, e = −1/10, μ = 20, r = 2/5, σ = 2/5). The onset of both methods from tools/flutter_references.py: mpmath findroot on the flutter determinant at 30 digits, and SciPy eigvals with brentq on the Jones state matrix.",
+        "tolerance": "Exact for the domain, the mass matrix and V_D. The two methods: 1e-2 relative in V_F and Ω_F. The two Jones forms: 1e-8. Each onset against the reference: 1e-7. Residuals: 1e-9. RK4: 1e-6, with an observed order from 3.5 to 4.5.",
+        "checks": [
+          "The k method and the p–k method give the same Theodorsen onset.",
+          "The Jones state space and the k method with the Jones C(k) give the same onset.",
+          "The Theodorsen and Jones onsets agree within 1 %.",
+          "RK4 at the onset converges at order 4 to the matrix exponential."
+        ]
+      },
+      "solver": {
+        "method": "Frequency domain: the k method on the flutter determinant and the p–k iteration. Time domain: the eigenvalues of the Jones state matrix. Brent's method for each onset.",
+        "discretization": "The k method uses 240 reduced frequencies from 4 to 0.02 on a logarithmic grid. The p–k method and the state space use 125 speeds up to 1.25 times the first onset. The map has 41 × 31 points.",
+        "convergence": "Brent's method stops at 1e-15 in k and at 1e-14 in V. The p–k iteration stops when the change of Ω is less than 1e-12·max(1, Ω). RK4 uses 16 to 256 steps per period of the flutter mode at the onset.",
+        "reproducibility": "Plain JavaScript with no random numbers. tools/flutter_references.py calculates the references again with pinned mpmath, NumPy and SciPy."
+      }
     }
   ],
   "separate": [

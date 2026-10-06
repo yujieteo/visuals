@@ -25,6 +25,7 @@
     "pipe-flow", "channel-flow", "nozzle-flow", "hydraulic-jump", "blasius-plate", "airfoil-flow",
     "advection-channel", "couette-heating", "thermocapillary-flow", "conjugate-channel", "plate-convection", "tube-convection", "natural-wall", "mixed-convection",
     "hx-parallel", "hx-counterflow", "melting-front", "film-condensation", "pool-boiling", "absorbing-slab",
+    "flutter", "flutter-hp",
     "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported", "fail-plastic", "fail-nozzle-shock", "fail-jump-subcritical", "fail-airfoil-stall", "fail-dry-bed", "fail-plate-transition", "fail-surface-loss", "fail-boiling-domain"];
   const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Transient cylinder", "Transient sphere", "Volumetric source", "Multilayer wall",
     "Rayleigh–Bénard convection", "Natural convection in an enclosure", "Lumped body with radiation", "Surface radiation", "Convection and radiation", "Custom ODE: ignition", "Custom ODE: Lorenz system",
@@ -32,6 +33,7 @@
     "Pipe flow", "Channel flow", "Nozzle flow", "Hydraulic jump", "Flat-plate boundary layer", "Airfoil in potential flow",
     "Advection–diffusion in a channel", "Couette flow with viscous heating", "Thermocapillary flow in a layer", "Conjugate fluid–solid channel", "Forced convection over a plate", "Forced convection in a tube", "Natural convection at a vertical wall", "Mixed convection in a vertical channel",
     "Parallel-flow heat exchanger", "Counterflow heat exchanger", "Melting front", "Laminar film condensation", "Pool boiling", "Radiation in an absorbing slab",
+    "Typical section: flutter", "Typical section: flutter, r² = 6/25",
     "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors",
     "Failure: unsupported analysis", "Failure: plastic collapse", "Failure: shock in the nozzle", "Failure: no jump from a slow flow", "Failure: airfoil at a large angle", "Failure: flow over a dry bed", "Failure: plate in the transition range", "Failure: heat loss at the free surface", "Failure: boiling outside the correlation's domain"];
   const MAX_STEP = 60;

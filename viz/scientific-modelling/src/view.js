@@ -373,16 +373,6 @@
     ].join("\n");
   }
 
-  function renderRoadmap() {
-    const rm = DATA.roadmap;
-    const byPiece = rm.pieces.filter((/** @type {any} */ p) => p.n > rm.current).map((/** @type {any} */ p) => {
-      const fam = rm.families.filter((/** @type {any} */ x) => x.piece === p.n).map((/** @type {any} */ x) => x.name);
-      const meth = rm.methods.filter((/** @type {any} */ x) => x.piece === p.n).map((/** @type {any} */ x) => x.name);
-      return `<div><h4>Piece ${p.n}: ${esc(p.title)}</h4><ul>${[...meth.map((/** @type {string} */ x) => `<li>Method: ${esc(x)}</li>`), ...fam.map((/** @type {string} */ x) => `<li>${esc(x)}</li>`)].join("") || "<li>The release checks of every family</li>"}</ul></div>`;
-    }).join("");
-    const built = rm.families.filter((/** @type {any} */ x) => x.piece <= rm.current).length;
-    $("roadmap-body").innerHTML = `<p>${built} of the ${rm.families.length} model families work now: the Model catalogue tab shows their declared models. The others arrive in pieces ${rm.current + 1} to 9, and the page offers none of them as a result until then.</p><div class="roadmap-grid">${byPiece}</div>`;
-  }
 
   let lastDetail = "";
   /** @param {Record<string, any>} state @param {any} d */
@@ -595,7 +585,6 @@
   /** @param {any} a */
   function bind(a) {
     app = a;
-    renderRoadmap();
     RegimeView.bind(app, { esc, ti, td, chip, sourceLink, data: DATA });
     StabView.bind(app, { esc, ti, td, chip, sourceLink });
     $("confirm").addEventListener("click", () => {
@@ -741,7 +730,7 @@
   }
 
   VisualKit.start({
-    slug: Model.SLUG, title: "Scientific Modelling and Dimensional Analysis", summary: "One shared model record for three tools; this preview runs the Dimensionless Number Finder.",
+    slug: Model.SLUG, title: "Scientific Modelling and Dimensional Analysis", summary: "One shared model record for three tools: the Dimensionless Number Finder, the Model Nondimensionalizer and the Regime Map Builder, with 26 declared model families.",
     schemaVersion: Model.SCHEMA_VERSION, fields: Model.FIELDS,
     derive: (/** @type {Record<string, any>} */ state) => Model.derive(state, DATA, active(state.example)),
     render, report: (/** @type {Record<string, any>} */ state, /** @type {any} */ d) => Report.report(state, d, DATA), bind, tools, commands,
