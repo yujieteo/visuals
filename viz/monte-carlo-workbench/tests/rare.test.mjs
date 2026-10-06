@@ -106,6 +106,19 @@ test("heavy tails: tilting is refused with the reason, and the other methods mee
   }
 });
 
+test("subset simulation on the ruin problem is refused when the cap on the ladder heights cuts off real mass (ρ = 0.99)", () => {
+  const record = { problem: "ruin", law: "exponential", params: "u=650; c=1.01; lam=1; rate=1" };
+  const c = Ra.prepare(record, { method: "subset", compare: "splitting" });
+  assert.ok(c.ok, c.errors?.join(" "));
+  assert.ok(Math.abs(c.rho - 1 / 1.01) < 1e-12);
+  assert.match(c.refused.subset, /ρ = 0\.9901/);
+  assert.match(c.refused.subset, /cap of 600 ladder heights/);
+  assert.match(c.refused.subset, /ρ\^601 = /);
+  assert.equal(c.refused.splitting, "", "splitting still applies");
+  assert.equal(run(record, { method: "subset", seed: 1, reps: 2 }).sm[0].refused, c.refused.subset, "a refused method returns its reason, not a number");
+  assert.equal(Ra.prepare({ problem: "ruin", law: "exponential", params: "u=30; c=1.25" }, { method: "subset" }).refused.subset, "", "ρ = 0.8 keeps subset simulation");
+});
+
 test("one big jump: splitting gains little on a heavy tail, because paths pass several levels at once", () => {
   const share = (/** @type {any} */ record) => {
     const d = run(record, { method: "splitting", seed: 5, reps: 4 }).acc.methods[0].diags;
@@ -135,8 +148,8 @@ test("the failure experiments: the light family has unbounded weights, a nominal
 });
 
 test("weight accounting: every change of measure of the catastrophe test has E_g[f/g] = 1, 3 seeds", () => {
-  for (const [law, q] of /** @type {[string, any][]} */ ([["exponential", { tilt: 1.3, nu: 2.4 }], ["exponential", { r: 0.8, nu: 2.4 }], ["pareto2", { r: 0.9 }], ["pareto2", { mix: { beta: 0.1, r: 0.2 } }], ["weibull", { mix: { beta: 0.2, r: 0.3 } }]])) {
-    const c = Ra.prepare({ problem: "cat", law, copula: "clayton", params: "M=200" }, { method: "direct" });
+  for (const [law, q, params] of /** @type {[string, any, string][]} */ ([["exponential", { tilt: 1.3, nu: 2.4 }, "M=200"], ["exponential", { r: 0.8, nu: 2.4 }, "M=200"], ["pareto2", { r: 0.9 }, "M=200"], ["pareto2", { mix: { beta: 0.1, r: 0.2 } }, "M=200"], ["weibull", { mix: { beta: 0.2, r: 0.3 } }, "M=200"], ["pareto2", { v: 2, nu: 2.4 }, "M=3"], ["weibull", { v: 1.5 }, "M=4"]])) {
+    const c = Ra.prepare({ problem: "cat", law, copula: "clayton", params }, { method: "direct" });
     for (const seed of SEEDS) {
       const rng = Rng.stream(seed, "test/lr", 0, 0);
       let s = 0, s2 = 0;

@@ -241,8 +241,6 @@
       if (!(c.rho < 1)) return { ok: false, errors: [`The net profit condition fails: ρ = λ E[X] / c = ${g4(c.rho)} ≥ 1, so ψ(u) = 1 for every u. Raise the premium c above λ E[X] = ${g4(p.lam * claim.mean)}.`] };
       c.J = integratedTail(claim);
       c.x0 = p.u;
-      c.kmax = Math.min(LIMITS.kmax, Math.ceil(Math.log(1e-12) / Math.log(c.rho)));
-      c.kmaxMass = Math.pow(c.rho, c.kmax + 1);
     } else {
       const sev = jump(law, p);
       c.sev = sev;
@@ -251,8 +249,12 @@
       if (p.m > p.K) return { ok: false, errors: [`A systemic ruin needs m = ${p.m} defaults, more than the K = ${p.K} insurers.`] };
       c.cat = catSetup(c);
     }
-    c.refused = Object.fromEntries(c.methods.map((/** @type {string} */ m) => [m, refusal(c, m)]));
     c.guess = guess(c);
+    if (problem === "ruin") {
+      c.kmax = Math.min(LIMITS.kmax, Math.ceil(Math.log(Math.min(1e-12, 1e-6 * c.guess)) / Math.log(c.rho)));
+      c.kmaxMass = Math.pow(c.rho, c.kmax + 1);
+    }
+    c.refused = Object.fromEntries(c.methods.map((/** @type {string} */ m) => [m, refusal(c, m)]));
     c.quantities = quantitiesOf(c);
     return c;
   }
@@ -268,6 +270,7 @@
       return "";
     }
     if (m === "subset" && c.problem === "cat") return "Subset simulation needs a fixed number of random inputs. In the catastrophe test, the number of events is random. Thus the page offers subset simulation only for the sum and the ruin problems.";
+    if (m === "subset" && c.problem === "ruin" && c.kmaxMass > 1e-6 * c.guess) return `Subset simulation needs a fixed number of ladder heights. The page stops at the cap of ${LIMITS.kmax} ladder heights. With ρ = ${g4(c.rho)}, the mass ρ^${LIMITS.kmax + 1} = ${g4(c.kmaxMass)} above the cap is not small next to the expected ψ(u) ≈ ${g4(c.guess)}. Thus the estimate would be too low. Use splitting, the cross-entropy method or adaptive importance sampling.`;
     return "";
   }
 
@@ -962,10 +965,11 @@
         S[e] = x;
         logLR += Math.log(r0) - r0 * x - Math.log(FM) - (-Math.log(mt) - x / mt - Math.log(FMt));
       } else if (q.v !== undefined) {
-        const x = Math.min(c.trunc ? c.trunc.M : Infinity, q.v * exp1(rng));
+        const FMv = c.trunc ? -Math.expm1(-c.trunc.M / q.v) : 1;
+        const x = c.trunc ? -q.v * Math.log1p(-rng.uniform() * FMv) : q.v * exp1(rng);
         S[e] = x;
         H[e] = hazardOf(c, x);
-        logLR += (c.trunc && x >= c.trunc.M ? -Infinity : c.sev.logpdf(x) - (c.trunc ? Math.log(c.trunc.FM) : 0)) + Math.log(q.v) + x / q.v - (c.trunc ? Math.log(-Math.expm1(-c.trunc.M / q.v)) : 0);
+        logLR += c.sev.logpdf(x) - (c.trunc ? Math.log(c.trunc.FM) : 0) + Math.log(q.v) + x / q.v - Math.log(FMv);
       } else {
         const r = q.r && !q.mix ? q.r : 1, rr = e === chosen ? q.mix.r : r;
         const h = exp1(rng) / rr;
@@ -1105,7 +1109,7 @@
       path.push({ gamma, q: { ...q } });
       if (gamma >= top) break;
     }
-    return { q, work, diag: { path, final: q, reached, family: light ? "exponential" : "hazard", infiniteVariance: light } };
+    return { q, work, diag: { path, final: q, reached, family: light ? "exponential" : "hazard", infiniteVariance: light && !c.trunc } };
   }
 
   /**
@@ -1287,17 +1291,19 @@
     const sf = Array.from(g.exceed, (/** @type {number} */ v) => v / n);
     let k = sf.findIndex((v) => v <= 1 - q);
     if (k < 0) return { var: null, es: null, how: `The grid ends at ${g4(grid[grid.length - 1])}: P(L > x) is above ${g4(1 - q)} there.` };
-    let x = grid[k];
+    let x = grid[k], sx = sf[k];
     if (k > 0 && sf[k - 1] > sf[k]) {
-      const t = (Math.log(sf[k - 1]) - Math.log(1 - q)) / (Math.log(sf[k - 1]) - Math.log(Math.max(sf[k], 1e-300)));
-      x = Math.exp(Math.log(grid[k - 1]) + Math.min(1, Math.max(0, t)) * (Math.log(grid[k]) - Math.log(grid[k - 1])));
+      const lo = Math.log(sf[k - 1]), hi = Math.log(Math.max(sf[k], 1e-300));
+      const t = Math.min(1, Math.max(0, (lo - Math.log(1 - q)) / (lo - hi)));
+      x = Math.exp(Math.log(grid[k - 1]) + t * (Math.log(grid[k]) - Math.log(grid[k - 1])));
+      sx = Math.exp(lo + t * (hi - lo));
       k = k - 1;
     }
     const finiteMean = Number.isFinite(c.cat.meanS);
     let es = null;
     if (finiteMean) {
-      // E[(L − x)⁺] at the grid point below x, less (x − grid[k]) P(L > x): exact for the weighted sample.
-      const ex = g.excess[k] / n - (x - grid[k]) * sf[Math.min(sf.length - 1, k + 1)];
+      // E[(L − x)⁺] at the grid point below x, less ∫ P(L > y) dy from grid[k] to x by the trapezoid rule. This is an approximation inside the cell.
+      const ex = g.excess[k] / n - ((x - grid[k]) * (sf[k] + sx)) / 2;
       es = x + Math.max(0, ex) / (1 - q);
     }
     return { var: x, es, how: finiteMean ? `from the weighted sample on a grid of ${grid.length} points` : "ES is infinite: the mean event loss is infinite (α ≤ 1 and no truncation), so E[L | L > VaR] = ∞. The page shows no number." };

@@ -32,8 +32,8 @@
   let data = g.Model?.DATA ?? null;
   /** @type {any} */
   let run = null;
-  /** @type {any} */
-  let pool = null;
+  /** One worker pool for the main run and one for the sweep, so a sweep never takes the workers of the run. @type {Record<string, any>} */
+  const pools = { run: null, sweep: null };
   /** @type {any} */
   let sweep = null;
   /** The run record a reader loaded, to compare with its replay. @type {any} */
@@ -61,9 +61,10 @@
   function source() {
     return ["src-rng", "src-special", "src-expr", "src-continuous", "src-copulas", "src-rare", "src-rare-worker"].map((id) => $(id).textContent).join("\n;\n");
   }
-  function getPool() {
-    if (!pool) pool = Pool.createPool({ source: source(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: Ra });
-    return pool;
+  /** @param {"run" | "sweep"} k */
+  function getPool(k) {
+    if (!pools[k]) pools[k] = Pool.createPool({ source: source(), size: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)), engine: Ra });
+    return pools[k];
   }
 
   /** A new, empty run for the state, with the compiled problem or its errors. @param {Record<string, any>} s */
@@ -79,7 +80,7 @@
     r.status = "running";
     r.started = performance.now();
     r.message = "";
-    const p = getPool();
+    const p = getPool("run");
     r.handle = p.run({ record: r.record, settings: r.settings, opts: {}, from: r.acc.blocks, to }, {
       onBlock(/** @type {any} */ blk) {
         if (run !== r) return;
@@ -516,7 +517,7 @@ ${first?.risk ? `<p>Total loss over T: VaR at ${fmt(c.p.q)} = ${fmt(first.risk.v
       if (!c.ok) { sw.error = `At ${s.r_sweep} = ${fmt(xs[sw.i])}: ${c.errors[0]}`; schedule(); return; }
       if (c.refused[c.method]) { sw.error = `At ${s.r_sweep} = ${fmt(xs[sw.i])}: ${c.refused[c.method]}`; schedule(); return; }
       let acc = Ra.empty(c);
-      sw.handle = getPool().run({ record, settings, opts: {}, from: 0, to: c.R }, {
+      sw.handle = getPool("sweep").run({ record, settings, opts: {}, from: 0, to: c.R }, {
         onBlock(/** @type {any} */ b) { acc = Ra.merge(acc, b, c); },
         onEnd(/** @type {string} */ status, /** @type {string} */ message) {
           if (sweep !== sw) return;
