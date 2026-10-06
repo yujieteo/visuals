@@ -217,12 +217,21 @@ async function publication(page) {
   await page.locator("#viewer-close").click();
 }
 
-// Keep both target cleanup hooks in one async parent suite. A filtered-out fullSuite may finish before
-// loadTargets below resolves; the parent waits for registration and every child before closing either server.
-await describe(`${SLUG} full browser checks`, async () => {
+// No check starts before the whole file is registered: this empty suite holds the runner's build phase until the
+// finally below, so a check cannot finish (and the root close either server) while loadTargets is pending. Both
+// cleanup hooks stay on the root, which runs them even when a name filter selects no check; a filtered parent suite
+// would skip its own after hooks and keep the servers alive.
+/** @type {() => void} */
+let registered = () => {};
+describe(`${SLUG} registration`, () => new Promise((resolve) => { registered = () => resolve(undefined); }));
+try {
   await fullSuite(SLUG, fullChecks);
-  if (!selected) return;
+  if (selected) await resources();
+} finally {
+  registered();
+}
 
+async function resources() {
   // The resource policy and Cancel in each browser: a CSV larger than a 256 MiB budget allows is refused before it
   // is imported, Cancel while reading keeps nothing, and the import of fewer columns then succeeds.
   const big = join(tmp, "big.csv");
@@ -554,4 +563,4 @@ await describe(`${SLUG} full browser checks`, async () => {
       step7({ project, browser: () => browser, targets, artifact, tmp, ready, view, Zip, openSession, settle });
     });
   }
-});
+}
