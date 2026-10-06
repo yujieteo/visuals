@@ -236,5 +236,87 @@
    },
    "text": "Independent sampling with separate streams draws each alternative from its own streams. The paired differences then have the variance (σ_a² + σ_b²)/n, and the ratio in the decision report is near 1."
   }
+ },
+ {
+  "id": "euler",
+  "name": "Euler time discretisation",
+  "family": "Processes",
+  "estimator": "\\hat X_{k+1} = \\hat X_k + a(\\hat X_k)\\, h + b(\\hat X_k)\\, \\Delta W_k, \\quad \\Delta W_k \\sim N(0, h); \\qquad \\hat\\theta_n = \\frac{1}{n}\\sum_{i=1}^{n} f\\left(\\hat X^{(i)}\\right), \\quad \\mathbb{E}\\hat\\theta_n - \\theta = O(h)",
+  "estimatorText": "On each step of length h, the scheme freezes the drift and the volatility of a diffusion. For a point process, it freezes the intensity. The estimator is the sample mean of the quantity of the discrete path. Its error has two parts: the discretisation bias, which does not decrease with n, and the Monte Carlo error, of order n^(−1/2).",
+  "assumptions": [
+   "The coefficients a and b are Lipschitz and grow at most linearly. Then the Euler–Maruyama scheme has strong order 1/2 and, for a smooth f, weak order 1.",
+   "The step h satisfies the stability condition of the scheme. For the Ornstein–Uhlenbeck process, |1 − κh| < 1, so 0 < κh < 2.",
+   "The scheme keeps the state space only when the step allows it. The Euler step of geometric Brownian motion can give a value below 0.",
+   "Some laws have an exact transition on the grid: Brownian motion, a Markov chain, a branching process and the variance-gamma process. Under this method, such a law uses its exact sampler."
+  ],
+  "settings": [
+   "Diffusions: Euler–Maruyama with the normal increments of the exact sampler, so the comparison with independent sampling uses the same Brownian path.",
+   "Poisson and compound Poisson processes: at most one event in each step, with probability λh.",
+   "Hawkes process: Poisson(λ(t_k)h) events in each step with the intensity frozen at the start of the step.",
+   "With coarsen = c, the coarse path adds the fine increments in groups of c. This gives the coupled coarse path of multilevel Monte Carlo."
+  ],
+  "suitable": {
+   "model": "gbm-option-mlmc",
+   "settings": {
+    "method": "euler"
+   },
+   "text": "The payoff of the option is a Lipschitz function of the value at T. The Euler bias of its mean is of order h, and with a few hundred steps it is below the Monte Carlo error. The multilevel panel then lowers the cost to reach a given root mean square error."
+  },
+  "failure": {
+   "model": "exp-ou",
+   "settings": {
+    "method": "euler"
+   },
+   "text": "With κh ≥ 2 the Euler scheme multiplies the distance to θ by 1 − κh ≤ −1 in each step, so its paths oscillate and grow. The exact process is stable and stationary. The exact transition does not have this condition."
+  },
+  "comparison": {
+   "with": "independent",
+   "model": "gbm-option-mlmc",
+   "settings": {
+    "method": "euler",
+    "compare": "independent"
+   },
+   "text": "Independent sampling uses the exact lognormal transition on the same normals. The difference of the two estimates is the discretisation bias of the Euler scheme, because both use the same Brownian increments. The Monte Carlo error of each estimate does not include it."
+  }
+ },
+ {
+  "id": "mlmc",
+  "name": "Multilevel Monte Carlo",
+  "family": "Multilevel",
+  "estimator": "\\hat\\theta = \\sum_{l=0}^{L} \\frac{1}{N_l}\\sum_{i=1}^{N_l} \\left(P_l^{(i,l)} - P_{l-1}^{(i,l)}\\right), \\ P_{-1} = 0; \\qquad N_l \\propto \\sqrt{V_l / C_l}",
+  "estimatorText": "Level l estimates the correction E[P_l − P_(l−1)] between the grids of n0 · 2^l and n0 · 2^(l−1) steps. The two paths use the same Brownian increments. The sum of the level means is an unbiased estimate of E P_L. The levels are independent, so its variance is Σ V_l/N_l. The bias E P_L − E P remains, and the page estimates it apart from the Monte Carlo error.",
+  "assumptions": [
+   "Each level couples its coarse and fine paths: the coarse path adds the fine Brownian increments in pairs (coarsen = 2).",
+   "The weak error decays as |E[P_l − P]| ≤ c 2^(−αl). The level variance decays as V_l ≤ c 2^(−βl), with α ≥ min(β, γ)/2 (Giles, 2015, theorem 1).",
+   "The levels use independent streams: level l takes the seed of the run plus (l + 1) · 2654435769.",
+   "The bias estimate max(|Y_(L−1)|/2^α, |Y_L|)/(2^α − 1) assumes that the decay of the level means has started. It is an estimate, not a bound."
+  ],
+  "settings": [
+   "The target for the root mean square error is ε. The sample sizes are N_l = ⌈2 ε^(−2) √(V_l/C_l) Σ √(V_j C_j)⌉, in whole blocks of 1,024.",
+   "The run starts with levels 0, 1 and 2, with 2 blocks each. It adds one level while the bias test max(|Y_(L−1)|/2^α, |Y_L|) < (2^α − 1) ε/√2 fails, up to level 8.",
+   "The model declares the parameters steps (n0, the steps of level 0) and coarsen, and passes them to its diffusion."
+  ],
+  "suitable": {
+   "model": "gbm-option-mlmc",
+   "settings": {
+    "method": "euler"
+   },
+   "text": "The payoff is Lipschitz, so the Euler level variance decays as 2^(−l) (β = 1) and the means as 2^(−l) (α = 1). The cost for an error ε is then of order ε^(−2)(log ε)^2, against ε^(−3) for plain Monte Carlo on the finest grid."
+  },
+  "failure": {
+   "model": "brownian-alarm-mlmc",
+   "settings": {
+    "method": "euler"
+   },
+   "text": "The indicator that the path reaches a level is a discontinuous function of the path. A fine and a coarse path disagree with a probability of order 2^(−l/2). Thus V_l decays only as 2^(−l/2) (β = 1/2), and the monitoring bias also decays as 2^(−l/2). The multilevel run needs many levels and gives a small gain."
+  },
+  "comparison": {
+   "with": "euler",
+   "model": "gbm-option-mlmc",
+   "settings": {
+    "method": "euler"
+   },
+   "text": "The panel compares the cost of the multilevel run with the cost of plain Euler sampling on the finest grid. For the same Monte Carlo variance, the plain run needs N V_L/(Σ V_l/N_l) samples of n0 · 2^L steps each."
+  }
  }
 ]

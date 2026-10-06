@@ -121,6 +121,59 @@ await fullSuite("monte-carlo-workbench", {
     } finally {
       await mix.close();
     }
+    // Group 5: a process shows its sample paths with the run's ensemble bands and first passages, and a passage
+    // probability has a continuous-time reference; a copula shows its scatter; the conditions of a process follow its
+    // parameters; the multilevel panel runs to its bias test and keeps the bias apart from the Monte Carlo error, and
+    // its Cancel stops a run without a complete result.
+    const bm = await ctx.open("#model=exp-brownian");
+    try {
+      await runSettles(bm.page, ["done"]);
+      assert.ok(await bm.page.locator("#fig-paths").isVisible(), "the paths figure shows for a process");
+      assert.equal(await bm.page.locator("#paths-plot .sample-paths path").count(), 12, "12 sample paths");
+      assert.ok(await bm.page.locator("#paths-plot path.band").count() >= 1, "the ensemble bands of the run");
+      assert.ok(await bm.page.locator("#paths-plot .passage circle").count() >= 1, "first passages at the level");
+      assert.match(await bm.page.locator("#results-table").innerText(), /continuous-time closed form/);
+      assert.ok(await bm.page.locator("#fig-scatter").isHidden(), "no scatter without a copula");
+    } finally {
+      await bm.close();
+    }
+    const cop = await ctx.open("#model=exp-claytoncopula");
+    try {
+      await runSettles(cop.page, ["done"]);
+      assert.ok(await cop.page.locator("#scatter-plot .scatter circle").count() >= 1000, "the copula scatter");
+      assert.match(await cop.page.locator("#scatter-note").innerText(), /Kendall's tau of these points: [\d.]+.*of the copula: 0\.5/s);
+      assert.match(await cop.page.locator("#law-card").innerText(), /Clayton copula/);
+    } finally {
+      await cop.close();
+    }
+    const ou = await ctx.open("#model=exp-ou&method=euler&panel=assumptions");
+    try {
+      assert.match(await ou.page.locator("#panel-assumptions").innerText(), /Stability\s+not stable/);
+    } finally {
+      await ou.close();
+    }
+    const ml = await ctx.open("#model=gbm-option-mlmc&method=euler&mlmc_eps=0.2");
+    try {
+      await runSettles(ml.page, ["done"]);
+      await ml.page.locator("#mlmc-run").click();
+      await ml.page.waitForFunction(() => ["done", "stopped"].includes(/** @type {any} */ (window).MCDepView.result()?.status), null, { timeout: 90_000 });
+      const r = await ml.page.evaluate(() => /** @type {any} */ (window).MCDepView.result());
+      assert.equal(r.status, "done", r.message);
+      assert.ok(r.summary.levels.length >= 3 && r.summary.bias !== null && r.summary.se > 0);
+      assert.ok(Math.abs(r.summary.est - r.reference) < 4.5 * r.summary.se + 0.2, `the estimate ${r.summary.est} against the Black–Scholes value ${r.reference}`);
+      const text = await ml.page.locator("#mlmc-result").innerText();
+      assert.match(text, /Monte Carlo error/);
+      assert.match(text, /Discretisation bias/);
+      assert.match(text, /the interval above does not include it/);
+      await ml.page.locator("#mlmc-eps").fill("0.005");
+      await ml.page.locator("#mlmc-eps").press("Enter");
+      await ml.page.locator("#mlmc-run").click();
+      await ml.page.locator("#mlmc-stop").click();
+      assert.equal(await ml.page.evaluate(() => /** @type {any} */ (window).MCDepView.result().status), "cancelled");
+      await ml.page.waitForFunction(() => /Cancelled.*not complete/.test(document.getElementById("mlmc-status")?.textContent ?? ""), null, { timeout: 10_000 });
+    } finally {
+      await ml.close();
+    }
   }),
 
   "back-forward": (ctx) => using(ctx.open, async (s) => {

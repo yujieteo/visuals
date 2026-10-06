@@ -344,5 +344,91 @@
     return `<svg class="chart graph" viewBox="0 0 ${W} ${h}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg"><title>${esc(label)}</title>${parts.join("")}</svg>`;
   }
 
-  return { fmt, tickLabel, padRange, ticks, logTicks, scale, distribution, tail, probability, convergence, comparison, sweep, graph, W, H };
+  /**
+   * Sample paths of a process with the ensemble of the run as bands: the pointwise 5–95 % and 25–75 % ranges, the
+   * median and the mean, the reference mean of the law as a dashed line, a level as a horizontal line and the first
+   * grid time each drawn path reaches it as a dot.
+   * @param {{ t: number[], paths: number[][], band: { q: (number | null)[][], mean: number[], n: number, t: number[] } | null, refMean: (number | null)[] | null,
+   *   level: number | null, up: boolean, step: boolean, xlabel: string, ylabel: string }} o
+   */
+  function paths(o) {
+    const label = `${o.paths.length} sample paths of ${o.ylabel} against ${o.xlabel}${o.band ? `, with the pointwise 5–95 % and 25–75 % bands of ${o.band.n.toLocaleString("en-US")} paths` : ""}${o.level !== null ? `, and the first time each path reaches ${fmt(o.level)}` : ""}`;
+    const vals = [...o.paths.flat(), ...(o.band ? o.band.q.flat().filter((v) => v !== null).map(Number) : []), ...(o.refMean ?? []).filter((v) => v !== null).map(Number), ...(o.level !== null ? [o.level] : [])].filter(Number.isFinite);
+    if (!vals.length || o.t.length < 2) return svg(label, `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">No paths to draw yet.</text>`);
+    const [y0, y1] = padRange(vals, 0.04);
+    const f = frame({ x: [o.t[0], o.t[o.t.length - 1]], y: [y0, y1], xlabel: o.xlabel, ylabel: o.ylabel });
+    const parts = [f.markup];
+    /** @param {number[]} xs @param {number[]} ys */
+    const line = (xs, ys) => (o.step ? steps(xs, ys, f.sx, f.sy, xs[xs.length - 1]) : path(xs, ys, f.sx, f.sy));
+    if (o.band) {
+      const bt = o.band.q[0].map((_, i) => i), tt = o.band.t;
+      for (const [lo, hi, cls] of [[0, 4, "band"], [1, 3, "band band-inner"]]) {
+        const ok = bt.filter((i) => o.band?.q[/** @type {number} */ (lo)][i] !== null && o.band?.q[/** @type {number} */ (hi)][i] !== null);
+        if (ok.length < 2) continue;
+        const top = ok.map((i) => `${f.sx(tt[i]).toFixed(1)} ${f.sy(/** @type {number} */ (o.band?.q[/** @type {number} */ (hi)][i])).toFixed(1)}`), bottom = ok.slice().reverse().map((i) => `${f.sx(tt[i]).toFixed(1)} ${f.sy(/** @type {number} */ (o.band?.q[/** @type {number} */ (lo)][i])).toFixed(1)}`);
+        parts.push(`<path class="${cls}" d="M${top.join("L")}L${bottom.join("L")}Z"/>`);
+      }
+      const med = bt.filter((i) => o.band?.q[2][i] !== null);
+      if (med.length > 1) parts.push(`<path class="series s1 median" d="${path(med.map((i) => tt[i]), med.map((i) => /** @type {number} */ (o.band?.q[2][i])), f.sx, f.sy)}"/>`);
+      parts.push(`<path class="series s3 ens-mean" d="${path(tt, o.band.mean, f.sx, f.sy)}"/>`);
+    }
+    parts.push('<g class="sample-paths">');
+    for (const p of o.paths) parts.push(`<path d="${line(o.t, p)}"/>`);
+    parts.push("</g>");
+    if (o.refMean && o.refMean.every((v) => v !== null)) parts.push(`<path class="series s2 ref-law" d="${path(o.t, /** @type {number[]} */ (o.refMean), f.sx, f.sy)}"/>`);
+    if (o.level !== null) {
+      const lv = o.level;
+      parts.push(`<line class="ref" x1="${M.l}" x2="${W - M.r}" y1="${f.sy(lv).toFixed(1)}" y2="${f.sy(lv).toFixed(1)}"/>`);
+      parts.push('<g class="passage">');
+      for (const p of o.paths) {
+        const k = p.findIndex((x) => (o.up ? x >= lv : x <= lv));
+        if (k >= 0) parts.push(`<circle cx="${f.sx(o.t[k]).toFixed(1)}" cy="${f.sy(p[k]).toFixed(1)}" r="3.5"/>`);
+      }
+      parts.push("</g>");
+    }
+    const key = ["grey: paths", o.band ? "blue: bands" : "", o.band ? "green: run mean" : "", o.refMean ? "orange: law mean" : "", o.level !== null ? "dots: passage" : ""].filter(Boolean).join(" · ");
+    parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">${esc(key)}</text>`);
+    return svg(label, parts.join(""));
+  }
+
+  /**
+   * A scatter of two copula components on the unit square, with the tail boxes above and below the level q.
+   * @param {{ points: [number, number][], q: number, xlabel: string, ylabel: string }} o
+   */
+  function scatter(o) {
+    const n = o.points.length, hi = o.points.filter(([u, v]) => u > o.q && v > o.q).length, lo = o.points.filter(([u, v]) => u <= 1 - o.q && v <= 1 - o.q).length;
+    const label = `Scatter of ${n.toLocaleString("en-US")} draws of (${o.xlabel}, ${o.ylabel}) on the unit square: ${hi} in the upper tail box and ${lo} in the lower tail box at level ${o.q}`;
+    const f = frame({ x: [0, 1], y: [0, 1], xlabel: o.xlabel, ylabel: o.ylabel });
+    const parts = [f.markup];
+    for (const [a, b] of [[o.q, 1], [0, 1 - o.q]]) parts.push(`<rect class="tail-box" x="${f.sx(a).toFixed(1)}" y="${f.sy(b).toFixed(1)}" width="${(f.sx(b) - f.sx(a)).toFixed(1)}" height="${(f.sy(a) - f.sy(b)).toFixed(1)}"/>`);
+    parts.push('<g class="scatter">');
+    for (const [u, v] of o.points) parts.push(`<circle cx="${f.sx(u).toFixed(1)}" cy="${f.sy(v).toFixed(1)}" r="1.4"/>`);
+    parts.push("</g>");
+    parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">${esc(`boxes: both above ${o.q} (${hi}), both below ${+(1 - o.q).toFixed(4)} (${lo})`)}</text>`);
+    return svg(label, parts.join(""));
+  }
+
+  /**
+   * The levels of a multilevel run: log2 of the variance V_l and of |E Y_l| against the level l, the two rates that
+   * set the cost and the bias.
+   * @param {{ levels: { l: number, mean: number, var: number }[] }} o
+   */
+  function levels(o) {
+    const pts = o.levels.filter((x) => x.l >= 0);
+    const label = `Multilevel Monte Carlo: log2 of the variance and of the absolute mean of the level corrections against the level, for ${pts.length} levels`;
+    const lv = pts.filter((x) => x.var > 0).map((x) => ({ l: x.l, y: Math.log2(x.var) })), lm = pts.filter((x) => x.mean !== 0).map((x) => ({ l: x.l, y: Math.log2(Math.abs(x.mean)) }));
+    if (lv.length + lm.length < 2) return svg(label, `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Run the multilevel estimator to draw the levels.</text>`);
+    const ys = [...lv, ...lm].map((x) => x.y), [y0, y1] = padRange(ys, 0.08), L = Math.max(1, ...pts.map((x) => x.l));
+    const f = frame({ x: [0, L], y: [y0, y1], xlabel: "Level l (the fine grid has n0 · 2^l steps)", ylabel: "log2", xint: true });
+    const parts = [f.markup];
+    for (const [ser, cls] of [[lv, "s1"], [lm, "s2"]]) {
+      const s2 = /** @type {{ l: number, y: number }[]} */ (ser);
+      if (s2.length > 1) parts.push(`<path class="series ${cls}" d="${path(s2.map((x) => x.l), s2.map((x) => x.y), f.sx, f.sy)}"/>`);
+      for (const x of s2) parts.push(`<circle class="dot ${cls}" cx="${f.sx(x.l).toFixed(1)}" cy="${f.sy(x.y).toFixed(1)}" r="4"/>`);
+    }
+    parts.push(`<text class="direct-label" x="${W - M.r}" y="${M.t - 4}" text-anchor="end">blue: log2 V_l (variance) · orange: log2 |E Y_l| (bias of the level)</text>`);
+    return svg(label, parts.join(""));
+  }
+
+  return { fmt, tickLabel, padRange, ticks, logTicks, scale, distribution, tail, probability, convergence, comparison, sweep, graph, paths, scatter, levels, W, H };
 });

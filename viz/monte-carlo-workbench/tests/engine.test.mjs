@@ -25,7 +25,9 @@ test("every catalogue model: each estimate is within 5.5 standard errors of its 
       const r = runModel(rec, { seed }, blocks, { status, refs });
       r.summary[0].alts.forEach((/** @type {any} */ alt, /** @type {number} */ a) => alt.quantities.forEach((/** @type {any} */ q, /** @type {number} */ k) => {
         const ref = r.refs[a].values[k];
-        if (ref === null || r.status[k].variance !== "finite") return;
+        // A continuous-time reference of a grid quantity (a passage of Brownian motion) differs from the run by its
+        // monitoring bias on purpose; tests/processes.test.mjs checks it from below.
+        if (ref === null || r.status[k].variance !== "finite" || r.refs[a].continuous?.[k]) return;
         if (q.kind === "expectation" && !variances.has(k)) variances.set(k, trueVariances(rec, k));
         const v = variances.get(k)?.[a] ?? null;
         const se = q.kind === "probability" ? Math.sqrt(ref * (1 - ref) / q.n) : q.kind === "expectation" && v !== null ? Math.sqrt(v / q.n) : q.se;

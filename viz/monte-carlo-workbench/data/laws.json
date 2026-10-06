@@ -2488,5 +2488,1013 @@
     "relation": "censoring keeps a bound for each value outside the limit, and truncation keeps no record"
    }
   ]
+ },
+ {
+  "id": "conditional",
+  "name": "Conditional model",
+  "type": "conditional",
+  "convention": "A conditional model draws a parent variable first, then a child variable whose law has parameters that read the parent. The model text writes this as K ~ categorical(p = w) and then N ~ poisson(lambda = rates[K]). The joint law is the product of the parent law and the conditional law of the child. The parent can be a regime, a state or an uncertain parameter.",
+  "formula": "p(x, y) = p_X(x)\\, p_{Y \\mid X}(y \\mid x), \\qquad Y \\mid X = x \\sim F_{\\theta(x)}",
+  "params": [
+   {
+    "name": "parent",
+    "tex": "X \\sim F_X",
+    "domain": "\\text{any law of groups 1 to 4}"
+   },
+   {
+    "name": "child",
+    "tex": "Y \\mid X = x \\sim F_{\\theta(x)}",
+    "domain": "\\theta(x) \\in \\Theta_F \\ \\text{for every } x \\in \\operatorname{supp} X"
+   }
+  ],
+  "support": "\\{(x, y) : x \\in \\operatorname{supp} X, \\ y \\in \\operatorname{supp} F_{\\theta(x)}\\}",
+  "limits": [
+   "If θ(x) does not depend on x, Y is independent of X and has the law F_θ.",
+   "A parent with a finite set of values gives a finite mixture as the law of Y.",
+   "A gamma parent for the Poisson rate gives a negative binomial law for the count.",
+   "A beta parent for the binomial probability gives the beta-binomial law.",
+   "A chain of conditional models in which each step reads only the previous one is a Markov chain."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}Y = \\mathbb{E}\\big[\\mathbb{E}[Y \\mid X]\\big]",
+   "variance": "\\operatorname{Var}Y = \\mathbb{E}\\big[\\operatorname{Var}(Y \\mid X)\\big] + \\operatorname{Var}\\big(\\mathbb{E}[Y \\mid X]\\big)",
+   "existence": "E|Y| is finite if and only if E[E[|Y| | X]] is finite. The variance formula is the law of total variance. It holds when E Y² is finite. The second term is the variance that the uncertain parent adds."
+  },
+  "transforms": {
+   "cf": "\\varphi_Y(t) = \\mathbb{E}\\big[\\varphi_{Y \\mid X}(t)\\big]",
+   "pgf": "G_Y(z) = \\mathbb{E}\\big[G_{Y \\mid X}(z)\\big]"
+  },
+  "methods": [
+   "Ancestral sampling: draw the parent, then draw the child from its conditional law with the parent value. Each replicate is an exact draw of the pair.",
+   "Enumeration: when the parent and the child are discrete, the page adds p_X(x) p(y | x) over the support. It gives exact references, with the neglected mass of a truncated tail stated.",
+   "Inverse transform: the sampler draws each variable by the inverse of its conditional CDF. The pair is exact, and stratification can act on the parent uniform."
+  ],
+  "links": [
+   {
+    "to": "gaussiancopula",
+    "relation": "a copula gives dependence with fixed margins, but a conditional model changes the law of the child"
+   },
+   {
+    "to": "markovchain",
+    "relation": "a chain of conditional draws in which each draw reads the previous state"
+   },
+   {
+    "to": "hawkes",
+    "relation": "the event rate is conditional on the past events"
+   }
+  ]
+ },
+ {
+  "id": "gaussiancopula",
+  "name": "Gaussian copula",
+  "type": "copula",
+  "convention": "The Gaussian copula is the dependence structure of a multivariate normal vector with the correlation matrix R. A component U_i = Φ(Z_i) is uniform on (0, 1). The parameter rho is one correlation for all pairs, or the d(d − 1)/2 entries above the diagonal of R, row by row. Sklar's theorem joins it with any margins through u = U[j].",
+  "formula": "C_R(u_1, \\dots, u_d) = \\Phi_R\\left(\\Phi^{-1}(u_1), \\dots, \\Phi^{-1}(u_d)\\right)",
+  "params": [
+   {
+    "name": "rho",
+    "tex": "\\rho",
+    "domain": "\\rho \\in (-1, 1), \\; R \\text{ positive definite } (\\rho > -1/(d-1) \\text{ for one common } \\rho)"
+   },
+   {
+    "name": "d",
+    "tex": "d",
+    "domain": "d \\in \\{2, \\dots, 16\\}"
+   }
+  ],
+  "support": "(0, 1)^d",
+  "limits": [
+   "ρ = 0 gives the independence copula.",
+   "ρ → 1 gives the comonotone copula: U_1 = U_2.",
+   "ρ → −1 in two dimensions gives the countermonotone copula: U_2 = 1 − U_1.",
+   "The t copula with the same R converges to the Gaussian copula as ν → ∞."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[U_i] = \\tfrac{1}{2}",
+   "variance": "\\operatorname{Var}(U_i) = \\tfrac{1}{12}",
+   "existence": "All moments exist, because each U_i lies in [0, 1]. Each margin is uniform. Spearman's rho is 12 E[U_1 U_2] − 3. For a pair, Spearman's rho is (6/π) arcsin(ρ/2)."
+  },
+  "transforms": {
+   "cf": "No closed form is used. The page describes the copula by its CDF: Φ_R at the normal quantiles, by Genz's bivariate normal method for d = 2."
+  },
+  "dependence": {
+   "tau": "Kendall's tau of the pair (i, j) is τ = (2/π) arcsin(ρ_ij).",
+   "tails": "λ_L = λ_U = 0 for every |ρ| < 1. The joint exceedance P(U_1 > q, U_2 > q)/(1 − q) tends to 0 as q → 1, but slowly when ρ is large.",
+   "domain": "Every dimension d from 2 to 16. R must be a positive definite correlation matrix. The page checks it with a Cholesky factorisation."
+  },
+  "methods": [
+   "Independent (exact): Z = L N with the Cholesky factor L of R and independent standard normals N (Box–Muller), then U_i = Φ(Z_i).",
+   "Inverse (exact): the conditional distribution method. Each normal comes from the inverse transform Φ⁻¹(V) (AS 241), and L gives each conditional normal law.",
+   "Rejection: the page refuses it. The copula density has no finite bound near the corners of the unit cube, so in general no bounded envelope exists.",
+   "Euler: a copula has no time, so under this method the page uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "tcopula",
+    "relation": "the limit of the t copula as ν → ∞"
+   },
+   {
+    "to": "frankcopula",
+    "relation": "another symmetric copula with no tail dependence"
+   },
+   {
+    "to": "conditional",
+    "relation": "a conditional model with normal latent variables gives the same dependence"
+   }
+  ]
+ },
+ {
+  "id": "tcopula",
+  "name": "Student t copula",
+  "type": "copula",
+  "convention": "The t copula is the dependence structure of a multivariate Student t vector with ν degrees of freedom and the correlation matrix R. A common random scale √(W/ν) gives joint extremes in both tails. The parameter rho has the same convention as for the Gaussian copula.",
+  "formula": "C_{\\nu, R}(u_1, \\dots, u_d) = t_{\\nu, R}\\left(t_\\nu^{-1}(u_1), \\dots, t_\\nu^{-1}(u_d)\\right)",
+  "params": [
+   {
+    "name": "rho",
+    "tex": "\\rho",
+    "domain": "\\rho \\in (-1, 1), \\; R \\text{ positive definite}"
+   },
+   {
+    "name": "nu",
+    "tex": "\\nu",
+    "domain": "0.5 \\le \\nu \\le 10^6"
+   },
+   {
+    "name": "d",
+    "tex": "d",
+    "domain": "d \\in \\{2, \\dots, 16\\}"
+   }
+  ],
+  "support": "(0, 1)^d",
+  "limits": [
+   "ν → ∞ gives the Gaussian copula with the same R.",
+   "ρ = 0 does not give independence when ν is finite: the common scale still makes the components dependent, with λ = 2 t_{ν+1}(−√(ν + 1)) > 0.",
+   "ρ → 1 gives the comonotone copula."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[U_i] = \\tfrac{1}{2}",
+   "variance": "\\operatorname{Var}(U_i) = \\tfrac{1}{12}",
+   "existence": "All moments exist, because each U_i lies in [0, 1]. Each margin is uniform. Spearman's rho is 12 E[U_1 U_2] − 3. The margins of the copula are uniform for every ν, so the copula has all moments even when the t law has none."
+  },
+  "transforms": {
+   "cf": "No closed form is used. The page describes the copula by its CDF: the bivariate t CDF by quadrature of the conditional t law, error about 1e−9."
+  },
+  "dependence": {
+   "tau": "Kendall's tau of the pair (i, j) is τ = (2/π) arcsin(ρ_ij), the same as for the Gaussian copula.",
+   "tails": "λ_L = λ_U = 2 t_{ν+1}(−√((ν + 1)(1 − ρ)/(1 + ρ))). For ρ = 0.5 and ν = 4 this is 0.2532.",
+   "domain": "Every dimension d from 2 to 16, 0.5 ≤ ν ≤ 10^6, and a positive definite correlation matrix R."
+  },
+  "methods": [
+   "Independent (exact): Z = L N as for the Gaussian copula, W ~ χ²(ν) by the gamma sampler, T = Z/√(W/ν), then U_i = F_ν(T_i).",
+   "Inverse (exact): the normals come from the inverse transform Φ⁻¹(V). W comes from the gamma sampler, as above.",
+   "Rejection: the page refuses it. The copula density has no finite bound near the corners of the unit cube, so in general no bounded envelope exists.",
+   "Euler: a copula has no time, so under this method the page uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "gaussiancopula",
+    "relation": "the limit as ν → ∞"
+   },
+   {
+    "to": "gumbelcopula",
+    "relation": "another copula with upper tail dependence, but with no lower tail dependence"
+   }
+  ]
+ },
+ {
+  "id": "claytoncopula",
+  "name": "Clayton copula",
+  "type": "copula",
+  "convention": "The Clayton copula is an Archimedean copula with the generator ψ(t) = (1 + θt)^(−1/θ). For θ > 0, small values come together: it has lower tail dependence and no upper tail dependence. The parameter θ is the same for all pairs, so the copula is exchangeable.",
+  "formula": "C_\\theta(u_1, \\dots, u_d) = \\left(\\sum_{i=1}^d u_i^{-\\theta} - d + 1\\right)^{-1/\\theta}",
+  "params": [
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "\\theta > -1 \\text{ for } d = 2; \\; 0 \\le \\theta \\le 200 \\text{ for } d \\ge 3"
+   },
+   {
+    "name": "d",
+    "tex": "d",
+    "domain": "d \\in \\{2, \\dots, 16\\}"
+   }
+  ],
+  "support": "(0, 1)^d",
+  "limits": [
+   "θ = 0 (the limit θ → 0) gives the independence copula.",
+   "θ → ∞ gives the comonotone copula.",
+   "θ → −1 in two dimensions gives the countermonotone copula, which this page does not sample.",
+   "For θ < 0 in d = 2 the CDF is max(u_1^{−θ} + u_2^{−θ} − 1, 0)^{−1/θ}."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[U_i] = \\tfrac{1}{2}",
+   "variance": "\\operatorname{Var}(U_i) = \\tfrac{1}{12}",
+   "existence": "All moments exist, because each U_i lies in [0, 1]. Each margin is uniform. Spearman's rho is 12 E[U_1 U_2] − 3."
+  },
+  "transforms": {
+   "cf": "The generator is the Laplace transform of the frailty V ~ Gamma(shape 1/θ, scale θ): ψ(t) = E[e^{−tV}] = (1 + θt)^{−1/θ}."
+  },
+  "dependence": {
+   "tau": "τ = θ/(θ + 2). It is negative for −1 < θ < 0.",
+   "tails": "λ_L = 2^(−1/θ) for θ > 0, and λ_U = 0. For θ = 2, λ_L = 0.7071.",
+   "domain": "In two dimensions θ > −1. For d ≥ 3 this page needs θ ≥ 0. The generator is d-monotone down to θ = −1/(d − 1), but the page does not sample θ < 0 for d ≥ 3. θ ≤ 200."
+  },
+  "methods": [
+   "Independent (exact): the Marshall–Olkin frailty algorithm. V is gamma, E_i are standard exponential, and U_i = ψ(E_i/V). For θ < 0 in two dimensions, the page uses conditional inversion in closed form.",
+   "Inverse (exact, d = 2 only): U_1 = V_1 and U_2 = C⁻¹(V_2 | U_1) in closed form. For d ≥ 3 the page refuses the method, because it needs derivatives of order d − 1 of ψ.",
+   "Rejection: the page refuses it. The copula density has no finite bound near the corners of the unit cube, so in general no bounded envelope exists.",
+   "Euler: a copula has no time, so under this method the page uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "frankcopula",
+    "relation": "another Archimedean copula, with no tail dependence"
+   },
+   {
+    "to": "gumbelcopula",
+    "relation": "the Archimedean copula with dependence in the upper tail instead of the lower tail"
+   }
+  ]
+ },
+ {
+  "id": "gumbelcopula",
+  "name": "Gumbel copula",
+  "type": "copula",
+  "convention": "The Gumbel copula is an Archimedean copula with the generator ψ(t) = exp(−t^(1/θ)). It links large values: it has upper tail dependence and no lower tail dependence. It is the only Archimedean copula that is also an extreme-value copula, so it suits the joint law of annual maxima.",
+  "formula": "C_\\theta(u_1, \\dots, u_d) = \\exp\\left(-\\left(\\sum_{i=1}^d (-\\log u_i)^\\theta\\right)^{1/\\theta}\\right)",
+  "params": [
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "1 \\le \\theta \\le 100"
+   },
+   {
+    "name": "d",
+    "tex": "d",
+    "domain": "d \\in \\{2, \\dots, 16\\}"
+   }
+  ],
+  "support": "(0, 1)^d",
+  "limits": [
+   "θ = 1 gives the independence copula.",
+   "θ → ∞ gives the comonotone copula.",
+   "The copula is max-stable: C(u_1^t, …, u_d^t) = C(u_1, …, u_d)^t for t > 0.",
+   "It has no negative dependence: τ ≥ 0 for every θ."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[U_i] = \\tfrac{1}{2}",
+   "variance": "\\operatorname{Var}(U_i) = \\tfrac{1}{12}",
+   "existence": "All moments exist, because each U_i lies in [0, 1]. Each margin is uniform. Spearman's rho is 12 E[U_1 U_2] − 3."
+  },
+  "transforms": {
+   "cf": "The generator is the Laplace transform of a positive stable frailty V with index 1/θ: ψ(t) = E[e^{−tV}] = exp(−t^{1/θ})."
+  },
+  "dependence": {
+   "tau": "τ = 1 − 1/θ.",
+   "tails": "λ_U = 2 − 2^(1/θ), and λ_L = 0. For θ = 2, λ_U = 0.5858.",
+   "domain": "θ ≥ 1 in every dimension from 2 to 16, and θ ≤ 100. Negative dependence is not possible."
+  },
+  "methods": [
+   "Independent (exact): the Marshall–Olkin frailty algorithm. V is positive stable (Kanter's method), E_i are standard exponential, and U_i = ψ(E_i/V).",
+   "Inverse (d = 2 only): U_1 = V_1 and U_2 = C⁻¹(V_2 | U_1) by bisection to 2^−60, so it is exact up to that tolerance. For d ≥ 3 the page refuses the method.",
+   "Rejection: the page refuses it. The copula density has no finite bound near the corners of the unit cube, so in general no bounded envelope exists.",
+   "Euler: a copula has no time, so under this method the page uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "claytoncopula",
+    "relation": "the Archimedean copula with dependence in the lower tail instead of the upper tail"
+   },
+   {
+    "to": "tcopula",
+    "relation": "a copula with tail dependence in both tails"
+   }
+  ]
+ },
+ {
+  "id": "frankcopula",
+  "name": "Frank copula",
+  "type": "copula",
+  "convention": "The Frank copula is an Archimedean copula with the generator ψ(t) = −log(1 − (1 − e^(−θ)) e^(−t))/θ. It is radially symmetric and has no tail dependence. In two dimensions θ can be negative, which gives negative dependence.",
+  "formula": "C_\\theta(u_1, \\dots, u_d) = -\\frac{1}{\\theta} \\log\\left(1 + \\frac{\\prod_{i=1}^d (e^{-\\theta u_i} - 1)}{(e^{-\\theta} - 1)^{d-1}}\\right)",
+  "params": [
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "\\theta \\ne 0, \\; |\\theta| \\le 700 \\text{ for } d = 2; \\; 0 < \\theta \\le 700 \\text{ for } d \\ge 3"
+   },
+   {
+    "name": "d",
+    "tex": "d",
+    "domain": "d \\in \\{2, \\dots, 16\\}"
+   }
+  ],
+  "support": "(0, 1)^d",
+  "limits": [
+   "θ → 0 gives the independence copula. The page also accepts θ = 0 as independence.",
+   "θ → ∞ gives the comonotone copula.",
+   "θ → −∞ in two dimensions gives the countermonotone copula.",
+   "The copula is radially symmetric: (U_1, U_2) and (1 − U_1, 1 − U_2) have the same law."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[U_i] = \\tfrac{1}{2}",
+   "variance": "\\operatorname{Var}(U_i) = \\tfrac{1}{12}",
+   "existence": "All moments exist, because each U_i lies in [0, 1]. Each margin is uniform. Spearman's rho is 12 E[U_1 U_2] − 3."
+  },
+  "transforms": {
+   "cf": "For θ > 0 the generator is the Laplace transform of a logarithmic series frailty V with p = 1 − e^{−θ}: ψ(t) = −log(1 − p e^{−t})/θ."
+  },
+  "dependence": {
+   "tau": "τ = 1 − (4/θ)(1 − D_1(θ)), with the Debye function D_1(θ) = (1/θ) ∫_0^θ t/(e^t − 1) dt. For θ = −5, τ = −0.4567.",
+   "tails": "λ_L = λ_U = 0 for every θ. Joint extremes are rarer than under a t, Clayton or Gumbel copula with the same τ.",
+   "domain": "In two dimensions any θ ≠ 0 with |θ| ≤ 700. For d ≥ 3 the generator is completely monotone only for θ > 0, so negative θ is valid in two dimensions only."
+  },
+  "methods": [
+   "Independent (exact): for θ > 0, the Marshall–Olkin frailty algorithm with a logarithmic series V (Kemp's algorithm). For θ < 0 in two dimensions, conditional inversion in closed form.",
+   "Inverse (exact, d = 2 only): U_1 = V_1 and U_2 = C⁻¹(V_2 | U_1) in closed form. For d ≥ 3 the page refuses the method.",
+   "Rejection: the page refuses it. The copula density has no finite bound near the corners of the unit cube, so in general no bounded envelope exists.",
+   "Euler: a copula has no time, so under this method the page uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "claytoncopula",
+    "relation": "another Archimedean copula, with lower tail dependence"
+   },
+   {
+    "to": "gaussiancopula",
+    "relation": "another symmetric copula with no tail dependence"
+   }
+  ]
+ },
+ {
+  "id": "brownian",
+  "name": "Brownian motion",
+  "type": "process",
+  "convention": "X is a Brownian motion with drift: X_t = X_0 + μt + σW_t, with W a standard Brownian motion. A draw is the path at the grid times t_k = kT/n, so X[1] = X_0 and X[n + 1] = X_T. The drift μ and the volatility σ are for each unit of time.",
+  "formula": "dX_t = \\mu\\,dt + \\sigma\\,dW_t, \\qquad X_{t_{k+1}} = X_{t_k} + \\mu h + \\sigma\\sqrt{h}\\,Z_k, \\ Z_k \\sim \\mathcal{N}(0, 1)",
+  "params": [
+   {
+    "name": "x0",
+    "tex": "X_0",
+    "domain": "X_0 \\in \\mathbb{R}"
+   },
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}"
+   },
+   {
+    "name": "sigma",
+    "tex": "\\sigma",
+    "domain": "\\sigma \\ge 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^{6}"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}, \\ h = T/n"
+   }
+  ],
+  "support": "\\mathbb{R}^{n+1} \\ (\\text{paths in } C[0, T])",
+  "limits": [
+   "σ = 0 gives the straight line X_t = X_0 + μt.",
+   "Donsker's theorem: a random walk with steps of variance σ²h converges in law to σW as h → 0.",
+   "The variance-gamma process converges to a Brownian motion as its variance rate ν → 0.",
+   "The OU process with κ = 0 is a Brownian motion.",
+   "log S_t of a GBM is a Brownian motion with drift μ − σ²/2."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}X_t = X_0 + \\mu t",
+   "variance": "\\operatorname{Var}X_t = \\sigma^2 t, \\quad \\operatorname{Cov}(X_s, X_t) = \\sigma^2 \\min(s, t)",
+   "existence": "X_t is normal, so all its moments exist. The maximum M_T has all moments too. For μ = 0, P(M_T ≥ b) = 2 P(X_T ≥ b) for b ≥ X_0 (the reflection principle)."
+  },
+  "transforms": {
+   "cf": "\\varphi_{X_t}(u) = \\exp\\!\\big(iu(X_0 + \\mu t) - \\tfrac12 \\sigma^2 u^2 t\\big)",
+   "generator": "(\\mathcal{L}f)(x) = \\mu f'(x) + \\tfrac12 \\sigma^2 f''(x)"
+  },
+  "conditions": {
+   "stationarity": "Not stationary: Var X_t = σ²t grows without bound. The increments are stationary and independent, so X is a Lévy process.",
+   "stability": "No mean reversion: the law spreads as √t, and no stable level exists. With μ ≠ 0 the path moves to +∞ or −∞ almost surely.",
+   "explosion": "No explosion: X_t is finite for every t, almost surely. The paths are continuous but nowhere differentiable.",
+   "boundary": "No boundary: the state space is the real line. A first-passage level belongs to the quantity, not to the process.",
+   "discretisation": "The grid values are exact for every h. The sampler does not draw the path between grid times. Thus a first-passage probability on the grid is lower than in continuous time, by a monitoring bias of order √h."
+  },
+  "methods": [
+   "Independent: exact Gaussian increments μh + σ√h Z, with Box–Muller normals. The grid values have the exact law.",
+   "Inverse: each normal is Φ⁻¹(V) of a uniform V, so stratification and antithetic pairs act on the increments. The grid values are exact.",
+   "Euler: X_{k+1} = X_k + μh + σΔW_k. With constant coefficients this is the exact scheme, so the grid values have no time discretisation bias.",
+   "Rejection: refused, because an increment is a direct normal draw.",
+   "With coarsen = c, the coarse path adds the fine increments in groups of c. The pair (n, 1) and (n/2, 2) shares one Brownian path: the coupled pair of MLMC."
+  ],
+  "links": [
+   {
+    "to": "gbm",
+    "relation": "log S of a GBM is a Brownian motion with drift"
+   },
+   {
+    "to": "ou",
+    "relation": "the OU process with κ = 0"
+   },
+   {
+    "to": "variancegamma",
+    "relation": "a Brownian motion run on a gamma clock"
+   }
+  ]
+ },
+ {
+  "id": "gbm",
+  "name": "Geometric Brownian motion",
+  "type": "process",
+  "convention": "S is a geometric Brownian motion (GBM): S_t = S_0 exp((μ − σ²/2)t + σW_t). The drift μ is the growth rate of the mean, E S_t = S_0 e^{μt}. The typical path grows at the lower rate μ − σ²/2. A draw is the path at the grid times t_k = kT/n.",
+  "formula": "dS_t = \\mu S_t\\,dt + \\sigma S_t\\,dW_t, \\qquad S_{t_{k+1}} = S_{t_k} \\exp\\!\\big((\\mu - \\tfrac12\\sigma^2)h + \\sigma\\sqrt{h}\\,Z_k\\big)",
+  "params": [
+   {
+    "name": "s0",
+    "tex": "S_0",
+    "domain": "S_0 > 0"
+   },
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}"
+   },
+   {
+    "name": "sigma",
+    "tex": "\\sigma",
+    "domain": "\\sigma \\ge 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^{6}"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}, \\ h = T/n"
+   }
+  ],
+  "support": "(0, \\infty)^{n+1}",
+  "limits": [
+   "σ = 0 gives the exponential curve S_t = S_0 e^{μt}.",
+   "log S_t is a Brownian motion with drift μ − σ²/2, so S_t is lognormal with the parameters log S_0 + (μ − σ²/2)t and σ√t.",
+   "If μ < σ²/2, S_t → 0 almost surely, while E S_t → ∞ when μ > 0: the time average and the ensemble average differ.",
+   "With μ = r, the risk-free rate, E[max(S_T − K, 0)] e^{−rT} is the Black–Scholes price of a call."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}S_t = S_0 e^{\\mu t}",
+   "variance": "\\operatorname{Var}S_t = S_0^2 e^{2\\mu t}\\big(e^{\\sigma^2 t} - 1\\big)",
+   "existence": "Every positive and negative moment exists: E S_t^p = S_0^p exp(pμt + p(p − 1)σ²t/2). The MGF of S_t is infinite for t > 0 and σ > 0, because the lognormal law has a heavy right tail in this sense. The median is S_0 e^{(μ − σ²/2)t}."
+  },
+  "transforms": {
+   "cf": "\\text{no closed form for } S_t; \\ \\varphi_{\\log S_t}(u) = \\exp\\!\\big(iu(\\log S_0 + (\\mu - \\tfrac12\\sigma^2)t) - \\tfrac12\\sigma^2u^2t\\big)",
+   "generator": "(\\mathcal{L}f)(s) = \\mu s f'(s) + \\tfrac12\\sigma^2 s^2 f''(s)"
+  },
+  "conditions": {
+   "stationarity": "Not stationary: log S_t is a Brownian motion with drift μ − σ²/2, so its variance σ²t grows without bound.",
+   "stability": "The typical path grows at the rate μ − σ²/2: S_t → 0 almost surely if μ < σ²/2 and S_t → ∞ if μ > σ²/2. The mean E S_t = S_0 e^{μt} follows μ, not this rate.",
+   "explosion": "No explosion: S_t is finite for every t, almost surely. The moments grow exponentially in t.",
+   "boundary": "The exact process stays in (0, ∞): 0 is not attainable from S_0 > 0. One Euler step can cross 0, with the probability Φ(−(1 + μh)/(σ√h)).",
+   "discretisation": "The exact log-step has no time discretisation error at the grid times. The Euler scheme has a weak bias of order h and a strong error of order √h. A first-passage probability on the grid has a monitoring bias of order √h."
+  },
+  "methods": [
+   "Independent: the exact log-step S_{k+1} = S_k exp((μ − σ²/2)h + σ√h Z), with Box–Muller normals. The grid values have the exact law.",
+   "Inverse: the same exact step with each normal Φ⁻¹(V), so stratification and antithetic pairs act on the increments.",
+   "Euler: S_{k+1} = S_k(1 + μh + σΔW_k). It is not exact: the weak bias is of order h and the strong error of order √h, and a path can become negative.",
+   "Rejection: refused, because a lognormal step is a transformed normal draw.",
+   "With coarsen = c, the coarse path adds the fine increments in groups of c. Thus the coupled pair of MLMC uses one Brownian path for the fine and the coarse Euler path."
+  ],
+  "links": [
+   {
+    "to": "brownian",
+    "relation": "log S is a Brownian motion with drift μ − σ²/2"
+   }
+  ]
+ },
+ {
+  "id": "ou",
+  "name": "Ornstein–Uhlenbeck process",
+  "type": "process",
+  "convention": "X is an Ornstein–Uhlenbeck (OU) process: it reverts to the long-run mean θ at the rate κ, with Gaussian noise of volatility σ. With κ > 0 its law approaches the stationary law N(θ, σ²/(2κ)). A draw is the path at the grid times t_k = kT/n. In interest-rate models this is the Vasicek model.",
+  "formula": "dX_t = \\kappa(\\theta - X_t)\\,dt + \\sigma\\,dW_t, \\qquad X_{t_{k+1}} = \\theta + (X_{t_k} - \\theta)e^{-\\kappa h} + \\sigma\\sqrt{\\tfrac{1 - e^{-2\\kappa h}}{2\\kappa}}\\,Z_k",
+  "params": [
+   {
+    "name": "x0",
+    "tex": "X_0",
+    "domain": "X_0 \\in \\mathbb{R}"
+   },
+   {
+    "name": "kappa",
+    "tex": "\\kappa",
+    "domain": "\\kappa \\in \\mathbb{R} \\ (\\kappa > 0 \\text{ for mean reversion})"
+   },
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "\\theta \\in \\mathbb{R}"
+   },
+   {
+    "name": "sigma",
+    "tex": "\\sigma",
+    "domain": "\\sigma \\ge 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^{6}"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}, \\ h = T/n"
+   }
+  ],
+  "support": "\\mathbb{R}^{n+1}",
+  "limits": [
+   "κ = 0 gives a Brownian motion with volatility σ and no drift.",
+   "σ = 0 gives the deterministic relaxation X_t = θ + (X_0 − θ)e^{−κt}.",
+   "As t → ∞ with κ > 0, X_t converges in law to N(θ, σ²/(2κ)), for every X_0.",
+   "If X_0 has the law N(θ, σ²/(2κ)), the process is stationary, with Cov(X_s, X_t) = σ²/(2κ) e^{−κ|t − s|}.",
+   "The time average (1/T)∫X_t dt converges to θ almost surely as T → ∞ when κ > 0 (ergodicity)."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}X_t = \\theta + (X_0 - \\theta)e^{-\\kappa t}",
+   "variance": "\\operatorname{Var}X_t = \\frac{\\sigma^2}{2\\kappa}\\big(1 - e^{-2\\kappa t}\\big) \\ (\\kappa \\ne 0), \\quad \\sigma^2 t \\ (\\kappa = 0)",
+   "existence": "X_t is normal, so all moments exist for every κ. The stationary variance σ²/(2κ) exists only for κ > 0. For κ < 0 the variance grows as e^{2|κ|t}."
+  },
+  "transforms": {
+   "cf": "\\varphi_{X_t}(u) = \\exp\\!\\big(iu\\,\\mathbb{E}X_t - \\tfrac12 u^2 \\operatorname{Var}X_t\\big)",
+   "generator": "(\\mathcal{L}f)(x) = \\kappa(\\theta - x) f'(x) + \\tfrac12\\sigma^2 f''(x)"
+  },
+  "conditions": {
+   "stationarity": "For κ > 0 the stationary law is N(θ, σ²/(2κ)), and the law of X_t approaches it at the rate e^{−κt}. For κ ≤ 0 no stationary law exists.",
+   "stability": "The exact process is stable for κ > 0. The Euler scheme multiplies the distance to θ by 1 − κh in each step, so it is stable only for 0 < κh < 2. With κh ≥ 2 its paths oscillate and grow.",
+   "explosion": "No explosion: X_t is finite for every t, almost surely, for every real κ.",
+   "boundary": "No boundary: the state space is the real line. Thus X_t can be negative, for example a negative interest rate.",
+   "discretisation": "The exact transition has no time discretisation error for any h. The Euler scheme has the stationary variance σ²/(κ(2 − κh)) instead of σ²/(2κ), a bias of order h."
+  },
+  "methods": [
+   "Independent: the exact Gaussian transition with the factor e^{−κh} and the variance σ²(1 − e^{−2κh})/(2κ). It is exact for every step size.",
+   "Inverse: the same exact transition with each normal Φ⁻¹(V).",
+   "Euler: X_{k+1} = X_k + κ(θ − X_k)h + σΔW_k. It has a bias of order h, and it is unstable for κh ≥ 2.",
+   "Rejection: refused, because a Gaussian transition needs no rejection.",
+   "With coarsen = c, the sampler draws each step as c exact sub-steps (or c fine Brownian increments for Euler). This gives the coupled pair of MLMC."
+  ],
+  "links": [
+   {
+    "to": "brownian",
+    "relation": "the OU process with κ = 0 is a Brownian motion"
+   },
+   {
+    "to": "markovchain",
+    "relation": "a mean-reverting Markov process in continuous state, with a finite chain as the discrete analogue"
+   }
+  ]
+ },
+ {
+  "id": "poissonprocess",
+  "name": "Poisson process",
+  "type": "process",
+  "convention": "N(t) counts the events in [0, t]. The rate λ(t) = λ(1 + a sin(2πt/P)) is the mean number of events for each unit of time. With a = 0, the process is homogeneous. The page records N at the grid times t_k = kT/n, with N(0) = 0.",
+  "formula": "\\mathbb{P}\\big(N(t+h) - N(t) = 1 \\mid \\mathcal{F}_t\\big) = \\lambda(t)\\,h + o(h), \\quad \\lambda(t) = \\lambda\\big(1 + a \\sin(2\\pi t / P)\\big), \\quad N(t) - N(s) \\sim \\mathrm{Poisson}\\big(\\Lambda(t) - \\Lambda(s)\\big), \\quad \\Lambda(t) = \\int_0^t \\lambda(u)\\,du",
+  "params": [
+   {
+    "name": "lambda",
+    "tex": "\\lambda",
+    "domain": "0 < \\lambda \\le 10^7"
+   },
+   {
+    "name": "amp",
+    "tex": "a",
+    "domain": "0 \\le a \\le 1"
+   },
+   {
+    "name": "period",
+    "tex": "P",
+    "domain": "P > 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^6"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}"
+   }
+  ],
+  "support": "N(t) \\in \\{0, 1, 2, \\dots\\}, \\ \\text{non-decreasing paths with unit jumps}",
+  "limits": [
+   "a = 0 gives the homogeneous process: N(t) ~ Poisson(λt), and the times between events are i.i.d. exponential with rate λ.",
+   "For a time T that is a whole number of periods, Λ(T) = λT for every a.",
+   "The superposition of independent Poisson processes with rates λ_1 and λ_2 is a Poisson process with rate λ_1 + λ_2.",
+   "(N(t) − Λ(t))/√Λ(t) converges in law to N(0, 1) as Λ(t) → ∞.",
+   "N(t)/t → λ almost surely as t → ∞ (the strong law of large numbers for the homogeneous process)."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,N(t) = \\Lambda(t) = \\lambda\\Big(t + \\frac{a P}{2\\pi}\\big(1 - \\cos(2\\pi t / P)\\big)\\Big)",
+   "variance": "\\operatorname{Var} N(t) = \\Lambda(t)",
+   "existence": "All moments of N(t) exist for every finite t. The count has the Poisson law with mean Λ(t), so P(N(t) = 0) = e^{−Λ(t)}."
+  },
+  "transforms": {
+   "cf": "\\mathbb{E}\\,e^{i s N(t)} = \\exp\\big(\\Lambda(t)(e^{i s} - 1)\\big)"
+  },
+  "conditions": {
+   "stationarity": "With a = 0 the increments are stationary and independent. With a > 0 the increments are independent but not stationary. The count N(t) itself is never stationary: it grows.",
+   "stability": "The count grows at the mean rate λ. N(t)/t → λ almost surely, also with a periodic rate, because the average of λ(t) over a period is λ.",
+   "explosion": "No explosion: the rate is at most λ(1 + a), so there are finitely many events in a finite time almost surely.",
+   "boundary": "N(t) is an integer, 0 at t = 0, and it never decreases. Each event adds exactly 1.",
+   "discretisation": "The exact methods count every event. The time discretisation allows at most one event in each step of length h, so it loses about (λh)²/2 events in each step."
+  },
+  "methods": [
+   "Exact on the grid (independent sampling): the sampler draws the increment in each step from Poisson(Λ(t_{k+1}) − Λ(t_k)). The values at the grid times have the exact law.",
+   "Inverse transform: the sampler maps the unit-rate event times Γ_i = Γ_{i−1} − log V_i to t_i = Λ⁻¹(Γ_i). It computes Λ⁻¹ by bisection. The method is exact up to the bisection tolerance.",
+   "Thinning (Lewis and Shedler, 1979): candidates come at the constant rate λ̄ = λ(1 + a) = max λ(t), and the sampler keeps each candidate with probability λ(t)/λ̄. The method is exact when λ̄ ≥ λ(t) for all t.",
+   "With failure = envelope, thinning uses λ̄ = λ(1 + a)/2. Then λ(t)/λ̄ can be above 1, the method keeps too few events, and the page counts these violations.",
+   "Euler time discretisation: one event in a step with probability λ(t_k)h, none otherwise. The bias is of order λh."
+  ],
+  "links": [
+   {
+    "to": "compoundprocess",
+    "relation": "the jump times of a compound Poisson process"
+   },
+   {
+    "to": "hawkes",
+    "relation": "the Hawkes process with α = 0"
+   }
+  ]
+ },
+ {
+  "id": "compoundprocess",
+  "name": "Compound Poisson process",
+  "type": "process",
+  "convention": "X_t = x_0 + c t + S_t, where S_t is the sum of the jumps up to time t. The jumps come at the times of a Poisson process with rate λ. Each jump is exponential with mean |m|. It goes up when m > 0 and down when m < 0. With m < 0 and c > 0, X is the Cramér–Lundberg surplus of an insurer.",
+  "formula": "X_t = x_0 + c\\,t + \\operatorname{sign}(m) \\sum_{i=1}^{N(t)} Y_i, \\quad N \\sim \\text{Poisson process}(\\lambda), \\quad Y_i \\overset{\\text{iid}}{\\sim} \\mathrm{Exp}(\\text{mean } |m|)",
+  "params": [
+   {
+    "name": "x0",
+    "tex": "x_0",
+    "domain": "x_0 \\in \\mathbb{R}"
+   },
+   {
+    "name": "drift",
+    "tex": "c",
+    "domain": "c \\in \\mathbb{R}"
+   },
+   {
+    "name": "lambda",
+    "tex": "\\lambda",
+    "domain": "0 < \\lambda \\le 10^7"
+   },
+   {
+    "name": "jump",
+    "tex": "m",
+    "domain": "m \\ne 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^6"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}"
+   }
+  ],
+  "support": "X_t \\in \\mathbb{R}; \\ \\text{piecewise linear paths with slope } c \\text{ and jumps of sign } \\operatorname{sign}(m)",
+  "limits": [
+   "λ → 0 with c fixed gives the deterministic line x_0 + c t.",
+   "With the exponential jumps of this page, (X_t − E X_t)/√(2λm²t) → N(0, 1) as λt → ∞.",
+   "Let m < 0, c > 0 and the safety loading θ = c/(λ|m|) − 1 > 0. Then ruin in infinite time has the probability ψ(u) = e^{−θu/((1 + θ)|m|)}/(1 + θ) (Cramér–Lundberg, exponential claims).",
+   "With θ ≤ 0, ruin in infinite time is certain for every initial capital u."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,X_t = x_0 + (c + \\lambda m)\\,t",
+   "variance": "\\operatorname{Var} X_t = 2 \\lambda m^2 t",
+   "existence": "All moments of X_t exist, because the exponential jumps have all moments. The MGF E e^{s sign(m) X_t} is finite for s < 1/|m|, and infinite for s ≥ 1/|m|."
+  },
+  "transforms": {
+   "cf": "\\mathbb{E}\\,e^{i s X_t} = \\exp\\Big(i s (x_0 + c t) + \\lambda t \\Big(\\frac{1}{1 - i s m} - 1\\Big)\\Big)"
+  },
+  "conditions": {
+   "stationarity": "X is a Lévy process: its increments are stationary and independent. The level X_t is not stationary, because Var X_t = 2λm²t grows with t.",
+   "stability": "X_t/t → c + λm almost surely. For a surplus, ruin in infinite time has a probability below 1 only if the safety loading θ = c/(λ|m|) − 1 is positive.",
+   "explosion": "No explosion: there are finitely many jumps in a finite time almost surely, and each jump is finite.",
+   "boundary": "The process has no boundary. A ruin level, such as min(X) < 0, is part of the quantity, not of the process.",
+   "discretisation": "The exact methods add every jump at its step. A quantity of the grid values, such as min(X), does not see the path inside a step. With downward jumps and c > 0, the path is lowest just after a jump, so the grid can miss a short drop below a level."
+  },
+  "methods": [
+   "Exact on the grid (independent sampling): the number of jumps in a step is Poisson(λh). The sampler draws their sum from Gamma(N_k, |m|) by the Marsaglia–Tsang method. The values at the grid times have the exact law.",
+   "Inverse transform: exponential gaps −log(V)/λ give the jump times, and −|m| log(V) gives the jump sizes. The method is exact.",
+   "The page has no thinning sampler for this process: exponential gaps and exponential jumps need no rejection.",
+   "Euler time discretisation: one jump in a step with probability λh, none otherwise. The bias is of order λh."
+  ],
+  "links": [
+   {
+    "to": "poissonprocess",
+    "relation": "the jump times are a Poisson process"
+   },
+   {
+    "to": "variancegamma",
+    "relation": "a Lévy process with finitely many jumps (VG has infinitely many small jumps)"
+   }
+  ]
+ },
+ {
+  "id": "markovchain",
+  "name": "Finite-state Markov chain",
+  "type": "process",
+  "convention": "A Markov chain X_0, X_1, X_2, … takes values in the states 1, …, k, and the next state depends only on the present state. The parameter P is the transition matrix, with k² entries row by row. Row i is the law of X_{n+1} when X_n = i. The chain starts in state x0 and makes steps transitions, one for each unit of time.",
+  "formula": "\\mathbb{P}(X_{n+1} = j \\mid X_n = i, X_{n-1}, \\dots, X_0) = P_{ij}, \\qquad \\mathbb{P}(X_n = j \\mid X_0 = x_0) = (e_{x_0} P^{n})_j",
+  "params": [
+   {
+    "name": "P",
+    "tex": "P = (P_{ij})",
+    "domain": "P_{ij} \\ge 0,\\ \\sum_{j} P_{ij} = 1,\\ k \\in \\{2, \\dots, 20\\}"
+   },
+   {
+    "name": "x0",
+    "tex": "x_0",
+    "domain": "x_0 \\in \\{1, \\dots, k\\}"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}"
+   }
+  ],
+  "support": "\\{1, \\dots, k\\}^{\\,n+1}",
+  "limits": [
+   "If all rows of P are the same probability vector p, then X_1, X_2, … are i.i.d. with the law p.",
+   "If P is the identity matrix, each state is absorbing and the path stays at x0.",
+   "If the chain is irreducible and aperiodic, Pⁿ(x, ·) → π as n → ∞ for each start x, with π the unique stationary law.",
+   "If the chain is irreducible, periodic or not, the fraction of time in state j converges to π_j almost surely as n → ∞. This is the ergodic theorem for Markov chains.",
+   "If the chain has two or more closed classes, the long-run fraction of time in a state depends on the class that the path enters. So it depends on X_0, and from a transient start also on chance."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,\\mathbf{1}\\{X_n = j\\} = (e_{x_0} P^{n})_j, \\qquad \\mathbb{E}\\,X_n = \\sum_{j=1}^{k} j\\,(e_{x_0} P^{n})_j",
+   "variance": "\\operatorname{Var} X_n = \\sum_{j=1}^{k} j^2 (e_{x_0} P^{n})_j - (\\mathbb{E}\\,X_n)^2",
+   "existence": "All moments exist, because the state space is finite. The state numbers are labels. So the mean of X_n has a meaning only when the states have an order, such as ratings. The usual quantities are state probabilities and occupation fractions."
+  },
+  "transforms": {
+   "cf": "\\varphi_{X_n}(t) = \\sum_{j=1}^{k} (e_{x_0} P^{n})_j\\, e^{itj}"
+  },
+  "conditions": {
+   "stationarity": "A law π with π P = π is stationary. It is unique when the chain has exactly one closed communicating class. If the chain has two or more closed classes, each class has its own stationary law.",
+   "stability": "If the chain is irreducible and aperiodic, Pⁿ(x, ·) → π for every start x at a geometric rate. The mixing time t_mix(1/4) is the first n with max over x of the TV distance ‖Pⁿ(x, ·) − π‖ ≤ 1/4. A periodic chain does not converge in law, but its time averages converge.",
+   "explosion": "No explosion: the chain is in discrete time with finitely many states, so it makes exactly one transition in each unit of time.",
+   "boundary": "A state i with P_ii = 1 is absorbing: a path that enters it stays there. A state outside the closed classes is transient: a path leaves it after a finite number of visits.",
+   "discretisation": "None: the chain is in discrete time, and each method draws the exact transitions. A continuous-time chain observed at fixed times gives a discrete chain with P = exp(Q h)."
+  },
+  "methods": [
+   "Exact (independent): for each row of P, an alias table (Walker, Vose) draws the next state with one integer and one uniform. The path law is exact.",
+   "Inverse transform: the next state is the first j with F_i(j) ≥ V. Here F_i is the cumulative sum of row i, and V is uniform. The path law is exact.",
+   "Rejection: not offered, because each row is a categorical law with cheap exact samplers.",
+   "Euler: the chain is in discrete time, so no time discretisation applies. The method uses the exact alias sampler."
+  ],
+  "links": [
+   {
+    "to": "ou",
+    "relation": "a continuous-state process that reverts to a level, which a chain on a fine grid of levels approximates"
+   },
+   {
+    "to": "branching",
+    "relation": "a Markov chain on the counts 0, 1, 2, …, with 0 absorbing"
+   },
+   {
+    "to": "conditional",
+    "relation": "each step draws X_{n+1} from a law that reads the earlier variable X_n"
+   }
+  ]
+ },
+ {
+  "id": "branching",
+  "name": "Galton–Watson branching process",
+  "type": "process",
+  "convention": "Z_n counts the individuals of generation n. Each individual has an independent number of offspring with mean m, and the offspring form the next generation. With k = inf the offspring number is Poisson(m). With a finite k it is negative binomial with mean m and dispersion k, so its variance is m + m²/k. The process starts with z0 ancestors.",
+  "formula": "Z_{n+1} = \\sum_{i=1}^{Z_n} \\xi_{n,i}, \\quad \\xi_{n,i} \\text{ i.i.d.}, \\ \\mathbb{E}\\,\\xi = m, \\quad f(s) = \\begin{cases} e^{m(s-1)} & k = \\infty \\\\ \\left(1 + m(1-s)/k\\right)^{-k} & k < \\infty \\end{cases}",
+  "params": [
+   {
+    "name": "z0",
+    "tex": "Z_0",
+    "domain": "Z_0 \\in \\{0, 1, \\dots, 10^6\\}"
+   },
+   {
+    "name": "m",
+    "tex": "m",
+    "domain": "0 < m \\le 100"
+   },
+   {
+    "name": "k",
+    "tex": "k",
+    "domain": "k \\in [10^{-6}, 10^{9}] \\text{ or } k = \\infty"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 200\\},\\ Z_0 m^{n} \\le 10^{12}"
+   }
+  ],
+  "support": "\\{0, 1, 2, \\dots\\}^{\\,n+1}",
+  "limits": [
+   "m ≤ 1 (subcritical or critical): extinction is certain, except in the trivial case where each individual has exactly 1 offspring. The offspring laws of this page always give a positive probability to 0, so q = 1.",
+   "m > 1 (supercritical): the extinction probability q of one ancestor is the smallest root of f(s) = s in [0, 1], and q < 1. With z0 ancestors it is q^{z0}.",
+   "Critical case m = 1 with offspring variance σ²: P(Z_n > 0) ~ 2/(n σ²) as n → ∞ (Kolmogorov).",
+   "k → ∞ gives Poisson offspring. A small k gives superspreading: most individuals have no offspring, and a few have many.",
+   "Z_n / mⁿ converges almost surely to a limit W. If m > 1 and E ξ log ξ < ∞, then W > 0 on the event of survival (Kesten–Stigum)."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,Z_n = Z_0\\, m^{n}",
+   "variance": "\\operatorname{Var} Z_n = Z_0\\,\\sigma^2 m^{n-1} \\frac{m^{n} - 1}{m - 1} \\ (m \\ne 1), \\quad Z_0\\, n \\sigma^2 \\ (m = 1), \\quad \\sigma^2 = m + m^2/k",
+   "existence": "All moments exist for each finite n, because the Poisson and negative binomial offspring laws have all moments. The mean mⁿ can be large while P(Z_n = 0) is near 1. Then the mean comes from rare large families."
+  },
+  "transforms": {
+   "pgf": "\\mathbb{E}\\, s^{Z_n} = \\left(f^{\\circ n}(s)\\right)^{Z_0}, \\qquad \\mathbb{P}(Z_n = 0) = \\left(f^{\\circ n}(0)\\right)^{Z_0}"
+  },
+  "conditions": {
+   "stationarity": "The only stationary law is the point mass at 0. If m ≤ 1, the process reaches 0 with probability 1. If m > 1, it reaches 0 with probability q^{z0} and otherwise grows like mⁿ.",
+   "stability": "Subcritical (m < 1): P(Z_n > 0) decreases geometrically. Critical (m = 1): P(Z_n > 0) decreases like 2/(n σ²). Supercritical (m > 1): the paths that survive grow geometrically at the rate m.",
+   "explosion": "No explosion in finite time: each generation is finite almost surely. The page refuses parameters with z0 mⁿ > 10^12, because such sizes cost too much time to simulate.",
+   "boundary": "0 is absorbing: a family with no members has no offspring. The process has no upper limit. A real population has a limit from its habitat, which this model does not contain.",
+   "discretisation": "None: the time unit is one generation, and each method draws the exact total offspring of a generation. Overlapping generations need an age-structured or continuous-time model."
+  },
+  "methods": [
+   "Exact (independent): Z_{n+1} ~ Poisson(m Z_n) for k = inf. For a finite k, Z_{n+1} ~ Poisson(Λ) with Λ ~ Gamma(k Z_n, m/k), which is the negative binomial total offspring. The path law is exact.",
+   "Inverse transform: the sampler finds Z_{n+1} by a sequential search of the Poisson or negative binomial law of the total offspring. The method is exact. The page offers it only when z0 · max(1, m)^steps ≤ 10^6, because the cost grows with the generation size.",
+   "Rejection: not offered, because the total offspring of a generation has an exact sampler.",
+   "Euler: the process is in discrete generations, so no time discretisation applies. The method uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "markovchain",
+    "relation": "a Markov chain on the counts 0, 1, 2, …, with an absorbing state 0"
+   },
+   {
+    "to": "hawkes",
+    "relation": "the Hawkes process is a branching process of events in continuous time, with branching ratio α/β"
+   }
+  ]
+ },
+ {
+  "id": "hawkes",
+  "name": "Hawkes process",
+  "type": "process",
+  "convention": "N(t) counts events whose rate rises after each event. The intensity is λ(t) = μ + Σ α e^{−β(t − t_i)} over the past events t_i. μ is the baseline rate, α the rise at each event, β the decay rate. The process starts with no history at t = 0.",
+  "formula": "\\lambda(t) = \\mu + \\sum_{t_i < t} \\alpha\\, e^{-\\beta (t - t_i)}, \\quad \\mathbb{P}\\big(N(t+h) - N(t) = 1 \\mid \\mathcal{F}_t\\big) = \\lambda(t)\\,h + o(h), \\quad n = \\alpha / \\beta",
+  "params": [
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu > 0"
+   },
+   {
+    "name": "alpha",
+    "tex": "\\alpha",
+    "domain": "\\alpha \\ge 0"
+   },
+   {
+    "name": "beta",
+    "tex": "\\beta",
+    "domain": "\\beta > 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "0 < T \\le 10^6"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}"
+   }
+  ],
+  "support": "N(t) \\in \\{0, 1, 2, \\dots\\}, \\ \\text{non-decreasing paths with unit jumps}",
+  "limits": [
+   "α = 0 gives the homogeneous Poisson process with rate μ.",
+   "With n = α/β < 1, E N(t)/t → μ/(1 − n) as t → ∞, and a stationary version exists.",
+   "With n ≥ 1 no stationary version exists: E N(t) grows as t² when n = 1 and exponentially when n > 1.",
+   "Each event has Poisson(n) direct children (cluster representation), so a cluster is a Galton–Watson tree with mean offspring n.",
+   "With n < 1 and T large, Var N(T)/T → μ/(1 − n)³, so the variance is about 1/(1 − n)² times the mean."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,N(t) = \\frac{\\beta \\mu t}{\\beta - \\alpha} + \\frac{\\alpha \\mu}{(\\beta - \\alpha)^2}\\big(e^{-(\\beta - \\alpha) t} - 1\\big) \\quad (\\alpha \\ne \\beta)",
+   "variance": "\\operatorname{Var} N(t) \\sim \\frac{\\mu t}{(1 - n)^3} \\ \\text{as } t \\to \\infty \\ (n < 1)",
+   "existence": "All moments of N(t) exist for every finite t, for every n. The long-run variance formula needs n < 1. The page gives no closed variance for a finite t."
+  },
+  "transforms": {
+   "cf": "\\text{generator of } (N, y), \\ y = \\lambda(t) - \\mu: \\quad \\mathcal{A}f(n, y) = -\\beta y\\,\\partial_y f + (\\mu + y)\\big(f(n + 1, y + \\alpha) - f(n, y)\\big)"
+  },
+  "conditions": {
+   "stationarity": "A stationary version exists if and only if n = α/β < 1. Its mean rate is μ/(1 − n). A path that starts with no history approaches that rate at the rate e^{−(β − α)t}. With n ≥ 1 there is no stationary version.",
+   "stability": "The mean number of direct children of each event is n. With n < 1 a cluster has on average 1/(1 − n) events. With n ≥ 1 the mean cluster size is infinite, and with n > 1 a cluster is infinite with positive probability.",
+   "explosion": "No explosion in finite time with the exponential kernel: the number of events in [0, T] is finite almost surely, for every n. The page stops a path above 100,000 events.",
+   "boundary": "N(t) is an integer, 0 at t = 0, and it never decreases. The intensity is at least μ.",
+   "discretisation": "The exact methods simulate the event times. The time discretisation freezes the intensity in each step of length h. Its relative bias is of order (α + β)h."
+  },
+  "methods": [
+   "Cluster representation (independent sampling, Hawkes and Oakes, 1974): immigrants come at the rate μ, and each event has Poisson(α/β) children after Exp(β) delays. The method is exact.",
+   "Inverse transform (Dassios and Zhao, 2013): each gap is the smaller of a baseline gap and an excitation gap, both by the inverse transform. The method is exact.",
+   "Ogata's thinning (1981): candidates come at the intensity just after the last point, which bounds λ until the next candidate. The sampler keeps each candidate with probability λ(t)/λ̄. The method is exact. With failure = envelope, the sampler uses half of this λ̄, so the law is wrong and the page counts the violations.",
+   "Euler time discretisation: Poisson((μ + y_k)h) events in each step with the excitation y_k frozen. The relative bias is of order (α + β)h."
+  ],
+  "links": [
+   {
+    "to": "poissonprocess",
+    "relation": "the Hawkes process with α = 0"
+   },
+   {
+    "to": "branching",
+    "relation": "each cluster is a Galton–Watson tree with Poisson(α/β) offspring"
+   },
+   {
+    "to": "conditional",
+    "relation": "the intensity is conditional on the past events"
+   }
+  ]
+ },
+ {
+  "id": "variancegamma",
+  "name": "Variance-gamma Lévy process",
+  "type": "process",
+  "convention": "The VG process is a Brownian motion with drift θ and volatility σ, run on a random clock G. The clock G is a gamma process with E G_t = t and Var G_t = ν t. So ν sets the excess kurtosis, and θ sets the skewness and the mean rate. The page gives the path at the grid times t_k = k T / steps, with X_0 = x0.",
+  "formula": "X_t = x_0 + \\theta\\, G_t + \\sigma\\, W(G_t), \\qquad G_{t+h} - G_t \\sim \\operatorname{Gamma}(h/\\nu,\\ \\nu)",
+  "params": [
+   {
+    "name": "x0",
+    "tex": "x_0",
+    "domain": "x_0 \\in \\mathbb{R}"
+   },
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "\\theta \\in \\mathbb{R}"
+   },
+   {
+    "name": "sigma",
+    "tex": "\\sigma",
+    "domain": "\\sigma \\ge 0"
+   },
+   {
+    "name": "nu",
+    "tex": "\\nu",
+    "domain": "\\nu > 0"
+   },
+   {
+    "name": "T",
+    "tex": "T",
+    "domain": "T > 0"
+   },
+   {
+    "name": "steps",
+    "tex": "n",
+    "domain": "n \\in \\{1, \\dots, 4096\\}"
+   }
+  ],
+  "support": "\\mathbb{R}^{\\,n+1} \\ (\\sigma > 0)",
+  "limits": [
+   "ν → 0: G_t → t, and X converges in law to Brownian motion with drift θ and volatility σ.",
+   "σ = 0: X_t = x0 + θ G_t, a gamma process times θ, which only moves in the direction of θ.",
+   "θ = 0: the law of X_t − x0 is symmetric, with excess kurtosis 3ν/t.",
+   "X_t − x0 is the difference of two independent gamma processes, so the VG process has infinitely many small jumps and no Brownian part.",
+   "As t → ∞ with ν fixed, the excess kurtosis 3ν/t (θ = 0) goes to 0, and the law of (X_t − θt)/√t is near a normal law."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}\\,X_t = x_0 + \\theta t",
+   "variance": "\\operatorname{Var} X_t = (\\sigma^2 + \\theta^2 \\nu)\\, t",
+   "existence": "All moments exist, and the moment generating function exists in a neighbourhood of 0. The fourth cumulant is κ₄ = (3σ⁴ν + 12σ²θ²ν² + 6θ⁴ν³) t, so the kurtosis E[(X_t − E X_t)⁴]/Var² = 3 + κ₄/Var² is above 3 when ν > 0."
+  },
+  "transforms": {
+   "cf": "\\mathbb{E}\\, e^{iu(X_t - x_0)} = \\left(1 - i\\theta\\nu u + \\tfrac{1}{2}\\sigma^2 \\nu u^2\\right)^{-t/\\nu}"
+  },
+  "conditions": {
+   "stationarity": "A Lévy process: its increments are stationary and independent. The level X_t is not stationary, because Var X_t = (σ² + θ²ν) t grows without limit.",
+   "stability": "X_t / t → θ almost surely as t → ∞ (the strong law of large numbers for Lévy processes). No level is stable, and the process does not revert to a mean.",
+   "explosion": "No explosion: the process has infinitely many small jumps in each interval. The sum of their sizes is finite, so X_t is finite for every t.",
+   "boundary": "No boundary: the state space is the whole real line. A price model uses S_t = S_0 exp(X_t) to keep the price positive.",
+   "discretisation": "The values at the grid times are exact on any grid. The grid does not show the jumps between two grid times. So the largest grid value is below the largest path value, and a barrier test on the grid misses some crossings."
+  },
+  "methods": [
+   "Exact (independent): for each step, a gamma time step ΔG ~ Gamma(h/ν, ν) by Marsaglia–Tsang, then ΔX = θ ΔG + σ √ΔG Z with Z standard normal. The values at the grid times are exact (Madan, Carr and Chang, 1998).",
+   "Inverse transform: the same construction with the normals by the inverse transform of uniforms. The gamma steps still use Marsaglia–Tsang. Exact at the grid times.",
+   "Rejection: not offered as a separate method, because the Marsaglia–Tsang gamma sampler is itself a rejection method.",
+   "Euler: the increments are exact on any grid, so no time discretisation applies. The method uses the exact sampler."
+  ],
+  "links": [
+   {
+    "to": "brownian",
+    "relation": "VG is Brownian motion with drift run on a gamma clock, and it converges to that Brownian motion as ν → 0"
+   },
+   {
+    "to": "compoundprocess",
+    "relation": "a pure-jump process like the compound Poisson process, but with infinitely many small jumps"
+   }
+  ]
  }
 ]

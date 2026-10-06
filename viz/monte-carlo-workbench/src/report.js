@@ -11,10 +11,10 @@
 })(/** @type {any} */ (typeof self !== "undefined" ? self : this), function () {
   "use strict";
 
-  const METHOD_NAMES = /** @type {Record<string, string>} */ ({ independent: "independent sampling", inverse: "the inverse transform", rejection: "rejection sampling", stratified: "stratification", antithetic: "antithetic variables", control: "control variates" });
+  const METHOD_NAMES = /** @type {Record<string, string>} */ ({ independent: "independent sampling", inverse: "the inverse transform", rejection: "rejection sampling", stratified: "stratification", antithetic: "antithetic variables", control: "control variates", euler: "the Euler time discretisation" });
 
   /** The sampler of each method's laws: the variance-reduction methods use the inverse transform or the reference sampler. */
-  const SAMPLER = /** @type {Record<string, string>} */ ({ independent: "independent", inverse: "inverse", rejection: "rejection", stratified: "inverse", antithetic: "inverse", control: "independent" });
+  const SAMPLER = /** @type {Record<string, string>} */ ({ independent: "independent", inverse: "inverse", rejection: "rejection", stratified: "inverse", antithetic: "inverse", control: "independent", euler: "euler" });
 
   /** A number as text: at most 4 significant digits, never NaN or Infinity. @param {number | null | undefined} v */
   function num(v) {
@@ -64,6 +64,14 @@
       title: "Assumptions",
       body: [`- Reason for the law: ${entry.reason}`, `- Parameters, units and data: ${entry.inputs}`, `- Dependence: ${entry.dependence}`].join("\n"),
       narration: say(entry.dependence),
+    });
+    // Group 5: the conditions of each process at the parameters in force, and the dependence of each copula.
+    const dep = d.dependence;
+    if (dep && (dep.processes.length || dep.copulas.length)) setup.push({
+      title: "Dependence and process conditions",
+      body: [...dep.processes.flatMap((/** @type {any} */ x) => [`**${x.name}: ${x.title}**`, "", ...x.conditions.map((/** @type {any} */ c) => `- ${c.kind[0].toUpperCase()}${c.kind.slice(1)}: ${c.text}`), ""]),
+        ...dep.copulas.map((/** @type {any} */ x) => `- ${x.name}: ${x.title}, d = ${x.d}. ${x.at.tau.map((/** @type {any} */ t) => `Kendall's tau of (${t.i}, ${t.j}) = ${num(t.tau)}`).join("; ")}. ${x.at.tails.map((/** @type {any} */ t) => `Tail dependence: lower ${num(t.lower)}, upper ${num(t.upper)}`).join("; ")}.`)].join("\n").trim(),
+      narration: dep.processes.length ? `The model has ${dep.processes.length === 1 ? "a process" : `${dep.processes.length} processes`}. Each states its stationarity, stability, explosion, boundary and discretisation conditions.` : "The copula holds the dependence, and the margins hold the laws.",
     });
     const methodFrames = [{
       title: `Method: ${method.name}`,

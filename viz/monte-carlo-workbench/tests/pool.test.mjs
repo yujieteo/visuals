@@ -4,7 +4,7 @@
 // pool whose workers cannot start must run the same blocks on the main thread.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { D, En, Pool, recordOf } from "./helpers.mjs";
+import { D, En, Pool, Pr, recordOf } from "./helpers.mjs";
 
 /** A stand-in worker: it runs the engine as src/worker.js does and answers after a delay from a fixed sequence. @param {number[]} delays */
 function fakeWorkers(delays) {
@@ -113,5 +113,21 @@ test("the variance-reduction designs give the same statistics with one and four 
       assert.equal(r.status, "done");
       assert.deepEqual(strip(r.acc), strip(seq), `${method} with ${compare}, ${streams} streams, ${size} workers`);
     }
+  }
+});
+
+test("a process model with its ensemble band and a copula model: one worker and four workers give the same statistics", async () => {
+  for (const id of ["exp-hawkes", "claytoncopula-crop-yields", "exp-gbm"]) {
+    const rec = recordOf(id), set = { seed: 21, method: "independent", compare: "none", failure: "none", overrides: {} }, cc = En.prepare(rec, set);
+    assert.ok(cc.ok, cc.errors?.join(" "));
+    const proc = cc.nodes.find((/** @type {any} */ n) => n.type === "var" && n.law.kind === "process");
+    const opts = proc ? { band: { name: proc.name, ...Pr.bandSpec(9, -5, 300) } } : {};
+    const j = { record: rec, settings: set, opts, from: 0, to: 6 };
+    const results = [];
+    for (const size of [1, 4]) {
+      const pool = Pool.createPool({ source: "", size, engine: En, makeWorker: fakeWorkers([5, 0, 3, 1]) });
+      results.push(strip(/** @type {any} */ (await runPool(pool, j, cc, En.empty(cc))).acc));
+    }
+    assert.deepEqual(results[0], results[1], id);
   }
 });

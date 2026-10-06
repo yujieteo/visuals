@@ -145,5 +145,61 @@
    "model": "exp-gpd",
    "settings": {}
   }
+ },
+ {
+  "id": "ergodicity",
+  "title": "Ergodicity, mixing, and time and ensemble averages",
+  "statement": "\\begin{gathered} (X_n) \\text{ irreducible, positive recurrent with stationary law } \\pi: \\quad \\frac{1}{n}\\sum_{k=0}^{n-1} f(X_k) \\to \\sum_x \\pi(x) f(x) \\ \\text{a.s. for every } X_0 \\\\ \\text{and, if also aperiodic:} \\quad \\lVert P^n(x, \\cdot) - \\pi \\rVert_{TV} \\to 0 \\end{gathered}",
+  "assumptions": [
+   "The chain is irreducible: each state reaches each other state.",
+   "It is positive recurrent. A finite irreducible chain always is. Then the stationary law π is unique.",
+   "f has a finite mean under π. The convergence of the law Pⁿ(x, ·) needs aperiodicity. The convergence of the time average does not.",
+   "For a general stationary process, Birkhoff's theorem gives the limit E[f | invariant σ-field] of the time average. This limit equals the ensemble average when the process is ergodic."
+  ],
+  "proof": "Split the path at the returns to a state x. The excursions between returns are i.i.d. (strong Markov property), and positive recurrence gives them a finite mean length E_x τ_x = 1/π(x). The strong law of large numbers applies to the sums of f over the excursions and to their lengths. The ratio of the two sums gives Σ π f. For the law, couple two copies of the chain, one started from π, until they meet at a time T. Aperiodicity and irreducibility make T finite, and ‖Pⁿ(x, ·) − π‖_TV ≤ P(T > n).",
+  "reference": "J. R. Norris, Markov Chains, Cambridge University Press, 1997, theorems 1.8.3 and 1.10.2. D. A. Levin and Y. Peres, Markov Chains and Mixing Times, 2nd ed., American Mathematical Society, 2017, chapter 4. G. D. Birkhoff, Proof of the ergodic theorem, PNAS 17 (1931) 656–660.",
+  "counterexample": "Geometric Brownian motion is not stationary. Let μ < σ²/2. Then (log S_t)/t → μ − σ²/2 < 0 almost surely, so almost every path tends to 0. But when μ > 0, the ensemble average E S_t = S_0 e^(μt) grows. The mean of many paths and the long-run growth of one path differ. A reducible chain with two closed classes also has a time average that depends on X_0.",
+  "experiment": {
+   "model": "exp-markovchain",
+   "settings": {}
+  }
+ },
+ {
+  "id": "sklar",
+  "title": "Sklar's theorem and copulas",
+  "statement": "\\begin{gathered} F(x_1, \\dots, x_d) = C\\left(F_1(x_1), \\dots, F_d(x_d)\\right) \\text{ for a copula } C, \\text{ unique on } \\operatorname{Ran} F_1 \\times \\dots \\times \\operatorname{Ran} F_d \\\\ U \\sim C, \\ X_j = F_j^{-1}(U_j) \\ \\Longrightarrow \\ X \\sim F, \\qquad \\tau, \\ \\lambda_U, \\ \\lambda_L \\text{ depend on } C \\text{ only} \\end{gathered}",
+  "assumptions": [
+   "F is a d-dimensional CDF with the margins F_1, …, F_d.",
+   "A copula is a CDF on [0, 1]^d with uniform margins.",
+   "C is unique when every margin is continuous. A discrete margin leaves C free outside the range of the margins, so discrete data do not identify their copula.",
+   "λ_U = lim_{q→1} P(U_2 > q | U_1 > q) and λ_L = lim_{q→0} P(U_2 ≤ q | U_1 ≤ q), where the limits exist."
+  ],
+  "proof": "For continuous margins, U_j = F_j(X_j) is uniform, and C is the CDF of U. Then F(x) = P(U_j ≤ F_j(x_j) for all j) = C(F_1(x_1), …). Conversely, F_j^(−1)(U_j) ≤ x_j if and only if U_j ≤ F_j(x_j), so the quantile transform of U ~ C has the CDF C(F_1, …, F_d). Kendall's tau and the tail coefficients are invariant under strictly increasing maps of the components, so they depend only on C. For discrete margins, extend F by interpolation to a continuous CDF on the range.",
+  "reference": "A. Sklar, Fonctions de répartition à n dimensions et leurs marges, Publ. Inst. Statist. Univ. Paris 8 (1959) 229–231. R. B. Nelsen, An Introduction to Copulas, 2nd ed., Springer, 2006, theorems 2.10.9 and 5.1.9. A. J. McNeil, R. Frey and P. Embrechts, Quantitative Risk Management, revised ed., Princeton University Press, 2015, chapter 7.",
+  "counterexample": "The Gaussian and the Student t copula with the same correlation ρ = 0.5 have the same Kendall's tau, (2/π) arcsin ρ = 1/3. But λ_U = 0 for the Gaussian copula, and λ_U is about 0.25 for the t copula with ν = 4. The same margins and the same tau thus give different probabilities of joint extremes.",
+  "experiment": {
+   "model": "exp-claytoncopula",
+   "settings": {}
+  }
+ },
+ {
+  "id": "mlmc",
+  "title": "Multilevel Monte Carlo and discretisation bias",
+  "statement": "\\begin{gathered} |\\mathbb{E}[P_l - P]| \\le c_1 2^{-\\alpha l}, \\ V_l \\le c_2 2^{-\\beta l}, \\ C_l \\le c_3 2^{\\gamma l}, \\ \\alpha \\ge \\tfrac12 \\min(\\beta, \\gamma) \\\\ \\Longrightarrow \\ \\exists L, N_l: \\ \\mathbb{E}\\left[(\\hat\\theta - \\mathbb{E}P)^2\\right] < \\varepsilon^2 \\ \\text{with cost} \\ \\le c_4 \\begin{cases} \\varepsilon^{-2} & \\beta > \\gamma \\\\ \\varepsilon^{-2} (\\log \\varepsilon)^2 & \\beta = \\gamma \\\\ \\varepsilon^{-2 - (\\gamma - \\beta)/\\alpha} & \\beta < \\gamma \\end{cases} \\end{gathered}",
+  "assumptions": [
+   "P_l is the quantity on the grid of level l, and P is its limit. The correction Y_l = P_l − P_(l−1) uses P_l and P_(l−1) on the same Brownian path.",
+   "The rates α, β and γ hold for every level. For the Euler–Maruyama scheme and a Lipschitz payoff, α = β = γ = 1.",
+   "The levels are independent, so the variance of the estimator is Σ V_l/N_l.",
+   "The mean square error is the sum of the Monte Carlo variance and the squared bias: E[(θ̂ − EP)²] = Σ V_l/N_l + (E P_L − E P)²."
+  ],
+  "proof": "Choose L with c_1 2^(−αL) ≤ ε/√2, so the squared bias is at most ε²/2. Minimise the cost Σ N_l C_l under the constraint Σ V_l/N_l ≤ ε²/2 with a Lagrange multiplier: N_l ∝ √(V_l/C_l). The cost is then 2ε^(−2)(Σ √(V_l C_l))². The sum Σ 2^((γ−β)l/2) stays bounded when β > γ, grows as L when β = γ, and grows as 2^((γ−β)L/2) when β < γ. With L ≈ log2(1/ε)/α this gives the three cases.",
+  "reference": "M. B. Giles, Multilevel Monte Carlo path simulation, Operations Research 56 (2008) 607–617. M. B. Giles, Multilevel Monte Carlo methods, Acta Numerica 24 (2015) 259–328, theorem 1. P. E. Kloeden and E. Platen, Numerical Solution of Stochastic Differential Equations, Springer, 1992, chapters 10 and 14.",
+  "counterexample": "Take the indicator that Brownian motion reaches a level, checked only at the grid times. A fine and a coarse path disagree with a probability of order 2^(−l/2), so β = 1/2 < γ = 1. The cost then grows as ε^(−3) up to a log factor, near the cost of plain Monte Carlo. The interval of a plain run on one grid also says nothing about its bias: a smaller interval does not reduce the monitoring bias.",
+  "experiment": {
+   "model": "gbm-option-mlmc",
+   "settings": {
+    "method": "euler"
+   }
+  }
  }
 ]
