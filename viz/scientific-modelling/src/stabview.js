@@ -135,10 +135,10 @@
     const an = st.analysis;
     const head = `<h3>${esc(an?.heading ?? "Hand calculation 9: stability and bifurcation")}</h3><p class="note">${esc(st.declaration.title)}. ${an ? `Concept: ${esc(an.concept)}.` : ""} Stability: ${esc(st.methods.stability.reason)} Bifurcation: ${esc(st.methods.bifurcation.reason)}</p>`;
     const exact = exactBlock(st.exact);
-    if (an?.family === "buoyancy-convection") box(host, head, exact, an, list);
+    if (an?.generic) generic(host, head, exact, an, list);
+    else if (an?.family === "buoyancy-convection") box(host, head, exact, an, list);
     else if (an?.model === "lumped-radiation") lumped(host, head, exact, an, list);
     else if (an?.model === "surface-radiation") surface(host, head, an, list);
-    else if (an?.generic) generic(host, head, exact, an, list);
     else host.innerHTML = `${head}${exact}${list}`;
   }
 

@@ -2,15 +2,16 @@
  * (src/declare.js), checks the Nondimensionalizer's dimensionless equations against it, and then draws a 1D diagram
  * or a 2D slice of the declared parameter space: the researcher chooses the axes, linear or logarithmic scales and the
  * fixed parameters. A family module (src/conduction.js, and src/convection.js and src/radiation.js of piece 4) evaluates
- * one point at a time; a module of piece 4 also gives the stability and bifurcation analysis at the record's point.
+ * one point at a time; a module of piece 4 also gives the stability and bifurcation analysis at the record's point, and src/convective.js of piece 7 adds the
+ * empirical layers of cited correlations.
  * This engine samples the grid, finds each boundary between two resolved points only (never across an unresolved
  * point), builds the regions of each layer, the points where no approximation meets the tolerance, the unresolved
  * points with their reasons, the intersections of boundaries, the limit paths, and the inspection of a point or a
  * boundary with its dimensional reconstruction.
  */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js"), require("./flows.js")]);
-  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR, root.SM.FL]);
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./rational.js"), require("./expr.js"), require("./sym.js"), require("./special.js"), require("./declare.js"), [require("./conduction.js"), require("./convection.js"), require("./radiation.js"), require("./structures.js"), require("./flows.js"), require("./convective.js")]);
+  else (root.SM = root.SM || {}).RM = factory(root.SM.Q, root.SM.E, root.SM.S, root.SM.SF, root.SM.D, [root.SM.CD, root.SM.RB, root.SM.RAD, root.SM.STR, root.SM.FL, root.SM.CV]);
 })(typeof self !== "undefined" ? self : this, function (Q, E, S, SF, D, IMPLS) {
   "use strict";
 
@@ -29,6 +30,7 @@
     { id: "approximation", name: "Approximation error", piece: 3 },
     { id: "stability", name: "Stability", piece: 4 },
     { id: "bifurcation", name: "Bifurcations", piece: 4 },
+    { id: "empirical", name: "Empirical boundaries", piece: 7 },
   ];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(10)) : null);
   /** Is v in a region [lo, hi)? A region marked closed also holds its upper end: an error equal to the tolerance meets it. */
@@ -36,8 +38,8 @@
   const WORD = /[A-Za-z][A-Za-z0-9_]*/g;
 
   /** The implementation of a declaration in the first family module that has it. */
-  function implement(decl, options = {}) {
-    for (const M of IMPLS) { const impl = M.implement(decl, options); if (impl) return impl; }
+  function implement(decl, options = {}, data = null) {
+    for (const M of IMPLS) { const impl = M.implement(decl, options, data); if (impl) return impl; }
     return null;
   }
 
@@ -175,7 +177,7 @@
     if (!m.ok) return { ready: false, reason: "mismatch", declaration: summaryOf(decl), problems: m.problems, message: "The record's dimensionless model does not equal the declared model.", next: m.next };
     const tipCond = m.conditions.find((c) => c.of === "tip");
     const options = { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated", geometry: base.geometry ?? {}, references: data.stability ?? null };
-    const impl = implement(decl, options);
+    const impl = implement(decl, options, data);
     if (!impl) return { ready: false, reason: "no-solver", declaration: summaryOf(decl), message: `Piece ${decl.piece} of the build plan adds the solver of ${decl.title}.`, next: "Use the Finder and the Nondimensionalizer now." };
 
     const notices = [];
@@ -313,6 +315,7 @@
       return { id: L.id, label: L.label, coupled: L.coupled, note: L.note, approx: L.approx ?? null, onSlice, points: onSlice ? inside.map((q) => [num(q[x]), y ? num(q[y]) : null]) : [] };
     });
     const ictx = inspectContext(decl, m, interp, nd, data, point0);
+    ictx.evidence = base.evidence ?? [];
     const atRecord = recordOnMap && params.every((p) => Math.abs(sel[p.id] - recordPoint[p.id]) <= 1e-12 * Math.max(1, Math.abs(recordPoint[p.id])));
     const inspection = inspectAt(impl, layers, tol, sel, { ...ictx, atRecord, exactPoint: atRecord ? Object.fromEntries(Object.entries(point0).map(([k, v]) => [k, v.exact])) : null });
     let boundary = null;
@@ -467,7 +470,7 @@
       const { interp, nd, base } = run(decl.acceptance.example);
       const m = D.match(decl, interp, nd);
       const tipCond = m.conditions.find((c) => c.of === "tip");
-      const impl = m.ok ? implement(decl, { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated", geometry: base.geometry ?? {}, references: data.stability ?? null }) : null;
+      const impl = m.ok ? implement(decl, { shape: base.geometry?.shape ?? "sphere", tip: tipCond && tipCond.alternative > 0 ? "convective" : "insulated", geometry: base.geometry ?? {}, references: data.stability ?? null }, data) : null;
       out = !m.ok ? { ok: false, checks: [], problems: m.problems } : !impl ? { ok: false, checks: [], problems: ["No solver."] }
         : (() => { const checks = impl.acceptance(inspectContext(decl, m, interp, nd, data, D.point(decl, m, interp, nd))); return { ok: checks.every((c) => c.passed), checks, problems: [] }; })();
     } catch (e) {

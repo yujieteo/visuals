@@ -55,7 +55,7 @@ test("the declarations of piece 6: five families, six models, each with the six 
     for (const m of ["dominant-balance", "asymptotic", "stability", "bifurcation"]) assert.ok(d.methods[m].reason.length > 40, `${d.id}: the reason of ${m}`);
   }
   assert.deepEqual(DATA.roadmap.families.filter((f) => f.piece === 6).map((f) => f.id), FAMILIES);
-  assert.equal(DATA.roadmap.current, 6);
+  assert.ok(DATA.roadmap.current >= 6);
 });
 
 test("each flow record matches its declared dimensionless form exactly, and its point is the record's values", () => {

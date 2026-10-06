@@ -14,7 +14,8 @@
   "use strict";
 
   const FAMILIES = ["buoyancy-convection", "radiation", "beams-and-columns", "nonlinear-buckling", "vibration",
-    "internal-viscous-flow", "compressible-nozzle-flow", "free-surface-flow", "boundary-layers", "external-aerodynamic-flow"];
+    "internal-viscous-flow", "compressible-nozzle-flow", "free-surface-flow", "boundary-layers", "external-aerodynamic-flow",
+    "advection-diffusion", "viscous-heat-generation", "thermocapillary-heat-transport", "conjugate-heat-transfer"];
   const num = (x) => (Number.isFinite(x) ? Number(x.toPrecision(12)) : null);
   const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
   const GREEK = { theta: "θ", theta_s: "θ_s", Psi: "Ψ", Omega: "Ω", eps: "ε" };
@@ -33,6 +34,7 @@
     "s-st-jacobian": { item: 9, title: "Linearization", reason: "The derivative of the right side at the equilibrium is the eigenvalue of the linearized model. A negative value means linear stability.", evidence: ["spec-8"] },
     "s-st-network": { item: 9, title: "Radiation network", reason: "The radiosity balance of each surface is linear in the radiosities. The page solves it exactly in rationals and checks reciprocity, summation and the energy balance.", evidence: ["lienhard-2024"] },
     "s-st-fold": { item: 9, title: "Branches and their fold", reason: "The steady solutions of an algebraic relation form branches. Where the derivative of the relation is 0, two branches meet at a fold; the exact sign of the derivative shows how many solutions each value has.", evidence: ["spec-8"] },
+    "s-cv-solution": { item: 10, title: "Declared convection model and reference checks", reason: "The declared solver or the named correlation gives the result at the record's values. Exact checks use rationals; numerical checks state their tolerance; a correlation holds only inside its cited range.", evidence: ["spec-10", "spec-14"] },
     "s-fl-solution": { item: 10, title: "Declared solution and reference checks", reason: "The declared solver computes the solution at the record's values. Exact checks use rationals; numerical checks state their tolerance and their convergence.", evidence: ["spec-10", "spec-14"] },
     "s-st-ode": { item: 9, title: "Equilibria and continuation of the ODE system", reason: "Newton's method from a grid of seeds finds equilibria; the eigenvalues of the exact Jacobian classify them; pseudo-arclength continuation follows each branch and marks folds, branch points and Hopf points.", evidence: ["spec-8", "farrell-2016"] },
   };
@@ -174,7 +176,8 @@
     if (wanted) return { ready: false, reason: "custom-pde", message: "The record names no declared model, and it is not a finite ODE system. Stability and bifurcation of a custom PDE are outside the supported set.", next: "Choose a declared model of piece 4 or 5, such as boussinesq-box or euler-column, or write the model as a finite ODE system." };
     return { ready: false, reason: "none", message: "The record does not ask for a stability or bifurcation analysis, and its declared model has none.", next: "" };
   }
-  const stepsFor = (id) => (id === "nozzle-air" || id === "shallow-water" ? ["s-st-fold"] : ["pipe-poiseuille", "channel-poiseuille", "blasius", "joukowski-airfoil"].includes(id) ? ["s-fl-solution"] : id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
+  const PIECE7 = ["advection-channel", "couette-heating", "thermocapillary-layer", "mixed-channel", "pipe-wall-temperature", "conjugate-channel", "plate-correlation", "wall-natural-correlation"];
+  const stepsFor = (id) => (PIECE7.includes(id) ? ["s-cv-solution"] : id === "nozzle-air" || id === "shallow-water" ? ["s-st-fold"] : ["pipe-poiseuille", "channel-poiseuille", "blasius", "joukowski-airfoil"].includes(id) ? ["s-fl-solution"] : id === "elastica" ? ["s-st-base", "s-st-perturb", "s-st-branch", "s-st-amplitude"] : id === "euler-column" || id === "beam-modes" ? ["s-st-base", "s-st-perturb", "s-st-eigen"] : id === "beam-column" ? ["s-st-eigen"] : id === "damped-oscillator" ? ["s-st-jacobian"] : id === "boussinesq-box" ? ["s-st-base", "s-st-perturb", "s-st-eigen", "s-st-branch", "s-st-amplitude"] : id === "surface-radiation" ? ["s-st-network"] : id === "convection-radiation" ? ["s-st-equilibrium", "s-st-jacobian"] : ["s-st-base", "s-st-perturb", "s-st-equilibrium", "s-st-jacobian"]);
 
   /* ---------- results ---------- */
 
@@ -197,7 +200,8 @@
     if (ex?.error) add({ id: "r-st-exact-error", kind: "stability", title: `The exact checks cannot run: ${ex.error}`, status: "unresolved", next: "Check the declared stability set-up." });
     const an = st.analysis;
     if (!an) return out;
-    if (an.family === "buoyancy-convection") boxResults(an, add);
+    if (an.generic) for (const r of an.results) add({ steps: ["s-st-eigen"], evidence: ["spec-8"], ...r });
+    else if (an.family === "buoyancy-convection") boxResults(an, add);
     else if (an.model === "lumped-radiation") lumpedResults(an, add);
     else if (an.model === "surface-radiation") for (const c of an.checks ?? []) add({ id: `r-st-net-${c.id}`, kind: "exchange", title: `${c.title}: ${c.passed ? "passed" : "failed"}. ${c.detail}`, status: c.passed ? c.status : "unresolved", tolerance: c.tolerance ?? null, steps: ["s-st-network"], evidence: ["lienhard-2024"] });
     else if (an.generic) for (const r of an.results) add({ steps: ["s-st-eigen"], evidence: ["spec-8"], ...r });

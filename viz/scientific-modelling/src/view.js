@@ -386,8 +386,30 @@
 
   let lastDetail = "";
   /** @param {Record<string, any>} state @param {any} d */
+  /** The import of numerical results: shown for an example that accepts them (data/convective.json, imports). @param {any} rec */
+  function renderImports(rec) {
+    const spec = DATA.convective?.imports?.[rec.origin];
+    $("imports").hidden = !spec;
+    if (!spec) return;
+    const n = (rec.evidence ?? []).filter((/** @type {any} */ e) => e.kind === "numerical-results").length;
+    $("imports-note").textContent = `${spec.describe} The file must state its provenance (${SM.EM.PROVENANCE.join(", ")}) and define ${Object.entries(spec.definitions).map(([k, v]) => `${k} as "${v}"`).join(" and ")}. ${n ? `The record holds ${n} imported file${n > 1 ? "s" : ""}.` : "The record holds no imported file."}`;
+  }
+  /** Add checked numerical results to the record's evidence, as a new version. @param {any} doc @param {string} name */
+  function importResults(doc, name) {
+    const rec = active(app.state.example);
+    const spec = DATA.convective?.imports?.[rec.origin];
+    const v = SM.EM.validateImport(doc, spec);
+    if (!v.ok) { tellModel(`${name} was not loaded, and the record stays as it is: ${v.errors.slice(0, 3).join(" ")}`); return; }
+    commit((/** @type {any} */ inp) => {
+      let k = 1;
+      while (inp.evidence.some((/** @type {any} */ e) => e.id === `ev-import-${k}`)) k++;
+      inp.evidence.push({ id: `ev-import-${k}`, kind: "numerical-results", source: "import", claim: `Imported numerical results: ${v.doc.provenance.source}; ${v.doc.provenance.method}.`, results: v.doc });
+    }, `Imported ${v.doc.points.length} numerical results from ${name}. Confirm the interpretation to compare them.`);
+  }
+
   function render(state, d) {
     renderEditor(active(state.example));
+    renderImports(active(state.example));
     renderStatus(d);
     renderInterpretation(d);
     renderIssues(d);
@@ -617,6 +639,17 @@
       }
       file.value = "";
     });
+    const results = $("load-results");
+    results.addEventListener("change", async () => {
+      const chosen = results.files?.[0];
+      if (!chosen) return;
+      let doc = null;
+      try { doc = JSON.parse(await chosen.text()); } catch { doc = null; }
+      if (!doc) tellModel(`${chosen.name} is not JSON, and the record stays as it is.`);
+      else importResults(doc, chosen.name);
+      results.value = "";
+    });
+    $("sample-results").addEventListener("click", () => importResults(DATA.heatrefs?.sample, "the sample file"));
     $("repeating-auto").addEventListener("click", () => app.set({ repeating: "" }));
     $("tool-nondim").addEventListener("click", (/** @type {Event} */ e) => {
       const t = /** @type {HTMLElement} */ (e.target);

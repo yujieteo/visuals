@@ -7590,6 +7590,2343 @@
           "v-h1",
           "v-g"
         ]
+      },
+      {
+        "id": "advection-channel",
+        "label": "Advection–diffusion in a channel",
+        "group": "standard",
+        "title": "Steady advection and diffusion of heat along a channel segment",
+        "purpose": {
+          "question": "How does the Péclet number shape the temperature along a channel segment between two fixed end temperatures? Is the total heat flux the same at every section?",
+          "observable": "v-q",
+          "calculation": "regime-map",
+          "declaration": "advection-channel"
+        },
+        "variables": [
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_{out}",
+            "meaning": "Local temperature minus the outlet temperature, T − T_out",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance along the channel from the inlet",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Length of the segment",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.01",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "meaning": "Prescribed flow speed",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.00028",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-alpha",
+            "symbol": "alpha",
+            "meaning": "Thermal diffusivity of the fluid",
+            "quantity": "thermal-diffusivity",
+            "unit": "m^2/s",
+            "value": "1.4e-7",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTi",
+            "symbol": "DT_in",
+            "tex": "T_{in}-T_{out}",
+            "meaning": "Inlet temperature minus the outlet temperature, T_in − T_out",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "20",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-C",
+            "symbol": "C_v",
+            "tex": "\\rho c_p",
+            "meaning": "Volumetric heat capacity of the fluid, ρc_p",
+            "quantity": "volumetric-heat-capacity",
+            "unit": "J/(m^3*K)",
+            "value": "4.18e6",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-q",
+            "symbol": "q",
+            "meaning": "Total heat flux along the channel, advection plus conduction",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "U*d(DT,x) = alpha*d(DT,x,x)",
+            "domain": "0 < x < L"
+          }
+        ],
+        "geometry": {
+          "domain": "A channel segment of length L with a uniform prescribed velocity U along it",
+          "coordinates": "x from the inlet (x = 0) to the outlet (x = L)",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The inlet and outlet sections"
+        },
+        "conditions": [
+          {
+            "id": "c-in",
+            "kind": "boundary",
+            "text": "DT = DT_in",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-out",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "x = L"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-plug",
+            "kind": "physical",
+            "text": "The velocity is prescribed and uniform, and the properties are constant. The model is one-dimensional and steady.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-dT",
+            "kind": "mathematical",
+            "text": "The inlet and outlet temperatures differ.",
+            "source": "spec-10",
+            "relation": "DT_in != 0"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for water. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The segment length is the length scale."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "DT_in",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The end difference is the temperature scale, so θ = 1 at the inlet and 0 at the outlet."
+          }
+        ],
+        "preferred": [
+          "v-L",
+          "v-U",
+          "v-DTi"
+        ],
+        "evidence": [
+          {
+            "id": "ev-pe",
+            "source": "lienhard-2024",
+            "claim": "The Péclet number ρc_pu x/k compares advection with axial conduction (eqn. 6.61)."
+          }
+        ]
+      },
+      {
+        "id": "couette-heating",
+        "label": "Couette flow with viscous heating",
+        "group": "standard",
+        "title": "Plane Couette flow with viscous heat generation between two isothermal walls",
+        "purpose": {
+          "question": "How much does viscous heating raise the temperature of an oil film between a fixed wall and a moving wall? Where does the heat leave?",
+          "observable": "v-q0",
+          "calculation": "regime-map",
+          "declaration": "couette-heating"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the walls",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_0",
+            "meaning": "Local temperature minus the temperature of the fixed wall, T − T_0",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the fixed wall",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-H",
+            "symbol": "H",
+            "meaning": "Gap between the walls",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.001",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "meaning": "Speed of the moving wall",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of the oil",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "0.1",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the oil",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.15",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of the oil",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "2000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTw",
+            "symbol": "DT_w",
+            "tex": "T_1-T_0",
+            "meaning": "Temperature of the moving wall minus that of the fixed wall, T_1 − T_0",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "10",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-q0",
+            "symbol": "q_0",
+            "meaning": "Heat flux into the fixed wall",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "mu*d(u,y,y) = 0",
+            "domain": "0 < y < H"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "k*d(DT,y,y) + mu*d(u,y)^2 = 0",
+            "domain": "0 < y < H"
+          }
+        ],
+        "geometry": {
+          "domain": "A plane layer of fluid between a fixed wall at y = 0 and a wall at y = H that moves with speed U",
+          "coordinates": "y from the fixed wall (y = 0) to the moving wall (y = H)",
+          "lengths": [
+            "v-H"
+          ],
+          "interfaces": "The two walls"
+        },
+        "conditions": [
+          {
+            "id": "c-u0",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-uH",
+            "kind": "boundary",
+            "text": "u = U",
+            "at": "y = H"
+          },
+          {
+            "id": "c-T0",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-TH",
+            "kind": "boundary",
+            "text": "DT = DT_w",
+            "at": "y = H"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-steady",
+            "kind": "physical",
+            "text": "The flow is steady, laminar and fully developed, and the fluid is Newtonian with constant properties.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-diss",
+            "kind": "physical",
+            "text": "The viscous dissipation μ(du/dy)² is a heat source in the energy equation. Br = μU²/(kΔT) compares it with conduction across the gap.",
+            "source": "mit-viscous"
+          },
+          {
+            "id": "a-dT",
+            "kind": "mathematical",
+            "text": "The wall temperatures differ: T_1 − T_0 is not 0. It is a signed difference.",
+            "relation": "DT_w != 0",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for a light oil. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "H",
+            "offset": "0",
+            "symbol": "eta",
+            "reason": "The gap is the length scale, so η = y/H runs from 0 at the fixed wall to 1 at the moving wall."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "U",
+            "offset": "0",
+            "symbol": "V",
+            "reason": "The wall speed is the velocity scale."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "DT_w",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The wall difference T_1 − T_0 is the temperature scale, so θ = 0 at the fixed wall and 1 at the moving wall."
+          }
+        ],
+        "preferred": [
+          "v-H",
+          "v-U",
+          "v-mu",
+          "v-DTw"
+        ],
+        "evidence": [
+          {
+            "id": "ev-br",
+            "source": "mit-viscous",
+            "claim": "The Brinkman number μv²/(kΔT) is the ratio of viscous heating to transverse heat conduction."
+          }
+        ]
+      },
+      {
+        "id": "thermocapillary-flow",
+        "label": "Thermocapillary flow in a layer",
+        "group": "standard",
+        "title": "Thermocapillary flow in a liquid layer with a declared surface temperature gradient",
+        "purpose": {
+          "question": "Which way does the surface of a heated liquid layer move, and how fast? How much does the flow add to the heat transport along the layer?",
+          "observable": "v-us",
+          "calculation": "regime-map",
+          "declaration": "thermocapillary-layer"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the layer",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_0-bx",
+            "meaning": "Temperature minus the declared linear part, T − T_0 − b x",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-z",
+            "symbol": "z",
+            "meaning": "Height above the bottom",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-d",
+            "symbol": "h_l",
+            "meaning": "Depth of the layer",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.001",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Length of the layer",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.02",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-b",
+            "symbol": "b",
+            "meaning": "Declared temperature gradient along the layer, ΔT/L",
+            "quantity": "temperature-gradient",
+            "unit": "K/m",
+            "value": "100",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-gT",
+            "symbol": "gamma_T",
+            "tex": "\\gamma_T",
+            "meaning": "Temperature derivative of the surface tension, dγ/dT",
+            "quantity": "surface-tension-gradient",
+            "unit": "N/(m*K)",
+            "value": "-6.5e-5",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of the liquid",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "0.0046",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the liquid",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.117",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of the liquid",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "920",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of the liquid",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "1630",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-G",
+            "symbol": "G",
+            "meaning": "Pressure gradient along the layer, dp/dx, set by the zero net flow",
+            "quantity": "pressure-gradient",
+            "unit": "Pa/m",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-us",
+            "symbol": "u_s",
+            "meaning": "Speed of the free surface",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "mu*d(u,z,z) = G",
+            "domain": "0 < z < h_l"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "rho*c_p*b*u = k*d(DT,z,z)",
+            "domain": "0 < z < h_l"
+          }
+        ],
+        "geometry": {
+          "domain": "A long horizontal liquid layer of depth h_l on a rigid bottom, with a flat free surface",
+          "coordinates": "z from the bottom (z = 0) to the free surface (z = h_l). x along the layer",
+          "lengths": [
+            "v-d",
+            "v-L"
+          ],
+          "interfaces": "The free surface at z = h_l"
+        },
+        "conditions": [
+          {
+            "id": "c-noslip",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "z = 0"
+          },
+          {
+            "id": "c-stress",
+            "kind": "boundary",
+            "text": "mu*d(u,z) = gamma_T*b",
+            "at": "z = h_l"
+          },
+          {
+            "id": "c-bottom",
+            "kind": "boundary",
+            "text": "d(DT,z) = 0",
+            "at": "z = 0"
+          },
+          {
+            "id": "c-surface",
+            "kind": "boundary",
+            "text": "d(DT,z) = 0",
+            "at": "z = h_l"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-parallel",
+            "kind": "physical",
+            "text": "Far from the ends, the flow is steady, laminar and parallel to the bottom. The temperature is T_0 + b x plus a part that depends on z only.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-return",
+            "kind": "physical",
+            "text": "The ends are closed, so the net flow through each section is zero. This fixes G.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-flat",
+            "kind": "physical",
+            "text": "The free surface stays flat, and the model neglects buoyancy.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-adiabatic",
+            "kind": "physical",
+            "text": "No heat crosses the bottom or the free surface.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for a silicone oil. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-z",
+            "for": "v-z",
+            "scale": "h_l",
+            "offset": "0",
+            "symbol": "Z",
+            "reason": "The depth is the length scale."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "gamma_T*b*h_l/mu",
+            "offset": "0",
+            "symbol": "W",
+            "reason": "The surface stress (dγ/dT)b times h_l/μ is the velocity scale. It keeps the sign of the stress."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "b*h_l",
+            "offset": "0",
+            "symbol": "Theta",
+            "reason": "The declared gradient times the depth is the temperature scale."
+          }
+        ],
+        "preferred": [
+          "v-d",
+          "v-mu",
+          "v-k",
+          "v-b"
+        ],
+        "evidence": [
+          {
+            "id": "ev-ma",
+            "source": "comsol-marangoni",
+            "claim": "The tangential stress is τ = (∂σ/∂T)(∂T/∂s). The liquid moves to the side with the higher surface tension."
+          }
+        ]
+      },
+      {
+        "id": "conjugate-channel",
+        "label": "Conjugate fluid–solid channel",
+        "group": "standard",
+        "title": "Conjugate heat transfer: a laminar channel flow heated through a solid wall",
+        "purpose": {
+          "question": "How do the wall conduction and the flow share the heat from a heated outer surface? Do the interface temperature and heat flux stay continuous?",
+          "observable": "v-DTo",
+          "calculation": "regime-map",
+          "declaration": "conjugate-channel"
+        },
+        "variables": [
+          {
+            "id": "v-Tf",
+            "symbol": "DT_f",
+            "tex": "T_f-T_{in}",
+            "meaning": "Fluid temperature minus the inlet temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-Ts",
+            "symbol": "DT_s",
+            "tex": "T_s-T_{in}",
+            "meaning": "Wall temperature minus the inlet temperature",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Axial velocity of the fluid",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance along the channel from the inlet",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the mid-plane of the channel",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-H",
+            "symbol": "H",
+            "meaning": "Half-width of the channel",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.001",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Lh",
+            "symbol": "L",
+            "meaning": "Heated length",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.08",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-Ho",
+            "symbol": "H_o",
+            "tex": "H_o",
+            "meaning": "Distance of the outer wall surface from the mid-plane, H + t, with t the wall thickness",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.0015",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-um",
+            "symbol": "u_m",
+            "meaning": "Mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.00075",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-kf",
+            "symbol": "k_f",
+            "meaning": "Thermal conductivity of the fluid",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.6",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-ks",
+            "symbol": "k_s",
+            "meaning": "Thermal conductivity of the wall",
+            "quantity": "thermal-conductivity",
+            "phase": "solid",
+            "unit": "W/(m*K)",
+            "value": "16",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of the fluid",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "1000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of the fluid",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "4000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-q",
+            "symbol": "q",
+            "meaning": "Heat flux into the outer wall surface",
+            "quantity": "heat-flux",
+            "unit": "W/m^2",
+            "value": "1000",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTo",
+            "symbol": "DT_o",
+            "tex": "T_o-T_{in}",
+            "meaning": "Outer-surface temperature minus the inlet temperature at the station",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-fluid",
+            "kind": "governing",
+            "text": "rho*c_p*u*d(DT_f,x) = k_f*(d(DT_f,x,x) + d(DT_f,y,y))",
+            "domain": "0 < x < L, 0 < y < H"
+          },
+          {
+            "id": "e-solid",
+            "kind": "governing",
+            "text": "d(DT_s,x,x) + d(DT_s,y,y) = 0",
+            "domain": "0 < x < L, H < y < H_o"
+          },
+          {
+            "id": "e-velocity",
+            "kind": "closure",
+            "text": "u = 3/2*u_m*(1 - y^2/H^2)",
+            "domain": "0 < y < H"
+          }
+        ],
+        "geometry": {
+          "domain": "A plane channel of half-width H between two walls of thickness t, heated with a uniform flux on the outer surfaces over the length L; symmetric about the mid-plane",
+          "coordinates": "x from the inlet (x = 0) to the outlet (x = L). y from the mid-plane (y = 0) through the fluid (y < H) and the wall (H < y < H + t)",
+          "lengths": [
+            "v-H",
+            "v-Ho",
+            "v-Lh"
+          ],
+          "interfaces": "The fluid–solid interface at y = H"
+        },
+        "conditions": [
+          {
+            "id": "c-sym",
+            "kind": "boundary",
+            "text": "d(DT_f,y) = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-iT",
+            "kind": "interface",
+            "text": "DT_f = DT_s",
+            "at": "y = H"
+          },
+          {
+            "id": "c-iq",
+            "kind": "interface",
+            "text": "k_f*d(DT_f,y) = k_s*d(DT_s,y)",
+            "at": "y = H"
+          },
+          {
+            "id": "c-outer",
+            "kind": "boundary",
+            "text": "k_s*d(DT_s,y) = q",
+            "at": "y = H_o"
+          },
+          {
+            "id": "c-in",
+            "kind": "boundary",
+            "text": "DT_f = 0",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-out",
+            "kind": "boundary",
+            "text": "d(DT_f,x) = 0",
+            "at": "x = L"
+          },
+          {
+            "id": "c-s0",
+            "kind": "boundary",
+            "text": "d(DT_s,x) = 0",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-sL",
+            "kind": "boundary",
+            "text": "d(DT_s,x) = 0",
+            "at": "x = L"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "Steady laminar flow with the fully developed parabolic velocity between parallel plates, and constant properties.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-ends",
+            "kind": "physical",
+            "text": "The two ends of the wall are adiabatic. At the inlet, the fluid brings T_in by advection. The model neglects conduction across the inlet plane.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-interface",
+            "kind": "physical",
+            "text": "The interface has no contact resistance: one temperature and one heat flux.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for water in a steel wall. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "H",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The half-width is the length scale along and across the channel."
+          },
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "H",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The half-width is the length scale."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "u_m",
+            "offset": "0",
+            "symbol": "W",
+            "reason": "The mean velocity is the velocity scale."
+          },
+          {
+            "id": "s-Tf",
+            "for": "v-Tf",
+            "scale": "q*H/k_f",
+            "offset": "0",
+            "symbol": "theta_f",
+            "reason": "The heat flux causes this temperature difference across H in the fluid."
+          },
+          {
+            "id": "s-Ts",
+            "for": "v-Ts",
+            "scale": "q*H/k_f",
+            "offset": "0",
+            "symbol": "theta_s",
+            "reason": "The same scale as the fluid, so the interface condition θ_f = θ_s keeps its form."
+          }
+        ],
+        "preferred": [
+          "v-H",
+          "v-um",
+          "v-rho",
+          "v-kf"
+        ],
+        "evidence": [
+          {
+            "id": "ev-plates",
+            "source": "lienhard-flow",
+            "claim": "Nu_Dh = 8.235 for a fixed flux at both plates (eqn. 7.63)."
+          }
+        ]
+      },
+      {
+        "id": "plate-convection",
+        "label": "Forced convection over a plate",
+        "group": "standard",
+        "title": "Forced convection from an isothermal flat plate: local and mean Nusselt numbers",
+        "purpose": {
+          "question": "Which local and mean heat-transfer coefficients does a uniform air stream give on an isothermal flat plate? Where do the laminar and turbulent correlations hold?",
+          "observable": "v-h",
+          "calculation": "regime-map",
+          "declaration": "plate-correlation"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the plate",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-v",
+            "symbol": "v",
+            "meaning": "Velocity normal to the plate",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_w",
+            "meaning": "Local temperature minus the wall temperature, T − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance from the leading edge",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the plate",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-U",
+            "symbol": "U",
+            "meaning": "Speed of the outer stream",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Length of the plate",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-xs",
+            "symbol": "x_s",
+            "meaning": "Distance of the station from the leading edge",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.25",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-nu",
+            "symbol": "nu",
+            "tex": "\\nu",
+            "meaning": "Kinematic viscosity of the air",
+            "quantity": "kinematic-viscosity",
+            "unit": "m^2/s",
+            "value": "1.589e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-alpha",
+            "symbol": "alpha",
+            "meaning": "Thermal diffusivity of the air",
+            "quantity": "thermal-diffusivity",
+            "unit": "m^2/s",
+            "value": "2.25e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the air",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.0263",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-ye",
+            "symbol": "y_e",
+            "meaning": "Outer edge of the computation, far outside the layer",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.05",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-DTe",
+            "symbol": "DT_e",
+            "tex": "T_\\infty-T_w",
+            "meaning": "Outer-stream temperature minus the wall temperature, T_∞ − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "-30",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": false
+          },
+          {
+            "id": "v-h",
+            "symbol": "h",
+            "meaning": "Local heat-transfer coefficient at the station",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-hm",
+            "symbol": "h_m",
+            "tex": "\\bar h",
+            "meaning": "Mean heat-transfer coefficient of the plate",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-continuity",
+            "kind": "governing",
+            "text": "d(v,y) + d(u,x) = 0",
+            "domain": "x > 0, 0 < y < y_e"
+          },
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y)",
+            "domain": "x > 0, 0 < y < y_e"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "u*d(DT,x) + v*d(DT,y) = alpha*d(DT,y,y)",
+            "domain": "x > 0, 0 < y < y_e"
+          }
+        ],
+        "geometry": {
+          "domain": "A thin flat plate of length L parallel to a uniform stream, with a sharp leading edge and a uniform wall temperature",
+          "coordinates": "x along the plate from the leading edge, y normal to it",
+          "lengths": [
+            "v-L",
+            "v-xs"
+          ],
+          "interfaces": "The plate surface y = 0"
+        },
+        "conditions": [
+          {
+            "id": "c-noslip",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-wall",
+            "kind": "boundary",
+            "text": "v = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-outer",
+            "kind": "boundary",
+            "text": "u = U",
+            "at": "y = y_e"
+          },
+          {
+            "id": "c-edge",
+            "kind": "boundary",
+            "text": "u = U",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-Tw",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-Te",
+            "kind": "boundary",
+            "text": "DT = DT_e",
+            "at": "y = y_e"
+          },
+          {
+            "id": "c-T0",
+            "kind": "boundary",
+            "text": "DT = DT_e",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "Steady, two-dimensional flow with constant properties, a uniform outer stream and an isothermal wall.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-thin",
+            "kind": "physical",
+            "text": "A thin layer: Re ≫ 1 and Pe_x ≫ 100, so axial conduction is negligible.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-lowspeed",
+            "kind": "physical",
+            "text": "Low speed: the Eckert number is much less than 1, so viscous heating is negligible.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for air at about 300 K. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The plate length."
+          },
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "(nu*L/U)^(1/2)",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The inner scale: the thickness at which viscosity balances inertia."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "U",
+            "offset": "0",
+            "symbol": "Uh",
+            "reason": "The outer speed."
+          },
+          {
+            "id": "s-v",
+            "for": "v-v",
+            "scale": "U*(nu/(U*L))^(1/2)",
+            "offset": "0",
+            "symbol": "Vh",
+            "reason": "The scale of v from continuity."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "DT_e",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The outer-to-wall difference, so θ = 0 at the wall and 1 in the outer stream."
+          }
+        ],
+        "preferred": [
+          "v-L",
+          "v-U",
+          "v-nu",
+          "v-k"
+        ],
+        "evidence": [
+          {
+            "id": "ev-plate",
+            "source": "lienhard-2024",
+            "claim": "Nu_x = 0.332 Re_x^(1/2) Pr^(1/3) for Pr ≥ 0.6 (eqn. 6.58) and the mean Nu_L = 0.664 Re_L^(1/2) Pr^(1/3) (eqn. 6.68)."
+          }
+        ]
+      },
+      {
+        "id": "tube-convection",
+        "label": "Forced convection in a tube",
+        "group": "standard",
+        "title": "Laminar forced convection in a tube with a uniform wall temperature (the Graetz problem)",
+        "purpose": {
+          "question": "Which Nusselt number does a tube with a uniform wall temperature give far from the entrance? How does it differ from the value for a uniform heat flux at the wall?",
+          "observable": "v-h",
+          "calculation": "regime-map",
+          "declaration": "pipe-wall-temperature"
+        },
+        "variables": [
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_w",
+            "meaning": "Local temperature minus the wall temperature, T − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Axial velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-r",
+            "symbol": "r",
+            "meaning": "Distance from the axis",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Distance from the start of the heated section",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-R",
+            "symbol": "R",
+            "meaning": "Tube radius",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.005",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-um",
+            "symbol": "u_m",
+            "meaning": "Mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.05",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of the water",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "997",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of the water",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "8.55e-4",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the water",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.613",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-cp",
+            "symbol": "c_p",
+            "meaning": "Specific heat capacity of the water",
+            "quantity": "specific-heat",
+            "phase": "fluid",
+            "unit": "J/(kg*K)",
+            "value": "4179",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-xs",
+            "symbol": "x_s",
+            "meaning": "Distance of the station from the start of the heated section",
+            "quantity": "length",
+            "unit": "m",
+            "value": "2",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTi",
+            "symbol": "DT_i",
+            "tex": "T_i-T_w",
+            "meaning": "Inlet temperature minus the wall temperature, T_i − T_w",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "-20",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-h",
+            "symbol": "h",
+            "meaning": "Heat-transfer coefficient of the fully developed flow",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "rho*c_p*u*d(DT,x) = k*(d(DT,r,r) + d(DT,r)/r)",
+            "domain": "0 < r < R, x > 0"
+          },
+          {
+            "id": "e-velocity",
+            "kind": "closure",
+            "text": "u = 2*u_m*(1 - r^2/R^2)",
+            "domain": "0 < r < R"
+          }
+        ],
+        "geometry": {
+          "domain": "A long straight tube of radius R with a fully developed laminar velocity profile; the wall temperature is uniform from x = 0",
+          "coordinates": "r from the axis to the wall, x along the tube from the start of the heated section",
+          "lengths": [
+            "v-R",
+            "v-xs"
+          ],
+          "interfaces": "The wall at r = R"
+        },
+        "conditions": [
+          {
+            "id": "c-axis",
+            "kind": "boundary",
+            "text": "d(DT,r) = 0",
+            "at": "r = 0"
+          },
+          {
+            "id": "c-wall",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "r = R"
+          },
+          {
+            "id": "c-inlet",
+            "kind": "initial",
+            "text": "DT = DT_i",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "Steady laminar flow with the fully developed (Hagen–Poiseuille) velocity profile before the heated section starts.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-axial",
+            "kind": "physical",
+            "text": "Axial conduction is negligible against advection (Pe ≫ 1), and viscous heating is small.",
+            "source": "lienhard-flow"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for water. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-r",
+            "for": "v-r",
+            "scale": "R",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The radius is the length scale across the tube."
+          },
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "rho*c_p*u_m*R^2/k",
+            "offset": "0",
+            "symbol": "Z",
+            "reason": "The axial length over which conduction across the radius acts on the flow: R·Pe_R."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "u_m",
+            "offset": "0",
+            "symbol": "U",
+            "reason": "The mean velocity is the velocity scale."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "DT_i",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The inlet difference is the temperature scale."
+          }
+        ],
+        "preferred": [
+          "v-R",
+          "v-um",
+          "v-rho",
+          "v-k"
+        ],
+        "evidence": [
+          {
+            "id": "ev-graetz",
+            "source": "lienhard-flow",
+            "claim": "Nu_D = 3.657 for a uniform wall temperature and 48/11 = 4.364 for a uniform heat flux at the wall, fully developed (eqns. 7.22 and 7.23)."
+          }
+        ]
+      },
+      {
+        "id": "natural-wall",
+        "label": "Natural convection at a vertical wall",
+        "group": "standard",
+        "title": "Natural convection from an isothermal vertical wall",
+        "purpose": {
+          "question": "Which mean heat-transfer coefficient does a heated vertical wall give in still air? In which range of the Rayleigh number does the correlation hold?",
+          "observable": "v-hm",
+          "calculation": "regime-map",
+          "declaration": "wall-natural-correlation"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the wall, upward",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-v",
+            "symbol": "v",
+            "meaning": "Velocity normal to the wall",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-DT",
+            "symbol": "DT",
+            "tex": "T-T_\\infty",
+            "meaning": "Local temperature minus the ambient temperature, T − T_∞",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-x",
+            "symbol": "x",
+            "meaning": "Height above the lower edge",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the wall",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-L",
+            "symbol": "L",
+            "meaning": "Height of the wall",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-g",
+            "symbol": "g",
+            "meaning": "Gravitational acceleration",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "value": "9.81",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-beta",
+            "symbol": "beta",
+            "meaning": "Thermal expansion coefficient of the air, 1/T_f",
+            "quantity": "thermal-expansion",
+            "unit": "1/K",
+            "value": "1/300",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTw",
+            "symbol": "DT_w",
+            "tex": "T_w-T_\\infty",
+            "meaning": "Wall temperature minus the ambient temperature, T_w − T_∞",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "20",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-nu",
+            "symbol": "nu",
+            "tex": "\\nu",
+            "meaning": "Kinematic viscosity of the air",
+            "quantity": "kinematic-viscosity",
+            "unit": "m^2/s",
+            "value": "1.589e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-alpha",
+            "symbol": "alpha",
+            "meaning": "Thermal diffusivity of the air",
+            "quantity": "thermal-diffusivity",
+            "unit": "m^2/s",
+            "value": "2.25e-5",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-k",
+            "symbol": "k",
+            "meaning": "Thermal conductivity of the air",
+            "quantity": "thermal-conductivity",
+            "phase": "fluid",
+            "unit": "W/(m*K)",
+            "value": "0.0263",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-ye",
+            "symbol": "y_e",
+            "meaning": "Outer edge of the computation, far outside the layer",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.05",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": false
+          },
+          {
+            "id": "v-hm",
+            "symbol": "h_m",
+            "tex": "\\bar h",
+            "meaning": "Mean heat-transfer coefficient over the height",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-continuity",
+            "kind": "governing",
+            "text": "d(v,y) + d(u,x) = 0",
+            "domain": "0 < x < L, 0 < y < y_e"
+          },
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y) + g*beta*DT",
+            "domain": "0 < x < L, 0 < y < y_e"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "u*d(DT,x) + v*d(DT,y) = alpha*d(DT,y,y)",
+            "domain": "0 < x < L, 0 < y < y_e"
+          }
+        ],
+        "geometry": {
+          "domain": "A vertical isothermal wall of height L in a large volume of still air",
+          "coordinates": "x upward from the lower edge, y normal to the wall",
+          "lengths": [
+            "v-L"
+          ],
+          "interfaces": "The wall y = 0"
+        },
+        "conditions": [
+          {
+            "id": "c-noslip",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-wall",
+            "kind": "boundary",
+            "text": "v = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-outer",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = y_e"
+          },
+          {
+            "id": "c-edge",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "x = 0"
+          },
+          {
+            "id": "c-Tw",
+            "kind": "boundary",
+            "text": "DT = DT_w",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-Te",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "y = y_e"
+          },
+          {
+            "id": "c-T0",
+            "kind": "boundary",
+            "text": "DT = 0",
+            "at": "x = 0"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-boussinesq",
+            "kind": "physical",
+            "text": "Boussinesq approximation: the density changes only in the buoyancy term, and βΔT is small.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-laminar",
+            "kind": "physical",
+            "text": "Steady, two-dimensional boundary layer along an isothermal vertical wall. Properties at the film temperature.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for air at about 300 K. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-x",
+            "for": "v-x",
+            "scale": "L",
+            "offset": "0",
+            "symbol": "X",
+            "reason": "The height of the wall."
+          },
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "L*(nu^2/(g*beta*DT_w*L^3))^(1/4)",
+            "offset": "0",
+            "symbol": "Y",
+            "reason": "The laminar layer thickness L·Gr^(−1/4)."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "(g*beta*DT_w*L)^(1/2)",
+            "offset": "0",
+            "symbol": "Uh",
+            "reason": "The buoyancy velocity √(gβΔT L)."
+          },
+          {
+            "id": "s-v",
+            "for": "v-v",
+            "scale": "(g*beta*DT_w*L)^(1/2)*(nu^2/(g*beta*DT_w*L^3))^(1/4)",
+            "offset": "0",
+            "symbol": "Vh",
+            "reason": "The scale of v from continuity."
+          },
+          {
+            "id": "s-T",
+            "for": "v-DT",
+            "scale": "DT_w",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The wall difference is the temperature scale."
+          }
+        ],
+        "preferred": [
+          "v-L",
+          "v-nu",
+          "v-k",
+          "v-DTw"
+        ],
+        "evidence": [
+          {
+            "id": "ev-cc",
+            "source": "lienhard-2024",
+            "claim": "The Churchill–Chu correlations for vertical isothermal surfaces, eqns. (8.13a) for Ra_L < 10⁹ and (8.13b) for all Ra_L."
+          }
+        ]
+      },
+      {
+        "id": "mixed-convection",
+        "label": "Mixed convection in a vertical channel",
+        "group": "standard",
+        "title": "Fully developed mixed convection between two vertical walls at different temperatures",
+        "purpose": {
+          "question": "How does buoyancy change the velocity profile of a slow flow between a hot and a cold vertical wall? When does the flow reverse near a wall?",
+          "observable": "v-umax",
+          "calculation": "regime-map",
+          "declaration": "mixed-channel"
+        },
+        "variables": [
+          {
+            "id": "v-u",
+            "symbol": "u",
+            "meaning": "Velocity along the channel, in the direction of the mean flow",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-Tr",
+            "symbol": "T_r",
+            "tex": "T-T_0",
+            "meaning": "Temperature minus the mean wall temperature, T − (T_h + T_c)/2",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "kind": "field",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-y",
+            "symbol": "y",
+            "meaning": "Distance from the hot wall",
+            "quantity": "length",
+            "unit": "m",
+            "kind": "coordinate",
+            "domain": "nonnegative",
+            "pi": false
+          },
+          {
+            "id": "v-D",
+            "symbol": "D",
+            "meaning": "Width of the channel",
+            "quantity": "length",
+            "unit": "m",
+            "value": "0.02",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-um",
+            "symbol": "u_m",
+            "meaning": "Mean velocity",
+            "quantity": "speed",
+            "unit": "m/s",
+            "value": "0.01",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-DTw",
+            "symbol": "DT_w",
+            "tex": "T_h-T_c",
+            "meaning": "Hot-wall temperature minus cold-wall temperature, T_h − T_c",
+            "quantity": "temperature-difference",
+            "unit": "K",
+            "value": "10",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-g",
+            "symbol": "g_x",
+            "tex": "g_x",
+            "meaning": "Component of gravity along the mean flow (negative for upward flow)",
+            "quantity": "gravity",
+            "unit": "m/s^2",
+            "value": "-9.81",
+            "kind": "parameter",
+            "domain": "nonzero",
+            "pi": true
+          },
+          {
+            "id": "v-beta",
+            "symbol": "beta",
+            "meaning": "Thermal expansion coefficient of the water",
+            "quantity": "thermal-expansion",
+            "unit": "1/K",
+            "value": "2.1e-4",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-rho",
+            "symbol": "rho",
+            "meaning": "Density of the water",
+            "quantity": "density",
+            "phase": "fluid",
+            "unit": "kg/m^3",
+            "value": "997",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-mu",
+            "symbol": "mu",
+            "meaning": "Dynamic viscosity of the water",
+            "quantity": "dynamic-viscosity",
+            "phase": "fluid",
+            "unit": "Pa*s",
+            "value": "8.9e-4",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          },
+          {
+            "id": "v-G",
+            "symbol": "G",
+            "meaning": "Gradient of the reduced pressure, dp'/dx, set by the mean velocity",
+            "quantity": "pressure-gradient",
+            "unit": "Pa/m",
+            "kind": "parameter",
+            "domain": "real",
+            "pi": false
+          },
+          {
+            "id": "v-umax",
+            "symbol": "u_max",
+            "meaning": "Largest velocity in the channel",
+            "quantity": "speed",
+            "unit": "m/s",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": [
+          {
+            "id": "e-momentum",
+            "kind": "governing",
+            "text": "mu*d(u,y,y) = G + rho*g_x*beta*T_r",
+            "domain": "0 < y < D"
+          },
+          {
+            "id": "e-energy",
+            "kind": "governing",
+            "text": "d(T_r,y,y) = 0",
+            "domain": "0 < y < D"
+          }
+        ],
+        "geometry": {
+          "domain": "A vertical channel between two parallel walls a distance D apart, far from the inlet",
+          "coordinates": "y from the hot wall (y = 0) to the cold wall (y = D). x along the mean flow",
+          "lengths": [
+            "v-D"
+          ],
+          "interfaces": "The two walls"
+        },
+        "conditions": [
+          {
+            "id": "c-u0",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-uD",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "y = D"
+          },
+          {
+            "id": "c-Th",
+            "kind": "boundary",
+            "text": "T_r = DT_w/2",
+            "at": "y = 0"
+          },
+          {
+            "id": "c-Tc",
+            "kind": "boundary",
+            "text": "T_r = -DT_w/2",
+            "at": "y = D"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-boussinesq",
+            "kind": "physical",
+            "text": "Boussinesq approximation: the density changes only in the buoyancy term, ρ = ρ_0(1 − β(T − T_0)), with T_0 the mean wall temperature.",
+            "source": "lienhard-2024"
+          },
+          {
+            "id": "a-developed",
+            "kind": "physical",
+            "text": "Steady, laminar and fully developed flow: u depends on y only, and the temperature is the conduction profile.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-mean",
+            "kind": "physical",
+            "text": "The mean velocity u_m fixes the pressure gradient G.",
+            "source": "spec-10"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for water. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": [
+          {
+            "id": "s-y",
+            "for": "v-y",
+            "scale": "D",
+            "offset": "0",
+            "symbol": "eta",
+            "reason": "The width is the length scale."
+          },
+          {
+            "id": "s-u",
+            "for": "v-u",
+            "scale": "u_m",
+            "offset": "0",
+            "symbol": "W",
+            "reason": "The mean velocity is the velocity scale."
+          },
+          {
+            "id": "s-T",
+            "for": "v-Tr",
+            "scale": "DT_w",
+            "offset": "0",
+            "symbol": "theta",
+            "reason": "The wall difference is the temperature scale."
+          }
+        ],
+        "preferred": [
+          "v-D",
+          "v-um",
+          "v-rho",
+          "v-DTw"
+        ],
+        "evidence": [
+          {
+            "id": "ev-ri",
+            "source": "lienhard-2024",
+            "claim": "Gr_L/Re_L² compares natural with forced convection (eqn. 8.45). Assisting flow and opposing flow differ."
+          }
+        ]
+      },
+      {
+        "id": "fail-plate-transition",
+        "label": "Failure: plate in the transition range",
+        "group": "failure",
+        "failure": "The station is in the transition range of a flat-plate boundary layer. No correlation gives a local value there, and the page does not interpolate.",
+        "title": "Failure: a station in the transition range of the plate boundary layer",
+        "purpose": {
+          "question": "Which local and mean heat-transfer coefficients does a uniform air stream give on an isothermal flat plate? Where do the laminar and turbulent correlations hold?",
+          "observable": "v-h",
+          "calculation": "regime-map",
+          "declaration": "plate-correlation"
+        },
+        "variables": "plate-convection",
+        "overrides": {
+          "v-U": {
+            "value": "20"
+          },
+          "v-xs": {
+            "value": "0.5"
+          }
+        },
+        "equations": "plate-convection",
+        "geometry": "plate-convection",
+        "conditions": "plate-convection",
+        "assumptions": "plate-convection",
+        "scales": "plate-convection",
+        "evidence": "plate-convection",
+        "preferred": [
+          "v-L",
+          "v-U",
+          "v-nu",
+          "v-k"
+        ]
+      },
+      {
+        "id": "fail-surface-loss",
+        "label": "Failure: heat loss at the free surface",
+        "group": "failure",
+        "failure": "A heat loss at the free surface makes the temperature depend on x in another way. So the parallel-flow declaration does not hold, and the case needs a separate declaration.",
+        "title": "Failure: thermocapillary layer with a heat loss at the free surface",
+        "purpose": {
+          "question": "Which way does the surface of a heated liquid layer move, and how fast? How much does the flow add to the heat transport along the layer?",
+          "observable": "v-us",
+          "calculation": "regime-map",
+          "declaration": "thermocapillary-heat-loss"
+        },
+        "variables": "thermocapillary-flow",
+        "extra": [
+          {
+            "id": "v-hs",
+            "symbol": "h_s",
+            "meaning": "Heat-transfer coefficient at the free surface",
+            "quantity": "heat-transfer-coefficient",
+            "unit": "W/(m^2*K)",
+            "value": "10",
+            "kind": "parameter",
+            "domain": "positive",
+            "pi": true
+          }
+        ],
+        "equations": "thermocapillary-flow",
+        "geometry": "thermocapillary-flow",
+        "conditions": [
+          {
+            "id": "c-noslip",
+            "kind": "boundary",
+            "text": "u = 0",
+            "at": "z = 0"
+          },
+          {
+            "id": "c-stress",
+            "kind": "boundary",
+            "text": "mu*d(u,z) = gamma_T*b",
+            "at": "z = h_l"
+          },
+          {
+            "id": "c-bottom",
+            "kind": "boundary",
+            "text": "d(DT,z) = 0",
+            "at": "z = 0"
+          },
+          {
+            "id": "c-surface",
+            "kind": "boundary",
+            "text": "-k*d(DT,z) = h_s*DT",
+            "at": "z = h_l"
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "a-parallel",
+            "kind": "physical",
+            "text": "Far from the ends, the flow is steady, laminar and parallel to the bottom. The temperature is T_0 + b x plus a part that depends on z only.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-return",
+            "kind": "physical",
+            "text": "The ends are closed, so the net flow through each section is zero. This fixes G.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-flat",
+            "kind": "physical",
+            "text": "The free surface stays flat, and the model neglects buoyancy.",
+            "source": "comsol-marangoni"
+          },
+          {
+            "id": "a-values",
+            "kind": "physical",
+            "text": "The property values are illustrative values for a silicone oil. The page does not claim them as data of a named fluid.",
+            "source": "spec-10"
+          }
+        ],
+        "scales": "thermocapillary-flow",
+        "evidence": "thermocapillary-flow",
+        "preferred": [
+          "v-d",
+          "v-mu",
+          "v-k",
+          "v-b"
+        ]
       }
     ]
   },
@@ -8792,7 +11129,7 @@
         "title": "Lienhard IV and Lienhard V: A Heat Transfer Textbook, 6th edition, version 6.00 (19 April 2024)",
         "url": "https://ahtt.mit.edu/",
         "read": "2026-10-06",
-        "supports": "The lumped model is accurate within about 3 % if Bi < 0.1 (section 1.3). The radiation coefficient h_rad = 4σT_m³ε needs (ΔT/T_m)²/4 ≪ 1 (equations 2.28 to 2.31). View factor reciprocity and summation, the string rule (problem 10.14) and radiosity networks of grey surfaces (section 10.4). Properties of water at 300 K (Table A.3) and of pure copper (Table A.1)."
+        "supports": "The lumped model is accurate within about 3 % if Bi < 0.1 (section 1.3). The radiation coefficient h_rad = 4σT_m³ε needs (ΔT/T_m)²/4 ≪ 1 (equations 2.28 to 2.31). View factor reciprocity and summation, the string rule (problem 10.14) and radiosity networks of grey surfaces (section 10.4). Properties of water at 300 K (Table A.3) and of pure copper (Table A.1). Piece 7: the laminar flat-plate correlations Nu_x = 0.332 Re_x^(1/2) Pr^(1/3) for Pr ≥ 0.6, within 2 % of the exact solution (eqn. 6.58), and Nu_L = 0.664 Re_L^(1/2) Pr^(1/3) (eqn. 6.68); the turbulent gas correlation 0.0296 Re_x^0.8 Pr^0.6 (eqn. 6.112); the transition data of section 6.1; the Péclet number (eqn. 6.61); Churchill and Chu's eqns. (8.13a) and (8.13b) with Example 8.1; inclined walls with g cos θ (section 8.4); and Gr/Re² for mixed convection with assisting and opposing flow (eqn. 8.45)."
       },
       {
         "id": "nist-sigma",
@@ -8897,7 +11234,7 @@
         "title": "Lienhard IV and Lienhard V: A Heat Transfer Textbook, 6th edition, version 6.00 (19 April 2024), chapters 6 and 7",
         "url": "https://ahtt.mit.edu/",
         "read": "2026-10-06",
-        "supports": "The Hagen–Poiseuille profile (eqn. 7.14), the laminar friction factor f = 64/Re_D, Nu_D = 48/11 = 4.364 for a uniform wall heat flux (eqn. 7.22), the parallel-plate profile (eqn. 7.62) and Nu_Dh = 8.235 for a fixed flux at both plates (eqn. 7.63). The Blasius solution f''(0) = 0.33206 (Table 6.1) and c_f = 0.664/√Re_x (eqns. 6.32 and 6.33)."
+        "supports": "The Hagen–Poiseuille profile (eqn. 7.14), the laminar friction factor f = 64/Re_D, Nu_D = 48/11 = 4.364 for a uniform wall heat flux (eqn. 7.22), the parallel-plate profile (eqn. 7.62) and Nu_Dh = 8.235 for a fixed flux at both plates (eqn. 7.63). The Blasius solution f''(0) = 0.33206 (Table 6.1) and c_f = 0.664/√Re_x (eqns. 6.32 and 6.33). Piece 7: Nu_D = 3.657 for a uniform wall temperature (eqn. 7.23), the thermal entry lengths 0.034 and 0.043 Re_D Pr (eqn. 7.24), the minimum transitional Re_D ≈ 2100, and Gnielinski's correlation with Filonenko's friction factor for 2300 ≤ Re_D ≤ 5 × 10⁶ and 0.6 ≤ Pr ≤ 10⁵ (eqns. 7.41 and 7.42)."
       },
       {
         "id": "apsley-rvf",
@@ -8954,12 +11291,33 @@
         "url": "https://www-mdp.eng.cam.ac.uk/web/library/enginfo/aerothermal_dvd_only/aero/fprops/poten/node37.html",
         "read": "2026-10-06",
         "supports": "Potential flow gives C_p = 1 − 4 sin²θ and zero drag (d'Alembert's paradox). In a real flow viscosity causes separation behind the cylinder, and the agreement with experiment is lost there."
+      },
+      {
+        "id": "comsol-marangoni",
+        "title": "COMSOL Multiphysics Cyclopedia: Marangoni effect",
+        "url": "https://www.comsol.com/multiphysics/marangoni-effect",
+        "read": "2026-10-06",
+        "supports": "The tangential stress at a free surface τ = (∂σ/∂T)(∂T/∂s). The liquid flows toward regions of higher surface tension, so toward the cold side when the surface tension falls with temperature. Ma = |∂σ/∂T|ΔT L/(μα). The flow couples with heat transport."
+      },
+      {
+        "id": "mit-viscous",
+        "title": "MIT 2.810 Manufacturing Processes and Systems (2016): Quiz 1 solutions, problem 4, Viscous heating",
+        "url": "https://www.mit.edu/course/2/2.810/www/files/quizzes/2016_quizzes/2016_Quiz1_Solutions.pdf",
+        "read": "2026-10-06",
+        "supports": "The ratio of the rate of viscous heating to the rate of transverse heat conduction is the Brinkman number Br = μv²/(kΔT). Br > 1 means that viscous heating exceeds the transverse heat loss by conduction."
+      },
+      {
+        "id": "mit-163-kh",
+        "title": "MIT 1.63J/2.21J Advanced Fluid Dynamics of the Environment (Mei, 2002), notes 5.2: Kelvin–Helmholtz instability for continuous shear and stratification",
+        "url": "https://ocw.mit.edu/courses/1-63-advanced-fluid-dynamics-of-the-environment-fall-2002/49955a0c0c0f8641ddac43bab9d4ec9d_52KHcontin.pdf",
+        "read": "2026-10-06",
+        "supports": "The gradient Richardson number Ri = −(g/ρ)(dρ/dz)/(dU/dz)² (eqn. 5.2.1), a local ratio of the vertical density gradient to the square of the vertical shear, and the Miles–Howard result that instability needs Ri < 1/4."
       }
     ]
   },
   "roadmap": {
     "about": "The agreed build plan (spec.md, Agreed decisions): nine pieces in merge order. The page lists what is still to come until piece 9 removes the preview label.",
-    "current": 6,
+    "current": 7,
     "pieces": [
       {
         "n": 1,
@@ -16201,6 +18559,2548 @@
           "convergence": "Pressure lift within 1e-12 at 256 points. Moment order 2 ± 0.3.",
           "reproducibility": "Plain JavaScript doubles. No random numbers."
         }
+      },
+      {
+        "id": "advection-channel",
+        "family": "advection-diffusion",
+        "title": "Steady advection and diffusion along a channel segment",
+        "piece": 7,
+        "model": {
+          "summary": "Steady one-dimensional heat transport along a channel segment, by a prescribed uniform velocity and by conduction. The inlet and the outlet have fixed temperatures.",
+          "roles": [
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the outlet temperature"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the inlet"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "length of the segment"
+            },
+            {
+              "id": "U",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "prescribed flow speed"
+            },
+            {
+              "id": "alpha",
+              "quantity": "thermal-diffusivity",
+              "kind": "parameter",
+              "meaning": "thermal diffusivity"
+            },
+            {
+              "id": "DT_in",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "the inlet temperature minus the outlet temperature"
+            },
+            {
+              "id": "C_v",
+              "quantity": "volumetric-heat-capacity",
+              "kind": "parameter",
+              "meaning": "volumetric heat capacity ρc_p",
+              "optional": true
+            },
+            {
+              "id": "q",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "total heat flux through each section of the channel",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "U*d(DT,x) = alpha*d(DT,x,x)",
+              "domain": "0 < x < L"
+            }
+          ],
+          "closures": [
+            "The heat flux along the channel is ρc_pU(T − T_ref) − k dT/dx: advection by the prescribed velocity plus Fourier conduction. The Péclet number Pe = UL/α compares the two (Lienhard, A Heat Transfer Textbook, eqn. (6.61))."
+          ],
+          "geometry": "A channel segment of length L with a uniform prescribed velocity U. The model is one-dimensional: the temperature depends on x only.",
+          "conditions": [
+            {
+              "id": "in",
+              "kind": "boundary",
+              "text": "DT = DT_in",
+              "at": "x = 0",
+              "meaning": "the inlet temperature"
+            },
+            {
+              "id": "out",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "x = L",
+              "meaning": "the outlet temperature"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "DT_in",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Pe",
+                "tex": "Pe",
+                "def": "U*L/alpha",
+                "solve": "U",
+                "meaning": "Péclet number: advection over conduction along the segment"
+              },
+              {
+                "id": "J",
+                "tex": "J",
+                "def": "q/(C_v*U*DT_in)*U*L/alpha",
+                "solve": "q",
+                "meaning": "total heat flux in units of conduction, kΔT/L"
+              }
+            ],
+            "equations": [
+              {
+                "of": "energy",
+                "text": "Pe*d(theta,X) = d(theta,X,X)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "in",
+                "text": "theta = 1",
+                "at": "X = 0"
+              },
+              {
+                "of": "out",
+                "text": "theta = 0",
+                "at": "X = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Pe",
+              "tex": "Pe",
+              "label": "Péclet number UL/α",
+              "min": 0.001,
+              "max": 1000,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady one-dimensional transport with a prescribed uniform velocity and constant properties.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "The flow goes from the inlet to the outlet, U > 0, and the end temperatures differ.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact solution θ = (1 − e^(−Pe(1−X)))/(1 − e^(−Pe)) and the total flux J = Pe/(1 − e^(−Pe)).",
+            "The composite outlet-layer form equals (1 − e^(−Pe))θ, so its error is e^(−Pe) exactly.",
+            "The exact discrete solutions of the central and upwind finite-volume schemes in rationals, with the same flux at every face."
+          ],
+          "numerical": [
+            "Finite volumes on four meshes with the observed order of the central (2) and upwind (1) schemes.",
+            "The cell Péclet number of each mesh and the monotonicity of each discrete solution, decided in rationals."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete: advection Pe θ_X and conduction θ_XX. For Pe ≪ 1, conduction controls and θ ≈ 1 − X. For Pe ≫ 1, advection controls, except in a layer of thickness 1/Pe at the outlet."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Pe → 0 is a regular limit with the diffusion form 1 − X. Pe → ∞ is singular: the outer solution θ = 1 loses the outlet condition, and an inner layer in ξ = Pe(1 − X) restores it. The composite form has the exact error e^(−Pe)."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The model is linear and steady with a prescribed velocity. It has one solution, and no stability question applies to it."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution for each Pe: it has no branches."
+          }
+        },
+        "limitations": [
+          "One-dimensional transport only: a velocity profile across the channel needs the tube or channel declarations.",
+          "Constant uniform velocity and constant properties.",
+          "Fixed end temperatures: other end conditions need a separate declaration."
+        ],
+        "acceptance": {
+          "example": "advection-channel",
+          "reference": "θ(X) = (1 − e^(−Pe(1−X)))/(1 − e^(−Pe)) and J = Pe/(1 − e^(−Pe)). The mpmath library gives the same values (tools/convective_references.py).",
+          "tolerance": "Exact conservation of both discrete schemes. Finite-volume flux within relative 1e-3 of J. Observed orders within 0.1 of 2 (central) and 0.15 of 1 (upwind).",
+          "checks": [
+            "Both schemes carry the same flux through every face, exactly.",
+            "Above a cell Péclet number of 2, the central scheme oscillates and the upwind scheme does not.",
+            "The observed orders are 2 and 1."
+          ]
+        },
+        "solver": {
+          "method": "The exact solution in double precision (expm1), and finite volumes solved with the Thomas algorithm in exact rationals.",
+          "discretization": "Equal intervals: N₀ with cell Péclet number at most 1, then 2N₀, 4N₀ and 8N₀.",
+          "convergence": "Observed order from the two finest meshes.",
+          "reproducibility": "Exact rationals (BigInt) and plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "couette-heating",
+        "family": "viscous-heat-generation",
+        "title": "Plane Couette flow with viscous heat generation",
+        "piece": 7,
+        "model": {
+          "summary": "Steady plane Couette flow of a Newtonian fluid between a fixed wall and a moving wall. The viscous dissipation is a uniform heat source, and both walls have a prescribed temperature.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the walls"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the temperature of the fixed wall"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the fixed wall"
+            },
+            {
+              "id": "H",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "gap between the walls"
+            },
+            {
+              "id": "U",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "speed of the moving wall"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity"
+            },
+            {
+              "id": "DT_w",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "temperature of the moving wall minus that of the fixed wall"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity",
+              "optional": true
+            },
+            {
+              "id": "q_0",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "heat flux into the fixed wall",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "mu*d(u,y,y) = 0",
+              "domain": "0 < y < H"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "k*d(DT,y,y) + mu*d(u,y)^2 = 0",
+              "domain": "0 < y < H"
+            }
+          ],
+          "closures": [
+            "Newtonian viscous stress μ du/dy and Fourier conduction k dT/dy. The dissipation function of a parallel shear flow is μ(du/dy)² (the page's derivation). The Brinkman number μU²/(kΔT) is the ratio of viscous heating to transverse conduction (MIT 2.810 Quiz 1 solutions, 2016, problem 4)."
+          ],
+          "geometry": "A plane layer between a fixed wall at y = 0 and a parallel wall at y = H that moves with speed U. The layer is long in the direction of motion.",
+          "conditions": [
+            {
+              "id": "u0",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = 0",
+              "meaning": "no slip at the fixed wall"
+            },
+            {
+              "id": "uH",
+              "kind": "boundary",
+              "text": "u = U",
+              "at": "y = H",
+              "meaning": "no slip at the moving wall"
+            },
+            {
+              "id": "T0",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "y = 0",
+              "meaning": "the temperature T_0 of the fixed wall"
+            },
+            {
+              "id": "TH",
+              "kind": "boundary",
+              "text": "DT = DT_w",
+              "at": "y = H",
+              "meaning": "the temperature T_1 of the moving wall"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "eta",
+                "of": "y",
+                "offset": "0",
+                "scale": "H",
+                "tex": "\\eta"
+              },
+              {
+                "symbol": "V",
+                "of": "u",
+                "offset": "0",
+                "scale": "U",
+                "tex": "V"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "DT_w",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Br",
+                "tex": "Br",
+                "def": "mu*U^2/(k*DT_w)",
+                "solve": "DT_w",
+                "meaning": "Brinkman number: viscous heating over conduction across the gap"
+              }
+            ],
+            "equations": [
+              {
+                "of": "momentum",
+                "text": "d(V,eta,eta) = 0"
+              },
+              {
+                "of": "energy",
+                "text": "d(theta,eta,eta) + Br*d(V,eta)^2 = 0"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "u0",
+                "text": "V = 0",
+                "at": "eta = 0"
+              },
+              {
+                "of": "uH",
+                "text": "V = 1",
+                "at": "eta = 1"
+              },
+              {
+                "of": "T0",
+                "text": "theta = 0",
+                "at": "eta = 0"
+              },
+              {
+                "of": "TH",
+                "text": "theta = 1",
+                "at": "eta = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Br",
+              "tex": "Br",
+              "label": "Brinkman number μU²/(kΔT)",
+              "min": 0.001,
+              "max": 100,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar, fully developed Couette flow of a Newtonian fluid with constant properties: the viscosity does not change with temperature.",
+              "source": "spec-10"
+            },
+            {
+              "text": "The walls have prescribed temperatures with T_1 > T_0, so ΔT = T_1 − T_0 is a positive scale on the map. A negative ΔT gives the mirror image.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact velocity V = η and temperature θ = η + (Br/2)η(1 − η) in rationals.",
+            "The exact heat fluxes at the walls, θ'(0) = 1 + Br/2 and θ'(1) = 1 − Br/2, and the energy balance θ'(0) − θ'(1) = Br. The zero-dissipation limit θ = η and the interior temperature maximum at η* = 1/2 + 1/Br for |Br| > 2."
+          ],
+          "numerical": [
+            "Not applicable: the solution is exact. Floating-point values are for the figures only."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Two terms compete in the energy equation: conduction across the gap and viscous dissipation. The exact heat flux at the moving wall changes sign at Br = 2. Above Br = 2, the dissipation sends heat out through both walls."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The expansion in the small parameter Br ends at the first order: θ = η + Br·η(1 − η)/2 exactly. The zero-dissipation limit Br → 0 is regular, and its error is Br/8 exactly."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. The walls prescribe the velocity, and the temperature problem is linear. If the viscosity falls with temperature, the problem can have more than one solution (thermal runaway). That case needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "With constant properties the declared model is linear and has one solution for each Br: it has no branches."
+          }
+        },
+        "limitations": [
+          "Constant properties only: a viscosity that changes with temperature needs a separate declaration.",
+          "Laminar Couette flow only, with two isothermal walls. Other wall conditions, such as an adiabatic wall, need a separate declaration.",
+          "No end effects: the layer is long in the direction of motion."
+        ],
+        "acceptance": {
+          "example": "couette-heating",
+          "reference": "θ = η + (Br/2)η(1 − η), θ'(0) − θ'(1) = Br and the zero-dissipation limit θ = η (the page's exact derivation). SymPy gives the same polynomials (tools/convective_references.py).",
+          "tolerance": "Exact for the profile, the residual, the conditions and the energy balance.",
+          "checks": [
+            "The polynomial θ satisfies the energy equation and both conditions exactly.",
+            "The heat that leaves through the walls equals the dissipation exactly.",
+            "Br = Pr·Ec exactly when Pr and Ec use the same properties."
+          ]
+        },
+        "solver": {
+          "method": "Exact polynomial integration in rationals.",
+          "discretization": "None: the solution is a polynomial of degree 2 in η.",
+          "convergence": "Not applicable: no discretization.",
+          "reproducibility": "Exact rationals (BigInt). No random numbers."
+        }
+      },
+      {
+        "id": "thermocapillary-layer",
+        "family": "thermocapillary-heat-transport",
+        "title": "Thermocapillary flow in a liquid layer with a declared temperature gradient",
+        "piece": 7,
+        "model": {
+          "summary": "A long horizontal liquid layer with a flat free surface. A declared temperature gradient along the layer changes the surface tension. The tangential stress at the surface drives a flow, with a return flow below it. The flow then carries heat along the layer.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the layer"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus its declared linear part"
+            },
+            {
+              "id": "z",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "height above the bottom"
+            },
+            {
+              "id": "h_l",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "depth of the layer"
+            },
+            {
+              "id": "b",
+              "quantity": "temperature-gradient",
+              "kind": "parameter",
+              "meaning": "declared temperature gradient along the layer"
+            },
+            {
+              "id": "gamma_T",
+              "quantity": "surface-tension-gradient",
+              "kind": "parameter",
+              "meaning": "temperature derivative of the surface tension"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity"
+            },
+            {
+              "id": "G",
+              "quantity": "pressure-gradient",
+              "kind": "parameter",
+              "meaning": "pressure gradient along the layer"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "length of the layer",
+              "optional": true
+            },
+            {
+              "id": "u_s",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "speed of the free surface",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "mu*d(u,z,z) = G",
+              "domain": "0 < z < h_l"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "rho*c_p*b*u = k*d(DT,z,z)",
+              "domain": "0 < z < h_l"
+            }
+          ],
+          "closures": [
+            "Newtonian stress and Fourier conduction. At the free surface, the tangential stress is τ = (∂σ/∂T)(∂T/∂s). The liquid moves to the side with the higher surface tension (COMSOL, Marangoni effect). The zero net flow through each section fixes the pressure gradient G."
+          ],
+          "geometry": "A horizontal liquid layer of depth h_l on a rigid bottom, with a flat free surface, far from its closed ends.",
+          "conditions": [
+            {
+              "id": "noslip",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "z = 0",
+              "meaning": "no slip at the bottom"
+            },
+            {
+              "id": "stress",
+              "kind": "boundary",
+              "text": "mu*d(u,z) = gamma_T*b",
+              "at": "z = h_l",
+              "meaning": "the thermocapillary stress at the free surface"
+            },
+            {
+              "id": "bottom",
+              "kind": "boundary",
+              "text": "d(DT,z) = 0",
+              "at": "z = 0",
+              "meaning": "an adiabatic bottom"
+            },
+            {
+              "id": "surface",
+              "kind": "boundary",
+              "text": "d(DT,z) = 0",
+              "at": "z = h_l",
+              "meaning": "an adiabatic free surface"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "Z",
+                "of": "z",
+                "offset": "0",
+                "scale": "h_l",
+                "tex": "Z"
+              },
+              {
+                "symbol": "W",
+                "of": "u",
+                "offset": "0",
+                "scale": "gamma_T*b*h_l/mu",
+                "tex": "W"
+              },
+              {
+                "symbol": "Theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "b*h_l",
+                "tex": "\\Theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Ms",
+                "tex": "s\\,Ma_d",
+                "def": "rho*c_p*gamma_T*b*h_l^2/(k*mu)",
+                "solve": "b",
+                "meaning": "signed depth-based Marangoni number: its sign is the sign of the surface stress"
+              },
+              {
+                "id": "Gp",
+                "tex": "\\Pi_G",
+                "def": "G*h_l/(gamma_T*b)",
+                "solve": "G",
+                "meaning": "pressure gradient in units of the surface stress"
+              },
+              {
+                "id": "A",
+                "tex": "h_l/L",
+                "def": "h_l/L",
+                "solve": "L",
+                "meaning": "aspect ratio of the layer"
+              }
+            ],
+            "equations": [
+              {
+                "of": "momentum",
+                "text": "d(W,Z,Z) = Gp"
+              },
+              {
+                "of": "energy",
+                "text": "Ms*W = d(Theta,Z,Z)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "noslip",
+                "text": "W = 0",
+                "at": "Z = 0"
+              },
+              {
+                "of": "stress",
+                "text": "d(W,Z) = 1",
+                "at": "Z = 1"
+              },
+              {
+                "of": "bottom",
+                "text": "d(Theta,Z) = 0",
+                "at": "Z = 0"
+              },
+              {
+                "of": "surface",
+                "text": "d(Theta,Z) = 0",
+                "at": "Z = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Ms",
+              "tex": "s\\,Ma_d",
+              "label": "signed Marangoni number ρc_p(dγ/dT)b h_l²/(kμ)",
+              "min": -200,
+              "max": 200,
+              "log": false,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar, parallel flow far from the ends; the free surface stays flat, and buoyancy is neglected.",
+              "source": "comsol-marangoni"
+            },
+            {
+              "text": "The surface tension changes linearly with temperature, and no heat crosses the bottom or the free surface.",
+              "source": "comsol-marangoni"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact velocity W = (3Z² − 2Z)/4 in rationals, with Π_G = 3/2 from the zero net flow. The exact temperature Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120) in rationals.",
+            "The exact transport factor k_eff/k = 1 + Ma_d²/1680 and the balance crossover Ma_d² = 1680."
+          ],
+          "numerical": [
+            "Not applicable: the solution is exact. Floating-point values are for the figures only."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Along the layer, heat moves by conduction and by advection in the thermocapillary flow. Their exact ratio is Ma_d²/1680, so the two are equal at Ma_d = √1680 ≈ 41."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The temperature is exactly linear in Ma_d and the transport exactly quadratic, so the expansions in Ma_d end after these orders. The conduction-only limit Ma_d → 0 has the exact relative error Ma_d²/1680."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. The return flow can become unstable to hydrothermal waves. That case needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared parallel flow is the one solution of the linear model for each Ma_d: it has no branches."
+          }
+        },
+        "limitations": [
+          "Far from the ends only: the end regions need a separate declaration.",
+          "A flat free surface and no buoyancy.",
+          "An adiabatic surface: a heat loss at the surface makes the temperature depend on x in another way and needs a separate declaration."
+        ],
+        "acceptance": {
+          "example": "thermocapillary-flow",
+          "reference": "The page's exact derivation gives W = (3Z² − 2Z)/4, Π_G = 3/2 and ∫W dZ = 0. It also gives Θ = s·Ma_d(Z⁴/16 − Z³/12 + 1/120) and the transport factor 1 + Ma_d²/1680. The stress condition and the flow direction come from COMSOL, Marangoni effect. SymPy gives the same polynomials (tools/convective_references.py).",
+          "tolerance": "Exact for the profiles, the conditions, the zero net flow and the transport factor.",
+          "checks": [
+            "The stress condition at the surface holds exactly. The surface moves to the side with the higher surface tension.",
+            "The net flow is zero and the return flow starts at Z = 2/3.",
+            "The transport factor is 1 + Ma_d²/1680 exactly."
+          ]
+        },
+        "solver": {
+          "method": "Exact polynomial integration in rationals.",
+          "discretization": "None: the profiles are polynomials of degree 2 and 4 in Z.",
+          "convergence": "Not applicable: no discretization.",
+          "reproducibility": "Exact rationals (BigInt). No random numbers."
+        }
+      },
+      {
+        "id": "conjugate-channel",
+        "family": "conjugate-heat-transfer",
+        "title": "Conjugate heat transfer in a fluid–solid channel",
+        "piece": 7,
+        "model": {
+          "summary": "Steady laminar flow between two parallel walls of finite thickness. Heat enters the outer surfaces with a uniform flux. It goes through the walls by conduction, and the fluid carries it away. The interface keeps one temperature and one heat flux.",
+          "roles": [
+            {
+              "id": "DT_f",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "fluid temperature minus the inlet temperature"
+            },
+            {
+              "id": "DT_s",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "wall temperature minus the inlet temperature"
+            },
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "axial velocity of the fluid"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the inlet"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the mid-plane"
+            },
+            {
+              "id": "H",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "half-width of the channel"
+            },
+            {
+              "id": "H_o",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "distance of the outer surface from the mid-plane"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "heated length"
+            },
+            {
+              "id": "u_m",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "mean velocity"
+            },
+            {
+              "id": "k_f",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "fluid conductivity"
+            },
+            {
+              "id": "k_s",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "wall conductivity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "fluid density"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity of the fluid"
+            },
+            {
+              "id": "q",
+              "quantity": "heat-flux",
+              "kind": "parameter",
+              "meaning": "heat flux into the outer surface"
+            },
+            {
+              "id": "DT_o",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "outer-surface temperature rise at the station",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "fluid",
+              "kind": "governing",
+              "text": "rho*c_p*u*d(DT_f,x) = k_f*(d(DT_f,x,x) + d(DT_f,y,y))",
+              "domain": "0 < x < L, 0 < y < H"
+            },
+            {
+              "id": "solid",
+              "kind": "governing",
+              "text": "d(DT_s,x,x) + d(DT_s,y,y) = 0",
+              "domain": "0 < x < L, H < y < H_o"
+            },
+            {
+              "id": "velocity",
+              "kind": "closure",
+              "text": "u = 3/2*u_m*(1 - y^2/H^2)",
+              "domain": "0 < y < H"
+            }
+          ],
+          "closures": [
+            "The fully developed parabolic velocity between parallel plates, Fourier conduction in both media, and continuity of temperature and heat flux at the interface. Far downstream the fluid has Nu_Dh = 8.235 for a fixed flux at its walls (Lienhard, eqn. (7.63))."
+          ],
+          "geometry": "A plane channel of half-width H between walls of thickness H_o − H. Heat goes into both outer surfaces over the length L. The channel is symmetric about the mid-plane.",
+          "conditions": [
+            {
+              "id": "sym",
+              "kind": "boundary",
+              "text": "d(DT_f,y) = 0",
+              "at": "y = 0",
+              "meaning": "symmetry at the mid-plane"
+            },
+            {
+              "id": "iT",
+              "kind": "interface",
+              "text": "DT_f = DT_s",
+              "at": "y = H",
+              "meaning": "one temperature at the interface"
+            },
+            {
+              "id": "iq",
+              "kind": "interface",
+              "text": "k_f*d(DT_f,y) = k_s*d(DT_s,y)",
+              "at": "y = H",
+              "meaning": "one heat flux at the interface"
+            },
+            {
+              "id": "outer",
+              "kind": "boundary",
+              "text": "k_s*d(DT_s,y) = q",
+              "at": "y = H_o",
+              "meaning": "the heat flux into the outer surface"
+            },
+            {
+              "id": "in",
+              "kind": "boundary",
+              "text": "DT_f = 0",
+              "at": "x = 0",
+              "meaning": "the inlet temperature"
+            },
+            {
+              "id": "out",
+              "kind": "boundary",
+              "text": "d(DT_f,x) = 0",
+              "at": "x = L",
+              "meaning": "no conduction across the outlet"
+            },
+            {
+              "id": "s0",
+              "kind": "boundary",
+              "text": "d(DT_s,x) = 0",
+              "at": "x = 0",
+              "meaning": "an adiabatic end of the wall"
+            },
+            {
+              "id": "sL",
+              "kind": "boundary",
+              "text": "d(DT_s,x) = 0",
+              "at": "x = L",
+              "meaning": "an adiabatic end of the wall"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "H",
+                "tex": "X"
+              },
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "H",
+                "tex": "Y"
+              },
+              {
+                "symbol": "W",
+                "of": "u",
+                "offset": "0",
+                "scale": "u_m",
+                "tex": "W"
+              },
+              {
+                "symbol": "theta_f",
+                "of": "DT_f",
+                "offset": "0",
+                "scale": "q*H/k_f",
+                "tex": "\\theta_f"
+              },
+              {
+                "symbol": "theta_s",
+                "of": "DT_s",
+                "offset": "0",
+                "scale": "q*H/k_f",
+                "tex": "\\theta_s"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "PeH",
+                "tex": "Pe_H",
+                "def": "rho*c_p*u_m*H/k_f",
+                "solve": "u_m",
+                "meaning": "Péclet number with the half-width, Pe/4"
+              },
+              {
+                "id": "K",
+                "tex": "K",
+                "def": "k_s/k_f",
+                "solve": "k_s",
+                "meaning": "solid-to-fluid conductivity ratio"
+              },
+              {
+                "id": "Yo",
+                "tex": "H_o/H",
+                "def": "H_o/H",
+                "solve": "H_o",
+                "meaning": "position of the outer surface, with the wall thickness (H_o/H − 1)H"
+              },
+              {
+                "id": "Lr",
+                "tex": "L/H",
+                "def": "L/H",
+                "solve": "L",
+                "meaning": "heated length in half-widths"
+              }
+            ],
+            "equations": [
+              {
+                "of": "fluid",
+                "text": "PeH*W*d(theta_f,X) = d(theta_f,X,X) + d(theta_f,Y,Y)"
+              },
+              {
+                "of": "solid",
+                "text": "d(theta_s,X,X) + d(theta_s,Y,Y) = 0"
+              },
+              {
+                "of": "velocity",
+                "text": "W = 3/2 - 3/2*Y^2"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "sym",
+                "text": "d(theta_f,Y) = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "iT",
+                "text": "theta_f = theta_s",
+                "at": "Y = 1"
+              },
+              {
+                "of": "iq",
+                "text": "d(theta_f,Y) = K*d(theta_s,Y)",
+                "at": "Y = 1"
+              },
+              {
+                "of": "outer",
+                "text": "d(theta_s,Y) = 1/K",
+                "at": "Y = Yo"
+              },
+              {
+                "of": "in",
+                "text": "theta_f = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "out",
+                "text": "d(theta_f,X) = 0",
+                "at": "X = Lr"
+              },
+              {
+                "of": "s0",
+                "text": "d(theta_s,X) = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "sL",
+                "text": "d(theta_s,X) = 0",
+                "at": "X = Lr"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "K",
+              "tex": "K",
+              "label": "conductivity ratio k_s/k_f",
+              "min": 0.1,
+              "max": 1000,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Yo",
+              "tex": "H_o/H",
+              "label": "outer-surface position H_o/H",
+              "min": 1.05,
+              "max": 3,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "PeH",
+              "tex": "Pe_H",
+              "label": "Péclet number u_mH/α_f",
+              "min": 0.5,
+              "max": 50,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady laminar flow with the fully developed parabolic velocity and constant properties in each medium.",
+              "source": "lienhard-flow"
+            },
+            {
+              "text": "No contact resistance at the interface; adiabatic ends of the wall; the inlet admits heat only by advection.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The fully developed solution in rationals: θ_w − θ_m = 17/35, Nu_f = 140/17 and θ_o − θ_w = (H_o/H − 1)/K, so Nu_o = 4/(17/35 + (H_o/H − 1)/K)."
+          ],
+          "numerical": [
+            "Finite volumes on three meshes (refinement ratio 2) with central advection, a harmonic interface conductance and a banded LU solve. The cell Péclet number stays below 2.",
+            "The observed order, the Richardson value and the grid convergence index of the outer-wall temperature. The continuity of the interface flux, from one-sided second-order fluxes. The interface and global heat balances."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "The heat from the outer surface meets two thermal resistances in series: conduction across the wall, (H_o/H − 1)/K, and convection into the fluid, 17/35. Their exact ratio says which one controls the outer temperature."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Far from the inlet the solution tends to the exact fully developed state. Near the inlet, a thermal entry region of length of order Pe·H develops. The page measures where Nu_f comes within 1 % of 140/17."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "The model is linear and steady with a prescribed velocity. No stability question applies to it."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution: it has no branches."
+          }
+        },
+        "limitations": [
+          "Laminar, fully developed velocity. Constant properties in each medium.",
+          "No contact resistance at the interface: a contact resistance needs a separate declaration (piece 3 has one for walls).",
+          "The page limits the finest mesh to 150 000 cells."
+        ],
+        "acceptance": {
+          "example": "conjugate-channel",
+          "reference": "θ_w − θ_m = 17/35 (Nu_Dh = 140/17 = 8.235, Lienhard eqn. (7.63)) and θ_o − θ_w = (H_o/H − 1)/K in rationals. SymPy gives the same rationals (tools/convective_references.py).",
+          "tolerance": "Exact for the fully developed solution. Finite volumes: observed order between 1.6 and 2.4. Fully developed values within relative 1e-3 in the middle of the channel. Heat balances within relative 1e-9.",
+          "checks": [
+            "The fully developed solution is exact.",
+            "The finite-volume solution converges at second order and meets the fully developed values.",
+            "The interface balances hold."
+          ]
+        },
+        "solver": {
+          "method": "Finite volumes with flux balances, solved by banded LU without row exchanges.",
+          "discretization": "Δx = min(0.25, 1.2/Pe_H) H, 6 + ⌈6(H_o/H − 1)⌉ cells across, then twice and four times finer.",
+          "convergence": "Observed order and grid convergence index (safety factor 1.25) from three meshes.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "plate-correlation",
+        "family": "boundary-layers",
+        "title": "Forced convection from an isothermal flat plate (named correlations)",
+        "piece": 7,
+        "model": {
+          "summary": "The laminar boundary-layer equations of an isothermal flat plate in a uniform stream. The declared result is a named correlation: Pohlhausen's power law for the laminar layer and the power law of Reynolds et al. for the turbulent layer of a gas, each inside its validity range.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the plate"
+            },
+            {
+              "id": "v",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity normal to the plate"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the wall temperature"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the leading edge"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the plate"
+            },
+            {
+              "id": "U",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "speed of the outer stream"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "length of the plate"
+            },
+            {
+              "id": "nu",
+              "quantity": "kinematic-viscosity",
+              "kind": "parameter",
+              "meaning": "kinematic viscosity"
+            },
+            {
+              "id": "alpha",
+              "quantity": "thermal-diffusivity",
+              "kind": "parameter",
+              "meaning": "thermal diffusivity"
+            },
+            {
+              "id": "y_e",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "outer edge of the computation"
+            },
+            {
+              "id": "DT_e",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "the outer-stream temperature minus the wall temperature"
+            },
+            {
+              "id": "x_s",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "position of the station",
+              "optional": true
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity",
+              "optional": true
+            },
+            {
+              "id": "h",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "local heat-transfer coefficient",
+              "optional": true
+            },
+            {
+              "id": "h_m",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "mean heat-transfer coefficient",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "continuity",
+              "kind": "governing",
+              "text": "d(v,y) + d(u,x) = 0",
+              "domain": "x > 0, 0 < y < y_e"
+            },
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y)",
+              "domain": "x > 0, 0 < y < y_e"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "u*d(DT,x) + v*d(DT,y) = alpha*d(DT,y,y)",
+              "domain": "x > 0, 0 < y < y_e"
+            }
+          ],
+          "closures": [
+            "Laminar: Nu_x = 0.332 Re_x^(1/2) Pr^(1/3) for Pr ≥ 0.6, within 2 % of the exact solution (Lienhard, eqn. (6.58)), and Nu_L = 0.664 Re_L^(1/2) Pr^(1/3) (eqn. (6.68)). Turbulent, gases: Nu_x = 0.0296 Re_x^0.8 Pr^0.6 (eqn. (6.112))."
+          ],
+          "geometry": "A thin flat plate of length L parallel to a uniform stream, with a sharp leading edge and a uniform wall temperature.",
+          "conditions": [
+            {
+              "id": "noslip",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = 0",
+              "meaning": "no slip at the plate"
+            },
+            {
+              "id": "wall",
+              "kind": "boundary",
+              "text": "v = 0",
+              "at": "y = 0",
+              "meaning": "no flow through the plate"
+            },
+            {
+              "id": "outer",
+              "kind": "boundary",
+              "text": "u = U",
+              "at": "y = y_e",
+              "meaning": "the outer stream"
+            },
+            {
+              "id": "edge",
+              "kind": "boundary",
+              "text": "u = U",
+              "at": "x = 0",
+              "meaning": "the stream at the leading edge"
+            },
+            {
+              "id": "Tw",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "y = 0",
+              "meaning": "the uniform wall temperature"
+            },
+            {
+              "id": "Te",
+              "kind": "boundary",
+              "text": "DT = DT_e",
+              "at": "y = y_e",
+              "meaning": "the outer-stream temperature"
+            },
+            {
+              "id": "T0",
+              "kind": "boundary",
+              "text": "DT = DT_e",
+              "at": "x = 0",
+              "meaning": "the stream temperature at the leading edge"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "(nu*L/U)^(1/2)",
+                "tex": "Y"
+              },
+              {
+                "symbol": "Uh",
+                "of": "u",
+                "offset": "0",
+                "scale": "U",
+                "tex": "\\hat u"
+              },
+              {
+                "symbol": "Vh",
+                "of": "v",
+                "offset": "0",
+                "scale": "U*(nu/(U*L))^(1/2)",
+                "tex": "\\hat v"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "DT_e",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Re",
+                "tex": "Re_L",
+                "def": "U*L/nu",
+                "solve": "U",
+                "meaning": "Reynolds number with the plate length"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "nu/alpha",
+                "solve": "alpha",
+                "meaning": "Prandtl number"
+              },
+              {
+                "id": "Ye",
+                "tex": "Y_e",
+                "def": "y_e*(U/(nu*L))^(1/2)",
+                "solve": "y_e",
+                "meaning": "outer edge in inner units"
+              },
+              {
+                "id": "Xs",
+                "tex": "x_s/L",
+                "def": "x_s/L",
+                "solve": "x_s",
+                "meaning": "position of the station"
+              },
+              {
+                "id": "Nu",
+                "tex": "Nu_x",
+                "def": "h*x_s/k",
+                "solve": "h",
+                "meaning": "local Nusselt number at the station"
+              },
+              {
+                "id": "Num",
+                "tex": "Nu_L",
+                "def": "h_m*L/k",
+                "solve": "h_m",
+                "meaning": "mean Nusselt number of the plate"
+              }
+            ],
+            "equations": [
+              {
+                "of": "continuity",
+                "text": "d(Vh,Y) + d(Uh,X) = 0"
+              },
+              {
+                "of": "momentum",
+                "text": "Uh*d(Uh,X) + Vh*d(Uh,Y) = d(Uh,Y,Y)"
+              },
+              {
+                "of": "energy",
+                "text": "Pr*Uh*d(theta,X) + Pr*Vh*d(theta,Y) = d(theta,Y,Y)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "noslip",
+                "text": "Uh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "wall",
+                "text": "Vh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "outer",
+                "text": "Uh = 1",
+                "at": "Y = Ye"
+              },
+              {
+                "of": "edge",
+                "text": "Uh = 1",
+                "at": "X = 0"
+              },
+              {
+                "of": "Tw",
+                "text": "theta = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "Te",
+                "text": "theta = 1",
+                "at": "Y = Ye"
+              },
+              {
+                "of": "T0",
+                "text": "theta = 1",
+                "at": "X = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Re",
+              "tex": "Re_x",
+              "label": "Reynolds number Ux/ν at the station",
+              "min": 100,
+              "max": 100000000.0,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Pr",
+              "tex": "Pr",
+              "label": "Prandtl number ν/α",
+              "min": 0.1,
+              "max": 100,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Two-dimensional, incompressible flow along a flat isothermal wall, with Ma < 0.3 and Ec ≪ 1.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "Pe_x ≫ 100, so the boundary-layer approximation holds.",
+              "source": "lienhard-2024"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact mean-from-local factors: 0.664 = 2 × 0.332 for the exponent −1/2 of x and 0.037 = (5/4) × 0.0296 for the exponent −1/5, in rationals.",
+            "Pe = Re·Pr exactly, and the local and mean Nusselt numbers kept apart."
+          ],
+          "numerical": [
+            "The Blasius solution by RK4 shooting and Pohlhausen's θ'(0) = 1/∫(f''/f''(0))^Pr dη by Simpson's rule, against the correlation 0.332 Pr^(1/3).",
+            "Imported numerical results with provenance, compared with the correlation inside its range."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Inside the layer, advection along the plate and conduction across the layer are in balance. With the inner scale, this gives Nu_x ∝ Re_x^(1/2). The outer stream sets Re_x."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "The boundary-layer equations are the first term of the expansion in Re^(−1/2). The correlation fits the similarity solution of that order within 2 % for Pr ≥ 0.6."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. Transition to a turbulent layer depends on the free-stream disturbance, so the page shows it as an empirical boundary with a range."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The laminar similarity solution is unique for each Pr: no branches."
+          }
+        },
+        "limitations": [
+          "The page refuses each correlation outside its stated range. The laminar law needs Pr ≥ 0.6. The turbulent law is for gases (0.6 ≤ Pr ≤ 1 on this page).",
+          "In the transition range 2 × 10⁵ < Re_x < 4 × 10⁶ no correlation applies to a local value: the layer can be laminar or turbulent.",
+          "A uniform wall temperature only."
+        ],
+        "acceptance": {
+          "example": "plate-convection",
+          "reference": "Nu_x = 0.332 Re_x^(1/2) Pr^(1/3), within 2 % of Pohlhausen's exact solution for Pr ≥ 0.6 and within 1 % for 0.6 ≤ Pr ≤ 2 (Lienhard, eqn. (6.58)). The Blasius value is f''(0) = 0.33206 (Lienhard, Table 6.1).",
+          "tolerance": "Exact for the mean-from-local factors. The page's θ'(0) within the stated 1 % or 2 % of the correlation, and f''(0) within 1e-6 of 0.33206.",
+          "checks": [
+            "The mean-from-local factors are exact.",
+            "The page's similarity solution agrees with the correlation within the stated tolerance.",
+            "The page refuses each correlation outside its range."
+          ]
+        },
+        "solver": {
+          "method": "RK4 shooting for f''(0) with a bracketed root search, then Simpson's rule for Pohlhausen's integral.",
+          "discretization": "3000 equal steps over 0 ≤ η ≤ 15.",
+          "convergence": "f'(η_max) = 1 within 1e-12. The integrand decays below 1e-10 at η = 15 for Pr ≥ 0.5.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "pipe-wall-temperature",
+        "family": "internal-viscous-flow",
+        "title": "Laminar tube flow with a uniform wall temperature (the Graetz problem)",
+        "piece": 7,
+        "model": {
+          "summary": "Steady laminar flow with the Hagen–Poiseuille velocity in a circular tube whose wall has a uniform temperature from x = 0. The temperature develops along the tube to its fully developed shape, an eigenfunction of the cross-section.",
+          "roles": [
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the wall temperature"
+            },
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "axial velocity"
+            },
+            {
+              "id": "r",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the axis"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the start of the heated section"
+            },
+            {
+              "id": "R",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "tube radius"
+            },
+            {
+              "id": "u_m",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "mean velocity"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity"
+            },
+            {
+              "id": "c_p",
+              "quantity": "specific-heat",
+              "kind": "parameter",
+              "meaning": "specific heat capacity"
+            },
+            {
+              "id": "x_s",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "position of the station"
+            },
+            {
+              "id": "DT_i",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "the inlet temperature minus the wall temperature"
+            },
+            {
+              "id": "h",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "heat-transfer coefficient",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "rho*c_p*u*d(DT,x) = k*(d(DT,r,r) + d(DT,r)/r)",
+              "domain": "0 < r < R, x > 0"
+            },
+            {
+              "id": "velocity",
+              "kind": "closure",
+              "text": "u = 2*u_m*(1 - r^2/R^2)",
+              "domain": "0 < r < R"
+            }
+          ],
+          "closures": [
+            "The fully developed Hagen–Poiseuille velocity and Fourier conduction across the radius. Axial conduction is negligible. Far from the start of the heated section, Nu_D = 3.657 (Lienhard, eqn. (7.23)). A uniform heat flux at the wall gives 48/11 instead (eqn. (7.22))."
+          ],
+          "geometry": "A long straight tube of radius R. The velocity profile has its fully developed shape before the heated section starts at x = 0.",
+          "conditions": [
+            {
+              "id": "axis",
+              "kind": "boundary",
+              "text": "d(DT,r) = 0",
+              "at": "r = 0",
+              "meaning": "symmetry at the axis"
+            },
+            {
+              "id": "wall",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "r = R",
+              "meaning": "the uniform wall temperature"
+            },
+            {
+              "id": "inlet",
+              "kind": "initial",
+              "text": "DT = DT_i",
+              "at": "x = 0",
+              "meaning": "the uniform inlet temperature"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "r",
+                "offset": "0",
+                "scale": "R",
+                "tex": "X"
+              },
+              {
+                "symbol": "Z",
+                "of": "x",
+                "offset": "0",
+                "scale": "rho*c_p*u_m*R^2/k",
+                "tex": "Z"
+              },
+              {
+                "symbol": "U",
+                "of": "u",
+                "offset": "0",
+                "scale": "u_m",
+                "tex": "U"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "DT_i",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Re",
+                "tex": "Re_D",
+                "def": "2*rho*u_m*R/mu",
+                "solve": "u_m",
+                "meaning": "Reynolds number with the diameter"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "mu*c_p/k",
+                "solve": "c_p",
+                "meaning": "Prandtl number"
+              },
+              {
+                "id": "xD",
+                "tex": "x/D",
+                "def": "x_s/(2*R)",
+                "solve": "x_s",
+                "meaning": "position of the station in diameters"
+              },
+              {
+                "id": "Nu",
+                "tex": "Nu_D",
+                "def": "2*h*R/k",
+                "solve": "h",
+                "meaning": "Nusselt number with the diameter"
+              }
+            ],
+            "equations": [
+              {
+                "of": "energy",
+                "text": "U*d(theta,Z) = d(theta,X,X) + d(theta,X)/X"
+              },
+              {
+                "of": "velocity",
+                "text": "U = 2 - 2*X^2"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "axis",
+                "text": "d(theta,X) = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "wall",
+                "text": "theta = 0",
+                "at": "X = 1"
+              },
+              {
+                "of": "inlet",
+                "text": "theta = 1",
+                "at": "Z = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Re",
+              "tex": "Re_D",
+              "label": "Reynolds number ρu_mD/μ",
+              "min": 10,
+              "max": 1000000.0,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "xD",
+              "tex": "x/D",
+              "label": "station in diameters x/D",
+              "min": 1,
+              "max": 100000.0,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Pr",
+              "tex": "Pr",
+              "label": "Prandtl number μc_p/k",
+              "min": 0.5,
+              "max": 1000,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady laminar flow with a fully developed velocity before the heating starts; constant properties.",
+              "source": "lienhard-flow"
+            },
+            {
+              "text": "Axial conduction and viscous heating are negligible (Pe ≫ 1).",
+              "source": "lienhard-flow"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The fully developed uniform-flux solution φ = ρ² − ρ⁴/4 and Nu_D = 48/11 in rationals, kept apart from the uniform-temperature case.",
+            "Lienhard's entry lengths x/D = 0.034 Re_D Pr (uniform temperature) and 0.043 Re_D Pr (uniform flux) as exact boundaries of the empirical layer."
+          ],
+          "numerical": [
+            "The first Graetz eigenvalue λ₀ by RK4 shooting with a series start, on three step sizes, and Nu_D = λ₀²/2.",
+            "Gnielinski's correlation with Filonenko's friction factor for turbulent flow, inside its validity range only."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "Axial advection and radial conduction balance over the length R·Pe_R. This length sets the scale of Z and of the thermal entry length."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Far downstream (large Z), one eigenmode remains and Nu_D tends to λ₀²/2 = 3.657. The page uses this limit only beyond Lienhard's entry length, where Nu is within 5 % of it."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. Transition to turbulence above Re_D ≈ 2100 is an empirical boundary, not a result of a linear analysis."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution: it has no branches."
+          }
+        },
+        "limitations": [
+          "Laminar flow only: above Re_D = 2300 the page shows Gnielinski's correlation as an empirical result, not as this model.",
+          "Fully developed temperature only: inside the thermal entry length the local Nu is higher, and the page marks the station as unresolved.",
+          "A uniform wall temperature. The uniform heat flux is the declaration pipe-poiseuille."
+        ],
+        "acceptance": {
+          "example": "tube-convection",
+          "reference": "λ₀ = 2.70436442… from mpmath (the Kummer-function form of the Graetz eigenfunction, tools/convective_references.py), so Nu_D = 3.6568. Lienhard gives Nu_D = 3.657 (eqn. (7.23)) and 48/11 for a uniform flux (eqn. (7.22)).",
+          "tolerance": "λ₀ within 1e-7 of the reference, with an observed order within 0.3 of 4. Nu_D within 0.001 of 3.657. The value 48/11 is exact.",
+          "checks": [
+            "The uniform-flux value 48/11 is exact.",
+            "The shooting eigenvalue converges at fourth order to the reference.",
+            "The two wall conditions give different Nusselt numbers."
+          ]
+        },
+        "solver": {
+          "method": "RK4 shooting on λ with a series start at ρ = 0.02 and a bracketed root search on ψ(1) = 0.",
+          "discretization": "40, 80 and 160 equal steps over 0.02 ≤ ρ ≤ 1.",
+          "convergence": "Observed order within 0.3 of 4. Root tolerance 1e-14.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "wall-natural-correlation",
+        "family": "buoyancy-convection",
+        "title": "Natural convection from an isothermal vertical wall (Churchill–Chu correlations)",
+        "piece": 7,
+        "model": {
+          "summary": "The Boussinesq boundary-layer equations of an isothermal vertical wall in still fluid. The declared result is a named correlation: Churchill and Chu's equations for the mean Nusselt number, each inside its range.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the wall"
+            },
+            {
+              "id": "v",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity normal to the wall"
+            },
+            {
+              "id": "DT",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the ambient temperature"
+            },
+            {
+              "id": "x",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "height above the lower edge"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the wall"
+            },
+            {
+              "id": "L",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "height of the wall"
+            },
+            {
+              "id": "g",
+              "quantity": "gravity",
+              "kind": "parameter",
+              "meaning": "gravitational acceleration"
+            },
+            {
+              "id": "beta",
+              "quantity": "thermal-expansion",
+              "kind": "parameter",
+              "meaning": "thermal expansion coefficient"
+            },
+            {
+              "id": "DT_w",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "the wall temperature minus the ambient temperature"
+            },
+            {
+              "id": "nu",
+              "quantity": "kinematic-viscosity",
+              "kind": "parameter",
+              "meaning": "kinematic viscosity"
+            },
+            {
+              "id": "alpha",
+              "quantity": "thermal-diffusivity",
+              "kind": "parameter",
+              "meaning": "thermal diffusivity"
+            },
+            {
+              "id": "y_e",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "outer edge of the computation"
+            },
+            {
+              "id": "k",
+              "quantity": "thermal-conductivity",
+              "kind": "parameter",
+              "meaning": "thermal conductivity",
+              "optional": true
+            },
+            {
+              "id": "h_m",
+              "quantity": "heat-transfer-coefficient",
+              "kind": "parameter",
+              "meaning": "mean heat-transfer coefficient",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "continuity",
+              "kind": "governing",
+              "text": "d(v,y) + d(u,x) = 0",
+              "domain": "0 < x < L, 0 < y < y_e"
+            },
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "u*d(u,x) + v*d(u,y) = nu*d(u,y,y) + g*beta*DT",
+              "domain": "0 < x < L, 0 < y < y_e"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "u*d(DT,x) + v*d(DT,y) = alpha*d(DT,y,y)",
+              "domain": "0 < x < L, 0 < y < y_e"
+            }
+          ],
+          "closures": [
+            "Boussinesq buoyancy gβ(T − T_∞). Churchill and Chu: Nu_L = 0.68 + 0.670 Ra_L^(1/4)[1 + (0.492/Pr)^(9/16)]^(−4/9) for Ra_L < 10⁹ (Lienhard, eqn. (8.13a)), and Nu_L = {0.825 + 0.387 Ra_L^(1/6)/[1 + (0.492/Pr)^(9/16)]^(8/27)}² for all Ra_L (eqn. (8.13b)). Both hold for a uniform temperature or a uniform heat flux at the wall."
+          ],
+          "geometry": "A vertical isothermal wall of height L in a large volume of still fluid.",
+          "conditions": [
+            {
+              "id": "noslip",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = 0",
+              "meaning": "no slip at the wall"
+            },
+            {
+              "id": "wall",
+              "kind": "boundary",
+              "text": "v = 0",
+              "at": "y = 0",
+              "meaning": "no flow through the wall"
+            },
+            {
+              "id": "outer",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = y_e",
+              "meaning": "still fluid outside the layer"
+            },
+            {
+              "id": "edge",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "x = 0",
+              "meaning": "still fluid at the lower edge"
+            },
+            {
+              "id": "Tw",
+              "kind": "boundary",
+              "text": "DT = DT_w",
+              "at": "y = 0",
+              "meaning": "the uniform wall temperature"
+            },
+            {
+              "id": "Te",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "y = y_e",
+              "meaning": "the ambient temperature"
+            },
+            {
+              "id": "T0",
+              "kind": "boundary",
+              "text": "DT = 0",
+              "at": "x = 0",
+              "meaning": "the ambient temperature at the lower edge"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "X",
+                "of": "x",
+                "offset": "0",
+                "scale": "L",
+                "tex": "X"
+              },
+              {
+                "symbol": "Y",
+                "of": "y",
+                "offset": "0",
+                "scale": "L*(nu^2/(g*beta*DT_w*L^3))^(1/4)",
+                "tex": "Y"
+              },
+              {
+                "symbol": "Uh",
+                "of": "u",
+                "offset": "0",
+                "scale": "(g*beta*DT_w*L)^(1/2)",
+                "tex": "\\hat u"
+              },
+              {
+                "symbol": "Vh",
+                "of": "v",
+                "offset": "0",
+                "scale": "(g*beta*DT_w*L)^(1/2)*(nu^2/(g*beta*DT_w*L^3))^(1/4)",
+                "tex": "\\hat v"
+              },
+              {
+                "symbol": "theta",
+                "of": "DT",
+                "offset": "0",
+                "scale": "DT_w",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "Gr",
+                "tex": "Gr_L",
+                "def": "g*beta*DT_w*L^3/nu^2",
+                "solve": "DT_w",
+                "meaning": "Grashof number with the height"
+              },
+              {
+                "id": "Pr",
+                "tex": "Pr",
+                "def": "nu/alpha",
+                "solve": "alpha",
+                "meaning": "Prandtl number"
+              },
+              {
+                "id": "Ra",
+                "tex": "Ra_L",
+                "def": "g*beta*DT_w*L^3/(nu*alpha)",
+                "solve": "g",
+                "meaning": "Rayleigh number with the height"
+              },
+              {
+                "id": "Ye",
+                "tex": "Y_e",
+                "def": "y_e*(g*beta*DT_w/(nu^2*L))^(1/4)",
+                "solve": "y_e",
+                "meaning": "outer edge in inner units"
+              },
+              {
+                "id": "Num",
+                "tex": "Nu_L",
+                "def": "h_m*L/k",
+                "solve": "h_m",
+                "meaning": "mean Nusselt number"
+              }
+            ],
+            "equations": [
+              {
+                "of": "continuity",
+                "text": "d(Vh,Y) + d(Uh,X) = 0"
+              },
+              {
+                "of": "momentum",
+                "text": "Uh*d(Uh,X) + Vh*d(Uh,Y) = d(Uh,Y,Y) + theta"
+              },
+              {
+                "of": "energy",
+                "text": "Pr*Uh*d(theta,X) + Pr*Vh*d(theta,Y) = d(theta,Y,Y)"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "noslip",
+                "text": "Uh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "wall",
+                "text": "Vh = 0",
+                "at": "Y = 0"
+              },
+              {
+                "of": "outer",
+                "text": "Uh = 0",
+                "at": "Y = Ye"
+              },
+              {
+                "of": "edge",
+                "text": "Uh = 0",
+                "at": "X = 0"
+              },
+              {
+                "of": "Tw",
+                "text": "theta = 1",
+                "at": "Y = 0"
+              },
+              {
+                "of": "Te",
+                "text": "theta = 0",
+                "at": "Y = Ye"
+              },
+              {
+                "of": "T0",
+                "text": "theta = 0",
+                "at": "X = 0"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Ra",
+              "tex": "Ra_L",
+              "label": "Rayleigh number gβΔT L³/(να)",
+              "min": 1,
+              "max": 100000000000000.0,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Pr",
+              "tex": "Pr",
+              "label": "Prandtl number ν/α",
+              "min": 0.01,
+              "max": 1000,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Boussinesq fluid with properties at the film temperature (T_w + T_∞)/2; still fluid outside the layer.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "A vertical wall. An inclined wall uses g cos θ for θ ≤ 45° and 10⁵ ≤ Ra_L ≤ 10⁹ only (Lienhard, section 8.4).",
+              "source": "lienhard-2024"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact buoyancy scales in rationals: the velocity scale √(gβΔT L), the thickness L·Gr^(−1/4) and Ra = Gr·Pr. The exact exponents h ∝ L^(−1/4) of the laminar law and h ∝ L⁰ of the Ra^(1/3) limit."
+          ],
+          "numerical": [
+            "Churchill and Chu's equations (8.13a) and (8.13b), each inside its range, and their difference in the laminar range."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "In the laminar layer, buoyancy balances inertia and viscosity, and conduction across the layer balances advection. This gives δ/L ∝ Ra^(−1/4) and Nu_L ∝ Ra^(1/4)."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "For large Ra_L, eqn. (8.13a) tends to 0.670 Ra^(1/4)[…]^(−4/9) and eqn. (8.13b) to 0.150 Ra^(1/3)[…]^(−16/27). These exponents give h ∝ L^(−1/4) and an h that does not depend on L."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. Near Ra_L ≈ 10⁹, the layer changes from laminar to turbulent. The page shows this change as an empirical boundary."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared result is a correlation of measured data: it has no branches."
+          }
+        },
+        "limitations": [
+          "Vertical or slightly inclined walls only: horizontal plates need other correlations (Lienhard, section 8.4).",
+          "The page refuses eqn. (8.13a) above Ra_L = 10⁹. Above this value, only eqn. (8.13b) applies.",
+          "Measured data scatter above Ra_L/[1 + (0.492/Pr)^(9/16)]^(16/9) ≈ 10⁸ (Lienhard, section 8.3)."
+        ],
+        "acceptance": {
+          "example": "natural-wall",
+          "reference": "Lienhard, Example 8.1: air at T_f = 308 K, L = 0.30 m, ΔT = 30 K gives Ra_L = 6.78 × 10⁷ and Nu_L = 47.33 from eqn. (8.13a).",
+          "tolerance": "The page's Nu_L for Example 8.1 within 0.05 of 47.33. Exact exponents.",
+          "checks": [
+            "The buoyancy scales and the exponents are exact.",
+            "The page reproduces Example 8.1.",
+            "The page refuses each correlation outside its range."
+          ]
+        },
+        "solver": {
+          "method": "Direct evaluation of the correlations in plain JavaScript doubles.",
+          "discretization": "None.",
+          "convergence": "Not applicable.",
+          "reproducibility": "Plain JavaScript doubles. No random numbers."
+        }
+      },
+      {
+        "id": "mixed-channel",
+        "family": "buoyancy-convection",
+        "title": "Fully developed mixed convection in a vertical channel",
+        "piece": 7,
+        "model": {
+          "summary": "Steady, fully developed laminar flow between two vertical walls at different temperatures. Buoyancy acts with the forced mean flow near one wall and against it near the other wall. Lienhard calls these two cases assisting flow and opposing flow.",
+          "roles": [
+            {
+              "id": "u",
+              "quantity": "speed",
+              "kind": "field",
+              "meaning": "velocity along the mean flow"
+            },
+            {
+              "id": "T_r",
+              "quantity": "temperature-difference",
+              "kind": "field",
+              "meaning": "temperature minus the mean wall temperature"
+            },
+            {
+              "id": "y",
+              "quantity": "length",
+              "kind": "coordinate",
+              "meaning": "distance from the first wall"
+            },
+            {
+              "id": "D",
+              "quantity": "length",
+              "kind": "parameter",
+              "meaning": "width of the channel"
+            },
+            {
+              "id": "u_m",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "mean velocity"
+            },
+            {
+              "id": "DT_w",
+              "quantity": "temperature-difference",
+              "kind": "parameter",
+              "meaning": "temperature of the wall at y = 0 minus that of the wall at y = D"
+            },
+            {
+              "id": "g_x",
+              "quantity": "gravity",
+              "kind": "parameter",
+              "meaning": "component of gravity along the mean flow"
+            },
+            {
+              "id": "beta",
+              "quantity": "thermal-expansion",
+              "kind": "parameter",
+              "meaning": "thermal expansion coefficient"
+            },
+            {
+              "id": "rho",
+              "quantity": "density",
+              "kind": "parameter",
+              "meaning": "density"
+            },
+            {
+              "id": "mu",
+              "quantity": "dynamic-viscosity",
+              "kind": "parameter",
+              "meaning": "dynamic viscosity"
+            },
+            {
+              "id": "G",
+              "quantity": "pressure-gradient",
+              "kind": "parameter",
+              "meaning": "gradient of the reduced pressure"
+            },
+            {
+              "id": "u_max",
+              "quantity": "speed",
+              "kind": "parameter",
+              "meaning": "largest velocity",
+              "optional": true
+            }
+          ],
+          "equations": [
+            {
+              "id": "momentum",
+              "kind": "governing",
+              "text": "mu*d(u,y,y) = G + rho*g_x*beta*T_r",
+              "domain": "0 < y < D"
+            },
+            {
+              "id": "energy",
+              "kind": "governing",
+              "text": "d(T_r,y,y) = 0",
+              "domain": "0 < y < D"
+            }
+          ],
+          "closures": [
+            "Boussinesq buoyancy: the density changes only in the body force, ρ = ρ₀(1 − β(T − T₀)). Gr/Re² compares the natural and the forced flow (Lienhard, eqn. (8.45)). The direction of gravity sets the wall at which buoyancy helps the mean flow."
+          ],
+          "geometry": "A vertical channel between two parallel walls a distance D apart, far from the inlet. The mean flow is along x.",
+          "conditions": [
+            {
+              "id": "u0",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = 0",
+              "meaning": "no slip at the first wall"
+            },
+            {
+              "id": "uD",
+              "kind": "boundary",
+              "text": "u = 0",
+              "at": "y = D",
+              "meaning": "no slip at the second wall"
+            },
+            {
+              "id": "T0",
+              "kind": "boundary",
+              "text": "T_r = DT_w/2",
+              "at": "y = 0",
+              "meaning": "the temperature of the first wall"
+            },
+            {
+              "id": "TD",
+              "kind": "boundary",
+              "text": "T_r = -DT_w/2",
+              "at": "y = D",
+              "meaning": "the temperature of the second wall"
+            }
+          ],
+          "dimensionless": {
+            "variables": [
+              {
+                "symbol": "eta",
+                "of": "y",
+                "offset": "0",
+                "scale": "D",
+                "tex": "\\eta"
+              },
+              {
+                "symbol": "W",
+                "of": "u",
+                "offset": "0",
+                "scale": "u_m",
+                "tex": "W"
+              },
+              {
+                "symbol": "theta",
+                "of": "T_r",
+                "offset": "0",
+                "scale": "DT_w",
+                "tex": "\\theta"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "B",
+                "tex": "B",
+                "def": "rho*g_x*beta*DT_w*D^2/(mu*u_m)",
+                "solve": "g_x",
+                "meaning": "signed buoyancy parameter: g_x βΔT D²/(νu_m), the signed ratio Gr/Re"
+              },
+              {
+                "id": "P",
+                "tex": "P",
+                "def": "G*D^2/(mu*u_m)",
+                "solve": "G",
+                "meaning": "dimensionless pressure gradient, from the mean velocity"
+              },
+              {
+                "id": "Re",
+                "tex": "Re",
+                "def": "rho*u_m*D/mu",
+                "solve": "u_m",
+                "meaning": "Reynolds number with the width"
+              },
+              {
+                "id": "Gr",
+                "tex": "Gr",
+                "def": "-rho^2*g_x*beta*DT_w*D^3/mu^2",
+                "solve": "beta",
+                "meaning": "Grashof number with the width (g_x < 0: gravity against the mean flow)"
+              }
+            ],
+            "equations": [
+              {
+                "of": "momentum",
+                "text": "d(W,eta,eta) = P + B*theta"
+              },
+              {
+                "of": "energy",
+                "text": "d(theta,eta,eta) = 0"
+              }
+            ],
+            "conditions": [
+              {
+                "of": "u0",
+                "text": "W = 0",
+                "at": "eta = 0"
+              },
+              {
+                "of": "uD",
+                "text": "W = 0",
+                "at": "eta = 1"
+              },
+              {
+                "of": "T0",
+                "text": "theta = 1/2",
+                "at": "eta = 0"
+              },
+              {
+                "of": "TD",
+                "text": "theta = -1/2",
+                "at": "eta = 1"
+              }
+            ]
+          }
+        },
+        "domain": {
+          "parameters": [
+            {
+              "id": "Re",
+              "tex": "Re",
+              "label": "Reynolds number ρu_mD/μ",
+              "min": 1,
+              "max": 2000,
+              "log": true,
+              "kind": "parameter"
+            },
+            {
+              "id": "Gr",
+              "tex": "Gr",
+              "label": "Grashof number |g|β|ΔT|D³/ν²",
+              "min": 1,
+              "max": 100000000.0,
+              "log": true,
+              "kind": "parameter"
+            }
+          ],
+          "assumptions": [
+            {
+              "text": "Steady, laminar, fully developed flow of a Boussinesq fluid with constant properties.",
+              "source": "lienhard-2024"
+            },
+            {
+              "text": "The map shows assisting flow (gravity against the mean flow, hot wall at y = 0). Opposing flow has the same reversal boundary at the other wall.",
+              "source": "spec-10"
+            }
+          ]
+        },
+        "operations": {
+          "symbolic": [
+            "The exact profile W = 6η(1 − η) − B·η(1 − η)(1 − 2η)/12 with P = −12 from the mean velocity, in rationals.",
+            "The forced limit B → 0, the buoyancy limit with the buoyancy speed, and the exact reversal boundary |B| = 72."
+          ],
+          "numerical": [
+            "Not applicable: the solution is exact. Floating-point values are for the figures only."
+          ]
+        },
+        "methods": {
+          "dominant-balance": {
+            "applies": true,
+            "reason": "In the momentum equation the pressure gradient (scale 12) competes with the buoyancy force (scale |B|/2). The wall shear at one wall changes sign at |B| = Gr/Re = 72 exactly. The bulk Richardson number Gr/Re² alone does not set this boundary."
+          },
+          "asymptotic": {
+            "applies": true,
+            "reason": "Both limits are exact. W is linear in B, so the expansion in B ends at the first order. The expansion in 1/B of u over the buoyancy speed also ends at the first order."
+          },
+          "stability": {
+            "applies": false,
+            "reason": "This declaration computes no stability analysis. The reversed flow near a wall can become unstable. That case needs a separate declaration."
+          },
+          "bifurcation": {
+            "applies": false,
+            "reason": "The declared model is linear and has one solution for each B: it has no branches."
+          }
+        },
+        "limitations": [
+          "Fully developed region only: the entrance region needs a separate declaration.",
+          "Uniform wall temperatures: the fully developed temperature is the conduction profile, so Nu = 1.",
+          "Laminar flow and constant properties except the Boussinesq buoyancy."
+        ],
+        "acceptance": {
+          "example": "mixed-convection",
+          "reference": "W = 6η(1 − η) − B·η(1 − η)(1 − 2η)/12, ∫W dη = 1 and the reversal boundary |B| = 72 come from the page's exact derivation. Gr/Re² and the two cases of flow direction come from Lienhard, eqn. (8.45). SymPy gives the same polynomials (tools/convective_references.py).",
+          "tolerance": "Exact for the profile, the conditions, the mean flow, the limits and the reversal boundary.",
+          "checks": [
+            "The profile satisfies the momentum equation, both walls and the mean flow exactly.",
+            "Both limits hold exactly.",
+            "The reversal boundary is |Gr/Re| = 72 exactly."
+          ]
+        },
+        "solver": {
+          "method": "Exact polynomial integration in rationals.",
+          "discretization": "None: the profile is a cubic polynomial in η.",
+          "convergence": "Not applicable: no discretization.",
+          "reproducibility": "Exact rationals (BigInt). No random numbers."
+        }
       }
     ],
     "separate": [
@@ -16231,6 +21131,13 @@
         "needs": "flow separation and a viscous model",
         "family": "external-aerodynamic-flow",
         "next": "Use the model joukowski-airfoil at small angles with attached flow. Stall needs a declaration with a viscous boundary layer and separation."
+      },
+      {
+        "id": "thermocapillary-heat-loss",
+        "title": "A thermocapillary layer that loses heat to its surroundings",
+        "needs": "a heat loss at the free surface",
+        "family": "thermocapillary-heat-transport",
+        "next": "Use the model thermocapillary-layer with an adiabatic free surface. A heat loss at the surface needs a declaration in which the temperature depends on x and z."
       }
     ]
   },
@@ -21729,6 +26636,459 @@
       "cl_joukowski": 0.7400392034774583,
       "cl_arc": 0.6890080422522702,
       "cl_thin": 0.6899764967800438
+    }
+  },
+  "convective": {
+    "about": "Piece 7 data. The named correlations of the convective heat-transfer examples, each with its constants, source, measured data and validity range. The empirical boundaries with their cited values and bands. The published reference values. The definitions that an imported numerical-results file must use. The page evaluates a correlation only inside its range.",
+    "correlations": [
+      {
+        "id": "plate-laminar-local",
+        "name": "Pohlhausen's laminar flat-plate correlation, local",
+        "form": "power",
+        "result": "Nu_x = h x/k",
+        "local": true,
+        "tex": "Nu_x=0.332\\,Re_x^{1/2}\\,Pr^{1/3}",
+        "constants": {
+          "C": "0.332",
+          "a": "1/2",
+          "b": "1/3"
+        },
+        "range": {
+          "Pr": [
+            0.6,
+            null
+          ],
+          "Re": [
+            null,
+            200000
+          ]
+        },
+        "source": "lienhard-2024",
+        "where": "eqn. (6.58)",
+        "data": "A power-law fit to Pohlhausen's exact similarity solution of the laminar boundary-layer equations: within 2 % for Pr ≥ 0.6 and within 1 % for 0.6 ≤ Pr ≤ 2. The upper limit of Re_x is the start of transition in a laboratory wind tunnel."
+      },
+      {
+        "id": "plate-laminar-mean",
+        "name": "Laminar flat-plate correlation, mean over the length",
+        "form": "power",
+        "result": "Nu_L = h̄L/k",
+        "local": false,
+        "tex": "\\overline{Nu}_L=0.664\\,Re_L^{1/2}\\,Pr^{1/3}",
+        "constants": {
+          "C": "0.664",
+          "a": "1/2",
+          "b": "1/3"
+        },
+        "range": {
+          "Pr": [
+            0.6,
+            null
+          ],
+          "Re": [
+            null,
+            200000
+          ]
+        },
+        "source": "lienhard-2024",
+        "where": "eqn. (6.68)",
+        "data": "The integral of eqn. (6.58) over the plate: h̄ = 2h(x = L). It holds when the whole plate is laminar."
+      },
+      {
+        "id": "plate-turbulent-local",
+        "name": "Turbulent flat-plate correlation of Reynolds et al., local, gases",
+        "form": "power",
+        "result": "Nu_x = h x/k",
+        "local": true,
+        "tex": "Nu_x=0.0296\\,Re_x^{0.8}\\,Pr^{0.6}",
+        "constants": {
+          "C": "0.0296",
+          "a": "4/5",
+          "b": "3/5"
+        },
+        "range": {
+          "Pr": [
+            0.6,
+            1.0
+          ],
+          "Re": [
+            4000000,
+            null
+          ]
+        },
+        "source": "lienhard-2024",
+        "where": "eqn. (6.112)",
+        "data": "Measurements of Reynolds et al. for air over a plate at constant temperature. The correlation is for gases only. The page takes 0.6 ≤ Pr ≤ 1 as the range of gases, and Re_x ≥ 4 × 10⁶ where the layer is fully turbulent in every case."
+      },
+      {
+        "id": "tube-gnielinski",
+        "name": "Gnielinski's correlation for turbulent tube flow",
+        "form": "gnielinski",
+        "result": "Nu_D = hD/k",
+        "local": true,
+        "tex": "Nu_D=\\frac{(f/8)(Re_D-1000)Pr}{1+12.7\\sqrt{f/8}\\,(Pr^{2/3}-1)},\\quad f=(1.82\\log_{10}Re_D-1.64)^{-2}",
+        "constants": {
+          "c0": "1000",
+          "c1": "12.7",
+          "f1": "1.82",
+          "f2": "1.64"
+        },
+        "range": {
+          "Re": [
+            2300,
+            5000000
+          ],
+          "Pr": [
+            0.6,
+            100000
+          ]
+        },
+        "source": "lienhard-flow",
+        "where": "eqns. (7.41) and (7.42)",
+        "data": "Gnielinski's fit to a large set of measured data: more than 90 % of the liquid data within ±20 %, and better for gases. For a uniform wall temperature or heat flux."
+      },
+      {
+        "id": "wall-cc-laminar",
+        "name": "Churchill and Chu, laminar vertical wall",
+        "form": "churchill-chu-laminar",
+        "result": "Nu_L = h̄L/k",
+        "local": false,
+        "tex": "\\overline{Nu}_L=0.68+0.670\\,Ra_L^{1/4}\\left[1+\\left(\\frac{0.492}{Pr}\\right)^{9/16}\\right]^{-4/9}",
+        "constants": {
+          "c0": "0.68",
+          "c1": "0.670",
+          "c2": "0.492"
+        },
+        "range": {
+          "Ra": [
+            null,
+            1000000000
+          ]
+        },
+        "source": "lienhard-2024",
+        "where": "eqn. (8.13a)",
+        "data": "Churchill and Chu fitted the Squire–Eckert form to measured data of 13 independent studies with many fluids. For laminar natural convection, Ra_L < 10⁹, a uniform wall temperature or heat flux, and properties at the film temperature."
+      },
+      {
+        "id": "wall-cc-all",
+        "name": "Churchill and Chu, vertical wall, all Ra_L",
+        "form": "churchill-chu-all",
+        "result": "Nu_L = h̄L/k",
+        "local": false,
+        "tex": "\\overline{Nu}_L=\\left\\{0.825+\\frac{0.387\\,Ra_L^{1/6}}{\\left[1+(0.492/Pr)^{9/16}\\right]^{8/27}}\\right\\}^2",
+        "constants": {
+          "c0": "0.825",
+          "c1": "0.387",
+          "c2": "0.492"
+        },
+        "range": {},
+        "source": "lienhard-2024",
+        "where": "eqn. (8.13b)",
+        "data": "The same data, and also the turbulent layer above Ra_L = 10⁹. Lienhard states that this equation applies for all Ra_L and Pr. Eqn. (8.13a) is more accurate in the laminar range."
+      }
+    ],
+    "boundaries": {
+      "plate": {
+        "measure": "Re_x",
+        "source": "lienhard-2024",
+        "where": "section 6.1",
+        "data": "Laminar flow can begin to break down at Re_x ≈ 30 000 in a highly disturbed flow. In a laboratory wind tunnel, transition often starts between 2 × 10⁵ and 5 × 10⁵. Very careful experiments delayed the onset to 2.8 × 10⁶ and fully turbulent flow to 4 × 10⁶.",
+        "regions": [
+          {
+            "id": "laminar",
+            "lo": null,
+            "hi": 30000,
+            "label": "Laminar in any stream",
+            "status": "evidence"
+          },
+          {
+            "id": "laminar-quiet",
+            "lo": 30000,
+            "hi": 200000,
+            "label": "Laminar unless the stream has strong disturbances",
+            "status": "evidence"
+          },
+          {
+            "id": "transition",
+            "lo": 200000,
+            "hi": 4000000,
+            "label": "Transition range: laminar or turbulent, by the stream and the surface",
+            "status": "unresolved"
+          },
+          {
+            "id": "turbulent",
+            "lo": 4000000,
+            "hi": null,
+            "label": "Turbulent in every case",
+            "status": "evidence"
+          }
+        ]
+      },
+      "tube": {
+        "measure": "Re_D",
+        "source": "lienhard-flow",
+        "where": "sections 7.2 and 7.3",
+        "data": "The minimum transitional Reynolds number is about 2100. Gnielinski's correlation holds from Re_D = 2300 to 5 × 10⁶.",
+        "regions": [
+          {
+            "id": "laminar",
+            "lo": null,
+            "hi": 2100,
+            "label": "Laminar: the declared model applies",
+            "status": "evidence"
+          },
+          {
+            "id": "transition",
+            "lo": 2100,
+            "hi": 2300,
+            "label": "Near the minimum transitional Re_D: no declared result",
+            "status": "unresolved"
+          },
+          {
+            "id": "turbulent",
+            "lo": 2300,
+            "hi": 5000000,
+            "label": "Turbulent: Gnielinski's correlation",
+            "status": "evidence"
+          },
+          {
+            "id": "outside",
+            "lo": 5000000,
+            "hi": null,
+            "label": "Above the range of the correlation",
+            "status": "unresolved"
+          }
+        ]
+      },
+      "entry": {
+        "measure": "x/(0.034 Re_D Pr D)",
+        "source": "lienhard-flow",
+        "where": "eqn. (7.24)",
+        "data": "x_et/D ≈ 0.034 Re_D Pr for a uniform wall temperature and 0.043 Re_D Pr for a uniform heat flux at the wall. Beyond x_et, the Nusselt number is within 5 % of the fully developed value.",
+        "regions": [
+          {
+            "id": "entry",
+            "lo": null,
+            "hi": 1,
+            "label": "Thermal entry region: the local Nu is above the fully developed value by more than 5 %",
+            "status": "unresolved"
+          },
+          {
+            "id": "developed",
+            "lo": 1,
+            "hi": null,
+            "label": "Fully developed within 5 %",
+            "status": "evidence"
+          }
+        ]
+      },
+      "wall": {
+        "measure": "Ra_L",
+        "source": "lienhard-2024",
+        "where": "section 8.3",
+        "data": "Above Ra_L ≈ 10⁹, the boundary layer is turbulent, and eqn. (8.13a) lies on the low side of the data. Eqn. (8.13b) holds for all Ra_L.",
+        "regions": [
+          {
+            "id": "laminar",
+            "lo": null,
+            "hi": 1000000000,
+            "label": "Laminar layer: eqn. (8.13a) and eqn. (8.13b)",
+            "status": "evidence"
+          },
+          {
+            "id": "turbulent",
+            "lo": 1000000000,
+            "hi": null,
+            "label": "Turbulent layer: eqn. (8.13b) only",
+            "status": "evidence"
+          }
+        ]
+      }
+    },
+    "literature": {
+      "tubeT": {
+        "value": 3.657,
+        "tolerance": 0.001,
+        "source": "lienhard-flow",
+        "where": "eqn. (7.23)"
+      },
+      "tubeQ": {
+        "value": 4.364,
+        "tolerance": 0.001,
+        "source": "lienhard-flow",
+        "where": "eqn. (7.22)"
+      },
+      "plates": {
+        "value": 8.235,
+        "tolerance": 0.001,
+        "source": "lienhard-flow",
+        "where": "eqn. (7.63)"
+      },
+      "blasius": {
+        "value": 0.33206,
+        "tolerance": 1e-05,
+        "source": "lienhard-2024",
+        "where": "Table 6.1"
+      },
+      "example81": {
+        "Pr": 0.71,
+        "nu": 1.643e-05,
+        "alpha": 2.315e-05,
+        "k": 0.02672,
+        "beta": 0.00325,
+        "g": 9.8,
+        "dT": 30,
+        "L": 0.3,
+        "Ra": 67800000.0,
+        "Nu": 47.33,
+        "tolerance": 0.05,
+        "source": "lienhard-2024",
+        "where": "Example 8.1"
+      }
+    },
+    "imports": {
+      "plate-convection": {
+        "example": "plate-convection",
+        "correlation": "plate-laminar-local",
+        "inputs": [
+          "Pr"
+        ],
+        "output": "NuRe",
+        "definitions": {
+          "NuRe": "Nu_x/Re_x^(1/2), local, isothermal wall, laminar",
+          "Pr": "nu/alpha"
+        },
+        "tolerance": 0.02,
+        "describe": "Each point gives the local Nu_x/Re_x^(1/2) of a laminar layer on an isothermal plate at one Prandtl number. The page compares it with 0.332 Pr^(1/3) where Pr ≥ 0.6. The stated agreement of the correlation is 2 %."
+      }
+    }
+  },
+  "heatrefs": {
+    "about": "Reference values for the convective heat-transfer models of piece 7, independent of the page's engine, and the sample file of imported numerical results. Written by tools/convective_references.py; CI compares the engine with this file and never runs the script.",
+    "tool": "tools/convective_references.py",
+    "versions": {
+      "python": "3.12.13",
+      "sympy": "1.14.0",
+      "mpmath": "1.3.0",
+      "scipy": "1.16.2",
+      "numpy": "2.3.3"
+    },
+    "couette": {
+      "theta": "-Br*eta**2/2 + Br*eta/2 + eta",
+      "flux0": "Br/2 + 1",
+      "flux1": "1 - Br/2",
+      "balance": "Br"
+    },
+    "capillary": {
+      "F": [
+        "0",
+        "-1/2",
+        "3/4"
+      ],
+      "G": [
+        "1/120",
+        "0",
+        "0",
+        "-1/12",
+        "1/16"
+      ],
+      "pressure": "3/2",
+      "transport": "-1/1680",
+      "reversal": [
+        "0",
+        "2/3"
+      ]
+    },
+    "mixed": {
+      "profile": "-B*eta**3/6 + B*eta**2/4 - B*eta/12 - 6*eta**2 + 6*eta",
+      "P": "-12",
+      "reversal_B": [
+        "-72",
+        "72"
+      ]
+    },
+    "tube": {
+      "NuQ": "48/11",
+      "graetz": {
+        "lambda0": 2.7043644198825323,
+        "lambda0_text": "2.7043644198825321633",
+        "NuT": 3.6567934577632926,
+        "method": "mpmath 1.3.0: the root of exp(−λ/2) ₁F₁(1/2 − λ/4; 1; λ) near 2.7"
+      }
+    },
+    "conjugate": {
+      "wall_minus_mean": "17/35",
+      "Nu_f": "140/17",
+      "flux": "1"
+    },
+    "advection": {
+      "Pe": 20.0,
+      "J": 20.00000004122307,
+      "theta": {
+        "0.5": 0.9999546021312976,
+        "0.9": 0.8646647185455941,
+        "0.95": 0.6321205601314552,
+        "0.99": 0.1812692472956419
+      }
+    },
+    "blasius": {
+      "fpp0": 0.3320573362152024
+    },
+    "graetz": {
+      "lambda0": 2.7043644198825323,
+      "lambda0_text": "2.7043644198825321633",
+      "NuT": 3.6567934577632926,
+      "method": "mpmath 1.3.0: the root of exp(−λ/2) ₁F₁(1/2 − λ/4; 1; λ) near 2.7"
+    },
+    "sample": {
+      "schema": "scientific-modelling/numerical-results",
+      "schemaVersion": 1,
+      "example": "plate-convection",
+      "provenance": {
+        "source": "tools/convective_references.py of this page, run once and committed",
+        "method": "Blasius and Pohlhausen similarity equations as one boundary-value problem on 0 ≤ η ≤ 15, collocation (scipy.integrate.solve_bvp)",
+        "software": "SciPy 1.16.2, NumPy 2.3.3, Python 3.12.13",
+        "date": "2026-10-06",
+        "tolerance": "solve_bvp tol = 1e-10; values rounded to 10 decimals",
+        "notes": "Pr = 0.5 lies outside the range Pr ≥ 0.6 of the correlation, so the page keeps that point but does not compare it."
+      },
+      "definitions": {
+        "NuRe": "Nu_x/Re_x^(1/2), local, isothermal wall, laminar",
+        "Pr": "nu/alpha"
+      },
+      "points": [
+        {
+          "Pr": 0.5,
+          "NuRe": 0.2592935574
+        },
+        {
+          "Pr": 0.6,
+          "NuRe": 0.2769560857
+        },
+        {
+          "Pr": 0.7,
+          "NuRe": 0.2926802226
+        },
+        {
+          "Pr": 1.0,
+          "NuRe": 0.3320573362
+        },
+        {
+          "Pr": 2.0,
+          "NuRe": 0.4223081723
+        },
+        {
+          "Pr": 5.0,
+          "NuRe": 0.5766888906
+        },
+        {
+          "Pr": 10.0,
+          "NuRe": 0.7281413055
+        },
+        {
+          "Pr": 50.0,
+          "NuRe": 1.2472874971
+        }
+      ]
     }
   }
 }
