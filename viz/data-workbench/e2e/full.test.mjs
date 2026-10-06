@@ -9,7 +9,7 @@
 // the Nature preset, and the PDF, PNG and SVG downloads read back with the page's own readers.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
@@ -30,6 +30,7 @@ if (selected && !process.env.E2E_ARTIFACT) {
 const { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, markdownExport, saved, using } = await import("../../../e2e/lib/full.js");
 const { openSession, selectedProjects, settle } = await import("../../../e2e/lib/browser.js");
 const { loadTargets } = await import("../../../e2e/lib/targets.js");
+const { serveArtifacts } = await import("../../../e2e/lib/server.js");
 const { parseDeck } = await import("../../../scripts/templates/beamdswitch/deck.mjs");
 
 /** @param {import("playwright").Page} page */
@@ -160,6 +161,7 @@ const load = (path) => require(fileURLToPath(new URL(`../${path}`, import.meta.u
 const Pdf = load("src/pdf.js");
 const Png = load("src/png.js");
 const Fonts = load("src/fonts.js");
+const Zip = load("src/zip.js");
 const PDFLib = load("vendor/pdf-lib/pdf-lib.min.js");
 const fontkit = load("vendor/fontkit/fontkit.umd.min.js");
 
@@ -363,6 +365,90 @@ if (selected) {
           assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
         } finally {
           await s.close();
+        }
+      });
+
+      test("the export package: one download (by touch on a phone), its deck's figures shown by beamdswitch, and the project reopened and reproduced", { timeout: 600_000 }, async () => {
+        const touch = !!project.context.hasTouch;
+        const press = (/** @type {import("playwright").Locator} */ l) => (touch ? l.tap() : l.click());
+        const s = await openSession(browser, project, targets.origin(artifact));
+        const zipPath = join(tmp, `${project.name}-package.zip`);
+        try {
+          await s.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
+          await settle(s.page, 'html[data-ready="true"]');
+          await press(s.page.locator('button[value="planted"]'));
+          await ready(s.page, "planted");
+          const plan = await s.page.locator("[data-export-plan]").innerText();
+          assert.match(plan, /155 valid figures of 1 table \(158 with every page of each timeline\), as SVG, PDF, PNG/);
+          assert.equal(await s.page.locator("[data-export-open]").count(), 0, "nothing left to finish");
+          const started = Date.now();
+          const [file] = await Promise.all([s.page.waitForEvent("download", { timeout: 300_000 }), press(s.page.locator("#export-package"))]);
+          await file.saveAs(zipPath);
+          console.log(`${project.name}: export package of the planted example in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+          assert.match(file.suggestedFilename(), /^data-workbench-export-\d{4}-\d{2}-\d{2}\.zip$/);
+          assert.equal(await s.page.locator("[data-export-status]").getAttribute("data-export-status"), "complete");
+          const zip = await Zip.open(new Blob([readFileSync(zipPath)]));
+          const figures = zip.paths.filter((/** @type {string} */ p) => p.startsWith("figures/"));
+          assert.equal(figures.length, 158 * 3, "every valid figure and timeline page as SVG, PDF and PNG");
+          for (const name of ["report.md", "highlights.json", "specs/planted.json", "transforms.json", "stats.json", "validation.json", "deck.md", "project.json", "manifest.json"]) assert.ok(zip.has(name), name);
+          const manifest = JSON.parse(await zip.text("manifest.json"));
+          assert.equal(manifest.status, "complete");
+          assert.equal(manifest.files.length, zip.paths.length - 1);
+          assert.ok(Png.read(await zip.bytes(figures.find((/** @type {string} */ p) => p.endsWith(".png")))).dpi > 299, "a PNG holds its resolution");
+          const pdf = await Pdf.read(PDFLib, await zip.bytes(figures.find((/** @type {string} */ p) => p.endsWith(".pdf"))));
+          assert.ok(pdf.fonts.every((/** @type {any} */ f) => f.file === "FontFile2"), "a PDF embeds its fonts");
+          assert.deepEqual(s.observed.pageErrors, [], "no uncaught errors");
+          assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
+          // The deck in beamdswitch itself, at the tested commit: its parser reads the frames and its slides show each figure.
+          const deck = await zip.text("deck.md");
+          const beam = JSON.parse(execFileSync("python3", [join(folder, "runtime_files.py"), "beamdswitch"], { encoding: "utf8" }));
+          const site = join(tmp, `${project.name}-beamdswitch`);
+          mkdirSync(site, { recursive: true });
+          writeFileSync(join(site, "index.html"), readFileSync(beam.renderer));
+          writeFileSync(join(site, "deck.md"), deck);
+          const server = await serveArtifacts(new Map([["beamdswitch", site]]));
+          const b = await openSession(browser, project, `${server.origin}/beamdswitch/`);
+          try {
+            await b.page.goto(`${server.origin}/beamdswitch/index.html?src=deck.md&view`, { waitUntil: "load" });
+            await b.page.waitForFunction(() => /** @type {any} */ (window).beamdswitch?.deck, undefined, { timeout: 60_000 });
+            const frames = await b.page.evaluate(() => /** @type {any} */ (window).beamdswitch.deck.frames.map((/** @type {any} */ f) => ({ title: f.title, steps: f.steps })));
+            assert.deepEqual(frames.map((/** @type {any} */ f) => f.title), parseDeck(deck).frames.map((/** @type {any} */ f) => f.title), "the app's parser reads the frames the vendored parser reads");
+            let shown = 0;
+            for (const [i, f] of frames.entries()) {
+              await b.page.evaluate(([k, step]) => /** @type {any} */ (window).beamdswitch.go(k, step), [i, f.steps - 1]);
+              const images = await b.page.evaluate(async () => Promise.all([...document.querySelectorAll("#stage img")].map(async (img) => {
+                await /** @type {HTMLImageElement} */ (img).decode().catch(() => {});
+                const r = img.getBoundingClientRect();
+                return { natural: /** @type {HTMLImageElement} */ (img).naturalWidth, width: r.width, height: r.height };
+              })));
+              for (const im of images) assert.ok(im.natural > 0 && im.width > 50 && im.height > 30, `${f.title}: the figure is drawn (${JSON.stringify(im)})`);
+              shown += images.length;
+            }
+            assert.equal(shown, (deck.match(/data:image\/svg\+xml;base64,/g) ?? []).length, "every embedded figure is shown on its slide");
+            assert.ok(shown >= 6);
+            assert.deepEqual(b.observed.pageErrors, [], "beamdswitch shows the deck without an error");
+          } finally {
+            await b.close();
+            await server.close();
+          }
+        } finally {
+          await s.close();
+        }
+        // The package reopens in a fresh page: the source (a built-in example) is checked and every figure and test result reproduced.
+        const r = await openSession(browser, project, targets.origin(artifact));
+        try {
+          await r.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
+          await settle(r.page, 'html[data-ready="true"]');
+          await r.page.locator("#reopen-file").setInputFiles(zipPath);
+          await press(r.page.locator("#reopen-go"));
+          await r.page.locator("[data-reproduced]").waitFor({ timeout: 300_000 });
+          assert.equal(await r.page.locator("[data-reproduced]").getAttribute("data-reproduced"), "yes", await r.page.locator("[data-reproduced]").innerText());
+          assert.match(await r.page.locator("[data-reproduced]").innerText(), /planted: 158 of 158 SVG figures and 62 of 62 test results match the saved project\./);
+          assert.match(await r.page.locator("#log").innerText(), /Reopened planted from planted\.csv: its source matches/);
+          assert.deepEqual(r.observed.pageErrors, [], "no uncaught errors");
+          assert.deepEqual(r.observed.unexpectedRequests, [], "no requests outside the artifact");
+        } finally {
+          await r.close();
         }
       });
     });

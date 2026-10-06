@@ -49,7 +49,7 @@ async function publish(chart, preset, extra = {}) {
   const drawn = Render.render(spec, chart.data, Figure.styleOf(settings, { family: fonts.family, measure: fonts.measure }));
   const pdfBytes = await Pdf.write(PDFLib, fontkit, drawn.scene, fonts, { title: spec.annotation.title, date: new Date(Date.UTC(2026, 9, 6)) });
   const pdf = await Pdf.read(PDFLib, pdfBytes);
-  const svgText = Fonts.svgFile(drawn.svg, drawn.scene, fonts);
+  const svgText = await Fonts.svgFile(drawn.svg, drawn.scene, fonts);
   const svg = Fonts.readSvg(svgText, fontkit);
   const result = Figure.check(drawn, { spec, settings, font: bundled, files: { pdf, svg } });
   return { settings, spec, drawn, pdf, pdfBytes, svg, svgText, result };

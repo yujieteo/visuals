@@ -3,8 +3,8 @@
  * report(snapshot) turns the page's snapshot (the tables and their column profiles, never their rows) into the
  * report the kit writes as the Markdown record and the site's beamdswitch template writes as a narrated deck.
  * Names and values from the data go only into list items and table cells, escaped, and never into narration,
- * which beamdswitch reads aloud and which must hold plain words. Piece 5 replaces the deck with the full export
- * package; this one records the inspection, the accounting of each table's charts and its findings: the family of
+ * which beamdswitch reads aloud and which must hold plain words. The export package's deck.md, with the
+ * highlighted figures, is src/package.js's; this one records the inspection, the accounting of each table's charts and its findings: the family of
  * hypotheses with its counts, and each list's highlights with their adjusted p-values.
  */
 (function (root, factory) {
