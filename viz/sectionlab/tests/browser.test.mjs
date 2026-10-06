@@ -8,10 +8,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
 import fs from "node:fs";
-import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { L, RAW, compute } from "./helpers.mjs";
+import { serve } from "./server.mjs";
 
 const fmt = L.report.fmt;
 
@@ -73,15 +73,6 @@ async function launch(chrome) {
     fs.rmSync(profile, { recursive: true, force: true });
   };
   return { send, on: (l) => listeners.push(l), close };
-}
-
-function serve() {
-  const root = new URL("..", import.meta.url).pathname;
-  const server = http.createServer((req, res) => {
-    if (req.url.split("?")[0] !== "/" && req.url.split("?")[0] !== "/index.html") { res.writeHead(404).end(); return; }
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(fs.readFileSync(path.join(root, "index.html")));
-  });
-  return new Promise((r) => server.listen(0, "127.0.0.1", () => r(server)));
 }
 
 const chrome = findChrome();

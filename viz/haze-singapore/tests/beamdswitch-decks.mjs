@@ -6,17 +6,18 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 
 const root = new URL("../", import.meta.url);
 export const read = (path) => readFileSync(new URL(path, root), "utf8");
 export const require = createRequire(import.meta.url);
-export const load = (path) => require(new URL(path, root).pathname);
+export const load = (path) => require(fileURLToPath(new URL(path, root)));
 const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 export const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
 
 // A site checkout to compare against as well, when one is at hand: SITE_REPO, or a sibling `site`.
-const siteRepo = process.env.SITE_REPO || new URL("../../../../site/", import.meta.url).pathname;
+const siteRepo = process.env.SITE_REPO || fileURLToPath(new URL("../../../../site/", import.meta.url));
 const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
 const haveSite = existsSync(SITE_TEMPLATE);
 

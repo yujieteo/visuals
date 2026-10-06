@@ -61,5 +61,10 @@ calculations, checks one card per step with drawn equations and no raw TeX, save
 Markdown through a real download and copies it through the real clipboard (both must
 equal the engine's document), and checks the page does not scroll sideways at 375 px.
 
+`tests/file-paths.test.mjs` copies the page and its test helpers into a temporary
+folder whose name contains spaces, `%`, `#` and Unicode. It checks the decoded
+root path and requests the exact page through `tests/server.mjs`, the same server
+that the Chrome test uses. This regression needs no browser.
+
 The Python suite also confirms that `index.html`, `reference/fixtures.json`,
 `reference/reference.json` and `reference/torsion-accuracy.json` are current.
