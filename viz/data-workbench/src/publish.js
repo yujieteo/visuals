@@ -112,22 +112,33 @@
 
     /** Write the figure's three files, read each back, and keep them for the downloads. */
     async function writeFiles(drawn, key) {
+      const fonts = state.fonts;
+      const files = await write(drawn);
+      state.written = { key, fonts, files };
+      return files;
+    }
+
+    /**
+     * Write a drawn figure's files in the formats asked for (all three by default), each read back for its checks.
+     * @param {any} drawn draw()'s answer @param {string[]} [formats]
+     */
+    async function write(drawn, formats = ["svg", "pdf", "png"]) {
       const files = {};
       const fonts = state.fonts;
       if (!fonts) {
-        for (const f of ["svg", "pdf", "png"]) files[f] = { error: state.fontError || "The font is not read yet." };
+        for (const f of formats) files[f] = { error: state.fontError || "The font is not read yet." };
         return files;
       }
       const P = /** @type {any} */ (window).PDFLib, fontkit = /** @type {any} */ (window).fontkit;
-      try {
-        const text = Fonts.svgFile(drawn.svg, drawn.scene, fonts);
-        files.svg = { ...Fonts.readSvg(text, fontkit), blob: new Blob([text], { type: "image/svg+xml" }) };
+      if (formats.includes("svg")) try {
+        const text = await Fonts.svgFile(drawn.svg, drawn.scene, fonts);
+        files.svg = { ...Fonts.readSvg(text, fontkit), text, blob: new Blob([text], { type: "image/svg+xml" }) };
       } catch (error) { files.svg = { error: `The SVG could not be written: ${app.message(error)}` }; }
-      try {
+      if (formats.includes("pdf")) try {
         const bytes = await Pdf.write(P, fontkit, drawn.scene, fonts, { title: drawn.spec.annotation.title, subject: drawn.desc });
         files.pdf = { ...(await Pdf.read(P, bytes)), blob: new Blob([bytes], { type: "application/pdf" }) };
       } catch (error) { files.pdf = { error: `The PDF could not be written: ${app.message(error)}` }; }
-      try {
+      if (formats.includes("png")) try {
         const size = Png.pixels(drawn.scene.width, drawn.scene.height, state.settings.dpi);
         if (!size.ok) throw new Error(size.reason);
         await document.fonts.load(`10px '${fonts.name}'`);
@@ -143,8 +154,15 @@
         const bytes = Png.withDpi(new Uint8Array(await blob.arrayBuffer()), state.settings.dpi);
         files.png = { ...Png.read(bytes), blob: new Blob([bytes], { type: "image/png" }) };
       } catch (error) { files.png = { error: `The PNG could not be written: ${app.message(error)}` }; }
-      state.written = { key, fonts, files };
       return files;
+    }
+
+    /** The checks of a drawn figure and its written files, by the settings in use. @param {any} drawn @param {any} files */
+    const checked = (drawn, files) => Figure.check(drawn, { spec: drawn.spec, settings: state.settings, font: fontInfo(), files });
+
+    /** Use saved settings (a reopened project): the preset's and the person's values, held to their limits. @param {any} settings */
+    function restore(settings) {
+      state.settings = Figure.settingsOf(settings ?? {});
     }
 
     /* ---------- the panel ---------- */
@@ -256,7 +274,7 @@
         rules: Figure.rulesOf(s.preset).map((r) => ({ rule: r.text, status: r.status, source: r.url, read: r.read })) };
     }
 
-    return { draw, panel, ready, summary, settings: () => state.settings };
+    return { draw, panel, ready, write, checked, restore, summary, settings: () => state.settings, font: fontInfo };
   }
 
   return { mount };

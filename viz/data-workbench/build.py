@@ -35,7 +35,8 @@ sys.path.insert(0, str(SCRIPTS))
 from style_guide import THEME_SCRIPT  # noqa: E402
 
 MODULES = ("sql", "infer", "preflight", "sha256", "stats", "examples", "profile", "engine", "report", "grammar", "chartspec", "chartsql", "render",
-           "charts", "statsql", "family", "rank", "figure", "fonts", "pdf", "png", "publish", "gallery", "findings", "app")
+           "charts", "statsql", "family", "rank", "figure", "fonts", "pdf", "png", "publish", "gallery", "findings", "zip", "package", "project",
+           "exporter", "app")
 # The page reads nothing from the network itself; the engine's worker, started from runtime/, reads the engine and
 # the Parquet extension from the same folder. Inline scripts and styles are the page's own.
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src data: blob:; "
@@ -81,6 +82,10 @@ def script(block_id, text, kind=None):
     return f"<script{attrs}>\n{text.rstrip(chr(10))}\n</script>"
 
 
+# The page's own SHA-256 goes into its data block: the hash of the page with this value in its place.
+UNSET = "0" * 64
+
+
 def data_block(raw, downloads):
     """What the page reads at start: the examples with their embedded files, the engine versions, the steps to come."""
     files = {}
@@ -94,8 +99,13 @@ def data_block(raw, downloads):
     examples = [{k: e[k] for k in ("id", "title", "table", "kind", "about", "licence") if k in e}
                 | {k: e[k] for k in ("source_url", "fetched", "publisher", "sha256", "bytes") if k in e} for e in raw["examples"]]
     pieces = [p for p in raw["preview"]["pieces"] if p["n"] > raw["preview"]["piece"]]
-    data = {"examples": examples, "files": files, "pieces": pieces,
-            "engine": {"duckdb": downloads["duckdb"], "duckdbWasm": downloads["duckdb_wasm"], "platform": downloads["platform"]}}
+    tested = json.loads(read("tests/beamdswitch.json"))
+    beam = {"repository": tested["repository"], "commit": tested["commit"],
+            "parser": {"file": "src/deck.js", "sha256": tested["downloads"][1]["sha256"]},
+            "renderer": {"file": "beamdswitch.html", "sha256": tested["downloads"][0]["sha256"]}}
+    data = {"examples": examples, "files": files, "pieces": pieces, "step": raw["preview"]["piece"],
+            "engine": {"duckdb": downloads["duckdb"], "duckdbWasm": downloads["duckdb_wasm"], "platform": downloads["platform"]},
+            "beamdswitch": beam, "build": {"page_sha256": UNSET, "rule": "SHA-256 of index.html with this value written as 64 zeros"}}
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
 
 
@@ -198,6 +208,9 @@ def main(argv=None):
     parser.add_argument("--verify", action="store_true", help="check index.html is current; write nothing")
     args = parser.parse_args(argv)
     text = page()
+    if text.count(UNSET) != 1:
+        fail("the page holds 64 zeros elsewhere, so its own SHA-256 cannot take their place")
+    text = text.replace(UNSET, sha256(text.encode("utf-8")), 1)
     target = HERE / "index.html"
     if args.verify:
         if not target.is_file() or target.read_text(encoding="utf-8") != text:

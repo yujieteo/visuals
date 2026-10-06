@@ -31,6 +31,8 @@
     const { store, h, byId, fmtInt, plural } = app;
     /** @type {Map<string, any>} the chart state of each table, by table name */
     const charts = new Map();
+    /** @type {Map<string, any[]>} saved edited charts of a reopened table, until its first generation */
+    const seeds = new Map();
     /** @type {Map<string, string>} picture URLs of drawn figures, by candidate id and version */
     const pictures = new Map();
     const viewer = { table: "", id: "", page: 1, zoom: "fit", error: "", busy: false, size: { width: 0, height: 0 }, drawing: 0 };
@@ -85,7 +87,8 @@
       const api = await app.ensureEngine();
       const { classes, plan, ctx } = Charts.prepare({ name: table.name, rowColumn: table.imported.rowColumn, rows: table.imported.rows, sample: table.sample,
         columns: columnsOf(table), additive: additiveOf(table) });
-      const st = stateOf(table.name) ?? { filter: { kind: "all", outcome: "valid" }, shown: PAGE, candidates: [] };
+      const st = stateOf(table.name) ?? { filter: { kind: "all", outcome: "valid" }, shown: PAGE, candidates: seeds.get(table.name) ?? [] };
+      seeds.delete(table.name);
       const old = new Map(st.candidates.map((c) => [c.id, c]));
       st.candidates = plan.candidates.map((c) => {
         const sig = signature(c, ctx);
@@ -641,7 +644,17 @@
       return h("button", { type: "button", class: "figure-open thumb", "data-thumb": id, "aria-label": `Open full size: ${label}`, onclick: () => open(tableName, id) }, img);
     }
 
-    return { generate, draw, drop, summary, candidates, bind, thumb, open, state: stateOf };
+    /**
+     * Seed a table's charts with saved edited specifications (a reopened project), before its first generation: each
+     * is kept when it still validates against the table as read, as an edit made in the page is.
+     * @param {string} name @param {{ id: string, spec: any }[]} edits
+     */
+    function seed(name, edits) {
+      if (!edits.length) return;
+      seeds.set(name, edits.map((e) => ({ id: e.id, edited: true, spec: e.spec, version: 0, svg: null })));
+    }
+
+    return { generate, draw, drop, summary, candidates, bind, thumb, open, seed, state: stateOf };
   }
 
   return { mount };

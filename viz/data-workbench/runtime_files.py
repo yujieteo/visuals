@@ -10,6 +10,7 @@ Usage:
     python3 runtime_files.py fetch            # download every pinned file that the cache does not hold
     python3 runtime_files.py stage DIR        # DIR/index.html, data.json, its assets and runtime/, as the site publishes them
     python3 runtime_files.py node             # the engine for node --test, as JSON paths (tests/engine.mjs reads it)
+    python3 runtime_files.py beamdswitch      # beamdswitch's parser and renderer at the tested commit, as JSON paths
 """
 import argparse
 import hashlib
@@ -121,6 +122,17 @@ def node(cache=DEFAULT_CACHE):
             "home": str(home), "repository": NODE_REPOSITORY}
 
 
+def beamdswitch(cache=DEFAULT_CACHE):
+    """Lay out beamdswitch's parser (deck.mjs) and renderer (beamdswitch.html) of tests/beamdswitch.json under
+    cache/beamdswitch/ and return their paths and the commit."""
+    pin = json.loads((HERE / "tests" / "beamdswitch.json").read_text(encoding="utf-8"))
+    root = Path(cache)
+    files = fetch(cache, quiet=True, entries=pin["downloads"])
+    for published, source in files.items():
+        place(source, root / published)
+    return {"commit": pin["commit"], "parser": str(root / "beamdswitch" / "deck.mjs"), "renderer": str(root / "beamdswitch" / "beamdswitch.html")}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -128,12 +140,15 @@ def main(argv=None):
     stage_parser = sub.add_parser("stage")
     stage_parser.add_argument("dir", type=Path)
     sub.add_parser("node")
+    sub.add_parser("beamdswitch")
     args = parser.parse_args(argv)
     if args.command == "fetch":
         files = fetch()
         print(f"runtime_files.py: {len(files)} pinned files in {DEFAULT_CACHE}")
     elif args.command == "stage":
         print(f"runtime_files.py: staged {stage(args.dir)}")
+    elif args.command == "beamdswitch":
+        print(json.dumps(beamdswitch()))
     else:
         print(json.dumps(node()))
 

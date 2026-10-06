@@ -318,7 +318,7 @@ step n]** with its evidence.
 | 2 | Charts and candidates: the chart specification and its validator, grammar v1, the candidate enumerator and its accounting, the SVG renderer and timelines, the gallery and edits | built |
 | 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | built |
 | 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | built |
-| 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | to come |
+| 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | built |
 | 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | to come |
 | 7 | Phones, speed and acceptance: touch tests, the 1 million row benchmark, phone limits, "Measure this device", the section 13 table | to come |
 
@@ -627,7 +627,13 @@ Where the plan left a choice or changed:
     replacing the browser's, every CRC checked when read back; above 16.7 megapixels the PNG is refused with the
     reason and the SVG and PDF stay.
   - **[Changed in step 4]** SVG: the downloaded file holds each face its text uses, whole, in an `@font-face`
-    (fontkit's subsets have no character map, so a browser cannot use them). "Fonts embedded" passes for SVG only
+    (fontkit's subsets have no character map, so a browser cannot use them). **[Changed in step 5]** A whole face
+  is about 410 KB, so a package of 158 SVG figures held about 170 MB of fonts; each SVG now holds a TrueType subset
+  of the characters it shows with a character map the workbench writes (src/fonts.js `subset`: fontkit's glyph
+  subset plus `cmap` formats 4 and 12, `name`, `OS/2` and a version 3 `post`), about 12 KB a face. Chromium and
+  WebKit load it as a web font, fontkit reads every character back, and "Fonts embedded" still decides on that
+  (tests/export.test.mjs, every figure of the planted package). A CFF (OpenType) face of the person's is still
+  embedded whole. "Fonts embedded" passes for SVG only
     when the file, read back, holds fonts fontkit reads that map every character of its text to a glyph; the text
     stays `<text>` and names the family, which drawing programs that ignore `@font-face` take from the installed
     fonts.
@@ -669,6 +675,42 @@ Where the plan left a choice or changed:
   and renderer commits tested, browser, seeds, completion status, remaining work), deck.md (beamdswitch, voice
   bf_emma, highlighted figures as base64 SVG images, statistics in LaTeX), project.json, and the source files only
   when the person opts in. Reopening checks source hashes.
+  **[Built in step 5]** "5. Export" (src/exporter.js, src/package.js, src/project.js, src/zip.js):
+  - One button writes the package as one piece of work with progress and Cancel; Cancel saves nothing. Figures are
+    drawn by the publication settings in use (src/publish.js), each file read back and checked; the formats are
+    SVG, PDF and PNG, all ticked by default. A timeline of more than 500 events is one file a page,
+    `<chart>.p1.svg` onwards. Files: `figures/<table>/<chart id>[.p<n>].<format>`, `specs/<table>.json` (every
+    candidate with its outcome, reason, files and specification), `sources/<table>/<file>` when included.
+  - The zip deflates each text file and stores what does not shrink and the source files, which are read a slice
+    at a time and never held twice; names are UTF-8; past 65,535 entries or 4 GiB it is ZIP64. Python's zipfile
+    reads it (tests/export.test.mjs).
+  - manifest.json lists every other file with its size and SHA-256, and holds the page's own SHA-256 (of
+    index.html with that value written as 64 zeros, set by build.py), the engine, the grammar, specification and
+    catalogue versions, the publication preset with its rules' sources and dates, the beamdswitch commit tested,
+    the browser, every seed, the completion status and the remaining work. The package is complete only when every
+    table is profiled, its charts and statistics complete and every figure file written; otherwise each missing
+    piece is a line of "remaining", in report.md too. A figure that fails a check is written and its check listed
+    in validation.json: a failed check is not missing work.
+  - deck.md comes from the site's beamdswitch template: a frame a table, then a frame for each distinct highlighted
+    figure (both lists, each figure once) with its SVG file as a base64 image and its effect measure,
+    unusualness, adjusted p-value and n in LaTeX. **[Changed in step 5]** What was observed, the tests and the
+    cautions are the frame's notes, not its body: on the slide beside the figure they ran past its bottom edge in
+    beamdswitch (seen at 1280 × 800).
+  - **[Fact]** beamdswitch, rechecked on 2026-10-06 at commit 647d0ef of yujieteo/beamdswitch (now public): decks
+    load with `?src=` from the same site; raw HTML is shown as text, so figures are Markdown images, and its image
+    renderer keeps `data:` URLs. Its parser (`src/deck.js`) differs from the copy vendored in
+    scripts/templates/beamdswitch (7dfd98d) only by marking automatic narration. tests/beamdswitch.json pins the
+    parser and the built app (`beamdswitch.html`) of that commit by SHA-256; the Node checks parse deck.md with
+    both parsers, and the browser checks open it in the app in every project and check that each slide shows its
+    figure.
+  - project.json records each table's source (file, size, SHA-256, or the built-in example), how it was imported,
+    the readings set or approved, the dismissed suggestions, the fields marked additive, the edited charts'
+    specifications, the study details, the highlight count and the publication settings, and what came out: each
+    SVG figure's SHA-256 and each tested hypothesis's raw and adjusted p-values. "Reopen a saved project" takes
+    the zip (its sources when they are in it) or project.json (then each file is chosen), refuses a file whose
+    size or SHA-256 differs, imports the tables again with those settings, and then says how many SVG figures and
+    test results match: the planted example reopens with 158 of 158 figures and 62 of 62 results. A font of the
+    person's own is not in the project, so figures drawn in it reopen in the bundled font and say they differ.
 - Mobile: one column under 768 px; touch targets of at least 44 px; every detail also on tap; a full-size chart
   viewer with pinch zoom; the SQL editor as a plain text area; the file input accepts .csv and .parquet; downloads
   through a blob link.
@@ -745,6 +787,20 @@ Where the plan left a choice or changed:
   redraws it with the title in the legend; its PDF (MediaBox 183 mm, FontFile2, text as text), PNG (3,242 px wide,
   pHYs of 17,717 pixels a metre, 450 dpi, every CRC) and SVG (183 mm, its font inside) are downloaded and read back
   with the page's own readers, and the PNG fails Nature's format rule.
+
+### Verification fixtures (step 5 part)
+
+- tests/export.test.mjs, the planted example through the pinned engine: the zip of deflated, stored and Blob
+  entries, plain and ZIP64, read by Python's zipfile; the package holds 158 SVG files for the 155 valid charts (the
+  point timeline's 4 pages); every file's size and SHA-256 in the manifest; report.md links only to files in the
+  package; every specification validates; deck.md parsed by both beamdswitch parsers, each highlighted figure's
+  image the package's own SVG; the completion status of charts cancelled, statistics not run and a figure not
+  written; the project made again from the same bytes reproducing every SVG figure and test result; a changed
+  file refused.
+- e2e/full.test.mjs in every browser project, by touch on the phones: the package of the planted example
+  downloaded (474 files: SVG, PDF and PNG of 158 figures, with the JSON files, report, deck and manifest), deck.md
+  opened in beamdswitch at the tested commit with every embedded figure drawn on its slide, and the package
+  reopened in a fresh page with 158 of 158 SVG figures and 62 of 62 test results matching.
 
 ### Built-in examples (step 1)
 

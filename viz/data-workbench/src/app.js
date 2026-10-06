@@ -9,7 +9,7 @@
 (function () {
   "use strict";
   const Sql = window.DWSql, Infer = window.DWInfer, Preflight = window.DWPreflight, Profile = window.DWProfile;
-  const Sha = window.DWSha256, Examples = window.DWExamples, Engine = window.DWEngine, Report = window.DWReport;
+  const Sha = window.DWSha256, Examples = window.DWExamples, Engine = window.DWEngine, Report = window.DWReport, Project = window.DWProject;
   const DATA = JSON.parse(document.getElementById("dw-data").textContent);
   const byId = (id) => document.getElementById(id);
   const ROLES = ["measure", "identifier", "category", "ordered category", "time", "event label", "interval start", "interval end", "unknown"];
@@ -104,6 +104,15 @@
     const run = turn.then(work);
     turn = run.catch(() => {});
     return run;
+  }
+  /** Resolve once no work is running or queued, including work that finished work queues after itself. */
+  async function settled() {
+    for (;;) {
+      const now = turn;
+      await now;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (now === turn && !store.busy) return;
+    }
   }
 
   /** Run a long step with progress; Cancel stops it between queries and stops the running query. */
@@ -248,7 +257,10 @@
       name: item.name, kind: item.kind, example: item.example?.id ?? null,
       file: { name: item.fileName, bytes: item.bytes, sha256: "" }, estimate, imported, sample, columnsKept: columns,
       columns: [], status: "profiling", reason: "", overrides: {}, dismissed: [], begun,
+      // The file itself, for a package that includes the sources; a built-in example is made again instead.
+      source: item.example ? null : item.file ?? null,
     };
+    if (item.restore) restoreInto(table, item.restore);
     store.tables.push(table);
     store.queue = store.queue.filter((q) => q !== item);
     store.selected = table.name;
@@ -260,6 +272,52 @@
     progress(`Checking ${item.fileName}: SHA-256`, 0, 1);
     table.file.sha256 = item.sha256 ?? (await Sha.ofBlob(item.file, (share) => progress(`Checking ${item.fileName}: SHA-256, ${Math.round(share * 100)}%`, share, 1), () => store.stop)) ?? "";
     await profileRest(table);
+  }
+
+  /** A reopened table takes its project's readings, dismissals, additive fields, study details and edited charts. */
+  function restoreInto(table, saved) {
+    Object.assign(table.overrides, saved.overrides ?? {});
+    table.dismissed = [...(saved.dismissed ?? [])];
+    for (const f of saved.additive ?? []) store.additive[`${table.name}\u0000${f}`] = true;
+    if (saved.study) Findings.restoreStudy(table.name, saved.study);
+    Gallery.seed(table.name, saved.edits ?? []);
+  }
+
+  /**
+   * Import the tables of a saved project (src/project.js) as they were imported: each source is a built-in example
+   * made again, or a file given (chosen, or in the package); its size and SHA-256 must match the record. Returns the
+   * names of the tables imported; their charts and statistics follow as for any import.
+   * @param {any} doc @param {Map<string, { blob: Blob }>} given
+   */
+  async function reopen(doc, given) {
+    const opened = [];
+    await busy("Reopening the project", async () => {
+      const api = await ensureEngine();
+      for (const t of doc.tables) {
+        if (store.stop) break;
+        const refuse = (why) => note({ kind: "failed", table: t.name, text: `Not reopened: ${t.name} ${why}` });
+        if (tableOf(t.name)) { refuse("is the name of a table already open."); continue; }
+        const meta = t.source.example ? DATA.examples.find((x) => x.id === t.source.example) : null;
+        let data = null, file = null;
+        if (meta) data = new TextEncoder().encode(meta.id === "planted" ? Examples.planted() : DATA.files[meta.id]);
+        else if (given.get(t.name)) file = new File([given.get(t.name).blob], t.source.file);
+        else { refuse(`has no source file: choose ${t.source.file}.`); continue; }
+        progress(`Checking ${t.source.file}: SHA-256`, 0, 1);
+        let hash;
+        if (data) { const x = Sha.create(); x.update(data); hash = x.hex(); } else hash = await Sha.ofBlob(file, (share) => progress(`Checking ${t.source.file}: SHA-256, ${Math.round(share * 100)}%`, share, 1), () => store.stop);
+        if (hash === null) break;
+        const c = Project.check(t.source, { bytes: data ? data.length : file.size, sha256: hash });
+        if (!c.ok) { refuse(`was not reopened: its source ${c.text}.`); continue; }
+        const item = { id: ++store.seq, file, fileName: t.source.file, kind: t.source.kind, bytes: t.source.bytes, sha256: hash, example: meta, name: t.name,
+          choice: t.import.choice, decision: { sample: t.import.sample }, keep: t.import.columns ?? [], rows: t.import.fileRows ?? 0, columns: [], restore: t,
+          estimate: Preflight.estimate(t.source.kind === "parquet" ? "parquet" : "csv", t.source.bytes) };
+        item.path = data ? await api.registerBytes(item.fileName, data) : await api.register(file);
+        await importOne(item);
+        if (tableOf(t.name)) { opened.push(t.name); note({ kind: "reopen", table: t.name, text: `Reopened ${t.name} from ${t.source.file}: its source ${c.text}.` }); }
+        else refuse(`could not be imported: ${item.problem || "stopped"}`);
+      }
+    });
+    return opened;
   }
 
   /** Profile the columns of a table not profiled yet; Cancel leaves the rest listed as not profiled. */
@@ -487,6 +545,7 @@
     drawTables();
     Gallery.draw();
     Findings.draw();
+    Exporter.draw();
     drawExamples();
     drawLog();
   }
@@ -830,6 +889,16 @@
     setHighlights: (n) => kit?.set({ highlights: n }, "replace"),
   });
 
+  /* ---------- export ---------- */
+
+  // The export package and reopening a saved project.
+  const Exporter = window.DWExport.mount({
+    store, h, byId, fmtInt, plural, busy, progress, refresh, ensureEngine, note, message, cancel, snapshot, settled, reopen,
+    cancelled: Engine.cancelled, gallery: Gallery, findings: Findings, publish: Publish, data: DATA,
+    highlights: () => kit?.state.highlights ?? 6,
+    setHighlights: (n) => kit?.set({ highlights: n }, "replace"),
+  });
+
   /* ---------- start ---------- */
 
   const examples = ["none", ...DATA.examples.map((x) => x.id)];
@@ -906,6 +975,7 @@
       ...DATA.examples.map((x) => ({ label: `Open the example: ${x.title}`, run: () => { kit.set({ example: x.id }); openExample(x.id); } })),
       { label: "Choose files to import", run: () => byId("files").click() },
       { label: "Go to the findings: unusual and statistically supported patterns", run: () => byId("findings-title")?.scrollIntoView({ block: "start" }) },
+      { label: "Download the export package", run: () => Exporter.exportPackage() },
     ],
   });
 })();

@@ -334,7 +334,12 @@
       return { ...out, lists };
     }
 
-    return { analyse, draw, drop, summary, tool, ranked, state: stateOf };
+    /** Take saved study details (a reopened project) before the table's statistics first run. @param {string} name @param {any} study */
+    function restoreStudy(name, study) {
+      ensure(name).study = { ...Family.NO_STUDY, ...(study ?? {}) };
+    }
+
+    return { analyse, draw, drop, summary, tool, ranked, restoreStudy, state: stateOf };
   }
 
   return { mount };
