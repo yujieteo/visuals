@@ -8,7 +8,8 @@
  *
  * The gallery shows the valid figures of the selected table as pictures; the full-size view draws one figure as
  * SVG and lets the person change its fields, transformations, labels, scales and layout, and add facets. Every
- * change is validated before it is drawn and recorded in the specification and in the conversion log.
+ * change is validated before it is drawn and recorded in the specification and in the conversion log. The
+ * full-size view draws the figure by the publication preset (src/publish.js), with its checks and its files.
  */
 (function (root, factory) {
   root.DWGallery = factory(root.DWGrammar, root.DWChartSpec, root.DWCharts, root.DWRender, root.DWRank);
@@ -32,7 +33,9 @@
     const charts = new Map();
     /** @type {Map<string, string>} picture URLs of drawn figures, by candidate id and version */
     const pictures = new Map();
-    const viewer = { table: "", id: "", page: 1, zoom: "fit", error: "", busy: false };
+    const viewer = { table: "", id: "", page: 1, zoom: "fit", error: "", busy: false, size: { width: 0, height: 0 }, drawing: 0 };
+    /** @type {{ key: string, data: any } | null} the computed data of the chart open full size */
+    let shownData = null;
     /** @type {Set<string>} pictures being drawn again, so a redraw does not ask twice */
     const drawing = new Set();
     /** @type {string[]} picture URLs no longer current, released once the gallery no longer shows them */
@@ -340,17 +343,7 @@
         h("button", { type: "button", disabled: at < 0 || at >= valid.length - 1, onclick: () => open(st.ctx.table, valid[at + 1].id), text: "Next chart" }),
         h("span", { class: "seg", role: "group", "aria-label": "Zoom" }, [["fit", "Fit"], ["100", "100%"], ["200", "200%"]].map(([z, l]) =>
           h("button", { type: "button", "aria-pressed": String(viewer.zoom === z), onclick: () => { viewer.zoom = z; zoom(); drawZoomButtons(); }, "data-zoom": z, text: l }))));
-      const figure = byId("viewer-figure");
-      figure.replaceChildren(h("p", { class: "note", text: "Drawing…" }));
-      if (cand.outcome !== "valid") {
-        figure.replaceChildren(h("p", { class: "note", text: cand.outcome === "pending" ? "This chart is being computed again; it shows here once it is drawn." : `${cand.outcome[0].toUpperCase()}${cand.outcome.slice(1)}: ${cand.reason}` }));
-      } else try {
-        const svg = await svgOf(st, cand, shownSpec(cand));
-        figure.innerHTML = svg;
-        zoom();
-      } catch (error) {
-        figure.replaceChildren(h("p", { class: "warn-text", text: `This figure could not be drawn: ${app.message(error)}` }));
-      }
+      await drawFigure(st, cand);
       const page = cand.spec.transform.find((/** @type {any} */ t) => t.id === "page");
       const pages = byId("viewer-pages");
       pages.replaceChildren();
@@ -365,6 +358,44 @@
       byId("viewer-spec").textContent = JSON.stringify(cand.spec, null, 2);
     }
 
+    /**
+     * Draw the open chart by the publication settings, with its publication panel: its data is computed once a
+     * version and page, and a change of the settings draws the figure again without the engine.
+     */
+    async function drawFigure(st, cand) {
+      const figure = byId("viewer-figure");
+      const panel = byId("viewer-publish");
+      const turn = ++viewer.drawing;
+      if (cand.outcome !== "valid") {
+        figure.replaceChildren(h("p", { class: "note", text: cand.outcome === "pending" ? "This chart is being computed again; it shows here once it is drawn." : `${cand.outcome[0].toUpperCase()}${cand.outcome.slice(1)}: ${cand.reason}` }));
+        panel.replaceChildren();
+        return;
+      }
+      try {
+        const spec = shownSpec(cand);
+        const key = `${cand.id}@${cand.version}#${viewer.page}`;
+        // Another chart, version or page is drawn anew; new settings redraw the figure in place.
+        if (shownData?.key !== key || !figure.querySelector("svg")) figure.replaceChildren(h("p", { class: "note", text: "Drawing…" }));
+        if (shownData?.key !== key) {
+          const api = await app.ensureEngine();
+          const data = await app.exclusive(() => Charts.compute(api.query, spec, st.ctx));
+          if (data.excluded) throw new Error(data.excluded);
+          shownData = { key, data };
+        }
+        const data = shownData.data;
+        const drawn = await app.publish.draw(spec, data);
+        if (turn !== viewer.drawing) return;
+        figure.innerHTML = drawn.svg;
+        viewer.size = { width: drawn.scene.width, height: drawn.scene.height };
+        zoom();
+        app.publish.panel(panel, { spec, drawn, name: cand.id, redraw: () => { const now = current(); if (now.cand) drawFigure(now.st, now.cand); } });
+      } catch (error) {
+        if (turn !== viewer.drawing) return;
+        figure.replaceChildren(h("p", { class: "warn-text", text: `This figure could not be drawn: ${app.message(error)}` }));
+        panel.replaceChildren();
+      }
+    }
+
     function drawZoomButtons() {
       for (const b of byId("viewer-nav").querySelectorAll("[data-zoom]")) b.setAttribute("aria-pressed", String(b.getAttribute("data-zoom") === viewer.zoom));
     }
@@ -373,11 +404,10 @@
     function zoom() {
       const svg = byId("viewer-figure").querySelector("svg");
       if (!svg) return;
-      const { cand } = current();
       if (viewer.zoom === "fit") { svg.style.width = "100%"; svg.style.height = "auto"; return; }
       const k = Number(viewer.zoom) / 100;
-      svg.style.width = `${cand.spec.layout.width * k}mm`;
-      svg.style.height = `${cand.spec.layout.height * k}mm`;
+      svg.style.width = `${viewer.size.width * k}mm`;
+      svg.style.height = `${viewer.size.height * k}mm`;
     }
 
     /** The edit form of a chart: fields, transformations, labels, scales and layout. */

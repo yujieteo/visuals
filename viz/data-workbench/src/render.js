@@ -1,14 +1,17 @@
 /* Universal Data Workbench: draw a chart specification and its computed data as a figure.
  *
- * render(spec, data) lays the figure out in millimetres as a scene graph (rectangles, lines, paths, circles and
- * text, with sizes in points), then writes it as SVG with every label a <text> element, so the figure stays
- * editable. The same scene graph is what step 4 writes as PDF and PNG. Nothing here touches the page: the
- * gallery, the full-size view and the Node checks call the same function.
+ * render(spec, data, style) lays the figure out in millimetres as a scene graph (rectangles, lines, paths, circles
+ * and text, with sizes in points, each item with its role), then writes it as SVG with every label a <text>
+ * element, so the figure stays editable. src/pdf.js writes the same scene graph as PDF and src/png.js as PNG, and
+ * src/figure.js checks it. Nothing here touches the page: the gallery, the full-size view and the Node checks call
+ * the same function.
  *
  * The figure is paper: a white ground, near-black text, one blue for marks and a light-to-dark blue for counts,
- * in both page themes, because it is what an export holds. Text is 6 pt or larger and lines 0.5 pt or wider, the
- * general preset's minimums. Text widths come from Helvetica's metrics (an Arial-metric font draws the same widths),
- * so label collisions are counted the same way in the browser and in Node.
+ * in both page themes, because it is what an export holds. The style is a publication preset's (src/figure.js):
+ * the general one by default, with text 6 pt or larger and lines 0.5 pt or wider; Nature's sets text from 5 to
+ * 7 pt in black, no grid lines and no patterns, and leaves the title and caption to the figure legend. Text widths
+ * come from Helvetica's metrics (Liberation Sans, an Arial-metric font, draws the same widths), or from the font
+ * the person loads, so label collisions are counted the same way in the browser and in Node.
  */
 (function (root, factory) {
   const api = factory();
@@ -19,11 +22,21 @@
 
   const PT = 25.4 / 72;
   const FONT = "'Liberation Sans', Arimo, Arial, Helvetica, sans-serif";
-  const COLOR = { paper: "#ffffff", ink: "#1a1a1a", muted: "#52514e", grid: "#e4e3df", axis: "#52514e", mark: "#2a78d6", markDark: "#1c5cab", fill: "#b7d3f6", other: "#76756f" };
+  const BASE_COLOR = { paper: "#ffffff", ink: "#1a1a1a", muted: "#52514e", grid: "#e4e3df", axis: "#52514e", mark: "#2a78d6", markDark: "#1c5cab", fill: "#b7d3f6", other: "#76756f" };
   /* Light to dark blue, for counts: near zero recedes toward the paper. */
   const SEQUENTIAL = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b"];
-  const SIZE = { title: 9, label: 7, tick: 6.5, caption: 6.5, small: 6 };
+  const BASE_SIZE = { title: 9, label: 7, tick: 6.5, caption: 6.5, small: 6 };
   const LINE = { axis: 0.5, grid: 0.5, mark: 1, thin: 0.5 };
+  /**
+   * The general preset's style: what step 2 drew. A style may set sizes (points), ink and muted (text colours),
+   * grid (grid lines behind the marks), hatch (patterns for dates known to the year or month), title and caption
+   * (in the artwork, or left to the legend), family (the font named in SVG) and measure(text, pt, bold), the width
+   * of a text in millimetres in the font used.
+   */
+  const GENERAL = { sizes: BASE_SIZE, ink: BASE_COLOR.ink, muted: BASE_COLOR.muted, grid: true, hatch: true, title: true, caption: true, family: FONT, measure: null };
+  /* The style of the figure being drawn: render() sets it and puts the general one back, so the helpers below read
+   * one style throughout a drawing. */
+  let SIZE = BASE_SIZE, COLOR = BASE_COLOR, STYLE = GENERAL;
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   /* Helvetica's advance widths for the characters from space (32) to ~ (126), in thousandths of the font size. */
@@ -31,8 +44,9 @@
     1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556,
     333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584];
 
-  /** The width of a text in millimetres at a size in points. */
+  /** The width of a text in millimetres at a size in points, in the style's font (Helvetica's metrics by default). */
   function textWidth(text, pt, bold = false) {
+    if (STYLE.measure) return STYLE.measure(String(text), pt, bold);
     let w = 0;
     for (const ch of String(text)) {
       const code = ch.codePointAt(0) ?? 0;
@@ -257,7 +271,11 @@
       line: (x1, y1, x2, y2, o = {}) => items.push({ t: "line", x1, y1, x2, y2, stroke: COLOR.axis, sw: LINE.thin, ...o }),
       path: (d, o = {}) => items.push({ t: "path", d, ...o }),
       circle: (cx, cy, r, o = {}) => items.push({ t: "circle", cx, cy, r, ...o }),
-      text: (x, y, text, o = {}) => items.push({ t: "text", x, y, text: String(text), size: SIZE.tick, fill: COLOR.ink, ...o }),
+      text: (x, y, text, o = {}) => {
+        const it = { t: "text", x, y, text: String(text), size: SIZE.tick, fill: COLOR.ink, ...o };
+        it.w = textWidth(it.text, it.size, it.weight === "bold");
+        items.push(it);
+      },
     };
     return s;
   }
@@ -266,13 +284,13 @@
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   /** The scene as an SVG document: millimetre units, text as <text>, a <title> and <desc> for screen readers. */
-  function toSvg(sc, title, desc, id) {
+  function toSvg(sc, title, desc, id, family = FONT) {
     const hatchId = `hatch-${id}`;
     const out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${r3(sc.width)}mm" height="${r3(sc.height)}mm" viewBox="0 0 ${r3(sc.width)} ${r3(sc.height)}" role="img" aria-labelledby="${id}-t ${id}-d">`,
       `<title id="${id}-t">${esc(title)}</title>`, `<desc id="${id}-d">${esc(desc)}</desc>`];
     if (sc.hatch) out.push(`<defs><pattern id="${hatchId}" patternUnits="userSpaceOnUse" width="1.2" height="1.2" patternTransform="rotate(45)"><rect width="1.2" height="1.2" fill="${COLOR.paper}"/><line x1="0" y1="0" x2="0" y2="1.2" stroke="${COLOR.mark}" stroke-width="0.3"/></pattern></defs>`);
     out.push(`<rect width="${r3(sc.width)}" height="${r3(sc.height)}" fill="${COLOR.paper}"/>`);
-    out.push(`<g font-family="${esc(FONT)}">`);
+    out.push(`<g font-family="${esc(family)}">`);
     for (const it of sc.items) {
       const tip = it.tip ? `<title>${esc(it.tip)}</title>` : "";
       const stroke = it.stroke ? ` stroke="${it.stroke}" stroke-width="${r3((it.sw ?? LINE.thin) * PT)}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ""}` : "";
@@ -308,11 +326,11 @@
     for (const v of ticks) {
       const p = scale(v);
       if (orient === "x") {
-        if (o.grid) sc.line(p, plot.y, p, plot.y + plot.h, { stroke: COLOR.grid, sw: LINE.grid });
+        if (o.grid && STYLE.grid) sc.line(p, plot.y, p, plot.y + plot.h, { stroke: COLOR.grid, sw: LINE.grid, role: "grid" });
         sc.line(p, plot.y + plot.h, p, plot.y + plot.h + tick);
         if (o.show !== false) sc.text(p, plot.y + plot.h + tick + SIZE.tick * PT * 1.05, label(v), { anchor: "middle" });
       } else {
-        if (o.grid !== false) sc.line(plot.x, p, plot.x + plot.w, p, { stroke: COLOR.grid, sw: LINE.grid });
+        if (o.grid !== false && STYLE.grid) sc.line(plot.x, p, plot.x + plot.w, p, { stroke: COLOR.grid, sw: LINE.grid, role: "grid" });
         sc.line(plot.x - tick, p, plot.x, p);
         if (o.show !== false) sc.text(plot.x - tick - 0.6, p + SIZE.tick * PT * 0.35, label(v), { anchor: "end" });
       }
@@ -416,7 +434,7 @@
           const x0 = x(data.x.lo + i * data.x.width), x1 = x(data.x.lo + (i + 1) * data.x.width);
           const lo = isLog(spec, "x") ? number(10 ** (data.x.lo + i * data.x.width)) : number(data.x.lo + i * data.x.width);
           const hi = isLog(spec, "x") ? number(10 ** (data.x.lo + (i + 1) * data.x.width)) : number(data.x.lo + (i + 1) * data.x.width);
-          sc.rect(x0, y(n), x1 - x0, y(0) - y(n), { fill: COLOR.mark, stroke: COLOR.paper, sw: 0.25, tip: `${lo} to ${hi}: ${count(n)} rows` });
+          sc.rect(x0, y(n), x1 - x0, y(0) - y(n), { fill: COLOR.mark, stroke: COLOR.paper, sw: 0.25, gap: true, tip: `${lo} to ${hi}: ${count(n)} rows` });
         });
         axis(sc, x, xKind, "x", plot, { show: edge.bottom });
         return;
@@ -458,7 +476,7 @@
           // The 95% interval as a band, broken where a period has no interval.
           let run = [];
           const flush = () => {
-            if (run.length > 1) sc.path(`M${run.map((p) => `${r3(x(p.p + half(p.p)))},${r3(y(yv(p.hi)))}`).join("L")}L${[...run].reverse().map((p) => `${r3(x(p.p + half(p.p)))},${r3(y(yv(p.lo)))}`).join("L")}Z`, { fill: COLOR.fill, opacity: 0.8 });
+            if (run.length > 1) sc.path(`M${run.map((p) => `${r3(x(p.p + half(p.p)))},${r3(y(yv(p.hi)))}`).join("L")}L${[...run].reverse().map((p) => `${r3(x(p.p + half(p.p)))},${r3(y(yv(p.lo)))}`).join("L")}Z`, { fill: COLOR.fill, opacity: 0.8, role: "area" });
             run = [];
           };
           for (const p of pts) { if (p.lo !== null && p.hi !== null && (yk !== "log10" || p.lo > 0)) run.push(p); else flush(); }
@@ -506,9 +524,9 @@
         for (const c of panel.cells) {
           const x0 = x(data.x.lo + c.i * data.x.width), x1 = x(data.x.lo + (c.i + 1) * data.x.width);
           const y0 = y(data.y.lo + (c.j + 1) * data.y.width), y1 = y(data.y.lo + c.j * data.y.width);
-          sc.rect(x0, y0, x1 - x0, y1 - y0, { fill: shade(c.n, data.max), tip: `${count(c.n)} rows` });
+          sc.rect(x0, y0, x1 - x0, y1 - y0, { fill: shade(c.n, data.max), role: "scale", tip: `${count(c.n)} rows` });
         }
-        sc.rect(plot.x, plot.y, plot.w, plot.h, { stroke: COLOR.grid, sw: LINE.thin });
+        sc.rect(plot.x, plot.y, plot.w, plot.h, { stroke: COLOR.grid, sw: LINE.thin, role: "frame" });
         axis(sc, y, yKind, "y", plot, { show: edge.left, grid: false });
         axis(sc, x, xKind, "x", plot, { show: edge.bottom });
         return;
@@ -550,7 +568,7 @@
           for (const c of panel.cells) {
             const [x0, w] = place(c);
             const fill = shade(c.n, data.max);
-            sc.rect(x0, yb(c.y), w, yb.width, { fill, tip: `${c.x} and ${c.y}: ${count(c.n)} rows` });
+            sc.rect(x0, yb(c.y), w, yb.width, { fill, role: "scale", tip: `${c.x} and ${c.y}: ${count(c.n)} rows` });
             if (w >= textWidth(count(c.n), SIZE.small) + 1 && yb.width >= SIZE.small * PT * 1.2) sc.text(x0 + w / 2, yb(c.y) + yb.width / 2 + SIZE.small * PT * 0.35, count(c.n), { anchor: "middle", size: SIZE.small, fill: inkOn(fill) });
           }
           bandAxis(sc, xb, "x", plot, { show: edge.bottom });
@@ -558,7 +576,7 @@
           const x = linear(shared.x, [plot.x, plot.x + plot.w]);
           for (const c of panel.cells) {
             const x0 = x(c.p), x1 = x(nextOf(c.p, data.unit));
-            sc.rect(x0, yb(c.g), Math.max(0.15, x1 - x0), yb.width, { fill: shade(c.n, shared.max), tip: `${timeLabel(c.p, data.unit)}, ${c.g}: ${count(c.n)} rows` });
+            sc.rect(x0, yb(c.g), Math.max(0.15, x1 - x0), yb.width, { fill: shade(c.n, shared.max), role: "scale", tip: `${timeLabel(c.p, data.unit)}, ${c.g}: ${count(c.n)} rows` });
           }
           axis(sc, x, "time", "x", plot, { show: edge.bottom });
         }
@@ -591,6 +609,12 @@
       ends[lane] = Math.max(ends[lane], it.x1);
       return { ...it, lane, crowded };
     });
+  }
+
+  /** A span of a date known only to its year or month: hatched, or a light fill in a style without patterns. */
+  function uncertain(sc, x, y, w, h, o) {
+    if (STYLE.hatch) { sc.hatch = true; sc.rect(x, y, w, h, { hatch: true, ...o }); }
+    else sc.rect(x, y, w, h, { fill: COLOR.fill, ...o });
   }
 
   /** The label of a timeline event: the label, the date as written, and how many rows it merges. */
@@ -629,7 +653,7 @@
     const laneH = Math.min(7, Math.max(LANE, plot.h / used));
     if (rug) {
       const y = plot.y + laneH * (capacity - 1);
-      sc.line(plot.x, y, plot.x + plot.w, y, { stroke: COLOR.grid, sw: LINE.thin });
+      sc.line(plot.x, y, plot.x + plot.w, y, { stroke: COLOR.grid, sw: LINE.thin, role: "frame" });
     }
     for (const p of placed) {
       const cy = plot.y + laneH * (p.lane + 0.5);
@@ -638,8 +662,7 @@
         const u = precisionUnit(e.p);
         const tip = `${e.label}: ${e.raw}${e.n > 1 ? `, ${count(e.n)} rows` : ""}${u ? `, known to the ${u}` : ""}${e.q ? ", approximate" : ""}`;
         if (u) {
-          sc.hatch = true;
-          sc.rect(x(e.t), cy - LANE * 0.3, Math.max(0.8, x(nextOf(e.t, u)) - x(e.t)), LANE * 0.6, { hatch: true, stroke: COLOR.mark, sw: LINE.thin, dash: e.q ? "0.6 0.4" : undefined, tip });
+          uncertain(sc, x(e.t), cy - LANE * 0.3, Math.max(0.8, x(nextOf(e.t, u)) - x(e.t)), LANE * 0.6, { stroke: COLOR.mark, sw: LINE.thin, dash: e.q ? "0.6 0.4" : undefined, tip });
         } else sc.circle(x(e.t), cy, 0.8, e.q ? { fill: COLOR.paper, stroke: COLOR.mark, sw: 0.75, tip } : { fill: COLOR.mark, tip });
         if (p.crowded) sc.dropped += 1;
         else if (p.side === "left") sc.text(p.mark[0] - 0.6, cy + size * PT * 0.35, p.text, { size, anchor: "end", tip });
@@ -655,8 +678,8 @@
       if (e.s === null) sc.rect(x0, cy - h / 2, Math.max(0.4, solid1 - x0), h, { fill: COLOR.paper, stroke: COLOR.mark, sw: LINE.thin, dash: "0.8 0.5", tip: `${tip} (start unknown)` });
       else if (e.e === null) sc.rect(solid0, cy - h / 2, Math.max(0.4, x1 - solid0), h, { fill: COLOR.paper, stroke: COLOR.mark, sw: LINE.thin, dash: "0.8 0.5", tip: `${tip} (end unknown)` });
       else sc.rect(solid0, cy - h / 2, Math.max(0.4, solid1 - solid0), h, { fill: COLOR.mark, tip });
-      if (e.s !== null && us) { sc.hatch = true; sc.rect(x0, cy - h / 2, Math.max(0.4, solid0 - x0), h, { hatch: true, stroke: COLOR.mark, sw: LINE.thin, dash: e.qs ? "0.6 0.4" : undefined, tip: `${tip} (start known to the ${us})` }); }
-      if (e.e !== null && ue) { sc.hatch = true; sc.rect(solid1, cy - h / 2, Math.max(0.4, x1 - solid1), h, { hatch: true, stroke: COLOR.mark, sw: LINE.thin, dash: e.qe ? "0.6 0.4" : undefined, tip: `${tip} (end known to the ${ue})` }); }
+      if (e.s !== null && us) uncertain(sc, x0, cy - h / 2, Math.max(0.4, solid0 - x0), h, { stroke: COLOR.mark, sw: LINE.thin, dash: e.qs ? "0.6 0.4" : undefined, tip: `${tip} (start known to the ${us})` });
+      if (e.e !== null && ue) uncertain(sc, solid1, cy - h / 2, Math.max(0.4, x1 - solid1), h, { stroke: COLOR.mark, sw: LINE.thin, dash: e.qe ? "0.6 0.4" : undefined, tip: `${tip} (end known to the ${ue})` });
       if (p.crowded) { sc.dropped += 1; continue; }
       const ty = cy + size * PT * 0.35;
       if (p.side === "inside") sc.text(Math.max(solid0, x0) + 0.8, ty, p.text, { size, tip });
@@ -671,6 +694,8 @@
   const KIND_LABEL = { histogram: "Histogram", box: "Box plot", bar: "Bar chart of counts", "count-series": "Count time series", scatter: "Scatter plot", "binned-heatmap": "Binned heatmap",
     "box-by-group": "Box plot by group", "mean-bar": "Mean bar chart", "count-heatmap": "Count heatmap", "mean-series": "Mean time series", "period-heatmap": "Period-by-category heatmap",
     "point-timeline": "Point timeline", "interval-timeline": "Interval timeline" };
+
+  const spanWord = () => (STYLE.hatch ? "hatched" : "light");
 
   /** The automatic caption: how the figure was made, under the rules of grammar v1. */
   function autoCaption(spec, data) {
@@ -698,7 +723,7 @@
       case "point-timeline": case "interval-timeline": {
         const first = (data.page.page - 1) * data.page.size + 1;
         const last = Math.min(data.page.events, data.page.page * data.page.size);
-        const marks = spec.kind === "point-timeline" ? "Dots are dates to the day or time; hatched spans are dates known only to the year or month; open or dashed marks are dates written as approximate (c., ~, ?)." : "Bars run from start to end; hatched ends are dates known only to the year or month; dashed bars are open: the start or end is unknown.";
+        const marks = spec.kind === "point-timeline" ? `Dots are dates to the day or time; ${spanWord()} spans are dates known only to the year or month; open or dashed marks are dates written as approximate (c., ~, ?).` : `Bars run from start to end; ${spanWord()} ends are dates known only to the year or month; dashed bars are open: the start or end is unknown.`;
         return `${marks} The same label at the same date is one mark (×n). Events ${count(first)}–${count(last)} of ${count(data.page.events)}${data.page.pages > 1 ? `, page ${data.page.page} of ${data.page.pages} in time order` : ""}.`;
       }
       default: return "";
@@ -774,33 +799,53 @@
   }
 
   /**
-   * Draw a specification with its computed data (src/charts.js compute). Returns the SVG, the scene and what the
-   * layout gave up: label collisions and labels left out for lack of room.
-   * @param {any} spec @param {any} data
+   * Draw a specification with its computed data (src/charts.js compute), in a style (the general one by default).
+   * Returns the SVG, the scene, what the layout gave up (label collisions, labels left out for lack of room) and the
+   * legend: the title, caption and notes as text, which the figure holds or, in a style without them, leaves to the
+   * figure legend beside it.
+   * @param {any} spec @param {any} data @param {any} [style] a partial style; the rest is the general one's
    */
-  function render(spec, data) {
+  function render(spec, data, style) {
+    const before = [SIZE, COLOR, STYLE];
+    STYLE = { ...GENERAL, ...(style ?? {}) };
+    SIZE = { ...BASE_SIZE, ...STYLE.sizes };
+    COLOR = { ...BASE_COLOR, ink: STYLE.ink, muted: STYLE.muted };
+    try {
+      return draw(spec, data);
+    } finally {
+      [SIZE, COLOR, STYLE] = before;
+    }
+  }
+
+  function draw(spec, data) {
     const W = spec.layout.width, H = spec.layout.height;
     const sc = scene(W, H);
     const pad = 4;
     const inner = W - 2 * pad;
-    // Title, then the axis labels, the plot, the caption.
-    const title = fit(spec.annotation.title, SIZE.title, inner);
-    sc.text(pad, pad + SIZE.title * PT * 0.8, title, { size: SIZE.title, weight: "bold", tip: spec.annotation.title });
-    let top = pad + SIZE.title * PT * 1.3;
+    // Title, then the axis labels, the plot, the caption; a style may leave the title and caption to the legend.
+    let top = pad;
+    if (STYLE.title) {
+      const title = fit(spec.annotation.title, SIZE.title, inner);
+      sc.text(pad, pad + SIZE.title * PT * 0.8, title, { size: SIZE.title, weight: "bold", tip: spec.annotation.title });
+      top = pad + SIZE.title * PT * 1.3;
+    }
     const sampled = spec.data.sample || data.facts.scatterSample;
-    if (sampled) {
-      const s = data.facts.scatterSample ? `Sample: ${count(data.facts.scatterSample.rows)} of ${count(data.facts.scatterSample.of)} points drawn (seed ${data.facts.scatterSample.seed})` : "";
-      const t = spec.data.sample ? `Sample: the table holds a seeded sample of ${count(spec.data.sample.rows)} rows (seed ${spec.data.sample.seed})` : "";
+    const sampleText = sampled ? [spec.data.sample ? `Sample: the table holds a seeded sample of ${count(spec.data.sample.rows)} rows (seed ${spec.data.sample.seed})` : "",
+      data.facts.scatterSample ? `Sample: ${count(data.facts.scatterSample.rows)} of ${count(data.facts.scatterSample.of)} points drawn (seed ${data.facts.scatterSample.seed})` : ""].filter(Boolean).join("; ") : "";
+    if (sampleText && STYLE.caption) {
       top += SIZE.small * PT * 1.1;
-      sc.text(pad, top, fit([t, s].filter(Boolean).join("; "), SIZE.small, inner), { size: SIZE.small, fill: COLOR.muted, weight: "bold" });
+      sc.text(pad, top, fit(sampleText, SIZE.small, inner), { size: SIZE.small, fill: COLOR.muted, weight: "bold" });
     }
     top += 2;
     const caption = [spec.annotation.caption || autoCaption(spec, data), factsLine(spec, data), ...data.facts.notes, ...spec.annotation.notes].filter(Boolean).join(" ");
-    let lines = wrap(caption, SIZE.caption, inner);
-    const maxLines = Math.max(2, Math.floor((H * 0.3) / (SIZE.caption * PT * 1.25)));
-    if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = fit(`${lines[maxLines - 1]} …`, SIZE.caption, inner); }
-    const capH = lines.length * SIZE.caption * PT * 1.25 + 1.5;
-    lines.forEach((l, i) => sc.text(pad, H - pad - capH + 1.5 + (i + 0.8) * SIZE.caption * PT * 1.25, l, { size: SIZE.caption, fill: COLOR.muted }));
+    let capH = 0;
+    if (STYLE.caption) {
+      let lines = wrap(caption, SIZE.caption, inner);
+      const maxLines = Math.max(2, Math.floor((H * 0.3) / (SIZE.caption * PT * 1.25)));
+      if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = fit(`${lines[maxLines - 1]} …`, SIZE.caption, inner); }
+      capH = lines.length * SIZE.caption * PT * 1.25 + 1.5;
+      lines.forEach((l, i) => sc.text(pad, H - pad - capH + 1.5 + (i + 0.8) * SIZE.caption * PT * 1.25, l, { size: SIZE.caption, fill: COLOR.muted }));
+    }
     const labels = spec.annotation.labels;
     const zone = (ch) => (spec.scale[ch]?.zone === "utc" ? " (UTC)" : spec.scale[ch]?.zone === "unknown" ? " (zone unknown)" : "");
     const horizontal = spec.kind === "bar" && spec.scale.x?.order !== "value";
@@ -833,20 +878,21 @@
         const lx = area.x + area.w + 4, ly = area.y + 2, lh = Math.min(30, area.h * 0.6);
         sc.text(lx, ly, "Rows", { size: SIZE.small, fill: COLOR.muted });
         const steps = SEQUENTIAL.length - 1;
-        for (let k = 0; k < steps; k++) sc.rect(lx, ly + 1.5 + (lh * (steps - 1 - k)) / steps, 3, lh / steps + 0.05, { fill: SEQUENTIAL[k + 1] });
+        for (let k = 0; k < steps; k++) sc.rect(lx, ly + 1.5 + (lh * (steps - 1 - k)) / steps, 3, lh / steps + 0.05, { fill: SEQUENTIAL[k + 1], role: "scale" });
         sc.text(lx + 4, ly + 1.5 + SIZE.small * PT * 0.8, count(max), { size: SIZE.small });
         sc.text(lx + 4, ly + 1.5 + lh, "1", { size: SIZE.small });
       }
     }
-    if (xTitle) sc.text(area.x + area.w / 2, H - pad - capH - 0.6, fit(xTitle, SIZE.label, area.w), { size: SIZE.label, anchor: "middle", fill: COLOR.ink });
-    if (yTitle) sc.text(pad + SIZE.label * PT * 0.9, area.y + area.h / 2, fit(yTitle, SIZE.label, area.h), { size: SIZE.label, anchor: "middle", rotate: -90 });
+    if (xTitle) sc.text(area.x + area.w / 2, H - pad - capH - 0.6, fit(xTitle, SIZE.label, area.w), { size: SIZE.label, anchor: "middle", fill: COLOR.ink, axis: horizontal ? "y" : "x" });
+    if (yTitle) sc.text(pad + SIZE.label * PT * 0.9, area.y + area.h / 2, fit(yTitle, SIZE.label, area.h), { size: SIZE.label, anchor: "middle", rotate: -90, axis: horizontal ? "x" : "y" });
     if (sc.dropped) {
       sc.text(W - pad, top - 0.6, `${count(sc.dropped)} event${sc.dropped === 1 ? "" : "s"} drawn without a label, for lack of room (the bottom strip)`, { size: SIZE.small, anchor: "end", fill: COLOR.muted });
     }
     const id = String(spec.id).replace(/[^a-z0-9_-]+/gi, "-");
     const desc = describe(spec, data);
-    return { svg: toSvg(sc, spec.annotation.title, desc, id), desc, collisions: sc.collisions, dropped: sc.dropped, overlapped: sc.overlapped, marks: sc.items.length };
+    const legendText = { title: spec.annotation.title, caption: [sampleText ? `${sampleText}.` : "", caption].filter(Boolean).join(" "), inFigure: { title: STYLE.title, caption: STYLE.caption } };
+    return { svg: toSvg(sc, spec.annotation.title, desc, id, STYLE.family), desc, collisions: sc.collisions, dropped: sc.dropped, overlapped: sc.overlapped, marks: sc.items.length, scene: sc, legend: legendText };
   }
 
-  return { UNITS, utc, floorPeriod, nextPeriod, PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
+  return { UNITS, utc, floorPeriod, nextPeriod, PT, COLOR: BASE_COLOR, SEQUENTIAL, SIZE: BASE_SIZE, LINE, WIDTHS, GENERAL, FONT, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
 });

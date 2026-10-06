@@ -1,6 +1,6 @@
 ---
 name: data-workbench
-description: Use the Universal Data Workbench to read what a CSV or Parquet table holds - each column's source type, inferred type with its share, role, missing values, values that do not read, unusual values, suspected data errors and suggested corrections - which charts of grammar v1 it gives, each valid, excluded, failed or incomplete with its reason, and its findings - the hypothesis family tested by catalogue v1 with Benjamini–Yekutieli adjusted p-values, and the two ranked lists of unusual and statistically supported patterns with their distinct highlights explained - through its read-only WebMCP tools. Profiles hold example values, never whole rows; chart candidates hold specifications, never plotted points; findings hold statistics. A preview: step 3 of 7 (statistics and ranking).
+description: Use the Universal Data Workbench to read what a CSV or Parquet table holds - each column's source type, inferred type with its share, role, missing values, values that do not read, unusual values, suspected data errors and suggested corrections - which charts of grammar v1 it gives, each valid, excluded, failed or incomplete with its reason, and its findings - the hypothesis family tested by catalogue v1 with Benjamini–Yekutieli adjusted p-values, and the two ranked lists of unusual and statistically supported patterns with their distinct highlights explained - through its read-only WebMCP tools. Profiles hold example values, never whole rows; chart candidates hold specifications, never plotted points; findings hold statistics. Figures are written as SVG, PDF and PNG under General, Nature or Science presets with checks at final size. A preview: step 4 of 7 (publication figures).
 ---
 
 # Use the Universal Data Workbench
@@ -34,7 +34,7 @@ All read-only. None returns a row; profiles hold example values, such as the mos
 | Tool | Input | Returns |
 | --- | --- | --- |
 | `get_metadata` | none | Title, summary, state schema version and the state field (`example`) |
-| `get_state` | none | The state, every table with its column profiles, the engine, the budget, the steps to come and the conversion log, with the URL |
+| `get_state` | none | The state, every table with its column profiles, the engine, the budget, the publication settings with the preset's rules and their sources, the steps to come and the conversion log, with the URL |
 | `get_markdown` | none | The Markdown record: what was imported, how columns are read, one table of columns per table, suspected errors and the log |
 | `get_tables` | none | Each table: name, source file with size and SHA-256, rows, columns, sample or all rows, status, CSV dialect, the lines the CSV reader could not read |
 | `get_profile` | `table` (required) | That table with each column's source type, type, reading, share, role and reasons, missing values, failures with examples, errors, unusual values, summary and open suggestions |
@@ -45,6 +45,7 @@ All read-only. None returns a row; profiles hold example values, such as the mos
 
 - **Markdown record:** `data-workbench-record.md`, the same frames as the deck without narration, with each table's findings (the family's counts and each list's highlights).
 - **beamdswitch deck:** `data-workbench-beamdswitch.md` (voice `bf_emma`): Set-up, Method, Results (one frame a table), Checks and takeaway.
+- **Publication figures:** from a chart's full-size view, `<candidate id>-<preset>.svg`, `.pdf` and `.png` under the General, Nature or Science preset, at the set size in millimetres, PNG resolution and font: the SVG with its text as `<text>` and each font it uses inside, whole, the PDF with every text in an embedded TrueType subset (FontFile2) and a MediaBox of the size, the PNG with its resolution in a pHYs chunk. Each file is read back and checked against the preset's rules, each named with its source and the date it was read (Nature's figure guide on 2026-10-06; every Science rule unverified). `get_state` holds the settings and the preset's rules under `publication`; no tool writes a figure.
 - **Data:** [data.json](https://teoyujie.org/visuals/data-workbench/data.json) (`raw.json` here): the examples' sources, licences and SHA-256, and the steps still to come.
 
 ## Worked example

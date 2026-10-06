@@ -317,7 +317,7 @@ step n]** with its evidence.
 | 1 | Import and inspect: CSV and Parquet import, profiles, suspected errors, suggested corrections with approval, the resource preflight, progress and Cancel, built-in examples | built |
 | 2 | Charts and candidates: the chart specification and its validator, grammar v1, the candidate enumerator and its accounting, the SVG renderer and timelines, the gallery and edits | built |
 | 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | built |
-| 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | to come |
+| 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | built |
 | 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | to come |
 | 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | to come |
 | 7 | Phones, speed and acceptance: touch tests, the 1 million row benchmark, phone limits, "Measure this device", the section 13 table | to come |
@@ -356,6 +356,12 @@ step n]** with its evidence.
   explanations), `src/findings.js` (the Findings section, the study details, subset families, `get_findings`).
   [catalog.md](catalog.md) documents test catalogue v1, the family and the ranking, and is published beside the
   page. The highlight count is view state in the URL (`highlights`, 0 to 50, default 6).
+- Publication figures (step 4): `src/figure.js` (the presets with their dated sources, settings, size and style,
+  every check), `src/fonts.js` (font faces, widths, the SVG file with its font), `src/pdf.js` (the PDF writer
+  and reader), `src/png.js` (the canvas painter, pHYs, the PNG reader), `src/publish.js` (the panel of the
+  full-size view). pdf-lib 1.17.1 and @pdf-lib/fontkit 1.1.1 are vendored unchanged in `vendor/` and inlined;
+  Liberation Sans 2.1.5 (Regular and Bold, from its release archive pinned by SHA-256) is published beside the page
+  in `vendor/liberation-fonts/` with its licence and read on first use.
 
 ### SQL dialect [Choice]
 
@@ -603,6 +609,60 @@ Where the plan left a choice or changed:
   least 6 pt, lines at least 0.5 pt), Nature (from its figure guide, each rule with journal, stage, source URL,
   date and status), Science (answer 6). Checks per figure; no compliance claim while a required check is
   unverified.
+  **[Built in step 4]** The full-size view of a chart has a "Publication figure" panel. Its settings hold for every
+  chart of the page: the preset, width and height in mm (empty: the chart's own width, and its proportions), PNG
+  dpi, the title and caption in the artwork or in a legend beside it, and the font. The figure is drawn by them, its
+  SVG, PDF and PNG are written at once, read back and checked, and each download is the file that was checked.
+  - Font: Liberation Sans 2.1.5, chosen over Arimo because its release ships static Regular and Bold TrueType files
+    (Arimo's current release is a variable font). Its advance widths, rounded to thousandths of an em, equal the
+    Helvetica table step 2 measures with (tests/figures.test.mjs), so a general figure is drawn exactly as step 2
+    drew it. The person's TTF or OTF files (a face of weight 600 or more is the bold one) replace it; text is then
+    measured in their font.
+  - PDF: one page, MediaBox the size in mm at 72 points a 25.4 mm; every text a text-showing operator in an
+    embedded subset (Type 0, CIDFontType2, FontFile2 for TrueType outlines), with a ToUnicode map, no ligatures or
+    kerning, so the text stays editable and searchable; marks as paths in DeviceRGB; translucency in an ExtGState.
+    poppler's `pdffonts` lists the fonts as "CID TrueType, embedded"; its "sub" column says no because pdf-lib names
+    a subset without the six-letter tag, though the font file holds only the glyphs used.
+  - PNG: the scene painted on a canvas at dpi / 25.4 px a mm, a pHYs chunk (pixels a metre) right after IHDR
+    replacing the browser's, every CRC checked when read back; above 16.7 megapixels the PNG is refused with the
+    reason and the SVG and PDF stay.
+  - **[Changed in step 4]** SVG: the downloaded file holds each face its text uses, whole, in an `@font-face`
+    (fontkit's subsets have no character map, so a browser cannot use them). "Fonts embedded" passes for SVG only
+    when the file, read back, holds fonts fontkit reads that map every character of its text to a glyph; the text
+    stays `<text>` and names the family, which drawing programs that ignore `@font-face` take from the installed
+    fonts.
+  - Glyphs: a character of the figure that the font has no glyph for fails the scene's "Glyphs" check, and it names
+    the characters; without a font file the check is unverified.
+  - General preset: the workbench's own rules (sections 9 and 15): 180 mm or the set width, 300 dpi, text at least
+    6 pt, lines at least 0.5 pt, fonts embedded and text as text, RGB, a palette that stays distinct with protanopia
+    and deuteranopia (Viénot, Brettel and Mollon 1999; ΔE76 at least 10 between mark colours, the colour scale's
+    lightness in order), text contrast at least 4.5:1 against what is under it, marks at least 3:1 against the
+    paper, nothing past the page edge, no overlapping texts (each text's box from its font, 0.75 em above the
+    baseline and 0.21 below, rotation included).
+  - **[Fact]** Nature, read on 2026-10-06 from the research figure guide's "Preparing figures – our
+    specifications" and "Building and exporting figure panels" (copies kept with the step 4 evidence): widths 89 mm
+    (single column) and 183 mm (double column); maximum height 170 mm; all text 5 to 7 pt, panel labels 8 pt bold
+    lowercase; standard sans-serif fonts, preferably Helvetica or Arial; do not outline text; embed fonts (TrueType
+    2 or 42, not Type 3); avoid coloured text, background gridlines and patterns; axis lines, tick marks and every
+    axis labelled with its unit in parentheses; an accessible palette; RGB; main figures as PDF, EPS or AI
+    (preferred), SVG acceptable, PNG not accepted; images at least 450 dpi in exported artwork; files at most 50 MB.
+    The guide names no submission stage: the preset records "figures of primary research content prepared for
+    publication".
+  - **[Changed in step 4]** The Nature preset draws in its own style: text 5.5 to 7 pt, black, no gridlines, dates
+    known only to the year or month as light spans instead of hatching, and the title and caption in the legend
+    beside the figure (the guide keeps legends outside the artwork); 183 mm and 450 dpi by default. A figure in
+    Liberation Sans gets "unverified" on the font rule (an Arial-metric substitute, not Arial or Helvetica), and an
+    axis of a measure with no unit from the source or the person gets "unverified" on the axis rule: the workbench
+    never invents a unit. The check reads the axis title as drawn: a known unit cut off from a shortened title fails.
+    So a figure claims Nature compliance only in Arial or Helvetica with every unit given.
+  - Science (answer 6): science.org answered HTTP 403 again on 2026-10-06, so every Science rule (sizes, text and
+    fonts, formats, resolution, colour and lines) is unverified and no figure claims Science compliance; until the
+    captain's saved page is read the figure is drawn with the general preset's values and checked by its rules.
+  - **[Changed in step 4]** Translucent scatter points (more than 1,000 points are drawn at 45% or 25% opacity so
+    that overlaps show density) make the 3:1 mark check "unverified" rather than a pass or a failure: one point
+    alone is below 3:1, overlapping points reach it, and the person judges it at final size.
+  - Statuses: pass, fails, unverified, does not apply; each check names its rule, the rule's source and the date
+    it was read. A file meets a preset only when every check that applies passes.
 - Export package: one zip with every valid figure in the requested formats, report.md, highlights.json,
   specifications, transforms.json, stats.json, validation.json, manifest.json (source SHA-256 and sizes, the build,
   DuckDB-WASM and DuckDB versions, grammar and catalogue versions, preset sources and dates, the beamdswitch parser
@@ -660,6 +720,25 @@ Where the plan left a choice or changed:
 - Independence, study details, the rejection rules, a subset family (tests/findings-engine.test.mjs); the ranking's
   penalties, orders, clusters and highlights (tests/rank-rules.test.mjs); the page in every browser project
   (e2e/full.test.mjs).
+
+### Verification fixtures (step 4 part)
+
+- tests/figures.test.mjs, on one chart of each of the 12 kinds the planted example gives, through the pinned engine:
+  every Nature rule verified with its URL and the date, every Science rule unverified; Liberation Sans' widths equal
+  step 2's table and the general style draws the same SVG as step 2; under the general preset every kind meets its
+  checks as PDF and SVG (MediaBox 180 mm, Type 0 CIDFontType2 fonts with FontFile2, a text-showing operator for
+  every text, no CMYK; a `<text>` for every text and an `@font-face` whose font maps every character in the SVG), except the scatter plot's
+  translucent points, unverified; under Nature 183 mm, at most 170 mm, text 5 to 7 pt in black, no gridlines or
+  patterns, the title in the legend, the font unverified, PNG refused as a format, Arial and a unit passing, 120 mm
+  failing; under Science every rule unverified; a scene with overlapping, clipped, too small and pale text, a thin
+  line and red with green fails each check; pHYs written after IHDR, replacing an earlier one, every CRC holding;
+  the 16.7 megapixel limit; a timeline's light spans under Nature; an SVG whose font is a fontkit subset with no
+  character map fails "Font embedded"; characters with no glyph fail "Glyphs"; a unit cut off a shortened axis
+  title fails Nature's axis rule.
+- e2e/full.test.mjs in every browser project: the box plot of price meets the general preset, then the Nature preset
+  redraws it with the title in the legend; its PDF (MediaBox 183 mm, FontFile2, text as text), PNG (3,242 px wide,
+  pHYs of 17,717 pixels a metre, 450 dpi, every CRC) and SVG (183 mm, its font inside) are downloaded and read back
+  with the page's own readers, and the PNG fails Nature's format rule.
 
 ### Built-in examples (step 1)
 

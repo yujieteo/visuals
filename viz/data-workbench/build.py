@@ -11,9 +11,11 @@ Parquet extension, which the site fetches by SHA-256 and publishes in runtime/ b
               command palette
     scripts   the data block (#dw-data: examples with their files, engine versions, the steps to come), Apache
               Arrow and the DuckDB-WASM client from vendor/ (each checked against vendor/manifest.json), the kit
-              (scripts/kit/kit.js), the beamdswitch template, then src/: sql, infer, preflight, sha256, stats,
-              examples, profile, engine, report, grammar, chartspec, chartsql, render, charts, statsql, family,
-              rank, gallery, findings and app, each in a <script id> of its own
+              (scripts/kit/kit.js), the beamdswitch template, pdf-lib and its fontkit from vendor/ (checked the same
+              way), then src/: sql, infer, preflight, sha256, stats, examples, profile, engine, report, grammar,
+              chartspec, chartsql, render, charts, statsql, family, rank, figure, fonts, pdf, png, publish, gallery,
+              findings and app, each in a <script id> of its own. The fonts in vendor/liberation-fonts/ are assets
+              beside the page, read when a figure is written.
 
     python3 build.py            # write index.html
     python3 build.py --verify   # check index.html is current without writing it
@@ -33,7 +35,7 @@ sys.path.insert(0, str(SCRIPTS))
 from style_guide import THEME_SCRIPT  # noqa: E402
 
 MODULES = ("sql", "infer", "preflight", "sha256", "stats", "examples", "profile", "engine", "report", "grammar", "chartspec", "chartsql", "render",
-           "charts", "statsql", "family", "rank", "gallery", "findings", "app")
+           "charts", "statsql", "family", "rank", "figure", "fonts", "pdf", "png", "publish", "gallery", "findings", "app")
 # The page reads nothing from the network itself; the engine's worker, started from runtime/, reads the engine and
 # the Parquet extension from the same folder. Inline scripts and styles are the page's own.
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src data: blob:; "
@@ -117,7 +119,7 @@ def licences_html(manifest, raw):
                      f'fetched {html.escape(e["fetched"])}. {html.escape(e["licence"])}</li>')
     links = {}
     for entry in manifest["files"]:
-        if not entry["path"].endswith((".js", ".cjs")):
+        if not entry["path"].endswith((".js", ".cjs", ".ttf")):
             links.setdefault(entry["path"].split("/")[0], []).append(entry["path"])
     for package in manifest["packages"]:
         files = ", ".join(f'<a href="vendor/{html.escape(p)}">{html.escape(Path(p).name)}</a>' for p in links.get(package["dir"], []))
@@ -149,7 +151,9 @@ def page():
               script("vendor-arrow", unmapped(read("vendor/apache-arrow/Arrow.esnext.min.js"))),
               script("vendor-duckdb", client),
               script("kit", (SCRIPTS / "kit" / "kit.js").read_text(encoding="utf-8")),
-              script("beamdswitch", read("beamdswitch.js"))]
+              script("beamdswitch", read("beamdswitch.js")),
+              script("vendor-pdf-lib", unmapped(read("vendor/pdf-lib/pdf-lib.min.js"))),
+              script("vendor-fontkit", unmapped(read("vendor/fontkit/fontkit.umd.min.js")))]
     blocks += [script(name, read(f"src/{name}.js")) for name in MODULES]
     style = "\n".join([(SCRIPTS / "kit" / "style-tokens.css").read_text(encoding="utf-8").rstrip("\n"),
                        (SCRIPTS / "kit" / "kit.css").read_text(encoding="utf-8").rstrip("\n"), read("src/style.css").rstrip("\n")])

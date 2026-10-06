@@ -49,6 +49,7 @@
           "- Statistics: test catalogue v1. Each table is one family of hypotheses, listed before any test; a test runs only when its checks pass, and raw p-values are adjusted by Benjamini–Yekutieli over the tests that ran. An adjusted p-value at or below 0.05 is exploratory evidence. Without study details, independence is assumed, not confirmed, and tests are refused where the data contradicts it.",
           "- Ranking: unusualness = usefulness × the share of complete rows − penalties. Two lists, unusual patterns and statistically supported patterns, each with distinct highlights.",
           `- Engine: DuckDB ${cell(d.engine?.duckdb)} (DuckDB-WASM ${cell(d.engine?.duckdbWasm)}) in this browser, memory budget ${cell(d.engine?.budget)}.`,
+          ...(d.publication ? [`- Publication figures: the ${cell(d.publication.preset)} preset, ${d.publication.width ? `${n(d.publication.width)} mm wide` : "each chart's own width"}, ${n(d.publication.dpi)} dpi PNG, ${cell(d.publication.font)}; its rules: ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "verified").length)} read in their source, ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "unverified").length)} unverified, ${n(d.publication.rules.filter((/** @type {any} */ r) => r.status === "workbench").length)} the workbench's own. No compliance is claimed while a check is unverified.`] : []),
         ].join("\n"),
         narration: "A column is read as a type when at least ninety five percent of its values fit that type. Missing values, markers and unusual values are counted, and none is removed or filled.",
       }],
@@ -74,7 +75,7 @@
           "",
           `- Still to come: ${(d.pieces ?? []).map((p) => cell(p.title)).join("; ")}.`,
         ].join("\n"),
-        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: publication figures, the export package, SQL and the phone checks are still to come.`,
+        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: the export package, SQL and the phone checks are still to come.`,
         key: tables.length && tables.every((t) => t.status === "complete") ? "Every value stays as written; each change is approved and logged." : "The inspection is not complete yet.",
       }],
     };

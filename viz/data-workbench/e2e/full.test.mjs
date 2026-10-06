@@ -4,14 +4,16 @@
 // real tables in each browser project: the examples, a CSV and a Parquet file chosen through the file input, a
 // file too large for the budget, Cancel while reading, an approval by keyboard, the Markdown record and the deck,
 // the charts: every candidate of the planted example, the full-size view, an edit with facets, a refused edit
-// and a page of timeline events, with the time to the first figure; and the findings: the family, both lists with
-// their highlights explained, the highlight count, the study details and get_findings.
+// and a page of timeline events, with the time to the first figure; the findings: the family, both lists with
+// their highlights explained, the highlight count, the study details and get_findings; and the publication figures:
+// the Nature preset, and the PDF, PNG and SVG downloads read back with the page's own readers.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const SLUG = "data-workbench";
@@ -150,6 +152,64 @@ await fullSuite(SLUG, {
   }),
 });
 
+const require = createRequire(import.meta.url);
+// The page's readers and the vendored bundles load by a computed path: the harness's strict type check reads this
+// file, not the page's modules or minified bundles, which the folder's own checks cover.
+/** @param {string} path @returns {any} */
+const load = (path) => require(fileURLToPath(new URL(`../${path}`, import.meta.url)));
+const Pdf = load("src/pdf.js");
+const Png = load("src/png.js");
+const Fonts = load("src/fonts.js");
+const PDFLib = load("vendor/pdf-lib/pdf-lib.min.js");
+const fontkit = load("vendor/fontkit/fontkit.umd.min.js");
+
+/** The bytes of the file a click downloads. @param {import("playwright").Page} page @param {import("playwright").Locator} button */
+async function download(page, button) {
+  const [file] = await Promise.all([page.waitForEvent("download"), button.click()]);
+  return { name: file.suggestedFilename(), bytes: new Uint8Array(readFileSync(/** @type {string} */ (await file.path()))) };
+}
+
+/**
+ * Publication figures: the box plot of price under the general preset meets its checks; the Nature preset draws it
+ * 183 mm wide with the title in the legend, and its PDF (MediaBox in millimetres, TrueType text), PNG (450 dpi in
+ * pHYs) and SVG (its font inside) are the files the panel checked.
+ * @param {import("playwright").Page} page
+ */
+async function publication(page) {
+  await page.locator("#chart-kind").selectOption("box");
+  await page.locator('[data-candidate="planted.box.price"]').click();
+  const panel = page.locator("#viewer-publish");
+  await panel.locator('[data-file="pdf"]').waitFor({ timeout: 60_000 });
+  assert.match(await panel.locator("[data-verdict]").innerText(), /Meets every check of the General preset/);
+  assert.equal(await panel.locator('[data-file="pdf"]').getAttribute("data-file-status"), "pass");
+  await panel.locator('input[name="preset"][value="nature"]').check();
+  await panel.locator("[data-verdict]", { hasText: "Nature" }).waitFor({ timeout: 60_000 });
+  await panel.locator('[data-file="png"]').waitFor({ timeout: 60_000 });
+  assert.match(await panel.locator("[data-verdict]").innerText(), /No compliance claim for the Nature preset/);
+  assert.equal(await panel.locator('[data-check="font"]').getAttribute("data-status"), "unverified", "Liberation Sans is an Arial-metric substitute");
+  assert.equal(await panel.locator('[data-check="grid"]').getAttribute("data-status"), "pass");
+  const title = await page.locator("#viewer-title").innerText();
+  assert.equal(await page.locator("#viewer-figure svg text[font-weight=bold]").count(), 0, "the title is in the legend, not the artwork");
+  assert.ok((await panel.locator(".legend-text").innerText()).includes(title));
+  const pdf = await download(page, panel.locator('[data-download="pdf"]'));
+  assert.equal(pdf.name, "planted.box.price-nature.pdf");
+  const read = await Pdf.read(PDFLib, pdf.bytes);
+  assert.ok(Math.abs(read.mediaBoxMm[0] - 183) < 1e-6, `MediaBox ${read.mediaBoxMm}`);
+  assert.ok(read.fonts.length > 0 && read.fonts.every((/** @type {any} */ f) => f.file === "FontFile2"), JSON.stringify(read.fonts));
+  assert.ok(read.showText >= await page.locator("#viewer-figure svg text").count(), "every text of the figure is text in the PDF");
+  const png = await download(page, panel.locator('[data-download="png"]'));
+  const image = Png.read(png.bytes);
+  assert.equal(image.width, Math.round((183 / 25.4) * 450));
+  assert.ok(image.ppm === Math.round(450 / 0.0254) && image.crcs, "pHYs holds 450 dpi, in pixels a metre");
+  assert.equal(await panel.locator('[data-file="png"]').getAttribute("data-file-status"), "fail", "Nature does not accept PNG for main figures");
+  const svg = Fonts.readSvg(new TextDecoder().decode((await download(page, panel.locator('[data-download="svg"]'))).bytes), fontkit);
+  assert.ok(Math.abs(svg.width - 183) < 1e-6 && svg.fontFaces >= 1 && !svg.unmapped.length && svg.texts >= 3, JSON.stringify(svg));
+  // Back to the general preset, which the rest of the page's checks expect.
+  await panel.locator('input[name="preset"][value="general"]').check();
+  await panel.locator("[data-verdict]", { hasText: "General" }).waitFor({ timeout: 60_000 });
+  await page.locator("#viewer-close").click();
+}
+
 // The resource policy and Cancel in each browser: a CSV larger than a 256 MiB budget allows is refused before it
 // is imported, Cancel while reading keeps nothing, and the import of fewer columns then succeeds.
 if (selected) {
@@ -265,6 +325,7 @@ if (selected) {
           await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
           assert.match(await s.page.locator("#viewer-figure svg").innerHTML(), /Events 501–1,000 of 2,000, page 2 of 4/);
           await s.page.locator("#viewer-close").click();
+          await publication(s.page);
           // The findings: the family, both lists with distinct highlights explained, and the count of highlights.
           const findings = s.page.locator("#findings-view");
           assert.match(await findings.locator("[data-family]").innerText(), /Family planted, run 1: 80 hypotheses, 62 tested \(m\), 18 not tested; 2 with an adjusted p-value at or below 0\.05\./);

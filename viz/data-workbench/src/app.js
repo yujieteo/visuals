@@ -805,15 +805,19 @@
         charts: Gallery.summary(t.name),
         findings: Findings.summary(t.name),
       })),
+      publication: Publish.summary(),
       log: store.log.map((e) => e.text),
     };
   }
 
   /* ---------- charts ---------- */
 
+  // Publication figures: the preset, size, resolution and font of every figure, drawn in the full-size view.
+  const Publish = window.DWPublish.mount({ h, note, message, refresh });
+
   const Gallery = window.DWGallery.mount({
     store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
-    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory,
+    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory, publish: Publish,
     // Once a table's charts are drawn, its statistics run and its charts are ranked.
     charted: (table) => Findings.analyse(table),
   });
