@@ -35,6 +35,8 @@
   const MODEL_IDS = [...WORKFLOWS, ...EXPERIMENTS, ...INPUTS, "custom"];
   const METHOD_IDS = Object.keys(En.METHODS);
 
+  const LAB_IDS = ["chain-correlated", "chain-two-modes", "chain-funnel", "balance-bias", "balance-evidence", "oring-launch", "tank-level", "volatility", "qmc-peak", "qmc-sum", "asian-option"];
+  const LAB_METHODS = ["metropolis", "gibbs", "hmc", "smc", "particle", "rqmc", "independent"];
   /** @type {Record<string, KitField>} */
   const FIELDS = {
     model: { type: "enum", values: MODEL_IDS, default: "binomial-overbooking", label: "Model" },
@@ -52,9 +54,9 @@
     plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile", "tail"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF; tail: the survival function on log–log axes)" },
     yscale: { type: "enum", values: ["linear", "log"], default: "linear", label: "Vertical axis" },
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
-    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity"], default: "lln", label: "Theory panel" },
+    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity", "markov", "particles", "rqmc"], default: "lln", label: "Theory panel" },
     mlmc_eps: { type: "number", min: 1e-6, max: 1e6, default: 0.05, label: "Target root mean square error ε of multilevel Monte Carlo" },
-    nav: { type: "enum", values: ["examples", "interview", "rare", "editor", "library"], default: "examples", label: "Left panel" },
+    nav: { type: "enum", values: ["examples", "interview", "rare", "chains", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
     sweep_from: { type: "number", min: -1e9, max: 1e9, default: 0, label: "Sweep from" },
@@ -79,6 +81,27 @@
     r_from: { type: "number", min: -1e9, max: 1e9, default: 1, label: "Rare-event sweep from" },
     r_to: { type: "number", min: -1e9, max: 1e9, default: 2, label: "Rare-event sweep to" },
     r_points: { type: "integer", min: 3, max: 15, default: 6, label: "Rare-event sweep points" },
+    // Group 8: the Markov chain, sequential and quasi-Monte Carlo lab (src/chains.js, src/chainview.js). It shares the seed.
+    c_example: { type: "enum", values: LAB_IDS, default: "chain-correlated", label: "Example of the lab" },
+    c_params: { type: "string", default: "", label: "Parameters of the lab example, such as rho=0.99" },
+    c_method: { type: "enum", values: LAB_METHODS, default: "metropolis", label: "Method of the lab" },
+    c_compare: { type: "enum", values: ["none", ...LAB_METHODS], default: "hmc", label: "Comparison method of the lab" },
+    c_size: { type: "integer", min: 6, max: 18, default: 12, label: "Size of each run, log2: draws after the warm-up, particles or points" },
+    c_runs: { type: "integer", min: 2, max: 32, default: 4, label: "Independent runs R: chains, samplers, filters or randomisations" },
+    c_step: { type: "number", min: 0.001, max: 10, default: 1, label: "Step size of the random walk of Metropolis–Hastings, in units of the scale" },
+    c_eps: { type: "number", min: 0.001, max: 10, default: 0.2, label: "Leapfrog step ε of Hamiltonian Monte Carlo, in units of the scale" },
+    c_leap: { type: "integer", min: 1, max: 200, default: 10, label: "Leapfrog steps L of Hamiltonian Monte Carlo" },
+    c_start: { type: "enum", values: ["dispersed", "one_point"], default: "dispersed", label: "Start points of the chains" },
+    c_resample: { type: "enum", values: ["systematic", "stratified", "residual", "multinomial", "none"], default: "systematic", label: "Resampling scheme" },
+    c_ess: { type: "number", min: 0.05, max: 1, default: 0.5, label: "ESS threshold τ: resample when the weight ESS is below τN" },
+    c_schedule: { type: "enum", values: ["adaptive", "fixed"], default: "adaptive", label: "Tempering schedule of sequential Monte Carlo" },
+    c_temps: { type: "integer", min: 1, max: 200, default: 10, label: "Steps of the fixed tempering schedule" },
+    c_moves: { type: "integer", min: 0, max: 20, default: 5, label: "Metropolis moves after each tempering step" },
+    c_scramble: { type: "enum", values: ["lms_shift", "shift", "none"], default: "lms_shift", label: "Randomisation of the Sobol points" },
+    c_path: { type: "enum", values: ["standard", "bridge"], default: "standard", label: "Path construction of the option" },
+    c_plot: { type: "enum", values: ["trace", "acf", "scatter", "weights", "genealogy", "filter", "points", "rate", "runs"], default: "trace", label: "Figure of the lab" },
+    c_coord: { type: "integer", min: 1, max: 2, default: 1, label: "Coordinate in the trace and the autocorrelation" },
+    c_q: { type: "integer", min: 1, max: 3, default: 1, label: "Quantity in the rate and runs figures" },
   };
 
   /** The state an example opens: its model and the settings its catalogue entry names. @param {any} m */
@@ -695,5 +718,5 @@ focus N
     };
   }
 
-  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, INPUTS, METHOD_IDS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
+  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, INPUTS, METHOD_IDS, LAB_IDS, LAB_METHODS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
 });

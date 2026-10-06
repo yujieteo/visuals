@@ -28,9 +28,9 @@ import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
 SLUG = HERE.name
-DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview", "rare"]
-ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl", "rare"]
-PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "rareview", "view"]
+DATA = ["laws", "models", "methods", "theory", "glossary", "datasets", "groups", "limits", "interview", "rare", "chains"]
+ENGINE = ["rng", "special", "expr", "continuous", "tails", "laws", "custom", "constructed", "copulas", "processes", "engine", "dsl", "rare", "chains"]
+PAGE = ["plots", "mlmc", "model", "interview", "report", "pool", "depview", "iview", "rareview", "chainview", "view"]
 
 
 def read(path):
@@ -73,9 +73,14 @@ def static_parts(cat):
     if rare:
         limits += (f"<p>Rare-event lab: at most 2^{rare['maxSize']} = {2 ** rare['maxSize']:,} paths in each replication, {rare['maxReps']} replications "
                    f"and {rare['seconds']} s for one run. {e(rare['how'])}</p>")
+    lab = cat["limits"].get("chains")
+    if lab:
+        limits += (f"<p>Markov chain, sequential and quasi-Monte Carlo lab: at most {lab['runs']} independent runs of 2^{lab['chain']} draws after the warm-up, "
+                   f"2^{lab['particles']} particles or 2^{lab['points']} points, and {lab['seconds']} s for one run. {e(lab['how'])}</p>")
     here = [g for g in cat["groups"] if g["status"] == "here"]
-    titles = [g["title"][0].lower() + g["title"][1:] for g in here]
-    span = lambda gs: f"{gs[0]['piece']}" if len(gs) == 1 else f"{gs[0]['piece']} to {gs[-1]['piece']}"
+    # A title that starts with a proper name, such as Markov, keeps its capital letter inside the sentence.
+    titles = [g["title"] if g["title"].split()[0] in ("Markov",) else g["title"][0].lower() + g["title"][1:] for g in here]
+    span = lambda gs: f"{gs[0]['piece']}" if len(gs) == 1 else f"{gs[0]['piece']} and {gs[1]['piece']}" if len(gs) == 2 else f"{gs[0]['piece']} to {gs[-1]['piece']}"
     later = [g for g in cat["groups"] if g["status"] != "here"]
     summary = (f"This page holds group{'s' if len(here) > 1 else ''} {span(here)} of {len(cat['groups'])}: "
                f"{', '.join(titles[:-1]) + ', and ' + titles[-1] if len(titles) > 1 else titles[0]}."
@@ -97,6 +102,7 @@ def build():
     blocks += [script(f"src-{m}", read(HERE / "src" / f"{m}.js")) for m in ENGINE]
     blocks.append(script("src-worker", read(HERE / "src" / "worker.js"), "text/plain"))
     blocks.append(script("src-rare-worker", read(HERE / "src" / "rare-worker.js"), "text/plain"))
+    blocks.append(script("src-chains-worker", read(HERE / "src" / "chains-worker.js"), "text/plain"))
     blocks += [script(f"src-{m}", read(HERE / "src" / f"{m}.js")) for m in PAGE]
     blocks.append(script("mathjax", kit.mathjax_bundle(), vendor=kit.MATHJAX))
     parts = {

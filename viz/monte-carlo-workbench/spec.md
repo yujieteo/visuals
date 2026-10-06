@@ -2,7 +2,7 @@
 
 # Monte Carlo Probability Workbench: specification
 
-Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 7 are on the page.
+Status: the owner approved the build plan on 5 October 2026. This document is the specification of all 10 groups; each group ships as its own pull request, in the order below. Groups 1 to 8 are on the page.
 
 ## Agreed decisions
 

@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView, Rv = g.MCRareView;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView, Rv = g.MCRareView, Cv = g.MCChainView;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -138,14 +138,16 @@
 
   /** @param {Record<string, any>} s */
   function drawNav(s) {
-    for (const id of ["examples", "interview", "rare", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
+    for (const id of ["examples", "interview", "rare", "chains", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
     Ivw.draw(s);
     // Group 7: the rare-event lab draws its own list, card and run.
     Rv.draw(s);
+    // Group 8: the Markov chain, sequential and quasi-Monte Carlo lab, the same way.
+    Cv.draw(s);
     const list = matches(s.q);
     // The custom input examples of group 4 come last, under their own heading.
     const byLaw = [...data.laws, { id: "custom", name: "Custom law inputs" }].map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
-    const rareHtml = Rv.examples(s.q, s);
+    const rareHtml = Rv.examples(s.q, s) + Cv.examples(s.q, s);
     $("example-list").innerHTML = (byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
       `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : m.kind === "input" ? `Input${m.fails ? ", fails" : ""}` : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
       : rareHtml ? "" : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`) + rareHtml;
@@ -397,7 +399,7 @@ ${fit?.kind === "series" ? seriesPanel(ds, fit) : fit ? `<h4>Data: ${esc(ds.titl
 <table><thead><tr><th scope="col">Value</th><th scope="col">Observed</th><th scope="col">Expected, fitted law</th></tr></thead><tbody>${ds.values.map((/** @type {number} */ v, /** @type {number} */ i) => `<tr><td class="num">${v}${i === ds.values.length - 1 ? " or more" : ""}</td><td class="num">${count(ds.counts[i])}</td><td class="num">${fit.expected[i].toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td></tr>`).join("")}</tbody></table>
 <p>Chi-square test against the fitted law: statistic ${fmt(fit.fittedTest.stat)} on ${fit.fittedTest.df} degrees of freedom, p = ${fmt(fit.fittedTest.p)}. ${fit.alternatives.map((/** @type {any} */ x) => `Against ${esc(x.label)}: statistic ${fmt(x.stat)}, p = ${fmt(x.p)}.`).join(" ")} ${tag("numerical")} A p-value measures the fit of this data to one law. It does not prove the law.</p>` : ""}
 <h4>Claim tags</h4><p>${tag("theorem")} follows from a theorem under the stated assumptions. ${tag("numerical")} is a computed value with a stated error source. ${tag("observation")} is what this finite run showed.</p>
-<p class="note">Group 8 adds the effective sample size and the Markov-chain diagnostics. Here every replicate is independent.</p>`;
+<p class="note">Here every replicate is independent, so no Markov-chain diagnostic applies. The Chains panel has the effective sample size, split R-hat and the weight diagnostics of group 8.</p>`;
     const dec = m0?.decision;
     $("panel-interpretation").innerHTML = `${entry?.kind === "workflow" ? `<h4>Diagnostics and competing models</h4><p>${esc(entry.diagnostics)}</p><h4>Interpretation and rejection conditions</h4><p>${esc(entry.interpretation)}</p>` : entry ? `<h4>What to observe</h4><p>${esc(entry.observe)}</p>` : '<p class="note">A custom model has no reviewed interpretation. Read each result with its claim tag.</p>'}
 <h4>This run</h4><p>${run?.accum.blocks ? `${count(run.accum.n)} replicates for each alternative, seed ${s.seed}, ${esc(METHOD[s.method].toLowerCase())}. ${dec && dec.best !== null ? `The best admissible alternative in this run is ${esc(d.alternatives[dec.best])}${dec.separated ? "" : ", but it is not separable from the others yet"}.` : ""}` : "No run yet."} ${tag("observation")}</p>`;
@@ -851,6 +853,7 @@ ${parts}`;
         const th = data.theory.find((/** @type {any} */ x) => x.id === t.dataset.linked);
         // Group 7's panels link to an example of the rare-event lab.
         if (th.experiment.rare) Rv.open(th.experiment.rare);
+        else if (th.experiment.chains) Cv.open(th.experiment.chains, th.experiment.settings);
         else {
           openModel(th.experiment.model);
           app.set({ ...th.experiment.settings, panel: "diagnostics" });
@@ -931,6 +934,7 @@ ${parts}`;
     });
     loader("load-run", loadRun);
     Rv.bind(a, data, { save, saveSvg, savePng });
+    Cv.bind(a, data, { save, saveSvg, savePng });
     $("mlmc-run").addEventListener("click", () => Dv.startMultilevel({ state: app.state, derived: app.derived, record: M.modelOf(app.state, data).record, overrides: M.parseParams(app.state.params).overrides, pool: getPool(), redraw: schedule }));
     $("mlmc-stop").addEventListener("click", () => { Dv.stopMultilevel(); schedule(); });
     for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"], ["paths-plot", "paths"], ["scatter-plot", "scatter"], ["mlmc-plot", "multilevel"]]) {
@@ -942,6 +946,7 @@ ${parts}`;
       const t = /** @type {HTMLElement} */ (e.target);
       if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable) return;
       if (app.state.nav === "rare" && (e.key === " " || e.key === ".")) { e.preventDefault(); Rv.key(e.key); return; }
+      if (app.state.nav === "chains" && (e.key === " " || e.key === ".")) { e.preventDefault(); Cv.key(e.key); return; }
       if (e.key === " ") { e.preventDefault(); if (run?.handle) pauseRun(); else startRun(); }
       else if (e.key === ".") stepRun();
     });
@@ -998,6 +1003,7 @@ ${parts}`;
       execute: async () => { Dv.sync(app.state, app.derived); return out(Dv.result() ?? { status: "none", note: "No multilevel run yet. Open a model with the parameters steps and coarsen, then press Run in the multilevel panel." }); } },
     Ivw.tool,
     Rv.tool,
+    Cv.tool,
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },
@@ -1011,6 +1017,7 @@ ${parts}`;
     ...data.theory.map((/** @type {any} */ t) => ({ label: `Theory: ${t.title}`, run: () => app.set({ theory: t.id, panel: "theory" }) })),
     ...Ivw.commands,
     ...Rv.commands,
+    ...Cv.commands,
   ];
 
   app = K.start({
@@ -1018,7 +1025,7 @@ ${parts}`;
     schemaVersion: M.SCHEMA_VERSION, fields: M.FIELDS,
     derive: (/** @type {any} */ s) => M.derive(s, data),
     render,
-    report: (/** @type {any} */ s, /** @type {any} */ d) => s.nav === "rare" ? Rv.report(s) : Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
+    report: (/** @type {any} */ s, /** @type {any} */ d) => s.nav === "rare" ? Rv.report(s) : s.nav === "chains" ? Cv.report(s) : Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
     bind, tools, commands,
   });
   g.Workbench = { get run() { return run; }, summary, runRecord, modelRecord, resultsCsv, traceCsv, startRun, stepRun, pauseRun, resetRun, get pool() { return pool; } };

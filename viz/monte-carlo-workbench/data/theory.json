@@ -297,5 +297,66 @@
   "experiment": {
    "rare": "cat-infinite-mean"
   }
+ },
+ {
+  "id": "markov",
+  "title": "Ergodic averages and the Markov chain CLT",
+  "statement": "\\begin{gathered} P \\text{ Harris ergodic with } \\pi P = \\pi, \\ \\pi|g| < \\infty \\ \\Longrightarrow \\ \\bar g_n = \\frac1n \\sum_{i=1}^{n} g(X_i) \\to \\pi(g) \\ \\text{a.s., from any start} \\\\ \\text{geometric ergodicity}, \\ \\pi|g|^{2+\\delta} < \\infty \\ \\Longrightarrow \\ \\sqrt n\\,(\\bar g_n - \\pi g) \\Rightarrow N(0, \\sigma_g^2), \\quad \\sigma_g^2 = \\operatorname{Var}_\\pi g \\Bigl(1 + 2\\sum_{k \\ge 1} \\rho_k\\Bigr) = \\operatorname{Var}_\\pi g \\cdot \\tau, \\quad \\mathrm{ESS} = n / \\tau \\end{gathered}",
+  "assumptions": [
+   "The kernel P keeps π stationary. Metropolis–Hastings and each coordinate update of the Gibbs sweep satisfy detailed balance, so the sweep keeps π stationary. In Hamiltonian Monte Carlo, the leapfrog map with a momentum flip keeps volume and is its own inverse. With the Metropolis step, the chain keeps π stationary.",
+   "The chain is φ-irreducible, aperiodic and Harris recurrent, so it is Harris ergodic.",
+   "For the central limit theorem: geometric ergodicity and π|g|^(2+δ) < ∞ for some δ > 0, or a reversible chain with π g² < ∞ and a finite asymptotic variance."
+  ],
+  "proof": "For the ergodic theorem, Nummelin's splitting gives regeneration times. The sums of g between regenerations are i.i.d., and the strong law of large numbers applies to them. For the central limit theorem, solve the Poisson equation ĝ − Pĝ = g − π g. Then the sum of g(X_i) − π g is a martingale plus the remainder ĝ(X₀) − ĝ(X_n), which is small compared with √n. The martingale central limit theorem applies. The variance of the martingale increments is Var_π g (1 + 2 Σ ρ_k).",
+  "reference": "G. O. Roberts and J. S. Rosenthal, General state space Markov chains and MCMC algorithms, Probability Surveys 1 (2004) 20–71. G. L. Jones, On the Markov chain central limit theorem, Probability Surveys 1 (2004) 299–320. C. J. Geyer, Practical Markov chain Monte Carlo, Statistical Science 7 (1992) 473–483. A. Vehtari, A. Gelman, D. Simpson, B. Carpenter and P.-C. Bürkner, Rank-normalization, folding, and localization: an improved R-hat, Bayesian Analysis 16 (2021) 667–718.",
+  "counterexample": "A random walk on two modes 11 units apart is ergodic, so the theorem holds. But the expected time to cross between the modes is far longer than any run. Chains that start in one mode agree with each other: split R-hat is near 1 and the ESS is large. But the estimate of P(x₁ + x₂ > 0) is near 0, and the exact value is 0.7. A theorem about n → ∞ says nothing about the n of one run, and the ESS is a diagnostic, not a proof of convergence.",
+  "experiment": {
+   "chains": "chain-two-modes",
+   "settings": {
+    "c_method": "metropolis",
+    "c_compare": "smc",
+    "c_start": "one_point"
+   }
+  }
+ },
+ {
+  "id": "particles",
+  "title": "Importance weights, resampling and the unbiased likelihood",
+  "statement": "\\begin{gathered} \\hat Z_T = \\prod_{t=1}^{T} \\sum_{i=1}^{N} W_{t-1}^i\\, g_t(x_t^i), \\qquad \\mathbb E\\,\\hat Z_T = p(y_{1:T}) \\ \\text{for every } N \\ge 1 \\\\ \\mathrm{ESS}_t = \\Bigl(\\sum_i W_t^i\\Bigr)^2 \\Big/ \\sum_i (W_t^i)^2 \\in [1, N] \\end{gathered}",
+  "assumptions": [
+   "The particles move with the transition law f of the model, and g_t(x) = p(y_t | x_t = x) is the observation density.",
+   "The resampling scheme has no bias: given the weights, the expected number of copies of particle i is N W_i. Multinomial, stratified, systematic and residual resampling have this property.",
+   "E Ẑ_T = p(y_{1:T}) needs only these conditions. Error bounds for the filter law that do not grow with T need more: bounded potentials g_t and a mixing transition. Then the relative variance of Ẑ_T grows linearly in T."
+  ],
+  "proof": "Let F_t be the history of the particle system up to time t. The resampling has no bias. Thus, given F_(t−1), each new particle comes from the mixture Σ_i W_(t−1)^i f(· | x_(t−1)^i). Thus E[Σ_i W_(t−1)^i g_t(x_t^i) | F_(t−1)] = Σ_i W_(t−1)^i ∫ f(x | x_(t−1)^i) g_t(x) dx. By induction on t, E[Ẑ_t Σ_i W_t^i φ(x_t^i)] = ∫ φ(x) p(x_t = x, y_(1:t)) dx for every bounded φ. Take φ = 1 at t = T. The result is p(y_(1:T)).",
+  "reference": "P. Del Moral, Feynman–Kac Formulae: Genealogical and Interacting Particle Systems with Applications, Springer, 2004. C. Andrieu, A. Doucet and R. Holenstein, Particle Markov chain Monte Carlo methods, Journal of the Royal Statistical Society B 72 (2010) 269–342. A. Kong, J. S. Liu and W. H. Wong, Sequential imputations and Bayesian missing data problems, Journal of the American Statistical Association 89 (1994) 278–288. N. Chopin and O. Papaspiliopoulos, An Introduction to Sequential Monte Carlo, Springer, 2020.",
+  "counterexample": "Without resampling the estimator is still unbiased, but the variance of the weights grows about exponentially in T. After a few steps, one particle has almost all the weight, and the ESS is near 1. In most runs Ẑ is far below p(y_(1:T)). The mean is right only because rare runs give very large values. Also log Ẑ has a negative bias for every scheme, because log is concave.",
+  "experiment": {
+   "chains": "tank-level",
+   "settings": {
+    "c_method": "particle",
+    "c_resample": "none",
+    "c_plot": "weights"
+   }
+  }
+ },
+ {
+  "id": "rqmc",
+  "title": "Randomised quasi-Monte Carlo: no bias and a smaller variance",
+  "statement": "\\begin{gathered} \\Bigl|\\frac1n \\sum_{i} f(u_i) - \\int_{[0,1)^d} f\\Bigr| \\le V_{\\mathrm{HK}}(f)\\, D_n^*(u_1, \\dots, u_n) \\quad \\text{(Koksma–Hlawka)} \\\\ \\text{scrambled } (t, m, d)\\text{-net in base 2}, \\ n = 2^m: \\ \\mathbb E \\hat I = I, \\quad \\operatorname{Var} \\hat I \\le 2^t 3^d \\, \\frac{\\sigma^2}{n}, \\quad \\operatorname{Var} \\hat I = o(1/n) \\ \\text{for } f \\in L^2 \\end{gathered}",
+  "assumptions": [
+   "The points are the first 2^m points of a Sobol sequence, a (t, m, d)-net in base 2, with Owen's nested uniform scramble. Owen (2003) shows that Matoušek's random linear scramble with a digital shift, which this page uses, has the same variance.",
+   "f is square-integrable on the unit cube. σ² is its variance: the variance of independent sampling with one point.",
+   "For smooth f, with the condition that Owen (1997) states, Var Î = O(n^(−3) (log n)^(d−1)). A jump that is not parallel to the axes removes this rate."
+  ],
+  "proof": "Expand f in base-2 Haar wavelets, grouped by the resolution k = (k_1, …, k_d) in each coordinate. The scramble makes each point uniform, so Î has no bias, and it makes the contributions of different groups uncorrelated. Thus Var Î = Σ_k Γ_k σ_k² / n, where σ_k² is the variance of f in group k. The net property gives Γ_k = 0 for groups with |k| ≤ m − t, and Γ_k ≤ 2^t 3^d for all k. The groups with Γ_k ≠ 0 carry a variance that tends to 0, so n Var Î → 0.",
+  "reference": "A. B. Owen, Monte Carlo variance of scrambled net quadrature, SIAM Journal on Numerical Analysis 34 (1997) 1884–1910. A. B. Owen, Scrambled net variance for integrals of smooth functions, Annals of Statistics 25 (1997) 1541–1562. J. Matoušek, On the L2-discrepancy for anchored boxes, Journal of Complexity 14 (1998) 527–556. A. B. Owen, Variance with alternative scramblings of digital nets, ACM Transactions on Modeling and Computer Simulation 13 (2003) 363–378. S. Joe and F. Y. Kuo, Constructing Sobol sequences with better two-dimensional projections, SIAM Journal on Scientific Computing 30 (2008) 2635–2654.",
+  "counterexample": "The indicator that a sum of 8 uniforms is above 5 jumps along a slanted plane, so V_HK = ∞ and the Koksma–Hlawka bound is empty. The scrambled points still have no bias and a smaller variance. But the variance ratio against independent points is about 5, against more than 10,000 for the smooth peak. Without randomisation the points give one deterministic value, and repeated runs cannot estimate its error.",
+  "experiment": {
+   "chains": "qmc-sum",
+   "settings": {
+    "c_plot": "rate"
+   }
+  }
  }
 ]
