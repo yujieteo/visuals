@@ -157,6 +157,7 @@ const require = createRequire(import.meta.url);
 /** @type {any} */ const Png = require("../src/png.js");
 /** @type {any} */ const Fonts = require("../src/fonts.js");
 /** @type {any} */ const PDFLib = require("../vendor/pdf-lib/pdf-lib.min.js");
+/** @type {any} */ const fontkit = require("../vendor/fontkit/fontkit.umd.min.js");
 
 /** The bytes of the file a click downloads. @param {import("playwright").Page} page @param {import("playwright").Locator} button */
 async function download(page, button) {
@@ -197,8 +198,8 @@ async function publication(page) {
   assert.equal(image.width, Math.round((183 / 25.4) * 450));
   assert.ok(image.ppm === Math.round(450 / 0.0254) && image.crcs, "pHYs holds 450 dpi, in pixels a metre");
   assert.equal(await panel.locator('[data-file="png"]').getAttribute("data-file-status"), "fail", "Nature does not accept PNG for main figures");
-  const svg = Fonts.readSvg(new TextDecoder().decode((await download(page, panel.locator('[data-download="svg"]'))).bytes));
-  assert.ok(Math.abs(svg.width - 183) < 1e-6 && svg.fontFaces >= 1 && svg.texts >= 3, JSON.stringify(svg));
+  const svg = Fonts.readSvg(new TextDecoder().decode((await download(page, panel.locator('[data-download="svg"]'))).bytes), fontkit);
+  assert.ok(Math.abs(svg.width - 183) < 1e-6 && svg.fontFaces >= 1 && !svg.unmapped.length && svg.texts >= 3, JSON.stringify(svg));
   // Back to the general preset, which the rest of the page's checks expect.
   await panel.locator('input[name="preset"][value="general"]').check();
   await panel.locator("[data-verdict]", { hasText: "General" }).waitFor({ timeout: 60_000 });

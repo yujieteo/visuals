@@ -6,8 +6,8 @@
  * file; the widths below are the sums of the glyphs' advance widths, with no kerning or ligatures, which is how
  * src/pdf.js sets text, so a label measured here takes the same room in every file.
  *
- * svgFile() adds the subset of each face that the figure's text uses to the SVG, as an @font-face, so the file
- * holds its font; readSvg() reads a written file back for the checks.
+ * svgFile() adds each face that the figure's text uses to the SVG, whole, as an @font-face, so the file holds its
+ * font; readSvg() reads a written file back for the checks, its fonts with fontkit.
  */
 (function (root, factory) {
   const api = factory();
@@ -60,23 +60,8 @@
       family: `'${family.replace(/'/g, "")}', ${kind === "bundled" ? FALLBACK : `'Liberation Sans', ${FALLBACK}`}`,
       measure: (text, pt, isBold = false) => ((advance(isBold && bold ? bold : regular, text) / 1000) * pt * PT),
       faceOf: (isBold) => (isBold && bold ? bold : regular),
+      missing: (text, isBold = false) => missing(isBold && bold ? bold : regular, text),
     };
-  }
-
-  /** The subset of a face holding the glyphs of a text, as font file bytes (TrueType outlines stay TrueType). */
-  function subset(f, text) {
-    const sub = f.font.createSubset();
-    for (const ch of new Set(String(text))) sub.includeGlyph(f.font.glyphForCodePoint(ch.codePointAt(0) ?? 0));
-    return new Promise((resolve, reject) => {
-      /** @type {Uint8Array[]} */
-      const parts = [];
-      sub.encodeStream().on("data", (/** @type {Uint8Array} */ d) => parts.push(d)).on("end", () => {
-        const out = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
-        let at = 0;
-        for (const p of parts) { out.set(p, at); at += p.length; }
-        resolve(out);
-      }).on("error", reject);
-    });
   }
 
   function base64(bytes) {
@@ -86,23 +71,16 @@
   }
 
   /**
-   * The SVG file of a figure: the drawn SVG with the subsets of the faces its text uses in an @font-face, under the
-   * family the text names, so the file holds its font. Only CFF-outlined faces go in as OpenType.
+   * The SVG file of a figure: the drawn SVG with each face its text uses, whole, in an @font-face under the family
+   * the text names, so the file holds its font with its character map.
    * @param {string} svg Render.render's svg @param {any} scene its scene @param {any} fonts a set()
    */
-  async function svgFile(svg, scene, fonts) {
-    const texts = scene.items.filter((/** @type {any} */ it) => it.t === "text");
-    /** @type {Map<any, string>} each face and the characters it sets */
-    const chars = new Map();
-    for (const it of texts) {
-      const f = fonts.faceOf(it.weight === "bold");
-      chars.set(f, (chars.get(f) ?? "") + it.text);
-    }
+  function svgFile(svg, scene, fonts) {
+    const used = new Set(scene.items.filter((/** @type {any} */ it) => it.t === "text").map((/** @type {any} */ it) => fonts.faceOf(it.weight === "bold")));
     const rules = [];
-    for (const [f, used] of chars) {
-      const bytes = await subset(f, used);
+    for (const f of used) {
       const type = f.outlines === "CFF" ? ["font/otf", "opentype"] : ["font/ttf", "truetype"];
-      const src = `src:url(data:${type[0]};base64,${base64(bytes)}) format('${type[1]}')`;
+      const src = `src:url(data:${type[0]};base64,${base64(f.bytes)}) format('${type[1]}')`;
       // Without a bold face, bold text is set in the regular one, as in the PDF.
       const weights = f === fonts.bold ? [700] : fonts.bold ? [400] : [400, 700];
       for (const w of weights) rules.push(`@font-face{font-family:'${fonts.name.replace(/'/g, "")}';font-weight:${w};${src}}`);
@@ -112,18 +90,44 @@
     return svg.replace(/(<desc[^>]*>[\s\S]*?<\/desc>)/, `$1\n${style}`);
   }
 
-  /** What a written SVG holds: its size in millimetres, its text elements, its embedded fonts and the family named. */
-  function readSvg(text) {
+  const unescape = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+
+  /**
+   * What a written SVG holds: its size in millimetres, its text elements, its embedded fonts read back by fontkit,
+   * the characters of its text that no embedded font of their weight maps to a glyph, and the family named.
+   * @param {string} text @param {any} fontkit
+   */
+  function readSvg(text, fontkit) {
     const root = /<svg\b[^>]*>/.exec(text)?.[0] ?? "";
     const mm = (name) => Number(new RegExp(`\\b${name}="([\\d.]+)mm"`).exec(root)?.[1] ?? NaN);
+    /** @type {Map<number, any>} each weight and the font embedded for it */
+    const embedded = new Map();
+    let fontFaces = 0;
+    for (const [, weight, data] of text.matchAll(/@font-face\{[^}]*?font-weight:(\d+);src:url\(data:font\/[a-z]+;base64,([A-Za-z0-9+/=]+)\)[^}]*\}/g)) {
+      try {
+        const bin = atob(data);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const font = fontkit.create(bytes);
+        if (!font.directory?.tables?.cmap) continue;
+        embedded.set(Number(weight), font);
+        fontFaces++;
+      } catch { /* a file fontkit cannot read is not a font */ }
+    }
+    const unmapped = new Set();
+    const elements = [...text.matchAll(/<text\b([^>]*)>(?:<title>[\s\S]*?<\/title>)?([^<]*)<\/text>/g)];
+    for (const [, attrs, content] of elements) {
+      const font = embedded.get(/font-weight="(bold|700)"/.test(attrs) ? 700 : 400);
+      for (const ch of unescape(content)) if (ch.trim() && !(font && font.glyphForCodePoint(ch.codePointAt(0) ?? 0).id)) unmapped.add(ch);
+    }
     return {
       width: mm("width"), height: mm("height"),
       texts: (text.match(/<text\b/g) ?? []).length,
-      fontFaces: (text.match(/@font-face\{/g) ?? []).length,
+      fontFaces, unmapped: [...unmapped],
       family: (/font-family="([^"]*)"/.exec(text)?.[1] ?? "").replace(/&#39;|&quot;|'/g, "").split(",")[0].trim(),
       bytes: new TextEncoder().encode(text).length,
     };
   }
 
-  return { face, set, advance, missing, subset, svgFile, readSvg };
+  return { face, set, advance, missing, svgFile, readSvg };
 });

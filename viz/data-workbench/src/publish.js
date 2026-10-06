@@ -30,7 +30,7 @@
       loading: null,
       fontError: "",
       ownNote: "",
-      /** @type {{ key: string, files: Record<string, any> } | null} the written files of the figure shown */
+      /** @type {{ key: string, fonts: any, files: Record<string, any> } | null} the written files of the figure shown and the font set they hold */
       written: null,
       turn: 0,
     };
@@ -108,7 +108,7 @@
       return { ...drawn, spec: sized };
     }
 
-    const fontInfo = () => (state.fonts ? { name: state.fonts.name, kind: state.fonts.kind, bold: !!state.fonts.bold } : { name: "Helvetica's widths (no font file)", kind: "none", bold: true });
+    const fontInfo = () => (state.fonts ? { name: state.fonts.name, kind: state.fonts.kind, bold: !!state.fonts.bold, missing: state.fonts.missing } : { name: "Helvetica's widths (no font file)", kind: "none", bold: true });
 
     /** Write the figure's three files, read each back, and keep them for the downloads. */
     async function writeFiles(drawn, key) {
@@ -120,8 +120,8 @@
       }
       const P = /** @type {any} */ (window).PDFLib, fontkit = /** @type {any} */ (window).fontkit;
       try {
-        const text = await Fonts.svgFile(drawn.svg, drawn.scene, fonts);
-        files.svg = { ...Fonts.readSvg(text), blob: new Blob([text], { type: "image/svg+xml" }) };
+        const text = Fonts.svgFile(drawn.svg, drawn.scene, fonts);
+        files.svg = { ...Fonts.readSvg(text, fontkit), blob: new Blob([text], { type: "image/svg+xml" }) };
       } catch (error) { files.svg = { error: `The SVG could not be written: ${app.message(error)}` }; }
       try {
         const bytes = await Pdf.write(P, fontkit, drawn.scene, fonts, { title: drawn.spec.annotation.title, subject: drawn.desc });
@@ -143,7 +143,7 @@
         const bytes = Png.withDpi(new Uint8Array(await blob.arrayBuffer()), state.settings.dpi);
         files.png = { ...Png.read(bytes), blob: new Blob([bytes], { type: "image/png" }) };
       } catch (error) { files.png = { error: `The PNG could not be written: ${app.message(error)}` }; }
-      state.written = { key, files };
+      state.written = { key, fonts, files };
       return files;
     }
 
@@ -195,7 +195,7 @@
           h("label", { class: "choice" }, h("input", { type: "radio", name: "font", value: "own", checked: state.fonts?.kind === "own", disabled: state.fonts?.kind !== "own" }), " Your font", state.fonts?.kind === "own" ? `: ${state.fonts.name}` : ""),
           h("div", { class: "field" }, h("label", { for: id("font-files"), text: "Load your font files (TTF or OTF; a regular and a bold face)" }),
             h("input", { id: id("font-files"), type: "file", accept: ".ttf,.otf,font/ttf,font/otf", multiple: true, onchange: (ev) => { useOwn([...ev.target.files], o.redraw); ev.target.value = ""; } }),
-            state.ownNote ? h("p", { class: "note", text: state.ownNote }) : h("p", { class: "note", text: "Your files stay on this device; the PDF and SVG embed the subset the figure uses." }))),
+            state.ownNote ? h("p", { class: "note", text: state.ownNote }) : h("p", { class: "note", text: "Your files stay on this device; the PDF embeds the subset the figure uses and the SVG the whole font." }))),
         h("p", { class: "note", text: "These settings hold for every chart of the page." }));
 
       const result = Figure.check(o.drawn, { spec: o.drawn.spec, settings: s, font: fontInfo(), files: null });
@@ -216,7 +216,7 @@
       if (state.fontError) el.insertBefore(h("p", { class: "warn-text", role: "alert", text: state.fontError }), el.children[1]);
 
       // The files: written once a figure and settings, checked, then offered for download.
-      const key = JSON.stringify([o.name, s, state.fonts?.name ?? "", o.drawn.svg.length, o.drawn.scene.items.length]);
+      const key = JSON.stringify([o.name, s, o.drawn.svg]);
       const turn = ++state.turn;
       const done = (files) => {
         if (turn !== state.turn) return;
@@ -232,7 +232,7 @@
             h("details", {}, h("summary", { text: `${format.toUpperCase()} checks` }), checkList(f.checks, `Checks of the ${format.toUpperCase()} file`)));
         }));
       };
-      if (state.written?.key === key) done(state.written.files);
+      if (state.written?.key === key && state.written.fonts === state.fonts) done(state.written.files);
       else writeFiles(o.drawn, key).then(done);
     }
 

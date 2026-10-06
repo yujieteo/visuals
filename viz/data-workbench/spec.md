@@ -357,7 +357,7 @@ step n]** with its evidence.
   [catalog.md](catalog.md) documents test catalogue v1, the family and the ranking, and is published beside the
   page. The highlight count is view state in the URL (`highlights`, 0 to 50, default 6).
 - Publication figures (step 4): `src/figure.js` (the presets with their dated sources, settings, size and style,
-  every check), `src/fonts.js` (font faces, widths, the SVG file with its font subset), `src/pdf.js` (the PDF writer
+  every check), `src/fonts.js` (font faces, widths, the SVG file with its font), `src/pdf.js` (the PDF writer
   and reader), `src/png.js` (the canvas painter, pHYs, the PNG reader), `src/publish.js` (the panel of the
   full-size view). pdf-lib 1.17.1 and @pdf-lib/fontkit 1.1.1 are vendored unchanged in `vendor/` and inlined;
   Liberation Sans 2.1.5 (Regular and Bold, from its release archive pinned by SHA-256) is published beside the page
@@ -626,9 +626,13 @@ Where the plan left a choice or changed:
   - PNG: the scene painted on a canvas at dpi / 25.4 px a mm, a pHYs chunk (pixels a metre) right after IHDR
     replacing the browser's, every CRC checked when read back; above 16.7 megapixels the PNG is refused with the
     reason and the SVG and PDF stay.
-  - **[Changed in step 4]** SVG: the downloaded file holds the subset of each face its text uses in an `@font-face`,
-    so "fonts embedded" can pass for SVG too; the text stays `<text>` and names the family, which drawing programs
-    that ignore `@font-face` take from the installed fonts.
+  - **[Changed in step 4]** SVG: the downloaded file holds each face its text uses, whole, in an `@font-face`
+    (fontkit's subsets have no character map, so a browser cannot use them). "Fonts embedded" passes for SVG only
+    when the file, read back, holds fonts fontkit reads that map every character of its text to a glyph; the text
+    stays `<text>` and names the family, which drawing programs that ignore `@font-face` take from the installed
+    fonts.
+  - Glyphs: a character of the figure that the font has no glyph for fails the scene's "Glyphs" check, and it names
+    the characters; without a font file the check is unverified.
   - General preset: the workbench's own rules (sections 9 and 15): 180 mm or the set width, 300 dpi, text at least
     6 pt, lines at least 0.5 pt, fonts embedded and text as text, RGB, a palette that stays distinct with protanopia
     and deuteranopia (Viénot, Brettel and Mollon 1999; ΔE76 at least 10 between mark colours, the colour scale's
@@ -649,7 +653,8 @@ Where the plan left a choice or changed:
     beside the figure (the guide keeps legends outside the artwork); 183 mm and 450 dpi by default. A figure in
     Liberation Sans gets "unverified" on the font rule (an Arial-metric substitute, not Arial or Helvetica), and an
     axis of a measure with no unit from the source or the person gets "unverified" on the axis rule: the workbench
-    never invents a unit. So a figure claims Nature compliance only in Arial or Helvetica with every unit given.
+    never invents a unit. The check reads the axis title as drawn: a known unit cut off from a shortened title fails.
+    So a figure claims Nature compliance only in Arial or Helvetica with every unit given.
   - Science (answer 6): science.org answered HTTP 403 again on 2026-10-06, so every Science rule (sizes, text and
     fonts, formats, resolution, colour and lines) is unverified and no figure claims Science compliance; until the
     captain's saved page is read the figure is drawn with the general preset's values and checked by its rules.
@@ -722,12 +727,14 @@ Where the plan left a choice or changed:
   every Nature rule verified with its URL and the date, every Science rule unverified; Liberation Sans' widths equal
   step 2's table and the general style draws the same SVG as step 2; under the general preset every kind meets its
   checks as PDF and SVG (MediaBox 180 mm, Type 0 CIDFontType2 fonts with FontFile2, a text-showing operator for
-  every text, no CMYK; a `<text>` for every text and an `@font-face` in the SVG), except the scatter plot's
+  every text, no CMYK; a `<text>` for every text and an `@font-face` whose font maps every character in the SVG), except the scatter plot's
   translucent points, unverified; under Nature 183 mm, at most 170 mm, text 5 to 7 pt in black, no gridlines or
   patterns, the title in the legend, the font unverified, PNG refused as a format, Arial and a unit passing, 120 mm
   failing; under Science every rule unverified; a scene with overlapping, clipped, too small and pale text, a thin
   line and red with green fails each check; pHYs written after IHDR, replacing an earlier one, every CRC holding;
-  the 16.7 megapixel limit; a timeline's light spans under Nature.
+  the 16.7 megapixel limit; a timeline's light spans under Nature; an SVG whose font is a fontkit subset with no
+  character map fails "Font embedded"; characters with no glyph fail "Glyphs"; a unit cut off a shortened axis
+  title fails Nature's axis rule.
 - e2e/full.test.mjs in every browser project: the box plot of price meets the general preset, then the Nature preset
   redraws it with the title in the legend; its PDF (MediaBox 183 mm, FontFile2, text as text), PNG (3,242 px wide,
   pHYs of 17,717 pixels a metre, 450 dpi, every CRC) and SVG (183 mm, its font inside) are downloaded and read back

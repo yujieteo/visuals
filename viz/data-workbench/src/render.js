@@ -883,8 +883,8 @@
         sc.text(lx + 4, ly + 1.5 + lh, "1", { size: SIZE.small });
       }
     }
-    if (xTitle) sc.text(area.x + area.w / 2, H - pad - capH - 0.6, fit(xTitle, SIZE.label, area.w), { size: SIZE.label, anchor: "middle", fill: COLOR.ink });
-    if (yTitle) sc.text(pad + SIZE.label * PT * 0.9, area.y + area.h / 2, fit(yTitle, SIZE.label, area.h), { size: SIZE.label, anchor: "middle", rotate: -90 });
+    if (xTitle) sc.text(area.x + area.w / 2, H - pad - capH - 0.6, fit(xTitle, SIZE.label, area.w), { size: SIZE.label, anchor: "middle", fill: COLOR.ink, axis: horizontal ? "y" : "x" });
+    if (yTitle) sc.text(pad + SIZE.label * PT * 0.9, area.y + area.h / 2, fit(yTitle, SIZE.label, area.h), { size: SIZE.label, anchor: "middle", rotate: -90, axis: horizontal ? "x" : "y" });
     if (sc.dropped) {
       sc.text(W - pad, top - 0.6, `${count(sc.dropped)} event${sc.dropped === 1 ? "" : "s"} drawn without a label, for lack of room (the bottom strip)`, { size: SIZE.small, anchor: "end", fill: COLOR.muted });
     }

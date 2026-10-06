@@ -25,7 +25,7 @@ const require = createRequire(import.meta.url);
 const folder = new URL("../", import.meta.url);
 const font = (name) => readFileSync(new URL(`vendor/liberation-fonts/${name}`, folder));
 const fonts = Fonts.set(Fonts.face(fontkit, font("LiberationSans-Regular.ttf")), Fonts.face(fontkit, font("LiberationSans-Bold.ttf")), "bundled");
-const bundled = { name: fonts.name, kind: "bundled", bold: true };
+const bundled = { name: fonts.name, kind: "bundled", bold: true, missing: fonts.missing };
 
 // One chart of every kind the planted example has, computed once.
 const e = await engine();
@@ -49,8 +49,8 @@ async function publish(chart, preset, extra = {}) {
   const drawn = Render.render(spec, chart.data, Figure.styleOf(settings, { family: fonts.family, measure: fonts.measure }));
   const pdfBytes = await Pdf.write(PDFLib, fontkit, drawn.scene, fonts, { title: spec.annotation.title, date: new Date(Date.UTC(2026, 9, 6)) });
   const pdf = await Pdf.read(PDFLib, pdfBytes);
-  const svgText = await Fonts.svgFile(drawn.svg, drawn.scene, fonts);
-  const svg = Fonts.readSvg(svgText);
+  const svgText = Fonts.svgFile(drawn.svg, drawn.scene, fonts);
+  const svg = Fonts.readSvg(svgText, fontkit);
   const result = Figure.check(drawn, { spec, settings, font: bundled, files: { pdf, svg } });
   return { settings, spec, drawn, pdf, pdfBytes, svg, svgText, result };
 }
@@ -104,6 +104,7 @@ test("the general preset: every chart kind meets its checks as PDF and SVG, tran
     assert.equal(pdf.cmyk, false);
     assert.equal(svg.texts, texts, "every text an SVG <text>");
     assert.ok(svg.fontFaces >= 1, "the SVG holds its font");
+    assert.deepEqual(svg.unmapped, [], "the embedded font maps every character of the text to a glyph");
     const notPassing = [...result.checks, ...result.files.pdf.checks, ...result.files.svg.checks].filter((c) => c.status !== "pass" && c.status !== "n/a");
     if (chart.spec.kind === "scatter") {
       assert.deepEqual(notPassing.map((c) => [c.id, c.status]), [["contrast-marks", "unverified"]], "2,000 translucent points: one alone is below 3:1");
@@ -179,6 +180,45 @@ test("the PDF keeps rotated, anchored and bold text as text in two embedded face
   // operators are as many as the scene's texts.
   const again = await PDFLib.PDFDocument.load(out.pdfBytes);
   assert.equal(again.getTitle(), bar.spec.annotation.title);
+});
+
+test("the SVG's font passes only when read back it maps every character: a subset with no character map fails", async () => {
+  const bar = charts.find((x) => x.spec.kind === "mean-bar");
+  const out = await publish(bar, "general");
+  assert.equal(out.result.files.svg.checks.find((/** @type {any} */ c) => c.id === "embedded").status, "pass");
+  // fontkit's subsets hold no cmap table: such a font in the @font-face maps no character.
+  const sub = fonts.regular.font.createSubset();
+  for (const ch of "Mean") sub.includeGlyph(fonts.regular.font.glyphForCodePoint(ch.codePointAt(0)));
+  const bytes = await new Promise((resolve) => { const parts = []; sub.encodeStream().on("data", (d) => parts.push(d)).on("end", () => resolve(Buffer.concat(parts))); });
+  const broken = out.svgText.replace(/base64,[A-Za-z0-9+/=]+/g, `base64,${bytes.toString("base64")}`);
+  const svg = Fonts.readSvg(broken, fontkit);
+  assert.ok(svg.unmapped.length > 0, JSON.stringify(svg.unmapped));
+  const r = Figure.check(out.drawn, { spec: out.spec, settings: out.settings, font: bundled, files: { svg } });
+  assert.equal(r.files.svg.checks.find((/** @type {any} */ c) => c.id === "embedded").status, "fail");
+  assert.equal(r.files.svg.verdict.status, "fail");
+});
+
+test("characters the font has no glyph for fail the glyph check and every file's verdict", async () => {
+  const bar = charts.find((x) => x.spec.kind === "mean-bar");
+  const spec = { ...bar.spec, annotation: { ...bar.spec.annotation, title: "血圧 by group" } };
+  const out = await publish({ ...bar, spec }, "general");
+  const glyphs = out.result.checks.find((/** @type {any} */ c) => c.id === "glyphs");
+  assert.equal(glyphs.status, "fail");
+  assert.match(glyphs.detail, /"血" \(U\+8840\), "圧" \(U\+5727\)/);
+  for (const f of ["svg", "pdf", "png"]) assert.equal(out.result.files[f].verdict.status, "fail", f);
+  assert.equal(out.result.files.svg.checks.find((/** @type {any} */ c) => c.id === "embedded").status, "fail", "the SVG's font maps no glyph to them");
+});
+
+test("the Nature axis-unit check reads the drawn axis title: a unit cut off with … fails", () => {
+  const box = charts.find((x) => x.spec.kind === "box");
+  const settings = Figure.settingsOf({ preset: "nature", width: 89 });
+  const long = { ...box.spec, annotation: { ...box.spec.annotation, units: { y: "mmHg" }, labels: { y: "Systolic blood pressure at the enrolment visit of every participant (mmHg)" } } };
+  const spec = Figure.sized(long, settings);
+  const drawn = Render.render(spec, box.data, Figure.styleOf(settings, fonts));
+  const title = drawn.scene.items.find((/** @type {any} */ it) => it.axis === "y");
+  assert.ok(title.text.endsWith("…") && !title.text.includes("(mmHg)"), title.text);
+  const r = Figure.check(drawn, { spec, settings, font: bundled, files: null });
+  assert.equal(status(r, "axes"), "fail");
 });
 
 /** A small RGB PNG made here: IHDR, one IDAT of deflated rows, IEND. */

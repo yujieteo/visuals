@@ -298,14 +298,15 @@
     };
   }
 
-  /** Which channels of a chart show a measure on an axis, and their unit when the source or the person gave one. */
-  function measureAxes(spec) {
+  /** Which channels of a chart show a measure on an axis, their unit when the source or the person gave one, and the axis title as drawn. */
+  function measureAxes(spec, scene) {
     const axes = [];
     for (const ch of ["x", "y"]) {
       const enc = spec.encoding[ch];
       if (!enc || enc.class !== "Q") continue;
       if (spec.kind === "count-heatmap") continue;
-      axes.push({ channel: ch, field: enc.field, unit: spec.annotation.units?.[ch] ?? "", label: spec.annotation.labels?.[ch] ?? "" });
+      const drawn = scene.items.find((/** @type {any} */ it) => it.t === "text" && it.axis === ch);
+      axes.push({ channel: ch, field: enc.field, unit: spec.annotation.units?.[ch] ?? "", label: drawn?.text ?? "" });
     }
     return axes;
   }
@@ -315,7 +316,7 @@
    * it back found. Returns { checks: [{ id, group, label, status, detail, rule }], files: { svg, pdf, png } each with
    * its checks and verdict, verdict } where status is "pass", "fail", "unverified" or "n/a".
    * @param {{ scene: any, dropped?: number }} drawn what Render.render returned
-   * @param {{ spec: any, settings: any, font: { name: string, family: string, kind: string, bold: boolean }, files?: Record<string, any> }} o
+   * @param {{ spec: any, settings: any, font: { name: string, family: string, kind: string, bold: boolean, missing?: (text: string, bold: boolean) => string[] }, files?: Record<string, any> }} o
    */
   function check(drawn, o) {
     const s = settingsOf(o.settings);
@@ -357,6 +358,14 @@
     if (!o.font.bold && sc.items.some((it) => it.t === "text" && it.weight === "bold")) {
       add("bold", "Bold text", "unverified", "Your font has no bold face, so bold text is set in its regular face. Load the bold file too.", general("fonts"));
     }
+    // Glyphs.
+    const texts = sc.items.filter((/** @type {any} */ it) => it.t === "text");
+    if (typeof o.font.missing === "function") {
+      const lacking = [...new Set(texts.flatMap((/** @type {any} */ it) => o.font.missing(it.text, it.weight === "bold")))];
+      add("glyphs", "Glyphs", lacking.length ? "fail" : "pass", lacking.length ? `${o.font.name} has no glyph for ${lacking.slice(0, 8).map((ch) => `"${ch}" (U+${(ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")})`).join(", ")}${lacking.length > 8 ? ` and ${lacking.length - 8} more` : ""}: the files would show empty boxes. Load a font that has them, or change the text.` : `${o.font.name} has a glyph for every character of the figure.`, general("fonts"));
+    } else if (texts.length) {
+      add("glyphs", "Glyphs", "unverified", "No font file is read, so whether the font has every character of the figure is not known.", general("fonts"));
+    }
     // Lines.
     add("lines", "Line widths", m.minLine === null ? "n/a" : m.thin ? "fail" : "pass",
       m.minLine === null ? "No lines." : m.thin ? `${plural(m.thin, "line is", "lines are")} thinner than 0.5 pt.` : `Every line at least ${fmt(m.minLine, 2)} pt.`, general("lines"));
@@ -385,10 +394,13 @@
       add("patterns", "Patterns", m.patterns ? "fail" : "pass", m.patterns ? `${plural(m.patterns, "patterned mark", "patterned marks")}.` : "None: dates known only to the year or month are light spans.", rule("patterns"));
       const coloured = m.textColours.filter((c) => c !== "#000000" && c !== "#ffffff");
       add("colour-text", "Coloured text", coloured.length ? "fail" : "pass", coloured.length ? `Text in ${coloured.join(", ")}.` : "Every text is black or white.", rule("colour-text"));
-      const axes = measureAxes(o.spec);
-      const missing = axes.filter((a) => !a.unit || !a.label.includes(`(${a.unit})`));
-      add("axes", "Axis units", !axes.length ? "n/a" : missing.length ? "unverified" : "pass",
-        !axes.length ? "No axis shows a measure: counts, categories and dates need no unit." : missing.length ? `No unit is known for ${missing.map((a) => a.field).join(" and ")}. The workbench never invents a unit: give one in Inspect if the field has one.` : `Every measure's axis shows its unit: ${axes.map((a) => a.label).join("; ")}.`,
+      const axes = measureAxes(o.spec, sc);
+      const unknown = axes.filter((a) => !a.unit);
+      const hidden = axes.filter((a) => a.unit && !a.label.includes(`(${a.unit})`));
+      add("axes", "Axis units", !axes.length ? "n/a" : hidden.length ? "fail" : unknown.length ? "unverified" : "pass",
+        !axes.length ? "No axis shows a measure: counts, categories and dates need no unit."
+          : hidden.length ? `The drawn axis title of ${hidden.map((a) => `${a.field} ("${a.label}")`).join(" and ")} does not show its unit: write it as "label (unit)" or shorten the label so it fits.`
+            : unknown.length ? `No unit is known for ${unknown.map((a) => a.field).join(" and ")}. The workbench never invents a unit: give one in Inspect if the field has one.` : `Every measure's axis shows its unit: ${axes.map((a) => a.label).join("; ")}.`,
         rule("axes"));
       add("panels", "Panel labels", "n/a", "One chart a figure: no panel letters. Facets are labelled with their level.", rule("text"));
     }
@@ -417,7 +429,8 @@
     if (format === "svg") {
       add("file-size", "Size in the file", mm(file.width) && Math.abs(file.height - H) <= 0.01 ? "pass" : "fail", `width="${fmt(file.width, 3)}mm" height="${fmt(file.height, 3)}mm".`, general("size"));
       add("text-as-text", "Text as text", file.texts === c.expectedTexts ? "pass" : "fail", `${plural(file.texts, "<text> element", "<text> elements")} for ${plural(c.expectedTexts, "text", "texts")}; no text drawn as outlines.`, nature ? rule("embed") : general("fonts"));
-      add("embedded", "Font embedded", file.fontFaces > 0 ? "pass" : "fail", file.fontFaces > 0 ? `${plural(file.fontFaces, "font subset", "font subsets")} in an @font-face of the file; the text names ${file.family}. Drawing programs that ignore @font-face use an installed font of that name.` : "The file names its font but does not hold it.", nature ? rule("embed") : general("fonts"));
+      const held = file.fontFaces > 0 && !file.unmapped.length;
+      add("embedded", "Font embedded", held ? "pass" : "fail", !file.fontFaces ? "The file names its font but does not hold a font that reads." : file.unmapped.length ? `${plural(file.fontFaces, "font", "fonts")} in an @font-face of the file, but they map no glyph to ${file.unmapped.slice(0, 8).map((ch) => `"${ch}"`).join(", ")}.` : `${plural(file.fontFaces, "font", "fonts")} in an @font-face of the file, read back: every character of the text maps to a glyph; the text names ${file.family}. Drawing programs that ignore @font-face use an installed font of that name.`, nature ? rule("embed") : general("fonts"));
     }
     if (format === "pdf") {
       const box = file.mediaBoxMm;
