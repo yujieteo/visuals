@@ -10,12 +10,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
 import { checkDeck } from "./beamdswitch-deck-checks.mjs";
+import { waitForDownloads } from "./download-checks.mjs";
 
 const PAGE = fileURLToPath(new URL("../diagonal-tension.html", import.meta.url));
 const html = readFileSync(PAGE, "utf8");
@@ -64,8 +65,10 @@ async function openBrowser(downloads) {
   const exceptions = [];
   /** @type {string[]} */
   const requests = [];
-  /** @type {string[]} */
-  const done = [];
+  /** @type {Map<string, string>} download GUID to suggested filename */
+  const downloadNames = new Map();
+  /** @type {Set<string>} completed filenames, not a count of arbitrary Chrome downloads */
+  const done = new Set();
   /** Resolves when the page fires its load event, so no check reads the DOM before #status exists. */
   let loaded = () => {};
   ws.onmessage = (ev) => {
@@ -76,7 +79,11 @@ async function openBrowser(downloads) {
       msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result);
     } else if (msg.method === "Runtime.exceptionThrown") exceptions.push(msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text);
     else if (msg.method === "Network.requestWillBeSent") requests.push(msg.params.request.url);
-    else if (msg.method === "Browser.downloadProgress" && msg.params.state === "completed") done.push(msg.params.guid);
+    else if (msg.method === "Browser.downloadWillBegin") downloadNames.set(msg.params.guid, msg.params.suggestedFilename);
+    else if (msg.method === "Browser.downloadProgress" && msg.params.state === "completed") {
+      const name = downloadNames.get(msg.params.guid);
+      if (name) done.add(name);
+    }
     else if (msg.method === "Page.loadEventFired") loaded();
   };
   /** A DevTools protocol command; its result's shape depends on the method, so it is left open.
@@ -199,8 +206,7 @@ test("offline from file://, a fresh browser meshes, solves, compares and exports
     await until(`/on 651 nodes/.test(${STATUS})`, "the reset run");
     assert.deepEqual(await evaluate(TABLE), plain(expectedTable(DT.defaultState())));
     for (const id of ["export-model", "export-results", "save-beamdswitch"]) await evaluate(`${$v(id)}.click()`);
-    for (let i = 0; i < 200 && page.done.length < 3; i++) await sleep(25);
-    assert.deepEqual(readdirSync(downloads).sort(), ["diagonal-tension-beamdswitch.md", "diagonal-tension-model.json", "diagonal-tension-results.csv"]);
+    await waitForDownloads(downloads, ["diagonal-tension-beamdswitch.md", "diagonal-tension-model.json", "diagonal-tension-results.csv"], page.done);
     const model = JSON.parse(readFileSync(join(downloads, "diagonal-tension-model.json"), "utf8"));
     assert.equal(model.units.stress, "MPa");
     assert.equal(model.mesh.nodes, 651);
