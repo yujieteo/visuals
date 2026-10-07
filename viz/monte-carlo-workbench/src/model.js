@@ -37,6 +37,8 @@
 
   const LAB_IDS = ["chain-correlated", "chain-two-modes", "chain-funnel", "balance-bias", "balance-evidence", "oring-launch", "tank-level", "volatility", "qmc-peak", "qmc-sum", "asian-option"];
   const LAB_METHODS = ["metropolis", "gibbs", "hmc", "smc", "particle", "rqmc", "independent"];
+  /** The examples of the statistical-physics lab of group 9. */
+  const PHYS_IDS = DATA.physics.examples.map((/** @type {any} */ x) => x.id);
   /** @type {Record<string, KitField>} */
   const FIELDS = {
     model: { type: "enum", values: MODEL_IDS, default: "binomial-overbooking", label: "Model" },
@@ -54,9 +56,9 @@
     plot: { type: "enum", values: ["pmf", "cdf", "survival", "quantile", "tail"], default: "pmf", label: "Distribution plot (pmf: the PMF or the PDF; tail: the survival function on log–log axes)" },
     yscale: { type: "enum", values: ["linear", "log"], default: "linear", label: "Vertical axis" },
     panel: { type: "enum", values: ["theory", "assumptions", "diagnostics", "interpretation"], default: "assumptions", label: "Right panel" },
-    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity", "markov", "particles", "rqmc"], default: "lln", label: "Theory panel" },
+    theory: { type: "enum", values: ["lln", "clt", "consistency", "variance", "reduction", "tails", "extremes", "exceedances", "ergodicity", "sklar", "mlmc", "ldp", "tilting", "ruin", "pk", "taildep", "sensitivity", "markov", "particles", "rqmc", "metastability", "annealing", "scaling", "soc"], default: "lln", label: "Theory panel" },
     mlmc_eps: { type: "number", min: 1e-6, max: 1e6, default: 0.05, label: "Target root mean square error ε of multilevel Monte Carlo" },
-    nav: { type: "enum", values: ["examples", "interview", "rare", "chains", "editor", "library"], default: "examples", label: "Left panel" },
+    nav: { type: "enum", values: ["examples", "interview", "rare", "chains", "physics", "editor", "library"], default: "examples", label: "Left panel" },
     q: { type: "string", default: "", label: "Library search" },
     sweep: { type: "string", default: "", label: "Swept parameter" },
     sweep_from: { type: "number", min: -1e9, max: 1e9, default: 0, label: "Sweep from" },
@@ -102,6 +104,37 @@
     c_plot: { type: "enum", values: ["trace", "acf", "scatter", "weights", "genealogy", "filter", "points", "rate", "runs"], default: "trace", label: "Figure of the lab" },
     c_coord: { type: "integer", min: 1, max: 2, default: 1, label: "Coordinate in the trace and the autocorrelation" },
     c_q: { type: "integer", min: 1, max: 3, default: 1, label: "Quantity in the rate and runs figures" },
+    // Group 9: the statistical-physics lab. Its run uses the seed above.
+    ph_example: { type: "enum", values: PHYS_IDS, default: "metastable-exit", label: "Example of the physics lab" },
+    ph_land: { type: "enum", values: ["double-well", "three-wells", "rugged"], default: "double-well", label: "Energy landscape" },
+    ph_tlo: { type: "number", min: 0.05, max: 2, default: 0.12, label: "Lowest temperature of the exit times" },
+    ph_thi: { type: "number", min: 0.05, max: 2, default: 0.3, label: "Highest temperature of the exit times" },
+    ph_cap: { type: "integer", min: 10, max: 24, default: 20, label: "Step limit of each exit, log2" },
+    ph_reps: { type: "integer", min: 1, max: 10, default: 7, label: "Replicates or chains of the landscape experiments, log2" },
+    ph_t0: { type: "number", min: 0.05, max: 5, default: 1, label: "Start temperature T_0 of annealing" },
+    ph_tend: { type: "number", min: 0.01, max: 2, default: 0.05, label: "End temperature of annealing" },
+    ph_kappa: { type: "number", min: 0.25, max: 4, default: 1, label: "Constant c/d* of the logarithmic schedule" },
+    ph_steps: { type: "integer", min: 8, max: 20, default: 16, label: "Steps of annealing or sweeps of tempering, log2" },
+    ph_tmin: { type: "number", min: 0.02, max: 2, default: 0.08, label: "Lowest temperature T_min of parallel tempering" },
+    ph_tmax: { type: "number", min: 0.05, max: 5, default: 1, label: "Highest temperature T_max of parallel tempering" },
+    ph_k: { type: "integer", min: 2, max: 16, default: 8, label: "Temperatures of parallel tempering" },
+    ph_inner: { type: "integer", min: 1, max: 64, default: 8, label: "Metropolis steps in each sweep" },
+    ph_start: { type: "enum", values: ["trap", "spread"], default: "trap", label: "Start of the tempering chains" },
+    ph_rule: { type: "enum", values: ["btw", "manna"], default: "btw", label: "Toppling rule" },
+    ph_bc: { type: "enum", values: ["open", "closed", "periodic"], default: "open", label: "Boundary of the sandpile" },
+    ph_drive: { type: "enum", values: ["random", "centre"], default: "random", label: "Drive of the sandpile" },
+    ph_g: { type: "integer", min: 1, max: 64, default: 1, label: "Grains for each drive" },
+    ph_eps: { type: "number", min: 0, max: 0.5, default: 0, label: "Bulk dissipation ε" },
+    ph_l: { type: "integer", min: 4, max: 128, default: 32, label: "Lattice size L" },
+    ph_lmax: { type: "enum", values: ["16", "32", "64", "128"], default: "64", label: "Largest lattice size of finite-size scaling" },
+    ph_drives: { type: "integer", min: 8, max: 18, default: 14, label: "Recorded drives of each chain, log2" },
+    ph_chains: { type: "integer", min: 1, max: 6, default: 3, label: "Sandpile chains, log2" },
+    ph_tau: { type: "number", min: 1, max: 2, default: 1.27, label: "Collapse exponent τ" },
+    ph_d: { type: "number", min: 1, max: 4, default: 2.75, label: "Collapse exponent D" },
+    ph_b: { type: "enum", values: ["1", "2", "4", "8", "16"], default: "4", label: "Block size b of the coarse-graining" },
+    ph_az: { type: "integer", min: -180, max: 180, default: -35, label: "Turn of the 3D view, degrees" },
+    ph_el: { type: "integer", min: 10, max: 90, default: 35, label: "Tilt of the 3D view, degrees" },
+    ph_plot: { type: "enum", values: ["land", "arrhenius", "route", "exits", "schedules", "energy", "success", "basins", "swaps", "ladder", "grid", "sizes", "heights", "collapse", "moments", "mean", "blockvar", "boxes"], default: "arrhenius", label: "Figure of the physics lab" },
   };
 
   /** The state an example opens: its model and the settings its catalogue entry names. @param {any} m */
@@ -718,5 +751,5 @@ focus N
     };
   }
 
-  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, INPUTS, METHOD_IDS, LAB_IDS, LAB_METHODS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
+  return { SLUG, SCHEMA_VERSION, MAX_SIZE, FIELDS, EXAMPLES, MODEL_IDS, EXPERIMENTS, WORKFLOWS, INPUTS, METHOD_IDS, LAB_IDS, LAB_METHODS, PHYS_IDS, DATA, CUSTOM_TEXT, exampleState, derive, seriesFit, modelOf, parseParams, formatParams, setCustom, getCustom, safe };
 });

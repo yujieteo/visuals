@@ -39,6 +39,10 @@ export const Pool = require("../src/pool.js");
 export const Ra = require("../src/rare.js");
 /** @type {typeof import("../src/chains.js")} */
 export const Ch = require("../src/chains.js");
+/** @type {typeof import("../src/physics.js")} */
+export const Ph = require("../src/physics.js");
+/** @type {typeof import("../src/physics-plots.js")} */
+export const PP = require("../src/physics-plots.js");
 /** @type {any} */
 export const data = require("../raw.json");
 

@@ -34,4 +34,8 @@ section("Rare events: examples", rare.presets.map((/** @type {any} */ p) => [p.t
 const lab = data.chains;
 section("Lab: examples", lab.examples.map((/** @type {any} */ x) => [x.title, x.problem, x.observe ?? "", x.decision ?? "", x.reason ?? "", x.inputs ?? "", x.dependence ?? "", x.method ?? "", x.diagnostics ?? "", x.interpretation ?? "", x.data.text, x.params.map((/** @type {any} */ p) => p.note), x.quantities.map((/** @type {any} */ q) => q.note)]));
 section("Lab: methods", lab.methods.map((/** @type {any} */ m) => [m.estimatorText, m.assumptions, m.settings, m.suitable.text, m.failure.text, m.comparison.text]));
+const phys = data.physics;
+section("Physics lab: examples", [phys.statement, ...phys.examples.flatMap((/** @type {any} */ x) => [x.title, x.problem, x.observe, x.assumptions, x.diagnostics, x.interpretation])]);
+section("Physics lab: theory", data.theory.filter((/** @type {any} */ t) => t.experiment.physics).flatMap((/** @type {any} */ t) => [t.assumptions, t.proof, t.counterexample]));
+section("Physics lab: methods", phys.methods.map((/** @type {any} */ m) => [m.estimatorText, m.assumptions, m.settings, m.suitable.text, m.failure.text, m.comparison.text]));
 process.stdout.write(`${out.join("\n")}\n`);

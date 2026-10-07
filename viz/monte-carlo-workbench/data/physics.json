@@ -1,0 +1,179 @@
+{
+ "statement": "A finite lattice does not establish a universality class. A universality class is a statement about the limit L → ∞, and no simulation reaches it. On this page, an exponent or a data collapse from a finite lattice is a finite-run observation. Only a result with a theorem tag, such as the exact mean size of an avalanche, holds for the stated dynamics as a theorem.",
+ "examples": [
+  {
+   "id": "metastable-exit",
+   "kind": "experiment",
+   "family": "landscape",
+   "title": "Metastability: the time to leave the shallow well",
+   "problem": "A Metropolis chain starts at the bottom of the shallow left well of a tilted double well. How long does it stay before it reaches an energy below its start, and how does that time change with the temperature T?",
+   "observe": "The mean time to exit grows roughly like exp(V_m / T), where V_m is the barrier above the start. On the plot of log E[τ] against 1/T, two slopes show: one from the run and one from the exact means. At these temperatures both are below V_m. They come nearer to V_m as T decreases. The theorem gives the slope only in the limit T → 0. The exit times scaled by their mean are near an exponential law: the time still to wait does not depend on the time already spent.",
+   "assumptions": "The state space is the 61 × 61 grid of [−2, 2]². Each step proposes one of the 4 neighbours with probability 1/4. The chain refuses a proposal off the grid, so the proposal is symmetric. The step accepts the proposal with probability min(1, exp(−ΔV / T)). The stationary law is the Boltzmann law exp(−V / T) / Z on the grid.",
+   "diagnostics": "Each temperature has its own replicates on separate streams, so the exit times are independent, and the CLT interval applies. The page censors a replicate that does not leave by the step limit. Then the mean is only a lower bound, and the page shows no interval. The exact mean comes from a linear solve, and it checks the sampler.",
+   "interpretation": "Read the slope from the run as a finite-run observation at these temperatures, not as the barrier. Reject the Arrhenius interpretation when censored replicates remain, or when the slope changes much as you remove the highest temperature.",
+   "settings": { "ph_land": "double-well", "ph_tlo": 0.12, "ph_thi": 0.3, "ph_cap": 20, "ph_reps": 7, "ph_plot": "arrhenius" }
+  },
+  {
+   "id": "annealing-schedules",
+   "kind": "experiment",
+   "family": "landscape",
+   "title": "Simulated annealing: four cooling schedules on three wells",
+   "problem": "A chain starts in the medium well of a landscape with three wells. Four schedules lower the temperature from T_0 to a low end over K steps. Which schedule ends in the narrow deep well, and how often?",
+   "observe": "At a high temperature, the wide well holds the most probability. At a low temperature, the narrow well does. The quench stays in the start well. The geometric and linear schedules end in each of the three wells in about one third of the replicates. The logarithmic schedule with c = d* meets the condition of Hajek's theorem. But at K = 65,536 steps it ends in the global well in only a few replicates, because the theorem is about K → ∞. The same streams for each schedule decrease the variance of the paired differences.",
+   "assumptions": "The chain is the Metropolis chain on the grid, with the temperature T_k at step k. The logarithmic schedule is T_k = min(T_0, c / log(k + 2)) with c = κ d*. The geometric and linear schedules go from T_0 to T_end. The quench stays at T_end. Each replicate uses the same stream for the four schedules.",
+   "diagnostics": "The probability of each schedule has a Wilson interval from independent replicates. The paired differences use the same replicates, so their intervals are usually narrower than the intervals of the two probabilities. Each has an exact interval, given the replicates where the two schedules differ. The Boltzmann probability at the final temperature is the value at equilibrium, not the estimand. A gap shows that the chain is not in equilibrium at the end.",
+   "interpretation": "A schedule is better here only for this landscape, start and K. Reject a general order of the schedules from this run. A schedule that wins on this landscape can lose on another one.",
+   "settings": { "ph_land": "three-wells", "ph_t0": 1, "ph_tend": 0.05, "ph_kappa": 1, "ph_steps": 16, "ph_reps": 7, "ph_plot": "success" }
+  },
+  {
+   "id": "tempering-wells",
+   "kind": "experiment",
+   "family": "landscape",
+   "title": "Parallel tempering against one chain at a low temperature",
+   "problem": "Estimate the probability of each well under the Boltzmann law at T_min = 0.08, with chains that start in the medium well. Does parallel tempering give the exact probabilities? Does one chain at T_min with the same cost give them?",
+   "observe": "Each single chain at T_min stays mostly in its start well, so its estimate is far from the exact value. The single chains also disagree with each other. In parallel tempering the hot replicas cross the barriers, and swaps bring the crossings down to T_min. Its estimates are near the exact values.",
+   "assumptions": "K replicas run at temperatures T_min to T_max on a geometric ladder. In each sweep each replica makes m Metropolis steps. Then pairs of neighbours, even pairs and odd pairs in turn, swap with probability min(1, exp((β_r − β_{r+1})(V_r − V_{r+1}))). The product of the Boltzmann laws is stationary, so the replica at T_min has the Boltzmann law at T_min. The first quarter of the sweeps is the warm-up.",
+   "diagnostics": "Each chain is independent, so the t interval over the chains measures the spread of the chain means. It does not measure a bias that all the chains share. The swap rates and the round trips of each replica between T_min and T_max show whether the ladder mixes. Start the chains in different wells to find a shared bias.",
+   "interpretation": "Trust the estimate only when the round trips are many and the chains that start in different wells agree. Reject the estimate of the single chain when the chains disagree with the exact value although they agree with each other.",
+   "settings": { "ph_land": "three-wells", "ph_tmin": 0.08, "ph_tmax": 1, "ph_k": 8, "ph_steps": 12, "ph_inner": 8, "ph_start": "trap", "ph_reps": 4, "ph_plot": "basins" }
+  },
+  {
+   "id": "sandpile-btw",
+   "kind": "experiment",
+   "family": "sandpile",
+   "title": "The BTW sandpile: avalanches after a slow drive",
+   "problem": "Add one grain at a random site of an L × L lattice. Then let the unstable sites topple until all are stable. Grains leave at the open boundary. What is the law of the avalanche size, area and duration in the stationary state?",
+   "observe": "On log axes, the size distribution is close to a straight line over a range of sizes. It falls off near a cutoff that grows with L. The mean size agrees with the exact value from Dhar's identity. The heights at the central sites agree with the exact probabilities of the infinite lattice. The burning test shows that each chain is in the recurrent set after the warm-up.",
+   "assumptions": "The page states the dynamics, drive, boundary and dissipation beside the figure. The warm-up adds 4L² grains. The burning test then checks that the chain is in the recurrent set. The stationary law of the BTW rule with an open boundary and a random drive is uniform on the recurrent configurations (Dhar 1990).",
+   "diagnostics": "The drives of one chain are dependent, so the intervals come from independent chains. The exact mean of the size checks the sampler. The grains added equal the grains lost plus the change of the mass: an exact count.",
+   "interpretation": "The straight part of the size distribution is a finite-run observation on one lattice. Reject a power-law interpretation when the straight part covers less than about two decades, or when its slope changes with L.",
+   "settings": { "ph_rule": "btw", "ph_bc": "open", "ph_drive": "random", "ph_g": 1, "ph_eps": 0, "ph_l": 32, "ph_drives": 14, "ph_chains": 3, "ph_plot": "sizes" }
+  },
+  {
+   "id": "finite-size",
+   "kind": "experiment",
+   "family": "sandpile",
+   "title": "Finite-size effects: the same sandpile on lattices from 8 to 64",
+   "problem": "Run the same dynamics on L = 8, 16, 32 and 64. How do the size distribution and its moments change with L? Can one choice of τ and D make the curves fall on one curve?",
+   "observe": "The cutoff of the size distribution grows with L. The slope of log ⟨s⟩ against log L agrees with the same fit of the exact values. That slope tends to 2 as L → ∞. The other moments grow faster. With τ near 1.27 and D near 2.75 the curves almost fall on one curve. Small changes of τ and D give almost the same result. A collapse on finite lattices does not establish a universality class.",
+   "assumptions": "Each lattice size has independent chains with the stated dynamics. The simple finite-size scaling hypothesis is P(s) = s^(−τ) F(s / L^D). It is a hypothesis, not a theorem. For the BTW rule in two dimensions, studies report that it fails: the moments show multiscaling (Tebaldi, De Menech and Stella 1999).",
+   "diagnostics": "The moment slopes σ(q) come from least squares over L. Their intervals hold the Monte Carlo error of each moment only, not the error of a straight line on these few sizes. The exact ⟨s⟩ at each L shows how far the smallest lattices are from the limit.",
+   "interpretation": "Read τ and D as the values that make this collapse, not as exponents of a class. Reject any claim of a universality class from this experiment. No finite lattice can establish one.",
+   "settings": { "ph_rule": "btw", "ph_bc": "open", "ph_drive": "random", "ph_g": 1, "ph_eps": 0, "ph_lmax": "64", "ph_drives": 13, "ph_chains": 3, "ph_tau": 1.27, "ph_d": 2.75, "ph_plot": "collapse" }
+  },
+  {
+   "id": "coarse-graining",
+   "kind": "experiment",
+   "family": "sandpile",
+   "title": "Coarse-graining: heights and avalanches at block sizes 1 to 16",
+   "problem": "Average the heights of the stationary sandpile over b × b blocks, and count the boxes of side b that a large avalanche touches. How do these quantities change with the scale b?",
+   "observe": "The variance of the block mean falls with b. The page compares its slope on log axes with −2, the slope for independent heights. The box count of large avalanches falls with a slope between −2 and −1.5. For a compact set, the boxes on its edge make the slope shallower than −2 at large b. These slopes are finite-run observations at a few scales.",
+   "assumptions": "The block mean is the mean of the heights in each b × b block, sampled 64 times in each chain. The box count is the number of b × b boxes with at least one toppled site. The page counts each avalanche with an area of at least L²/16.",
+   "diagnostics": "The slopes come from least squares over the block sizes. Few block sizes and a few large blocks on one lattice make them uncertain. Compare chains and lattice sizes before you read a slope.",
+   "interpretation": "A slope near −2 does not prove that the heights are independent or that the avalanches have no holes. Reject a statement about scale invariance from these few scales.",
+   "settings": { "ph_rule": "btw", "ph_bc": "open", "ph_drive": "random", "ph_g": 1, "ph_eps": 0, "ph_l": 64, "ph_drives": 13, "ph_chains": 3, "ph_b": "4", "ph_plot": "grid" }
+  }
+ ],
+ "methods": [
+  {
+   "id": "annealing",
+   "name": "Simulated annealing",
+   "family": "Optimisation",
+   "estimator": "X_{k+1} \\sim K_{T_k}(X_k, \\cdot), \\quad \\hat p_K = \\frac{1}{R}\\sum_{r=1}^{R} \\mathbf 1\\{X^{(r)}_K \\in B_{\\min}\\}",
+   "estimatorText": "A Metropolis chain runs while the temperature T_k falls. The estimate is the fraction of R independent replicates that end in the basin of the global minimum, with a Wilson interval.",
+   "assumptions": [
+    "Each step is a Metropolis step at the current temperature, with a symmetric proposal.",
+    "Hajek's theorem: on a finite connected state space with T_k ↓ 0, P(X_k is a global minimum) → 1 if and only if Σ exp(−d* / T_k) = ∞. The page estimates the probability of the basin of the global minimum. The logarithmic schedule c / log(k + 2) meets this condition when c ≥ d*.",
+    "The theorem says nothing about a finite K. A finite run gives only a finite-run observation."
+   ],
+   "settings": [
+    "The start temperature T_0, the end temperature T_end and the number of steps K = 2^steps.",
+    "The constant c = κ d* of the logarithmic schedule, with the exact depth d* of the landscape.",
+    "R = 2^reps replicates, each on its own stream, and the same stream for the four schedules."
+   ],
+   "suitable": { "example": "annealing-schedules", "settings": { "ph_land": "double-well" }, "text": "On the tilted double well the deep well also holds the most probability at moderate temperatures. Thus the geometric and linear schedules end in it nearly always." },
+   "failure": { "example": "annealing-schedules", "settings": {}, "text": "On three wells, the quench stays in the start well. The geometric and linear schedules end in the global well in only about one third of the replicates. The logarithmic schedule at K = 65,536 ends there in only a few replicates. Hajek's guarantee holds only as K → ∞." },
+   "comparison": { "with": "tempering", "example": "tempering-wells", "settings": {}, "text": "Annealing looks for the minimum and ends at one state. Parallel tempering samples the Boltzmann law at T_min, so it estimates the probability of every well, with the same kind of Metropolis steps." }
+  },
+  {
+   "id": "tempering",
+   "name": "Parallel tempering",
+   "family": "Optimisation",
+   "estimator": "\\hat\\pi_{T_{\\min}}(B) = \\frac{1}{R}\\sum_{r=1}^{R} \\frac{1}{S - S_0}\\sum_{w=S_0+1}^{S} \\mathbf 1\\{X^{(r)}_{1,w} \\in B\\}",
+   "estimatorText": "K replicas run at the temperatures of a ladder and swap their states. The estimate is the fraction of the sweeps after the warm-up with the replica at T_min in the basin B. The page averages it over R independent chains.",
+   "assumptions": [
+    "Each replica's Metropolis step keeps its Boltzmann law stationary.",
+    "A swap of two neighbours with probability min(1, exp((β_r − β_{r+1})(V_r − V_{r+1}))) satisfies detailed balance for the product law. Thus the replica at T_min has the Boltzmann law at T_min in the limit.",
+    "The speed of mixing is not guaranteed. Wells of very different widths can make parallel tempering mix slowly (Woodard, Schmidler and Huber, Sufficient conditions for torpid mixing of parallel and simulated tempering, Electronic Journal of Probability 14 (2009) 780–804)."
+   ],
+   "settings": [
+    "T_min, T_max and the number K of temperatures on a geometric ladder.",
+    "2^steps sweeps of m Metropolis steps for each replica. The first quarter is the warm-up.",
+    "R = 2^reps independent chains, from the start well or spread over the wells."
+   ],
+   "suitable": { "example": "tempering-wells", "settings": {}, "text": "With 8 temperatures from 0.08 to 1, every swap rate is above 0.5 and each replica makes many round trips. The estimates at T_min agree with the exact Boltzmann probabilities." },
+   "failure": { "example": "tempering-wells", "settings": { "ph_k": 2, "ph_tmax": 0.2 }, "text": "With 2 temperatures and T_max = 0.2, the hot replica crosses the barriers rarely, so few crossings reach T_min. The estimate stays biased." },
+   "comparison": { "with": "annealing", "example": "annealing-schedules", "settings": {}, "text": "Simulated annealing lowers one temperature in time and ends at one state. Parallel tempering keeps all the temperatures at all times, so it gives a sample of the law at T_min, not only a minimum." }
+  },
+  {
+   "id": "sandpile",
+   "name": "Sandpile experiment",
+   "family": "Critical systems",
+   "estimator": "\\langle s\\rangle_{\\text{run}} = \\frac{1}{R}\\sum_{r=1}^{R}\\frac{1}{D}\\sum_{k=1}^{D} s^{(r)}_k, \\qquad \\langle s\\rangle = c\\,\\frac{g}{N}\\,\\mathbf 1^{\\top}\\Delta^{-1}\\mathbf 1 \\ \\text{(exact, random drive; } c = 1 \\text{ BTW}, \\ c = 2 \\text{ Manna)}",
+   "estimatorText": "R independent chains each make D recorded drives after the warm-up. The estimate of a mean is the mean over the chains of each chain's mean, with a t interval over the chains. Dhar's identity gives the exact mean size for the stated dynamics.",
+   "assumptions": [
+    "The drive is slow: the page adds g grains and relaxes the lattice completely before the next drive.",
+    "Grains can leave: through an open boundary, or by the bulk dissipation ε > 0. Otherwise an avalanche can go on for ever, and the page refuses the setting.",
+    "The chain is in its stationary state after the warm-up. For the BTW rule with an open boundary, the burning test checks the necessary condition that the configuration is recurrent."
+   ],
+   "settings": [
+    "The rule (BTW or Manna), the boundary (open, closed or periodic), the drive (random or centre), g grains for each drive and ε.",
+    "The lattice size L and D = 2^drives recorded drives in each chain.",
+    "R = 2^chains independent chains on their own streams."
+   ],
+   "suitable": { "example": "sandpile-btw", "settings": {}, "text": "The BTW rule with an open boundary and a random drive has an exact mean size and exact height probabilities. The run agrees with both." },
+   "failure": { "example": "sandpile-btw", "settings": { "ph_g": 32 }, "text": "With 32 grains for each drive, the avalanches of different grains merge. The mean is still exact: 32 times the mean for one grain. But the size distribution loses its straight part, because one drive of 32 grains joins 32 avalanches into one." },
+   "comparison": { "with": "fss", "example": "finite-size", "settings": {}, "text": "One lattice shows one cutoff. Finite-size scaling runs the same dynamics on several lattices and shows how the cutoff and the moments move with L." }
+  },
+  {
+   "id": "coarse",
+   "name": "Coarse-graining",
+   "family": "Critical systems",
+   "estimator": "\\bar z_b(B) = \\frac{1}{b^2}\\sum_{x \\in B} z(x), \\qquad \\widehat{\\operatorname{Var}}_b = \\frac{1}{|\\mathcal B_b|}\\sum_{B}\\bigl(\\bar z_b(B) - \\bar z\\bigr)^2, \\qquad N_b = \\#\\{B : B \\cap A \\neq \\emptyset\\}",
+   "estimatorText": "The page averages the heights over b × b blocks B and takes the variance of the block means. It also counts the boxes N_b of side b that an avalanche A touches. On log axes, the slope of each value against b shows how it changes with the scale.",
+   "assumptions": [
+    "L is a multiple of b, so the blocks tile the lattice.",
+    "The block variance of independent heights falls like b^(−2). A slope that differs shows correlation between sites.",
+    "A box count N_b ∝ b^(−d) over all scales would give a dimension d. A few scales on a finite lattice give only a slope."
+   ],
+   "settings": [
+    "The block sizes b = 1, 2, 4, 8 and 16 that are at most L/2.",
+    "64 samples of the block variance in each chain.",
+    "The box count of each avalanche with an area of at least L²/16."
+   ],
+   "suitable": { "example": "coarse-graining", "settings": {}, "text": "On L = 64 the block sizes 1 to 16 give five scales, and many avalanches are large enough to count boxes." },
+   "failure": { "example": "coarse-graining", "settings": { "ph_l": 8 }, "text": "On L = 8 only the block sizes 1, 2 and 4 fit, and a block of 4 leaves 4 blocks. The slopes rest on a few points and change much from seed to seed." },
+   "comparison": { "with": "fss", "example": "finite-size", "settings": {}, "text": "Coarse-graining changes the scale of the view of one lattice. Finite-size scaling changes the lattice itself. Both are scale transformations. Neither of them alone shows that the law has no scale." }
+  },
+  {
+   "id": "fss",
+   "name": "Finite-size scaling",
+   "family": "Critical systems",
+   "estimator": "\\langle s^q\\rangle_L \\propto L^{\\sigma(q)}, \\quad \\hat\\sigma(q) = \\text{slope of } \\log\\langle s^q\\rangle_L \\text{ against } \\log L, \\qquad s^{\\tau} P_L(s) \\text{ against } s / L^{D}",
+   "estimatorText": "The page fits a line to log ⟨s^q⟩ against log L over the lattice sizes. It also draws s^τ P(s) against s / L^D for the τ and D that you choose.",
+   "assumptions": [
+    "Simple finite-size scaling, P_L(s) = s^(−τ) F(s / L^D), is a hypothesis. If it holds, σ(q) = D(q + 1 − τ) for q > τ − 1.",
+    "For the mean, ⟨s⟩ / L² tends to a constant as L → ∞: a theorem for the stated dynamics with an open boundary and ε = 0 (Dhar 1990). The exact values give the slope at each pair of sizes.",
+    "The fit uses few sizes. Corrections to scaling at small L move the slopes."
+   ],
+   "settings": [
+    "The largest size L_max: the sizes are 8, 16, … up to L_max.",
+    "The collapse exponents τ and D.",
+    "The recorded drives and the chains for each size."
+   ],
+   "suitable": { "example": "finite-size", "settings": {}, "text": "The slope σ(1) agrees with the same fit of the exact values, so the run checks the moment analysis where a theorem gives the answer." },
+   "failure": { "example": "finite-size", "settings": { "ph_bc": "periodic", "ph_eps": 0.01 }, "text": "With bulk dissipation ε = 0.01 on a periodic lattice, the mean size is exactly 1 / (4ε) = 25 at every L. The dissipation, not the lattice, sets the cutoff. For L well above 1/√(4ε) the moments stop their increase with L, and no collapse in L exists." },
+   "comparison": { "with": "coarse", "example": "coarse-graining", "settings": {}, "text": "Coarse-graining looks at one lattice at several scales. Finite-size scaling compares lattices. A claim of scale invariance needs both, and still only for the sizes run." }
+  }
+ ]
+}

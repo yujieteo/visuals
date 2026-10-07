@@ -7,7 +7,7 @@
 (function () {
   "use strict";
   const g = /** @type {any} */ (globalThis);
-  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView, Rv = g.MCRareView, Cv = g.MCChainView;
+  const K = g.VisualKit, M = g.Model, En = g.MCEngine, P = g.MCPlots, Rng = g.MCRng, Rep = g.Report, D = g.MCDsl, Laws = g.MCLaws, Pool = g.MCPool, Cu = g.MCCustom, Dv = g.MCDepView, Ivw = g.MCInterviewView, Rv = g.MCRareView, Cv = g.MCChainView, Pv = g.MCPhysView;
   const data = M.DATA;
   const LIMIT_MS = 120000, AUTOSAVE = "monte-carlo-workbench/autosave/v1";
   /** @param {string} id @returns {any} */
@@ -138,16 +138,18 @@
 
   /** @param {Record<string, any>} s */
   function drawNav(s) {
-    for (const id of ["examples", "interview", "rare", "chains", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
+    for (const id of ["examples", "interview", "rare", "chains", "physics", "editor", "library"]) $(`nav-${id}`).hidden = s.nav !== id;
     Ivw.draw(s);
     // Group 7: the rare-event lab draws its own list, card and run.
     Rv.draw(s);
     // Group 8: the Markov chain, sequential and quasi-Monte Carlo lab, the same way.
     Cv.draw(s);
+    // Group 9: the statistical-physics lab, the same way.
+    Pv.draw(s);
     const list = matches(s.q);
     // The custom input examples of group 4 come last, under their own heading.
     const byLaw = [...data.laws, { id: "custom", name: "Custom law inputs" }].map((/** @type {any} */ l) => ({ law: l, models: list.filter((/** @type {any} */ m) => m.law === l.id) })).filter((/** @type {any} */ x) => x.models.length);
-    const rareHtml = Rv.examples(s.q, s) + Cv.examples(s.q, s);
+    const rareHtml = Rv.examples(s.q, s) + Cv.examples(s.q, s) + Pv.examples(s.q, s);
     $("example-list").innerHTML = (byLaw.length ? byLaw.map((/** @type {any} */ x) => `<h3 class="law-head">${esc(x.law.name)}</h3><ul class="model-list">${x.models.map((/** @type {any} */ m) =>
       `<li><button type="button" class="link${m.id === s.model ? " current" : ""}" data-open="${esc(m.id)}" aria-current="${m.id === s.model}"><span class="kind">${m.kind === "experiment" ? "Behaviour" : m.kind === "input" ? `Input${m.fails ? ", fails" : ""}` : esc(m.domain)}</span> ${esc(m.title)}</button></li>`).join("")}</ul>`).join("")
       : rareHtml ? "" : `<p class="note">No example matches "${esc(s.q)}". Search by a decision, a phenomenon, a law or a method.</p>`) + rareHtml;
@@ -854,6 +856,7 @@ ${parts}`;
         // Group 7's panels link to an example of the rare-event lab.
         if (th.experiment.rare) Rv.open(th.experiment.rare);
         else if (th.experiment.chains) Cv.open(th.experiment.chains, th.experiment.settings);
+        else if (th.experiment.physics) Pv.open(th.experiment.physics, th.experiment.settings);
         else {
           openModel(th.experiment.model);
           app.set({ ...th.experiment.settings, panel: "diagnostics" });
@@ -935,6 +938,7 @@ ${parts}`;
     loader("load-run", loadRun);
     Rv.bind(a, data, { save, saveSvg, savePng });
     Cv.bind(a, data, { save, saveSvg, savePng });
+    Pv.bind(a, data, { save, saveSvg, savePng });
     $("mlmc-run").addEventListener("click", () => Dv.startMultilevel({ state: app.state, derived: app.derived, record: M.modelOf(app.state, data).record, overrides: M.parseParams(app.state.params).overrides, pool: getPool(), redraw: schedule }));
     $("mlmc-stop").addEventListener("click", () => { Dv.stopMultilevel(); schedule(); });
     for (const [id, name] of [["dist-plot", "distribution"], ["conv-plot", "convergence"], ["compare-plot", "comparison"], ["sweep-plot", "sweep"], ["graph-plot", "dependency-graph"], ["paths-plot", "paths"], ["scatter-plot", "scatter"], ["mlmc-plot", "multilevel"]]) {
@@ -947,6 +951,7 @@ ${parts}`;
       if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable) return;
       if (app.state.nav === "rare" && (e.key === " " || e.key === ".")) { e.preventDefault(); Rv.key(e.key); return; }
       if (app.state.nav === "chains" && (e.key === " " || e.key === ".")) { e.preventDefault(); Cv.key(e.key); return; }
+      if (app.state.nav === "physics" && (e.key === " " || e.key === ".")) { e.preventDefault(); Pv.key(e.key); return; }
       if (e.key === " ") { e.preventDefault(); if (run?.handle) pauseRun(); else startRun(); }
       else if (e.key === ".") stepRun();
     });
@@ -1004,6 +1009,7 @@ ${parts}`;
     Ivw.tool,
     Rv.tool,
     Cv.tool,
+    Pv.tool,
   ];
   const commands = [
     { label: "Run the experiment", run: startRun },
@@ -1018,6 +1024,7 @@ ${parts}`;
     ...Ivw.commands,
     ...Rv.commands,
     ...Cv.commands,
+    ...Pv.commands,
   ];
 
   app = K.start({
@@ -1025,7 +1032,7 @@ ${parts}`;
     schemaVersion: M.SCHEMA_VERSION, fields: M.FIELDS,
     derive: (/** @type {any} */ s) => M.derive(s, data),
     render,
-    report: (/** @type {any} */ s, /** @type {any} */ d) => s.nav === "rare" ? Rv.report(s) : s.nav === "chains" ? Cv.report(s) : Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
+    report: (/** @type {any} */ s, /** @type {any} */ d) => s.nav === "rare" ? Rv.report(s) : s.nav === "chains" ? Cv.report(s) : s.nav === "physics" ? Pv.report(s) : Rep.report(s, d, data, run && run.accum.blocks ? { status: run.status, n: run.accum.n, summary: summary() } : null),
     bind, tools, commands,
   });
   g.Workbench = { get run() { return run; }, summary, runRecord, modelRecord, resultsCsv, traceCsv, startRun, stepRun, pauseRun, resetRun, get pool() { return pool; } };
