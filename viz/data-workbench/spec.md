@@ -966,9 +966,11 @@ Where the plan left a choice or changed:
   `E2E_SLUG=data-workbench` and `E2E_ARTIFACT` naming that folder,
   `node --test --test-name-pattern='charts: every candidate' viz/data-workbench/e2e/full.test.mjs` failed before
   navigation with `ERR_CONNECTION_REFUSED` before the fix, then passed the charts, findings and publication-file
-  checks alone with an asynchronous parent suite (155 valid candidates, 62 tested hypotheses). That parent suite
-  kept the servers alive when no check matched, so the root hooks replaced it. tests/e2e-lifecycle.test.mjs runs
-  the file with a filter that selects no check, with stand-ins for playwright and yaml, and requires it to exit.
+  checks alone after the registration barrier (155 valid candidates, 62 tested hypotheses). The filtered charts
+  and reduced-motion checks, plus an empty filter, pass and exit normally on Node 22.23.3. An earlier asynchronous
+  parent suite kept the servers alive when no check matched, so the root hooks replaced it.
+  tests/e2e-lifecycle.test.mjs runs the file with an empty filter and stand-ins for playwright and yaml, and requires
+  a successful exit without depending on the Node version's default reporter.
 - tests/speed-engine.test.mjs: the typed copy gives the same outcome, reason and SVG for every candidate (of the
   50-column table, every single-column chart and every seventh other) and the same statistics, on the planted
   example, the messy CSV with every correction approved and the benchmark table; its types and its memory estimate;

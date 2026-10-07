@@ -34,7 +34,7 @@ test("a name filter that selects no check closes both target servers and exits",
     E2E_TMP: tmp, E2E_VISUALS: empty, E2E_SITE: empty, E2E_RESULTS: "",
   };
   delete env.NODE_TEST_CONTEXT;
-  const child = spawn(process.execPath, ["--import", join(tmp, "register.mjs"), "--test", "--test-name-pattern=no check has this name", join(folder, "e2e", "full.test.mjs")], { env, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(process.execPath, ["--import", join(tmp, "register.mjs"), "--test", "--test-timeout=45000", "--test-name-pattern=no check has this name", join(folder, "e2e", "full.test.mjs")], { env, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
   child.stdout.on("data", (chunk) => { output += chunk; });
   child.stderr.on("data", (chunk) => { output += chunk; });
@@ -43,5 +43,4 @@ test("a name filter that selects no check closes both target servers and exits",
     child.on("exit", (code) => { clearTimeout(timer); resolve(code); });
   });
   assert.equal(exit, 0, output);
-  assert.match(output, /ℹ fail 0/, output);
 });
