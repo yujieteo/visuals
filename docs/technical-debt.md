@@ -113,8 +113,8 @@ The risk is that a Firefox-only failure shows first in CI.
 - Severity: Low
 - Maintenance cost: A regression in these 12 is not caught by the contract.
 - Proposed fix: Set `"offline": true` in each of the 12 manifests, one pull request each owner may review. Do not change page text.
-- Decision: SUSPECTED gap. The claim is a statement by the visual owner, so this pull request does not set it.
-- Verification: One-off runs in Chromium, kept with the task evidence.
+- Decision: CONFIRMED, and fixed: `"offline": true` is set in the 12 manifests. `tampines-food-map` had no manifest, so one is added that holds only that key. No page text changes.
+- Verification: For the 12 visuals, `test:standalone` gives 12 pass, 0 fail in chromium-desktop, chromium-mobile, webkit-desktop and webkit-mobile. `test:baseline` gives 0 fail in the same 4 projects, and its `file-url` check now runs and passes for each of the 12. Firefox could not start here, so CI is the first Firefox run.
 
 ### SA-7
 - ID: SA-7
