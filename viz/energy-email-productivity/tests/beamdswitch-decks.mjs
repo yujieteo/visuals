@@ -37,8 +37,6 @@ export function assertTemplateCopy(slug) {
   if (haveSite) assertSiteTemplate(copy, SITE_TEMPLATE, `beamdswitch.js`);
 }
 
-// The page inlines each script verbatim in its own <script id="..."> block.
-
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
   return out;

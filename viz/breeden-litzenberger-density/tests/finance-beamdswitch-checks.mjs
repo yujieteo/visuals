@@ -14,7 +14,6 @@ export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url
 // This repository holds one page; its slug names the files the page saves.
 export const SLUG = JSON.parse(read("meta.json")).slug;
 
-// The shared template rule checks the copied beamdswitch.js.
 const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 /* A script without its JSDoc types, as build.py inlines report.js: the regular expressions of strip_types in

@@ -15,7 +15,6 @@ export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url
 // This repository holds one page; its slug names the files the page saves.
 export const SLUG = JSON.parse(read("meta.json")).slug;
 
-// The shared template rule checks the copied beamdswitch.js.
 const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.

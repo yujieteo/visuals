@@ -57,8 +57,6 @@ export function checkDeck(md, what) {
   return deck;
 }
 
-/* checkDeck, then every plot with the frame it sits on; each curve must be finite across its x range. */
-
 /* ---------- a stand-in DOM: enough for a page script to start and for its buttons to be clicked ---------- */
 /**
  * The event a stand-in element's listeners receive.

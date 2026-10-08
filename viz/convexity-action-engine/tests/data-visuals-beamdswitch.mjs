@@ -11,9 +11,6 @@ export const read = (path) => readFileSync(new URL(path, root), "utf8");
 const skeleton = read("tests/fixtures/beamdswitch/report-template.md");
 export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
-/* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template, which the folder's
-   beamdswitch.js copies unchanged. */
-
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
   return out;
