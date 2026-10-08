@@ -30,6 +30,14 @@ const deckFor = (s, sim = L.simCreate(s), date = DATE) => T.deck(R.report(s, L.v
 const plainText = (md) => md.replace(/\\(.)/g, "$1");
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
+test("the deck controls keep their status announcement and export hints", () => {
+  assert.match(html, /<button type="button" id="save-beamdswitch"[^>]*>Save deck<\/button>/);
+  assert.match(html, /<button type="button" id="copy-beamdswitch"[^>]*>Copy deck<\/button>/);
+  assert.match(html, /id="deck-status"[^>]*role="status"/);
+  assert.ok(html.includes('href="https://teoyujie.org/visuals/beamdswitch/"'));
+});
+
+
 test("every template parses as the standard narrated deck with bf_emma, the four sections and a final key", () => {
   for (const t of D.templates) {
     const s = L.fromTemplate(D, t.id, 5), md = deckFor(s);

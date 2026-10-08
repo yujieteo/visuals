@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
-import { assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertDeckButtons, assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "tourist-attractions";
 const T = load(`beamdswitch.js`);
@@ -22,6 +22,7 @@ const chain = new Proxy(function () {}, {
 const csvParse = (text, row) => Array.from(realD3.csvParse(text, row));
 const d3 = new Proxy({ csvParse, csvFormat: realD3.csvFormat }, { get: (t, k) => (k in t ? t[k] : chain) });
 const page = await openPage(SLUG, { globals: { d3 }, skip: ["d3"] });
+const html = page.html;
 const D = { rows: page.run("rows"), terms: page.run("terms"), medianLon: page.run("medianLon"), medianLat: page.run("medianLat"), described: 106, source: meta.source, fetched: meta.fetched };
 
 // No filter, each of a few words, a search, a search with a word, and each with and without a selected attraction.
@@ -31,6 +32,11 @@ const what = (v) => `term=${v.term} query=${v.query} selection=${v.selection}`;
 const deckFor = (v) => T.deck(R.report(D, v));
 // Deck text escapes the characters beamdswitch reads as maths or markup.
 const esc = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]#]/g, "\\$&");
+
+test("the deck controls keep their status announcement and export hints", () => {
+  assertDeckButtons(html, SLUG);
+});
+
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the word, search and attraction shown", async () => {
   page.run('state.query="art";selectTerm("heritage")');

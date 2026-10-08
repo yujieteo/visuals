@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertDeckButtons, assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "graduate-employment-survey";
 /** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
@@ -12,6 +12,11 @@ const html = read(`index.html`);
 const rows = JSON.parse(/** @type {RegExpExecArray} */ (/const rows=(\[\[.*?\]\]),medians=/.exec(html))[1].replace(/<\\\//g, "</"));
 const medians = JSON.parse(/** @type {RegExpExecArray} */ (/,medians=(\[\[.*?\]\]),svg=/.exec(html))[1]);
 const md = T.deck(R.report({ rows, medians, source: meta.source, fetched: meta.fetched }));
+
+test("the deck controls keep their status announcement and export hints", () => {
+  assertDeckButtons(html, SLUG);
+});
+
 
 test("the beamdswitch button saves, and Copy deck copies, the chart's deck", async () => {
   await assertButtonsExport(await openPage(SLUG), SLUG, md);
