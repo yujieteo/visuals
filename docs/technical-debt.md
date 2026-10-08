@@ -111,10 +111,10 @@ The risk is that a Firefox-only failure shows first in CI.
 - Problem: 13 visuals do not claim to work offline, so `file-url` and `test:standalone` skip them.
 - Evidence: A copy of each with an offline claim passed `test:standalone` in Chromium, except `work-lanyards` (SA-2). The other 12 are `data-workbench`, `manchester-city-finances`, `marvell`, `multi-armed-bandit`, `ooda-orientation`, `panw`, `root-locus`, `sectionlab`, `singapore-covid-governance-hindsight`, `social-values-surveydata`, `tampines-food-map` and `tourist-attractions`.
 - Severity: Low
-- Maintenance cost: A regression in these 12 is not caught by the contract.
-- Proposed fix: Set `"offline": true` in each of the 12 manifests, one pull request each owner may review. Do not change page text.
-- Decision: SUSPECTED gap. The claim is a statement by the visual owner, so this pull request does not set it.
-- Verification: One-off runs in Chromium, kept with the task evidence.
+- Maintenance cost: A regression in these 11 is not caught by the contract.
+- Proposed fix: Set `"offline": true` in 11 of the 12 manifests, one pull request each owner may review. Do not change page text.
+- Decision: CONFIRMED, and fixed: `"offline": true` is set in the 11 manifests. `tampines-food-map` had no manifest, so one is added that holds only that key. `data-workbench` stays without the claim: its spec says the page opens from the site, not from `file://`. No page text changes.
+- Verification: For the 11 visuals, `test:standalone` gives 11 pass, 0 fail in chromium-desktop, chromium-mobile, webkit-desktop and webkit-mobile. `test:baseline` gives 0 fail in the same 4 projects, and its `file-url` check now runs and passes for each of the 11. Firefox could not start here, so CI is the first Firefox run.
 
 ### SA-7
 - ID: SA-7
