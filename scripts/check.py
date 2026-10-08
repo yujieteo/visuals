@@ -170,6 +170,7 @@ def restore(folder, before):
         path.unlink()
     for path, data in before.items():
         if after.get(path) != data:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     return sorted({p.relative_to(folder).as_posix() for p in after.keys() ^ before.keys()} | {p.relative_to(folder).as_posix() for p in before.keys() & after.keys() if before[p] != after[p]})
 
