@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Quantum Electrodynamics: a visual laboratory</title>
+<meta name="description" content="QED as a laboratory with three synchronized lenses — perturbative QFT, Connes–Kreimer renormalization and noncommutative spectral geometry, and local operator algebras — with every computation done in the page.">
+<link rel="canonical" href="https://teoyujie.org/visuals/connes-qft/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Quantum Electrodynamics: a visual laboratory">
+<meta property="og:description" content="Fields, Feynman graphs, Hopf algebras, spectral triples and modular flow, synchronized and computed live.">
+<meta property="og:url" content="https://teoyujie.org/visuals/connes-qft/">
+<meta name="twitter:card" content="summary">
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#f9f9f7;--panel:#fcfcfb;--fg:#0b0b0b;--ink2:#52514e;--muted:#6f6d68;--faint:#a3a19b;--rule:#e1e0d9;--control:#737373;--axis:#c3c2b7;--soft:#f0efec;--focus:#0a66d6;
+--qft:#2a78d6;--qft-bg:rgba(42,120,214,.10);--ck:#eb6834;--ck-bg:rgba(235,104,52,.11);--ncg:#1baf7a;--ncg-bg:rgba(27,175,122,.11);--aqft:#4a3aa7;--aqft-bg:rgba(74,58,167,.10);--synth:#52514e;--synth-bg:rgba(82,81,78,.08);
+--ok:#006300;--okm:#0ca30c;--bad:#d03b3b;--warn:#856000;--hl:#b83b3b;--hl-bg:rgba(227,73,72,.13);--photon:#2a78d6;--fermion:#0b0b0b;--loop:#eb6834;
+--sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace;--serif:"STIX Two Math","Cambria Math","Latin Modern Math","Times New Roman",Georgia,serif;--r:.55rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0d0d;--panel:#1a1a19;--fg:#ffffff;--ink2:#c3c2b7;--muted:#a3a19b;--faint:#6b6a66;--rule:#2c2c2a;--control:#797975;--axis:#383835;--soft:#232321;--focus:#4b9bff;
+--qft:#3987e5;--qft-bg:rgba(57,135,229,.16);--ck:#d95926;--ck-bg:rgba(217,89,38,.18);--ncg:#199e70;--ncg-bg:rgba(25,158,112,.18);--aqft:#9085e9;--aqft-bg:rgba(144,133,233,.18);--synth:#c3c2b7;--synth-bg:rgba(195,194,183,.10);
+--ok:#0ca30c;--okm:#0ca30c;--bad:#e66767;--warn:#e0a020;--hl:#e66767;--hl-bg:rgba(230,103,103,.18);--photon:#3987e5;--fermion:#ffffff;--loop:#d95926}}
+:root[data-theme="dark"]{--bg:#0d0d0d;--panel:#1a1a19;--fg:#ffffff;--ink2:#c3c2b7;--muted:#a3a19b;--faint:#6b6a66;--rule:#2c2c2a;--control:#797975;--axis:#383835;--soft:#232321;--focus:#4b9bff;
+--qft:#3987e5;--qft-bg:rgba(57,135,229,.16);--ck:#d95926;--ck-bg:rgba(217,89,38,.18);--ncg:#199e70;--ncg-bg:rgba(25,158,112,.18);--aqft:#9085e9;--aqft-bg:rgba(144,133,233,.18);--synth:#c3c2b7;--synth-bg:rgba(195,194,183,.10);
+--ok:#0ca30c;--okm:#0ca30c;--bad:#e66767;--warn:#e0a020;--hl:#e66767;--hl-bg:rgba(230,103,103,.18);--photon:#3987e5;--fermion:#ffffff;--loop:#d95926;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14.5px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,110rem);margin:auto;padding:clamp(.8rem,3vw,1.6rem) 0 4rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(1.7rem,4.5vw,2.5rem);line-height:1.05;letter-spacing:-.03em;margin:.25rem 0 .35rem}
+h2{font:600 .72rem/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.nc{text-transform:none;letter-spacing:0}
+h3{font:600 .9rem/1.35 var(--sans);margin:.9rem 0 .35rem}
+p{margin:.4rem 0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .7rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.2rem .9rem}
+.eyebrow a{text-decoration:none}.eyebrow a:hover{text-decoration:underline}
+.lede{max-width:78ch;color:var(--ink2);margin:.1rem 0 .6rem}
+.muted{color:var(--muted)}.small{font-size:.82rem}.tiny{font-size:.74rem}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--control);background:var(--panel);border-radius:999px;padding:.15rem .7rem;min-height:1.95rem;font-size:.8rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--soft)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.small{min-height:1.6rem;padding:.02rem .55rem;font-size:.75rem}
+.btn.primary{border-color:var(--fg)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:.1rem .6rem;min-height:1.75rem;font-size:.78rem}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:600}
+.badge{border:1px solid currentColor;border-radius:999px;padding:.02rem .55rem;font:600 .72rem var(--mono);background:none;white-space:nowrap}
+.badge.pass,.pass{color:var(--ok)}.badge.fail,.fail{color:var(--bad)}
+kbd{font:600 .7rem var(--mono);border:1px solid var(--rule);border-bottom-width:2px;border-radius:.3rem;padding:0 .3rem;background:var(--panel)}
+.toolbar{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.3rem 0}
+.toolbar .sep{width:1px;height:1.4rem;background:var(--rule);margin:0 .15rem}
+.msg{font-size:.78rem;color:var(--muted)}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+/* lenses */
+.lenses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.6rem 0 .3rem}
+.lens{border:1px solid var(--rule);border-left:4px solid var(--c);border-radius:.45rem;padding:.35rem .6rem;background:var(--panel);min-width:0}
+.lens b{display:block;font:600 .72rem/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.lens span{font-size:.78rem;color:var(--ink2)}
+.lens.on{background:var(--cb)}
+.lens-note{font-size:.76rem;color:var(--muted);margin:.1rem 0 .5rem;max-width:110ch}
+/* status strip */
+.status{display:grid;grid-template-columns:1.6fr 1.25fr .8fr 1.5fr 1.8fr;gap:.5rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);padding:.45rem .65rem;margin:.4rem 0 .8rem;align-items:start}
+.status>div{min-width:0}
+.status h2{font-size:.64rem}
+.status .val{font:600 .9rem var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status .lab{font-size:.7rem;color:var(--muted)}
+.status input[type=range]{width:100%}
+.pipe{display:flex;flex-wrap:wrap;gap:.2rem;align-items:center;font-size:.68rem}
+.pipe button{border:1px solid var(--control);background:var(--panel);border-radius:.3rem;padding:.05rem .3rem;font:600 .64rem var(--mono);letter-spacing:.02em}
+.pipe button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.pipe i{color:var(--faint);font-style:normal}
+/* layout */
+.layout{display:grid;grid-template-columns:16.5rem minmax(0,1fr);gap:1rem;align-items:start}
+.side{position:sticky;top:.6rem;max-height:calc(100vh - 1.2rem);overflow:auto;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);padding:.5rem}
+.side h2{margin:.2rem 0 .3rem}
+.cmap svg{width:100%;height:auto;display:block}
+.cmap .node rect{fill:var(--panel);stroke:var(--rule)}
+.cmap .node text{font:600 7.6px var(--mono);letter-spacing:.03em;fill:var(--ink2)}
+.cmap .node{cursor:pointer}
+.cmap .node:hover rect{stroke:var(--fg)}
+.cmap .node.on rect{stroke-width:1.6}
+.cmap .edge{stroke:var(--axis);fill:none}
+.cmap .rel{stroke:var(--faint);stroke-dasharray:2 3;fill:none}
+.scenelist details{border-top:1px solid var(--rule);padding:.25rem 0}
+.scenelist summary{font:600 .7rem var(--mono);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;color:var(--muted)}
+.scenelist ul{list-style:none;margin:.2rem 0;padding:0}
+.scenelist li button{display:block;width:100%;text-align:left;border:0;background:none;padding:.12rem .3rem;border-radius:.3rem;font-size:.8rem}
+.scenelist li button:hover{background:var(--soft)}
+.scenelist li button[aria-current="true"]{background:var(--fg);color:var(--bg)}
+.scenelist .sec{font:500 .66rem var(--mono);color:var(--faint);margin-left:.3rem}
+.scenelist li button[aria-current="true"] .sec{color:var(--bg)}
+/* stage */
+.stage{min-width:0}
+.shead{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:baseline;justify-content:space-between}
+.shead .title{font:650 1.25rem/1.25 var(--sans);letter-spacing:-.01em;margin:0;text-transform:none;color:var(--fg)}
+.chip{display:inline-block;border-radius:999px;padding:.02rem .5rem;font:600 .66rem/1.5 var(--mono);letter-spacing:.04em;text-transform:uppercase;background:var(--cb);color:var(--fg);border:1px solid var(--c)}
+.secs{font:500 .7rem var(--mono);color:var(--muted)}
+.summary{color:var(--ink2);margin:.2rem 0 .4rem;max-width:95ch}
+.switches{display:flex;flex-wrap:wrap;gap:.4rem .8rem;align-items:center;margin:.2rem 0 .5rem}
+.switches .lab{font:600 .64rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:.45rem .9rem;align-items:center;border:1px dashed var(--rule);border-radius:var(--r);padding:.4rem .6rem;margin:.2rem 0 .6rem;background:var(--panel)}
+.controls:empty{display:none}
+.ctl{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem}
+.ctl input[type=range]{width:9rem}
+.ctl output{font:600 .78rem var(--mono);min-width:3.5rem}
+.warning{border-left:3px solid var(--warn);background:var(--soft);padding:.35rem .6rem;border-radius:.3rem;font-size:.8rem;margin:.3rem 0 .6rem}
+.warning b{font-weight:650}
+.quad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.quad.max .panel:not(.maxed){display:none}
+.quad.max{grid-template-columns:minmax(0,1fr)}
+.panel{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);padding:.45rem .55rem .5rem;min-width:0;position:relative}
+.panel>header{display:flex;gap:.4rem;align-items:baseline;justify-content:space-between;margin-bottom:.25rem}
+.panel>header .ptitle{font:600 .68rem/1.3 var(--mono);letter-spacing:.07em;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel>header .psub{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel .pbody{min-height:8rem}
+.panel .pbody svg{width:100%;height:auto;display:block;overflow:hidden;margin:0 auto}
+.panel .pbody pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.panel .pfoot{font-size:.76rem;color:var(--ink2);margin-top:.25rem}
+.panel .maxbtn{border:0;background:none;color:var(--faint);font-size:.8rem;padding:0 .2rem}
+.panel.focus{box-shadow:0 0 0 2px var(--c,var(--fg))}
+.notes{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:1rem;margin-top:.8rem}
+.notes .text{max-width:80ch}
+.notes .side2{border-left:1px solid var(--rule);padding-left:.9rem;font-size:.82rem}
+.formula{font-family:var(--serif);font-size:1.08rem;margin:.4rem 0;overflow-x:auto;padding:.2rem 0}
+details.rig{border:1px solid var(--rule);border-radius:.4rem;padding:.3rem .6rem;margin:.5rem 0;background:var(--panel)}
+details.rig summary{cursor:pointer;font-weight:600;font-size:.82rem}
+.sources{font-size:.76rem;color:var(--ink2);padding-left:1.1rem}
+.sources li{margin:.15rem 0}
+table.t{border-collapse:collapse;font-size:.8rem;width:100%}
+table.t th,table.t td{border-bottom:1px solid var(--rule);padding:.2rem .35rem;text-align:left;vertical-align:top}
+table.t th{font:600 .7rem var(--mono);letter-spacing:.02em;color:var(--muted)}
+table.t td.num{font-variant-numeric:tabular-nums;text-align:right;font-family:var(--mono);font-size:.76rem}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.1rem .7rem;font-size:.8rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.steps{display:flex;flex-wrap:wrap;gap:.25rem;margin:.2rem 0 .4rem}
+.steps button{border:1px solid var(--control);background:var(--panel);border-radius:.35rem;padding:.08rem .45rem;font-size:.74rem}
+.steps button[aria-current="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--c,var(--fg))}
+/* svg vocabulary */
+svg text{font-family:var(--sans);fill:var(--fg)}
+svg .lbl{font-size:11px}
+svg .sm{font-size:9.5px}
+svg .xs{font-size:8.5px}
+svg .mono{font-family:var(--mono)}
+svg .mut{fill:var(--muted)}
+svg .ink2{fill:var(--ink2)}
+svg .serif{font-family:var(--serif);font-style:italic}
+svg .grid{stroke:var(--rule);stroke-width:1}
+svg .axis{stroke:var(--axis);stroke-width:1}
+svg .fermion{stroke:var(--fermion);stroke-width:1.8;fill:none}
+svg .fermion-mu{stroke:var(--aqft);stroke-width:1.8;fill:none}
+svg .photon{stroke:var(--photon);stroke-width:1.6;fill:none}
+svg .arrowh{fill:var(--fermion)}
+svg .arrowh-mu{fill:var(--aqft)}
+svg .vtx{fill:var(--fg)}
+svg .ext{fill:var(--panel);stroke:var(--axis)}
+svg .ct{fill:var(--panel);stroke:var(--fg);stroke-width:1.4}
+svg .qft{stroke:var(--qft)}svg .ck{stroke:var(--ck)}svg .ncg{stroke:var(--ncg)}svg .aqft{stroke:var(--aqft)}
+svg .fqft{fill:var(--qft)}svg .fck{fill:var(--ck)}svg .fncg{fill:var(--ncg)}svg .faqft{fill:var(--aqft)}
+svg .bgsynth{fill:var(--synth-bg)}svg .bgqft{fill:var(--qft-bg)}svg .bgck{fill:var(--ck-bg)}svg .bgncg{fill:var(--ncg-bg)}svg .bgaqft{fill:var(--aqft-bg)}
+svg .hit{fill:transparent;stroke:transparent;cursor:pointer}
+svg [data-drag]{cursor:grab}
+svg .bad{stroke:var(--bad);fill:none}
+svg .fbad{fill:var(--bad)}
+svg .fok{fill:var(--okm)}
+svg .ok{stroke:var(--okm);fill:none}
+svg .cone{fill:var(--qft-bg);stroke:var(--qft);stroke-width:1}
+svg .sub{fill:var(--ck-bg);stroke:var(--ck);stroke-width:1.3;stroke-dasharray:4 3}
+svg .sub.sel{stroke-dasharray:none;stroke-width:2}
+svg .loopk{stroke:var(--loop);stroke-width:8;fill:none;opacity:.35;stroke-linecap:round}
+.hlon [data-link].lit,.lit{filter:drop-shadow(0 0 3px var(--hl))}
+span.lit{background:var(--hl-bg);border-radius:.2rem}
+/* tex */
+.tx{font-family:var(--serif);white-space:nowrap}
+.tx i{font-style:italic}
+.tx-rm{font-style:normal}
+.tx-fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .12em;font-size:.92em}
+.tx-fr .tx-n{border-bottom:1px solid currentColor;padding:0 .15em}
+.tx-fr .tx-d{padding:0 .15em}
+.tx-ov{border-top:1px solid currentColor;padding-top:.05em}
+.tx-sq{white-space:nowrap}
+.tx-acc{position:relative;display:inline-block}
+.tx-acc .tx-a{position:absolute;left:0;right:0;top:-.55em;text-align:center;font-style:normal}
+.tx-sl{position:relative;display:inline-block}
+.tx-sl::after{content:"";position:absolute;left:10%;right:10%;top:50%;border-top:1px solid currentColor;transform:rotate(-60deg)}
+.tx-big{font-size:1.25em;vertical-align:-.1em}
+.tx-box{border:1px solid currentColor;padding:.1em .35em;border-radius:.15em}
+.tx sup,.tx sub{font-size:.72em;line-height:0}
+.tx-link{border-radius:.2rem;cursor:default}
+.tx-link.lit{background:var(--hl-bg);box-shadow:0 0 0 2px var(--hl-bg)}
+/* tooltip */
+#tip{position:fixed;z-index:60;pointer-events:none;background:var(--fg);color:var(--bg);font-size:.74rem;padding:.2rem .45rem;border-radius:.3rem;max-width:22rem;white-space:pre-line}
+/* palette */
+.palette{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:50}
+.palette .box{width:min(36rem,94vw);background:var(--panel);border:1px solid var(--rule);border-radius:.7rem;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
+.palette input{width:100%;border:0;border-bottom:1px solid var(--control);padding:.7rem .9rem;background:var(--panel);font-size:1rem}
+.palette ul{list-style:none;margin:0;padding:.3rem;max-height:55vh;overflow:auto}
+.palette li{padding:.35rem .6rem;border-radius:.4rem;cursor:pointer;display:flex;justify-content:space-between;gap:.6rem}
+.palette li[aria-selected="true"]{background:var(--soft)}
+.palette li .k{font:500 .7rem var(--mono);color:var(--faint)}
+/* drawer */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(30rem,94vw);background:var(--panel);border-left:1px solid var(--rule);z-index:45;overflow:auto;padding:1rem;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+.drawer h2{margin:.6rem 0 .3rem}
+.drawer ol{padding-left:1.2rem;font-size:.8rem}
+.drawer li{margin:.25rem 0}
+.drawer li.cur{font-weight:600}
+/* presentation */
+.present{position:fixed;inset:0;background:var(--bg);z-index:55;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:clamp(.6rem,2vw,1.4rem)}
+.present .ph{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.present .ph .n{font:600 .8rem var(--mono);color:var(--muted)}
+.present .ph h2{font:650 clamp(1.2rem,3vw,1.9rem)/1.2 var(--sans);letter-spacing:-.02em;color:var(--fg);text-transform:none;margin:0}
+.present .pstage{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;min-height:0;overflow:auto;margin:.6rem 0}
+.present .pstage .panel .pbody{min-height:0}
+.present .pcap{font-size:1rem;max-width:100ch}
+.present .pnav{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:.4rem}
+.present .dots{display:flex;flex-wrap:wrap;gap:.2rem}
+.present .dots button{width:1.6rem;height:1.3rem;border:1px solid var(--control);background:var(--panel);border-radius:.25rem;font:500 .62rem var(--mono);padding:0}
+.present .dots button[aria-current="true"]{background:var(--fg);color:var(--bg)}
+#fallback textarea{width:100%;min-height:10rem;font:12px var(--mono)}
+.export{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+footer.foot{margin-top:2rem;border-top:1px solid var(--rule);padding-top:.8rem;font-size:.78rem;color:var(--muted)}
+@media (max-width:72rem){.status{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.side{position:static;max-height:none}.notes{grid-template-columns:minmax(0,1fr)}.notes .side2{border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:.6rem}}
+@media (max-width:46rem){main{width:calc(100% - 2rem)}.quad,.present .pstage{grid-template-columns:minmax(0,1fr)}.lenses{grid-template-columns:minmax(0,1fr)}.status{grid-template-columns:minmax(0,1fr)}.ctl input[type=range]{width:7rem}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+@media print{.side,.toolbar,.status,.controls,.palette,.drawer,.present{display:none!important}.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<div id="nojs"><h1>Quantum Electrodynamics</h1><p>This laboratory computes everything in the browser and needs JavaScript. The three flagship computations it steps through are: the one-loop QED vacuum polarization carried from momentum integral to Laurent series, counterterm, running coupling, Hopf-algebra element and Birkhoff factorization; a spectral triple whose inner fluctuation produces a U(1) gauge field and its spectral action; and a spacetime region whose local algebra and vacuum give the Tomita operator S = JΔ<sup>1/2</sup> and modular flow.</p></div>
+<div id="app" hidden>
+  <p class="eyebrow"><a href="https://teoyujie.org/visuals/">Visuals</a><span>Interactive laboratory</span><span>QED · NCG · AQFT</span></p>
+  <h1 id="title">Quantum Electrodynamics</h1>
+  <p class="lede">A visual laboratory for quantum fields, operator algebras, noncommutative geometry, and renormalization. Every number on the page is computed here; finite matrix and lattice models stand in for infinite-dimensional objects and say so.</p>
+  <div class="toolbar" role="toolbar" aria-label="Views and exports">
+    <button class="btn primary" type="button" id="btn-connes" aria-pressed="false" title="Connes view: the conceptual map of the whole laboratory">CONNES VIEW</button>
+    <button class="btn" type="button" id="btn-present" title="Presentation mode: the 27-step sequence">Presentation</button>
+    <span class="sep"></span>
+    <button class="btn" type="button" id="btn-md" title="Export the current view as Markdown with its parameters">Export Markdown</button>
+    <button class="btn" type="button" id="btn-md-copy" title="Copy the same Markdown to the clipboard">Copy Markdown</button>
+    <button class="btn" type="button" id="save-beamdswitch" title="Switch: save a narrated beamdswitch deck of the current computation">beamdswitch</button>
+    <button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard">Copy deck</button>
+    <span class="sep"></span>
+    <button class="btn" type="button" id="btn-palette" title="Search commands"><kbd>⌘K</kbd> Search</button>
+    <button class="btn" type="button" id="btn-refs" title="Reference drawer">References</button>
+    <button class="btn" type="button" id="btn-theme" title="Toggle light / dark">Theme</button>
+    <button class="badge" type="button" id="selftest-badge" title="Run the engine's self-test">Self-test …</button>
+    <span class="msg" id="io-msg" role="status"></span>
+  </div>
+  <div id="fallback" hidden><p class="small" id="fallback-label"></p><textarea id="fallback-text" readonly aria-label="Export text"></textarea></div>
+  <div class="lenses" id="lenses"></div>
+  <p class="lens-note" id="lens-note"></p>
+  <div class="status" id="status" aria-label="Global state"></div>
+  <div class="layout">
+    <nav class="side" id="side" aria-label="Concept map">
+      <h2>Concept graph</h2>
+      <div class="cmap" id="cmap"></div>
+      <div class="scenelist" id="scenelist"></div>
+    </nav>
+    <section class="stage" id="stage" aria-live="polite">
+      <div class="shead"><div><span class="chip" id="s-track"></span> <span class="secs" id="s-secs"></span><h2 class="title" id="s-title" tabindex="-1"></h2></div></div>
+      <p class="summary" id="s-summary"></p>
+      <div class="switches" id="switches"></div>
+      <div id="warnings"></div>
+      <div class="controls" id="controls"></div>
+      <div class="quad" id="quad">
+        <div class="panel" id="panel-space"><header><span class="ptitle" id="pt-space">SPACETIME</span><span class="psub" id="ps-space"></span><button class="maxbtn" type="button" data-act="maxpanel" data-arg="space" title="Enlarge">⤢</button></header><div class="pbody" id="pb-space"></div><div class="pfoot" id="pf-space"></div></div>
+        <div class="panel" id="panel-field"><header><span class="ptitle" id="pt-field">FIELD CONFIGURATION</span><span class="psub" id="ps-field"></span><button class="maxbtn" type="button" data-act="maxpanel" data-arg="field" title="Enlarge">⤢</button></header><div class="pbody" id="pb-field"></div><div class="pfoot" id="pf-field"></div></div>
+        <div class="panel" id="panel-diagram"><header><span class="ptitle" id="pt-diagram">MOMENTUM / DIAGRAM</span><span class="psub" id="ps-diagram"></span><button class="maxbtn" type="button" data-act="maxpanel" data-arg="diagram" title="Enlarge">⤢</button></header><div class="pbody" id="pb-diagram"></div><div class="pfoot" id="pf-diagram"></div></div>
+        <div class="panel" id="panel-algebra"><header><span class="ptitle" id="pt-algebra">ALGEBRA / SPECTRUM</span><span class="psub" id="ps-algebra"></span><button class="maxbtn" type="button" data-act="maxpanel" data-arg="algebra" title="Enlarge">⤢</button></header><div class="pbody" id="pb-algebra"></div><div class="pfoot" id="pf-algebra"></div></div>
+      </div>
+      <div class="notes" id="notes"><div class="text" id="n-text"></div><div class="side2" id="n-side"></div></div>
+    </section>
+  </div>
+  <footer class="foot">
+    <p>Natural units ħ = c = 1, Heaviside–Lorentz charge e² = 4πα, metric (+, −, −, −). Every running coupling is one-loop QED with one Dirac fermion in the MS-bar scheme unless labelled otherwise. Toy and finite models are labelled where they appear. <button class="btn small" type="button" data-act="refs">All references</button></p>
+    <p>MIT licence · <a href="https://teoyujie.org/visuals/connes-qft/">teoyujie.org/visuals/connes-qft</a></p>
+  </footer>
+</div>
+<div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="Commands">
+  <div class="box"><input id="palette-input" type="text" placeholder="Type a command: vacuum polarization, Birkhoff, modular flow…" aria-label="Command" autocomplete="off"><ul id="palette-list" role="listbox"></ul></div>
+</div>
+<aside class="drawer" id="drawer" hidden aria-label="References"></aside>
+<div class="present" id="present" hidden role="dialog" aria-modal="true" aria-label="Presentation"></div>
+<div id="tip" hidden></div>
+</main>
+<script id="connes-qft-data">self.CQFT_DATA = /*@DATA@*/;</script>
+<script id="connes-qft-engine">
+/*@ENGINE@*/
+</script>
+<script id="beamdswitch">
+/*@BEAMDSWITCH@*/
+</script>
+<script id="connes-qft-ui">
+/*@UI@*/
+</script>
+</body>
+</html>

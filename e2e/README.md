@@ -11,7 +11,7 @@ keeps the original commit subjects.
 
 This folder is the shared harness. A visual's own checks live in its folder: `viz/<slug>/e2e/manifest.json`
 (how to drive it, which checks do not apply, and known findings) and `viz/<slug>/e2e/full.test.mjs` (its
-fuller checks). The two visuals the site keeps itself, beamdswitch and connes-qft, keep theirs in
+fuller checks). The beamdswitch viewer that the site keeps itself has its checks in
 `site/<slug>/`. CI runs a visual's browser checks only when it changes (`.github/workflows/ci.yml`, one job
 per browser project), and every visual's, with the site's own, once a day.
 
