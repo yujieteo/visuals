@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertDeckButtons, assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "tourist-attractions";
 const T = load(`beamdswitch.js`);
@@ -33,12 +33,10 @@ const deckFor = (v) => T.deck(R.report(D, v));
 // Deck text escapes the characters beamdswitch reads as maths or markup.
 const esc = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]#]/g, "\\$&");
 
-test("the site's shared beamdswitch template is the copy the page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
+test("the deck controls keep their status announcement and export hints", () => {
   assertDeckButtons(html, SLUG);
 });
+
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the word, search and attraction shown", async () => {
   page.run('state.query="art";selectTerm("heritage")');

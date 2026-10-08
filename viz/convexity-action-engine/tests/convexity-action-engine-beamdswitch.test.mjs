@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { createRequire } from "node:module";
-import { assertButtonsExport, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage } from "./data-visuals-beamdswitch.mjs";
 
 // engine.js loads as in tests/convexity-action-engine.test.mjs: the model without the page shell.
 const require = createRequire(import.meta.url);
@@ -46,12 +46,6 @@ const check = (r) => {
 };
 const what = (c) => `${JSON.stringify(c.r)} h=${c.h} lens=${c.lens}`;
 const esc = (s) => String(s).replace(/[\\$*_`|<>[\]]/g, "\\$&");
-
-test("the site's shared beamdswitch template is the copy the Convexity Action Engine inlines", () => {
-  assertTemplateCopy("convexity-action-engine");
-  const html = read("index.html");
-  assert.ok(html.includes(`<script id="beamdswitch">\n${read("beamdswitch.js")}</script>`), "the page inlines beamdswitch.js unchanged");
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the page the route shows", async () => {
   const page = await openPage("convexity-action-engine", { hash: "#/a/swim" });

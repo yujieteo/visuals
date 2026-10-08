@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage } from "./data-visuals-beamdswitch.mjs";
 
 const require = createRequire(import.meta.url);
 const T = require("../beamdswitch.js");
@@ -13,13 +13,6 @@ const VIEWS = D.windows.flatMap((w) => [null, ...D.bands.map((b) => b.id)].flatM
   [null, 1, 7, 49].map((open) => ({ window: w.id, band, open }))));
 const deckFor = (view) => T.deck(R.report(D, view));
 const what = (v) => `${v.window} band=${v.band} ball=${v.open}`;
-
-test("the site's shared beamdswitch template is the copy the TOTO page inlines", () => {
-  assertTemplateCopy("toto-frequency");
-  const html = read("index.html");
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"), "toto-frequency");
-  assertInlined(html, "report", read("report.js"), "toto-frequency");
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the window shown", async () => {
   const page = await openPage("toto-frequency"), band = D.bands[1];

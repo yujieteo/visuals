@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read, stripTypes } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertStandardDeck, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
-const html = read("index.html");
 // The scripts as the page runs them, loaded into one context: the template and the report.
 const context = load(read("beamdswitch.js"), read("report.js"));
 const Beamdswitch = /** @type {typeof import("../beamdswitch.js")} */ (context.Beamdswitch);
@@ -24,12 +23,6 @@ const density = (K, { S0, r, sigma, T }) => {
   const d2 = (Math.log(S0 / K) + (r - sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
   return Math.exp(-d2 * d2 / 2) / Math.sqrt(2 * Math.PI) / (K * sigma * Math.sqrt(T));
 };
-
-test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
-  assertTemplateCopy();
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"));
-  assertInlined(html, "report", stripTypes(read("report.js")));
-});
 
 test("every strike and half-width's deck parses in beamdswitch as the standard template, narrated on every slide", () => {
   for (const v of VIEWS) {

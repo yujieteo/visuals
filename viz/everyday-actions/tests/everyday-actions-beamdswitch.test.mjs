@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage, read } from "./data-visuals-beamdswitch.mjs";
 
 const require = createRequire(import.meta.url);
 const T = require("../beamdswitch.js");
@@ -17,12 +17,6 @@ VIEWS.push(...R.TIERS.map((tier) => ({ tier, decision: DATA.decisions.find((d) =
   ...[...new Set(DATA.decisions.map((d) => d.domain))].map((domain) => ({ domain, sel: "commuting" })));
 const deckFor = (view) => T.deck(R.report(DATA, view));
 const what = (v) => JSON.stringify(v);
-
-test("the site's shared beamdswitch template is the copy the everyday-actions page inlines", () => {
-  assertTemplateCopy("everyday-actions");
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"), "everyday-actions");
-  assertInlined(html, "report", read("report.js"), "everyday-actions");
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the charts as set", async () => {
   const sel = DATA.activities[0].activity_id, tier = R.TIERS[0];

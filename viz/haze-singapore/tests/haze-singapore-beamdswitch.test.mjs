@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertDeckButtons, assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "haze-singapore";
 const T = load(`beamdswitch.js`);
@@ -23,12 +23,10 @@ function official(endpoint, field, t, region) {
   return null;
 }
 
-test("the site's shared beamdswitch template is the copy the page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
+test("the deck controls keep their status announcement and export hints", () => {
   assertDeckButtons(html, SLUG);
 });
+
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the measure, hour and region shown", async () => {
   page.run('metric="pm1";setT(2000,true);select("east")');

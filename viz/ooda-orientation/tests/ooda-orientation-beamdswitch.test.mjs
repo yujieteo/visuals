@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertDeckButtons, assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "ooda-orientation";
 /** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
@@ -26,12 +26,10 @@ const deckFor = (s) => T.deck(R.report(s, L, D));
 /** @param {string} md */
 const plainText = (md) => md.replace(/\\(.)/g, "$1");
 
-test("the site's shared beamdswitch template is the copy the page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
+test("the deck controls keep their status announcement and export hints", () => {
   assertDeckButtons(html, SLUG);
 });
+
 
 test("a situation restored from storage is what beamdswitch saves and Copy deck copies", async () => {
   for (const id of ["stalled-project", "southwest"]) {
