@@ -54,7 +54,8 @@ def scan(paths, root):
     """Sort a change's paths into (every slug, the visuals it touches, the site visuals whose browser checks it
     touches, the shared paths it touches)."""
     existing = {folder.name for folder in folders(root)}
-    used = uses_index(visuals(root))
+    catalogue = visuals(root)
+    used = uses_index(catalogue)
     selected, site, shared = set(), set(), []
     for path in paths:
         parts = path.split("/")
@@ -68,7 +69,9 @@ def scan(paths, root):
         elif is_docs(path):
             continue
         elif path.startswith(E2E_SITE) and len(parts) > 3:
-            site.add(parts[2])
+            # A public visual supersedes its former site-owned browser target.
+            if parts[2] not in catalogue or catalogue[parts[2]].get("published", True) is False:
+                site.add(parts[2])
         else:
             shared.append(path)
     return existing, selected, site, shared
