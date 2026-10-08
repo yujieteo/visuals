@@ -1,5 +1,6 @@
 """scripts/refresh_kit.py and the SEC refresh of scripts/stock_cases.py, offline: recorded answers, never the network."""
 import argparse
+import contextlib
 import io
 import json
 import os
@@ -111,6 +112,20 @@ class Run(unittest.TestCase):
         self.assertIn("  rows,all,\"2\"\n", out)
         self.assertIn("next: python3 scripts/refresh.py demo\n", out)
 
+    def test_a_dry_run_reads_each_source_file_once(self):
+        reads = []
+        read_bytes = Path.read_bytes
+
+        def record(path):
+            if path == self.folder / "raw.json":
+                reads.append(path)
+            return read_bytes(path)
+
+        with mock.patch.object(Path, "read_bytes", record):
+            code, out = self.run_refresh('{"rows": ["a", "b"]}', dry_run=True)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(reads, [self.folder / "raw.json"])
+
     def test_up_to_date_data_writes_nothing_and_keeps_fetched(self):
         before = self.files()
         code, out = self.run_refresh('{"rows": ["a"]}')
@@ -159,6 +174,17 @@ class Run(unittest.TestCase):
         self.assertIn("ModuleNotFoundError", out.getvalue())
         self.assertIn("written: nothing", out.getvalue())
         self.assertEqual(self.files(), before)
+
+    def test_invalid_retrieval_time_is_a_usage_error_without_writes(self):
+        before = self.files()
+        for value in ["not-a-date", "", "2026-99-04T09:00:00+08:00"]:
+            with self.subTest(value=value), mock.patch.object(refresh_kit, "ROOT", self.layout.root), \
+                    mock.patch.object(refresh_kit, "Source", return_value=Replay({URL: '{"rows": ["a"]}'}, now=self.NOW)), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    refresh_kit.main(["demo", "--now", value])
+                self.assertEqual(error.exception.code, 2)
+                self.assertEqual(self.files(), before)
 
     def test_a_builder_that_fails_puts_every_file_back(self):
         before = self.files()

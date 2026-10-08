@@ -56,16 +56,6 @@ export function checkDeck(md, what) {
 }
 
 /* checkDeck, then every plot with the frame it sits on; each curve must be finite across its x range. */
-/** @param {string} md @param {string} what */
-export function checkDeckPlots(md, what) {
-  const deck = checkDeck(md, what);
-  const plots = deck.frames.flatMap((f) => divs(f.children, "plot").map((d) => ({ frame: f, spec: parsePlot(textOf(d)) })));
-  for (const { frame, spec } of plots) for (const c of spec.curves) for (let i = 0; i <= 20; i++) {
-    const x = spec.x[0] + ((spec.x[1] - spec.x[0]) * i) / 20;
-    assert.ok(Number.isFinite(c.f(x)), `${what}: "${c.src}" on "${frame.title}" is finite at x = ${x}`);
-  }
-  return { deck, plots };
-}
 
 /* A visualisation's copy of the template is the site's shared one, unchanged, and its built page
    inlines that copy verbatim. */

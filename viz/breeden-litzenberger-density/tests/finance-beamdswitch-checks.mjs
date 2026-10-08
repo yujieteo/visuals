@@ -2,7 +2,6 @@
    Copy deck buttons in Node. Decks are parsed with beamdswitch's own parsers (read-only copies in
    tests/fixtures/beamdswitch/), as the site's tests do. */
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
@@ -15,23 +14,9 @@ export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url
 // This repository holds one page; its slug names the files the page saves.
 export const SLUG = JSON.parse(read("meta.json")).slug;
 
-/* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
-   page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
-const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
+// The shared template rule checks the copied beamdswitch.js.
 const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
-export function assertTemplateCopy() {
-  const copy = read("beamdswitch.js");
-  assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
-    "beamdswitch.js must stay identical to the site's templates/beamdswitch.js");
-  if (process.env.SITE_REPO)
-    assert.equal(copy, readFileSync(`${process.env.SITE_REPO}/templates/beamdswitch.js`, "utf8"),
-      "the site's templates/beamdswitch.js and beamdswitch.js must stay identical");
-}
-
-/* The page inlines each script in its own <script id="..."> block; returns that block's source. */
-/** @param {string} html @param {string} id */
-const inlined = (html, id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)?.[1];
 /* A script without its JSDoc types, as build.py inlines report.js: the regular expressions of strip_types in
    ../../scripts/page_parts.py, so the page is the one built from the unannotated script. */
 /** @param {string} js */
@@ -39,12 +24,6 @@ export const stripTypes = (js) => js
   .replace(/^[ \t]*\/\*\*(?:(?!\*\/)[\s\S])*\*\/[ \t]*\n/gm, "")
   .replace(/^[ \t]*\/\/ @ts-expect-error\b.*\n/gm, "")
   .replace(/\/\*\*[\s\S]*?\*\/ ?/g, "");
-/** @param {string} html @param {string} id @param {string} source */
-export function assertInlined(html, id, source) {
-  const block = inlined(html, id);
-  assert.ok(block !== undefined, `${SLUG}: the page has a <script id="${id}"> block`);
-  assert.equal(block, source, `${SLUG}: the page inlines ${id} unchanged`);
-}
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
 /** @param {Deck} deck @param {string} what */

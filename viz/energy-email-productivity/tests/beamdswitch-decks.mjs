@@ -38,11 +38,6 @@ export function assertTemplateCopy(slug) {
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.
-export function assertInlined(html, id, source, what) {
-  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
-  assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
-  assert.equal(m[1], source, `${what}: the page inlines ${id} unchanged`);
-}
 
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }

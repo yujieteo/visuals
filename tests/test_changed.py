@@ -1,5 +1,9 @@
 """scripts/changed.py: which visuals a change selects."""
 import unittest
+import contextlib
+import io
+import json
+from unittest import mock
 
 from helpers import Layout, metadata
 
@@ -79,6 +83,19 @@ class SelectTest(unittest.TestCase):
     def test_every_site_visual_adds_one_job_naming_none(self):
         jobs = browser_jobs(["alpha"], every_site_visual=True)
         self.assertEqual([(job["only"], job["site"]) for job in jobs], [("alpha", False), ("", True)])
+
+    def test_command_uses_the_same_changed_paths_for_visual_and_browser_jobs(self):
+        output = self.layout.root / "github-output"
+        with mock.patch.object(changed, "ROOT", self.layout.root), \
+                mock.patch.object(changed, "select", side_effect=lambda paths, **kwargs: select(paths, root=self.layout.root)), \
+                mock.patch.object(changed, "browser", side_effect=lambda paths, **kwargs: browser(paths, root=self.layout.root)), \
+                mock.patch.object(changed, "change", side_effect=[(["viz/alpha/index.html"], None), (["viz/beta/index.html"], None)]), \
+                mock.patch.dict(changed.os.environ, {"GITHUB_OUTPUT": str(output)}), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            changed.main(["--base", "HEAD", "--github-output"])
+        rows = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        self.assertEqual(json.loads(rows["slugs"]), ["alpha"])
+        self.assertEqual(json.loads(rows["browser"]), [{"name": "alpha", "only": "alpha", "site": False}])
 
     def test_a_removed_visual_selects_nothing(self):
         self.assertEqual(self.select("viz/deleted/index.html"), [])

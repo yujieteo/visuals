@@ -156,8 +156,14 @@ def main(argv=None):
     parser.add_argument("--base", help="git ref to compare against; omit to select every visual")
     parser.add_argument("--github-output", action="store_true", help="also write slugs=<JSON> to $GITHUB_OUTPUT")
     args = parser.parse_args(argv)
-    slugs, reason = selection(args.base)
-    jobs, browser_reason = browser_selection(args.base)
+    paths, reason = change(args.base)
+    if paths is None:
+        slugs = [folder.name for folder in folders()]
+        jobs = browser_jobs(slugs, every_site_visual=True)
+        browser_reason = reason
+    else:
+        slugs, reason = select(paths, root=ROOT)
+        jobs, browser_reason = browser(paths, root=ROOT)
     print(f"{len(slugs)} visual(s): {reason}", file=sys.stderr)
     print(f"{len(jobs)} browser job(s): {', '.join(job['name'] for job in jobs) or 'none'}; {browser_reason}", file=sys.stderr)
     print(json.dumps(slugs))

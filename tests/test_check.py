@@ -1,6 +1,7 @@
 """scripts/check.py: the steps a folder calls for, the WebMCP tools check and the allow list of the rule steps."""
 import contextlib
 import io
+import shutil
 import subprocess
 import sys
 import unittest
@@ -164,6 +165,18 @@ class ToonTest(unittest.TestCase):
         self.assertIn("wrote extra.txt, index.html", out)
         self.assertEqual((folder / "index.html").read_bytes(), before)
         self.assertFalse((folder / "extra.txt").exists())
+
+    def test_restore_recreates_a_directory_removed_by_a_builder(self):
+        layout = self.layout()
+        folder = layout.root / "viz" / "alpha"
+        nested = folder / "src" / "nested"
+        nested.mkdir(parents=True)
+        target = nested / "model.js"
+        target.write_bytes(b"const value = 1;\n")
+        before = check.snapshot(folder)
+        shutil.rmtree(folder / "src")
+        self.assertEqual(check.restore(folder, before), ["src/nested/model.js"])
+        self.assertEqual(target.read_bytes(), b"const value = 1;\n")
 
     def test_a_builder_that_only_checks_passes_the_build_step(self):
         layout = self.layout()

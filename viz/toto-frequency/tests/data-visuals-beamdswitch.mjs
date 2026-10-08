@@ -12,17 +12,8 @@ const skeleton = read("tests/fixtures/beamdswitch/report-template.md");
 export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 // The folder's beamdswitch.js is the site's shared template, unchanged (the vendored copy in tests/fixtures/beamdswitch/).
-export function assertTemplateCopy(slug) {
-  assert.equal(read("beamdswitch.js"), read("tests/fixtures/beamdswitch/beamdswitch.js"),
-    `tests/fixtures/beamdswitch/beamdswitch.js and beamdswitch.js must stay identical (${slug})`);
-}
 
 // The page inlines each script verbatim in its own <script id="..."> block.
-export function assertInlined(html, id, source, what) {
-  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
-  assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
-  assert.equal(m[1], source, `${what}: the page inlines ${id} unchanged`);
-}
 
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }

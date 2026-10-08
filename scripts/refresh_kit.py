@@ -264,12 +264,13 @@ def run(slug, dry_run=False, args=None, source=None, root=ROOT, out=None, hook=N
         update = hook.refresh(source or Source(), folder, args or argparse.Namespace())
         require(update.files, f"viz/{slug}/refresh.py returned no file to write")
         files = dict(update.files)
-        news = any(row["status"] != "unchanged" for row in compare(folder, files))
+        rows = compare(folder, files)
+        news = any(row["status"] != "unchanged" for row in rows)
         if news and update.fetched:
             files["visual.json"] = set_fetched(read(folder, "visual.json") or "", update.fetched)
+            rows = [row for row in rows if row["path"] != "visual.json"] + compare(folder, {"visual.json": files["visual.json"]})
     except Exception as error:
         return failed(report, error, out)
-    rows = compare(folder, files)
     report.update({"result": "changes" if news else "up-to-date", "source": update.source, "files": rows,
                    "changes": update.changes, "notes": update.notes,
                    "build": " ".join(["python3", *update.build]) if update.build else "none"})
@@ -302,7 +303,10 @@ def main(argv=None, slug=None):
     except Exception as error:
         return failed({"slug": slug, "mode": "dry-run" if known.dry_run else "write"}, error, sys.stdout)
     args = parser.parse_args(argv)
-    now = datetime.fromisoformat(args.now) if args.now else None
+    try:
+        now = datetime.fromisoformat(args.now) if args.now is not None else None
+    except ValueError:
+        parser.error("--now must be an ISO 8601 date and time with an offset")
     if now is not None and now.tzinfo is None:
         parser.error("--now needs an offset, such as 2026-10-04T09:00:00+08:00")
     return run(slug, args.dry_run, args, Source(now), hook=hook)

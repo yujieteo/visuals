@@ -46,12 +46,6 @@ export function assertTemplateCopy(slug) {
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.
-/** @param {string} html @param {string} id @param {string} source @param {string} what */
-export function assertInlined(html, id, source, what) {
-  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
-  assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
-  assert.equal(/** @type {RegExpExecArray} */ (m)[1], source, `${what}: the page inlines ${id} unchanged`);
-}
 
 /** @param {DeckNode[]} children @param {string} name @param {DeckDiv[]} [out] @returns {DeckDiv[]} */
 const divs = (children, name, out = []) => {
