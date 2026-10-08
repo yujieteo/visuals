@@ -1,6 +1,6 @@
 # Technical debt inventory
 
-This file lists the debt findings for `visuals`. It covers the standalone artifact requirement.
+This file lists the debt findings for `visuals`. It covers the standalone artifact requirement and deterministic builds.
 Other findings stay here until a separate pull request closes them.
 The architecture is in [monorepo.md](monorepo.md), [SKILLS.md](../SKILLS.md) and [e2e/README.md](../e2e/README.md).
 
@@ -151,6 +151,30 @@ The risk is that a Firefox-only failure shows first in CI.
 - Proposed fix: None. The step stays cheap on purpose.
 - Decision: NOT A DEFECT.
 - Verification: CI runs `npm run test:standalone` after the baseline step in every browser project.
+
+### DB-1
+- ID: DB-1
+- Repository: visuals
+- Location: `scripts/check.py` (`check`, the default `build` step), `viz/{beamdiag,edge-pitch,generating-functions,lug-joint,stability,vgc-protect-fakeout-pivot-trainer}/build.py`
+- Problem: The default `build` step runs `build.py --verify`. Six builders ignore `--verify` and write the page. The step then passes even when the committed page is stale.
+- Evidence: In a scratch copy, a changed `index.html` of each of the six was rewritten by `build.py --verify` with exit code 0. See `verify-drift.txt` in the task evidence.
+- Severity: Medium
+- Maintenance cost: A stale generated page can pass `check.py` and show only as a diff in the working tree.
+- Proposed fix: `check.py` records the folder files before the `build` step. It fails the visual when the step changed a file, and it restores the files. No builder changes.
+- Decision: CONFIRMED, and fixed. The builders stay as they are, because a visual owns its builder.
+- Verification: `tests/test_check.py` has a builder that writes (fails, folder restored) and a builder that only checks (passes). All 41 builders run clean with no change. `check.py --toon --changed main`: 71 visuals, 725 steps, 0 fail.
+
+### DB-2
+- ID: DB-2
+- Repository: visuals
+- Location: `viz/*/build.py` (41 builders), `build/` (ignored by Git)
+- Problem: A reader can suspect that a second build changes the generated output.
+- Evidence: In a scratch copy of HEAD, each of the 41 builders ran twice. Both runs exited 0 and changed no tracked file. `build/catalogue.json` and `build/index.html` have the same SHA-256 after two runs of `build_catalogue.py`. `build/` is ignored by Git.
+- Severity: None
+- Maintenance cost: None found.
+- Proposed fix: None.
+- Decision: NOT A DEFECT. Builds are deterministic, and the canonical data (`raw.*`, `meta.json`) stays apart from the generated page.
+- Verification: `rebuild-twice.sh` and `rebuild-twice.txt` in the task evidence. A page that a builder embeds into a hand-written `index.html` (for example `stealth-rcs`) checks only its generated blocks, by design.
 
 ## Canonical owners of shared interfaces
 

@@ -153,6 +153,25 @@ class ToonTest(unittest.TestCase):
         self.assertIn('failures[2]{visual,step,file_line,evidence}:\n  alpha,build,"viz/alpha/index.html:3","stale: index.html:3 differs"\n', out)
         self.assertIn('alpha,pydead,"viz/alpha/build.py:1","build.py:1: import os is unused"', out)
 
+    def test_a_builder_that_writes_during_verify_fails_and_leaves_the_folder_unchanged(self):
+        layout = self.layout()
+        folder = layout.root / "viz" / "alpha"
+        (folder / "build.py").write_text("from pathlib import Path\nPath('index.html').write_text('rebuilt')\nPath('extra.txt').write_text('new')\n", encoding="utf-8")
+        before = (folder / "index.html").read_bytes()
+        out, code = toon(layout, "alpha")
+        self.assertEqual(code, 1)
+        self.assertIn("build writes nothing", out)
+        self.assertIn("wrote extra.txt, index.html", out)
+        self.assertEqual((folder / "index.html").read_bytes(), before)
+        self.assertFalse((folder / "extra.txt").exists())
+
+    def test_a_builder_that_only_checks_passes_the_build_step(self):
+        layout = self.layout()
+        (layout.root / "viz" / "alpha" / "build.py").write_text("print('fresh')\n", encoding="utf-8")
+        out, code = toon(layout, "alpha")
+        self.assertNotIn("build writes nothing", out)
+        self.assertEqual(code, 0)
+
     def test_an_unknown_visual_an_unknown_ref_and_a_change_selecting_nothing_exit_2(self):
         layout = self.layout()
         out, code = toon(layout, "alpha", "gamma")
