@@ -228,6 +228,37 @@ Times: one run on the author machine, one core, Python 3.13 and Node 22, on 2026
 
 The CI file `.github/workflows/ci.yml` runs these commands in one job each: repository (Python 3.9 and 3.12), one job per touched visual, and one browser job per touched visual and project. `.no-mistakes.yaml` runs the cheap subset that needs no browser.
 
+## Requirement map
+
+Each visuals-side P1 and P2 requirement, with its status and evidence. Pull requests: [#106](https://github.com/yujieteo/visuals/pull/106), [#107](https://github.com/yujieteo/visuals/pull/107), [#108](https://github.com/yujieteo/visuals/pull/108), [#109](https://github.com/yujieteo/visuals/pull/109).
+
+| Requirement | Status | Evidence |
+| --- | --- | --- |
+| P1 ownership: list shared and copied files and name the canonical source | Done | Table "Canonical owners of shared interfaces" below, with SA-7 |
+| P1 ownership: remove unnecessary reverse dependencies | Done, none found | RD-1: no core artifact, builder or check reads the site. Only the site-kept visuals read a site clone |
+| P1 ownership: keep frozen copies and test boundaries | Kept | SA-7, and no test file was merged or removed |
+| P1 verification tools: list, owner, purpose, time, failures | Done | Table "Verification commands" |
+| P1 verification tools: find repeated checks, remove only when equivalent | Done, none removed | VC-1 |
+| P1 generated artifacts: generated files stay outside Git | Confirmed | `build/` and `.typecheck/` are in `.gitignore`; `check_repo.py` fails on a tracked build artifact |
+| P1 generated artifacts: reproducible build and an unchanged second build | Confirmed, and a gap fixed | DB-2 for 41 builders; DB-1 for the `build` step that could not fail |
+| P1 generated artifacts: keep canonical data, sources and history apart from output | Kept | No data or source file changed in any of the four pull requests |
+| P1 generated artifacts: an archived visual needs no site generator | Confirmed | SA-1 and SA-4: `test:standalone` runs each offline-claiming page from an empty folder |
+| P2 site-specific maintenance (visuals side) | Done, nothing to change here | The two site-kept visuals keep their checks in `e2e/site/`; the site owns their code. Publication logic stays in the site |
+| Standalone and offline contract | Done | SA-1 to SA-6; 11 more visuals now run the contract (SA-6) |
+| Known findings kept | Kept | SA-2 (`work-lanyards` photos, content decision of the owner) and SA-8 (recorded findings) |
+
+## Report
+
+Repository commits: visuals `b306894` (#106), `cabbc95` (#107), `8a34eee` (#108), `c90999c` (#109). The site commit read as interface evidence is `e0483bfe4bd7afd08142bebca0f6df9b4eee3cd0`.
+Issues fixed: SA-1, SA-6 (11 of 12 visuals), DB-1.
+Issues retained: SA-2 and SA-8 (owner decisions), `data-workbench` in SA-6, and the findings that are not defects.
+Tests passed: the checks named in "Baseline", "After the change", DB-1 and SA-6, each with its recorded run.
+Tests not run: Firefox projects (Firefox cannot start on the author machine; CI runs them). The `file-url` result of `data-workbench` differed between the author machine and CI, see SA-6.
+Build time before and after: a second build changes nothing, and `check.py` over all 71 visuals took 630 s before and 664 s after, within the noise of one run on one machine. The change adds one file snapshot to each default build step.
+Test time before and after: the unit tests took 13.7 s before and about 13 s after. The standalone contract adds about 52 s for each browser project in CI.
+New dependencies: none. Removed dependencies: none.
+Remaining risks: the Firefox result is first seen in CI; the WebKit jobs in CI can hang or time out (tracked apart from this file); the site clone in the browser jobs follows the site `main` branch.
+
 ## Canonical owners of shared interfaces
 
 | Interface | Canonical owner | Copies |
