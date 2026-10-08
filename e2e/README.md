@@ -23,6 +23,7 @@ Node 22 or later, from this folder:
 npm ci
 npx playwright install chromium firefox webkit   # or one of them
 E2E_ONLY=mohr npm run test:baseline              # the baseline for one visual, every project
+E2E_ONLY=mohr npm run test:standalone            # its standalone contract: index.html and declared assets only, offline, from file://
 node --test ../viz/mohr/e2e/full.test.mjs        # its fuller checks
 npm run test:harness                             # the harness itself, no browser
 npm run typecheck
@@ -60,6 +61,12 @@ Everything is chosen by environment variables:
 | `overflow-390` | nothing scrolls sideways when the same page is then 390 px wide, a common phone width |
 | `primary-control` | operating its primary control changes what the reader sees (URL, text, form values, ARIA state, SVG or canvas) |
 | `numeric-text` | no visible text reads `NaN`, `Infinity` or `undefined`, as the page opens and after each visible number field and slider (up to 12) is set to its minimum, its maximum, 0 when in range and, for a number field, empty; an error that driving raises counts here |
+
+**Standalone contract, for every visual that claims to work offline** (`tests/standalone.test.js`): the page opens from
+`file://` in an empty folder that holds its `index.html` and its declared `assets`, but no `data.json` and no site file, in
+a browser context that is offline (WebKit refuses `file://` navigation when offline, so there every http(s) request is
+refused and counted instead). It must raise no error and make no request, and its primary control must change what the
+reader sees. Optional integrations such as WebMCP are absent in the test browsers, so a pass shows the core does not need them.
 
 The primary control comes from the visual's manifest, or else the first
 visible slider, select, number field, tab, radio, checkbox, button or
