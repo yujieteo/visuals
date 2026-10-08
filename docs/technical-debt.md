@@ -1,6 +1,6 @@
 # Technical debt inventory
 
-This file lists the debt findings for `visuals`. It covers the standalone artifact requirement and deterministic builds.
+This file lists the debt findings for `visuals`. It covers the standalone artifact requirement, deterministic builds, the reverse dependency on the site, and command ownership with measured overlap.
 Other findings stay here until a separate pull request closes them.
 The architecture is in [monorepo.md](monorepo.md), [SKILLS.md](../SKILLS.md) and [e2e/README.md](../e2e/README.md).
 
@@ -175,6 +175,58 @@ The risk is that a Firefox-only failure shows first in CI.
 - Proposed fix: None.
 - Decision: NOT A DEFECT. Builds are deterministic, and the canonical data (`raw.*`, `meta.json`) stays apart from the generated page.
 - Verification: `rebuild-twice.sh` and `rebuild-twice.txt` in the task evidence. A page that a builder embeds into a hand-written `index.html` (for example `stealth-rcs`) checks only its generated blocks, by design.
+
+### RD-1
+- ID: RD-1
+- Repository: visuals
+- Location: `e2e/scripts/fetch-targets.js`, `e2e/lib/targets.js` (`E2E_SITE`), the `Fetch yujieteo/site` step of `.github/workflows/ci.yml`
+- Problem: `fetch-targets` clones `yujieteo/site` at its `main` branch. A change in the site can change a visuals test result.
+- Evidence: Only the jobs with `site: true` fetch it: a change under `e2e/site/<slug>/`, and the job for every site-kept visual (`scripts/changed.py`). No job for a visual in `viz/` fetches or reads the site. `build_catalogue.py`, `check.py` and `check_repo.py` read no site file.
+- Severity: Low
+- Maintenance cost: A site change can fail a visuals job for `beamdswitch` or `connes-qft`. Those two visuals live in the site, so the failure is correct.
+- Proposed fix: None now. `npm run fetch-targets <ref>` already takes a branch, tag or commit. A fixed pin would add a file, and the pin of the site revision belongs to the site task.
+- Decision: NOT A DEFECT for the core artifacts. The dependency covers the visuals that the site keeps, and it is optional (`E2E_SITE` can be absent). The scheduled run needs the floating revision on purpose, to find new site changes.
+- Verification: `grep` of `scripts/`, `tests/` and `viz/` finds no read of a site clone. The template copies (SA-7) are frozen in `viz/*/beamdswitch.js` and compared with a recorded SHA-256, not with a site checkout.
+
+### VC-1
+- ID: VC-1
+- Repository: visuals
+- Location: the commands in the table "Verification commands"
+- Problem: Several commands look alike: `check_repo.py` and `build_catalogue.py` both read every `visual.json`; `requests` and `network`, `file-url` and `test:standalone`, and `template` and `check_repo.py` all inspect the same files or pages.
+- Evidence: Each pair fails on a different input (the "Detects" column). `build_catalogue.py` costs 0.03 s, `check_repo.py` 0.71 s, and `requests` runs inside the visual's own step. The slow commands are the node tests of the visuals (365 s of 664 s, on one core) and the browser suites. No pair has the same failure set.
+- Severity: Low
+- Maintenance cost: Low. No overlapping command costs more than 1 s of a run.
+- Proposed fix: None. Removing one command of a pair would lose a failure mode. The time is in tests that protect the mathematical and data results.
+- Decision: NOT A DEFECT. Keep every command. No check is removed, weakened or retimed.
+- Verification: The times in the table come from the runs recorded in `step-times.json` and in the baseline above. The step names `template`, `requests`, `contrast`, `theme`, `pydead`, `sourcetests`, `tools`, `vendor` and `generated` run in memory, so they have no time of their own (the total of 664 s includes them).
+
+## Verification commands
+
+Owner: the repository owner `yujieteo`, through the file that defines the command. The visual folder owns its own `checks`, tests and `e2e/` files.
+Times: one run on the author machine, one core, Python 3.13 and Node 22, on 2026-10-08. The numbers are measured, not estimated.
+
+| Command | Defined in | Purpose | Detects | Time |
+| --- | --- | --- | --- | --- |
+| `python3 scripts/check_repo.py` | `scripts/check_repo.py` | Fast repository check on every change | Invalid `visual.json`, a file named but missing, a home path, a tracked build or OS artifact, a Python file that does not parse, stale vendored MathJax, kit or template copies | 0.71 s |
+| `python3 -m unittest discover -s tests -p 'test_*.py'` | `tests/` | Unit tests of the shared tooling, on Python 3.9 and 3.12 in CI | A wrong result of `check.py`, `changed.py`, `rules.py`, `new_visual.py`, `refresh_kit.py` and the other tools | 13.7 s (120 tests) |
+| `node --test tests/*.test.mjs` | `tests/` | Tests of the type check, the dead-code check and the shared beamdswitch and theme code | A broken `typecheck.mjs`, `deadcode.mjs` or shared script | 1.5 s |
+| `npm run typecheck` | `scripts/typecheck.mjs` | `tsc` over the shared tooling, one project for each visual with a `tsconfig.json` | A JSDoc type error | 3.2 s |
+| `python3 scripts/check.py <slug>` | `scripts/check.py` | One visual: build, its node and Python tests, types and the rule steps | A stale page (DB-1), a failing visual test, a type error, a rule finding | 664 s for 71 visuals, 725 steps |
+| `check.py` step `build` | `viz/<slug>/build.py` | The builder verifies its output | Stale generated output | 1.8 s for 29 default steps |
+| `check.py` step `node` and `python` | `viz/<slug>/tests/` | Mathematical results, data, WebMCP tools, exports | A wrong model, wrong data, a broken tool | 365 s for 52 node steps, 3.6 s for 9 Python steps |
+| `check.py` custom `checks` | `viz/<slug>/visual.json` | Replaces the default steps where they do not fit | The same failures, with the visual's commands | 238 s for 42 commands |
+| `check.py` step `types` | `scripts/typecheck.mjs` | Type check of the page's inline scripts | A type error in an inline script | 3.9 s for 27 visuals |
+| `check.py` step `deadcode` | `scripts/deadcode.mjs` | Unused locals, unreachable code, duplicate declarations | Dead or doubled code | 9.1 s for 71 visuals |
+| `check.py` rule steps | `scripts/rules.py` | `template`, `requests`, `contrast`, `theme`, `pydead`, `sourcetests`, `tools`, `vendor`, `generated` | See [monorepo.md](monorepo.md#checks) | in memory, no own time |
+| `python3 scripts/build_catalogue.py [--verify]` | `scripts/build_catalogue.py` | Generates the ignored `build/` catalogue and gallery | An invalid catalogue entry | 0.03 s |
+| `python3 scripts/new_visual.py --check --all` | `scripts/new_visual.py` | A generated visual holds the current mechanical files | Drift from the generator | 0.17 s |
+| `python3 scripts/changed.py` | `scripts/changed.py` | Maps a diff to the visuals and browser jobs | A wrong job plan | 0.09 s |
+| `npm run test:baseline` (`e2e`) | `e2e/lib/baseline.js` | Browser baseline: load, errors, requests, accessibility, `file://` | A console error, a refused request, an accessibility violation | 201 s (chromium-desktop, baseline run) |
+| `npm run test:standalone` (`e2e`) | `e2e/tests/standalone.test.js` | Offline `file://` contract in an empty folder | A hidden dependency on a sibling file or the network | about 52 s per project |
+| `npm run test:full` and each `viz/<slug>/e2e/full.test.mjs` | the visual | Fuller checks of the visual | Known findings (todo) and new failures | 522 s (chromium-desktop, baseline run) |
+| `npm run test:harness`, `npm run typecheck`, `npm run test:page-axi` (`e2e`) | `e2e/` | The harness itself, its types, `page-axi` on fixtures | A broken harness | 0.4 s, 0.2 s, 5.0 s |
+
+The CI file `.github/workflows/ci.yml` runs these commands in one job each: repository (Python 3.9 and 3.12), one job per touched visual, and one browser job per touched visual and project. `.no-mistakes.yaml` runs the cheap subset that needs no browser.
 
 ## Canonical owners of shared interfaces
 
