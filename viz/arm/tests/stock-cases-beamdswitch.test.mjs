@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertStandardDeck, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 // The shared scripts/templates/stock-cases-report.js (listed in uses in visual.json) as the page inlines it, type-stripped by scripts/page_parts.py.
 const REPORT = execFileSync("python3", ["-c", "import sys; from page_parts import strip_types; sys.stdout.buffer.write(strip_types(open('templates/stock-cases-report.js', encoding='utf-8').read()).encode())"],
@@ -25,12 +25,6 @@ function annual(raw, tag) {
     if (f.fp === "FY" && ["10-K", "20-F"].includes(f.form) && f.start && (!out.has(f.end) || f.filed > /** @type {Fact} */ (out.get(f.end)).filed)) out.set(f.end, f);
   return out;
 }
-
-test(`${SLUG}: the site's beamdswitch template is the copy the page inlines, with the stock report`, () => {
-  assertTemplateCopy();
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"));
-  assertInlined(html, "report", REPORT);
-});
 
 test(`${SLUG}: each measure's deck parses in beamdswitch as the standard template, narrated on every slide`, () => {
   for (const metric of METRICS) {

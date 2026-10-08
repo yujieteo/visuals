@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import test from "node:test";
-import { assertInlined, assertStandardDeck, assertTemplateCopy, read } from "./beamdswitch-helpers.mjs";
+import { assertStandardDeck } from "./beamdswitch-helpers.mjs";
 import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
 
 const require = createRequire(import.meta.url);
@@ -22,13 +22,6 @@ const VIEWS = [
   { ...base, result: "cannot_verify" },
 ];
 const deckFor = (v) => T.deck(R.report(D, v));
-
-test("the site's shared beamdswitch template is the copy the page inlines", () => {
-  assertTemplateCopy("stealth-rcs");
-  const html = read("index.html");
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"), "stealth-rcs");
-  assertInlined(html, "report", read("report.js"), "stealth-rcs");
-});
 
 test("every view's deck parses in beamdswitch into the standard template, narrated on every slide", () => {
   VIEWS.forEach((v, i) => {

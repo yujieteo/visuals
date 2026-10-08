@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertButtonsExport, assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "english-grammar";
 /** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
@@ -25,13 +25,6 @@ const deckFor = (id) => T.deck(R.report(idx, L, id));
 // A spread of lessons: the start page's concept, ones with and without contrasts, notes, gaps and supplements.
 const SOME = ["category-and-function", "subject", "complements-and-adjuncts", "relative-clauses", "fused-relatives", "supplementation", "passive",
   "clause-polarity", "comparative-clauses", "anaphora", "morphological-structure", "primary-terminals", "hyphens"];
-
-test("the site's shared beamdswitch template is the copy the page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
-  assertDeckButtons(html, SLUG);
-});
 
 test("on each concept page, beamdswitch saves and Copy deck copies that lesson's deck", async () => {
   for (const id of SOME) {

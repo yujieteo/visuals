@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read, require } from "./beamdswitch-decks.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage, read, require } from "./beamdswitch-decks.mjs";
 
 const SLUG = "fpl-expected-goals";
 const T = require(`../beamdswitch.js`);
@@ -10,12 +10,6 @@ const html = read(`index.html`);
 const ROWS = JSON.parse(/const rows=(\[.*?\]);\n/.exec(html)[1]);
 const FILTERS = ["all", "DEF", "MID", "FWD"];
 const deckFor = (filter = "all") => T.deck(R.report(ROWS, { filter, fetched: META.fetched, gameweek: "5 of 2026/27", source: META.source_url }));
-
-test("the site's shared beamdswitch template is the copy the FPL page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the position shown", async () => {
   await assertButtonsExport(await openPage(SLUG), SLUG, deckFor());

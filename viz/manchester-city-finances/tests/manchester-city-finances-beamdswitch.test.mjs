@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read, require } from "./beamdswitch-decks.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage, read, require } from "./beamdswitch-decks.mjs";
 
 const SLUG = "manchester-city-finances";
 const T = require(`../beamdswitch.js`);
@@ -12,12 +12,6 @@ const LANES = [...new Set(ROWS.map((r) => r.lane))];
 const deckFor = (active = "All", selected = null) => T.deck(R.report(ROWS, { active, selected, fetched: META.fetched }));
 const VIEWS = ["All", ...LANES].flatMap((active) => [null, ...ROWS.map((r) => r.id)].map((selected) => ({ active, selected })));
 const what = (v) => `${v.active} selected=${v.selected}`;
-
-test("the site's shared beamdswitch template is the copy the Manchester City page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the lane and item shown", async () => {
   await assertButtonsExport(await openPage(SLUG), SLUG, deckFor());

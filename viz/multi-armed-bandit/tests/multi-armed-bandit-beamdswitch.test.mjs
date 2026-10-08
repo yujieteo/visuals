@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
-import { assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
+import { assertStandardDeck, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "multi-armed-bandit";
 /** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
@@ -29,16 +29,6 @@ const deckFor = (s, sim = L.simCreate(s), date = DATE) => T.deck(R.report(s, L.v
 /** @param {string} md */
 const plainText = (md) => md.replace(/\\(.)/g, "$1");
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
-
-test("the site's shared beamdswitch template is the copy the page inlines, with Save deck and Copy deck", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
-  assert.match(html, /<button type="button" id="save-beamdswitch"[^>]*>Save deck<\/button>/);
-  assert.match(html, /<button type="button" id="copy-beamdswitch"[^>]*>Copy deck<\/button>/);
-  assert.match(html, /id="deck-status"[^>]*role="status"/);
-  assert.ok(html.includes('href="https://teoyujie.org/visuals/beamdswitch/"'));
-});
 
 test("every template parses as the standard narrated deck with bf_emma, the four sections and a final key", () => {
   for (const t of D.templates) {

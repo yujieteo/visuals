@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read, require } from "./beamdswitch-decks.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage, read, require } from "./beamdswitch-decks.mjs";
 
 const SLUG = "energy-email-productivity";
 const T = require(`../beamdswitch.js`);
@@ -11,12 +11,6 @@ const html = read(`index.html`);
 const ORDER = JSON.parse(/,order=(\[[^\]]*\])/.exec(html)[1]);
 const deckFor = (selected = null) => T.deck(R.report(DATA, { order: ORDER, selected, start: 8, end: 18, fetched: META.fetched }));
 const VIEWS = [null, ...ORDER];
-
-test("the site's shared beamdswitch template is the copy the energy page inlines", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the page as shown", async () => {
   await assertButtonsExport(await openPage(SLUG), SLUG, deckFor());

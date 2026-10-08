@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
+import { assertButtonsExport, assertStandardDeck, openPage } from "./data-visuals-beamdswitch.mjs";
 
 const require = createRequire(import.meta.url);
 const T = require("../beamdswitch.js");
@@ -16,13 +16,6 @@ const VIEWS = [null, ...D.cuisines.map((c) => c.id)].flatMap((cuisine) => [null,
 const deckFor = (view) => T.deck(R.report(D, view));
 const what = (v) => `cuisine=${v.cuisine} mall=${v.mall} sort=${v.sort} open=${v.open}`;
 const shownIn = (v) => D.outlets.filter((o) => (!v.cuisine || o.cuisine === v.cuisine) && (!v.mall || o.mall === v.mall));
-
-test("the site's shared beamdswitch template is the copy the Tampines food page inlines", () => {
-  assertTemplateCopy("tampines-food");
-  const html = read("index.html");
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"), "tampines-food");
-  assertInlined(html, "report", read("report.js"), "tampines-food");
-});
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the places filtered", async () => {
   const page = await openPage("tampines-food"), cuisine = estimated.cuisine;

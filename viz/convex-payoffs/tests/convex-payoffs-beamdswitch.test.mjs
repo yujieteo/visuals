@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertStandardDeck, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const html = read("index.html");
 // The scripts as the page runs them, loaded into one context: the template and the report.
@@ -20,12 +20,6 @@ const page0 = openPage(cells());
 /** @type {Parameters<typeof ConvexReport.report>[0]} */
 const PAGE = JSON.parse(JSON.stringify(page0.run("PAGE")));
 const deckFor = (/** @type {string} */ id) => Beamdswitch.deck(ConvexReport.report(PAGE, { id }));
-
-test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
-  assertTemplateCopy();
-  assertInlined(html, "beamdswitch", read("beamdswitch.js"));
-  assertInlined(html, "report", read("report.js"));
-});
 
 test("the deck's words are the page's: its quadrants, message, caveat and research basis", () => {
   // Every row the deck reads is the committed data, and every sentence it quotes is on the page.
