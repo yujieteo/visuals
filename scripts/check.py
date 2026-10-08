@@ -2,7 +2,7 @@
 """Run one or more visuals' checks, each from its own folder and independent of every other visual.
 
 For each viz/<slug>/, in order:
-  build    python3 build.py --verify, when the folder has a builder
+  build    python3 build.py --verify, when the folder has a builder; it fails too when the step changes a file
   node     node --test over tests/*.test.mjs and tests/*.test.cjs, when there are any
   python   python3 -m unittest discover over tests/test_*.py, when there are any
   types    scripts/typecheck.mjs, when the folder has a tsconfig.json
@@ -158,6 +158,22 @@ def run(name, argv, folder, log):
     return result.returncode == 0
 
 
+def snapshot(folder):
+    """Every file of the folder, by path and bytes, apart from Python's caches."""
+    return {p: p.read_bytes() for p in sorted(folder.rglob("*")) if p.is_file() and "__pycache__" not in p.parts}
+
+
+def restore(folder, before):
+    """Put the folder back as ``before`` was; return the names of the files the step had added, changed or removed."""
+    after = snapshot(folder)
+    for path in after.keys() - before.keys():
+        path.unlink()
+    for path, data in before.items():
+        if after.get(path) != data:
+            path.write_bytes(data)
+    return sorted({p.relative_to(folder).as_posix() for p in after.keys() ^ before.keys()} | {p.relative_to(folder).as_posix() for p in before.keys() & after.keys() if before[p] != after[p]})
+
+
 def check(slug, require_typecheck=False):
     """Run one visual's checks; return [(step, status, seconds)]."""
     folder = ROOT / VIZ / slug
@@ -170,7 +186,14 @@ def check(slug, require_typecheck=False):
     for name, argv in steps:
         shown = argv if isinstance(argv, str) else shlex.join(["python3" if arg == sys.executable else arg for arg in argv])
         print(f"[{slug}] {name}: {shown}", flush=True)
+        before = snapshot(folder) if name == "build" else None
         run(name, argv, folder, log)
+        if before is not None:
+            changed = restore(folder, before)
+            if changed:
+                problems = [f"build.py --verify wrote {', '.join(changed)}: it must only check, so the committed output is stale or the builder ignores --verify (the files are restored)"]
+                print(f"[{slug}] build: {problems[0]}", file=sys.stderr)
+                log.append(("build writes nothing", "FAIL", 0.0, problems))
     if (folder / "tsconfig.json").is_file():
         if TSC.is_file():
             print(f"[{slug}] types: scripts/typecheck.mjs {slug}", flush=True)
