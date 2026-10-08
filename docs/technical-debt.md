@@ -163,3 +163,23 @@ The risk is that a Firefox-only failure shows first in CI.
 | Standalone contract | visuals `e2e/tests/standalone.test.js` | none |
 
 Site revision pinning is outside this pull request. The counterpart site task owns it.
+
+## Live evidence
+
+The author ran this check live on 2026-10-08. It ran outside the pipeline.
+
+Command: `cd e2e && E2E_PROJECTS=chromium-desktop E2E_ONLY=mohr,theorem-explorer,okr-setter node --test tests/standalone.test.js`.
+
+The command starts one headless Chromium. It closes the browser afterwards.
+
+For each visual, the test copies the built folder into an empty scratch folder. The copy has no `data.json`.
+
+The test opens `index.html` from file:// in an offline browser context. It operates the primary control.
+
+The test asserts no error, no request and a changed page.
+
+Result: 3 pass, 0 fail. Time: mohr 1207 ms, okr-setter 757 ms, theorem-explorer 1020 ms, total 1.59 s.
+
+Full run of all 58 offline-claiming visuals: 58 pass in each of chromium-desktop, chromium-mobile, webkit-desktop and webkit-mobile.
+
+Limit: Firefox did not start in the author environment. The standalone test is untested in Firefox until CI runs it.
