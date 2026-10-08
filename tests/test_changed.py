@@ -48,6 +48,12 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(self.browser("viz/alpha/index.html"), [("alpha", False)])
         self.assertEqual(self.browser("scripts/family.py"), [("beta", False), ("gamma", False)])
 
+    def test_a_public_visual_supersedes_the_former_site_browser_target(self):
+        self.assertEqual(self.browser("viz/alpha/index.html", "e2e/site/alpha/full.test.js"),
+                         [("alpha", False)])
+        self.layout.visual("prototype", metadata(published=False))
+        self.assertEqual(self.browser("e2e/site/prototype/full.test.js"), [("prototype", True)])
+
     def test_a_site_visuals_checks_run_only_its_browser_checks_with_the_site(self):
         paths = ("e2e/site/beamdswitch/full.test.js", "e2e/site/beamdswitch/manifest.json")
         self.assertEqual(self.select(*paths), [])

@@ -140,3 +140,7 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 ## Review by risk
 
 The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it, such as a `scripts/refresh.py` run), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.
+
+## Connes QFT laboratory
+
+The `connes-qft` visual registers `get_metadata`, `get_current_state`, `compute_vacuum_polarization`, `analyse_feynman_graph`, `birkhoff_decomposition`, `finite_spectral_triple`, `modular_theory`, and `run_self_tests`. Its [SKILLS.md](viz/connes-qft/SKILLS.md) gives their inputs and outputs.

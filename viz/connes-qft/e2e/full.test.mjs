@@ -6,7 +6,7 @@
 // no JSON state file; those checks assert the canonical contract and are
 // recorded as findings in manifest/connes-qft.json.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, saved, using } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, saved, using } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const title = (page) => page.locator("#s-title").innerText();
