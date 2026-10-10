@@ -11,9 +11,8 @@ keeps the original commit subjects.
 
 This folder is the shared harness. A visual's own checks live in its folder: `viz/<slug>/e2e/manifest.json`
 (how to drive it, which checks do not apply, and known findings) and `viz/<slug>/e2e/full.test.mjs` (its
-fuller checks). The beamdswitch viewer that the site keeps itself has its checks in
-`site/<slug>/`. CI runs a visual's browser checks only when it changes (`.github/workflows/ci.yml`, one job
-per browser project), and every visual's, with the site's own, once a day.
+fuller checks). CI runs a visual's browser checks only when it changes (`.github/workflows/ci.yml`, one job
+per browser project), and every visual's once a day.
 
 ## Run it
 
@@ -27,7 +26,6 @@ E2E_ONLY=mohr npm run test:standalone            # its standalone contract: inde
 node --test ../viz/mohr/e2e/full.test.mjs        # its fuller checks
 npm run test:harness                             # the harness itself, no browser
 npm run typecheck
-npm run fetch-targets                            # optional: clone yujieteo/site to test its own visuals too
 ```
 
 Everything is chosen by environment variables:
@@ -35,12 +33,10 @@ Everything is chosen by environment variables:
 | Variable | Meaning |
 | --- | --- |
 | `E2E_VISUALS` | the yujieteo/visuals checkout whose `viz/` visuals are tested (default: this repository) |
-| `E2E_SITE` | a clone of yujieteo/site, to also test the visuals it keeps itself (default `.cache/site`, skipped when absent) |
 | `E2E_ARTIFACT` | test one artifact instead: a folder with `index.html`, an HTML file, or an `http(s)://` or `file://` URL; `E2E_SLUG` names it |
 | `E2E_BASE_URL` | test artifacts already served at `<base>/<slug>/`, e.g. `http://localhost:8000/visuals` over a built `site/` |
 | `E2E_PROJECTS` | comma-separated projects: `chromium-desktop`, `firefox-desktop`, `webkit-desktop`, `chromium-mobile`, `webkit-mobile` (default all) |
 | `E2E_ONLY` | comma-separated slugs |
-| `E2E_SOURCE` | `site` or `visuals`: only the visuals the site keeps itself, or only this repository's |
 | `E2E_SHARD` | `i/n`: every n-th visual from the i-th, for splitting a run across machines |
 | `E2E_CONCURRENCY` | visuals tested at once per browser (default 4) |
 | `E2E_RESULTS` | write one JSON line per check to `<folder>/<project>.<run>[.<shard>].jsonl` |
@@ -151,7 +147,7 @@ node scripts/record-findings.js results
 
 | Path | Role |
 | --- | --- |
-| `lib/catalogue.js` | discovers the visuals: every `viz/<slug>/visual.json`, and the site's own from a site clone |
+| `lib/catalogue.js` | discovers the visuals: every `viz/<slug>/visual.json` |
 | `lib/stage.js` | stages each visual as the site publishes it |
 | `lib/server.js` | the localhost static server |
 | `lib/targets.js` | turns the environment into the artifacts under test |
@@ -162,9 +158,8 @@ node scripts/record-findings.js results
 | `lib/kit.js` | every full check of a generated visual, through the controls the shared kit gives its page |
 | `lib/manifest.js` | finds and reads each visual's manifest |
 | `lib/page-axi.js`, `bin/page-axi.js` | page-axi, the one-call check of one page |
-| `lib/results.js`, `scripts/` | results, findings, timings and fetching the site |
+| `lib/results.js`, `scripts/` | results, findings and timings |
 | `tests/` | the baseline suite, the harness's and page-axi's own tests, with their fixtures |
-| `site/<slug>/` | the manifests and full checks of the visuals the site keeps itself |
 
 ## Licence
 

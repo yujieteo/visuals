@@ -1,13 +1,12 @@
 # CI tests only what a change touches (docs/monorepo.md). scripts/changed.py maps the diff to the visuals
 # it changes, and each gets its own job on a sparse checkout of the shared tooling plus its own folder, so
 # its checks cannot read another visual's folder and its failure cannot hide or fail another's. Its browser
-# checks (e2e/, its e2e/) get their own job per browser project too; a change to a visual the site keeps runs
-# that visual's (e2e/site/<slug>/). A change to shared tooling selects every visual, and a change to the
-# browser harness every visual's browser checks and the site's own, in shards when there are too many for a
-# job each. The repository job runs on every change on Python 3.9 and 3.12: every tracked Python file must
+# checks (e2e/, its e2e/) get their own job per browser project too. A change to shared tooling selects every
+# visual, and a change to the browser harness every visual's browser checks, in shards when there are too many
+# for a job each. The repository job runs on every change on Python 3.9 and 3.12: every tracked Python file must
 # parse and the shared tooling's tests must pass on both. It also checks the tooling's types, every
 # visual.json and tracked artifacts, and generates the catalogue (uploaded once, on 3.12). A daily run repeats every visual's browser
-# checks, and the site's own, against new browser releases.
+# checks against new browser releases.
 name: CI
 
 on:
@@ -150,8 +149,6 @@ jobs:
     env:
       E2E_PROJECTS: ${{ matrix.project }}
       E2E_ONLY: ${{ matrix.job.only }}
-      # The one job that names no visual tests every visual the site keeps itself.
-      E2E_SOURCE: ${{ matrix.job.only == '' && 'site' || '' }}
       E2E_RESULTS: results
       E2E_CONCURRENCY: 4
     steps:
@@ -162,9 +159,6 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
       - run: npm ci
-      - name: Fetch yujieteo/site, for the visuals it keeps itself
-        if: matrix.job.site
-        run: npm run fetch-targets
       - name: Install the browser
         env:
           MATRIX_PROJECT: ${{ matrix.project }}
@@ -180,17 +174,11 @@ jobs:
       - name: Fuller checks of the visuals that have them
         run: |
           files=()
-          if [ -z "$E2E_ONLY" ]; then
-            files=(site/*/full.test.js)
-          else
-            for slug in ${E2E_ONLY//,/ }; do
-              if [ -f "../viz/$slug/e2e/full.test.mjs" ]; then
-                files+=("../viz/$slug/e2e/full.test.mjs")
-              elif [ -f "site/$slug/full.test.js" ]; then
-                files+=("site/$slug/full.test.js")
-              fi
-            done
-          fi
+          for slug in ${E2E_ONLY//,/ }; do
+            if [ -f "../viz/$slug/e2e/full.test.mjs" ]; then
+              files+=("../viz/$slug/e2e/full.test.mjs")
+            fi
+          done
           if [ ${#files[@]} -gt 0 ]; then node --test "${files[@]}"; fi
       - name: Findings and timings
         if: always()

@@ -467,7 +467,7 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
     if (target.kind === "slug" && target.visual) {
       const { stageVisual } = await import("./stage.js");
       staging = mkdtempSync(join(process.env.E2E_TMP ?? tmpdir(), "page-axi-"));
-      folder = stageVisual(target.visual, { siteRoot: join(repo, "e2e", ".cache", "site"), visualsRepo: repo, stagingRoot: staging });
+      folder = stageVisual(target.visual, { visualsRepo: repo, stagingRoot: staging });
     }
     /** @type {string} */
     let url;

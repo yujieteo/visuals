@@ -1,7 +1,6 @@
-// Per-visual manifests: viz/<slug>/e2e/manifest.json (e2e/site/<slug>/manifest.json
-// for a visual the site keeps) says how to drive one visual and which of its checks
-// are known to fail. One file per visual, in its own folder, so workers who each
-// own a visual never edit the same file or the shared code.
+// Per-visual manifests: viz/<slug>/e2e/manifest.json says how to drive one visual
+// and which of its checks are known to fail. One file per visual, in its own folder,
+// so workers who each own a visual never edit the same file or the shared code.
 //
 // {
 //   "primary": { "selector": "#prior", "action": "range", "value": "0.3" },
@@ -59,14 +58,13 @@ export const FULL_CHECKS = /** @type {const} */ ([
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /**
- * Where a visual's manifest lives: its own folder in viz/, or e2e/site/ for a visual the site keeps.
+ * Where a visual's manifest lives: its own folder in viz/.
  * @param {string} slug
  * @param {string} [repo]
  * @returns {string}
  */
 export function manifestPath(slug, repo = REPO) {
-  const own = join(repo, "viz", slug, "e2e", "manifest.json");
-  return existsSync(join(repo, "viz", slug)) ? own : join(repo, "e2e", "site", slug, "manifest.json");
+  return join(repo, "viz", slug, "e2e", "manifest.json");
 }
 
 /**
@@ -86,11 +84,7 @@ export function loadManifest(slug, repo = REPO) {
  */
 export function loadAllManifests(repo = REPO) {
   const out = new Map();
-  const slugs = [
-    ...readdirSync(join(repo, "viz")).filter((slug) => existsSync(join(repo, "viz", slug, "e2e", "manifest.json"))),
-    ...(existsSync(join(repo, "e2e", "site")) ? readdirSync(join(repo, "e2e", "site")) : []),
-  ];
-  for (const slug of slugs.sort()) {
+  for (const slug of readdirSync(join(repo, "viz")).sort()) {
     const path = manifestPath(slug, repo);
     if (existsSync(path)) out.set(slug, JSON.parse(readFileSync(path, "utf8")));
   }

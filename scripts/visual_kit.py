@@ -1,4 +1,4 @@
-"""The shared, versioned parts every generated visual is built from: the kit (scripts/kit/), the site's beamdswitch
+"""The shared, versioned parts every generated visual is built from: the kit (scripts/kit/), the beamdswitch report
 template (scripts/templates/) and the vendored MathJax with its Fira font (scripts/vendor/mathjax/).
 
 scripts/visual_build.py inlines these into a visual's index.html, scripts/new_visual.py writes the files a visual
@@ -21,9 +21,8 @@ MATHJAX = "mathjax-4.1.3"
 # The vendored files in the order the bundle concatenates them. They run as one script, so the font is in place
 # before MathJax's startup, which resolves in a later microtask, chooses one.
 MATHJAX_FILES = ("mathjax/tex-svg-nofont.js", "mathjax/a11y/assistive-mml.js", "mathjax-fira-font/svg.js")
-# The site's beamdswitch template and the read-only beamdswitch parsers the shared tests use.
+# The beamdswitch report template a generated visual copies.
 BEAMDSWITCH = TEMPLATES / "beamdswitch.js"
-BEAMDSWITCH_HASH = TEMPLATES / "beamdswitch.sha256"
 
 
 def sha256(data):
@@ -102,9 +101,5 @@ def vendor_problems(vendor=VENDOR):
 
 
 def beamdswitch_template():
-    """The site's beamdswitch template as scripts/sync_template.py last recorded it."""
-    text = read(BEAMDSWITCH)
-    expected = read(BEAMDSWITCH_HASH).split()[0]
-    if sha256(text) != expected:
-        raise SystemExit(f"{BEAMDSWITCH} differs from {BEAMDSWITCH_HASH.name}; run scripts/sync_template.py")
-    return text
+    """The beamdswitch report template, scripts/templates/beamdswitch.js."""
+    return read(BEAMDSWITCH)

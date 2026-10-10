@@ -1,5 +1,5 @@
-// scripts/templates/beamdswitch.js, the site's report template that every deck-exporting page inlines unchanged
-// (the template rule in scripts/rules.py checks each copy against its SHA-256): a deck with no voice in its front
+// scripts/templates/beamdswitch.js, the report template that every deck-exporting page inlines unchanged
+// (the template rule in scripts/rules.py checks that each page inlines its copy unchanged): a deck with no voice in its front
 // matter is not narrated, so the template writes the report's meta.voice, or bf_emma (beamdswitch's default
 // British female voice) when the report names none. The deck is parsed with beamdswitch's own parser.
 import assert from "node:assert/strict";
