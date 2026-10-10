@@ -30,7 +30,11 @@ fn write(out: &mut String, value: &Value, indent: Option<usize>, depth: usize) {
             out.extend(std::iter::repeat_n(' ', n * depth));
         }
     };
-    let (comma, colon) = if indent.is_some() { (",", ": ") } else { (",", ":") };
+    let (comma, colon) = if indent.is_some() {
+        (",", ": ")
+    } else {
+        (",", ":")
+    };
     match value {
         Value::Null => out.push_str("null"),
         Value::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
@@ -111,14 +115,31 @@ pub fn float(f: f64) -> String {
         let body = if point <= 0 {
             format!("0.{}{}", "0".repeat((-point) as usize), digits)
         } else if digits.len() as i32 <= point {
-            format!("{}{}.0", digits, "0".repeat((point - digits.len() as i32) as usize))
+            format!(
+                "{}{}.0",
+                digits,
+                "0".repeat((point - digits.len() as i32) as usize)
+            )
         } else {
-            format!("{}.{}", &digits[..point as usize], &digits[point as usize..])
+            format!(
+                "{}.{}",
+                &digits[..point as usize],
+                &digits[point as usize..]
+            )
         };
         format!("{sign}{body}")
     } else {
-        let tail = if digits.len() > 1 { format!(".{}", &digits[1..]) } else { String::new() };
-        format!("{sign}{}{tail}e{}{:02}", &digits[..1], if exp < 0 { '-' } else { '+' }, exp.abs())
+        let tail = if digits.len() > 1 {
+            format!(".{}", &digits[1..])
+        } else {
+            String::new()
+        };
+        format!(
+            "{sign}{}{tail}e{}{:02}",
+            &digits[..1],
+            if exp < 0 { '-' } else { '+' },
+            exp.abs()
+        )
     }
 }
 
@@ -137,15 +158,32 @@ pub fn repr(value: Option<&Value>) -> String {
         Some(Value::Bool(b)) => if *b { "True" } else { "False" }.into(),
         Some(Value::Number(n)) => number(n).replace("NaN", "nan").replace("Infinity", "inf"),
         Some(Value::String(s)) => repr_str(s),
-        Some(Value::Array(items)) => format!("[{}]", items.iter().map(|v| repr(Some(v))).collect::<Vec<_>>().join(", ")),
+        Some(Value::Array(items)) => format!(
+            "[{}]",
+            items
+                .iter()
+                .map(|v| repr(Some(v)))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
         Some(Value::Object(map)) => {
-            format!("{{{}}}", map.iter().map(|(k, v)| format!("{}: {}", repr_str(k), repr(Some(v)))).collect::<Vec<_>>().join(", "))
+            format!(
+                "{{{}}}",
+                map.iter()
+                    .map(|(k, v)| format!("{}: {}", repr_str(k), repr(Some(v))))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
         }
     }
 }
 
 fn repr_str(s: &str) -> String {
-    let quote = if s.contains('\'') && !s.contains('"') { '"' } else { '\'' };
+    let quote = if s.contains('\'') && !s.contains('"') {
+        '"'
+    } else {
+        '\''
+    };
     let mut out = String::from(quote);
     for c in s.chars() {
         match c {
@@ -157,7 +195,9 @@ fn repr_str(s: &str) -> String {
                 out.push('\\');
                 out.push(c);
             }
-            c if (c as u32) < 0x20 || c as u32 == 0x7f => out.push_str(&format!("\\x{:02x}", c as u32)),
+            c if (c as u32) < 0x20 || c as u32 == 0x7f => {
+                out.push_str(&format!("\\x{:02x}", c as u32))
+            }
             c => out.push(c),
         }
     }
@@ -179,14 +219,19 @@ pub fn truthy(value: Option<&Value>) -> bool {
 
 /// `x.get(key) or default` for an array: the items, or none.
 pub fn items<'a>(x: &'a Value, key: &str) -> &'a [Value] {
-    x.get(key).and_then(Value::as_array).map_or(&[], Vec::as_slice)
+    x.get(key)
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
 }
 
 /// `json.loads(gzip.decompress(base64.b64decode(raw["packs"][name]["gz"])))`.
 pub fn unpack(raw: &Value, name: &str) -> Value {
-    let gz = base64::engine::general_purpose::STANDARD.decode(raw["packs"][name]["gz"].as_str().expect("pack gz")).expect("pack base64");
+    let gz = base64::engine::general_purpose::STANDARD
+        .decode(raw["packs"][name]["gz"].as_str().expect("pack gz"))
+        .expect("pack base64");
     let mut data = Vec::new();
-    std::io::Read::read_to_end(&mut flate2::read::GzDecoder::new(&gz[..]), &mut data).expect("pack gzip");
+    std::io::Read::read_to_end(&mut flate2::read::GzDecoder::new(&gz[..]), &mut data)
+        .expect("pack gzip");
     serde_json::from_slice(&data).expect("pack JSON")
 }
 
@@ -199,7 +244,10 @@ pub fn pack(value: &Value) -> Value {
     map.insert("bytes".into(), data.len().into());
     map.insert("gz_bytes".into(), gz.len().into());
     map.insert("sha256".into(), sha256_hex(&data).into());
-    map.insert("gz".into(), base64::engine::general_purpose::STANDARD.encode(&gz).into());
+    map.insert(
+        "gz".into(),
+        base64::engine::general_purpose::STANDARD.encode(&gz).into(),
+    );
     Value::Object(map)
 }
 
@@ -208,7 +256,9 @@ fn gzip(data: &[u8]) -> Vec<u8> {
     let mut body = Vec::with_capacity(data.len() / 2 + 1024);
     loop {
         let read = deflate.total_in() as usize;
-        let status = deflate.compress_vec(&data[read..], &mut body, FlushCompress::Finish).expect("deflate");
+        let status = deflate
+            .compress_vec(&data[read..], &mut body, FlushCompress::Finish)
+            .expect("deflate");
         if status == flate2::Status::StreamEnd {
             break;
         }
@@ -224,7 +274,10 @@ fn gzip(data: &[u8]) -> Vec<u8> {
 }
 
 pub fn sha256_hex(data: &[u8]) -> String {
-    Sha256::digest(data).iter().map(|b| format!("{b:02x}")).collect()
+    Sha256::digest(data)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 /// Python's `str.strip()`: whitespace by `str.isspace`, which also counts the separators U+001C to U+001F.
@@ -238,18 +291,38 @@ mod tests {
 
     #[test]
     fn floats_read_as_python_writes_them() {
-        for (f, want) in [(1.0, "1.0"), (0.1, "0.1"), (1e-5, "1e-05"), (1e16, "1e+16"), (123456789012345.6, "123456789012345.6"),
-            (0.0001, "0.0001"), (-2.5, "-2.5"), (1.5e-7, "1.5e-07"), (1e300, "1e+300"), (100000.0, "100000.0"), (-0.0, "-0.0")]
-        {
+        for (f, want) in [
+            (1.0, "1.0"),
+            (0.1, "0.1"),
+            (1e-5, "1e-05"),
+            (1e16, "1e+16"),
+            (123456789012345.6, "123456789012345.6"),
+            (0.0001, "0.0001"),
+            (-2.5, "-2.5"),
+            (1.5e-7, "1.5e-07"),
+            (1e300, "1e+300"),
+            (100000.0, "100000.0"),
+            (-0.0, "-0.0"),
+        ] {
             assert_eq!(float(f), want);
         }
     }
 
     #[test]
     fn json_has_python_separators_and_escapes() {
-        let v: Value = serde_json::from_str(r#"{"a":[1,2.0,{}],"b":"x\u0001\n\"é","c":[]}"#).unwrap();
-        assert_eq!(compact(&v), "{\"a\":[1,2.0,{}],\"b\":\"x\\u0001\\n\\\"é\",\"c\":[]}");
-        assert_eq!(indented(&v), "{\n \"a\": [\n  1,\n  2.0,\n  {}\n ],\n \"b\": \"x\\u0001\\n\\\"é\",\n \"c\": []\n}");
-        assert_eq!(repr(Some(&serde_json::json!(["s:a", null, 1, "it's"]))), "['s:a', None, 1, \"it's\"]");
+        let v: Value =
+            serde_json::from_str(r#"{"a":[1,2.0,{}],"b":"x\u0001\n\"é","c":[]}"#).unwrap();
+        assert_eq!(
+            compact(&v),
+            "{\"a\":[1,2.0,{}],\"b\":\"x\\u0001\\n\\\"é\",\"c\":[]}"
+        );
+        assert_eq!(
+            indented(&v),
+            "{\n \"a\": [\n  1,\n  2.0,\n  {}\n ],\n \"b\": \"x\\u0001\\n\\\"é\",\n \"c\": []\n}"
+        );
+        assert_eq!(
+            repr(Some(&serde_json::json!(["s:a", null, 1, "it's"]))),
+            "['s:a', None, 1, \"it's\"]"
+        );
     }
 }
