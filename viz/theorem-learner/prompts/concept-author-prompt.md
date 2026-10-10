@@ -6,7 +6,7 @@ seconds; the definition and examples are there when the reader needs more.
 
 ## Read first
 
-- `viz/theorem-learner/pipeline/learning.py`: its docstring defines the concept object and the markup
+- `viz/theorem-learner/src/learning.rs`: its module comment defines the concept object and the markup
   `[word](c:concept-id)`; `check` enforces the rules.
 - Your concept batch (given in your task): one packet per concept, with the catalog's definition text and its basis
   (judge, quoted nLab Idea passage or quoted mathlib doc comment), its catalog prerequisites, the concepts that need
@@ -42,6 +42,6 @@ ASD-STE100: short sentences, simple words, active voice, present tense. Mathemat
 Write one JSON array of concept objects, in packet order, to the output file named in your task, with a Python script
 (`json.dump`). Then run
 
-    python3 viz/theorem-learner/pipeline/learning.py check <output file>
+    cargo run --release --manifest-path viz/theorem-learner/Cargo.toml -- check <output file>
 
 and fix every problem until it prints `0 problems`. Edit no other file.

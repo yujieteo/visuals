@@ -7,9 +7,9 @@ step when they need it.
 
 ## Read first
 
-- `viz/theorem-learner/pipeline/learning.py`: its docstring defines the format (theorem and proof objects, the
+- `viz/theorem-learner/src/learning.rs`: its module comment defines the format (theorem and proof objects, the
   markup `[word](c:concept-id)`) and the rules that `check` enforces.
-- `viz/theorem-learner/pipeline/proof-author-example.json`: two finished theorems. Match their style and depth.
+- `viz/theorem-learner/prompts/proof-author-example.json`: two finished theorems. Match their style and depth.
 - `viz/theorem-learner/data/learning/mechanisms.json`: the proof moves you may name.
 - Your packet batch (given in your task): one packet per theorem, with its sources, its Lean declaration and Lean
   proof text when mathlib has one, its key concepts with catalog ids, its prerequisites and related results.
@@ -116,6 +116,6 @@ terms are allowed. No filler, no "clearly", no "it is easy to see".
 Write your answers as one JSON array, in packet order, to the output file named in your task. Build it with a Python
 script (`json.dump`), a few theorems at a time, to avoid escaping errors. Then run
 
-    python3 viz/theorem-learner/pipeline/learning.py check <output file>
+    cargo run --release --manifest-path viz/theorem-learner/Cargo.toml -- check <output file>
 
 and fix every problem until it prints `0 problems`. Edit no other file.
