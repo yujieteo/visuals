@@ -1,7 +1,55 @@
-# Monte Carlo Probability Workbench
+# Monte Carlo Probability Workbench: data
 
-`build.py` writes `index.html` and `raw.json` from `data/` (the catalogue), `src/` (body, CSS and the classic-script modules), `beamdswitch.js` and the shared kit. Never edit `index.html` or `raw.json` by hand. The engine modules (`rng`, `special`, `expr`, `continuous`, `tails`, `laws`, `custom`, `constructed`, `copulas`, `processes`, `engine`, `dsl`, `physics`) are pure and run in Node, in the page and in its workers; `mlmc.js` is pure too and runs the multilevel levels in the page; `pool.js`, `depview.js`, `rareview.js` and `view.js` run in the browser only. Group 7 keeps its rare-event engine in `rare.js` (pure; the workers run it through `rare-worker.js`) and its problems, methods and examples in `data/rare.json`; its theory panels are in `data/theory.json` and link to an example of the lab with `experiment.rare`. Group 8 keeps its Markov chain, sequential and quasi-Monte Carlo engine in `chains.js` (pure; the workers run it through `chains-worker.js`), its view in `chainview.js` (browser only), and its examples and methods in `data/chains.json`; its theory panels link to a lab example with `experiment.chains`, and its synthetic data name their generator, which `tests/chains-catalogue.test.mjs` runs again. Group 5 keeps its laws in `copulas.js` and `processes.js`, which the engine reads through `En.DEP`, and its catalogue entries in `data/laws.json` with the types `copula`, `process` and `conditional`. A workflow's model is its `dsl` text in `data/models.json`: change the text, then run `python3 build.py` and `node --test tests/*.test.mjs`.
+The page of this visual is now 4 notebooks of yujieteo/site. Each notebook reads some of the files in `data/`
+through the site's `visuals.lock`:
 
-Keep the rules of `spec.md`: every law keeps three workflows of its own, every method keeps a suitable example, a failure example and a comparison, every result keeps its claim tag, a moment that does not exist is never shown as a number, and synthetic parameters are never presented as calibrated evidence. A change to the engine keeps the results of the earlier groups the same: compare them before and after. Every process states its five conditions, and a continuous-time reference of a grid quantity stays marked as such (`continuous`), so no test or coverage check reads it as an error. Check the reader text with the ASD-STE100 checker; the page claims no certified conformance.
+| Notebook | Source in yujieteo/site | Data files that it reads |
+| --- | --- | --- |
+| `play/mclaws/` | `content/play/mclaws/index.md` | `laws.json`, `theory.json`, `glossary.json`, `limits.json` |
+| `play/mcmodels/` | `content/play/mcmodels/index.md` | `models.json`, `methods.json`, `datasets.json`, `groups.json`, `laws.json`, `interview.json` (the guided interview) |
+| `play/mcchains/` | `content/play/mcchains/index.md` | `chains.json` (the Markov chain, sequential and quasi-Monte Carlo lab), `rare.json` (the rare-event lab), `datasets.json` |
+| `play/mcphysics/` | `content/play/mcphysics/index.md` | `physics.json` (the statistical-physics lab) |
 
-Its tests are in `tests/`, its browser checks in `e2e/`. `python3 ../../scripts/check.py monte-carlo-workbench` runs its checks. Rules for every visual: [SKILLS.md](../../SKILLS.md).
+`site_page` in `visual.json` names the first notebook.
+
+## Pinned files
+
+The site's `visuals.lock` pins one commit of this repository and the SHA-256 of each file that a notebook reads.
+Thus a change to a data file has no effect on the site until the site pins the new commit. Change the bytes of a
+pinned file only together with a change to the site's `visuals.lock`. The site does not read `raw.json`.
+
+## History
+
+The last commit that has the JavaScript page is 02fcb4f. That commit also has these files:
+
+- `build.py`, the Python builder of the page and of `raw.json`.
+- `src/` and `tests/`, the engine of the page and its Node tests.
+- `e2e/`, the browser checks.
+- `SKILLS.md`, the WebMCP tools of the page.
+- `spec.md`, the specification of the owner.
+
+The notebooks port that page. The data keep these rules of the specification:
+
+- Every law has 3 workflows of its own.
+- Every method has a suitable example, a failure example and a comparison.
+- Every result has a claim tag: theorem, numerical approximation or finite-run observation.
+- A notebook never shows a moment that does not exist as a number.
+- Synthetic data name the model that makes them. Synthetic parameters are illustrative, never calibrated evidence.
+
+## Builder
+
+The builder is a Rust crate (`Cargo.toml`, `src/`). It writes `raw.json`, the catalogue of the 12 data files,
+with the same bytes as `build.py` wrote. `raw.json` holds `format` and `version`, then each data file under its
+name, in the order of `DATA` in `src/main.rs`. `src/py.rs` writes JSON as Python's
+`json.dumps(value, ensure_ascii=False, indent=1)` does. The repository's `rust-toolchain.toml` pins the compiler.
+Run these commands from this folder:
+
+| Command | Result |
+| --- | --- |
+| `cargo run --release` | It writes `raw.json`. |
+| `cargo run --release -- --verify` | It checks that `raw.json` is current and writes nothing. |
+| `cargo test --locked --release` | It builds the bytes of `raw.json` and compares them with the committed file. It also tests the JSON format of Python. |
+
+After a change to a data file, run `cargo run --release`. Then run `cargo test --locked --release`. Do not edit
+`raw.json` by hand. `python3 ../../scripts/check.py monte-carlo-workbench` runs the checks of this visual. The rules
+for every visual are in [SKILLS.md](../../SKILLS.md).
