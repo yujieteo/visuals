@@ -108,8 +108,8 @@ The risk is that a Firefox-only failure shows first in CI.
 - ID: SA-6
 - Repository: visuals
 - Location: `viz/*/e2e/manifest.json` and `visual.json` (`offline`, summary text)
-- Problem: 13 visuals do not claim to work offline, so `file-url` and `test:standalone` skip them.
-- Evidence: A copy of each with an offline claim passed `test:standalone` in Chromium, except `work-lanyards` (SA-2). The other 12 are `data-workbench`, `manchester-city-finances`, `marvell`, `multi-armed-bandit`, `ooda-orientation`, `panw`, `root-locus`, `sectionlab`, `singapore-covid-governance-hindsight`, `social-values-surveydata`, `tampines-food-map` and `tourist-attractions`.
+- Problem: 12 visuals do not claim to work offline, so `file-url` and `test:standalone` skip them.
+- Evidence: A copy of each with an offline claim passed `test:standalone` in Chromium, except `work-lanyards` (SA-2). The other 11 are `data-workbench`, `manchester-city-finances`, `marvell`, `multi-armed-bandit`, `ooda-orientation`, `panw`, `root-locus`, `singapore-covid-governance-hindsight`, `social-values-surveydata`, `tampines-food-map` and `tourist-attractions`.
 - Severity: Low
 - Maintenance cost: A regression in these 11 is not caught by the contract.
 - Proposed fix: Set `"offline": true` in 11 of the 12 manifests, one pull request each owner may review. Do not change page text.
