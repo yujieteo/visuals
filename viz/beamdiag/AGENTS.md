@@ -1,7 +1,18 @@
 # Beam diagram creator (beamdiag)
 
-`index.html` is built: edit `template.html`, `engine.js` (`BeamDiag`, the stiffness-method solver, which is authoritative), `handcalc.js` (`HandCalc`, the hand calculations and the deck's Hand calculations section) or `raw.json`, then run `python3 build.py`; never hand-edit `index.html`. After editing `fixtures.json`, run `python3 reference.py` to rebuild `reference.json`, the independent exact-arithmetic Python solver's answers the tests compare the engine with.
+The page is the Beam diagram notebook of yujieteo/site (`content/play/beamdiag/index.md`, at
+`teoyujie.org/play/beamdiag/`). It reads the three files of this folder through the site's `visuals.lock`,
+which pins their SHA-256, so a change here takes effect only when the site pins the new commit.
 
-The engine solves in SI (m, N, Pa); the page converts to and from the chosen units, and the WebMCP tools take and return SI. Loads are positive upward, couples counter-clockwise, and M is positive when sagging. Anything beamdiag adds to its decks lives in `handcalc.js`, never in `beamdswitch.js`.
+| File | Holds |
+| --- | --- |
+| `raw.json` | The page data: unit conventions, assumptions, the method, the sources and the Nastran cards. |
+| `fixtures.json` | The test beams: pin–pin, fixed–fixed, propped, cantilever, overhang and continuous layouts, up to forty supports, with closed forms where they exist. |
+| `reference.json` | The answers of `reference.py`, an exact rational solver by Macaulay integration with only the Python standard library, frozen on 2026-10-10. The notebook's check cell compares its own stiffness solver with every case to 1e-9 of each quantity's largest value. |
 
-[docs/verification.md](docs/verification.md) lists what each test checks. `tests/browser.test.mjs` drags handles in Chrome and lays out every preset's deck in `tests/fixtures/beamdswitch/beamdswitch.html`; it runs when `BEAMDIAG_BROWSER_URL` names a Chrome started with remote debugging (`scripts/with_chrome.py` starts one in CI) and skips otherwise. Rules for every visual: [SKILLS.md](../../SKILLS.md).
+`reference.py`, the old JavaScript page, its builder and its tests are in Git history: the last commit
+that has them is 32181d1. Never edit `reference.json` by hand. To add a case, restore `reference.py` from
+that commit, add the beam to `fixtures.json`, run it, and commit both files.
+
+Loads are positive upward, couples counter-clockwise, and M is positive when sagging. The data is in SI
+(m, N, Pa).

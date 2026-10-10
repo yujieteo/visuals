@@ -48,6 +48,12 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(self.browser("viz/alpha/index.html"), [("alpha", False)])
         self.assertEqual(self.browser("scripts/family.py"), [("beta", False), ("gamma", False)])
 
+    def test_a_visual_whose_page_moved_to_the_site_has_no_browser_checks(self):
+        self.layout.visual("delta", metadata(site_page="play/delta/", webmcp_tools=None), ("raw.json",))
+        self.assertEqual(self.select("viz/delta/raw.json"), ["delta"])
+        self.assertEqual(self.browser("viz/delta/raw.json"), [])
+        self.assertNotIn(("delta", False), self.browser("e2e/lib/full.js"))
+
     def test_a_public_visual_supersedes_the_former_site_browser_target(self):
         self.assertEqual(self.browser("viz/alpha/index.html", "e2e/site/alpha/full.test.js"),
                          [("alpha", False)])

@@ -47,7 +47,10 @@ tsconfig.base.json     compiler options every visual's tsconfig.json extends
 reads: `page`, the HTML when not `index.html`, such as a builder's template; and `skip`, the inline blocks
 it leaves out, by id or by the folder file they copy: a builder's inlined `src/*.js`, checked from `src/`,
 and the byte-identical `beamdswitch` and `report` templates), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
-`published: false` for a visual the site does not publish. The folder name is the slug.
+`published: false` for a visual the site does not publish. `site_page` names the yujieteo/site page that
+replaced a visual's page, such as `play/beamdiag/`: the folder then keeps only the data, the fixtures and the
+builders that the site pins in its `visuals.lock`, with no `index.html` and no `webmcp_tools`, and the
+catalogue, the page rules and the browser checks leave it out. The folder name is the slug.
 
 ## Checks
 

@@ -16,6 +16,10 @@ What a visual must be (artifact contract, state and export, interaction and acce
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
 4. Check it: `python3 scripts/check.py --toon <slug>`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --toon --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
 
+## A visual whose page moved to the site
+
+When yujieteo/site replaces a visual's page with one of its own, such as a notebook, the folder keeps only what the site pins in its `visuals.lock`: the data, the fixtures and the data builders. Delete the page, its builder and its page tests, and set `site_page` in `visual.json` to the site path (such as `play/beamdiag/`) in place of `webmcp_tools`. The checks then skip the page rules, the catalogue leaves the visual out, and it has no browser checks. Never change a pinned file's bytes without a matching change to the site's `visuals.lock`.
+
 ## One-call verdicts
 
 Agents call these and read their output; do not pipe a check's output through `tail` or `grep`, and do not sort type errors by hand. Each prints one short TOON verdict, the failures first with their `file:line`, counts and `help` lines with the next command, and writes the full output to a log in `build/logs/` whose path it prints. Exit 0 is a pass, 1 a failure, 2 a usage or environment error.

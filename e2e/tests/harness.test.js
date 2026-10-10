@@ -35,7 +35,9 @@ test("discovery finds catalogued, pinned and uncatalogued visuals", () => {
 });
 
 test("discovery reads every viz/<slug>/visual.json of a visuals checkout", () => {
-  const [delta] = discoverVisualsRepo(VISUALS);
+  const visuals = discoverVisualsRepo(VISUALS);
+  assert.deepEqual(visuals.map((v) => v.slug), ["delta"], "epsilon's page moved to the site, so it has no page to test");
+  const [delta] = visuals;
   assert.deepEqual({ slug: delta.slug, source: delta.source, htmlPath: delta.htmlPath, dataPath: delta.dataPath, assets: delta.assets, pin: delta.pin },
     { slug: "delta", source: "visuals", htmlPath: "viz/delta/index.html", dataPath: "viz/delta/raw.json", assets: ["viz/delta/probly.csv"], pin: null });
   assert.equal(delta.offlineClaim, true);
