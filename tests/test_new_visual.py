@@ -131,7 +131,7 @@ class GenerateTest(unittest.TestCase):
         template = (ROOT / "scripts" / "templates" / "beamdswitch.js").read_text(encoding="utf-8")
         self.assertEqual((folder / "beamdswitch.js").read_text(encoding="utf-8"), template)
         record = json.loads((folder / "generated.json").read_text(encoding="utf-8"))["beamdswitch"]
-        self.assertEqual(record, {"source": "yujieteo/site templates/beamdswitch.js", "copy": "beamdswitch.js", "sha256": visual_kit.sha256(template)})
+        self.assertEqual(record, {"source": "scripts/templates/beamdswitch.js", "copy": "beamdswitch.js", "sha256": visual_kit.sha256(template)})
 
 
 class DriftTest(unittest.TestCase):

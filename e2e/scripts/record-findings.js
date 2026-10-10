@@ -1,8 +1,9 @@
 // Turn the failures of a run into manifest findings. Run the suite with
 // E2E_RESULTS=<folder>, then: node scripts/record-findings.js <folder> [repository root].
 // Each failing check of a visual becomes (or replaces) one finding in its
-// manifest (viz/<slug>/e2e/manifest.json, or e2e/site/<slug>/) listing the projects it failed in and the
-// first evidence. A project counts as retested for a check only when the
+// manifest (viz/<slug>/e2e/manifest.json) listing the projects it failed in and the
+// first evidence; an artifact that is not a visual in viz/ has no manifest, so
+// it is skipped. A project counts as retested for a check only when the
 // check passed or failed there; a skip keeps what an earlier run found, and a
 // finding whose check now passes in every project it was seen in is dropped.
 // Review the diff: mark a check that fails only sometimes "status": "flaky".
@@ -29,6 +30,10 @@ for (const r of results) {
 
 let written = 0;
 for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b))) {
+  if (!existsSync(join(repo, "viz", slug))) {
+    console.log(`${slug}: not a visual in viz/, so its findings are not recorded`);
+    continue;
+  }
   const manifest = loadManifest(slug, repo);
   /** @type {import("../lib/manifest.js").Finding[]} */
   const kept = (manifest.findings ?? []).filter((f) => !checks.has(f.check));

@@ -12,7 +12,7 @@ and copied the same tooling into every repository.
 | Every test on every change | `scripts/changed.py` maps the diff to the visuals it touches; CI runs one job per touched visual, plus repository-wide jobs on Python 3.9 and 3.12. A change to shared tooling runs every visual. |
 | One visual's tests affecting another's | Each visual's checks run in their own job, from its folder, on a sparse checkout holding only the shared tooling and that folder, so a test that reads another visual's folder fails. Type checks run one `tsc` project per visual. |
 | Merge conflicts between parallel changes | Nothing shared lists the visuals. A visual is added or changed inside its folder only; the catalogue, gallery and any combined list are generated from the folders and never committed. |
-| Mechanical steps done by agents | No ports, pins or manifest entries: the site builds every visual straight from this repository. What remains mechanical runs in CI (below). |
+| Mechanical steps done by agents | No ports or manifest entries, and nothing to sync: the site keeps no copy of a visual or of the beamdswitch template (below). |
 
 ## Layout
 
@@ -27,13 +27,13 @@ viz/<slug>/            one visual, self-contained
   AGENTS.md            at most a few lines specific to changing this visual
   e2e/                 its browser checks: manifest.json and, when it has them, full.test.mjs
   generated.json       for a visual scripts/new_visual.py wrote: its options, the kit's version and the template's SHA-256
-e2e/                   the shared browser-check harness, and the checks of the visuals the site keeps (site/<slug>/)
+e2e/                   the shared browser-check harness
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
                        typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
   new_visual.py        the generator of new visuals, and its drift check and update
   visual_build.py, visual_kit.py, kit/   what a generated page is built from: the shell, the state and export
                        runtime, the style tokens and the shared tests
-  templates/           the site's beamdswitch template and its parsers, copied unchanged
+  templates/           the beamdswitch report template a new visual copies, and the parsers the tests use
   vendor/mathjax/      MathJax 4.1.3 and its Fira font, byte for byte, with their licences and SHA-256 list
 schema/visual.schema.json   what visual.json may hold
 tests/                 tests of the shared tooling only
@@ -65,7 +65,7 @@ deterministic rules that replaced review by reading (`scripts/rules.py`, `script
 
 | Step | Fails when |
 | --- | --- |
-| `template` | a copy of the beamdswitch template (`beamdswitch.js`, its test fixtures, the block the page inlines) differs from the SHA-256 `scripts/sync_template.py` records in `scripts/templates/beamdswitch.sha256` |
+| `template` | the page does not inline the folder's `beamdswitch.js` unchanged, a test copy of it (`tests/fixtures/beamdswitch/`) differs from it, or a page without a builder does not inline its `report.js` unchanged |
 | `requests` | the page requests a URL outside its published files (`index.html`, `data.json`, `assets`), also from CSS `@import` or `url()`: another origin, an absolute or parent path, or `notes.md`; uses `XMLHttpRequest`, `WebSocket`, `EventSource` or `sendBeacon`; fetches, imports or starts a worker from a computed URL; or sets an absolute http(s) URL as a source from script (teoyujie.org and w3.org aside) |
 | `contrast` | a text token (`--fg`, `--muted`, `--focus`, `--hl`, `--ok`, `--warn`, `--bad`) is below 4.5:1 on `--bg`, `--control` or a series colour below 3:1, a control is outlined in a token below 3:1 (such as `--border`), in either theme, or the two dark-theme blocks disagree |
 | `theme` | the page does not carry the site's theme script (`style_guide.THEME_SCRIPT`) unchanged before its first `<style>`, or a `[data-theme]` block does not set the matching `color-scheme` |
@@ -85,8 +85,8 @@ code is fixed.
 `*.pyc`, `.DS_Store` or AppleDouble `._*` file with `.gitignore` keeping them out, no unused or duplicated
 Python in `scripts/` and `tests/`, every tracked `.py` file parsing on the running interpreter (without executing it or writing bytecode),
 and the copies in `scripts/` unchanged: the vendored MathJax files against
-`scripts/vendor/mathjax/SOURCES.json`, `scripts/kit/style-tokens.css` against `scripts/kit/SOURCES.json`, and
-`scripts/templates/beamdswitch.js` against the SHA-256 that `scripts/sync_template.py` records. The tooling's own `tsconfig.json` fails on unused locals and unreachable code.
+`scripts/vendor/mathjax/SOURCES.json`, and `scripts/kit/style-tokens.css` against `scripts/kit/SOURCES.json`.
+The tooling's own `tsconfig.json` fails on unused locals and unreachable code.
 CI runs the repository job, including this check and the shared tooling's Python and Node tests, on
 Python 3.9 and 3.12 on every change, independently of visual selection. Both versions run even if one
 fails; `CI passed` requires both to succeed. Only the 3.12 job uploads the catalogue artifact. Visual
@@ -96,13 +96,11 @@ exercise its runtime compatibility.
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a
 visual lists in `uses` selects its users; documentation (`*.md` at the root or in `e2e/`, `docs/`) selects
 none; anything else is shared tooling and selects all. Browser checks follow the same selection, except
-that a path in `e2e/site/<slug>/` runs only that site visual's browser checks (cloning yujieteo/site for
-them), the rest of `e2e/` and CI run every visual's browser checks, the site's own visuals included (the
-rest of `e2e/` runs no other visual check, while CI runs them all), and other shared tooling, which the
-harness does not use, runs none. Each visual's browser checks get one job per
-browser; when more than 40 visuals are selected they are split into 8 shards. CI computes it against the
-pull request's base, or the previous commit on a push to `main`; `workflow_dispatch` and the daily run run
-everything, the site's own visuals included.
+that `e2e/` and CI run every visual's browser checks (`e2e/` runs no other visual check, while CI runs them
+all), and other shared tooling, which the harness does not use, runs none. Each visual's browser checks get
+one job per browser; when more than 40 visuals are selected they are split into 8 shards. CI computes it
+against the pull request's base, or the previous commit on a push to `main`; `workflow_dispatch` and the
+daily run run everything.
 
 ## Generating a visual
 
@@ -110,10 +108,10 @@ everything, the site's own visuals included.
 mechanical parts come from shared, versioned code instead of copies: its `build.py` calls
 `scripts/visual_build.py`, which inlines the kit (`scripts/kit/`), the style guide's tokens and, with
 `--mathjax`, the vendored MathJax, and its `visual.json` lists those paths in `uses`, so a change to one runs
-only the generated visuals. The one copy is `beamdswitch.js`, which must stay byte-identical to the site's
-template; `generated.json` records its source and SHA-256, and `scripts/sync_template.py` updates both. The
-folder's domain files (model, views, report, data, the domain's tests, `SKILLS.md`, `AGENTS.md`) are written
-once from a starter and never rewritten. `--check` reports drift in the mechanical parts of a generated visual, and
+only the generated visuals. The one copy is `beamdswitch.js`, byte-identical to
+`scripts/templates/beamdswitch.js`; `generated.json` records its source and SHA-256, and `--update` rewrites
+both when that template changes. The folder's domain files (model, views, report, data, the domain's tests,
+`SKILLS.md`, `AGENTS.md`) are written once from a starter and never rewritten. `--check` reports drift in the mechanical parts of a generated visual, and
 `--update` rewrites them. `viz/visual-skeleton/` is the generator's output, committed
 unchanged and unpublished, so CI and the daily browser run keep testing what the generator writes.
 
@@ -121,21 +119,16 @@ unchanged and unpublished, so CI and the daily browser run keep testing what the
 
 `python3 scripts/build_catalogue.py` writes `build/catalogue.json` (every published visual, newest first)
 and `build/index.html` (a gallery to browse locally). CI builds both on every run and keeps them as an
-artifact. The site reads the folders' `visual.json` itself, so nothing generated is committed and no pull
-request edits a list another one also edits.
+artifact. Nothing generated is committed, so no pull request edits a list another one also edits.
 
 ## Mechanical steps CI does
 
-With the ports, pins and catalogue stubs gone, one change still repeats across many folders: the site's
-beamdswitch report template, which every narrated visual carries unchanged (its `beamdswitch.js`, its
-tests' fixture copy, the block its page inlines, and in some tests the template's SHA-256) so that each folder
-stays self-contained. When the site changes `templates/beamdswitch.js`, the "Sync beamdswitch template"
-workflow (`.github/workflows/template.yml`, run by hand with the site branch) runs
-`scripts/sync_template.py`, which replaces the old text and its hash in every file of each visual that
-carries an older copy, and pushes the result to a branch whose pull request CI checks visual by visual. It
-lands before the site's change, whose tests compare the site's template with these copies. The same script
-runs locally. Publishing stays a deploy of the site, which CI never does; the site's CI builds against this
-repository's `main` daily, so a change here that breaks the site shows within a day.
+None now. The last one copied yujieteo/site's beamdswitch report template into every narrated visual, and
+the site no longer keeps that template, so the "Sync beamdswitch template" workflow and
+`scripts/sync_template.py` are gone. Each narrated visual keeps its own copy (its `beamdswitch.js`, its
+tests' fixture copy and the block its page inlines), so each folder stays self-contained, and the `template`
+step checks that the three agree. `scripts/templates/beamdswitch.js` is the copy a new visual gets.
+Publishing stays a deploy of the site, which CI never does.
 
 ## Importing the visual repositories
 
@@ -148,16 +141,17 @@ site's catalogue stub. Only a repository's `main` is imported: open pull request
 and are listed in the import pull request. The repositories are left untouched; archiving them is a later
 decision.
 
-Private repositories stay private and outside this public repository: `beamdswitch` (the site vendors its
-built page) and `connes-qft` (the site keeps its port). The site keeps their folders and catalogue stubs.
+Private repositories stay private and outside this public repository, such as `beamdswitch`. The site kept
+the beamdswitch viewer and a Connes QFT port itself for a time; it keeps no visual now, and the Connes QFT
+laboratory is `viz/connes-qft/`.
 
 ## The site
 
-yujieteo/site builds every visual from a checkout of this repository (`VISUALS_REPO`, as now): one
-published page per `viz/<slug>/visual.json` without `published: false`, at the same
-`teoyujie.org/visuals/<slug>/` URL, with `index.html`, the data file as `data.json`, and its assets. The
-pins, the ports in `visuals/<slug>/` and the catalogue stubs of imported visuals go, and so does the
-procedure of porting a change into the site.
+yujieteo/site keeps no visual itself: no ports in `visuals/<slug>/`, no catalogue stubs and no copy of the
+beamdswitch template. Its notebooks read data files from this repository, each pinned at one commit with its
+SHA-256 in the site's `visuals.lock`, so a change here reaches the site only when that lock moves. A visual
+whose page the site replaced keeps only the pinned files here (`site_page` in its `visual.json`; see
+[SKILLS.md](../SKILLS.md)).
 
 ## Browser checks
 
@@ -166,14 +160,13 @@ https://github.com/yujieteo/visuals/pull/49). That repository is deleted; the bo
 keeps the original commit subjects. Each visual's manifest
 and fuller checks into its folder (`viz/<slug>/e2e/`), the shared harness to `e2e/`. CI runs a visual's
 browser checks only when it changes, so a failure or recorded finding stays with its visual, and runs every
-visual's once a day against new browser releases, with the two visuals the site keeps itself (their checks
-are in `e2e/site/`). The combined findings list is generated in CI from the manifests, never committed.
+visual's once a day against new browser releases. The combined findings list is generated in CI from the
+manifests, never committed.
 
 ## Review by risk
 
 Data-only, documentation-only and mechanical changes take CI only, through a plain pull request. Mechanical
 means moving or copying already-reviewed content without changing its logic, tests or tooling: a
-byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template
-synced by `scripts/sync_template.py`. Anything touching a page's logic, a builder, tests, CI or shared tooling
-keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the
-monorepo. The diff decides.
+byte-identical import of a repository's main with its history, a regenerated file, a copied page. Anything
+touching a page's logic, a builder, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so
+does an import that also edits logic, tests or tooling to fit the monorepo. The diff decides.

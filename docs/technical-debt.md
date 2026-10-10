@@ -127,6 +127,7 @@ The risk is that a Firefox-only failure shows first in CI.
 - Proposed fix: None. Each copy keeps the visual self-contained.
 - Decision: NOT A DEFECT. This is a frozen copy that improves independence. The canonical owner is yujieteo/site `templates/beamdswitch.js`.
 - Verification: `python3 scripts/check_repo.py` and the `template` step passed.
+- Closed (2026-10-10): yujieteo/site no longer keeps `templates/beamdswitch.js`, so there is nothing to sync. The "Sync beamdswitch template" workflow, `scripts/sync_template.py` and `scripts/templates/beamdswitch.sha256` are removed. Each `viz/*/beamdswitch.js` is now the visual's own copy: the `template` step checks that its page inlines it unchanged and that its test copies match it. `scripts/templates/beamdswitch.js` is the copy a new visual gets.
 
 ### SA-8
 - ID: SA-8
@@ -187,6 +188,7 @@ The risk is that a Firefox-only failure shows first in CI.
 - Proposed fix: None now. `npm run fetch-targets <ref>` already takes a branch, tag or commit. A fixed pin would add a file, and the pin of the site revision belongs to the site task.
 - Decision: NOT A DEFECT for the core artifacts. The dependency covers the visuals that the site keeps, and it is optional (`E2E_SITE` can be absent). The scheduled run needs the floating revision on purpose, to find new site changes.
 - Verification: `grep` of `scripts/`, `tests/` and `viz/` finds no read of a site clone. The template copies (SA-7) are frozen in `viz/*/beamdswitch.js` and compared with a recorded SHA-256, not with a site checkout.
+- Closed (2026-10-10): yujieteo/site keeps no visual itself any more, and `e2e/site/` is empty. `fetch-targets`, `E2E_SITE`, `E2E_SOURCE`, the `Fetch yujieteo/site` step and the "every site visual" browser job are removed. No job reads the site.
 
 ### VC-1
 - ID: VC-1
@@ -243,7 +245,7 @@ Each visuals-side P1 and P2 requirement, with its status and evidence. Pull requ
 | P1 generated artifacts: reproducible build and an unchanged second build | Confirmed, and a gap fixed | DB-2 for 41 builders; DB-1 for the `build` step that could not fail |
 | P1 generated artifacts: keep canonical data, sources and history apart from output | Kept | No data or source file changed in any of the four pull requests |
 | P1 generated artifacts: an archived visual needs no site generator | Confirmed | SA-1 and SA-4: `test:standalone` runs each offline-claiming page from an empty folder |
-| P2 site-specific maintenance (visuals side) | Done, nothing to change here | The two site-kept visuals keep their checks in `e2e/site/`; the site owns their code. Publication logic stays in the site |
+| P2 site-specific maintenance (visuals side) | Done | The site keeps no visual now, so `e2e/site/` and the site clone are removed (RD-1). Publication logic stays in the site |
 | Standalone and offline contract | Done | SA-1 to SA-6; 11 more visuals now run the contract (SA-6) |
 | Known findings kept | Kept | SA-2 (`work-lanyards` photos, content decision of the owner) and SA-8 (recorded findings) |
 
@@ -263,7 +265,7 @@ Remaining risks: the Firefox result is first seen in CI; the WebKit jobs in CI c
 
 | Interface | Canonical owner | Copies |
 | --- | --- | --- |
-| beamdswitch report template | site `templates/beamdswitch.js` | `viz/*/beamdswitch.js`, `scripts/templates/beamdswitch.js` |
+| beamdswitch report template | visuals `scripts/templates/beamdswitch.js`, the copy a new visual gets (the site no longer keeps one) | `viz/*/beamdswitch.js`, each the visual's own |
 | Theme script and style tokens | visuals `scripts/style_guide.py`, `scripts/kit/style-tokens.css` (source yujieteo/skills) | inline in each page |
 | Catalogue entry of a visual | visuals `viz/<slug>/visual.json` | read by the site build |
 | Published files of a visual | visuals `viz/<slug>/` (`index.html`, `data.json`, declared assets) | copied by the site build |

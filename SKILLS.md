@@ -70,7 +70,7 @@ These rules are scripts, so do not check them by reading. `scripts/check.py` run
 | --- | --- |
 | A generated page matches its builder on Node 22, the version CI uses; review still decides whether a builder's output changes on other Node versions | `build` (`build.py --verify` on CI's Node 22) |
 | `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page registers, at least 3 | `tools`, and the schema in `scripts/check_repo.py` |
-| Every `beamdswitch.js` copy is the site's template | `template` (`scripts/templates/beamdswitch.sha256`) |
+| The page inlines its `beamdswitch.js` unchanged, and each test copy in `tests/fixtures/beamdswitch/` is the same file | `template` |
 | The page requests only its own published files, never `notes.md` | `requests`, and the browser check `network` |
 | Colour tokens meet WCAG contrast in both themes; no control is outlined in `--border` | `contrast` |
 | No unused imports or locals, unreachable code, or names declared twice | `deadcode` (JavaScript, with tsc), `pydead` (Python) |
@@ -112,7 +112,7 @@ It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its br
 | Versioned state, URL fragment, Back and Forward, Reset, JSON import and export with validation (§5, §12, §13, §14) | `scripts/kit/kit.js` (`VisualKit`), inlined unchanged | `tests/<slug>-kit.test.mjs` (`scripts/kit/checks.mjs`), browser `url-state`, `back-forward`, `reset`, `json-round-trip` |
 | At least 3 read-only WebMCP tools | the kit's `get_metadata`, `get_state`, `get_markdown`, and the starter's `get_example` | `tools`, schema |
 | Cmd/Ctrl+K palette, keyboard and touch controls (§9, §10) | the kit | browser `command-palette`, `keyboard`, `overflow-320` |
-| `beamdswitch.js` unchanged, and the `deck(report)` and Markdown exports (§14, §15) | `scripts/templates/beamdswitch.js` copied byte for byte (source and SHA-256 in `generated.json`); the kit calls `Beamdswitch.deck(report)` | `template`, `tests/<slug>-kit.test.mjs` (deck parse with beamdswitch's parser), browser `markdown-export`, `beamdswitch-export` |
+| `beamdswitch.js` unchanged, and the `deck(report)` and Markdown exports (§14, §15) | `scripts/templates/beamdswitch.js` copied byte for byte (source and SHA-256 in `generated.json`); the kit calls `Beamdswitch.deck(report)` | `generated`, `template`, `tests/<slug>-kit.test.mjs` (deck parse with beamdswitch's parser), browser `markdown-export`, `beamdswitch-export` |
 | MathJax 4.1.3 with Fira Math, offline, with licences (`--mathjax`) | `scripts/vendor/mathjax/`, inlined as one `data-vendor` block by `scripts/visual_kit.py` | `vendor`, `scripts/check_repo.py`, browser `network`, `file-url` |
 | Type check, dead code, tests and browser checks wired into CI | `tsconfig.json`, `types/globals.d.ts`, `tests/`, `e2e/manifest.json`, `e2e/full.test.mjs` (`e2e/lib/kit.js`) | `types`, `deadcode`, `node`, CI's visual and browser jobs, which find the folder |
 
@@ -127,7 +127,7 @@ What stays manual, in files the generator writes once and never rewrites:
 
 `python3 scripts/new_visual.py --check <slug>...` (or `--all`) reports where a generated visual's mechanical parts differ from the current generator's, and `--update <slug>...` rewrites its mechanical files and rebuilds its page; neither writes a domain file. Both refuse a visual made by hand, and `--all` reads only the generated visuals. A change to `scripts/kit/`, `scripts/visual_build.py`, `scripts/visual_kit.py`, `scripts/vendor/` or the beamdswitch template fails each generated visual's `build` or `generated` step until `--update` runs for it.
 
-To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
+To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI and the catalogue find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
 
 ## Change shared tooling
 
@@ -137,13 +137,13 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 
 - Pages are single files that work offline: inline CSS, data and JavaScript, no external requests, mobile friendly, and a page works without `modelContext`; WebMCP tools are read-only.
 - Generated files are never committed: the catalogue and gallery come from `python3 scripts/build_catalogue.py` into the ignored `build/`. Never add a hand-maintained list of visuals anywhere.
-- Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js` (the `template` step compares each copy with the SHA-256 in `scripts/templates/beamdswitch.sha256`), and decks declare `voice: bf_emma` unless the report names another. Never re-copy a changed template by hand: run the "Sync beamdswitch template" workflow with the site branch that changes it (or `python3 scripts/sync_template.py <site>/templates/beamdswitch.js`, which also records the new SHA-256), open the pull request its summary links, and merge it before the site's change.
+- yujieteo/site no longer keeps the beamdswitch template, so nothing syncs it: `scripts/templates/beamdswitch.js` is the copy a new visual gets, and `python3 scripts/new_visual.py --update <slug>` copies a change to it into a generated visual. Each `viz/<slug>/beamdswitch.js` is that visual's own copy: its page inlines it unchanged and its test copies match it (the `template` step). Decks declare `voice: bf_emma` unless the report names another.
 - Tests use `node --test` and Python `unittest` only; `package.json` pins the type-check tooling and nothing else.
 - Never commit credentials, host details or deployment config, and never write an absolute user-home path in any file; `scripts/check_repo.py` scans for one, and for tracked build or OS files. On macOS, make an archive with `COPYFILE_DISABLE=1 tar ...`, or it holds AppleDouble `._*` files.
 
 ## Review by risk
 
-The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it, such as a `scripts/refresh.py` run), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.
+The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it, such as a `scripts/refresh.py` run), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.
 
 ## Connes QFT laboratory
 

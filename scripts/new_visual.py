@@ -4,8 +4,8 @@ existing visual's mechanical parts for drift, or rewrite them, without touching 
 
 A generated viz/<slug>/ passes scripts/check.py, CI and its browser checks as written. It holds two kinds of file:
 
-  mechanical  the generator owns them and --update rewrites them: build.py, beamdswitch.js (the site's template,
-              byte for byte), tsconfig.json, types/globals.d.ts, tests/<slug>-kit.test.mjs, .gitattributes, the
+  mechanical  the generator owns them and --update rewrites them: build.py, beamdswitch.js (a byte-for-byte copy of
+              scripts/templates/beamdswitch.js), tsconfig.json, types/globals.d.ts, tests/<slug>-kit.test.mjs, .gitattributes, the
               "uses" and "typecheck" keys of visual.json (with --mathjax, also its MathJax allow.requests lines), generated.json and index.html (built by build.py)
   domain      written once from a starter, then the visual's own, never rewritten: src/model.js, src/view.js,
               src/body.html, src/style.css, report.js, raw.json, tests/<slug>-model.test.mjs, e2e/manifest.json,
@@ -96,7 +96,7 @@ def record(options):
         "generator": GENERATOR,
         "kit": kit.KIT_VERSION,
         "options": options,
-        "beamdswitch": {"source": "yujieteo/site templates/beamdswitch.js", "copy": "beamdswitch.js", "sha256": kit.sha256(template)},
+        "beamdswitch": {"source": "scripts/templates/beamdswitch.js", "copy": "beamdswitch.js", "sha256": kit.sha256(template)},
         "domain": sorted(starter_files(options["slug"])),
     }
 

@@ -4,9 +4,9 @@ Each check takes what it reads and returns a list of problems, one line each; sc
 per-visual ones from a visual's folder (it needs only that folder and scripts/, as on CI's sparse checkout),
 and scripts/check_repo.py the repository-wide ones. No check reads the network.
 
-  template      every copy of the site's beamdswitch template in the folder matches the SHA-256 that
-                scripts/sync_template.py records in scripts/templates/beamdswitch.sha256, and a page without
-                a builder inlines beamdswitch.js and report.js unchanged
+  template      every test copy of the beamdswitch template in the folder (tests/fixtures/beamdswitch/) is the
+                folder's beamdswitch.js, the page inlines beamdswitch.js unchanged, and a page without a builder
+                inlines its report.js unchanged
   requests      the page requests nothing outside the files the site publishes beside it (index.html,
                 data.json and visual.json "assets"): no absolute or parent paths, no notes.md, also from CSS
                 @import and url(); no XMLHttpRequest, WebSocket, EventSource or sendBeacon at all; and in a
@@ -34,15 +34,12 @@ elsewhere in the file does not break it. Each entry allows one problem: list it 
 problems. An entry that matches no problem fails, so it cannot go stale.
 """
 import ast
-import hashlib
 import re
 from collections import Counter
-from pathlib import Path
 
 from style_guide import THEME_SCRIPT
 
-TEMPLATE_HASH = Path(__file__).resolve().parent / "templates" / "beamdswitch.sha256"
-TEMPLATE_COPIES = ("beamdswitch.js", "tests/fixtures/beamdswitch/beamdswitch.js", "tests/fixtures/beamdswitch/template.js")
+TEMPLATE_COPIES = ("tests/fixtures/beamdswitch/beamdswitch.js", "tests/fixtures/beamdswitch/template.js")
 SKIPPED_DIRS = {"__pycache__", "node_modules", ".typecheck", ".git", ".venv"}
 
 
@@ -66,26 +63,21 @@ def allowed(problems, allow):
 
 # template ---------------------------------------------------------------------------------------------------
 
-def sha256(text):
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def template_problems(folder, expected=None):
-    """Copies of the beamdswitch template in ``folder`` that differ from the recorded site template, and a
-    hand-edited page whose inlined report.js differs from the file."""
-    expected = expected or TEMPLATE_HASH.read_text(encoding="utf-8").split()[0]
+def template_problems(folder):
+    """Test copies of the beamdswitch template in ``folder`` that differ from its beamdswitch.js, a page that does
+    not inline beamdswitch.js, and a hand-edited page whose inlined report.js differs from the file."""
     copy = folder / "beamdswitch.js"
     if not copy.is_file():
         return []
+    template = copy.read_text(encoding="utf-8")
     problems = []
     for name in TEMPLATE_COPIES:
         path = folder / name
-        if path.is_file() and sha256(path.read_text(encoding="utf-8")) != expected:
-            problems.append(f"{name} differs from the site's templates/beamdswitch.js (sha256 {expected[:12]}); "
-                            "run scripts/sync_template.py, never edit a copy by hand")
+        if path.is_file() and path.read_text(encoding="utf-8") != template:
+            problems.append(f"{name} differs from beamdswitch.js; copy it unchanged, never edit a copy by hand")
     page = folder / "index.html"
     html = page.read_text(encoding="utf-8") if page.is_file() else ""
-    if copy.read_text(encoding="utf-8").strip() not in html:
+    if template.strip() not in html:
         problems.append("index.html does not inline beamdswitch.js unchanged")
     # A page without a builder carries its report.js by hand; a builder's --verify checks its own copy.
     report = folder / "report.js"

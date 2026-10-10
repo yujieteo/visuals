@@ -20,7 +20,6 @@ node e2e/bin/page-axi.js check <slug>  # open the page headless at 3 widths in b
 python3 scripts/check_repo.py          # parse every tracked .py, check visual.json and folder rules, reject home paths and artifacts
 python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
-python3 scripts/sync_template.py <site>/templates/beamdswitch.js  # copy the site's report template into every visual that carries it
 python3 scripts/new_visual.py <slug> --title "..." --summary "..." [--mathjax]  # a new visual with every mechanical part
 python3 scripts/new_visual.py --check --all   # which generated visuals' mechanical parts drift from the generator's
 python3 scripts/new_visual.py --update <slug> # rewrite a generated visual's mechanical parts, never its domain code
@@ -42,19 +41,18 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/build.py` (or `build.mjs`), `src/` | The builder and page sources, for a generated page; `python3 build.py --verify` (or the check its `visual.json` names) checks the committed page and writes nothing. |
 | `viz/<slug>/tests/` | The visual's own tests. |
 | `viz/<slug>/e2e/` | Its browser checks: `manifest.json` and, when it has them, the fuller `full.test.mjs`. |
-| `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
+| `viz/<slug>/beamdswitch.js`, `report.js` | The visual's own copy of the beamdswitch report template, which the page inlines unchanged, and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
 | `viz/<slug>/generated.json` | For a visual `scripts/new_visual.py` wrote: its options, the kit's version and the beamdswitch template's source and SHA-256. |
-| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `page_rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the static rules page-axi prints, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
-| `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share. |
+| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `page_rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the static rules page-axi prints, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI. |
+| `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share; `templates/beamdswitch.js` is the beamdswitch report template that new narrated visuals copy. |
 | `scripts/new_visual.py`, `visual_build.py`, `visual_kit.py`, `kit/`, `vendor/mathjax/` | The generator of new visuals, the builder of their pages, the kit they inline (state, URL, JSON, exports, palette, WebMCP, style tokens, shared tests) and the vendored MathJax 4.1.3 with Fira Math. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
 | `rust-toolchain.toml` | The Rust compiler for the data builders that are crates in their visual's folder, such as `viz/theorem-learner/`. |
 | `package.json`, `tsconfig.base.json`, `tsconfig.json` | The pinned type checker, the compiler options every visual's `tsconfig.json` extends, and the tooling's own project. |
-| `e2e/` | The shared browser-check harness (Playwright, its own `package.json`), and the checks of the two visuals the site keeps; see [e2e/README.md](e2e/README.md). |
+| `e2e/` | The shared browser-check harness (Playwright, its own `package.json`); see [e2e/README.md](e2e/README.md). |
 | `.github/workflows/ci.yml` | CI: one job per changed visual, its browser checks' jobs, and a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |
-| `.github/workflows/template.yml` | Run by hand: copies the site's changed beamdswitch template into every visual that carries it and pushes a branch for the pull request. |
 | `SKILLS.md` | Agent guide for this repository. |
 
 ## Checks
