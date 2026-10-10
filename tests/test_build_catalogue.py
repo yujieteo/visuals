@@ -25,6 +25,7 @@ class CatalogueTest(unittest.TestCase):
             "bad link": (metadata(links=[{"rel": "likes", "target": "note:x"}]), "must be one of"),
             "uses inside viz": (metadata(uses=["viz/other/index.html"]), "uses[0]"),
             "wrong type": (metadata(published="no"), "expected boolean"),
+            "bad site page": (metadata(site_page="/play/alpha", webmcp_tools=None), "site_page"),
         }
         for name, (data, expected) in cases.items():
             with self.subTest(name), Layout() as layout:
@@ -42,6 +43,9 @@ class CatalogueTest(unittest.TestCase):
             "missing used file": ("alpha", metadata(uses=["scripts/nothing.py"]), ("index.html", "raw.json"), "uses names a missing path"),
             "not a slug": ("Alpha_1", metadata(), ("index.html", "raw.json"), "not a lowercase hyphenated slug"),
             "missing typecheck page": ("alpha", metadata(typecheck={"page": "src/template.html"}), ("index.html", "raw.json"), "typecheck page is missing"),
+            "no tools": ("alpha", metadata(webmcp_tools=None), ("index.html", "raw.json"), "missing webmcp_tools"),
+            "site with a page": ("alpha", metadata(site_page="play/alpha/", webmcp_tools=None), ("index.html", "raw.json"), "index.html is present"),
+            "site with tools": ("alpha", metadata(site_page="play/alpha/"), ("raw.json",), "webmcp_tools names tools"),
             "missing skipped file": ("alpha", metadata(typecheck={"skip": ["engine.js"]}), ("index.html", "raw.json"), "typecheck skip names a missing file"),
         }
         for name, (slug, data, files, expected) in cases.items():
@@ -49,6 +53,13 @@ class CatalogueTest(unittest.TestCase):
                 layout.visual(slug, data, files)
                 _, errors = load(layout.root)
                 self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_a_site_visual_keeps_only_data_and_leaves_the_catalogue(self):
+        with Layout() as layout:
+            layout.visual("alpha", metadata(site_page="play/alpha/", webmcp_tools=None), ("raw.json",))
+            by_slug, errors = load(layout.root)
+        self.assertEqual(errors, [])
+        self.assertEqual(catalogue(by_slug), [])
 
     def test_catalogue_is_newest_first_without_unpublished_visuals_and_with_repository_paths(self):
         by_slug = {

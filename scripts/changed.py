@@ -5,7 +5,7 @@ A path in viz/<slug>/ selects that visual. A shared file that visuals list in "u
 selects those visuals only. Documentation selects none. Any other path is shared tooling (scripts, schema,
 tests of the tooling, package.json, CI) and selects every visual.
 
-The browser checks are chosen apart: a selected visual runs its own, and a path in e2e/site/<slug>/ runs
+The browser checks are chosen apart: a selected visual runs its own, unless its page moved to yujieteo/site, and a path in e2e/site/<slug>/ runs
 the browser checks of that visual the site keeps itself. The browser harness (the rest of e2e/) and CI run
 every visual's browser checks, every visual the site keeps included; the harness selects no visual's other
 checks, while CI, like the rest of the shared tooling, selects them all. The rest of the shared tooling,
@@ -107,12 +107,20 @@ def browser_jobs(slugs, site=(), every_site_visual=False):
     return jobs
 
 
+def with_pages(slugs, root=ROOT):
+    """The slugs whose visual has its page here: a visual whose page moved to yujieteo/site ("site_page" in its
+    visual.json) has no page here, so it has no browser checks."""
+    by_slug = visuals(root)
+    return [slug for slug in slugs if "site_page" not in by_slug.get(slug, {})]
+
+
 def browser(paths, root=ROOT):
     """Return (browser jobs, reason) for a change to ``paths``."""
     existing, selected, site, shared = scan(paths, root)
     tooling = [path for path in shared if path.startswith(BROWSER_TOOLING)]
     if tooling:
-        return browser_jobs(existing, every_site_visual=True), shared_reason(tooling)
+        return browser_jobs(with_pages(existing, root), every_site_visual=True), shared_reason(tooling)
+    selected = with_pages(selected, root)
     return browser_jobs(selected, site), ("changed visuals" if selected or site else "no visual changed")
 
 
@@ -151,7 +159,7 @@ def browser_selection(base):
     paths, reason = change(base)
     if paths is not None:
         return browser(paths)
-    return browser_jobs([folder.name for folder in folders()], every_site_visual=True), reason
+    return browser_jobs(with_pages([folder.name for folder in folders()]), every_site_visual=True), reason
 
 
 def main(argv=None):
@@ -162,7 +170,7 @@ def main(argv=None):
     paths, reason = change(args.base)
     if paths is None:
         slugs = [folder.name for folder in folders()]
-        jobs = browser_jobs(slugs, every_site_visual=True)
+        jobs = browser_jobs(with_pages(slugs), every_site_visual=True)
         browser_reason = reason
     else:
         slugs, reason = select(paths, root=ROOT)

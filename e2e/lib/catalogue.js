@@ -52,15 +52,17 @@ function readmeText(folder) {
 }
 
 /**
- * Enumerate every visual of a yujieteo/visuals checkout (its viz/<slug>/visual.json), sorted by slug.
+ * Enumerate every visual of a yujieteo/visuals checkout (its viz/<slug>/visual.json), sorted by slug. A visual
+ * whose page moved to yujieteo/site (site_page in its visual.json) has no page here, so it is left out.
  * @param {string} visualsRoot
  * @returns {Visual[]}
  */
 export function discoverVisualsRepo(visualsRoot) {
   const viz = join(visualsRoot, "viz");
   if (!existsSync(viz)) throw new Error(`not a checkout of yujieteo/visuals (no viz/): ${visualsRoot}`);
-  return readdirSync(viz).sort().filter((slug) => existsSync(join(viz, slug, "visual.json"))).map((slug) => {
-    const doc = JSON.parse(readFileSync(join(viz, slug, "visual.json"), "utf8"));
+  const docs = readdirSync(viz).sort().filter((slug) => existsSync(join(viz, slug, "visual.json")))
+    .map((slug) => ({ slug, doc: JSON.parse(readFileSync(join(viz, slug, "visual.json"), "utf8")) }));
+  return docs.filter(({ doc }) => !doc.site_page).map(({ slug, doc }) => {
     const folder = `viz/${slug}/`;
     const summary = String(doc.summary ?? "");
     return {

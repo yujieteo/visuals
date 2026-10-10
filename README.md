@@ -37,7 +37,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | Path | Role |
 | --- | --- |
 | `viz/<slug>/index.html` | The page the site publishes at `teoyujie.org/visuals/<slug>/`. |
-| `viz/<slug>/visual.json` | The visual's metadata: its catalogue entry (title, summary, source, fetch date, data file, WebMCP tools, tags), and optionally its own check commands, type-check settings and the shared files it `uses`. `schema/visual.schema.json` defines it. |
+| `viz/<slug>/visual.json` | The visual's metadata: its catalogue entry (title, summary, source, fetch date, data file, WebMCP tools, tags), and optionally its own check commands, type-check settings, the shared files it `uses` and the `site_page` that replaced its page (the folder then keeps only data and fixtures). `schema/visual.schema.json` defines it. |
 | `viz/<slug>/raw.json`, `raw.csv`, `meta.json`, ... | The unchanged source data (published as `data.json`) and its provenance. |
 | `viz/<slug>/build.py` (or `build.mjs`), `src/` | The builder and page sources, for a generated page; `python3 build.py --verify` (or the check its `visual.json` names) checks the committed page and writes nothing. |
 | `viz/<slug>/tests/` | The visual's own tests. |

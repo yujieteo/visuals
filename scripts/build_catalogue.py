@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the catalogue and the gallery from every viz/<slug>/visual.json; neither is committed.
 
-Writes build/catalogue.json (every published visual, newest first, with repository-relative html_path and
+Writes build/catalogue.json (every published visual with a page here, newest first, with repository-relative html_path and
 data_path, the fields the site's catalogue reads) and build/index.html (a gallery to browse locally).
 --verify validates every visual.json against schema/visual.schema.json and the folder rules, renders both
 in memory and writes nothing.
@@ -56,8 +56,17 @@ def folder_errors(folder, data, root=ROOT):
     """Rules the schema cannot state: the files visual.json names exist where it says."""
     slug = folder.name
     errors = [] if SLUG.fullmatch(slug) else [f"{slug}: the folder name is not a lowercase hyphenated slug"]
-    if not (folder / "index.html").is_file():
-        errors.append(f"{slug}: index.html is missing")
+    page = (folder / "index.html").is_file()
+    if "site_page" in data:
+        if page:
+            errors.append(f"{slug}: index.html is present, but site_page says yujieteo/site has the page ({data['site_page']}); delete it")
+        if "webmcp_tools" in data:
+            errors.append(f"{slug}/visual.json: webmcp_tools names tools, but site_page says the folder has no page; remove it")
+    else:
+        if not page:
+            errors.append(f"{slug}: index.html is missing")
+        if "webmcp_tools" not in data:
+            errors.append(f"{slug}/visual.json: missing webmcp_tools")
     for key in ("data", "downloads"):
         if isinstance(data.get(key), str) and not (folder / data[key]).is_file():
             errors.append(f"{slug}: {key} names a missing file: {data[key]}")
@@ -113,8 +122,8 @@ def entry(slug, data):
 
 
 def catalogue(by_slug):
-    """Every published visual, newest fetched first and same-day visuals in slug order."""
-    items = [entry(slug, data) for slug, data in sorted(by_slug.items()) if data.get("published", True)]
+    """Every published visual with a page here, newest fetched first and same-day visuals in slug order."""
+    items = [entry(slug, data) for slug, data in sorted(by_slug.items()) if data.get("published", True) and "site_page" not in data]
     return sorted(items, key=lambda item: item["fetched"], reverse=True)
 
 
@@ -155,9 +164,10 @@ def main(argv=None):
         args.out.mkdir(parents=True, exist_ok=True)
         (args.out / "catalogue.json").write_text(text, encoding="utf-8")
         (args.out / "index.html").write_text(page, encoding="utf-8")
-    unpublished = len(by_slug) - len(items)
+    moved = sum("site_page" in data for data in by_slug.values())
+    unpublished = len(by_slug) - len(items) - moved
     print(f"{'verified' if args.verify else 'wrote'}: {len(items)} published visual(s)"
-          f"{f', {unpublished} unpublished' if unpublished else ''}, every visual.json valid")
+          f"{f', {unpublished} unpublished' if unpublished else ''}{f', {moved} with the page on the site' if moved else ''}, every visual.json valid")
 
 
 if __name__ == "__main__":

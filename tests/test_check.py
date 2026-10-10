@@ -99,6 +99,12 @@ class RuleStepsTest(unittest.TestCase):
             self.assertEqual(dict(rule_steps(folder, metadata()))["sourcetests"], [problem])
             self.assertEqual(dict(rule_steps(folder, metadata(allow={"sourcetests": [problem]})))["sourcetests"], [])
 
+    def test_a_visual_whose_page_is_on_the_site_gets_only_the_folder_rules(self):
+        data = metadata(site_page="play/alpha/", webmcp_tools=None)
+        with Layout() as layout:
+            folder = layout.visual("alpha", data, ("raw.json",))
+            self.assertEqual(rule_steps(folder, data), [("pydead", []), ("sourcetests", [])])
+
 
 def toon(layout, *args):
     """Run check.py --toon on ``layout``'s visuals; return (stdout, exit code)."""
@@ -137,6 +143,12 @@ class ToonTest(unittest.TestCase):
         self.assertIn("  2,2,2,0,every visual", out)
         log = out.split("log: ", 1)[1].split("\n", 1)[0]
         self.assertIn("checking 2 visual(s)", (layout.root / log).read_text(encoding="utf-8"))
+
+    def test_a_visual_whose_page_is_on_the_site_passes_without_a_page(self):
+        layout = self.layout()
+        layout.visual("gamma", metadata(site_page="play/gamma/", webmcp_tools=None), ("raw.json",))
+        out, code = toon(layout, "gamma")
+        self.assertEqual(code, 0, out)
 
     def test_a_named_visual_gives_a_verdict_on_it_and_says_how_many_were_not_checked(self):
         out, code = toon(self.layout(), "alpha")
