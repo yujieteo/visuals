@@ -307,7 +307,7 @@ def toon(results, slugs, total, reason, log_path):
         help.append(f"Run `npm run typecheck -- --summary {next(row[0] for row in failures if row[1] == 'types')}` for the type errors by code and file")
     if outside:
         help.append(f"{outside} visual(s) were not checked; run `python3 scripts/check.py --toon` for every visual")
-    if counts["skipped"] and not failures:
+    if not failures and any(status == "skipped (npm ci)" for log in results.values() for _, status, _, _ in log):
         help.append("Some steps were skipped; run `npm ci` once so the type and dead-code checks run")
     if not fail:
         help.append("All counted checks passed; the browser checks are in e2e/ (see e2e/README.md)")
