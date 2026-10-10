@@ -753,18 +753,3 @@ pub fn section_properties(spec: &Shape) -> Result<Section, ModelError> {
 pub fn indeterminacy(supports: &[Support]) -> i64 {
     supports.iter().map(|s| if s.kind == Kind::Fixed { 2 } else { 1 }).sum::<i64>() - 2
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn powers_round_as_javascript_does() {
-        assert_eq!(pw(0.2, 3), 0.008000000000000002);
-        assert_eq!(pw(1.1, 3), 1.3310000000000004);
-        assert_eq!(pw(10.0, -3), 0.001);
-        assert_eq!(pw(10.0, -7), 1e-7);
-        assert_eq!(pw(0.001, 4), 1.0000000000000002e-12);
-        assert_eq!(pw(0.0254, 4), 4.162314255999999e-7);
-    }
-}

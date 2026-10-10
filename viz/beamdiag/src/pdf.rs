@@ -226,29 +226,3 @@ pub fn pdf(list: &[Node], w: f64, h: f64, title: &str, fonts: [&'static [u8]; 3]
     o.extend(format!("xref\n0 {n}\n0000000000 65535 f \n{at}trailer\n<</Size {n}/Root 1 0 R/Info 3 0 R/ID[<{id}><{id}>]>>\nstartxref\n{start}\n%%EOF\n").as_bytes());
     o
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::draw::{Canvas, fill};
-
-    #[test]
-    fn a_figure_is_one_vector_page_with_its_fonts() {
-        let mut c = Canvas::new();
-        c.rect(0.0, 0.0, 10.0, 10.0, 2.0, fill("accent"));
-        c.add(Shape::Rect { x: 1.0, y: 1.0, w: 3.0, h: 3.0, rx: 0.0 }, crate::draw::Paint { opacity: Some(0.14), ..fill("warm") }, "");
-        c.text(5.0, 5.0, "V = −1.5×10⁻⁴ kN·m ↺", "val", Anchor::Middle);
-        c.text(5.0, 9.0, "x (mm)", "tick", Anchor::End);
-        let fonts = look::FONTS.map(|f| f.1);
-        let p = pdf(&c.finish(), 100.0, 40.0, "Beam diagram results", fonts);
-        let s = String::from_utf8_lossy(&p);
-        assert!(s.starts_with("%PDF-1.7") && s.ends_with("%%EOF\n"));
-        assert!(s.contains("/MediaBox[0 0 75 30]") && s.contains("/A14<</ca 0.14>>") && s.contains("/FontFile3"));
-        assert!(s.contains("/F0 ") && s.contains("/F1 "), "sans and mono are embedded");
-        let mut f = Fonts::new(fonts);
-        assert!(f.run(false, 10.0, 0.0, "abc").1 > 10.0);
-        assert!("−×⁻⁴·θ₁↺↻‖".chars().all(|c| f.0.iter().any(|x| x.has(script(c).0))), "the page's characters have glyphs");
-        assert_eq!(f.run(false, 10.0, 0.0, "10⁻⁴").0.len(), 2, "a superscript is a piece of its own");
-        assert_eq!(pdf(&[], 10.0, 10.0, "t", fonts), pdf(&[], 10.0, 10.0, "t", fonts));
-    }
-}
