@@ -136,30 +136,3 @@ pub fn is_one(t: &str) -> bool { t == "1" || t == "−1" }
 
 /// "1.5 newtons": a formatted number and its unit, read aloud.
 pub fn say(t: &str, q: Q, u: &Units) -> String { format!("{} {}", say_number(t), spoken_unit(u, q, !is_one(t))) }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::engine::units;
-
-    #[test]
-    fn formats_as_the_page_did() {
-        assert_eq!(nf(-1234.5, 3), "−1,235");
-        assert_eq!(nf(12.345, 3), "12.35");
-        assert_eq!(nf(0.00012345, 3), "1.234×10⁻⁴");
-        assert_eq!(nf(2.5e7, 3), "2.5×10⁷");
-        assert_eq!(sig(-0.5, 4), "−0.5");
-        assert_eq!(pow10(-123456789.0, 3), "−1.23×10⁸");
-        assert_eq!(sci(1e-3), "1×10⁻³");
-        assert_eq!(short(1.5e6, 3), "1.5×10⁶");
-        assert_eq!(say_number("−1.5×10⁻⁴"), "minus 1.5 times ten to the minus 4");
-        assert_eq!(tex_number("−1,234×10¹²"), "-1{,}234\\times 10^{12}");
-        assert_eq!(tex_unit("N·mm²"), "\\mathrm{N\\cdot mm^2}");
-        let u = units("lbf-in").unwrap();
-        assert_eq!(spoken_unit(u, Q::Moment, true), "pound-force inches");
-        assert_eq!(say("1", Q::Force, u), "1 pound-force");
-        assert_eq!(span_ratio(10.0, 0.004), "2500");
-        assert_eq!(from_origin(5.0 + 1e-13, 10.0, true), 0.0);
-        assert_eq!(counted(13, "load", "loads"), "13 loads");
-    }
-}

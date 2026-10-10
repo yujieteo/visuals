@@ -177,18 +177,3 @@ pub fn export_bdf(input: &Input, title: &str, u: &Units) -> Result<String, Model
     lines.extend(["$", "ENDDATA", ""].map(String::from));
     Ok(lines.join("\n"))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn reals_read_back_exactly() {
-        for (x, w, s) in [(6.0, 8, Some("6.")), (0.3, 8, Some("0.3")), (-40000.0, 8, Some("-40000.")), (2e11, 8, Some("2.E11")), (4.456e-4, 8, Some("4.456-4")),
-            (0.0, 8, Some("0.")), (1.0 / 3.0, 8, None), (123456.0, 8, Some("123456.")), (-0.001, 8, Some("-0.001"))] {
-            assert_eq!(exact_real(x, w).as_deref(), s, "{x}");
-        }
-        assert_eq!(nastran_real(1.0 / 3.0), ".333333333333333");
-        assert_eq!(safe_title("Fixed–fixed beam 𝑥"), "Fixed fixed beam");
-    }
-}

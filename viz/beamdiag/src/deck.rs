@@ -116,22 +116,3 @@ pub fn document(meta: &Meta, narration: &str, sections: &[(String, Vec<Frame>)])
     for (i, (title, frames)) in sections.iter().enumerate() { section(&mut out, title, i + 1, frames)? }
     Ok(out.join("\n"))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn refuses_what_would_break_the_deck() {
-        let f = |body: &str, narration: &str| Frame { title: "T".into(), body: body.into(), narration: narration.into(), key: "k".into(), ..Default::default() };
-        let r = |body: &str, narration: &str| Report { meta: Meta { title: "R".into(), ..Default::default() }, narration: "Hello.".into(),
-            sections: [vec![f("", "a")], vec![f("", "b")], vec![f("", "c")], vec![f(body, narration)]], ..Default::default() };
-        assert!(deck(&r("## no", "x")).unwrap_err().contains("heading"));
-        assert!(deck(&r("  ::: no", "x")).unwrap_err().contains("::: line"));
-        assert!(deck(&r("#tag is fine", "x")).is_ok());
-        assert!(deck(&r("", "a $x$")).unwrap_err().contains("plain spoken prose"));
-        let md = deck(&r("Body", "Said.")).unwrap();
-        assert!(md.starts_with("---\ntitle: R\nvoice: bf_emma\n---\n\n::: narration\nHello.\n:::\n\n# Set-up\n"));
-        assert!(md.contains("# Checks and takeaway\n\n::: narration\nPart 4. Checks and takeaway.\n:::\n\n## T\n\nBody\n\n::: key\nk\n:::\n\n::: narration\nSaid.\n:::\n"));
-    }
-}

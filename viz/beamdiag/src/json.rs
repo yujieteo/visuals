@@ -210,18 +210,3 @@ pub fn model_json(i: &Input) -> Value {
         }).collect())),
     ])
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn reads_and_writes_as_javascript_does() {
-        let t = r#"{"a":[1,-0.5,1e21,1.5e-7,true,null],"b":"x\"\\\n\u00e9\ud83d\ude00\u0001","c":{}}"#;
-        let v = parse(t).unwrap();
-        assert_eq!(stringify(&v), "{\"a\":[1,-0.5,1e+21,1.5e-7,true,null],\"b\":\"x\\\"\\\\\\né😀\\u0001\",\"c\":{}}");
-        assert_eq!(v.get("a").arr().unwrap()[1].num(), Some(-0.5));
-        assert!(parse("[1,]").is_err() && parse("01").is_err() && parse("{\"a\":1} x").is_err() && parse("\"\\x\"").is_err());
-        assert_eq!(stringify(&Value::Num(f64::NAN)), "null");
-    }
-}

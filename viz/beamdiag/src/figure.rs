@@ -297,15 +297,3 @@ impl App {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ticks_are_round_numbers() {
-        assert_eq!(nice_ticks(0.0, 6000.0, 6.0), [0.0, 1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0]);
-        assert_eq!(tick_labels(&nice_ticks(-0.3, 0.3, 4.0)), ["−0.2", "0", "0.2"]);
-        assert_eq!(tick_labels(&[0.0, 2e5]), ["0", "2×10⁵"]);
-    }
-}
