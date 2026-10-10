@@ -155,7 +155,7 @@ The risk is that a Firefox-only failure shows first in CI.
 ### DB-1
 - ID: DB-1
 - Repository: visuals
-- Location: `scripts/check.py` (`check`, the default `build` step), `viz/{beamdiag,edge-pitch,generating-functions,lug-joint,stability,vgc-protect-fakeout-pivot-trainer}/build.py`
+- Location: `scripts/check.py` (`check`, the default `build` step), `viz/{edge-pitch,generating-functions,lug-joint,stability,vgc-protect-fakeout-pivot-trainer}/build.py`
 - Problem: The default `build` step runs `build.py --verify`. Six builders ignore `--verify` and write the page. The step then passes even when the committed page is stale.
 - Evidence: In a scratch copy, a changed `index.html` of each of the six was rewritten by `build.py --verify` with exit code 0. See `verify-drift.txt` in the task evidence.
 - Severity: Medium
