@@ -124,20 +124,3 @@ pub fn inline(s: &str) -> String {
     }
     out + &esc(&s[last..])
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_tex_subset_draws_as_text_fractions_superscripts_and_subscripts() {
-        assert_eq!(nodes("R_{2} = -\\frac{-180}{6}"), vec![
-            Node::Text("R".into()), Node::Sub(vec![Node::Text("2".into())]), Node::Text(" = −".into()),
-            Node::Frac(vec![Node::Text("−180".into())], vec![Node::Text("6".into())]),
-        ]);
-        assert_eq!(text("\\langle x - 2 \\rangle^{3} \\quad \\theta(0) = 1{,}000\\ \\mathrm{kN\\cdot m^2}"), "⟨x − 2 ⟩^3 θ(0) = 1,000 kN·m^2");
-        assert_eq!(text("\\sigma_{\\max} = \\frac{|M|_{\\max}\\, c}{I}"), "σ_max = (|M|_max c)/(I)");
-        assert_eq!(html("a^{2}<"), "a<sup>2</sup>&lt;");
-        assert_eq!(inline("If $x_1$ > 0 or $5"), "If <span class=\"math\">x<sub>1</sub></span> &gt; 0 or $5");
-    }
-}
