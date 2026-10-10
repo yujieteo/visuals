@@ -1,5 +1,0 @@
-# Fastener pattern CG tracker
-
-`index.html` and `raw.json` are built: edit `src/` (`src/core/*.mjs` is the dependency-free calculation core, with the verification set in `src/core/verify.mjs` and the deck in `src/core/deck.mjs`; `src/ui/*.mjs` the page, canvas, storage and WebMCP tools; `src/template.html` the markup), then run `node build.mjs`. The bundler in `build.mjs` accepts only named relative imports and `export` on `function`, `const` and `class` declarations. Results are for preliminary sizing, and reports carry the "Preliminary sizing" line.
-
-`tests/fastener-cg.test.mjs` imports `src/` directly and runs the page's verification cases plus persistence, scene, WebMCP and build checks; the hand-calculation and deck tests parse with beamdswitch's own parser in `tests/fixtures/beamdswitch/`. `tests/fastener-cg-browser.test.mjs` drives the built page in headless Chrome when `FASTENER_CG_BROWSER_URL` names one (`scripts/with_chrome.py` starts one in CI) and skips otherwise. Rules for every visual: [SKILLS.md](../../SKILLS.md).

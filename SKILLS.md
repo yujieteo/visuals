@@ -1,6 +1,6 @@
 ---
 name: visuals
-description: Work in the visuals monorepo - add, change, refresh or check one visual in viz/<slug>/, or change the shared tooling - with the rules every change here keeps.
+description: Work in the visuals monorepo - add, change or check one visual in viz/<slug>/, or change the shared tooling - with the rules every change here keeps.
 ---
 
 # Visuals
@@ -37,34 +37,6 @@ Agents call these and read their output; do not pipe a check's output through `t
 | `npm run typecheck -- --summary [<slug>...] [--file PATH] [--since REF] [--first N]` | the same, with the errors filtered |
 
 A selection or filter never passes silently. Named visuals or projects get a verdict on them, and the verdict line says how many of the total were not checked. A `--file` or `--since` filter only narrows the errors listed: the verdict fails on every error in a checked project and on every tsc run that exits non-zero. An unknown visual, a missing path, an unknown ref, or a filter that matches nothing exits 2.
-
-## Refresh data
-
-Refresh a visual's data with one command, never by hand: `python3 scripts/refresh.py <slug>`. Each folder with a `refresh.py` has a refresh.
-
-1. Run `python3 scripts/refresh.py <slug>`. It reads the source, checks the data against the visual's schema and compares it with the current data. Then it writes the changed data and `visual.json`'s `fetched`, runs the builder and prints a TOON summary. Add `--dry-run` to print the summary and write nothing.
-2. Read the summary. Its `notes` say what the new numbers can make false, such as fixed claims in a builder.
-3. Read the diff of the page, run `python3 scripts/check.py <slug>`, and put the summary in the pull request. A data-only refresh takes CI only (Review by risk, below).
-
-The exit code is 2, and nothing is written, when the source fails, answers empty or with a bot check, or the data does not match the schema. When the builder fails after the write, every file in the folder goes back to what it was. Never get past a bot check: try again later.
-
-The stock pages (`airbnb`, `arm`, `marvell`, `panw`) read SEC, which asks for a name and an email in the User-Agent. Set them in the `SEC_CONTACT` environment variable, such as `SEC_CONTACT='Jane Tan jane@example.com'`. Never commit them. If `SEC_CONTACT` is not set, the refresh exits 2 and names the variable.
-
-A new refresh is `viz/<slug>/refresh.py` with a `refresh(source, folder, args)` that reads only through `source` and returns a `refresh_kit.Update`; `scripts/refresh_kit.py` says what each field means. Its tests replay recorded answers with `refresh_kit.Replay`, never the network, and the visual lists `scripts/refresh_kit.py` in `uses`. `tampines-library-events` is the one exception: its sources are JSON POST searches, so it reads them with its own `request()`, and its tests mock that function.
-
-These visuals have data from an outside source but no refresh script, because a person must do the steps:
-
-| Visual | Why a person refreshes it |
-| --- | --- |
-| `fpl-expected-goals` | No builder: the page text tells the story of one dated gameweek snapshot, so new data needs new text. |
-| `tampines-food-map`, `tampines-food` | The ratings come from Google Maps in a browser, and the picks from food guides that a person reads. |
-| `ubi-hougang-food` | The picks come from food guides that a person reads, and each place is checked by hand against a mall directory or a closure notice. |
-| `work-lanyards` | A hand-made snapshot of Amazon.sg listings, which answer a script with a bot check. |
-| `social-values-surveydata`, `graduate-employment-survey`, `tourist-attractions` | A provided dataset of one survey wave. A new wave is a new dataset, and the claims in `build.py` are about this one. |
-| `manchester-city-finances` | The figures come from published accounts and news articles that a person reads. |
-| `vgc-protect-fakeout-pivot-trainer` | The team list of one finished tournament: the data does not change. |
-
-The other visuals use fixed sources, such as papers, books or their own examples, so they have no refresh.
 
 ## What the checks decide
 
@@ -106,7 +78,7 @@ Generate it, then write only the domain:
 python3 scripts/new_visual.py <slug> --title "Title" --summary "One line for the catalogue." [--mathjax]
 ```
 
-It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its browser checks with no edit: a damped-oscillator starter that shows every mechanical part working. Replace the starter with the domain (the list below), run `python3 build.py` in the folder, and check it. `--mathjax` embeds MathJax 4.1.3 with its Fira font and their licences. `--help` lists the catalogue options (subject, category, tags, source URL, date, `--unpublished`). The same arguments always give the same bytes. `viz/visual-skeleton/` is the generator's output, committed unchanged (`published: false`), so CI and the daily browser run test it.
+It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its browser checks with no edit: a damped-oscillator starter that shows every mechanical part working. Replace the starter with the domain (the list below), run `python3 build.py` in the folder, and check it. `--mathjax` embeds MathJax 4.1.3 with its Fira font and their licences. `--help` lists the catalogue options (subject, category, tags, source URL, date, `--unpublished`). The same arguments always give the same bytes. The tooling tests (`tests/test_new_visual.py`) generate a visual and run its checks.
 
 | Mechanical part of the specification | Where a generated visual gets it | What checks it |
 | --- | --- | --- |
@@ -131,11 +103,11 @@ What stays manual, in files the generator writes once and never rewrites:
 
 `python3 scripts/new_visual.py --check <slug>...` (or `--all`) reports where a generated visual's mechanical parts differ from the current generator's, and `--update <slug>...` rewrites its mechanical files and rebuilds its page; neither writes a domain file. Both refuse a visual made by hand, and `--all` reads only the generated visuals. A change to `scripts/kit/`, `scripts/visual_build.py`, `scripts/visual_kit.py`, `scripts/vendor/` or the beamdswitch template fails each generated visual's `build` or `generated` step until `--update` runs for it.
 
-To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
+To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. A stdlib Python builder can import a shared module from `scripts/`, such as `style_guide` for the site's theme script. A builder for several pages lives in `scripts/`, and each page lists it in `uses`.
 
 ## Change shared tooling
 
-`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Keep all Python syntax compatible with 3.9 and the shared tooling working on 3.9 and 3.12; CI runs the repository check and tooling tests on both. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck -- --summary`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --toon`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
+`scripts/`, `schema/`, `tests/` (the tooling's own tests), `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Keep all Python syntax compatible with 3.9 and the shared tooling working on 3.9 and 3.12; CI runs the repository check and tooling tests on both. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck -- --summary`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --toon`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
 
 ## Rules
 
@@ -147,8 +119,4 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 
 ## Review by risk
 
-The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it, such as a `scripts/refresh.py` run), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.
-
-## Connes QFT laboratory
-
-The `connes-qft` visual registers `get_metadata`, `get_current_state`, `compute_vacuum_polarization`, `analyse_feynman_graph`, `birkhoff_decomposition`, `finite_spectral_triple`, `modular_theory`, and `run_self_tests`. Its [SKILLS.md](viz/connes-qft/SKILLS.md) gives their inputs and outputs.
+The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.

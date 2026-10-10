@@ -2,6 +2,7 @@
 
 This file lists the debt findings for `visuals`. It covers the standalone artifact requirement, deterministic builds, the reverse dependency on the site, and command ownership with measured overlap.
 Other findings stay here until a separate pull request closes them.
+The baseline numbers and the measured times come from the runs of that time, before the visuals that the site did not port were removed.
 The architecture is in [monorepo.md](monorepo.md), [SKILLS.md](../SKILLS.md) and [e2e/README.md](../e2e/README.md).
 
 Classes: CONFIRMED means a test or a command showed it. SUSPECTED means it is not yet shown. NOT A DEFECT means the design is intentional and useful.
@@ -56,30 +57,6 @@ The risk is that a Firefox-only failure shows first in CI.
 - Decision: CONFIRMED as a coverage gap, and fixed. The existing `file-url` check stays, because it detects other failures.
 - Verification: 58 of 58 offline-claiming visuals pass in 4 browser projects. A fixture with a CDN request fails.
 
-### SA-2
-- ID: SA-2
-- Repository: visuals
-- Location: `viz/work-lanyards/index.html`, `viz/work-lanyards/e2e/manifest.json`
-- Problem: The page loads product photos from `m.media-amazon.com` at run time.
-- Evidence: `network` fails with 85 refused requests. The manifest records it as a known finding. The visual does not claim to work offline.
-- Severity: Medium
-- Maintenance cost: The photos disappear offline and when the shop changes the links. The core tables still work.
-- Proposed fix: Embed the photos, or remove them, or keep the page as a hand-made snapshot. Each choice changes content or file size, so the owner must decide.
-- Decision: CONFIRMED. Retained in this pull request, because the choice is a content decision. Follow-on instruction is in the p2 notes.
-- Verification: The standalone test, run on a copy that claims offline use, fails on the same URLs.
-
-### SA-3
-- ID: SA-3
-- Repository: visuals
-- Location: `viz/stealth-rcs/index.html` (`img/` paths), `viz/stealth-rcs/visual.json` (`assets`)
-- Problem: The photos are separate published files, not inline.
-- Evidence: Without `img/`, the page raises 404 errors for the photos. With the declared assets, it passes offline.
-- Severity: Low
-- Maintenance cost: A copy of only `index.html` loses the photos.
-- Proposed fix: None now. The assets are declared in `visual.json`, the site publishes them, and inline photos would add about 12 JPEG files to the page.
-- Decision: NOT A DEFECT. Media assets declared in `visual.json` are an allowed published file. The contract test copies them.
-- Verification: `test:standalone` for `stealth-rcs` passes in 4 browser projects.
-
 ### SA-4
 - ID: SA-4
 - Repository: visuals
@@ -102,19 +79,7 @@ The risk is that a Firefox-only failure shows first in CI.
 - Maintenance cost: Low.
 - Proposed fix: None.
 - Decision: NOT A DEFECT. Keep both.
-- Verification: Both ran in the baseline and passed, except the recorded `work-lanyards` finding.
-
-### SA-6
-- ID: SA-6
-- Repository: visuals
-- Location: `viz/*/e2e/manifest.json` and `visual.json` (`offline`, summary text)
-- Problem: 12 visuals do not claim to work offline, so `file-url` and `test:standalone` skip them.
-- Evidence: A copy of each with an offline claim passed `test:standalone` in Chromium, except `work-lanyards` (SA-2). The other 11 are `data-workbench`, `manchester-city-finances`, `marvell`, `multi-armed-bandit`, `ooda-orientation`, `panw`, `root-locus`, `singapore-covid-governance-hindsight`, `social-values-surveydata`, `tampines-food-map` and `tourist-attractions`.
-- Severity: Low
-- Maintenance cost: A regression in these 11 is not caught by the contract.
-- Proposed fix: Set `"offline": true` in 11 of the 12 manifests, one pull request each owner may review. Do not change page text.
-- Decision: CONFIRMED, and fixed: `"offline": true` is set in the 11 manifests. `tampines-food-map` had no manifest, so one is added that holds only that key. `data-workbench` stays without the claim: its spec says the page opens from the site, not from `file://`. No page text changes.
-- Verification: For the 11 visuals, `test:standalone` gives 11 pass, 0 fail in chromium-desktop, chromium-mobile, webkit-desktop and webkit-mobile. `test:baseline` gives 0 fail in the same 4 projects, and its `file-url` check now runs and passes for each of the 11. Firefox could not start here, so CI is the first Firefox run.
+- Verification: Both ran in the baseline and passed, except 1 recorded finding of a visual that is now removed.
 
 ### SA-7
 - ID: SA-7
@@ -155,9 +120,9 @@ The risk is that a Firefox-only failure shows first in CI.
 ### DB-1
 - ID: DB-1
 - Repository: visuals
-- Location: `scripts/check.py` (`check`, the default `build` step), `viz/{edge-pitch,generating-functions,lug-joint,stability,vgc-protect-fakeout-pivot-trainer}/build.py`
-- Problem: The default `build` step runs `build.py --verify`. Six builders ignore `--verify` and write the page. The step then passes even when the committed page is stale.
-- Evidence: In a scratch copy, a changed `index.html` of each of the six was rewritten by `build.py --verify` with exit code 0. See `verify-drift.txt` in the task evidence.
+- Location: `scripts/check.py` (`check`, the default `build` step)
+- Problem: The default `build` step runs `build.py --verify`. A builder that ignores `--verify` writes the page. The step then passes even when the committed page is stale.
+- Evidence: In a scratch copy, six builders of that time rewrote a changed `index.html` under `build.py --verify` with exit code 0. See `verify-drift.txt` in the task evidence.
 - Severity: Medium
 - Maintenance cost: A stale generated page can pass `check.py` and show only as a diff in the working tree.
 - Proposed fix: `check.py` records the folder files before the `build` step. It fails the visual when the step changed a file, and it restores the files. No builder changes.
@@ -174,7 +139,7 @@ The risk is that a Firefox-only failure shows first in CI.
 - Maintenance cost: None found.
 - Proposed fix: None.
 - Decision: NOT A DEFECT. Builds are deterministic, and the canonical data (`raw.*`, `meta.json`) stays apart from the generated page.
-- Verification: `rebuild-twice.sh` and `rebuild-twice.txt` in the task evidence. A page that a builder embeds into a hand-written `index.html` (for example `stealth-rcs`) checks only its generated blocks, by design.
+- Verification: `rebuild-twice.sh` and `rebuild-twice.txt` in the task evidence. A page that a builder embeds into a hand-written `index.html` checks only its generated blocks, by design.
 
 ### RD-1
 - ID: RD-1
@@ -183,7 +148,7 @@ The risk is that a Firefox-only failure shows first in CI.
 - Problem: `fetch-targets` clones `yujieteo/site` at its `main` branch. A change in the site can change a visuals test result.
 - Evidence: Only the jobs with `site: true` fetch it: a change under `e2e/site/<slug>/`, and the job for every site-kept visual (`scripts/changed.py`). No job for a visual in `viz/` fetches or reads the site. `build_catalogue.py`, `check.py` and `check_repo.py` read no site file.
 - Severity: Low
-- Maintenance cost: A site change can fail a visuals job for `beamdswitch` or `connes-qft`. Those two visuals live in the site, so the failure is correct.
+- Maintenance cost: A site change can fail a visuals job for a visual that the site keeps itself, such as `beamdswitch`. The site owns that visual, so the failure is correct.
 - Proposed fix: None now. `npm run fetch-targets <ref>` already takes a branch, tag or commit. A fixed pin would add a file, and the pin of the site revision belongs to the site task.
 - Decision: NOT A DEFECT for the core artifacts. The dependency covers the visuals that the site keeps, and it is optional (`E2E_SITE` can be absent). The scheduled run needs the floating revision on purpose, to find new site changes.
 - Verification: `grep` of `scripts/`, `tests/` and `viz/` finds no read of a site clone. The template copies (SA-7) are frozen in `viz/*/beamdswitch.js` and compared with a recorded SHA-256, not with a site checkout.
@@ -208,7 +173,7 @@ Times: one run on the author machine, one core, Python 3.13 and Node 22, on 2026
 | Command | Defined in | Purpose | Detects | Time |
 | --- | --- | --- | --- | --- |
 | `python3 scripts/check_repo.py` | `scripts/check_repo.py` | Fast repository check on every change | Invalid `visual.json`, a file named but missing, a home path, a tracked build or OS artifact, a Python file that does not parse, stale vendored MathJax, kit or template copies | 0.71 s |
-| `python3 -m unittest discover -s tests -p 'test_*.py'` | `tests/` | Unit tests of the shared tooling, on Python 3.9 and 3.12 in CI | A wrong result of `check.py`, `changed.py`, `rules.py`, `new_visual.py`, `refresh_kit.py` and the other tools | 13.7 s (120 tests) |
+| `python3 -m unittest discover -s tests -p 'test_*.py'` | `tests/` | Unit tests of the shared tooling, on Python 3.9 and 3.12 in CI | A wrong result of `check.py`, `changed.py`, `rules.py`, `new_visual.py` and the other tools | 13.7 s (120 tests) |
 | `node --test tests/*.test.mjs` | `tests/` | Tests of the type check, the dead-code check and the shared beamdswitch and theme code | A broken `typecheck.mjs`, `deadcode.mjs` or shared script | 1.5 s |
 | `npm run typecheck` | `scripts/typecheck.mjs` | `tsc` over the shared tooling, one project for each visual with a `tsconfig.json` | A JSDoc type error | 3.2 s |
 | `python3 scripts/check.py <slug>` | `scripts/check.py` | One visual: build, its node and Python tests, types and the rule steps | A stale page (DB-1), a failing visual test, a type error, a rule finding | 664 s for 71 visuals, 725 steps |
@@ -244,16 +209,16 @@ Each visuals-side P1 and P2 requirement, with its status and evidence. Pull requ
 | P1 generated artifacts: keep canonical data, sources and history apart from output | Kept | No data or source file changed in any of the four pull requests |
 | P1 generated artifacts: an archived visual needs no site generator | Confirmed | SA-1 and SA-4: `test:standalone` runs each offline-claiming page from an empty folder |
 | P2 site-specific maintenance (visuals side) | Done, nothing to change here | The two site-kept visuals keep their checks in `e2e/site/`; the site owns their code. Publication logic stays in the site |
-| Standalone and offline contract | Done | SA-1 to SA-6; 11 more visuals now run the contract (SA-6) |
-| Known findings kept | Kept | SA-2 (`work-lanyards` photos, content decision of the owner) and SA-8 (recorded findings) |
+| Standalone and offline contract | Done | SA-1, SA-4 and SA-5 |
+| Known findings kept | Kept | SA-8 (recorded findings) |
 
 ## Report
 
 Repository commits: visuals `b306894` (#106), `cabbc95` (#107), `8a34eee` (#108), `c90999c` (#109). The site commit read as interface evidence is `e0483bfe4bd7afd08142bebca0f6df9b4eee3cd0`.
-Issues fixed: SA-1, SA-6 (11 of 12 visuals), DB-1.
-Issues retained: SA-2 and SA-8 (owner decisions), `data-workbench` in SA-6, and the findings that are not defects.
-Tests passed: the checks named in "Baseline", "After the change", DB-1 and SA-6, each with its recorded run.
-Tests not run: Firefox projects (Firefox cannot start on the author machine; CI runs them). The `file-url` result of `data-workbench` differed between the author machine and CI, see SA-6.
+Issues fixed: SA-1, DB-1.
+Issues retained: SA-8 (owner decision), and the findings that are not defects.
+Tests passed: the checks named in "Baseline", "After the change" and DB-1, each with its recorded run.
+Tests not run: Firefox projects (Firefox cannot start on the author machine; CI runs them).
 Build time before and after: a second build changes nothing, and `check.py` over all 71 visuals took 630 s before and 664 s after, within the noise of one run on one machine. The change adds one file snapshot to each default build step.
 Test time before and after: the unit tests took 13.7 s before and about 13 s after. The standalone contract adds about 52 s for each browser project in CI.
 New dependencies: none. Removed dependencies: none.
@@ -275,7 +240,7 @@ Site revision pinning is outside this pull request. The counterpart site task ow
 
 The author ran this check live on 2026-10-08. It ran outside the pipeline.
 
-Command: `cd e2e && E2E_PROJECTS=chromium-desktop E2E_ONLY=mohr,theorem-explorer,okr-setter node --test tests/standalone.test.js`.
+Command: `cd e2e && E2E_PROJECTS=chromium-desktop E2E_ONLY=<3 slugs> node --test tests/standalone.test.js`, with `theorem-explorer` and 2 visuals that are now removed.
 
 The command starts one headless Chromium. It closes the browser afterwards.
 
@@ -285,7 +250,7 @@ The test opens `index.html` from file:// in an offline browser context. It opera
 
 The test asserts no error, no request and a changed page.
 
-Result: 3 pass, 0 fail. Time: mohr 1207 ms, okr-setter 757 ms, theorem-explorer 1020 ms, total 1.59 s.
+Result: 3 pass, 0 fail. Time: theorem-explorer 1020 ms, total 1.59 s.
 
 Full run of all 58 offline-claiming visuals: 58 pass in each of chromium-desktop, chromium-mobile, webkit-desktop and webkit-mobile.
 

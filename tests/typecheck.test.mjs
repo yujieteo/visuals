@@ -146,9 +146,9 @@ test("a missing path, an unknown ref, an unknown visual or option is a usage err
     [["no-such-visual"], "no viz/<slug>/tsconfig.json for: no-such-visual"],
     [["--bogus"], "unknown option --bogus"],
     [["--first", "x"], "--first needs a whole number"],
-    [["airbnb", "--file", "README.md"], "--file README.md is in none of the checked tsc projects, so the filter matches nothing"],
+    [["theorem-explorer", "--file", "README.md"], "--file README.md is in none of the checked tsc projects, so the filter matches nothing"],
     [["--scoped"], "unknown option --scoped"],
-    [["work-lanyards", "--file", "viz/work-lanyards/data.json"], "--file viz/work-lanyards/data.json is in none of the checked tsc projects"],
+    [["theorem-explorer", "--file", "viz/theorem-explorer/build.py"], "--file viz/theorem-explorer/build.py is in none of the checked tsc projects"],
   ];
   const clean = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" }).stdout === "";
   if (clean) cases.push([["--since", "HEAD"], "--since HEAD: no file changed since"]);
@@ -164,7 +164,7 @@ test("--file finds a page's inline scripts when the repository is reached throug
   const link = join(dir, "repo");
   symlinkSync(fileURLToPath(new URL("../", import.meta.url)), link);
   try {
-    const args = ["scripts/typecheck.mjs", "--summary", "work-lanyards", "--file", "viz/work-lanyards/index.html"];
+    const args = ["scripts/typecheck.mjs", "--summary", "theorem-explorer", "--file", "viz/theorem-explorer/index.html"];
     const run = spawnSync(process.execPath, args, { cwd: link, env: { ...process.env, PWD: link }, encoding: "utf8" });
     assert.notEqual(run.status, 2, run.stdout);
     assert.match(run.stdout, /^verdict: (pass|fail)\b/);

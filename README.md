@@ -1,9 +1,15 @@
 # Visuals
 
-Self-contained, source-backed interactive visuals, published at
-<https://teoyujie.org/visuals/>. Each visual is one folder, `viz/<slug>/`, and
-its page is a single HTML file with its CSS, data and JavaScript inlined, so it
-works offline and from `file://`.
+The data, the data builders and the pages of the visuals that yujieteo/site
+ports. Each visual is one folder, `viz/<slug>/`. The site pins the files that
+it reads in its `visuals.lock`. When the site replaced the page of a visual,
+the folder keeps only the data, the fixtures and the data builders. A sealed
+artifact keeps the page that its Rust crate builds, and the site embeds that
+page. Each other folder keeps its page: a single HTML file with its CSS, data
+and JavaScript inlined, so it works offline and from `file://`.
+
+The visuals that the site did not port were removed on 2026-10-10, and Git
+history keeps them at commit cfd86d3.
 
 ## Quick start
 
@@ -18,7 +24,6 @@ python3 scripts/check.py --toon --changed  # one TOON verdict for agents; full o
 npm run typecheck -- --summary         # every tsc project's errors as one TOON verdict, by code and file
 node e2e/bin/page-axi.js check <slug>  # open the page headless at 3 widths in both themes: one verdict, screenshots in build/page-axi/<slug>/
 python3 scripts/check_repo.py          # parse every tracked .py, check visual.json and folder rules, reject home paths and artifacts
-python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
 python3 scripts/sync_template.py <site>/templates/beamdswitch.js  # copy the site's report template into every visual that carries it
 python3 scripts/new_visual.py <slug> --title "..." --summary "..." [--mathjax]  # a new visual with every mechanical part
@@ -45,15 +50,14 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
 | `viz/<slug>/generated.json` | For a visual `scripts/new_visual.py` wrote: its options, the kit's version and the beamdswitch template's source and SHA-256. |
-| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `page_rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the static rules page-axi prints, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
-| `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share. |
+| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `page_rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the static rules page-axi prints, the generated catalogue, the type-check extractor, the beamdswitch template sync. |
+| `scripts/style_guide.py`, `templates/` | The site's theme script that every page carries, and the site's beamdswitch template with its parsers. |
 | `scripts/new_visual.py`, `visual_build.py`, `visual_kit.py`, `kit/`, `vendor/mathjax/` | The generator of new visuals, the builder of their pages, the kit they inline (state, URL, JSON, exports, palette, WebMCP, style tokens, shared tests) and the vendored MathJax 4.1.3 with Fira Math. |
-| `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
 | `rust-toolchain.toml` | The Rust compiler for the data builders that are crates in their visual's folder, such as `viz/theorem-learner/`, and for the sealed artifacts. |
 | `Cargo.toml`, `look/` | The workspace of the sealed artifacts, pages that a Rust crate in their folder builds to WebAssembly, such as `viz/beamdiag/`, and the site's look they share. |
 | `package.json`, `tsconfig.base.json`, `tsconfig.json` | The pinned type checker, the compiler options every visual's `tsconfig.json` extends, and the tooling's own project. |
-| `e2e/` | The shared browser-check harness (Playwright, its own `package.json`), and the checks of the two visuals the site keeps; see [e2e/README.md](e2e/README.md). |
+| `e2e/` | The shared browser-check harness (Playwright, its own `package.json`); see [e2e/README.md](e2e/README.md). |
 | `.github/workflows/ci.yml` | CI: one job per changed visual, its browser checks' jobs, and a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |
 | `.github/workflows/template.yml` | Run by hand: copies the site's changed beamdswitch template into every visual that carries it and pushes a branch for the pull request. |
 | `SKILLS.md` | Agent guide for this repository. |
