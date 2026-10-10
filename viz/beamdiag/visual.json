@@ -1,10 +1,15 @@
 {
   "title": "Beam diagram creator",
-  "summary": "The data of the Beam diagram notebook on the site: a straight beam on pinned and fixed supports under point forces, couples and distributed loads, solved by the stiffness method for reactions, shear force, bending moment and deflection, with hand calculations by Macaulay's method and an MSC Nastran SOL 101 deck. This folder keeps the page data (raw.json), the test beams with their closed forms (fixtures.json) and the frozen answers of an independent exact-arithmetic Python solver (reference.json), which the notebook checks itself against at every build.",
+  "summary": "Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads, and choose its section and material. Reactions, shear force, bending moment and deflection are solved in the browser by the stiffness method, in Rust compiled to WebAssembly, so fixed–fixed, propped and continuous beams work, and every jump at a point load or couple is kept. Step-by-step hand calculations work the same answer by Macaulay's method. Drag supports and loads, read the diagrams, pick a consistent unit convention, and save the figure as PNG, SVG or PDF, the model as an MSC Nastran SOL 101 .bdf deck, or the hand calculations as Markdown. The page is a sealed artifact: the Beam diagram notebook of yujieteo/site embeds it, and the site pins its bytes. The data (raw.json), the test beams with their closed forms (fixtures.json) and the frozen answers of an exact-arithmetic solver (reference.json) stay here.",
   "source_url": "https://github.com/yujieteo/visuals/tree/main/viz/beamdiag",
   "fetched": "2026-10-02",
   "data": "raw.json",
-  "site_page": "play/beamdiag/",
+  "webmcp_tools": [
+    "get_metadata",
+    "get_current_beam",
+    "solve_beam",
+    "export_nastran_bdf"
+  ],
   "tags": [
     "structural-engineering",
     "beams",
@@ -13,5 +18,15 @@
     "units",
     "data-export"
   ],
-  "category": "data visualization"
+  "category": "data visualization",
+  "uses": [
+    "look",
+    "Cargo.toml",
+    "Cargo.lock"
+  ],
+  "sealed": true,
+  "checks": [
+    "cargo test --locked --release",
+    "cargo build --locked --release -q --target wasm32-unknown-unknown -p beamdiag --lib && cargo run --locked --release -q -p beamdiag --bin page -- ../../target/wasm32-unknown-unknown/release/beamdiag.wasm ../../target/beamdiag.html && cmp ../../target/beamdiag.html index.html"
+  ]
 }

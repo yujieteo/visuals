@@ -19,9 +19,12 @@ For each viz/<slug>/, in order:
            scripts and its test modules (scripts/deadcode.mjs, with the type checker)
   vendor   every vendored block of the page (data-vendor) is the bundle built from scripts/vendor/, unchanged
   generated  a visual scripts/new_visual.py generated holds its current mechanical files (new_visual.py --check)
+  budget   a sealed artifact and look/ stay within 25,000 lines of source
 "checks" in visual.json replaces build, node and python with its own commands, run from the folder; the
 steps after them always run, except that a visual whose page is on the site ("site_page" in visual.json) has no
-page, so it skips the page rules (requests, contrast, theme, vendor), deadcode and tools. scripts/rules.py says what each rule checks, and visual.json "allow" lists the
+page, so it skips the page rules (requests, contrast, theme, vendor), deadcode and tools. A sealed artifact
+("sealed": its Rust crate builds index.html) gets the requests rule, tools and budget only: look/ pins the
+site's look and tests it, and its scripts are Rust strings, which its own checks rebuild and compare. scripts/rules.py says what each rule checks, and visual.json "allow" lists the
 findings a visual keeps on purpose.
 
 Usage: scripts/check.py SLUG... | --all | --changed [BASE] [--require-typecheck]
@@ -120,8 +123,9 @@ def tools_problems(folder, data):
 def rule_steps(folder, data):
     """(name, problems) for each static rule that applies to the folder, its allowed findings removed. A
     visual whose page is on the site ("site_page" in visual.json) has no page, so only the rules for its Python and
-    its tests apply."""
-    html = None if "site_page" in data else (folder / "index.html").read_text(encoding="utf-8")
+    its tests apply. A sealed artifact gets the requests rule and the budget, not the contrast and theme rules."""
+    sealed = data.get("sealed") is True
+    html = None if "site_page" in data and not sealed else (folder / "index.html").read_text(encoding="utf-8")
     allow = data.get("allow", {})
     steps = []
     if (folder / "beamdswitch.js").is_file():
@@ -130,11 +134,12 @@ def rule_steps(folder, data):
         steps.append(("vendor", rules.vendor_problems(html)))
     if (folder / "generated.json").is_file():
         steps.append(("generated", new_visual.drift(folder, page=False)))
-    page = [] if html is None else [
-        ("requests", "requests", rules.request_problems(html, data)),
+    if sealed:
+        steps.append(("budget", rules.budget_problems(folder, folder.parents[1] / "look")))
+    page = [] if html is None else [("requests", "requests", rules.request_problems(html, data))] + ([] if sealed else [
         ("contrast", "contrast", rules.contrast_problems(html)),
         ("theme", "theme", rules.theme_problems(html)),
-    ]
+    ])
     for name, key, problems in page + [
         ("pydead", "python", rules.python_folder_problems(folder)),
         ("sourcetests", "sourcetests", rules.source_tests_problems(folder)),
@@ -213,8 +218,10 @@ def check(slug, require_typecheck=False):
         for problem in problems:
             print(f"[{slug}] {name}: {problem}", file=sys.stderr)
         log.append((name, "FAIL" if problems else "ok", 0.0, problems))
-    if "site_page" in data:
+    if "site_page" in data and not data.get("sealed"):
         log.append(("deadcode", "skipped (no page)", 0.0, None))
+    elif data.get("sealed"):
+        log.append(("deadcode", "skipped (sealed: Rust builds the scripts)", 0.0, None))
     elif TSC.is_file():
         print(f"[{slug}] deadcode: scripts/deadcode.mjs {slug}", flush=True)
         run("deadcode", ["node", str(ROOT / "scripts" / "deadcode.mjs"), slug], ROOT, log)
@@ -223,8 +230,8 @@ def check(slug, require_typecheck=False):
         log.append(("deadcode", "FAIL", 0.0, ["typescript is not installed; run npm ci"]))
     else:
         log.append(("deadcode", "skipped (npm ci)", 0.0, None))
-    problems = None if "site_page" in data else tools_problems(folder, data)
-    if "site_page" in data:
+    problems = None if "site_page" in data and not data.get("sealed") else tools_problems(folder, data)
+    if "site_page" in data and not data.get("sealed"):
         log.append(("tools", "skipped (no page)", 0.0, None))
     elif problems is None:
         log.append(("tools", "skipped (none registered literally)", 0.0, None))

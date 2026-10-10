@@ -37,7 +37,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | Path | Role |
 | --- | --- |
 | `viz/<slug>/index.html` | The page the site publishes at `teoyujie.org/visuals/<slug>/`. |
-| `viz/<slug>/visual.json` | The visual's metadata: its catalogue entry (title, summary, source, fetch date, data file, WebMCP tools, tags), and optionally its own check commands, type-check settings, the shared files it `uses` and the `site_page` that replaced its page (the folder then keeps only data and fixtures). `schema/visual.schema.json` defines it. |
+| `viz/<slug>/visual.json` | The visual's metadata: its catalogue entry (title, summary, source, fetch date, data file, WebMCP tools, tags), and optionally its own check commands, type-check settings, the shared files it `uses` and the `site_page` that replaced its page (the folder then keeps only data and fixtures, unless it is `sealed`: a page its Rust crate builds, which the site embeds). `schema/visual.schema.json` defines it. |
 | `viz/<slug>/raw.json`, `raw.csv`, `meta.json`, ... | The unchanged source data (published as `data.json`) and its provenance. |
 | `viz/<slug>/build.py` (or `build.mjs`), `src/` | The builder and page sources, for a generated page; `python3 build.py --verify` (or the check its `visual.json` names) checks the committed page and writes nothing. |
 | `viz/<slug>/tests/` | The visual's own tests. |
@@ -50,7 +50,8 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `scripts/new_visual.py`, `visual_build.py`, `visual_kit.py`, `kit/`, `vendor/mathjax/` | The generator of new visuals, the builder of their pages, the kit they inline (state, URL, JSON, exports, palette, WebMCP, style tokens, shared tests) and the vendored MathJax 4.1.3 with Fira Math. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
-| `rust-toolchain.toml` | The Rust compiler for the data builders that are crates in their visual's folder, such as `viz/theorem-learner/`. |
+| `rust-toolchain.toml` | The Rust compiler for the data builders that are crates in their visual's folder, such as `viz/theorem-learner/`, and for the sealed artifacts. |
+| `Cargo.toml`, `look/` | The workspace of the sealed artifacts, pages that a Rust crate in their folder builds to WebAssembly, such as `viz/beamdiag/`, and the site's look they share. |
 | `package.json`, `tsconfig.base.json`, `tsconfig.json` | The pinned type checker, the compiler options every visual's `tsconfig.json` extends, and the tooling's own project. |
 | `e2e/` | The shared browser-check harness (Playwright, its own `package.json`), and the checks of the two visuals the site keeps; see [e2e/README.md](e2e/README.md). |
 | `.github/workflows/ci.yml` | CI: one job per changed visual, its browser checks' jobs, and a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |

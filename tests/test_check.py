@@ -105,6 +105,16 @@ class RuleStepsTest(unittest.TestCase):
             folder = layout.visual("alpha", data, ("raw.json",))
             self.assertEqual(rule_steps(folder, data), [("pydead", []), ("sourcetests", [])])
 
+    def test_a_sealed_artifact_gets_the_requests_rule_and_its_budget(self):
+        data = metadata(site_page="play/alpha/", sealed=True)
+        with Layout() as layout:
+            folder = layout.visual("alpha", data, ("index.html", "Cargo.toml", "raw.json"))
+            self.assertEqual(rule_steps(folder, data), [("budget", []), ("requests", []), ("pydead", []), ("sourcetests", [])])
+            (folder / "src").mkdir()
+            (folder / "src" / "lib.rs").write_text("\n" * 25_000, encoding="utf-8")
+            self.assertEqual(dict(rule_steps(folder, data))["budget"],
+                             ["the sealed artifact has 25,001 lines of source with look/, over its budget of 25,000"])
+
 
 def toon(layout, *args):
     """Run check.py --toon on ``layout``'s visuals; return (stdout, exit code)."""

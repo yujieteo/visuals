@@ -57,7 +57,7 @@ def folder_errors(folder, data, root=ROOT):
     slug = folder.name
     errors = [] if SLUG.fullmatch(slug) else [f"{slug}: the folder name is not a lowercase hyphenated slug"]
     page = (folder / "index.html").is_file()
-    if "site_page" in data:
+    if "site_page" in data and data.get("sealed") is not True:
         if page:
             errors.append(f"{slug}: index.html is present, but site_page says yujieteo/site has the page ({data['site_page']}); delete it")
         if "webmcp_tools" in data:
@@ -67,6 +67,8 @@ def folder_errors(folder, data, root=ROOT):
             errors.append(f"{slug}: index.html is missing")
         if "webmcp_tools" not in data:
             errors.append(f"{slug}/visual.json: missing webmcp_tools")
+    if data.get("sealed") is True and not (folder / "Cargo.toml").is_file():
+        errors.append(f"{slug}: sealed says a Rust crate builds index.html, but there is no Cargo.toml")
     for key in ("data", "downloads"):
         if isinstance(data.get(key), str) and not (folder / data[key]).is_file():
             errors.append(f"{slug}: {key} names a missing file: {data[key]}")
