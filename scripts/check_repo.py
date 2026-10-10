@@ -23,9 +23,9 @@ from build_catalogue import load
 from visuals import ROOT
 
 HOME_PATH = re.compile(r"/(?:Users|home)/[^/\s]+/")
-# Generated, cached or installed, never written by hand: build/ and .typecheck/ come from tracked files, and
-# .cache/ holds the browser checks' site clone.
-SKIPPED = {".git", "__pycache__", ".ruff_cache", "node_modules", ".typecheck", "build", ".cache"}
+# Generated, cached or installed, never written by hand: build/, .typecheck/ and target/ (cargo) come from tracked
+# files, and .cache/ holds the browser checks' site clone.
+SKIPPED = {".git", "__pycache__", ".ruff_cache", "node_modules", ".typecheck", "build", ".cache", "target"}
 
 
 def home_paths(root=ROOT):

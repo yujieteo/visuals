@@ -50,6 +50,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `scripts/new_visual.py`, `visual_build.py`, `visual_kit.py`, `kit/`, `vendor/mathjax/` | The generator of new visuals, the builder of their pages, the kit they inline (state, URL, JSON, exports, palette, WebMCP, style tokens, shared tests) and the vendored MathJax 4.1.3 with Fira Math. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
+| `rust-toolchain.toml` | The Rust compiler for the data builders that are crates in their visual's folder, such as `viz/theorem-learner/`. |
 | `package.json`, `tsconfig.base.json`, `tsconfig.json` | The pinned type checker, the compiler options every visual's `tsconfig.json` extends, and the tooling's own project. |
 | `e2e/` | The shared browser-check harness (Playwright, its own `package.json`), and the checks of the two visuals the site keeps; see [e2e/README.md](e2e/README.md). |
 | `.github/workflows/ci.yml` | CI: one job per changed visual, its browser checks' jobs, and a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |
