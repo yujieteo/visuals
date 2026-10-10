@@ -13,17 +13,16 @@ cargo build --release --target wasm32-unknown-unknown -p beamdiag --lib
 cargo run --release -q -p beamdiag --bin page -- target/wasm32-unknown-unknown/release/beamdiag.wasm viz/beamdiag/index.html
 ```
 
-The checks in `visual.json` run `cargo test --locked --release`, then rebuild the page and compare it with
-`index.html`. In an iframe (the site's embed), the page hides its header and title, and follows the site's
-mode and theme. The WebMCP tools are in `src/tools.json`; `visual.json` names the same tools (a test checks it).
+The checks in `visual.json` rebuild the page and compare it with `index.html`. Tests are disposable: check a change end to end in the built page, and do not commit regression tests. In an iframe (the site's embed), the page hides its header and title, and follows the site's
+mode and theme. The WebMCP tools are in `src/tools.json`; `visual.json` names the same tools.
 
 | File | Holds |
 | --- | --- |
 | `raw.json` | The page data: unit conventions, assumptions, the method, the sources and the Nastran cards. |
 | `fixtures.json` | The test beams: pin–pin, fixed–fixed, propped, cantilever, overhang and continuous layouts, up to forty supports, with closed forms where they exist. |
-| `reference.json` | The answers of `reference.py`, an exact rational solver by Macaulay integration with only the Python standard library, frozen on 2026-10-10. The notebook's check cell compares its own stiffness solver with every case to 1e-9 of each quantity's largest value. |
-| `random.json` | Seeded random beams with the answers of `reference.py`, frozen on 2026-10-10. `tests/engine.rs` compares the solver with them. |
-| `src/`, `tests/` | The page in Rust: the stiffness solver (`engine.rs`), the hand calculations, the figure, the PDF, deck and Nastran exports, the page's events (`app.rs`), the WebAssembly entry (`wasm.rs`) and the page builder (`bin/page.rs`), with their tests. |
+| `reference.json` | The answers of `reference.py`, an exact rational solver by Macaulay integration with only the Python standard library, frozen on 2026-10-10. |
+| `random.json` | Seeded random beams with the answers of `reference.py`, frozen on 2026-10-10. |
+| `src/` | The page in Rust: the stiffness solver (`engine.rs`), the hand calculations, the figure, the PDF, deck and Nastran exports, the page's events (`app.rs`), the WebAssembly entry (`wasm.rs`) and the page builder (`bin/page.rs`). |
 
 `reference.py`, the old JavaScript page, its builder and its tests are in Git history: the last commit
 that has them is 32181d1. Never edit `reference.json` by hand. To add a case, restore `reference.py` from

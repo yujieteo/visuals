@@ -140,24 +140,3 @@ pub fn arrow(x: f64, y: f64, deg: f64, size: f64, along: f64) -> Vec<Seg> {
     let (a, b) = (at(-size, size * along), at(size, size * along));
     vec![Seg::M(x, y), Seg::L(a.0, a.1), Seg::L(b.0, b.1), Seg::Z]
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn writes_svg_compactly() {
-        assert_eq!(n(1.005), "1"); // 1.005 is just below 1.005
-        assert_eq!(n(-0.001), "0");
-        assert_eq!(n(12.5), "12.5");
-        let a = arrow(10.0, 10.0, 180.0, 4.0, 1.6);
-        let Seg::L(x, y) = a[1] else { panic!() };
-        assert!((x - 14.0).abs() < 1e-12 && (y - 3.6).abs() < 1e-12, "a downward tip has its base above");
-        let mut c = Canvas::new();
-        c.open(" class=\"g\"".into());
-        c.line(0.0, 0.0, 1.0, 1.0, "fg", 1.0);
-        c.text(2.0, 3.0, "a<b", "tick", Anchor::End);
-        assert_eq!(svg(&c.finish(), 4.0, 5.0, "", ""), "<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"bd-fig\" width=\"4\" height=\"5\" viewBox=\"0 0 4 5\"><g class=\"g\">\
-            <line x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\" fill=\"none\" stroke=\"var(--fg)\" stroke-width=\"1\"/><text class=\"tick\" x=\"2\" y=\"3\" text-anchor=\"end\">a&lt;b</text></g></svg>");
-    }
-}

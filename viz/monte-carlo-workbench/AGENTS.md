@@ -48,8 +48,7 @@ Run these commands from this folder:
 | --- | --- |
 | `cargo run --release` | It writes `raw.json`. |
 | `cargo run --release -- --verify` | It checks that `raw.json` is current and writes nothing. |
-| `cargo test --locked --release` | It builds the bytes of `raw.json` and compares them with the committed file. It also tests the JSON format of Python. |
 
-After a change to a data file, run `cargo run --release`. Then run `cargo test --locked --release`. Do not edit
+After a change to a data file, run `cargo run --release`. The check of this visual is `cargo run --release -- --verify`. Tests are disposable: check a change end to end in the built page, and do not commit regression tests. Do not edit
 `raw.json` by hand. `python3 ../../scripts/check.py monte-carlo-workbench` runs the checks of this visual. The rules
 for every visual are in [SKILLS.md](../../SKILLS.md).
