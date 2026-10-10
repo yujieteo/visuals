@@ -1,0 +1,127 @@
+<div class="bd">
+<p class="eyebrow"><a href="{{root}}play/index.html">Play</a><span>Structural mechanics</span><span>Runs in your browser</span></p>
+<h1>Beam diagram creator</h1>
+<p class="lede">Build a straight beam, place pinned and fixed supports and loads, and read its reactions, shear force, bending moment and deflection. Statically indeterminate beams such as fixed–fixed spans are solved by the stiffness method. Everything is calculated on this page, and the same model downloads as a NASTRAN deck.</p>
+
+<div class="toolbar" role="group" aria-label="Start from, and units">
+  <div class="group"><label class="label" for="preset">Example</label><select id="preset" data-field="preset">{{presets}}</select></div>
+  <div class="group" role="group" aria-label="Support conditions at the two ends">
+    <span class="label">Ends</span>
+    <button class="btn" type="button" data-act="ends" data-arg="pin,pin">Pin–pin</button>
+    <button class="btn" type="button" data-act="ends" data-arg="fixed,fixed">Fixed–fixed</button>
+    <button class="btn" type="button" data-act="ends" data-arg="fixed,pin">Fixed–pin</button>
+    <button class="btn" type="button" data-act="ends" data-arg="fixed,">Cantilever</button>
+  </div>
+  <div class="group"><label class="label" for="units">Units</label><select id="units" data-field="units" title="Consistent unit convention for every input, result, diagram and the NASTRAN deck">{{units}}</select></div>
+</div>
+<p id="preset-note" class="note">{{note}}</p>
+
+<div class="app">
+  <div class="figure">
+    {{error}}
+    <div id="plots" class="{{stale}}">{{figure}}</div>
+    <p id="readout" class="readout">{{readout}}</p>
+    <p class="hint">Drag a support or a load along the beam, or focus it and use the arrow keys (Shift for finer steps). Move over the diagrams, or focus them and use the arrow keys, to read values; Page Up and Page Down jump between supports and loads.</p>
+    <ul id="stats" class="stats {{stale}}">{{stats}}</ul>
+    <ul id="reactions" class="reactions" aria-label="Support reactions">{{reactions}}</ul>
+    <div class="export" role="group" aria-label="Save the diagrams and results">
+      <label class="f format"><span>Image format</span><select id="image-format" data-field="format"><option value="png">PNG</option><option value="svg">SVG</option></select></label>
+      <button class="btn primary" type="button" data-act="save-image">Save image</button>
+      <button class="btn" type="button" data-act="save-pdf">Save PDF</button>
+      <button class="btn" type="button" data-act="save-beamdswitch" title="Save a narrated Markdown talk about this beam, to open in beamdswitch">beamdswitch</button>
+      <button class="btn" type="button" data-act="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
+      <span id="figure-status" class="small muted" role="status"></span>
+    </div>
+    <p class="hint">The image and the PDF hold the beam, shear force, bending moment and deflection diagrams with every result below them. They are drawn on this page and saved straight to your device: nothing is uploaded. The PDF keeps its lines and text as vectors.</p>
+    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results, hand calculations and checks, every number as shown here, and a spoken narration on every slide. Open it in beamdswitch to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>Beam</h3>
+      <div class="row">
+        <label class="f"><span>Length L ({{length}})</span><input id="length" type="number" step="0.1" min="0.001" data-field="length" value="{{len}}"></label>
+        <label class="f"><span>Elements per segment</span><input id="divisions" type="number" step="1" min="1" data-field="divisions" value="{{div}}"></label>
+      </div>
+      <label class="f origin"><span>Measure x from</span><select id="origin" data-field="origin">{{origins}}</select></label>
+    </div>
+    <div class="card">
+      <h3>Supports</h3>
+      <ul id="supports" class="items">{{supports}}</ul>
+      <div class="adds"><button class="btn" type="button" data-act="add-support">+ Support</button></div>
+    </div>
+    <div class="card">
+      <h3>Loads</h3>
+      <p class="note">Forces and distributed loads: + up, − down. Couples: + counter-clockwise.</p>
+      <ul id="loads" class="items">{{loads}}</ul>
+      <div class="adds">
+        <button class="btn" type="button" data-act="add" data-arg="point">+ Point force</button>
+        <button class="btn" type="button" data-act="add" data-arg="dist">+ Distributed</button>
+        <button class="btn" type="button" data-act="add" data-arg="moment">+ Couple</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Section</h3>
+      <label class="f"><span>Shape</span><select id="shape" data-field="section.shape">{{shapes}}</select></label>
+      <div id="section-fields">{{fields}}</div>
+      <p id="section-derived" class="derived">{{derived}}</p>
+    </div>
+    <div class="card">
+      <h3>Material</h3>
+      <label class="f"><span>Preset</span><select id="material" data-field="material">{{materials}}</select></label>
+      <div class="row">
+        <label class="f"><span>Young's modulus E ({{stress}})</span><input id="E" type="number" step="1" data-field="material.E" value="{{e}}"></label>
+        <label class="f"><span>Poisson's ratio ν</span><input id="nu" type="number" step="0.01" data-field="material.nu" value="{{nu}}"></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="values" aria-labelledby="values-h">
+  <h2 id="values-h">Values at supports and loads</h2>
+  <p class="muted">Where a point force or couple acts, the diagram jumps: both the value just to the left (x⁻) and just to the right (x⁺) are listed.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th class="num" scope="col">x ({{length}})</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ ({{force}})</th><th class="num" scope="col">V x⁺ ({{force}})</th><th class="num" scope="col">M x⁻ ({{moment}})</th><th class="num" scope="col">M x⁺ ({{moment}})</th><th class="num" scope="col">v ({{length}})</th><th class="num" scope="col">θ ({{angle}})</th></tr></thead>
+    <tbody id="table" class="{{stale}}">{{table}}</tbody>
+  </table></div>
+</section>
+
+<section id="hand" aria-labelledby="hand-h">
+  <h2 id="hand-h">Hand calculations</h2>
+  <p>The same beam worked by hand, step by step, for every segment between consecutive supports and load points and at the point selected on the diagrams: reactions from equilibrium (or from compatibility when the beam is statically indeterminate), shear and moment by the method of sections, slope and deflection by double integration with the boundary and continuity conditions, then the bending stress and an equilibrium check. The stiffness solver is authoritative: every number below is its value, written as this page writes it, and the hand steps are a readable derivation of that same answer.</p>
+  <div class="export" role="group" aria-label="Save the hand calculations">
+    <button class="btn primary" type="button" data-act="save-hand" title="Save the hand calculations as a Markdown document, which beamdswitch also opens as a narrated deck">Save Markdown</button>
+    <button class="btn" type="button" data-act="copy-hand" title="Copy the same Markdown to the clipboard">Copy Markdown</button>
+    <span id="hand-status" class="small muted" role="status"></span>
+  </div>
+  <div id="hand-point">{{point}}</div>
+  <div id="hand-body">{{hand}}</div>
+</section>
+
+<section id="nastran" aria-labelledby="nastran-h">
+  <h2 id="nastran-h">NASTRAN deck</h2>
+  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, with every number in the units chosen above (<span data-unit="system">{{system}}</span>); a <code>$ Units</code> comment at the top of the deck names them.</p>
+  <div class="export">
+    <label class="f"><span>File name</span><input id="bdf-name" type="text" value="beamdiag.bdf" autocomplete="off" spellcheck="false" data-field="bdfname"></label>
+    <button class="btn primary" type="button" data-act="download">Download .bdf</button>
+    <button class="btn" type="button" data-act="copy">Copy deck</button>
+    <span id="export-status" class="small muted" role="status"></span>
+  </div>
+  <details id="deck-details"><summary>Show the deck</summary><pre class="deck" id="deck"></pre></details>
+  <h3>Getting the .xdb results</h3>
+  <ol id="run" class="small">{{run}}</ol>
+  <p class="muted">{{status}}</p>
+  <details><summary>What each card does</summary><div class="table-wrap"><table class="cards"><thead><tr><th scope="col">Card</th><th scope="col">Use</th></tr></thead><tbody>{{cards}}</tbody></table></div></details>
+</section>
+
+<section id="method" class="method" aria-labelledby="method-h">
+  <h2 id="method-h">Method, units and signs</h2>
+  <p>{{method}}</p>
+  <h3>Sign conventions</h3>
+  <ul>{{conventions}}</ul>
+  <h3>Assumptions</h3>
+  <ul>{{assumptions}}</ul>
+  <h3>Sources</h3>
+  <ul class="sources">{{sources}}</ul>
+</section>
+</div>

@@ -50,7 +50,10 @@ and the byte-identical `beamdswitch` and `report` templates), `uses` (shared fil
 `published: false` for a visual the site does not publish. `site_page` names the yujieteo/site page that
 replaced a visual's page, such as `play/beamdiag/`: the folder then keeps only the data, the fixtures and the
 builders that the site pins in its `visuals.lock`, with no `index.html` and no `webmcp_tools`, and the
-catalogue, the page rules and the browser checks leave it out. The folder name is the slug.
+catalogue, the page rules and the browser checks leave it out. `sealed: true` marks a sealed artifact: its
+Rust crate, a member of the Cargo workspace at the root, builds `index.html` with `look/`. With `site_page` the
+site embeds that page, so the folder keeps `index.html` and `webmcp_tools`; the page rules check only its
+requests, and the crate with `look/` stays within 25,000 lines of source. The folder name is the slug.
 
 ## Checks
 

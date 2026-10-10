@@ -27,6 +27,8 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 is the bundle scripts/visual_kit.py builds from scripts/vendor/, unchanged
   syntax        every tracked Python file parses on the interpreter running the repository check
   artifacts     no tracked __pycache__, *.pyc, .DS_Store or AppleDouble ._* file, and .gitignore keeps them out
+  budget        a sealed artifact ("sealed" in visual.json) stays within 25,000 lines of source: the text files
+                of its folder and of look/, apart from the built index.html, the data (JSON, CSV) and fonts
 
 A finding a visual keeps on purpose is listed, with its reason in the pull request, in visual.json
 "allow": {"<check>": ["<the problem line>", ...]}, without the line number after the file name, so an edit
@@ -317,6 +319,27 @@ def contrast_problems(html):
                 problems.append(f"dark: --{name} is {media_dark.get(name)} under prefers-color-scheme but "
                                 f"{forced_dark.get(name)} under [data-theme=\"dark\"]")
     return problems
+
+
+# budget -----------------------------------------------------------------------------------------------------
+
+# The lines of source one sealed artifact may have, its share of look/ included.
+ARTIFACT_LINES = 25_000
+NOT_SOURCE = {".json", ".csv", ".otf", ".woff2", ".png", ".wasm"}
+
+
+def budget_problems(folder, look):
+    """The sealed artifact in ``folder`` over ARTIFACT_LINES lines of source, with the look/ crate ``look``."""
+    lines = 0
+    for root in (folder, look):
+        for path in sorted(root.rglob("*")):
+            parts = set(path.relative_to(root).parts)
+            if (path.is_file() and path.suffix not in NOT_SOURCE and path != folder / "index.html"
+                    and not parts & (SKIPPED_DIRS | {"target"})):
+                lines += len(path.read_bytes().splitlines())
+    if lines > ARTIFACT_LINES:
+        return [f"the sealed artifact has {lines:,} lines of source with look/, over its budget of {ARTIFACT_LINES:,}"]
+    return []
 
 
 # theme ------------------------------------------------------------------------------------------------------

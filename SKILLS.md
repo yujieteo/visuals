@@ -20,6 +20,10 @@ What a visual must be (artifact contract, state and export, interaction and acce
 
 When yujieteo/site replaces a visual's page with one of its own, such as a notebook, the folder keeps only what the site pins in its `visuals.lock`: the data, the fixtures and the data builders. Delete the page, its builder and its page tests, and set `site_page` in `visual.json` to the site path (such as `play/beamdiag/`) in place of `webmcp_tools`. The checks then skip the page rules, the catalogue leaves the visual out, and it has no browser checks. Never change a pinned file's bytes without a matching change to the site's `visuals.lock`.
 
+## A sealed artifact
+
+A sealed artifact is a page that a Rust crate in its folder builds: a member of the Cargo workspace at the root, compiled to WebAssembly and sealed with `look/` (the site's theme, fonts and header) into one `index.html`, which Git keeps. Set `"sealed": true` in `visual.json`. With `site_page`, the site embeds the page in its notebook and pins its bytes, so the folder keeps `index.html` and `webmcp_tools`. Its `checks` run `cargo test --locked --release`, then rebuild the page and compare it with the committed one, so rebuild the page after every change to the crate or to `look/`. The page rules check only its requests, because `look/` pins the site's look and tests it. Each sealed artifact, with `look/`, stays within 25,000 lines of source (the `budget` step). `viz/beamdiag/` is the example.
+
 ## One-call verdicts
 
 Agents call these and read their output; do not pipe a check's output through `tail` or `grep`, and do not sort type errors by hand. Each prints one short TOON verdict, the failures first with their `file:line`, counts and `help` lines with the next command, and writes the full output to a log in `build/logs/` whose path it prints. Exit 0 is a pass, 1 a failure, 2 a usage or environment error.

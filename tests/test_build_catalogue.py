@@ -47,6 +47,8 @@ class CatalogueTest(unittest.TestCase):
             "site with a page": ("alpha", metadata(site_page="play/alpha/", webmcp_tools=None), ("index.html", "raw.json"), "index.html is present"),
             "site with tools": ("alpha", metadata(site_page="play/alpha/"), ("raw.json",), "webmcp_tools names tools"),
             "missing skipped file": ("alpha", metadata(typecheck={"skip": ["engine.js"]}), ("index.html", "raw.json"), "typecheck skip names a missing file"),
+            "sealed without a crate": ("alpha", metadata(sealed=True), ("index.html", "raw.json"), "there is no Cargo.toml"),
+            "sealed without a page": ("alpha", metadata(site_page="play/alpha/", sealed=True), ("Cargo.toml", "raw.json"), "index.html is missing"),
         }
         for name, (slug, data, files, expected) in cases.items():
             with self.subTest(name), Layout() as layout:
@@ -57,6 +59,13 @@ class CatalogueTest(unittest.TestCase):
     def test_a_site_visual_keeps_only_data_and_leaves_the_catalogue(self):
         with Layout() as layout:
             layout.visual("alpha", metadata(site_page="play/alpha/", webmcp_tools=None), ("raw.json",))
+            by_slug, errors = load(layout.root)
+        self.assertEqual(errors, [])
+        self.assertEqual(catalogue(by_slug), [])
+
+    def test_a_sealed_visual_the_site_embeds_keeps_its_page_and_leaves_the_catalogue(self):
+        with Layout() as layout:
+            layout.visual("alpha", metadata(site_page="play/alpha/", sealed=True), ("index.html", "Cargo.toml", "raw.json"))
             by_slug, errors = load(layout.root)
         self.assertEqual(errors, [])
         self.assertEqual(catalogue(by_slug), [])
