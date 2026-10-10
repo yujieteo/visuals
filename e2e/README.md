@@ -22,9 +22,9 @@ Node 22 or later, from this folder:
 ```sh
 npm ci
 npx playwright install chromium firefox webkit   # or one of them
-E2E_ONLY=mohr npm run test:baseline              # the baseline for one visual, every project
-E2E_ONLY=mohr npm run test:standalone            # its standalone contract: index.html and declared assets only, offline, from file://
-node --test ../viz/mohr/e2e/full.test.mjs        # its fuller checks
+E2E_ONLY=radar-network npm run test:baseline     # the baseline for one visual, every project
+E2E_ONLY=radar-network npm run test:standalone   # its standalone contract: index.html and declared assets only, offline, from file://
+node --test ../viz/radar-network/e2e/full.test.mjs  # its fuller checks
 npm run test:harness                             # the harness itself, no browser
 npm run typecheck
 npm run fetch-targets                            # optional: clone yujieteo/site to test its own visuals too
@@ -85,10 +85,10 @@ and URL state) and asserts on application state, not screenshots.
 so an agent does not hand-write browser probes:
 
 ```sh
-node e2e/bin/page-axi.js check mohr                         # a visual, staged as the site publishes it
-node e2e/bin/page-axi.js check viz/mohr --viewport 390 --themes dark
+node e2e/bin/page-axi.js check radar-network                # a visual, staged as the site publishes it
+node e2e/bin/page-axi.js check viz/radar-network --viewport 390 --themes dark
 node e2e/bin/page-axi.js check path/to/page.html
-node e2e/bin/page-axi.js check http://localhost:8000/visuals/mohr/
+node e2e/bin/page-axi.js check http://localhost:8000/visuals/radar-network/
 ```
 
 It loads the page once for each viewport (default 390, 768 and 1440 px) and theme (default light and dark, as

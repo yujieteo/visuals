@@ -18,7 +18,6 @@ import visual_kit
 from build_catalogue import load
 
 ARGS = ["--title", "Tide clock: a test", "--summary", "A test visual. Works offline.", "--fetched", "2026-10-04", "--tags", "test"]
-EXAMPLE = "visual-skeleton"
 
 
 def generated(root, slug="tide-clock", *extra):
@@ -179,19 +178,7 @@ class DriftTest(unittest.TestCase):
         self.assertNotIn("hand-made", out.getvalue())
 
 
-class ExampleTest(unittest.TestCase):
-    def test_the_committed_example_is_exactly_what_the_generator_writes(self):
-        folder = ROOT / "viz" / EXAMPLE
-        meta = json.loads((folder / "visual.json").read_text(encoding="utf-8"))
-        options = json.loads((folder / "generated.json").read_text(encoding="utf-8"))["options"]
-        args = [EXAMPLE, "--title", meta["title"], "--summary", meta["summary"], "--subject", options["subject"],
-                "--tags", ",".join(meta["tags"]), "--fetched", meta["fetched"], "--mathjax", "--unpublished"]
-        with GeneratorLayout() as layout:
-            fresh = new_visual.generate(new_visual.parse(args), layout.root)
-            self.assertEqual(sorted(files(folder)), sorted(files(fresh)))
-            for name, data in files(fresh).items():
-                self.assertEqual(files(folder)[name], data, f"viz/{EXAMPLE}/{name} is not the generator's output")
-
+class VendorTest(unittest.TestCase):
     def test_the_vendored_files_match_their_recorded_sha256(self):
         self.assertEqual(visual_kit.vendor_problems(), [])
         with Layout() as layout:

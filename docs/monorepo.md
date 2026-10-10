@@ -1,6 +1,6 @@
 # One repository for every visual
 
-Every public visual lives here, one folder each, and CI tests only the visuals a change touches. This
+Every visual that yujieteo/site ports lives here, one folder each, and CI tests only the visuals a change touches. This
 replaces one `yujieteo/<slug>` repository per visual, which kept tests apart and conflicts rare but cost two to
 four pull requests and pipeline runs per change (visual repository, port here or into yujieteo/site, pin)
 and copied the same tooling into every repository.
@@ -29,7 +29,7 @@ viz/<slug>/            one visual, self-contained
   generated.json       for a visual scripts/new_visual.py wrote: its options, the kit's version and the template's SHA-256
 e2e/                   the shared browser-check harness, and the checks of the visuals the site keeps (site/<slug>/)
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
-                       typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
+                       typecheck.mjs, and style_guide (the site's theme script that every page carries)
   new_visual.py        the generator of new visuals, and its drift check and update
   visual_build.py, visual_kit.py, kit/   what a generated page is built from: the shell, the state and export
                        runtime, the style tokens and the shared tests
@@ -117,8 +117,8 @@ only the generated visuals. The one copy is `beamdswitch.js`, which must stay by
 template; `generated.json` records its source and SHA-256, and `scripts/sync_template.py` updates both. The
 folder's domain files (model, views, report, data, the domain's tests, `SKILLS.md`, `AGENTS.md`) are written
 once from a starter and never rewritten. `--check` reports drift in the mechanical parts of a generated visual, and
-`--update` rewrites them. `viz/visual-skeleton/` is the generator's output, committed
-unchanged and unpublished, so CI and the daily browser run keep testing what the generator writes.
+`--update` rewrites them. The tooling tests (`tests/test_new_visual.py`) generate a visual and run its
+checks, so CI keeps testing what the generator writes.
 
 ## Generated, never committed
 
@@ -152,15 +152,14 @@ and are listed in the import pull request. The repositories are left untouched; 
 decision.
 
 Private repositories stay private and outside this public repository: `beamdswitch` (the site vendors its
-built page) and `connes-qft` (the site keeps its port). The site keeps their folders and catalogue stubs.
+built page). The site keeps its folder and catalogue stub.
 
 ## The site
 
-yujieteo/site builds every visual from a checkout of this repository (`VISUALS_REPO`, as now): one
-published page per `viz/<slug>/visual.json` without `published: false`, at the same
-`teoyujie.org/visuals/<slug>/` URL, with `index.html`, the data file as `data.json`, and its assets. The
-pins, the ports in `visuals/<slug>/` and the catalogue stubs of imported visuals go, and so does the
-procedure of porting a change into the site.
+yujieteo/site reads the files of this repository that its `visuals.lock` pins: one commit, and the SHA-256
+of each file. These are the data and the fixtures that its notebooks and stories read, and the sealed pages
+that its notebooks embed. Thus a change to a pinned file needs a matching change to the site's
+`visuals.lock`.
 
 ## Browser checks
 
@@ -169,8 +168,8 @@ https://github.com/yujieteo/visuals/pull/49). That repository is deleted; the bo
 keeps the original commit subjects. Each visual's manifest
 and fuller checks into its folder (`viz/<slug>/e2e/`), the shared harness to `e2e/`. CI runs a visual's
 browser checks only when it changes, so a failure or recorded finding stays with its visual, and runs every
-visual's once a day against new browser releases, with the two visuals the site keeps itself (their checks
-are in `e2e/site/`). The combined findings list is generated in CI from the manifests, never committed.
+visual's once a day against new browser releases, with the visuals the site keeps itself (their checks
+go in `e2e/site/`). The combined findings list is generated in CI from the manifests, never committed.
 
 ## Review by risk
 

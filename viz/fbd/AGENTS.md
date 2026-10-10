@@ -1,5 +1,0 @@
-# FBD drawer
-
-No build step: edit `index.html` directly. Its `<script data-core>` blocks are the DOM-free model (`self.FBD`: units, validation, serialisation, rendering, export, the aircraft presets and the beamdswitch report), `fbd-beamdswitch` is the inlined `beamdswitch.js`, and the `<script data-ui>` blocks are the interface and the WebMCP tools. Geometry is stored in mm, N, N·mm and N/mm, y up; SI and imperial are display systems only. Loading rejects a file with errors naming the exact path rather than dropping content.
-
-`examples.json` holds reference drawings 1 to 5: after changing them, run `node tools/make-examples.mjs` then `node tools/sync-examples.mjs` (which copies it into `<script id="fbd-examples">`); the tests say when they drift. `tools/core.mjs` loads the core into Node. Drawing 6 runs in a browser: open the page with touch emulation at phone size and run `tools/touch-build.js` in the console; it returns `{ same: true }` when a touch-only rebuild matches drawing 1. Rules for every visual: [SKILLS.md](../../SKILLS.md).
