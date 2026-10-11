@@ -425,6 +425,307 @@
      "alignment": "The source gives the root bound used in step 2 of the authored proof."
     }
    ]
+  },
+  {
+   "id": "nm:technique-p-group-fixed-point-congruence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L264-L297",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.PGroup",
+     "declaration": "IsPGroup.card_modEq_card_fixedPoints",
+     "lines": [
+      264,
+      297
+     ],
+     "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+     "excerpt": "/-- If `G` is a `p`-group acting on a finite set `α`, then the number of fixed points\n  of the action is congruent mod `p` to the cardinality of `α` -/\ntheorem card_modEq_card_fixedPoints : Nat.card α ≡ Nat.card (fixedPoints G α) [MOD p] := by\n  have := Fintype.ofFinite α\n  have := Fintype.ofFinite (fixedPoints G α)\n  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]\n  classical\n    calc\n      card α = card (Σ y : Quotient (orbitRel G α), { x // Quotient.mk'' x = y }) :=\n        card_congr (Equiv.sigmaFiberEquiv (@Quotient.mk'' _ (orbitRel G α))).symm\n      _ = ∑ a : Quotient (orbitRel G α), card { x // Quotient.mk'' x = a } := card_sigma\n      _ ≡ ∑ _a : fixedPoints G α, 1 [MOD p] := ?_\n      _ = _ := by simp\n    rw [← ZMod.natCast_eq_natCast_iff _ _ p, Nat.cast_sum, Nat.cast_sum]\n    have key :\n      ∀ x,\n        card { y // (Quotient.mk'' y : Quotient (orbitRel G α)) = Quotient.mk'' x } =\n          card (orbit G x) :=\n      fun x => by simp only [Quotient.eq'']; congr\n    refine\n      Eq.symm\n        (Finset.sum_bij_ne_zero (fun a _ _ => Quotient.mk'' a.1) (fun _ _ _ => Finset.mem_univ _)\n          (fun a₁ _ _ a₂ _ _ h =>\n            Subtype.ext (mem_fixedPoints'.mp a₂.2 a₁.1 (Quotient.exact' h)))\n          (fun b => Quotient.inductionOn' b fun b _ hb => ?_) fun a ha _ => by\n          rw [key, mem_fixedPoints_iff_card_orbit_eq_one.mp a.2])\n    obtain ⟨k, hk⟩ := hG.card_orbit b\n    rw [Nat.card_eq_fintype_card] at hk\n    have : k = 0 := by\n      contrapose! hb\n      simp [key, hk, hb]\n    exact\n      ⟨⟨b, mem_fixedPoints_iff_card_orbit_eq_one.2 <| by rw [hk, this, pow_zero]⟩,\n        Finset.mem_univ _, ne_of_eq_of_ne Nat.cast_one one_ne_zero, rfl⟩",
+     "excerpt_sha256": "d9b673389d4ca0a34aac168408455008681124cc343b499c867db762370b4bd5",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the congruence of |X| and the number of fixed points modulo p for a p-group action on a finite set."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L324-L331",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.PGroup",
+     "declaration": "IsPGroup.center_nontrivial",
+     "lines": [
+      324,
+      331
+     ],
+     "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+     "excerpt": "theorem center_nontrivial [Nontrivial G] [Finite G] : Nontrivial (Subgroup.center G) := by\n  have := (hG.of_equiv ConjAct.toConjAct).exists_fixed_point_of_prime_dvd_card_of_fixed_point G\n  rw [ConjAct.fixedPoints_eq_center] at this\n  have dvd : p ∣ Nat.card G := by\n    obtain ⟨n, hn0, hn⟩ := hG.nontrivial_iff_card.mp inferInstance\n    exact hn.symm ▸ dvd_pow_self _ (ne_of_gt hn0)\n  obtain ⟨g, hg⟩ := this dvd (Subgroup.center G).one_mem\n  exact ⟨⟨1, ⟨g, hg.1⟩, mt Subtype.ext_iff.mp hg.2⟩⟩",
+     "excerpt_sha256": "3a67937ee89833df0a499a20cf551b7d636cae8cd81c1e07a8b88f7df7bcb121",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the center of a nontrivial finite p-group is nontrivial. It is the consequence in the statement."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-groups-of-order-p-squared-abelian",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L484-L488",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.PGroup",
+     "declaration": "IsPGroup.isMulCommutative_of_card_eq_prime_sq",
+     "lines": [
+      484,
+      488
+     ],
+     "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+     "excerpt": "/-- A group of order `p ^ 2` is commutative. See also `IsPGroup.commGroupOfCardEqPrimeSq`\nfor the `CommGroup` instance. -/\ntheorem isMulCommutative_of_card_eq_prime_sq (hG : Nat.card G = p ^ 2) : IsMulCommutative G :=\n  let := cyclic_center_quotient_of_card_eq_prime_sq hG\n  isMulCommutative_of_isCyclic_quotient_center_self G",
+     "excerpt_sha256": "16a6791726ec99fc3ed96858c0bc52fefdb75db7eda4266c7aa10b0baa7d4645",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that a group of order p squared is commutative."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-euler-criterion-root-counting",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LegendreSymbol/Basic.lean#L61-L71",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LegendreSymbol.Basic",
+     "declaration": "ZMod.euler_criterion",
+     "lines": [
+      61,
+      71
+     ],
+     "module_sha256": "e719ed31ee33a23d312f2747347358da79cfee90d2ba6a8ed0de81b1aa6cd47b",
+     "excerpt": "/-- Euler's Criterion: a nonzero `a : ZMod p` is a square if and only if `x ^ (p / 2) = 1`. -/\ntheorem euler_criterion {a : ZMod p} (ha : a ≠ 0) : IsSquare (a : ZMod p) ↔ a ^ (p / 2) = 1 := by\n  apply (iff_congr _ (by simp [Units.ext_iff])).mp (euler_criterion_units p (Units.mk0 a ha))\n  simp only [Units.ext_iff, sq, Units.val_mk0, Units.val_mul]\n  constructor\n  · rintro ⟨y, hy⟩; exact ⟨y, hy.symm⟩\n  · rintro ⟨y, rfl⟩\n    have hy : y ≠ 0 := by\n      rintro rfl\n      simp [mul_zero, ne_eq] at ha\n    refine ⟨Units.mk0 y hy, ?_⟩; simp",
+     "excerpt_sha256": "460e2ab55bae97aacfc4ee82431ffa51e149e8f620af4a7480791dd52e29f01a",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the criterion for a non zero element of ZMod p."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LegendreSymbol/Basic.lean#L49-L59",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LegendreSymbol.Basic",
+     "declaration": "ZMod.euler_criterion_units",
+     "lines": [
+      49,
+      59
+     ],
+     "module_sha256": "e719ed31ee33a23d312f2747347358da79cfee90d2ba6a8ed0de81b1aa6cd47b",
+     "excerpt": "/-- Euler's Criterion: A unit `x` of `ZMod p` is a square if and only if `x ^ (p / 2) = 1`. -/\ntheorem euler_criterion_units (x : (ZMod p)ˣ) : (∃ y : (ZMod p)ˣ, y ^ 2 = x) ↔ x ^ (p / 2) = 1 := by\n  by_cases hc : p = 2\n  · subst hc\n    simp only [eq_iff_true_of_subsingleton, exists_const]\n  · have h₀ := FiniteField.unit_isSquare_iff (by rwa [ringChar_zmod_n]) x\n    have hs : (∃ y : (ZMod p)ˣ, y ^ 2 = x) ↔ IsSquare x := by\n      rw [isSquare_iff_exists_sq x]\n      simp_rw [eq_comm]\n    rw [hs]\n    rwa [card p] at h₀",
+     "excerpt_sha256": "1107667d5b4668d3239f485e0b9775c5ff1405959e56f802a1d5e7c89a9df5ef",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the same equivalence for units and prepares the nonzero case."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-cyclotomic-factorization-of-x-n-minus-1",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L336-L345",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+     "declaration": "Polynomial.prod_cyclotomic_eq_X_pow_sub_one",
+     "lines": [
+      336,
+      345
+     ],
+     "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+     "excerpt": "/-- `∏ i ∈ Nat.divisors n, cyclotomic i R = X ^ n - 1`. -/\ntheorem prod_cyclotomic_eq_X_pow_sub_one {n : ℕ} (hpos : 0 < n) (R : Type*) [CommRing R] :\n    ∏ i ∈ Nat.divisors n, cyclotomic i R = X ^ n - 1 := by\n  have integer : ∏ i ∈ Nat.divisors n, cyclotomic i ℤ = X ^ n - 1 := by\n    apply map_injective (Int.castRingHom ℂ) Int.cast_injective\n    simp only [Polynomial.map_prod, int_cyclotomic_spec, Polynomial.map_pow, map_X,\n      Polynomial.map_one, Polynomial.map_sub]\n    exact prod_cyclotomic'_eq_X_pow_sub_one hpos (Complex.isPrimitiveRoot_exp n hpos.ne')\n  simpa only [Polynomial.map_prod, map_cyclotomic_int, Polynomial.map_sub, Polynomial.map_one,\n    Polynomial.map_pow, Polynomial.map_X] using congr(map (Int.castRingHom R) $integer)",
+     "excerpt_sha256": "52bb2e1eb3f93c3272ab854387783d067a10eb767c7bde769b70cce6858a37c1",
+     "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the factorization of X^n − 1 into cyclotomic polynomials over any commutative ring."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L315-L318",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+     "declaration": "Polynomial.natDegree_cyclotomic",
+     "lines": [
+      315,
+      318
+     ],
+     "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+     "excerpt": "/-- The natural degree of `cyclotomic n` is `totient n`. -/\ntheorem natDegree_cyclotomic (n : ℕ) (R : Type*) [Ring R] [Nontrivial R] :\n    (cyclotomic n R).natDegree = Nat.totient n := by\n  rw [natDegree, degree_cyclotomic]; norm_cast",
+     "excerpt_sha256": "e1f3a29a3068438593fee0a37b406df45b6fb575eeac9da09db544f7db59c7fe",
+     "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the degree φ(n)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L472-L487",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+     "declaration": "Polynomial.cyclotomic_eq_prod_X_sub_primitiveRoots",
+     "lines": [
+      472,
+      487
+     ],
+     "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+     "excerpt": "/-- If there is a primitive `n`-th root of unity in `K`, then\n`cyclotomic n K = ∏ μ ∈ primitiveRoots n K, (X - C μ)`. ∈ particular,\n`cyclotomic n K = cyclotomic' n K` -/\ntheorem cyclotomic_eq_prod_X_sub_primitiveRoots {K : Type*} [CommRing K] [IsDomain K] {ζ : K}\n    {n : ℕ} (hz : IsPrimitiveRoot ζ n) : cyclotomic n K = ∏ μ ∈ primitiveRoots n K, (X - C μ) := by\n  rw [← cyclotomic']\n  induction n using Nat.strong_induction_on generalizing ζ with | _ k hk\n  obtain hzero | hpos := k.eq_zero_or_pos\n  · simp only [hzero, cyclotomic'_zero, cyclotomic_zero]\n  have h : ∀ i ∈ k.properDivisors, cyclotomic i K = cyclotomic' i K := by\n    intro i hi\n    obtain ⟨d, hd⟩ := (Nat.mem_properDivisors.1 hi).1\n    rw [mul_comm] at hd\n    exact hk i (Nat.mem_properDivisors.1 hi).2 (IsPrimitiveRoot.pow hpos hz hd)\n  rw [@cyclotomic_eq_X_pow_sub_one_div _ _ _ hpos, cyclotomic'_eq_X_pow_sub_one_div hpos hz,\n    Finset.prod_congr (refl k.properDivisors) h]",
+     "excerpt_sha256": "aa29914e3967cec094b806f26b44d18d8d88d16339961e266f2e7a5cf47f1129",
+     "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source writes the cyclotomic polynomial as a product over primitive roots."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-dedekind-independence-of-characters",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/LinearIndependent/Basic.lean#L510-L574",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.LinearIndependent.Basic",
+     "declaration": "linearIndependent_monoidHom",
+     "lines": [
+      510,
+      574
+     ],
+     "module_sha256": "f80942f74a6a448072a8c2999862dc6b18e0655d7554a105d655b5e94de8cae0",
+     "excerpt": "/-- Dedekind's linear independence of characters -/\n@[stacks 0CKL]\ntheorem linearIndependent_monoidHom (G : Type*) [MulOneClass G] (L : Type*) [CommRing L]\n    [IsDomain L] : LinearIndependent L (M := G → L) (fun f => f : (G →* L) → G → L) := by\n  let := Classical.decEq (G →* L)\n  let : MulAction L L := DistribMulAction.toMulAction\n  -- We prove linear independence by showing that only the trivial linear combination vanishes.\n  apply linearIndependent_iff'.2\n  intro s\n  induction s using Finset.induction_on with\n  | empty => simp\n  | insert a s has ih =>\n  intro g hg\n  -- Here\n  -- * `a` is a new character we will insert into the `Finset` of characters `s`,\n  -- * `ih` is the fact that only the trivial linear combination of characters in `s` is zero\n  -- * `hg` is the fact that `g` are the coefficients of a linear combination summing to zero\n  -- and it remains to prove that `g` vanishes on `insert a s`.\n  -- We now make the key calculation:\n  -- For any character `i` in the original `Finset`, we have `g i • i = g i • a` as functions\n  -- on the monoid `G`.\n  have h1 (i) (his : i ∈ s) : (g i • i : G → L) = g i • a := by\n    ext x\n    rw [← sub_eq_zero]\n    apply ih (fun j => g j * j x - g j * a x) _ i his\n    ext y\n    -- After that, it's just a chase scene.\n    calc\n      (∑ i ∈ s, (g i * i x - g i * a x) • i : G → L) y =\n          (∑ i ∈ s, g i * i x * i y) - ∑ i ∈ s, g i * a x * i y := by simp [sub_mul]\n      _ = (∑ i ∈ insert a s, g i * i x * i y) -\n            ∑ i ∈ insert a s, g i * a x * i y := by simp [Finset.sum_insert has]\n      _ = (∑ i ∈ insert a s, g i * (i x * i y)) -\n            ∑ i ∈ insert a s, a x * (g i * i y) := by\n        congrm ∑ i ∈ insert a s, ?_ - ∑ i ∈ insert a s, ?_\n        · rw [mul_assoc]\n        · rw [mul_assoc, mul_left_comm]\n      _ = (∑ i ∈ insert a s, g i • i : G → L) (x * y) -\n            a x * (∑ i ∈ insert a s, (g i • (i : G → L))) y := by simp [Finset.mul_sum]\n      _ = 0 := by rw [hg]; simp\n  -- On the other hand, since `a` is not already in `s`, for any character `i ∈ s`\n  -- there is some element of the monoid on which it differs from `a`.\n  have h2 (i) (his : i ∈ s) : ∃ y, i y ≠ a y := by\n    by_contra! hia\n    obtain rfl : i = a := MonoidHom.ext hia\n    contradiction\n  -- From these two facts we deduce that `g` actually vanishes on `s`,\n  have h3 (i) (his : i ∈ s) : g i = 0 := by\n    let ⟨y, hy⟩ := h2 i his\n    have h : g i • i y = g i • a y := congr($(h1 i his) y)\n    rw [← sub_eq_zero, ← smul_sub, smul_eq_zero] at h\n    exact h.resolve_right (sub_ne_zero_of_ne hy)\n  -- And so, using the fact that the linear combination over `s` and over `insert a s` both\n  -- vanish, we deduce that `g a = 0`.\n  have h4 : g a = 0 :=\n    calc\n      g a = g a * 1 := (mul_one _).symm\n      _ = (g a • a : G → L) 1 := by rw [← a.map_one]; rfl\n      _ = (∑ i ∈ insert a s, g i • i : G → L) 1 := by\n        rw [Finset.sum_insert has, Finset.sum_eq_zero, add_zero]\n        simp +contextual [h3]\n      _ = 0 := by rw [hg]; rfl\n  -- Now we're done; the last two facts together imply that `g` vanishes on every element\n  -- of `insert a s`.\n  exact (Finset.forall_mem_insert ..).2 ⟨h4, h3⟩",
+     "excerpt_sha256": "087d99c67156df15c25a54d2776e5f2d85d804c4769f4be08ce0206a18f8fdf1",
+     "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johannes Hölzl, Mario Carneiro, Alexander Bentkamp, Anne Baanen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the independence of distinct monoid homomorphisms from a monoid to a domain. It is the statement of the theorem."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-smallest-prime-index-subgroup-normal",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/IndexNormal.lean#L56-L84",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.IndexNormal",
+     "declaration": "Subgroup.normal_of_index_eq_minFac_card",
+     "lines": [
+      56,
+      84
+     ],
+     "module_sha256": "902c7e75413e33f59ec71cdef3179c53a81c85c29b6aa1d039ed062745fdd9a2",
+     "excerpt": "/-- A subgroup of a finite group whose index is the smallest prime factor is normal.\n\nNote : if `G` is infinite, then `Nat.card G = 0` and `(Nat.card G).minFac = 2` -/\ntheorem normal_of_index_eq_minFac_card (hHp : H.index = (Nat.card G).minFac) :\n    H.Normal := by\n  by_cases hG0 : Nat.card G = 0\n  · rw [hG0, minFac_zero] at hHp\n    exact normal_of_index_eq_two hHp\n  by_cases hG1 : Nat.card G = 1\n  · rw [hG1, minFac_one] at hHp\n    exact normal_of_index_eq_one hHp\n  suffices H.normalCore.relIndex H = 1 by\n    convert H.normalCore_normal\n    exact le_antisymm (relIndex_eq_one.mp this) (normalCore_le H)\n  have : Finite G := finite_of_card_ne_zero hG0\n  have index_ne_zero : H.index ≠ 0 := index_ne_zero_of_finite\n  rw [← mul_left_inj' index_ne_zero, one_mul, relIndex_mul_index H.normalCore_le]\n  have hp : Nat.Prime H.index := hHp ▸ minFac_prime hG1\n  have h : H.normalCore.index ∣ H.index ! := by\n    rw [normalCore_eq_ker, index_ker, index_eq_card, ← Nat.card_perm]\n    exact card_subgroup_dvd_card (toPermHom G (G ⧸ H)).range\n  apply dvd_antisymm _ (index_dvd_of_le H.normalCore_le)\n  rwa [← Coprime.dvd_mul_right, mul_factorial_pred hp.ne_zero]\n  have hr1 : H.normalCore.index ≠ 1 := fun hr1 ↦ hp.ne_one <|\n    Nat.eq_one_of_dvd_one (hr1 ▸ H.normalCore.index_dvd_of_le H.normalCore_le)\n  rw [Nat.coprime_factorial_iff hr1]\n  exact lt_of_lt_of_le (Nat.sub_one_lt hp.ne_zero) <|\n    hHp ▸ minFac_le_of_dvd (Nat.minFac_prime hr1).two_le\n      (dvd_trans (minFac_dvd H.normalCore.index) (H.normalCore.index_dvd_card))",
+     "excerpt_sha256": "8698b5dd6ea7828bf1bce543f42eb95cb213ae7686ccf3fe0d4ebc537a2774f7",
+     "attribution": "/-\nCopyright (c) 2025 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a subgroup of index equal to the smallest prime factor of the order is normal."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/IndexNormal.lean#L51-L54",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.IndexNormal",
+     "declaration": "Subgroup.normal_of_index_eq_two",
+     "lines": [
+      51,
+      54
+     ],
+     "module_sha256": "902c7e75413e33f59ec71cdef3179c53a81c85c29b6aa1d039ed062745fdd9a2",
+     "excerpt": "/-- A subgroup of index 2 is normal (does not require finiteness of G) -/\n@[to_additive]\ntheorem normal_of_index_eq_two (hH : H.index = 2) : H.Normal where\n  conj_mem x hxH g := by simp_rw [mul_mem_iff_of_index_two hH, hxH, iff_true, inv_mem_iff]",
+     "excerpt_sha256": "969bdabde8ddc36ec4e78d3e16e437d26b3fee263a6986ff2599520ed5888fc2",
+     "attribution": "/-\nCopyright (c) 2025 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the index 2 case."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-artin-fixed-field-degree",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/Fixed.lean#L342-L352",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.Fixed",
+     "declaration": "FixedPoints.finrank_eq_card",
+     "lines": [
+      342,
+      352
+     ],
+     "module_sha256": "833ae94ba43e9192b919d0e8ec59b6905d7dd59cf6218cf9c081bcac2982884f",
+     "excerpt": "/-- Let $F$ be a field. Let $G$ be a finite group acting faithfully on $F$.\nThen $[F : F^G] = |G|$. -/\n@[stacks 09I3 \"second part\"]\ntheorem finrank_eq_card [Fintype G] [FaithfulSMul G F] :\n    finrank (FixedPoints.subfield G F) F = Fintype.card G :=\n  le_antisymm (FixedPoints.finrank_le_card G F) <|\n    calc\n      Fintype.card G ≤ Fintype.card (F →ₐ[FixedPoints.subfield G F] F) :=\n        Fintype.card_le_of_injective _ (MulSemiringAction.toAlgHom_injective _ F)\n      _ ≤ finrank F (F →ₗ[FixedPoints.subfield G F] F) := finrank_algHom (subfield G F) F\n      _ = finrank (FixedPoints.subfield G F) F := finrank_linearMap_self _ _ _",
+     "excerpt_sha256": "e5bc386f64239cb80fb1b049a6bf72be79855fcd6e115a2e7e77e5b29d170c82",
+     "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves finrank of F over the fixed subfield equals the order of G."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-determinant-trick-integrality",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralClosure/Algebra/Basic.lean#L79-L84",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.IntegralClosure.Algebra.Basic",
+     "declaration": "IsIntegral.of_mem_of_fg",
+     "lines": [
+      79,
+      84
+     ],
+     "module_sha256": "072e859639b695ec6bfdf02307cde7325011057dfe24b906946ebfaef1bf88de",
+     "excerpt": "/-- If `S` is a sub-`R`-algebra of `A` and `S` is finitely-generated as an `R`-module,\n  then all elements of `S` are integral over `R`. -/\ntheorem IsIntegral.of_mem_of_fg (S : Subalgebra R B)\n    (HS : S.toSubmodule.FG) (x : B) (hx : x ∈ S) : IsIntegral R x :=\n  have : Module.Finite R S := .of_fg HS\n  (isIntegral_algHom_iff S.val Subtype.val_injective).mpr (.of_finite R (⟨x, hx⟩ : S))",
+     "excerpt_sha256": "519b0a2d1eeae3f422b9dbf0bd12c178737e74d576129fc765de6e641deaa3ec",
+     "attribution": "/-\nCopyright (c) 2019 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that b is integral when b lies in a finitely generated faithful module stable under multiplication."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralClosure/Algebra/Basic.lean#L68-L69",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.IntegralClosure.Algebra.Basic",
+     "declaration": "isIntegral_of_noetherian",
+     "lines": [
+      68,
+      69
+     ],
+     "module_sha256": "072e859639b695ec6bfdf02307cde7325011057dfe24b906946ebfaef1bf88de",
+     "excerpt": "theorem isIntegral_of_noetherian (_ : IsNoetherian R B) (x : B) : IsIntegral R x :=\n  .of_finite R x",
+     "excerpt_sha256": "420d7ebd9fb627dec9176e9a53099f064e47ae2952e6ebc08598ee8d1a712f9f",
+     "attribution": "/-\nCopyright (c) 2019 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that every element of B is integral over R when B is a Noetherian R-module. It is a consequence of the determinant trick."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-nilradical-intersection-of-primes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Nilpotent/Lemmas.lean#L53-L55",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Nilpotent.Lemmas",
+     "declaration": "nilradical_eq_sInf",
+     "lines": [
+      53,
+      55
+     ],
+     "module_sha256": "ec7384fafbcebacb18a4cc6ff0c700a1afc7aba4dc9a70910522ca06b1406f86",
+     "excerpt": "theorem nilradical_eq_sInf (R : Type*) [CommSemiring R] :\n    nilradical R = sInf { J : Ideal R | J.IsPrime } :=\n  (Ideal.radical_eq_sInf ⊥).trans <| by simp_rw [and_iff_right bot_le]",
+     "excerpt_sha256": "ac60479f5fced225b7c37a361e702dd60094e61d45b5c3bab08cb7a41e2e2707",
+     "attribution": "/-\nCopyright (c) 2021 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the nilradical is the infimum of all prime ideals."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Operations.lean#L933-L967",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Operations",
+     "declaration": "Ideal.radical_eq_sInf",
+     "lines": [
+      933,
+      967
+     ],
+     "module_sha256": "73f6a597697d94652087ca0c8553369de87edb02814fdf8f81ce56911e0624a3",
+     "excerpt": "theorem radical_eq_sInf (I : Ideal R) : radical I = sInf { J : Ideal R | I ≤ J ∧ IsPrime J } :=\n  le_antisymm (le_sInf fun _ hJ ↦ hJ.2.radical_le_iff.2 hJ.1) fun r hr ↦\n    by_contradiction fun hri ↦\n      let ⟨m, hIm, hm⟩ :=\n        zorn_le_nonempty₀ { K : Ideal R | r ∉ radical K }\n          (fun c hc hcc y hyc =>\n            ⟨sSup c, fun ⟨n, hrnc⟩ =>\n              let ⟨_, hyc, hrny⟩ := (Submodule.mem_sSup_of_directed ⟨y, hyc⟩ hcc.directedOn).1 hrnc\n              hc hyc ⟨n, hrny⟩,\n              fun _ => le_sSup⟩)\n          I hri\n      have hrm : r ∉ radical m := hm.prop\n      have : ∀ x ∉ m, r ∈ radical (m ⊔ span {x}) := fun x hxm =>\n        by_contradiction fun hrmx => hxm <| by\n          rw [hm.eq_of_le hrmx le_sup_left]\n          exact Submodule.mem_sup_right <| mem_span_singleton_self x\n      have : IsPrime m :=\n        ⟨by rintro rfl; rw [radical_top] at hrm; exact hrm trivial, fun {x y} hxym =>\n          or_iff_not_imp_left.2 fun hxm =>\n            by_contradiction fun hym =>\n              let ⟨n, hrn⟩ := this _ hxm\n              let ⟨p, hpm, q, hq, hpqrn⟩ := Submodule.mem_sup.1 hrn\n              let ⟨c, hcxq⟩ := mem_span_singleton'.1 hq\n              let ⟨k, hrk⟩ := this _ hym\n              let ⟨f, hfm, g, hg, hfgrk⟩ := Submodule.mem_sup.1 hrk\n              let ⟨d, hdyg⟩ := mem_span_singleton'.1 hg\n              hrm\n                ⟨n + k, by\n                  rw [pow_add, ← hpqrn, ← hcxq, ← hfgrk, ← hdyg, add_mul, mul_add (c * x),\n                      mul_assoc c x (d * y), mul_left_comm x, ← mul_assoc]\n                  refine\n                    m.add_mem (m.mul_mem_right _ hpm)\n                    (m.add_mem (m.mul_mem_left _ hfm) (m.mul_mem_left _ hxym))⟩⟩\n    hrm <|\n      this.radical.symm ▸ (sInf_le ⟨hIm, this⟩ : sInf { J : Ideal R | I ≤ J ∧ IsPrime J } ≤ m) hr",
+     "excerpt_sha256": "cf8b5d9b4f58bd3f47781497d9df2e4987a50df662755a9466371ee2cbb88d41",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the radical of an ideal is the infimum of the primes above it."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [

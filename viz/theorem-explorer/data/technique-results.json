@@ -2435,6 +2435,1663 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-p-group-fixed-point-congruence",
+   "name": "Fixed point congruence for p-group actions",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.GR",
+    "math.CO"
+   ],
+   "application_cats": [
+    "math.GR",
+    "math.CO"
+   ],
+   "statement": "Let p be a prime and let P be a finite group of order p^n. Let P act on a finite set X, and let X^P be the set of points fixed by every element of P. Then |X| ≡ |X^P| (mod p). Consequence: if n≥1, then the center Z(P) has order divisible by p. In particular Z(P) is not trivial.",
+   "hypotheses": [
+    "P is a finite group whose order is a power of p. The prime p is fixed.",
+    "X is a finite set, and P acts on X by permutations.",
+    "For the consequence, n≥1, so P is not the trivial group."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only the orbit-stabilizer bijection, which the proof states and proves. No catalog theorem is cited.",
+   "concepts": [
+    "p-group",
+    "fixed point set X^P",
+    "center Z(P)"
+   ],
+   "concept_prerequisites": [
+    "c:p-group",
+    "c:group-action",
+    "c:orbit",
+    "c:center"
+   ],
+   "definitions": [
+    {
+     "name": "p-group",
+     "text": "A finite group is a p-group if its order is a power of the prime p."
+    },
+    {
+     "name": "fixed point set X^P",
+     "text": "X^P is the set of x in X with g·x = x for all g in P. It is the union of the orbits that have exactly one point."
+    },
+    {
+     "name": "center Z(P)",
+     "text": "Z(P) is the set of elements that commute with every element of P. It is a normal subgroup."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L264-L297",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.GroupTheory.PGroup",
+    "declaration": "IsPGroup.card_modEq_card_fixedPoints",
+    "lines": [
+     264,
+     297
+    ],
+    "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+    "excerpt": "/-- If `G` is a `p`-group acting on a finite set `α`, then the number of fixed points\n  of the action is congruent mod `p` to the cardinality of `α` -/\ntheorem card_modEq_card_fixedPoints : Nat.card α ≡ Nat.card (fixedPoints G α) [MOD p] := by\n  have := Fintype.ofFinite α\n  have := Fintype.ofFinite (fixedPoints G α)\n  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]\n  classical\n    calc\n      card α = card (Σ y : Quotient (orbitRel G α), { x // Quotient.mk'' x = y }) :=\n        card_congr (Equiv.sigmaFiberEquiv (@Quotient.mk'' _ (orbitRel G α))).symm\n      _ = ∑ a : Quotient (orbitRel G α), card { x // Quotient.mk'' x = a } := card_sigma\n      _ ≡ ∑ _a : fixedPoints G α, 1 [MOD p] := ?_\n      _ = _ := by simp\n    rw [← ZMod.natCast_eq_natCast_iff _ _ p, Nat.cast_sum, Nat.cast_sum]\n    have key :\n      ∀ x,\n        card { y // (Quotient.mk'' y : Quotient (orbitRel G α)) = Quotient.mk'' x } =\n          card (orbit G x) :=\n      fun x => by simp only [Quotient.eq'']; congr\n    refine\n      Eq.symm\n        (Finset.sum_bij_ne_zero (fun a _ _ => Quotient.mk'' a.1) (fun _ _ _ => Finset.mem_univ _)\n          (fun a₁ _ _ a₂ _ _ h =>\n            Subtype.ext (mem_fixedPoints'.mp a₂.2 a₁.1 (Quotient.exact' h)))\n          (fun b => Quotient.inductionOn' b fun b _ hb => ?_) fun a ha _ => by\n          rw [key, mem_fixedPoints_iff_card_orbit_eq_one.mp a.2])\n    obtain ⟨k, hk⟩ := hG.card_orbit b\n    rw [Nat.card_eq_fintype_card] at hk\n    have : k = 0 := by\n      contrapose! hb\n      simp [key, hk, hb]\n    exact\n      ⟨⟨b, mem_fixedPoints_iff_card_orbit_eq_one.2 <| by rw [hk, this, pow_zero]⟩,\n        Finset.mem_univ _, ne_of_eq_of_ne Nat.cast_one one_ne_zero, rfl⟩",
+    "excerpt_sha256": "d9b673389d4ca0a34aac168408455008681124cc343b499c867db762370b4bd5",
+    "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source states the congruence of |X| and the number of fixed points modulo p for a p-group action on a finite set."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L324-L331",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.PGroup",
+     "declaration": "IsPGroup.center_nontrivial",
+     "lines": [
+      324,
+      331
+     ],
+     "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+     "excerpt": "theorem center_nontrivial [Nontrivial G] [Finite G] : Nontrivial (Subgroup.center G) := by\n  have := (hG.of_equiv ConjAct.toConjAct).exists_fixed_point_of_prime_dvd_card_of_fixed_point G\n  rw [ConjAct.fixedPoints_eq_center] at this\n  have dvd : p ∣ Nat.card G := by\n    obtain ⟨n, hn0, hn⟩ := hG.nontrivial_iff_card.mp inferInstance\n    exact hn.symm ▸ dvd_pow_self _ (ne_of_gt hn0)\n  obtain ⟨g, hg⟩ := this dvd (Subgroup.center G).one_mem\n  exact ⟨⟨1, ⟨g, hg.1⟩, mt Subtype.ext_iff.mp hg.2⟩⟩",
+     "excerpt_sha256": "3a67937ee89833df0a499a20cf551b7d636cae8cd81c1e07a8b88f7df7bcb121",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the center of a nontrivial finite p-group is nontrivial. It is the consequence in the statement."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Orbit-stabilizer count. Fix x in X and let P_x be its stabilizer. The map gP_x ↦ g·x is a well defined bijection from the left cosets of P_x onto the orbit of x. It is well defined and injective because g·x = h·x if and only if h⁻¹g fixes x. So |orbit of x|·|P_x| = |P|.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Orbit sizes. By step 1 the size of each orbit divides |P| = p^n. So each orbit size is a power of p. An orbit has size 1 if and only if its point is fixed. Every other orbit has size divisible by p.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Partition X into orbits. The orbits of size 1 are the points of X^P. The other orbits have sizes divisible by p. Add the sizes: |X| = |X^P| + (a sum of multiples of p). Hence |X| ≡ |X^P| (mod p).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Center. Let P act on the set X = P by conjugation, g·x = gxg⁻¹. A point x is fixed if and only if gxg⁻¹ = x for all g. That means x lies in Z(P). So X^P = Z(P).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Apply step 3 to this action. We get |P| ≡ |Z(P)| (mod p). Because n≥1, we have p | |P|. So p | |Z(P)|.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "The identity element lies in Z(P), so |Z(P)| ≥ 1. A positive multiple of p is at least p. So |Z(P)| ≥ p ≥ 2, and Z(P) is not trivial.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Remark. Grouping the conjugation action by orbits (conjugacy classes) gives the class equation |P| = |Z(P)| + ∑ [P : C(x)] over class representatives x outside the center. Step 2 shows that each term of the sum is divisible by p.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Cauchy theorem from the fixed point congruence",
+    "goal": "Prove that a finite group G with a prime p dividing |G| has an element of order p. Check the count for S₃ and S₄. Also check the center of the dihedral group of order 8.",
+    "hypotheses": [
+     "G is a finite group and p is a prime that divides |G|.",
+     "Let X be the set of p-tuples (g₁,…,g_p) in G^p with g₁g₂⋯g_p = e."
+    ],
+    "why_theorem_applies": "The cyclic group C_p of order p is a p-group. It acts on X by rotating the entries. The theorem then counts the fixed points of this action modulo p.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Size of X. Choose g₁,…,g_{p−1} freely. Then g_p = (g₁⋯g_{p−1})⁻¹ is forced. So |X| = |G|^{p−1}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Rotation keeps X. If g₁⋯g_p = e, then g₂⋯g_p g₁ = g₁⁻¹(g₁⋯g_p)g₁ = e. So the rotation (g₁,…,g_p) ↦ (g₂,…,g_p,g₁) maps X to X. It generates an action of C_p.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "A tuple is fixed by the rotation if and only if all its entries are equal. The fixed tuples are (g,…,g) with g^p = e. Let N be the number of g in G with g^p = e. The theorem for C_p gives |G|^{p−1} ≡ N (mod p).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Because p divides |G| and p−1 ≥ 1, the left side is divisible by p. So p divides N. The identity satisfies e^p = e, so N ≥ 1. Because p | N, we get N ≥ p ≥ 2. So some g ≠ e has g^p = e. The order of g divides p and is not 1, so it is p.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Check with G = S₃ and p = 3. Here |X| = 6² = 36. The solutions of g³ = e are the identity and the two 3-cycles, so N = 3. Both 36 and 3 are divisible by 3.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Check with G = S₃ and p = 2. Here |X| = 6. The solutions of g² = e are the identity and the three transpositions, so N = 4. Then 6 ≡ 4 ≡ 0 (mod 2).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Check with G = S₄ and p = 3. Here |X| = 24² = 576. The solutions of g³ = e are the identity and the eight 3-cycles, so N = 9. Both 576 = 3·192 and 9 are divisible by 3. A computer enumeration of all tuples agrees with these counts.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Center of the dihedral group D₄ of order 8, acting on the square. Its conjugacy classes have sizes 1, 1, 2, 2, 2, and 1+1+2+2+2 = 8. The center has order 2, which is a multiple of 2. This agrees with the theorem.",
+      "uses": []
+     },
+     {
+      "id": "s9",
+      "text": "The action of D₄ on the four vertices has no fixed vertex. The theorem predicts 4 ≡ 0 (mod 2), which holds.",
+      "uses": []
+     }
+    ],
+    "result": "Every prime divisor of |G| is the order of some element of G. For S₃ and S₄ the counts N = 3, 4 and 9 match the congruence |G|^{p−1} ≡ N (mod p). The center of D₄ has order 2.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The congruence needs a p-group. For S₃ acting on three points, no point is fixed and 3 is not 0 mod 2, while the group has order 6.",
+    "The congruence gives only a residue mod p. It does not say how many fixed points exist. It shows that X^P is not empty when p does not divide |X|.",
+    "Nontrivial center does not mean abelian. The group D₄ of order 8 has center of order 2 and is not abelian."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nl:16640",
+      "relation": "refines",
+      "reason": "The catalog record is the class equation. This entry states the more general fixed point congruence for any finite G-set, and the class equation is the special case of conjugation."
+     },
+     {
+      "id": "nl:8674",
+      "relation": "uses",
+      "reason": "The worked application reproves the Cauchy group theorem as a use of the technique."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-groups-of-order-p-squared-abelian",
+   "name": "Groups of order p² are abelian",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.GR"
+   ],
+   "application_cats": [
+    "math.GR"
+   ],
+   "statement": "Let p be a prime and G a group of order p². Then G is abelian. Consequently G is isomorphic to ℤ/p² or to ℤ/p × ℤ/p.",
+   "hypotheses": [
+    "G is a finite group and |G| = p² for a prime p.",
+    "The result fails for order p³. The dihedral group of order 8 is not abelian."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-p-group-fixed-point-congruence",
+     "reason": "Step 1 uses that the center of a nontrivial finite p-group has order divisible by p."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "center",
+    "cyclic group",
+    "quotient G/Z"
+   ],
+   "concept_prerequisites": [
+    "c:p-group",
+    "c:center",
+    "c:quotient-group",
+    "c:cyclic-group"
+   ],
+   "definitions": [
+    {
+     "name": "center",
+     "text": "Z(G) is the set of elements that commute with all of G. It is a normal subgroup."
+    },
+    {
+     "name": "cyclic group",
+     "text": "A group is cyclic if one element generates it."
+    },
+    {
+     "name": "quotient G/Z",
+     "text": "The group of cosets gZ with the product (gZ)(hZ) = ghZ. It is defined because Z is normal."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/PGroup.lean#L484-L488",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.GroupTheory.PGroup",
+    "declaration": "IsPGroup.isMulCommutative_of_card_eq_prime_sq",
+    "lines": [
+     484,
+     488
+    ],
+    "module_sha256": "729315c3885d26aae831b3dc18575b823891728d6e0cd7cae6788d15af72337f",
+    "excerpt": "/-- A group of order `p ^ 2` is commutative. See also `IsPGroup.commGroupOfCardEqPrimeSq`\nfor the `CommGroup` instance. -/\ntheorem isMulCommutative_of_card_eq_prime_sq (hG : Nat.card G = p ^ 2) : IsMulCommutative G :=\n  let := cyclic_center_quotient_of_card_eq_prime_sq hG\n  isMulCommutative_of_isCyclic_quotient_center_self G",
+    "excerpt_sha256": "16a6791726ec99fc3ed96858c0bc52fefdb75db7eda4266c7aa10b0baa7d4645",
+    "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning, Snir Broshi\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source states that a group of order p squared is commutative."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "G is a p-group, because |G| = p². By the fixed point congruence its center Z has order divisible by p. So |Z| is p or p², by Lagrange.",
+      "uses": [
+       "nm:technique-p-group-fixed-point-congruence"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "If |Z| = p², then Z = G and G is abelian. We now show that |Z| = p is impossible. Suppose |Z| = p.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Then |G/Z| = p²/p = p. A group of prime order is cyclic. Indeed any non identity element has an order that divides p, so it has order p and generates the group. So G/Z is cyclic.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Lemma. If G/Z is cyclic for Z = Z(G), then G is abelian. Let gZ generate G/Z. Every x in G has the form x = gⁱz with z in Z, because xZ = (gZ)ⁱ = gⁱZ.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Take x = gⁱz and y = gʲz′ with z, z′ in Z. Then xy = gⁱ z gʲ z′ = gⁱ⁺ʲ z z′, because z commutes with everything. In the same way yx = gʲ⁺ⁱ z′ z. Since z z′ = z′ z and i+j = j+i, we get xy = yx. So G is abelian.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "By the lemma, |Z| = p gives G abelian. Then Z = G, so |Z| = p². This contradicts |Z| = p. So the case |Z| = p does not occur, and Z = G.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Classification. Suppose G has an element a of order p². Then G = ⟨a⟩ has p² elements, so G ≅ ℤ/p². Otherwise each non identity element has order p. Pick a ≠ e and b outside ⟨a⟩.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "The map (i,j) ↦ aⁱbʲ from ℤ/p × ℤ/p to G is a homomorphism, because G is abelian. It is injective. If aⁱbʲ = e with j ≢ 0 mod p, then b would be a power of a, because j has an inverse mod p and b = b^{jj′} for some j′ with jj′ ≡ 1 (mod p). This contradicts b ∉ ⟨a⟩. So j ≡ 0 and then aⁱ = e gives i ≡ 0. Both groups have p² elements, so the map is an isomorphism.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Groups of order 49 and 25",
+    "goal": "Classify all groups of order 49. Count elements and subgroups in each case.",
+    "hypotheses": [
+     "p = 7, so |G| = 49.",
+     "The same argument with p = 5 gives order 25."
+    ],
+    "why_theorem_applies": "The order is p² with p = 7. The theorem gives that G is abelian, and the classification step gives the two isomorphism types.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "By the theorem, any group of order 49 is abelian, and it is ℤ/49 or ℤ/7 × ℤ/7.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "These two groups are not isomorphic. The group ℤ/49 has an element of order 49, namely 1. In ℤ/7 × ℤ/7, every element (a,b) satisfies 7(a,b) = (0,0), so no element has order 49.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Count elements of order 7. In ℤ/49 these are the multiples of 7 other than 0. There are 6 of them (7, 14, 21, 28, 35, 42). In ℤ/7 × ℤ/7 all 48 non zero elements have order 7.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Count subgroups of order 7. Each such subgroup has 6 elements of order 7 and each element of order 7 lies in exactly one such subgroup. In ℤ/49 there is 1 subgroup, namely ⟨7⟩. In ℤ/7 × ℤ/7 there are 48/6 = 8 subgroups.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The same count for order 25 gives 24 non zero elements in ℤ/5 × ℤ/5 and 24/4 = 6 subgroups of order 5. For ℤ/25 there is 1 subgroup of order 5.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "For order p³ the argument breaks at the lemma. For D₄ of order 8, the center has order 2 and D₄/Z has order 4. The quotient is ℤ/2 × ℤ/2, which is not cyclic. So the lemma does not apply, and D₄ is not abelian.",
+      "uses": []
+     }
+    ],
+    "result": "Up to isomorphism there are exactly two groups of order 49 and two of order 25. Both are abelian. In the elementary case ℤ/7 × ℤ/7 there are 8 subgroups of order 7.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof does not extend to order p³. Two non abelian groups of order 8 exist, D₄ and Q₈.",
+    "The classification into ℤ/p² and ℤ/p × ℤ/p uses abelian structure. It gives no information about groups of order p³ or larger.",
+    "The lemma needs G/Z(G) to be cyclic. For order p³ the quotient can have order p² and be non cyclic."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-euler-criterion-root-counting",
+   "name": "Euler criterion for squares modulo a prime by root counting",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.NT"
+   ],
+   "statement": "Let p be an odd prime and a an integer with p ∤ a. Then a^{(p−1)/2} ≡ 1 or −1 (mod p). Also, a is a square modulo p if and only if a^{(p−1)/2} ≡ 1 (mod p). Exactly (p−1)/2 of the non zero residues are squares. If p ≡ 3 (mod 4) and a is a square, then r = a^{(p+1)/4} satisfies r² ≡ a (mod p).",
+   "hypotheses": [
+    "p is an odd prime.",
+    "a is not divisible by p.",
+    "The square root formula needs p ≡ 3 (mod 4)."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q188295",
+     "reason": "Steps 3 and 6 use Fermat little theorem."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "square modulo p",
+    "Legendre symbol",
+    "root bound"
+   ],
+   "concept_prerequisites": [
+    "c:quadratic-residue",
+    "c:legendre-symbol",
+    "c:finite-field"
+   ],
+   "definitions": [
+    {
+     "name": "square modulo p",
+     "text": "An integer a is a square modulo p if x² ≡ a (mod p) has an integer solution x."
+    },
+    {
+     "name": "Legendre symbol",
+     "text": "(a/p) is 1 if a is a nonzero square modulo p, −1 if a is a non square, and 0 if p divides a. Euler criterion says (a/p) ≡ a^{(p−1)/2} (mod p)."
+    },
+    {
+     "name": "root bound",
+     "text": "A nonzero polynomial of degree d over a field has at most d roots in that field."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LegendreSymbol/Basic.lean#L61-L71",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.LegendreSymbol.Basic",
+    "declaration": "ZMod.euler_criterion",
+    "lines": [
+     61,
+     71
+    ],
+    "module_sha256": "e719ed31ee33a23d312f2747347358da79cfee90d2ba6a8ed0de81b1aa6cd47b",
+    "excerpt": "/-- Euler's Criterion: a nonzero `a : ZMod p` is a square if and only if `x ^ (p / 2) = 1`. -/\ntheorem euler_criterion {a : ZMod p} (ha : a ≠ 0) : IsSquare (a : ZMod p) ↔ a ^ (p / 2) = 1 := by\n  apply (iff_congr _ (by simp [Units.ext_iff])).mp (euler_criterion_units p (Units.mk0 a ha))\n  simp only [Units.ext_iff, sq, Units.val_mk0, Units.val_mul]\n  constructor\n  · rintro ⟨y, hy⟩; exact ⟨y, hy.symm⟩\n  · rintro ⟨y, rfl⟩\n    have hy : y ≠ 0 := by\n      rintro rfl\n      simp [mul_zero, ne_eq] at ha\n    refine ⟨Units.mk0 y hy, ?_⟩; simp",
+    "excerpt_sha256": "460e2ab55bae97aacfc4ee82431ffa51e149e8f620af4a7480791dd52e29f01a",
+    "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Michael Stoll\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source states the criterion for a non zero element of ZMod p."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LegendreSymbol/Basic.lean#L49-L59",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LegendreSymbol.Basic",
+     "declaration": "ZMod.euler_criterion_units",
+     "lines": [
+      49,
+      59
+     ],
+     "module_sha256": "e719ed31ee33a23d312f2747347358da79cfee90d2ba6a8ed0de81b1aa6cd47b",
+     "excerpt": "/-- Euler's Criterion: A unit `x` of `ZMod p` is a square if and only if `x ^ (p / 2) = 1`. -/\ntheorem euler_criterion_units (x : (ZMod p)ˣ) : (∃ y : (ZMod p)ˣ, y ^ 2 = x) ↔ x ^ (p / 2) = 1 := by\n  by_cases hc : p = 2\n  · subst hc\n    simp only [eq_iff_true_of_subsingleton, exists_const]\n  · have h₀ := FiniteField.unit_isSquare_iff (by rwa [ringChar_zmod_n]) x\n    have hs : (∃ y : (ZMod p)ˣ, y ^ 2 = x) ↔ IsSquare x := by\n      rw [isSquare_iff_exists_sq x]\n      simp_rw [eq_comm]\n    rw [hs]\n    rwa [card p] at h₀",
+     "excerpt_sha256": "1107667d5b4668d3239f485e0b9775c5ff1405959e56f802a1d5e7c89a9df5ef",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the same equivalence for units and prepares the nonzero case."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Work in the field F = ℤ/p. Because p is odd, for non zero x we have x ≠ −x. Also x² = y² implies (x−y)(x+y) = 0, so y = x or y = −x, because F has no zero divisors.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "So the squaring map on F^× is exactly 2 to 1. The set S of non zero squares has (p−1)/2 elements.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Each s in S has the form s = x². Then s^{(p−1)/2} = x^{p−1} = 1 by Fermat little theorem.",
+      "uses": [
+       "wd:Q188295"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "So all (p−1)/2 elements of S are roots of the polynomial f = X^{(p−1)/2} − 1. This polynomial has degree (p−1)/2. By the root bound it has at most (p−1)/2 roots. So the roots of f are exactly the elements of S.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Therefore a non zero a is a square if and only if a^{(p−1)/2} = 1. This is the criterion.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "For any non zero a put b = a^{(p−1)/2}. Then b² = a^{p−1} = 1 by Fermat. So (b−1)(b+1) = 0 in the field F, and b = 1 or b = −1. For a non square, b ≠ 1, so b = −1.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Square roots for p ≡ 3 (mod 4). Then (p+1)/4 is an integer. If a is a square, a^{(p−1)/2} = 1. Put r = a^{(p+1)/4}. Then r² = a^{(p+1)/2} = a·a^{(p−1)/2} = a.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Remark. For a = −1 we have (−1)^{(p−1)/2} = 1 if and only if (p−1)/2 is even. So −1 is a square modulo p if and only if p ≡ 1 (mod 4).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Squares modulo 23 and modulo 10007",
+    "goal": "Decide which numbers are squares modulo 23 and modulo 10007 with one modular power each. Compute a square root when p ≡ 3 (mod 4).",
+    "hypotheses": [
+     "p = 23, so (p−1)/2 = 11, and 23 ≡ 3 (mod 4).",
+     "q = 10007 is prime, and 10007 ≡ 3 (mod 4)."
+    ],
+    "why_theorem_applies": "Both primes are odd and the numbers tested are not divisible by them. So the criterion applies.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "List the squares modulo 23 by squaring 1,…,22. The set is {1, 2, 3, 4, 6, 8, 9, 12, 13, 16, 18}. It has 11 = (23−1)/2 elements, as the theorem says.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Compute a^{11} mod 23. For a = 2 and a = 3 the result is 1. For a = 5, 7 and 10 the result is 22 ≡ −1. This agrees with the list: 2 and 3 are squares, and 5, 7 and 10 are not.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Square root of 2 modulo 23. Here (p+1)/4 = 6. So r = 2⁶ = 64 ≡ 18 (mod 23). Check 18² = 324 = 14·23 + 2 ≡ 2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "For the large prime q = 10007 compute a^{5003} mod q. For a = 2, 3 and 6 the result is 1. For a = 5, 7 and 10 the result is 10006 ≡ −1. So 2, 3 and 6 are squares and 5, 7 and 10 are not. No search over 5003 candidates is needed.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Square root of 2 modulo 10007. Here (q+1)/4 = 2502. A modular power gives r = 2^{2502} ≡ 2641. Check 2641² = 6974881 ≡ 2 (mod 10007).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "As q ≡ 3 (mod 4), −1 is not a square modulo 10007. This also follows from (−1)^{5003} = −1.",
+      "uses": []
+     }
+    ],
+    "result": "The squares modulo 23 are {1,2,3,4,6,8,9,12,13,16,18}. Modulo 10007, the number 2 has square root 2641, and the numbers 5, 7 and 10 are not squares.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The formula for the root works only for p ≡ 3 (mod 4). For p ≡ 1 (mod 4) other algorithms are used, for example Tonelli-Shanks.",
+    "The criterion needs a prime modulus. For a composite modulus the power a^{(n−1)/2} can be 1 for non squares. The Jacobi symbol also does not decide squareness for composite n.",
+    "The criterion decides squareness only. It does not by itself find a root x with x² ≡ a when p ≡ 1 (mod 4)."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q472883",
+      "relation": "refines",
+      "reason": "The catalog record is quadratic reciprocity. This entry is the earlier step that computes the Legendre symbol by a power and counts the squares."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-cyclotomic-factorization-of-x-n-minus-1",
+   "name": "Factorization of Xⁿ−1 into cyclotomic polynomials",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.AC"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.AC"
+   ],
+   "statement": "Let n≥1 and let Φ_n(X) = ∏(X − ζ), taken over the primitive n-th roots of unity ζ in ℂ. Then (1) Xⁿ − 1 = ∏_{d|n} Φ_d(X). (2) Φ_n has degree φ(n), where φ is Euler totient function. (3) Φ_n is monic and has integer coefficients. (4) Consequently ∑_{d|n} φ(d) = n.",
+   "hypotheses": [
+    "n is a positive integer.",
+    "The product in (1) is over all positive divisors d of n.",
+    "A primitive n-th root of unity is a complex number of multiplicative order exactly n."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only roots of a polynomial over ℂ, orders of group elements and division with remainder by a monic polynomial. No catalog theorem is cited.",
+   "concepts": [
+    "primitive n-th root of unity",
+    "cyclotomic polynomial Φ_n",
+    "Euler totient φ(n)"
+   ],
+   "concept_prerequisites": [
+    "c:cyclotomic-polynomial",
+    "c:root-of-unity",
+    "c:euler-s-totient-function"
+   ],
+   "definitions": [
+    {
+     "name": "primitive n-th root of unity",
+     "text": "A complex ζ with ζⁿ = 1 and ζᵏ ≠ 1 for 0<k<n. The primitive roots are e^{2πik/n} with gcd(k,n) = 1."
+    },
+    {
+     "name": "cyclotomic polynomial Φ_n",
+     "text": "The monic polynomial whose roots are the primitive n-th roots of unity, each with multiplicity 1."
+    },
+    {
+     "name": "Euler totient φ(n)",
+     "text": "The number of k in {1,…,n} with gcd(k,n) = 1."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L336-L345",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+    "declaration": "Polynomial.prod_cyclotomic_eq_X_pow_sub_one",
+    "lines": [
+     336,
+     345
+    ],
+    "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+    "excerpt": "/-- `∏ i ∈ Nat.divisors n, cyclotomic i R = X ^ n - 1`. -/\ntheorem prod_cyclotomic_eq_X_pow_sub_one {n : ℕ} (hpos : 0 < n) (R : Type*) [CommRing R] :\n    ∏ i ∈ Nat.divisors n, cyclotomic i R = X ^ n - 1 := by\n  have integer : ∏ i ∈ Nat.divisors n, cyclotomic i ℤ = X ^ n - 1 := by\n    apply map_injective (Int.castRingHom ℂ) Int.cast_injective\n    simp only [Polynomial.map_prod, int_cyclotomic_spec, Polynomial.map_pow, map_X,\n      Polynomial.map_one, Polynomial.map_sub]\n    exact prod_cyclotomic'_eq_X_pow_sub_one hpos (Complex.isPrimitiveRoot_exp n hpos.ne')\n  simpa only [Polynomial.map_prod, map_cyclotomic_int, Polynomial.map_sub, Polynomial.map_one,\n    Polynomial.map_pow, Polynomial.map_X] using congr(map (Int.castRingHom R) $integer)",
+    "excerpt_sha256": "52bb2e1eb3f93c3272ab854387783d067a10eb767c7bde769b70cce6858a37c1",
+    "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the factorization of X^n − 1 into cyclotomic polynomials over any commutative ring."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L315-L318",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+     "declaration": "Polynomial.natDegree_cyclotomic",
+     "lines": [
+      315,
+      318
+     ],
+     "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+     "excerpt": "/-- The natural degree of `cyclotomic n` is `totient n`. -/\ntheorem natDegree_cyclotomic (n : ℕ) (R : Type*) [Ring R] [Nontrivial R] :\n    (cyclotomic n R).natDegree = Nat.totient n := by\n  rw [natDegree, degree_cyclotomic]; norm_cast",
+     "excerpt_sha256": "e1f3a29a3068438593fee0a37b406df45b6fb575eeac9da09db544f7db59c7fe",
+     "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the degree φ(n)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Cyclotomic/Basic.lean#L472-L487",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Cyclotomic.Basic",
+     "declaration": "Polynomial.cyclotomic_eq_prod_X_sub_primitiveRoots",
+     "lines": [
+      472,
+      487
+     ],
+     "module_sha256": "4bd2495c040770a7a8f001655706deffcf6b5e2c97606aa5e3935a1e7555cadc",
+     "excerpt": "/-- If there is a primitive `n`-th root of unity in `K`, then\n`cyclotomic n K = ∏ μ ∈ primitiveRoots n K, (X - C μ)`. ∈ particular,\n`cyclotomic n K = cyclotomic' n K` -/\ntheorem cyclotomic_eq_prod_X_sub_primitiveRoots {K : Type*} [CommRing K] [IsDomain K] {ζ : K}\n    {n : ℕ} (hz : IsPrimitiveRoot ζ n) : cyclotomic n K = ∏ μ ∈ primitiveRoots n K, (X - C μ) := by\n  rw [← cyclotomic']\n  induction n using Nat.strong_induction_on generalizing ζ with | _ k hk\n  obtain hzero | hpos := k.eq_zero_or_pos\n  · simp only [hzero, cyclotomic'_zero, cyclotomic_zero]\n  have h : ∀ i ∈ k.properDivisors, cyclotomic i K = cyclotomic' i K := by\n    intro i hi\n    obtain ⟨d, hd⟩ := (Nat.mem_properDivisors.1 hi).1\n    rw [mul_comm] at hd\n    exact hk i (Nat.mem_properDivisors.1 hi).2 (IsPrimitiveRoot.pow hpos hz hd)\n  rw [@cyclotomic_eq_X_pow_sub_one_div _ _ _ hpos, cyclotomic'_eq_X_pow_sub_one_div hpos hz,\n    Finset.prod_congr (refl k.properDivisors) h]",
+     "excerpt_sha256": "aa29914e3967cec094b806f26b44d18d8d88d16339961e266f2e7a5cf47f1129",
+     "attribution": "/-\nCopyright (c) 2020 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source writes the cyclotomic polynomial as a product over primitive roots."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Roots of Xⁿ−1. The n numbers e^{2πik/n}, for k = 0,…,n−1, are distinct and each is a root of Xⁿ−1. A polynomial of degree n has at most n roots. So Xⁿ−1 = ∏_{k=0}^{n−1}(X − e^{2πik/n}), because it is monic.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Order of a root. Let ζ be a root of Xⁿ−1. Its multiplicative order d divides n, because the set of m with ζ^m = 1 is a subgroup of ℤ containing n. Then ζ is a primitive d-th root of unity. Each root has exactly one order.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Group the n linear factors by the order d of the root. For fixed d | n, the roots of order d are exactly the primitive d-th roots of unity. Every primitive d-th root with d | n is a root of Xⁿ−1. So Xⁿ − 1 = ∏_{d|n} ∏_{ζ of order d}(X − ζ) = ∏_{d|n} Φ_d. This proves (1).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Degree. The primitive n-th roots are e^{2πik/n}, where k is in {1,…,n} and gcd(k,n) = 1. Indeed e^{2πik/n} has order n/gcd(k,n). So there are φ(n) of them, and Φ_n has degree φ(n). This proves (2).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Counting degrees in (1): n = ∑_{d|n} φ(d). This proves (4).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Integer coefficients by strong induction on n. Φ_1 = X − 1. Assume that Φ_d is monic with integer coefficients for all d<n. Let g = ∏_{d|n, d<n} Φ_d. This product is monic with integer coefficients, and Xⁿ−1 = g·Φ_n by (1).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Divide Xⁿ−1 by the monic g with remainder in ℤ[X]. We get Xⁿ − 1 = g·q + r with q, r in ℤ[X] and deg r < deg g. Division with remainder by a monic polynomial stays inside ℤ[X]. Also Xⁿ−1 = g·Φ_n, so g(Φ_n − q) = r in ℂ[X]. If Φ_n ≠ q, the left side has degree at least deg g, but deg r < deg g. So r = 0 and Φ_n = q lies in ℤ[X] and is monic. This proves (3).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Compute Φ₁₅ and check the degree count",
+    "goal": "Compute Φ₁₅ from the factorization. Check the degree sum. Then show that Φ₁₀₅ has a coefficient with absolute value larger than 1.",
+    "hypotheses": [
+     "n = 15, with divisors 1, 3, 5 and 15.",
+     "Φ₁(X) = X − 1, Φ₃(X) = X² + X + 1, Φ₅(X) = X⁴ + X³ + X² + X + 1."
+    ],
+    "why_theorem_applies": "The theorem gives X¹⁵ − 1 = Φ₁Φ₃Φ₅Φ₁₅ in ℤ[X], so Φ₁₅ is an exact quotient.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The primes 3 and 5 give Φ₃ and Φ₅ because Φ_p = (Xᵖ−1)/(X−1) = 1 + X + … + X^{p−1} for a prime p.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Multiply Φ₁Φ₃ = X³ − 1. Then (X³ − 1)Φ₅ = X⁷ + X⁶ + X⁵ − X² − X − 1.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Divide X¹⁵ − 1 by this monic polynomial of degree 7. The quotient is Φ₁₅ = X⁸ − X⁷ + X⁵ − X⁴ + X³ − X + 1. A direct multiplication back confirms X¹⁵ − 1.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Degree check: φ(1) + φ(3) + φ(5) + φ(15) = 1 + 2 + 4 + 8 = 15. The degrees of the factors are 1, 2, 4 and 8.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Check Φ₁₅(1) = 1 − 1 + 1 − 1 + 1 − 1 + 1 = 1. The value 1 is typical when n is not a prime power. We also get Φ₁₅(2) = 151, which is prime.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Φ₁₂ by the same method: X¹² − 1 divided by Φ₁Φ₂Φ₃Φ₄Φ₆ gives Φ₁₂ = X⁴ − X² + 1. Its value at 2 is 13.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "For n = 105 = 3·5·7, an exact computation gives φ(105) = 48. The polynomial Φ₁₀₅ has degree 48 and its smallest coefficient is −2. So cyclotomic polynomials can have coefficients other than 0, 1 and −1.",
+      "uses": []
+     }
+    ],
+    "result": "Φ₁₅ = X⁸ − X⁷ + X⁵ − X⁴ + X³ − X + 1, with degree 8 = φ(15). Also Φ₁₂ = X⁴ − X² + 1, and Φ₁₀₅ has coefficient −2.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The integer coefficient argument needs a monic divisor. Without monic polynomials, division in ℤ[X] can leave ℤ.",
+    "Φ_n is irreducible over ℚ. This is a separate theorem, and the factorization above does not prove it.",
+    "Reduction mod a prime p can make Φ_n reducible. For example Φ₈ = X⁴ + 1 is reducible mod every prime."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-dedekind-independence-of-characters",
+   "name": "Independence of characters and automorphisms",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.AC",
+    "math.NT",
+    "math.GR"
+   ],
+   "application_cats": [
+    "math.AC",
+    "math.NT",
+    "math.GR"
+   ],
+   "statement": "Let M be a monoid and L a field. Let χ₁,…,χ_k : M → L be pairwise distinct monoid homomorphisms from M to the multiplicative monoid of L, so χ(1) = 1 and χ(xy) = χ(x)χ(y). Then χ₁,…,χ_k are linearly independent over L as functions M → L. That is, if c₁χ₁ + … + c_kχ_k = 0 as a function, then all c_i = 0. In particular, distinct field automorphisms σ₁,…,σ_k of a field F are linearly independent over F, and the sequences (λ₁ⁿ),…,(λ_kⁿ) for distinct non zero λ_i are linearly independent.",
+   "hypotheses": [
+    "L is a field. More generally an integral domain suffices.",
+    "M is a monoid. It does not need to be commutative.",
+    "The maps are pairwise distinct as functions on M."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-vandermonde-determinant",
+     "reason": "Step 2 of the application uses the Vandermonde determinant to check the linear system."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "character",
+    "linear independence over L",
+    "field automorphism"
+   ],
+   "concept_prerequisites": [
+    "c:group-homomorphism",
+    "c:linear-independence",
+    "c:field-extension"
+   ],
+   "definitions": [
+    {
+     "name": "character",
+     "text": "A monoid homomorphism χ from M to the multiplicative monoid of L."
+    },
+    {
+     "name": "linear independence over L",
+     "text": "Functions f₁,…,f_k are independent if c₁f₁ + … + c_kf_k = 0 with c_i in L forces all c_i = 0."
+    },
+    {
+     "name": "field automorphism",
+     "text": "A bijective ring homomorphism σ : F → F. It restricts to a monoid homomorphism on the multiplicative monoid of F."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/LinearIndependent/Basic.lean#L510-L574",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.LinearIndependent.Basic",
+    "declaration": "linearIndependent_monoidHom",
+    "lines": [
+     510,
+     574
+    ],
+    "module_sha256": "f80942f74a6a448072a8c2999862dc6b18e0655d7554a105d655b5e94de8cae0",
+    "excerpt": "/-- Dedekind's linear independence of characters -/\n@[stacks 0CKL]\ntheorem linearIndependent_monoidHom (G : Type*) [MulOneClass G] (L : Type*) [CommRing L]\n    [IsDomain L] : LinearIndependent L (M := G → L) (fun f => f : (G →* L) → G → L) := by\n  let := Classical.decEq (G →* L)\n  let : MulAction L L := DistribMulAction.toMulAction\n  -- We prove linear independence by showing that only the trivial linear combination vanishes.\n  apply linearIndependent_iff'.2\n  intro s\n  induction s using Finset.induction_on with\n  | empty => simp\n  | insert a s has ih =>\n  intro g hg\n  -- Here\n  -- * `a` is a new character we will insert into the `Finset` of characters `s`,\n  -- * `ih` is the fact that only the trivial linear combination of characters in `s` is zero\n  -- * `hg` is the fact that `g` are the coefficients of a linear combination summing to zero\n  -- and it remains to prove that `g` vanishes on `insert a s`.\n  -- We now make the key calculation:\n  -- For any character `i` in the original `Finset`, we have `g i • i = g i • a` as functions\n  -- on the monoid `G`.\n  have h1 (i) (his : i ∈ s) : (g i • i : G → L) = g i • a := by\n    ext x\n    rw [← sub_eq_zero]\n    apply ih (fun j => g j * j x - g j * a x) _ i his\n    ext y\n    -- After that, it's just a chase scene.\n    calc\n      (∑ i ∈ s, (g i * i x - g i * a x) • i : G → L) y =\n          (∑ i ∈ s, g i * i x * i y) - ∑ i ∈ s, g i * a x * i y := by simp [sub_mul]\n      _ = (∑ i ∈ insert a s, g i * i x * i y) -\n            ∑ i ∈ insert a s, g i * a x * i y := by simp [Finset.sum_insert has]\n      _ = (∑ i ∈ insert a s, g i * (i x * i y)) -\n            ∑ i ∈ insert a s, a x * (g i * i y) := by\n        congrm ∑ i ∈ insert a s, ?_ - ∑ i ∈ insert a s, ?_\n        · rw [mul_assoc]\n        · rw [mul_assoc, mul_left_comm]\n      _ = (∑ i ∈ insert a s, g i • i : G → L) (x * y) -\n            a x * (∑ i ∈ insert a s, (g i • (i : G → L))) y := by simp [Finset.mul_sum]\n      _ = 0 := by rw [hg]; simp\n  -- On the other hand, since `a` is not already in `s`, for any character `i ∈ s`\n  -- there is some element of the monoid on which it differs from `a`.\n  have h2 (i) (his : i ∈ s) : ∃ y, i y ≠ a y := by\n    by_contra! hia\n    obtain rfl : i = a := MonoidHom.ext hia\n    contradiction\n  -- From these two facts we deduce that `g` actually vanishes on `s`,\n  have h3 (i) (his : i ∈ s) : g i = 0 := by\n    let ⟨y, hy⟩ := h2 i his\n    have h : g i • i y = g i • a y := congr($(h1 i his) y)\n    rw [← sub_eq_zero, ← smul_sub, smul_eq_zero] at h\n    exact h.resolve_right (sub_ne_zero_of_ne hy)\n  -- And so, using the fact that the linear combination over `s` and over `insert a s` both\n  -- vanish, we deduce that `g a = 0`.\n  have h4 : g a = 0 :=\n    calc\n      g a = g a * 1 := (mul_one _).symm\n      _ = (g a • a : G → L) 1 := by rw [← a.map_one]; rfl\n      _ = (∑ i ∈ insert a s, g i • i : G → L) 1 := by\n        rw [Finset.sum_insert has, Finset.sum_eq_zero, add_zero]\n        simp +contextual [h3]\n      _ = 0 := by rw [hg]; rfl\n  -- Now we're done; the last two facts together imply that `g` vanishes on every element\n  -- of `insert a s`.\n  exact (Finset.forall_mem_insert ..).2 ⟨h4, h3⟩",
+    "excerpt_sha256": "087d99c67156df15c25a54d2776e5f2d85d804c4769f4be08ce0206a18f8fdf1",
+    "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johannes Hölzl, Mario Carneiro, Alexander Bentkamp, Anne Baanen\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the independence of distinct monoid homomorphisms from a monoid to a domain. It is the statement of the theorem."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Suppose the claim fails. Among all non trivial relations c₁χ₁ + … + c_kχ_k = 0 (for any sub family of the given characters) choose one with the smallest number m of non zero coefficients. After renaming, the relation is c₁χ₁ + … + c_mχ_m = 0 with all c_i ≠ 0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Case m = 1. Then c₁χ₁(x) = 0 for all x. At x = 1 we get c₁·1 = 0, so c₁ = 0, a contradiction. So m ≥ 2.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Because χ₁ ≠ χ₂, there is h in M with χ₁(h) ≠ χ₂(h).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Apply the relation to the element hx, for any x in M. By multiplicativity, ∑_{i=1}^m c_iχ_i(h)χ_i(x) = 0. Multiply the original relation, evaluated at x, by χ₁(h). We get ∑_{i=1}^m c_iχ₁(h)χ_i(x) = 0.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Subtract the two identities. The term i = 1 cancels. We get ∑_{i=2}^m c_i(χ_i(h) − χ₁(h))χ_i(x) = 0 for all x. This is a relation among χ₂,…,χ_m, with fewer than m non zero terms.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "The coefficient of χ₂ is c₂(χ₂(h) − χ₁(h)). It is not 0, because c₂ ≠ 0 and χ₂(h) ≠ χ₁(h). So the new relation is non trivial. This contradicts the minimality of m. So no relation exists.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Automorphisms. A field automorphism σ of F restricts to a monoid homomorphism from the multiplicative monoid of F to F. Distinct automorphisms are distinct functions. So they are independent over F.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Exponential sequences. For non zero λ, the map n ↦ λⁿ is a monoid homomorphism from (ℕ, +) to (L, ·). Distinct λ give distinct maps, since the value at n = 1 is λ. So the sequences (λ_iⁿ) are independent. A relation that holds for all n, ∑ c_iλ_iⁿ = 0, forces all c_i = 0.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Uniqueness of the closed form of a linear recurrence",
+    "goal": "Write the sequence a_n with a₀ = 2, a₁ = 7, a₂ = 25 and a_{n+3} = 6a_{n+2} − 11a_{n+1} + 6a_n as A + B·2ⁿ + C·3ⁿ. Show that the coefficients are unique.",
+    "hypotheses": [
+     "The characteristic polynomial is X³ − 6X² + 11X − 6 = (X−1)(X−2)(X−3).",
+     "Its roots 1, 2 and 3 are distinct and non zero in ℚ."
+    ],
+    "why_theorem_applies": "The sequences n ↦ 1ⁿ, 2ⁿ, 3ⁿ are characters of (ℕ,+) into ℚ. By the theorem they are independent. So any representation a_n = A + B·2ⁿ + C·3ⁿ for all n has unique coefficients.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Each of 1ⁿ, 2ⁿ and 3ⁿ satisfies the recurrence, because each root satisfies the characteristic polynomial. So every combination A + B·2ⁿ + C·3ⁿ satisfies it.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The first three values give a linear system for (A, B, C): A+B+C = 2, A+2B+3C = 7, A+4B+9C = 25. Its matrix is a Vandermonde matrix with nodes 1, 2, 3. Its determinant is (2−1)(3−1)(3−2) = 2, which is not zero.",
+      "uses": [
+       "nm:technique-vandermonde-determinant"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Solve the system. Subtract the first row from the second: B + 2C = 5. Subtract the second from the third: 2B + 6C = 18, so B + 3C = 9. Then C = 4, B = −3 and A = 1. Check: 1 − 3 + 4 = 2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "So a_n = 1 − 3·2ⁿ + 4·3ⁿ. Both sides satisfy the same recurrence and agree for n = 0, 1, 2. So they agree for all n by induction.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Check the first eight values: 2, 7, 25, 85, 277, 877, 2725, 8365. The recurrence gives the same list from the starting values. For example a₃ = 6·25 − 11·7 + 6·2 = 150 − 77 + 12 = 85.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Uniqueness: if A′ + B′2ⁿ + C′3ⁿ is another closed form, then (A−A′)·1ⁿ + (B−B′)·2ⁿ + (C−C′)·3ⁿ = 0 for all n. By the theorem A = A′, B = B′ and C = C′.",
+      "uses": []
+     }
+    ],
+    "result": "a_n = 1 − 3·2ⁿ + 4·3ⁿ, and this representation is unique.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof needs L to have no zero divisors. In a ring with zero divisors, independence can fail.",
+    "The maps must be homomorphisms, so they must preserve products. Arbitrary distinct functions can be dependent.",
+    "The theorem gives independence only. A bound on the number of automorphisms by the degree of the extension needs extra linear algebra on top of it."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-smallest-prime-index-subgroup-normal",
+   "name": "Subgroup of smallest prime index is normal",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.GR"
+   ],
+   "application_cats": [
+    "math.GR"
+   ],
+   "statement": "Let G be a finite group and let p be the smallest prime that divides |G|. If H is a subgroup of G with index [G:H] = p, then H is normal in G. In particular a subgroup of index 2 is always normal. This also holds for index 2 in an infinite group.",
+   "hypotheses": [
+    "G is finite, and p is the smallest prime divisor of |G|. For index 2 the group may be infinite.",
+    "H has index exactly p.",
+    "The statement fails for a larger prime index. For S₃ the subgroup of order 2 has index 3 and is not normal."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only the coset action, the first isomorphism theorem and Lagrange theorem. No catalog theorem is cited.",
+   "concepts": [
+    "index [G:H]",
+    "normal subgroup",
+    "kernel of the coset action"
+   ],
+   "concept_prerequisites": [
+    "c:index-of-a-subgroup",
+    "c:normal-subgroup",
+    "c:group-action",
+    "c:symmetric-group"
+   ],
+   "definitions": [
+    {
+     "name": "index [G:H]",
+     "text": "The number of left cosets of H in G."
+    },
+    {
+     "name": "normal subgroup",
+     "text": "A subgroup N with gNg⁻¹ = N for all g in G. It is the kernel of some group homomorphism."
+    },
+    {
+     "name": "kernel of the coset action",
+     "text": "The set K of g that fix every coset xH under left multiplication. It equals the intersection of all conjugates of H."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/IndexNormal.lean#L56-L84",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.GroupTheory.IndexNormal",
+    "declaration": "Subgroup.normal_of_index_eq_minFac_card",
+    "lines": [
+     56,
+     84
+    ],
+    "module_sha256": "902c7e75413e33f59ec71cdef3179c53a81c85c29b6aa1d039ed062745fdd9a2",
+    "excerpt": "/-- A subgroup of a finite group whose index is the smallest prime factor is normal.\n\nNote : if `G` is infinite, then `Nat.card G = 0` and `(Nat.card G).minFac = 2` -/\ntheorem normal_of_index_eq_minFac_card (hHp : H.index = (Nat.card G).minFac) :\n    H.Normal := by\n  by_cases hG0 : Nat.card G = 0\n  · rw [hG0, minFac_zero] at hHp\n    exact normal_of_index_eq_two hHp\n  by_cases hG1 : Nat.card G = 1\n  · rw [hG1, minFac_one] at hHp\n    exact normal_of_index_eq_one hHp\n  suffices H.normalCore.relIndex H = 1 by\n    convert H.normalCore_normal\n    exact le_antisymm (relIndex_eq_one.mp this) (normalCore_le H)\n  have : Finite G := finite_of_card_ne_zero hG0\n  have index_ne_zero : H.index ≠ 0 := index_ne_zero_of_finite\n  rw [← mul_left_inj' index_ne_zero, one_mul, relIndex_mul_index H.normalCore_le]\n  have hp : Nat.Prime H.index := hHp ▸ minFac_prime hG1\n  have h : H.normalCore.index ∣ H.index ! := by\n    rw [normalCore_eq_ker, index_ker, index_eq_card, ← Nat.card_perm]\n    exact card_subgroup_dvd_card (toPermHom G (G ⧸ H)).range\n  apply dvd_antisymm _ (index_dvd_of_le H.normalCore_le)\n  rwa [← Coprime.dvd_mul_right, mul_factorial_pred hp.ne_zero]\n  have hr1 : H.normalCore.index ≠ 1 := fun hr1 ↦ hp.ne_one <|\n    Nat.eq_one_of_dvd_one (hr1 ▸ H.normalCore.index_dvd_of_le H.normalCore_le)\n  rw [Nat.coprime_factorial_iff hr1]\n  exact lt_of_lt_of_le (Nat.sub_one_lt hp.ne_zero) <|\n    hHp ▸ minFac_le_of_dvd (Nat.minFac_prime hr1).two_le\n      (dvd_trans (minFac_dvd H.normalCore.index) (H.normalCore.index_dvd_card))",
+    "excerpt_sha256": "8698b5dd6ea7828bf1bce543f42eb95cb213ae7686ccf3fe0d4ebc537a2774f7",
+    "attribution": "/-\nCopyright (c) 2025 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that a subgroup of index equal to the smallest prime factor of the order is normal."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/IndexNormal.lean#L51-L54",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.IndexNormal",
+     "declaration": "Subgroup.normal_of_index_eq_two",
+     "lines": [
+      51,
+      54
+     ],
+     "module_sha256": "902c7e75413e33f59ec71cdef3179c53a81c85c29b6aa1d039ed062745fdd9a2",
+     "excerpt": "/-- A subgroup of index 2 is normal (does not require finiteness of G) -/\n@[to_additive]\ntheorem normal_of_index_eq_two (hH : H.index = 2) : H.Normal where\n  conj_mem x hxH g := by simp_rw [mul_mem_iff_of_index_two hH, hxH, iff_true, inv_mem_iff]",
+     "excerpt_sha256": "969bdabde8ddc36ec4e78d3e16e437d26b3fee263a6986ff2599520ed5888fc2",
+     "attribution": "/-\nCopyright (c) 2025 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the index 2 case."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Let X = G/H be the set of left cosets. It has p elements. The group G acts on X by left multiplication. This action gives a group homomorphism ρ : G → Sym(X) ≅ S_p.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Let K = ker ρ. Then K is a normal subgroup of G. If g is in K, then g fixes the coset H, so gH = H and g is in H. So K ⊆ H.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The first isomorphism theorem gives G/K ≅ ρ(G), a subgroup of S_p. By Lagrange, m = |G/K| divides |S_p| = p!.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Also m = [G:K] divides |G|, because |G| = [G:K]·|K|. So every prime divisor of m divides |G|, hence is at least p by the choice of p.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Every prime divisor of m also divides p! = p·(p−1)!, so it is at most p. Together with step 4, the only prime divisor of m is p. So m = p^a for some a ≥ 0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "The prime p appears in p! exactly once, because the factors 1,…,p each contribute at most one factor p and only p itself does. Since p^a | p!, a ≤ 1. So m is 1 or p.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Now K ⊆ H gives [G:K] = [G:H]·[H:K] = p·[H:K] ≥ p. So m = p and [H:K] = 1. Hence H = K, and H is normal.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Index 2. The same proof with p = 2 uses only that S₂ has order 2. Finiteness of G is used only to say that every prime divisor of m divides |G|. For p = 2 this is not needed, because m divides 2! = 2 already, so the argument works for infinite G.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Subgroups of index 3 in a group of order 21, and failures for other indices",
+    "goal": "Let G be the group of maps x ↦ ax + b on ℤ/7 with a in {1,2,4}. Find the subgroups of index 3 and check normality. Compare with S₃ and S₄.",
+    "hypotheses": [
+     "|G| = 21 = 3·7, so the smallest prime divisor is 3.",
+     "G has 21 elements (a,b), with composition (a,b)(c,d) = (ac, ad+b)."
+    ],
+    "why_theorem_applies": "A subgroup of order 7 has index 3, which is the smallest prime divisor of 21. So the theorem applies to it.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The translations T = {(1,b)} form a subgroup of order 7. Its index is 21/7 = 3. By the theorem T is normal in G.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Direct check. For (a,b) in G and (1,c) in T, the conjugate (a,b)(1,c)(a,b)⁻¹ is the map x ↦ x + ac, which lies in T. So T is normal. A computer check of all 21 conjugations agrees.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Count all subgroups. A computer enumeration of the subgroups generated by one or two elements gives 10 subgroups: the trivial one, 7 subgroups of order 3, one subgroup of order 7 and G. Only the last three are normal.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The 7 subgroups of order 3 have index 7. The smallest prime divisor of 21 is 3, not 7. So the theorem does not apply to them, and indeed none is normal.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Failure for larger index. In S₃ the subgroup H = {id, (1 2)} has index 3. But the smallest prime divisor of 6 is 2, not 3. The subgroup H has 3 conjugates, so it is not normal.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "The dihedral group D₄ of order 8 inside S₄ has index 3. The smallest prime divisor of 24 is 2. The subgroup D₄ has 3 conjugates in S₄, so it is not normal.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Consequence for order 21. The unique subgroup of order 7 is normal. This is a quick case of the Sylow theorems that needs no counting of Sylow subgroups.",
+      "uses": []
+     }
+    ],
+    "result": "In the group of order 21, the subgroup of order 7 (index 3, the smallest prime divisor) is normal. The subgroups of order 3 (index 7) are not. In S₃ and S₄ the index 3 subgroups are not normal.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The index must be the smallest prime divisor. A subgroup of index 3 in S₃ is not normal.",
+    "The theorem does not say that every normal subgroup has such an index. It is only a sufficient test.",
+    "For infinite groups only the index 2 case holds as stated."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q1996305",
+      "relation": "distinct from",
+      "reason": "The catalog has Burnside normal complement results. This entry is an elementary test with no character theory."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-artin-fixed-field-degree",
+   "name": "Artin theorem on the degree of a fixed field",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.GR",
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.GR",
+    "math.NT"
+   ],
+   "statement": "Let G be a finite group of automorphisms of a field F. Let F^G be the subfield of elements fixed by every element of G. Then F is a finite extension of F^G, and [F : F^G] = |G|.",
+   "hypotheses": [
+    "G is a finite group of field automorphisms of F.",
+    "G acts faithfully, so distinct elements of G are distinct automorphisms."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-dedekind-independence-of-characters",
+     "reason": "The lower bound uses independence of distinct automorphisms."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "fixed field F^G",
+    "degree [F : K]"
+   ],
+   "concept_prerequisites": [
+    "c:field-extension",
+    "c:degree-of-an-extension",
+    "c:linear-independence"
+   ],
+   "definitions": [
+    {
+     "name": "fixed field F^G",
+     "text": "The set of x in F with g(x) = x for all g in G. It is a subfield of F."
+    },
+    {
+     "name": "degree [F : K]",
+     "text": "The dimension of F as a vector space over K."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/Fixed.lean#L342-L352",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.FieldTheory.Fixed",
+    "declaration": "FixedPoints.finrank_eq_card",
+    "lines": [
+     342,
+     352
+    ],
+    "module_sha256": "833ae94ba43e9192b919d0e8ec59b6905d7dd59cf6218cf9c081bcac2982884f",
+    "excerpt": "/-- Let $F$ be a field. Let $G$ be a finite group acting faithfully on $F$.\nThen $[F : F^G] = |G|$. -/\n@[stacks 09I3 \"second part\"]\ntheorem finrank_eq_card [Fintype G] [FaithfulSMul G F] :\n    finrank (FixedPoints.subfield G F) F = Fintype.card G :=\n  le_antisymm (FixedPoints.finrank_le_card G F) <|\n    calc\n      Fintype.card G ≤ Fintype.card (F →ₐ[FixedPoints.subfield G F] F) :=\n        Fintype.card_le_of_injective _ (MulSemiringAction.toAlgHom_injective _ F)\n      _ ≤ finrank F (F →ₗ[FixedPoints.subfield G F] F) := finrank_algHom (subfield G F) F\n      _ = finrank (FixedPoints.subfield G F) F := finrank_linearMap_self _ _ _",
+    "excerpt_sha256": "e5bc386f64239cb80fb1b049a6bf72be79855fcd6e115a2e7e77e5b29d170c82",
+    "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves finrank of F over the fixed subfield equals the order of G."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Let K = F^G and n = |G|. Write G = {g₁,…,gₙ}. We show [F:K] ≤ n and [F:K] ≥ n.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Upper bound. Suppose x₁,…,x_m in F are linearly independent over K with m > n. Consider the n equations Σⱼ gᵢ(xⱼ)·yⱼ = 0 for i = 1,…,n, in the m unknowns yⱼ. There are fewer equations than unknowns, so a nonzero solution exists in F.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Choose a nonzero solution with the fewest nonzero entries. Scale it so that one entry equals 1. Apply an element g of G to all equations. Since G permutes the equations, g(y) is again a solution with the same support.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The difference y − g(y) is a solution with fewer nonzero entries, because the entry equal to 1 cancels. By minimality it is zero. So every yⱼ is fixed by G, that is, every yⱼ lies in K.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "One equation is the one for the identity element: Σⱼ xⱼ·yⱼ = 0 with yⱼ in K, not all zero. This contradicts the independence of the xⱼ over K. So [F:K] ≤ n.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Lower bound. Suppose [F:K] = m < n, with a K-basis x₁,…,x_m. The m equations Σᵢ gᵢ(xⱼ)·yᵢ = 0 (j = 1,…,m) in n unknowns have a nonzero solution (y₁,…,yₙ) in F.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Every element a of F has the form Σⱼ cⱼxⱼ with cⱼ in K. Each cⱼ is fixed by every gᵢ. So Σᵢ yᵢ·gᵢ(a) = Σⱼ cⱼ·Σᵢ yᵢ·gᵢ(xⱼ) = 0.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "So the n distinct automorphisms g₁,…,gₙ satisfy the nontrivial relation Σ yᵢgᵢ = 0 on F. This contradicts the independence of characters. So [F:K] ≥ n, and [F:K] = n.",
+      "uses": [
+       "nm:technique-dedekind-independence-of-characters"
+      ]
+     },
+     {
+      "id": "s9",
+      "text": "Consequence. For a subgroup H of G, apply the theorem to H and to G. The degree multiplicativity [F:E][E:K]=[F:K] for a tower K⊆E⊆F gives [F:F^H]·[F^H:F^G] = [F:F^G], so [F^H : F^G] = |G|/|H|.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Fixed fields of the Klein four-group on Q(√2, √3)",
+    "goal": "Let F = Q(√2, √3) with basis (1, √2, √3, √6) over Q. Let G be the group generated by the automorphisms σ and τ. Compute the dimension of each fixed field.",
+    "hypotheses": [
+     "σ sends √2 to −√2 and fixes √3. τ sends √3 to −√3 and fixes √2.",
+     "On the basis, σ, τ and στ act as diag(1,−1,1,−1), diag(1,1,−1,−1) and diag(1,−1,−1,1)."
+    ],
+    "why_theorem_applies": "The dimension of a fixed field over Q equals the dimension of the common fixed space of the matrices. The theorem predicts 4/|H| for a subgroup H.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The trivial subgroup fixes all of F. Its fixed space has dimension 4 = 4/1.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The subgroup ⟨σ⟩ fixes the basis vectors 1 and √3. Its fixed space has dimension 2 = 4/2. This is Q(√3).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The subgroup ⟨τ⟩ fixes 1 and √2. The subgroup ⟨στ⟩ fixes 1 and √6. Both have dimension 2 = 4/2. These are Q(√2) and Q(√6).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The whole group G has order 4. Only the vector 1 is fixed by all three matrices. The fixed space has dimension 1 = 4/4. So F^G = Q.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The numbers agree with the theorem for all five subgroups. Also [F : Q] = 4 = |G|, so F is a Galois extension of Q with group G.",
+      "uses": []
+     }
+    ],
+    "result": "The fixed fields have dimensions 4, 2, 2, 2 and 1 over Q for the subgroups of order 1, 2, 2, 2 and 4. Each equals 4/|H|.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "G must be finite. For infinite G the fixed field can have infinite degree.",
+    "The theorem gives the degree only. It does not say that F is normal over Q in general. It does say that F is Galois over F^G."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-dedekind-independence-of-characters",
+      "relation": "uses",
+      "reason": "The lower bound is a direct use of this result."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-determinant-trick-integrality",
+   "name": "Determinant trick for integral elements",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.AC",
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.AC",
+    "math.NT"
+   ],
+   "statement": "Let A be a subring of B. Let N be a finitely generated A-submodule of B that is faithful, for example one that contains 1. If an element b of B satisfies bN ⊆ N, then b is integral over A. As a result, sums and products of integral elements are integral.",
+   "hypotheses": [
+    "A is a subring of the commutative ring B.",
+    "N is a finitely generated A-submodule of B with 1 in N, or with no nonzero element of B that kills N.",
+    "bN ⊆ N."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only the adjugate identity and the expansion of a determinant. No catalog result is needed.",
+   "concepts": [
+    "integral element",
+    "adjugate"
+   ],
+   "concept_prerequisites": [
+    "c:determinant",
+    "c:polynomial",
+    "c:basis-of-a-vector-space"
+   ],
+   "definitions": [
+    {
+     "name": "integral element",
+     "text": "An element b of B is integral over A if it is a root of a monic polynomial with coefficients in A."
+    },
+    {
+     "name": "adjugate",
+     "text": "The matrix adj(M) with M·adj(M) = det(M)·I over any commutative ring."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralClosure/Algebra/Basic.lean#L79-L84",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.IntegralClosure.Algebra.Basic",
+    "declaration": "IsIntegral.of_mem_of_fg",
+    "lines": [
+     79,
+     84
+    ],
+    "module_sha256": "072e859639b695ec6bfdf02307cde7325011057dfe24b906946ebfaef1bf88de",
+    "excerpt": "/-- If `S` is a sub-`R`-algebra of `A` and `S` is finitely-generated as an `R`-module,\n  then all elements of `S` are integral over `R`. -/\ntheorem IsIntegral.of_mem_of_fg (S : Subalgebra R B)\n    (HS : S.toSubmodule.FG) (x : B) (hx : x ∈ S) : IsIntegral R x :=\n  have : Module.Finite R S := .of_fg HS\n  (isIntegral_algHom_iff S.val Subtype.val_injective).mpr (.of_finite R (⟨x, hx⟩ : S))",
+    "excerpt_sha256": "519b0a2d1eeae3f422b9dbf0bd12c178737e74d576129fc765de6e641deaa3ec",
+    "attribution": "/-\nCopyright (c) 2019 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that b is integral when b lies in a finitely generated faithful module stable under multiplication."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralClosure/Algebra/Basic.lean#L68-L69",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.IntegralClosure.Algebra.Basic",
+     "declaration": "isIntegral_of_noetherian",
+     "lines": [
+      68,
+      69
+     ],
+     "module_sha256": "072e859639b695ec6bfdf02307cde7325011057dfe24b906946ebfaef1bf88de",
+     "excerpt": "theorem isIntegral_of_noetherian (_ : IsNoetherian R B) (x : B) : IsIntegral R x :=\n  .of_finite R x",
+     "excerpt_sha256": "420d7ebd9fb627dec9176e9a53099f064e47ae2952e6ebc08598ee8d1a712f9f",
+     "attribution": "/-\nCopyright (c) 2019 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that every element of B is integral over R when B is a Noetherian R-module. It is a consequence of the determinant trick."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Let n₁,…,n_k generate N over A. Since bN ⊆ N, write b·nᵢ = Σⱼ mᵢⱼ·nⱼ with mᵢⱼ in A. Let M be the matrix (mᵢⱼ).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Let v be the column of the nⱼ. Then (b·I − M)·v = 0 in B^k.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Multiply by the adjugate of (b·I − M). Since adj(X)·X = det(X)·I over a commutative ring, we get det(b·I − M)·nⱼ = 0 for every j.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The element 1 lies in N, so it is a combination of the nⱼ. Hence det(b·I − M)·1 = 0, that is, det(b·I − M) = 0.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Expand the determinant. It is a monic polynomial of degree k in b with coefficients in A. It is the characteristic polynomial of M. So b is integral over A.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Sums and products. Let a and b be integral, with monic equations of degrees r and s. The A-module N spanned by aⁱbʲ with i < r and j < s is finitely generated and contains 1. It is stable under multiplication by a and by b. So a + b and ab satisfy the hypothesis, and they are integral.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Integrality of √2 + √3 and its characteristic polynomial",
+    "goal": "Let A = Z and B = R. Let N be the Z-module with basis (1, √2, √3, √6). Show that α = √2 + √3 is integral and find its monic equation.",
+    "hypotheses": [
+     "N is closed under multiplication by α.",
+     "Columns of M give the images α·1, α·√2, α·√3, α·√6 on the basis."
+    ],
+    "why_theorem_applies": "The matrix of multiplication by α on N has integer entries. Its characteristic polynomial is the monic equation that the proof produces.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Compute α·1 = √2 + √3, α·√2 = 2 + √6, α·√3 = 3 + √6, α·√6 = 3√2 + 2√3. All are integer combinations of the basis. So αN ⊆ N.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The matrix of multiplication by α is M with rows [0,2,3,0], [1,0,0,3], [1,0,0,2], [0,1,1,0]. All entries are integers.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "A computer calculation gives M² with rows [5,0,0,12], [0,5,6,0], [0,4,5,0], [2,0,0,5].",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "A computer calculation shows M⁴ − 10M² + I = 0. So the characteristic polynomial of M is x⁴ − 10x² + 1.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "By the theorem, α is a root of x⁴ − 10x² + 1. A direct check: α² = 5 + 2√6, and (α² − 5)² = 24 gives α⁴ − 10α² + 1 = 0.",
+      "uses": []
+     }
+    ],
+    "result": "The number √2 + √3 is integral over Z. Its monic equation is x⁴ − 10x² + 1.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The module must be faithful. Without this, the determinant may kill N without giving an equation for b.",
+    "The theorem gives some monic equation. It does not give the minimal one."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-tower-law-field-degrees",
+      "relation": "uses",
+      "reason": "Degrees in a tower and integrality both come from finite generation."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-nilradical-intersection-of-primes",
+   "name": "Nilradical equals the intersection of all prime ideals",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.AC"
+   ],
+   "application_cats": [
+    "math.AC"
+   ],
+   "statement": "In a commutative ring R, the set of nilpotent elements equals the intersection of all prime ideals of R. More generally, the radical of an ideal I is the intersection of all prime ideals that contain I.",
+   "hypotheses": [
+    "R is a commutative ring with 1.",
+    "For the general form, I is an ideal of R."
+   ],
+   "prerequisites": [
+    {
+     "id": "nl:1475",
+     "reason": "The existence of a maximal ideal avoiding S uses Zorn lemma."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "nilpotent element",
+    "prime ideal",
+    "radical"
+   ],
+   "concept_prerequisites": [
+    "c:polynomial",
+    "c:quotient-group"
+   ],
+   "definitions": [
+    {
+     "name": "nilpotent element",
+     "text": "An element x with xⁿ = 0 for some n ≥ 1."
+    },
+    {
+     "name": "prime ideal",
+     "text": "A proper ideal P with ab in P only if a or b is in P."
+    },
+    {
+     "name": "radical",
+     "text": "The ideal of all x with xⁿ in I for some n."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Nilpotent/Lemmas.lean#L53-L55",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.Nilpotent.Lemmas",
+    "declaration": "nilradical_eq_sInf",
+    "lines": [
+     53,
+     55
+    ],
+    "module_sha256": "ec7384fafbcebacb18a4cc6ff0c700a1afc7aba4dc9a70910522ca06b1406f86",
+    "excerpt": "theorem nilradical_eq_sInf (R : Type*) [CommSemiring R] :\n    nilradical R = sInf { J : Ideal R | J.IsPrime } :=\n  (Ideal.radical_eq_sInf ⊥).trans <| by simp_rw [and_iff_right bot_le]",
+    "excerpt_sha256": "ac60479f5fced225b7c37a361e702dd60094e61d45b5c3bab08cb7a41e2e2707",
+    "attribution": "/-\nCopyright (c) 2021 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the nilradical is the infimum of all prime ideals."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Operations.lean#L933-L967",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Operations",
+     "declaration": "Ideal.radical_eq_sInf",
+     "lines": [
+      933,
+      967
+     ],
+     "module_sha256": "73f6a597697d94652087ca0c8553369de87edb02814fdf8f81ce56911e0624a3",
+     "excerpt": "theorem radical_eq_sInf (I : Ideal R) : radical I = sInf { J : Ideal R | I ≤ J ∧ IsPrime J } :=\n  le_antisymm (le_sInf fun _ hJ ↦ hJ.2.radical_le_iff.2 hJ.1) fun r hr ↦\n    by_contradiction fun hri ↦\n      let ⟨m, hIm, hm⟩ :=\n        zorn_le_nonempty₀ { K : Ideal R | r ∉ radical K }\n          (fun c hc hcc y hyc =>\n            ⟨sSup c, fun ⟨n, hrnc⟩ =>\n              let ⟨_, hyc, hrny⟩ := (Submodule.mem_sSup_of_directed ⟨y, hyc⟩ hcc.directedOn).1 hrnc\n              hc hyc ⟨n, hrny⟩,\n              fun _ => le_sSup⟩)\n          I hri\n      have hrm : r ∉ radical m := hm.prop\n      have : ∀ x ∉ m, r ∈ radical (m ⊔ span {x}) := fun x hxm =>\n        by_contradiction fun hrmx => hxm <| by\n          rw [hm.eq_of_le hrmx le_sup_left]\n          exact Submodule.mem_sup_right <| mem_span_singleton_self x\n      have : IsPrime m :=\n        ⟨by rintro rfl; rw [radical_top] at hrm; exact hrm trivial, fun {x y} hxym =>\n          or_iff_not_imp_left.2 fun hxm =>\n            by_contradiction fun hym =>\n              let ⟨n, hrn⟩ := this _ hxm\n              let ⟨p, hpm, q, hq, hpqrn⟩ := Submodule.mem_sup.1 hrn\n              let ⟨c, hcxq⟩ := mem_span_singleton'.1 hq\n              let ⟨k, hrk⟩ := this _ hym\n              let ⟨f, hfm, g, hg, hfgrk⟩ := Submodule.mem_sup.1 hrk\n              let ⟨d, hdyg⟩ := mem_span_singleton'.1 hg\n              hrm\n                ⟨n + k, by\n                  rw [pow_add, ← hpqrn, ← hcxq, ← hfgrk, ← hdyg, add_mul, mul_add (c * x),\n                      mul_assoc c x (d * y), mul_left_comm x, ← mul_assoc]\n                  refine\n                    m.add_mem (m.mul_mem_right _ hpm)\n                    (m.add_mem (m.mul_mem_left _ hfm) (m.mul_mem_left _ hxym))⟩⟩\n    hrm <|\n      this.radical.symm ▸ (sInf_le ⟨hIm, this⟩ : sInf { J : Ideal R | I ≤ J ∧ IsPrime J } ≤ m) hr",
+     "excerpt_sha256": "cf8b5d9b4f58bd3f47781497d9df2e4987a50df662755a9466371ee2cbb88d41",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the radical of an ideal is the infimum of the primes above it."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "A nilpotent element lies in every prime ideal. If xⁿ = 0 is in P, then x is in P by repeated use of primality.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Now suppose x is not nilpotent. Let S = {x, x², x³,…}. Then 0 is not in S.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Let Σ be the set of ideals that do not meet S. It is nonempty, because (0) is in it. Order it by inclusion.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "A union of a chain of ideals in Σ is an ideal in Σ. By Zorn lemma, Σ has a maximal element P.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "We show that P is prime. First, P is proper, because 1 is not in P when x is not in P. Suppose a and b are not in P.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Then P + (a) and P + (b) are bigger than P, so they meet S. We get xᵐ = p + ra and xᵏ = q + sb with p, q in P.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Multiply: xᵐ⁺ᵏ is in P + (ab). If ab were in P, then xᵐ⁺ᵏ would be in P, which contradicts P ∩ S = ∅. So ab is not in P, and P is prime.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Since x is not in P, x is not in the intersection of all primes. So the intersection is contained in the nilradical. For the general form, apply the result to R/I.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Nilradical of Z/360",
+    "goal": "Find the prime ideals of Z/360 and check that their intersection is the set of nilpotent elements.",
+    "hypotheses": [
+     "360 = 2³·3²·5.",
+     "Prime ideals of Z/360 correspond to the primes 2, 3 and 5."
+    ],
+    "why_theorem_applies": "The ring is finite. We can list the nilpotent elements and the prime ideals by computer.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The prime ideals are (2), (3) and (5). They have 180, 120 and 72 elements.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Their intersection is the set of multiples of lcm(2,3,5) = 30. It has 360/30 = 12 elements.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "A computer search finds the nilpotent elements of Z/360. They are exactly the 12 multiples of 30.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The element 30 has 30² ≡ 180 and 30³ ≡ 0 modulo 360. So 30 has nilpotency index 3.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The set of nilpotent elements equals the intersection of the three prime ideals. This agrees with the theorem.",
+      "uses": []
+     }
+    ],
+    "result": "In Z/360 the nilradical is (30). It has 12 elements and equals (2) ∩ (3) ∩ (5).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The ring must be commutative. In a noncommutative ring the intersection of prime ideals is the prime radical, which can be different from the nilpotents.",
+    "The theorem uses the axiom of choice through Zorn lemma."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
