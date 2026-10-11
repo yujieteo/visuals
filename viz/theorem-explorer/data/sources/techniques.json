@@ -5483,6 +5483,344 @@
      "alignment": "The source proves the cumulative distribution function of the exponential measure, 1−e^{−rx} for x≥0. This gives the survival function e^{−λt} used in step 1."
     }
    ]
+  },
+  {
+   "id": "nm:technique-spectrum-nonempty-compact-resolvent",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L145-L158",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+     "declaration": "nonempty",
+     "lines": [
+      145,
+      158
+     ],
+     "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+     "excerpt": "/-- In a (nontrivial) complex Banach algebra, every element has nonempty spectrum. -/\nprotected theorem nonempty (a : A) : (spectrum ℂ a).Nonempty := by\n  /- Suppose `σ a = ∅`, then resolvent set is `ℂ`, any `(z • 1 - a)` is a unit, and `resolvent a`\n    is differentiable on `ℂ`. -/\n  by_contra! h\n  have H₀ : resolventSet ℂ a = Set.univ := by rwa [spectrum, Set.compl_empty_iff] at h\n  have H₁ : Differentiable ℂ fun z : ℂ => resolvent a z := fun z =>\n    hasDerivAt_resolvent_const_left (H₀.symm ▸ Set.mem_univ z : z ∈ resolventSet ℂ a)\n      |>.differentiableAt\n  /- Since `resolvent a` tends to zero at infinity, by Liouville's theorem `resolvent a = 0`,\n  which contradicts that `resolvent a z` is invertible. -/\n  have H₃ := H₁.apply_eq_of_tendsto_cocompact 0 <| by\n    simpa [Metric.cobounded_eq_cocompact] using resolvent_tendsto_cobounded a (𝕜 := ℂ)\n  exact not_isUnit_zero <| H₃ ▸ (isUnit_resolvent.mp <| H₀.symm ▸ Set.mem_univ 0)",
+     "excerpt_sha256": "4511e1ef3664a5ff9173cd6cd51e83a4addf31474e08fcd29769c6be21b19c03",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the spectrum of every element of a nonzero complex Banach algebra is nonempty. It is the statement of part (v)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/Spectrum.lean#L163-L164",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.Spectrum",
+     "declaration": "isOpen_resolventSet",
+     "lines": [
+      163,
+      164
+     ],
+     "module_sha256": "d279ce0dd68eb5a0af6bdbaad138d36420ea15d25a3a26b0bdb1a3bdefb88cad",
+     "excerpt": "theorem isOpen_resolventSet (a : A) : IsOpen (ρ a) :=\n  Units.isOpen.preimage (by fun_prop)",
+     "excerpt_sha256": "0fc3ca39b9b357374dd3c4f94d3c7c2d934e53f46205fb58cbdaa31f284e7ab1",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the resolvent set is open, which is the first part of (i)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L64-L71",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+     "declaration": "hasFDerivAt_resolvent",
+     "lines": [
+      64,
+      71
+     ],
+     "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+     "excerpt": "theorem hasFDerivAt_resolvent {a : A} {k : 𝕜} (hk : k ∈ resolventSet 𝕜 a) :\n    HasFDerivAt (resolvent · k)\n      (((ContinuousLinearMap.mulLeftRight 𝕜 A) (resolvent a k)) (resolvent a k)) a := by\n  have H₁ : HasFDerivAt Ring.inverse _ (algebraMap 𝕜 A k - a) :=\n    hasFDerivAt_ringInverse (𝕜 := 𝕜) hk.unit\n  have H₂ : HasFDerivAt (fun a => algebraMap 𝕜 A k - a) (- .id 𝕜 A) a := by\n    simpa using! (hasFDerivAt_const _ a).sub (hasFDerivAt_id a)\n  simpa [resolvent_eq hk] using! H₁.comp a H₂",
+     "excerpt_sha256": "aafe35122ab666a0c0ea05e9cdb8b2dd0fa1ec74dec82bf28b88ca61e3d5b7f2",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the resolvent is differentiable on the resolvent set. It is the content of part (iii)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-jacobson-nonzero-spectrum-ab-ba",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Algebra/Spectrum/Basic.lean#L386-L391",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Algebra.Spectrum.Basic",
+     "declaration": "nonzero_mul_comm",
+     "lines": [
+      386,
+      391
+     ],
+     "module_sha256": "bf74584b1491c142077461b3880767c461a3cb53687ab7f7354ca510e56a34bc",
+     "excerpt": "theorem nonzero_mul_comm (a b : A) : σ (a * b) \\ {0} = σ (b * a) \\ {0} := by\n  suffices h : ∀ x y : A, σ (x * y) \\ {0} ⊆ σ (y * x) \\ {0} from\n    Set.eq_of_subset_of_subset (h a b) (h b a)\n  rintro _ _ k ⟨k_mem, k_ne⟩\n  change ((Units.mk0 k k_ne) : 𝕜) ∈ _ at k_mem\n  exact ⟨unit_mem_mul_comm.mp k_mem, k_ne⟩",
+     "excerpt_sha256": "9e0aaac3707c4aef69cdaccf74f7bc5d22c353fba10eb97a550de7bf9e6a6d92",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves σ(ab)∖{0}=σ(ba)∖{0} for any unital algebra. It is part (ii) of the statement."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Algebra/Spectrum/Basic.lean#L247-L261",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Algebra.Spectrum.Basic",
+     "declaration": "unit_mem_mul_comm",
+     "lines": [
+      247,
+      261
+     ],
+     "module_sha256": "bf74584b1491c142077461b3880767c461a3cb53687ab7f7354ca510e56a34bc",
+     "excerpt": "theorem unit_mem_mul_comm {a b : A} {r : Rˣ} : ↑r ∈ σ (a * b) ↔ ↑r ∈ σ (b * a) := by\n  have h₁ : ∀ x y : A, IsUnit (1 - x * y) → IsUnit (1 - y * x) := by\n    refine fun x y h => ⟨⟨1 - y * x, 1 + y * h.unit.inv * x, ?_, ?_⟩, rfl⟩\n    · calc\n        (1 - y * x) * (1 + y * (IsUnit.unit h).inv * x) =\n            1 - y * x + y * ((1 - x * y) * h.unit.inv) * x := by noncomm_ring\n        _ = 1 := by simp only [Units.inv_eq_val_inv, IsUnit.mul_val_inv, mul_one, sub_add_cancel]\n    · calc\n        (1 + y * (IsUnit.unit h).inv * x) * (1 - y * x) =\n            1 - y * x + y * (h.unit.inv * (1 - x * y)) * x := by noncomm_ring\n        _ = 1 := by simp only [Units.inv_eq_val_inv, IsUnit.val_inv_mul, mul_one, sub_add_cancel]\n  have := Iff.intro (h₁ (r⁻¹ • a) b) (h₁ b (r⁻¹ • a))\n  rw [mul_smul_comm r⁻¹ b a] at this\n  simpa only [mem_iff, not_iff_not, Algebra.algebraMap_eq_smul_one, ← Units.smul_def,\n    IsUnit.smul_sub_iff_sub_inv_smul, smul_mul_assoc]",
+     "excerpt_sha256": "4c185fd3d2a36c9fc60789ae5bd604625277d9258bb933e08d851ed26a07a0fb",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the version of the same statement for a unit r. It is the core of the argument in step 3."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-polynomial-spectral-mapping-banach",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/IsAlgClosed/Spectrum.lean#L116-L123",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.IsAlgClosed.Spectrum",
+     "declaration": "map_polynomial_aeval_of_nonempty",
+     "lines": [
+      116,
+      123
+     ],
+     "module_sha256": "793f45f5da3deb03bddc9fdd352cb5fe9863644ba647f192293b528d2c600485",
+     "excerpt": "/-- In this version of the spectral mapping theorem, we assume the spectrum\nis nonempty instead of assuming the degree of the polynomial is positive. -/\ntheorem map_polynomial_aeval_of_nonempty [IsAlgClosed 𝕜] (a : A) (p : 𝕜[X])\n    (hnon : (σ a).Nonempty) : σ (aeval a p) = (fun k => eval k p) '' σ a := by\n  nontriviality A\n  refine Or.elim (le_or_gt (degree p) 0) (fun h => ?_) (map_polynomial_aeval_of_degree_pos a p)\n  rw [eq_C_of_degree_le_zero h]\n  simp only [eval_C, aeval_C, scalar_eq, Set.Nonempty.image_const hnon]",
+     "excerpt_sha256": "eec3c88eaa345ec694e006b62ac4183c3cbd19a9378e36a13e687dcc7bb68601",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves σ(p(a))=p(σ(a)) over an algebraically closed field when σ(a) is nonempty. It is the statement of this entry for nonconstant and for constant p."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L174-L177",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+     "declaration": "map_polynomial_aeval",
+     "lines": [
+      174,
+      177
+     ],
+     "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+     "excerpt": "/-- The **spectral mapping theorem** for polynomials in a Banach algebra over `ℂ`. -/\ntheorem map_polynomial_aeval (a : A) (p : ℂ[X]) :\n    spectrum ℂ (aeval a p) = (fun k => eval k p) '' spectrum ℂ a :=\n  map_polynomial_aeval_of_nonempty a p (spectrum.nonempty a)",
+     "excerpt_sha256": "0cd3d16b7a613f236c1c645fa188c293d9719d3dc4fd5f429d8d9e8d6f761aec",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the same equality for every element of a complex Banach algebra, with the nonempty hypothesis removed by the Gelfand theorem."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-cstar-spectral-radius-equals-norm",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/CStarAlgebra/Spectrum.lean#L124-L129",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.CStarAlgebra.Spectrum",
+     "declaration": "IsSelfAdjoint.toReal_spectralRadius_complex_eq_norm",
+     "lines": [
+      124,
+      129
+     ],
+     "module_sha256": "867be37a8b64cdc2568a43f886cd0f9e158b643e8b671475b6343f352de7413a",
+     "excerpt": "/-- In a C⋆-algebra, the spectral radius of a self-adjoint element is equal to its norm.\nSee `IsSelfAdjoint.toReal_spectralRadius_eq_norm` for a version involving\n`spectralRadius ℝ a`. -/\nlemma IsSelfAdjoint.toReal_spectralRadius_complex_eq_norm {a : A} (ha : IsSelfAdjoint a) :\n    (spectralRadius ℂ a).toReal = ‖a‖ := by\n  simp [ha.spectralRadius_eq_nnnorm]",
+     "excerpt_sha256": "4052ab411f535496dea33109a1c1f822cfde6a9f566d35b338e0d29bd82c3eaa",
+     "attribution": "/-\nCopyright (c) 2022 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the spectral radius of a self-adjoint element of a C*-algebra equals its norm. It is the doubling argument of step 1 in its final form."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/CStarAlgebra/Spectrum.lean#L149-L152",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.CStarAlgebra.Spectrum",
+     "declaration": "toReal_spectralRadius_star_mul_self_eq_norm_sq",
+     "lines": [
+      149,
+      152
+     ],
+     "module_sha256": "867be37a8b64cdc2568a43f886cd0f9e158b643e8b671475b6343f352de7413a",
+     "excerpt": "theorem toReal_spectralRadius_star_mul_self_eq_norm_sq (a : A) :\n    (spectralRadius ℂ (a⋆ * a)).toReal = ‖a‖ ^ 2 := by\n  rw [(IsSelfAdjoint.star_mul_self a).toReal_spectralRadius_complex_eq_norm,\n    CStarRing.norm_star_mul_self, ← pow_two]",
+     "excerpt_sha256": "d41f2f3045ae4f05894052316d9dbdd22c2a4beeeba9e91f1f0d26106dbc8e8e",
+     "attribution": "/-\nCopyright (c) 2022 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the spectral radius of a*a is the square of the norm of a. The Mathlib proof of the normal case in the same file, IsStarNormal.spectralRadius_eq_nnnorm, is the main claim of this entry."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-fredholm-alternative-compact-operators",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/FredholmAlternative.lean#L158-L215",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative",
+     "declaration": "hasEigenvalue_or_mem_resolventSet",
+     "lines": [
+      158,
+      215
+     ],
+     "module_sha256": "1c1f0fc8c90fa6caae4c9a4dd77dcd6a08352e7f5e280233c955a3f70f5c7db7",
+     "excerpt": "/--\nThe **Fredholm alternative** for compact operators: if `T` is a compact operator and `μ ≠ 0`,\nthen either `μ` is an eigenvalue of `T`, or `μ` is in the resolvent set of `T`.\nSee also `hasEigenvalue_iff_mem_spectrum`, which says that the nonzero eigenvalues of a compact\noperator are exactly the nonzero points in the spectrum of the operator.\n-/\ntheorem hasEigenvalue_or_mem_resolventSet (hT : IsCompactOperator T) (hμ : μ ≠ 0) :\n    HasEigenvalue (T : End 𝕜 X) μ ∨ μ ∈ resolventSet 𝕜 T := by\n  -- Suppose not, then `μ` is not an eigenvalue and is in the spectrum.\n  by_contra!\n  obtain ⟨h₁, h₂⟩ := this\n  -- Defining S := `T - μ • 1`, we deduce that S is antilipschitz and not surjective.\n  let S := T - μ • 1\n  obtain ⟨K, hK : AntilipschitzWith K S⟩ := antilipschitz_of_not_hasEigenvalue hT hμ h₁\n  replace h₂ : ¬ (S : X → X).Bijective := by\n    rw [spectrum.mem_resolventSet_iff, ← IsUnit.neg_iff,\n      ContinuousLinearMap.isUnit_iff_bijective] at h₂\n    convert h₂\n    ext x\n    simp [S]\n  replace h₂ : ¬ (S : X → X).Surjective := by grind [Function.Bijective, hK.injective]\n  -- Take a sequence of vectors `f n` in the range of `S ^ n` such that `‖f n‖` is in the\n  -- interval `[1, ‖c‖ + 1]` and such that `f n` is at least `1` away from any vector in the range\n  -- of `S ^ (n + 1)`.\n  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜\n  obtain ⟨f, hf_norm_lower, hf_norm_upper, hf_mem, hf_far⟩ := exists_seq h₂\n    (hK.isClosedEmbedding S.uniformContinuous) hc (R := ‖c‖ + 1) (by simp)\n  replace hf_mem {n m : ℕ} (h : m ≤ n) : f n ∈ ((S : End 𝕜 X) ^ m).range :=\n    (S : End 𝕜 X).iterateRange.monotone (by lia) (hf_mem _)\n  have hf_mem' {n m : ℕ} (h : m ≤ n) : S (f n) ∈ ((S : End 𝕜 X) ^ (m + 1)).range := by\n    rw [iterate_succ', LinearMap.range_comp]\n    exact ⟨f n, hf_mem h, rfl⟩\n  -- Then the points `T (f n)` are bounded away from each other, using the separation property\n  -- of the `f n` and the lower bound on their norms.\n  have hp : Pairwise fun x₁ x₂ ↦ ‖μ‖ ≤ ‖T (f x₁) - T (f x₂)‖ := by\n    have : Std.Symm fun x₁ x₂ ↦ ‖μ‖ ≤ ‖T (f x₁) - T (f x₂)‖ := by grind [symm_def, norm_sub_rev]\n    apply Pairwise.of_lt\n    intro m n hmn\n    let u : X := μ⁻¹ • (S (f n) - S (f m) + μ • f n)\n    have hu : μ • (f m - u) = T (f m) - T (f n) := by\n      rw [smul_sub, smul_inv_smul₀ hμ]\n      simp [S]\n      linear_combination (norm := module)\n    have : u ∈ ((S : End 𝕜 X) ^ (m + 1)).range := by\n      apply Submodule.smul_mem _ _ (Submodule.add_mem _ _ _)\n      · exact Submodule.sub_mem _ (hf_mem' hmn.le) (hf_mem' le_rfl)\n      · exact Submodule.smul_mem _ μ (hf_mem hmn)\n    grw [← hu, norm_smul, mul_comm, ← hf_far _ u this, one_mul]\n  -- However the `f n` are contained in a compact set, so their image under the compact operator `T`\n  -- must contain a Cauchy subsequence, which is a contradiction.\n  obtain ⟨K, hK, hK'⟩ := hT.image_closedBall_subset_compact (‖c‖ + 1)\n  obtain ⟨y, hyK, ψ, hψ, hψy⟩ := hK.tendsto_subseq (fun n ↦ hK' ⟨f n, by simp [*], rfl⟩)\n  replace hψy := hψy.cauchySeq\n  rw [Metric.cauchySeq_iff'] at hψy\n  obtain ⟨N, hN⟩ := hψy ‖μ‖ (by positivity)\n  have : ‖T (f (ψ (N + 1))) - T (f (ψ N))‖ < ‖μ‖ := by simpa [dist_eq_norm_sub] using hN (N + 1)\n  refine this.not_ge (hp ?_)\n  simp [hψ.injective.eq_iff]",
+     "excerpt_sha256": "5c2fd8b86f8f35d29bac47abe770c163aae98a8341699fec91120962535e90cb",
+     "attribution": "/-\nCopyright (c) 2026 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that a nonzero μ is an eigenvalue of a compact operator on a Banach space or lies in its resolvent set. It is the statement of this entry."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/FredholmAlternative.lean#L217-L227",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative",
+     "declaration": "hasEigenvalue_iff_mem_spectrum",
+     "lines": [
+      217,
+      227
+     ],
+     "module_sha256": "1c1f0fc8c90fa6caae4c9a4dd77dcd6a08352e7f5e280233c955a3f70f5c7db7",
+     "excerpt": "/--\nIf `T` is a compact operator on a Banach space, then the nonzero eigenvalues of `T` are exactly\nthe nonzero points in the spectrum of `T`. This is a consequence of the Fredholm alternative for\ncompact operators. -/\ntheorem hasEigenvalue_iff_mem_spectrum (hT : IsCompactOperator T) (hμ : μ ≠ 0) :\n    HasEigenvalue (T : End 𝕜 X) μ ↔ μ ∈ spectrum 𝕜 T := by\n  constructor\n  · intro hμ'\n    rw [ContinuousLinearMap.spectrum_eq]\n    exact hμ'.mem_spectrum\n  · exact (hasEigenvalue_or_mem_resolventSet hT hμ).resolve_right",
+     "excerpt_sha256": "20ba787a81c09f6c4fd9fea8469b2f09d17a1790a642f5635388828963f0aaa2",
+     "attribution": "/-\nCopyright (c) 2026 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the nonzero points of the spectrum of a compact operator are exactly its nonzero eigenvalues."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-compact-operators-norm-closed",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/Basic.lean#L414-L450",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Operator.Compact.Basic",
+     "declaration": "isClosed_setOfPred_isCompactOperator",
+     "lines": [
+      414,
+      450
+     ],
+     "module_sha256": "d2b83f36e032c863672b9b04afa0d435fee3c7b7ad761331dd03f6098736ff1e",
+     "excerpt": "/-- The set of compact operators from a normed space to a complete topological vector space is\nclosed. -/\ntheorem isClosed_setOfPred_isCompactOperator {𝕜₁ 𝕜₂ : Type*} [NontriviallyNormedField 𝕜₁]\n    [NormedField 𝕜₂] {σ₁₂ : 𝕜₁ →+* 𝕜₂} {M₁ M₂ : Type*} [SeminormedAddCommGroup M₁]\n    [AddCommGroup M₂] [NormedSpace 𝕜₁ M₁] [Module 𝕜₂ M₂] [UniformSpace M₂] [IsUniformAddGroup M₂]\n    [ContinuousConstSMul 𝕜₂ M₂] [T2Space M₂] [CompleteSpace M₂] :\n    IsClosed { f : M₁ →SL[σ₁₂] M₂ | IsCompactOperator f } := by\n  refine isClosed_of_closure_subset ?_\n  rintro u hu\n  rw [mem_closure_iff_nhds_zero] at hu\n  suffices TotallyBounded (u '' Metric.closedBall 0 1) by\n    change IsCompactOperator (u : M₁ →ₛₗ[σ₁₂] M₂)\n    rw [isCompactOperator_iff_isCompact_closure_image_closedBall (u : M₁ →ₛₗ[σ₁₂] M₂) zero_lt_one]\n    exact this.closure.isCompact_of_isClosed isClosed_closure\n  rw [totallyBounded_iff_subset_finite_iUnion_nhds_zero]\n  intro U hU\n  rcases exists_nhds_zero_half hU with ⟨V, hV, hVU⟩\n  let SV : Set M₁ × Set M₂ := ⟨closedBall 0 1, -V⟩\n  rcases hu { f | ∀ x ∈ SV.1, f x ∈ SV.2 }\n      (ContinuousLinearMap.hasBasis_nhds_zero.mem_of_mem\n        ⟨NormedSpace.isVonNBounded_closedBall _ _ _, neg_mem_nhds_zero M₂ hV⟩) with\n    ⟨v, hv, huv⟩\n  rcases totallyBounded_iff_subset_finite_iUnion_nhds_zero.mp\n      (hv.isCompact_closure_image_closedBall 1).totallyBounded V hV with\n    ⟨T, hT, hTv⟩\n  have hTv : v '' closedBall 0 1 ⊆ _ := subset_closure.trans hTv\n  refine ⟨T, hT, ?_⟩\n  rw [image_subset_iff, preimage_iUnion₂] at hTv ⊢\n  intro x hx\n  specialize hTv hx\n  rw [mem_iUnion₂] at hTv ⊢\n  rcases hTv with ⟨t, ht, htx⟩\n  refine ⟨t, ht, ?_⟩\n  rw [mem_preimage, mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub] at htx ⊢\n  convert hVU _ htx _ (huv x hx) using 1\n  rw [sub_apply]\n  abel",
+     "excerpt_sha256": "d0fe7d1f2e71a9bc7fa8cd65ef8404300157d622d75388a17879b57e94aaf4b4",
+     "attribution": "/-\nCopyright (c) 2022 Anatole Dedecker. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anatole Dedecker\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the set of compact operators is closed for the operator norm. It is the statement of this entry."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-fourier-derivative-multiplier-decay",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/FourierTransformDeriv.lean#L253-L280",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.FourierTransformDeriv",
+     "declaration": "fourierIntegral_fderiv",
+     "lines": [
+      253,
+      280
+     ],
+     "module_sha256": "86c581a6926dddf6b540195217e54648bf54aaace698b9d2da9967f517c11baf",
+     "excerpt": "/-- The Fourier integral of the derivative of a function is obtained by multiplying the Fourier\nintegral of the original function by `-L w v`. -/\ntheorem fourierIntegral_fderiv [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]\n    {μ : Measure V} [Measure.IsAddHaarMeasure μ]\n    (hf : Integrable f μ) (h'f : Differentiable ℝ f) (hf' : Integrable (fderiv ℝ f) μ) :\n    fourierIntegral 𝐞 μ L.toLinearMap₁₂ (fderiv ℝ f)\n      = fourierSMulRight (-L.flip) (fourierIntegral 𝐞 μ L.toLinearMap₁₂ f) := by\n  ext w y\n  let g (v : V) : ℂ := 𝐞 (-L v w)\n  /- First rewrite things in a simplified form, without any real change. -/\n  suffices ∫ x, g x • fderiv ℝ f x y ∂μ = ∫ x, (2 * ↑π * I * L y w * g x) • f x ∂μ by\n    rw [fourierIntegral_continuousLinearMap_apply' hf']\n    simpa only [fourierIntegral, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,\n      fourierSMulRight_apply, neg_apply, ContinuousLinearMap.flip_apply, ← integral_smul, neg_smul,\n      smul_neg, ← smul_smul, coe_smul, neg_neg]\n  -- Key step: integrate by parts with respect to `y` to switch the derivative from `f` to `g`.\n  have A x : fderiv ℝ g x y = - 2 * ↑π * I * L y w * g x :=\n    fderiv_fourierChar_neg_bilinear_left_apply _ _ _ _\n  rw [integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable, ← integral_neg]\n  · simp only [A, neg_mul, neg_smul, neg_neg]\n  · have : Integrable (fun x ↦ (-(2 * ↑π * I * ↑((L y) w)) • ((g x : ℂ) • f x))) μ :=\n      ((fourierIntegral_convergent_iff' _ _).2 hf).smul _\n    convert! this using 2 with x\n    simp only [A, neg_mul, neg_smul, smul_smul]\n  · exact (fourierIntegral_convergent_iff' _ _).2 (hf'.apply_continuousLinearMap _)\n  · exact (fourierIntegral_convergent_iff' _ _).2 hf\n  · exact fun _ _ ↦ (differentiable_fourierChar_neg_bilinear_left _ _).differentiableAt\n  · exact fun _ _ ↦ h'f.differentiableAt",
+     "excerpt_sha256": "c4bca2f4c7c5a024b005efeff417f73cbde0969d9933f9792fe3cf3f4fa54be6",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex Kontorovich, David Loeffler, Heather Macbeth, Sébastien Gouëzel\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the Fourier transform of the derivative is the multiplier 2πi·ξ times the transform, for a differentiable integrable function with integrable derivative. It is part (A) for j=1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/FourierTransformDeriv.lean#L209-L237",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.FourierTransformDeriv",
+     "declaration": "hasFDerivAt_fourierIntegral",
+     "lines": [
+      209,
+      237
+     ],
+     "module_sha256": "86c581a6926dddf6b540195217e54648bf54aaace698b9d2da9967f517c11baf",
+     "excerpt": "/-- Main theorem of this section: if both `f` and `x ↦ ‖x‖ * ‖f x‖` are integrable, then the\nFourier transform of `f` has a Fréchet derivative (everywhere in its domain) and its derivative is\nthe Fourier transform of `smulRight L f`. -/\ntheorem hasFDerivAt_fourierIntegral\n    [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V] {μ : Measure V}\n    (hf : Integrable f μ) (hf' : Integrable (fun v : V ↦ ‖v‖ * ‖f v‖) μ) (w : W) :\n    HasFDerivAt (fourierIntegral 𝐞 μ L.toLinearMap₁₂ f)\n      (fourierIntegral 𝐞 μ L.toLinearMap₁₂ (fourierSMulRight L f) w) w := by\n  let F : W → V → E := fun w' v ↦ 𝐞 (-L v w') • f v\n  let F' : W → V → W →L[ℝ] E := fun w' v ↦ 𝐞 (-L v w') • fourierSMulRight L f v\n  let B : V → ℝ := fun v ↦ 2 * π * ‖L‖ * ‖v‖ * ‖f v‖\n  have h0 (w' : W) : Integrable (F w') μ :=\n    (fourierIntegral_convergent_iff continuous_fourierChar\n      (by apply L.continuous₂ : Continuous (fun p : V × W ↦ L.toLinearMap₁₂ p.1 p.2)) w').2 hf\n  have h1 : ∀ᶠ w' in 𝓝 w, AEStronglyMeasurable (F w') μ :=\n    Eventually.of_forall (fun w' ↦ (h0 w').aestronglyMeasurable)\n  have h3 : AEStronglyMeasurable (F' w) μ := by\n    refine .fun_smul ?_ hf.1.fourierSMulRight\n    refine (continuous_fourierChar.comp ?_).aestronglyMeasurable\n    fun_prop\n  have h4 : (∀ᵐ v ∂μ, ∀ (w' : W), w' ∈ Metric.ball w 1 → ‖F' w' v‖ ≤ B v) := by\n    filter_upwards with v w' _\n    rw [Circle.norm_smul _ (fourierSMulRight L f v)]\n    exact norm_fourierSMulRight_le L f v\n  have h5 : Integrable B μ := by simpa only [← mul_assoc] using hf'.const_mul (2 * π * ‖L‖)\n  have h6 : ∀ᵐ v ∂μ, ∀ w', w' ∈ Metric.ball w 1 → HasFDerivAt (fun x ↦ F x v) (F' w' v) w' :=\n    ae_of_all _ (fun v w' _ ↦ hasFDerivAt_fourierChar_smul L f v w')\n  exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds _ one_pos) h1 (h0 w)\n    h3 h4 h5 h6",
+     "excerpt_sha256": "ed29f49c850e7a13d44e8db9d607c85459657214b1bb3ae7f13a43a3e8b9ab78",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex Kontorovich, David Loeffler, Heather Macbeth, Sébastien Gouëzel\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the Fourier transform of f is differentiable when f and x·f are integrable. It is part (B) for j=1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-lyapunov-lp-interpolation",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/MeanInequalities.lean#L329-L360",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.MeanInequalities",
+     "declaration": "lintegral_Lp_mul_le_Lq_mul_Lr",
+     "lines": [
+      329,
+      360
+     ],
+     "module_sha256": "fe70c74c7f684a0ead0c87157dbea3cd648a624c1cdd1cdc52fccad8adc596d7",
+     "excerpt": "theorem lintegral_Lp_mul_le_Lq_mul_Lr {α} [MeasurableSpace α] {p q r : ℝ} (hp0_lt : 0 < p)\n    (hpq : p < q) (hpqr : 1 / p = 1 / q + 1 / r) (μ : Measure α) {f g : α → ℝ≥0∞}\n    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :\n    (∫⁻ a, (f * g) a ^ p ∂μ) ^ (1 / p) ≤\n      (∫⁻ a, f a ^ q ∂μ) ^ (1 / q) * (∫⁻ a, g a ^ r ∂μ) ^ (1 / r) := by\n  have hp0_ne : p ≠ 0 := (ne_of_lt hp0_lt).symm\n  have hp0 : 0 ≤ p := le_of_lt hp0_lt\n  have hq0_lt : 0 < q := lt_of_le_of_lt hp0 hpq\n  have hq0_ne : q ≠ 0 := (ne_of_lt hq0_lt).symm\n  have h_one_div_r : 1 / r = 1 / p - 1 / q := by rw [hpqr]; simp\n  let p2 := q / p\n  let q2 := p2.conjExponent\n  have hp2q2 : p2.HolderConjugate q2 :=\n    .conjExponent (by simp [p2, _root_.lt_div_iff₀, hpq, hp0_lt])\n  calc\n    (∫⁻ a : α, (f * g) a ^ p ∂μ) ^ (1 / p) = (∫⁻ a : α, f a ^ p * g a ^ p ∂μ) ^ (1 / p) := by\n      simp_rw [Pi.mul_apply, ENNReal.mul_rpow_of_nonneg _ _ hp0]\n    _ ≤ ((∫⁻ a, f a ^ (p * p2) ∂μ) ^ (1 / p2) *\n        (∫⁻ a, g a ^ (p * q2) ∂μ) ^ (1 / q2)) ^ (1 / p) := by\n      gcongr\n      simp_rw [ENNReal.rpow_mul]\n      exact ENNReal.lintegral_mul_le_Lp_mul_Lq μ hp2q2 (hf.pow_const _) (hg.pow_const _)\n    _ = (∫⁻ a : α, f a ^ q ∂μ) ^ (1 / q) * (∫⁻ a : α, g a ^ r ∂μ) ^ (1 / r) := by\n      rw [@ENNReal.mul_rpow_of_nonneg _ _ (1 / p) (by simp [hp0]), ← ENNReal.rpow_mul, ←\n        ENNReal.rpow_mul]\n      have hpp2 : p * p2 = q := by\n        symm\n        rw [mul_comm, ← div_eq_iff hp0_ne]\n      have hpq2 : p * q2 = r := by\n        rw [← inv_inv r, ← one_div, ← one_div, h_one_div_r]\n        simp [field, p2, q2, Real.conjExponent]\n      simp_rw [div_mul_div_comm, mul_one, mul_comm p2, mul_comm q2, hpp2, hpq2]",
+     "excerpt_sha256": "142565f2d9adbaa309fed768cfe08965b0f6d2196ee4e6815f1fd3cd6231f416",
+     "attribution": "/-\nCopyright (c) 2020 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the generalized Hölder inequality for products with exponents 1/p=1/q+1/r. It is the engine for the interpolation of Lp norms but is not the statement itself."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/MeanInequalities.lean#L146-L157",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.MeanInequalities",
+     "declaration": "lintegral_mul_le_Lp_mul_Lq_of_ne_zero_of_ne_top",
+     "lines": [
+      146,
+      157
+     ],
+     "module_sha256": "fe70c74c7f684a0ead0c87157dbea3cd648a624c1cdd1cdc52fccad8adc596d7",
+     "excerpt": "/-- Hölder's inequality in case of finite non-zero integrals -/\ntheorem lintegral_mul_le_Lp_mul_Lq_of_ne_zero_of_ne_top {p q : ℝ} (hpq : p.HolderConjugate q)\n    {f g : α → ℝ≥0∞} (hf : AEMeasurable f μ) (hf_nontop : ∫⁻ a, f a ^ p ∂μ ≠ ⊤)\n    (hg_nontop : ∫⁻ a, g a ^ q ∂μ ≠ ⊤) (hf_nonzero : ∫⁻ a, f a ^ p ∂μ ≠ 0)\n    (hg_nonzero : ∫⁻ a, g a ^ q ∂μ ≠ 0) :\n    ∫⁻ a, (f * g) a ∂μ ≤ (∫⁻ a, f a ^ p ∂μ) ^ (1 / p) * (∫⁻ a, g a ^ q ∂μ) ^ (1 / q) := by\n  rw [lintegral_mul_eq_lintegral_funMulInvSnorm_mul_funMulInvSnorm_mul_Lp_mul_Lq hf_nontop hg_nontop\n      hf_nonzero hg_nonzero]\n  apply mul_le_of_le_one_left'\n  have hf1 := lintegral_rpow_funMulInvSnorm_eq_one hpq.pos hf_nonzero hf_nontop\n  have hg1 := lintegral_rpow_funMulInvSnorm_eq_one hpq.symm.pos hg_nonzero hg_nontop\n  exact lintegral_mul_le_one_of_lintegral_rpow_eq_one hpq (hf.mul_const _) hf1 hg1",
+     "excerpt_sha256": "07413ab88e6b4ad1814b2708895e7af50683d67aa458828e9b6e0e4faaf81fec",
+     "attribution": "/-\nCopyright (c) 2020 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the Hölder inequality for conjugate exponents when the integrals are finite and nonzero. It is used in step 2."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-heisenberg-uncertainty-fourier",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/LpSpace.lean#L88-L91",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.LpSpace",
+     "declaration": "norm_fourier_eq",
+     "lines": [
+      88,
+      91
+     ],
+     "module_sha256": "7d86b8c70d21c45877f37792f9f81789c5f4551f41706afb4493958bb104065f",
+     "excerpt": "/-- Plancherel's theorem for `L2` functions. -/\n@[simp]\ntheorem norm_fourier_eq (f : Lp (α := E) F 2) : ‖𝓕 f‖ = ‖f‖ :=\n  (Lp.fourierTransformₗᵢ E F).norm_map f",
+     "excerpt_sha256": "b2f8949256e0ef778fb3356b5a4c81ca5eb9a933af367daa2eddddbd8f97a120",
+     "attribution": "/-\nCopyright (c) 2025 Moritz Doll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Moritz Doll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the Plancherel identity ‖f̂‖₂=‖f‖₂ for L² functions. It supplies step 3 only. Mathlib does not prove the uncertainty inequality itself."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-polya-quadrature-uniform-boundedness",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/BanachSteinhaus.lean#L31-L40",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Operator.BanachSteinhaus",
+     "declaration": "banach_steinhaus",
+     "lines": [
+      31,
+      40
+     ],
+     "module_sha256": "23313a6a69e39dfa231cf3cafe45656b9accf63b8767c6366de2a45cc1aa9393",
+     "excerpt": "/-- This is the standard Banach-Steinhaus theorem, or Uniform Boundedness Principle.\nIf a family of continuous linear maps from a Banach space into a normed space is pointwise\nbounded, then the norms of these linear maps are uniformly bounded.\n\nSee also `WithSeminorms.banach_steinhaus` for the general statement in barrelled spaces. -/\ntheorem banach_steinhaus {ι : Type*} [CompleteSpace E] {g : ι → E →SL[σ₁₂] F}\n    (h : ∀ x, ∃ C, ∀ i, ‖g i x‖ ≤ C) : ∃ C', ∀ i, ‖g i‖ ≤ C' := by\n  rw [show (∃ C, ∀ i, ‖g i‖ ≤ C) ↔ _ from (NormedSpace.equicontinuous_TFAE g).out 6 3]\n  refine (norm_withSeminorms 𝕜₂ F).banach_steinhaus (fun _ x ↦ ?_)\n  simpa [bddAbove_def, forall_mem_range] using h x",
+     "excerpt_sha256": "c9bb7ba802921265aa63d66130b38e5fadade45bb8d09240430d0bfea1fa30a6",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the uniform boundedness principle for families of continuous linear maps from a Banach space. It is the engine of the necessity of (ii). Mathlib does not prove the quadrature theorem."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [

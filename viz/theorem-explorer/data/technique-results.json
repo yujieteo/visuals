@@ -28064,6 +28064,1757 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-spectrum-nonempty-compact-resolvent",
+   "name": "Nonempty compact spectrum and resolvent bounds in a complex Banach algebra",
+   "aliases": [
+    "Resolvent identity and nonempty spectrum",
+    "Liouville argument for the spectrum"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.CV"
+   ],
+   "statement": "Let A be a complex Banach algebra with unit 1, with ‖1‖=1 and A≠{0}. Let a∈A. Put ρ(a)={λ∈ℂ : λ−a is invertible}, σ(a)=ℂ∖ρ(a) and R(λ)=(λ−a)⁻¹ for λ∈ρ(a). Then: (i) ρ(a) is open, and σ(a) is a compact subset of {|λ|≤‖a‖}. (ii) R(λ)−R(μ)=(μ−λ)R(λ)R(μ) for all λ,μ∈ρ(a). (iii) R is holomorphic on ρ(a), with R′(λ)=−R(λ)², and ‖R(λ)‖≤1/(|λ|−‖a‖) for |λ|>‖a‖. (iv) ‖R(λ)‖≥1/dist(λ,σ(a)) for every λ∈ρ(a), when σ(a)≠∅. (v) σ(a) is not empty.",
+   "hypotheses": [
+    "A is complete for a submultiplicative norm, so ‖xy‖≤‖x‖‖y‖.",
+    "The scalar field is ℂ. Part (v) is false over ℝ.",
+    "The unit has norm 1 and A has at least two elements, so 1≠0.",
+    "The algebra A need not be commutative."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q576478",
+     "reason": "Step 5 applies Liouville theorem to the scalar function φ(R(λ))."
+    },
+    {
+     "id": "wd:Q866116",
+     "reason": "Step 6 uses Hahn–Banach to conclude R(0)=0 from the vanishing of all functionals."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "resolvent set and spectrum",
+    "resolvent",
+    "Neumann series"
+   ],
+   "concept_prerequisites": [
+    "c:banach-algebra",
+    "c:spectrum-of-an-operator",
+    "c:norm"
+   ],
+   "definitions": [
+    {
+     "name": "resolvent set and spectrum",
+     "text": "ρ(a) is the set of λ∈ℂ such that λ·1−a has a two-sided inverse in A. The spectrum σ(a) is the complement of ρ(a)."
+    },
+    {
+     "name": "resolvent",
+     "text": "R(λ)=(λ−a)⁻¹ is the map λ↦(λ·1−a)⁻¹ defined on ρ(a), with values in A."
+    },
+    {
+     "name": "Neumann series",
+     "text": "If ‖x‖<1 then 1−x is invertible, with inverse ∑_{n≥0}xⁿ and ‖(1−x)⁻¹‖≤1/(1−‖x‖)."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L145-L158",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+    "declaration": "nonempty",
+    "lines": [
+     145,
+     158
+    ],
+    "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+    "excerpt": "/-- In a (nontrivial) complex Banach algebra, every element has nonempty spectrum. -/\nprotected theorem nonempty (a : A) : (spectrum ℂ a).Nonempty := by\n  /- Suppose `σ a = ∅`, then resolvent set is `ℂ`, any `(z • 1 - a)` is a unit, and `resolvent a`\n    is differentiable on `ℂ`. -/\n  by_contra! h\n  have H₀ : resolventSet ℂ a = Set.univ := by rwa [spectrum, Set.compl_empty_iff] at h\n  have H₁ : Differentiable ℂ fun z : ℂ => resolvent a z := fun z =>\n    hasDerivAt_resolvent_const_left (H₀.symm ▸ Set.mem_univ z : z ∈ resolventSet ℂ a)\n      |>.differentiableAt\n  /- Since `resolvent a` tends to zero at infinity, by Liouville's theorem `resolvent a = 0`,\n  which contradicts that `resolvent a z` is invertible. -/\n  have H₃ := H₁.apply_eq_of_tendsto_cocompact 0 <| by\n    simpa [Metric.cobounded_eq_cocompact] using resolvent_tendsto_cobounded a (𝕜 := ℂ)\n  exact not_isUnit_zero <| H₃ ▸ (isUnit_resolvent.mp <| H₀.symm ▸ Set.mem_univ 0)",
+    "excerpt_sha256": "4511e1ef3664a5ff9173cd6cd51e83a4addf31474e08fcd29769c6be21b19c03",
+    "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves that the spectrum of every element of a nonzero complex Banach algebra is nonempty. It is the statement of part (v)."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/Spectrum.lean#L163-L164",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.Spectrum",
+     "declaration": "isOpen_resolventSet",
+     "lines": [
+      163,
+      164
+     ],
+     "module_sha256": "d279ce0dd68eb5a0af6bdbaad138d36420ea15d25a3a26b0bdb1a3bdefb88cad",
+     "excerpt": "theorem isOpen_resolventSet (a : A) : IsOpen (ρ a) :=\n  Units.isOpen.preimage (by fun_prop)",
+     "excerpt_sha256": "0fc3ca39b9b357374dd3c4f94d3c7c2d934e53f46205fb58cbdaa31f284e7ab1",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the resolvent set is open, which is the first part of (i)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L64-L71",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+     "declaration": "hasFDerivAt_resolvent",
+     "lines": [
+      64,
+      71
+     ],
+     "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+     "excerpt": "theorem hasFDerivAt_resolvent {a : A} {k : 𝕜} (hk : k ∈ resolventSet 𝕜 a) :\n    HasFDerivAt (resolvent · k)\n      (((ContinuousLinearMap.mulLeftRight 𝕜 A) (resolvent a k)) (resolvent a k)) a := by\n  have H₁ : HasFDerivAt Ring.inverse _ (algebraMap 𝕜 A k - a) :=\n    hasFDerivAt_ringInverse (𝕜 := 𝕜) hk.unit\n  have H₂ : HasFDerivAt (fun a => algebraMap 𝕜 A k - a) (- .id 𝕜 A) a := by\n    simpa using! (hasFDerivAt_const _ a).sub (hasFDerivAt_id a)\n  simpa [resolvent_eq hk] using! H₁.comp a H₂",
+     "excerpt_sha256": "aafe35122ab666a0c0ea05e9cdb8b2dd0fa1ec74dec82bf28b88ca61e3d5b7f2",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the resolvent is differentiable on the resolvent set. It is the content of part (iii)."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Neumann series. Let ‖x‖<1. The partial sums of ∑xⁿ form a Cauchy sequence, because ‖xⁿ‖≤‖x‖ⁿ. So the series converges in A, since A is complete. Its sum s satisfies (1−x)s=s(1−x)=1, by telescoping. Also ‖s‖≤∑‖x‖ⁿ=1/(1−‖x‖).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Bound at infinity. Let |λ|>‖a‖. Write λ−a=λ(1−a/λ). Since ‖a/λ‖<1, step 1 shows that λ−a is invertible, and ‖R(λ)‖≤|λ|⁻¹/(1−‖a‖/|λ|)=1/(|λ|−‖a‖). So σ(a)⊂{|λ|≤‖a‖}. This proves the second part of (i) and the bound in (iii).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Openness, power series and the lower bound. Let λ₀∈ρ(a) and put r=1/‖R(λ₀)‖. Let |λ−λ₀|<r. Then λ−a=(λ₀−a)(1−x) with x=−(λ−λ₀)R(λ₀), and ‖x‖<1. By step 1, λ−a is invertible, and R(λ)=∑_{n≥0}(−1)ⁿ(λ−λ₀)ⁿR(λ₀)ⁿ⁺¹. So ρ(a) is open and σ(a) is closed. With step 2, σ(a) is compact. This also shows that the open disc of radius 1/‖R(λ₀)‖ around λ₀ lies in ρ(a). So dist(λ₀,σ(a))≥1/‖R(λ₀)‖, which is (iv).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Resolvent identity. For λ,μ∈ρ(a), R(λ)−R(μ)=R(λ)[(μ−a)−(λ−a)]R(μ)=(μ−λ)R(λ)R(μ). This is (ii). The power series of step 3 has first coefficient R(λ₀) and linear coefficient −R(λ₀)². So R is holomorphic on ρ(a) and R′(λ₀)=−R(λ₀)². This is (iii).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "No empty spectrum. Suppose σ(a)=∅. Let φ be a bounded linear functional on A and put f(λ)=φ(R(λ)). By step 3, f is a convergent scalar power series near each point, so f is entire. By step 2, |f(λ)|≤‖φ‖/(|λ|−‖a‖) for |λ|>‖a‖, so f(λ)→0 at infinity. The function f is continuous on the compact disc |λ|≤‖a‖+1 and bounded by ‖φ‖ outside it. So f is bounded and entire. By Liouville, f is constant. The constant is the limit 0 at infinity, so f≡0.",
+      "uses": [
+       "wd:Q576478"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Contradiction. Step 5 gives φ(R(0))=0 for every bounded functional φ. By the Hahn–Banach theorem there is a functional φ with φ(y)=‖y‖ for each given y. So R(0)=0. But R(0)(−a)=1≠0, a contradiction. Hence σ(a)≠∅. This is (v).",
+      "uses": [
+       "wd:Q866116"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Resolvent bounds for a 2×2 matrix",
+    "goal": "Test parts (ii), (iii) and (iv) for a=[[1,2],[0,3]] in the algebra of 2×2 complex matrices with the operator 2-norm.",
+    "hypotheses": [
+     "The algebra is M₂(ℂ) with the spectral norm, so ‖1‖=1.",
+     "The matrix is a=[[1,2],[0,3]]. It is upper triangular, so σ(a)={1,3}.",
+     "Numbers come from a floating point computation in double precision."
+    ],
+    "why_theorem_applies": "The theorem gives an upper bound for large |λ| and a lower bound near σ(a). Both hold in the numbers.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The norm is ‖a‖=3.6502815. For λ=5 the bound of step 2 is 1/(5−3.6502815)=0.74090. The true value is ‖R(5)‖=0.57206, which is below the bound.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Lower bound (iv). At λ=0 and λ=4 the distance to σ(a) is 1, and ‖R(0)‖=‖R(4)‖=1.21676≥1. At λ=2 the distance is 1, and R(2)=[[1,−2],[0,−1]] has ‖R(2)‖=1+√2=2.41421≥1. At λ=6 the distance is 3, and ‖R(6)‖=0.36915≥1/3.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The lower bound is not sharp for a non-normal matrix. At λ=2 the norm of the resolvent is 2.41 times the value 1/dist. For a normal matrix the two numbers are equal.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Resolvent identity (ii). Take λ=5+i and μ=2−3i. The largest entry of R(λ)−R(μ)−(μ−λ)R(λ)R(μ) has absolute value 2.8·10⁻¹⁷, which is rounding error.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Derivative (iii). Here R(0)=−a⁻¹=[[−1,2/3],[0,−1/3]]. So −R(0)²=[[−1,8/9],[0,−1/9]]. The difference quotient (R(h)−R(0))/h at h=10⁻⁶ is [[−1.000001,0.888890],[0,−0.111111]], which agrees to 6 digits.",
+      "uses": []
+     }
+    ],
+    "result": "The matrix has σ(a)={1,3}, which is nonempty and compact. The resolvent obeys the identity, the derivative formula and both norm bounds.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Part (v) fails over ℝ. The rotation matrix [[0,−1],[1,0]] has no real eigenvalue and its real spectrum is empty.",
+    "The lower bound (iv) is only a bound. For non-normal elements the resolvent norm can be much larger than 1/dist(λ,σ(a)), as the example shows.",
+    "The proof of (v) uses completeness twice: for the Neumann series and, in Liouville, for the analytic structure of a Banach-valued function.",
+    "The theorem says nothing about the structure of σ(a). Every nonempty compact subset of ℂ occurs as a spectrum."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-operator-neumann-series",
+      "relation": "overlaps",
+      "reason": "That entry certifies a truncation error of the Neumann series. This entry uses the series only as a tool to prove openness and nonempty spectrum."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-jacobson-nonzero-spectrum-ab-ba",
+   "name": "Jacobson lemma: ab and ba have the same nonzero spectrum",
+   "aliases": [
+    "Jacobson lemma for the spectrum",
+    "Spectrum of ab versus ba"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.FA"
+   ],
+   "statement": "Let k be a field and let A be an associative k-algebra with unit. Let a,b∈A. (i) If 1−ab is invertible, then 1−ba is invertible, and (1−ba)⁻¹=1+b(1−ab)⁻¹a. (ii) For the spectrum σ(x)={λ∈k : λ−x is not invertible}, σ(ab)∖{0}=σ(ba)∖{0}. (iii) If A=M_n(k) acts on a vector space, then for λ≠0 the map x↦bx is an injective linear map from ker(λ−ab) into ker(λ−ba). So the two eigenspaces have equal dimension. (iv) The point 0 can lie in one spectrum and not in the other.",
+   "hypotheses": [
+    "The algebra A is associative with a unit. It need not be commutative.",
+    "Part (ii) holds for any base field k and does not use a norm or a topology.",
+    "Part (iii) needs A to act on vector spaces, as in the matrix case with a of size m×n and b of size n×m."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof is a direct two-line algebraic identity with no earlier result from the catalog, so there is no prerequisite entry.",
+   "concepts": [
+    "invertible element",
+    "spectrum over a field"
+   ],
+   "concept_prerequisites": [
+    "c:spectrum-of-an-operator",
+    "c:eigenvalue"
+   ],
+   "definitions": [
+    {
+     "name": "invertible element",
+     "text": "x∈A is invertible if some y∈A satisfies xy=yx=1."
+    },
+    {
+     "name": "spectrum over a field",
+     "text": "σ(x) is the set of λ∈k such that λ·1−x is not invertible in A."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Algebra/Spectrum/Basic.lean#L386-L391",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Algebra.Algebra.Spectrum.Basic",
+    "declaration": "nonzero_mul_comm",
+    "lines": [
+     386,
+     391
+    ],
+    "module_sha256": "bf74584b1491c142077461b3880767c461a3cb53687ab7f7354ca510e56a34bc",
+    "excerpt": "theorem nonzero_mul_comm (a b : A) : σ (a * b) \\ {0} = σ (b * a) \\ {0} := by\n  suffices h : ∀ x y : A, σ (x * y) \\ {0} ⊆ σ (y * x) \\ {0} from\n    Set.eq_of_subset_of_subset (h a b) (h b a)\n  rintro _ _ k ⟨k_mem, k_ne⟩\n  change ((Units.mk0 k k_ne) : 𝕜) ∈ _ at k_mem\n  exact ⟨unit_mem_mul_comm.mp k_mem, k_ne⟩",
+    "excerpt_sha256": "9e0aaac3707c4aef69cdaccf74f7bc5d22c353fba10eb97a550de7bf9e6a6d92",
+    "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves σ(ab)∖{0}=σ(ba)∖{0} for any unital algebra. It is part (ii) of the statement."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Algebra/Spectrum/Basic.lean#L247-L261",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Algebra.Spectrum.Basic",
+     "declaration": "unit_mem_mul_comm",
+     "lines": [
+      247,
+      261
+     ],
+     "module_sha256": "bf74584b1491c142077461b3880767c461a3cb53687ab7f7354ca510e56a34bc",
+     "excerpt": "theorem unit_mem_mul_comm {a b : A} {r : Rˣ} : ↑r ∈ σ (a * b) ↔ ↑r ∈ σ (b * a) := by\n  have h₁ : ∀ x y : A, IsUnit (1 - x * y) → IsUnit (1 - y * x) := by\n    refine fun x y h => ⟨⟨1 - y * x, 1 + y * h.unit.inv * x, ?_, ?_⟩, rfl⟩\n    · calc\n        (1 - y * x) * (1 + y * (IsUnit.unit h).inv * x) =\n            1 - y * x + y * ((1 - x * y) * h.unit.inv) * x := by noncomm_ring\n        _ = 1 := by simp only [Units.inv_eq_val_inv, IsUnit.mul_val_inv, mul_one, sub_add_cancel]\n    · calc\n        (1 + y * (IsUnit.unit h).inv * x) * (1 - y * x) =\n            1 - y * x + y * (h.unit.inv * (1 - x * y)) * x := by noncomm_ring\n        _ = 1 := by simp only [Units.inv_eq_val_inv, IsUnit.val_inv_mul, mul_one, sub_add_cancel]\n  have := Iff.intro (h₁ (r⁻¹ • a) b) (h₁ b (r⁻¹ • a))\n  rw [mul_smul_comm r⁻¹ b a] at this\n  simpa only [mem_iff, not_iff_not, Algebra.algebraMap_eq_smul_one, ← Units.smul_def,\n    IsUnit.smul_sub_iff_sub_inv_smul, smul_mul_assoc]",
+     "excerpt_sha256": "4c185fd3d2a36c9fc60789ae5bd604625277d9258bb933e08d851ed26a07a0fb",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the version of the same statement for a unit r. It is the core of the argument in step 3."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Right inverse. Put u=(1−ab)⁻¹ and v=1+bua. Then (1−ba)v=1+bua−ba−babua. The terms bua and −babua combine to b(1−ab)ua=ba. So (1−ba)v=1−ba+ba=1.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Left inverse. Compute v(1−ba)=1−ba+bua−buaba. The terms bua and −buaba combine to bu(1−ab)a=ba. So v(1−ba)=1. Together with step 1, v is the two-sided inverse of 1−ba. This proves (i).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Spectra. Let λ≠0. Write λ−ab=λ(1−(λ⁻¹a)b) and λ−ba=λ(1−b(λ⁻¹a)). By steps 1 and 2 with a replaced by λ⁻¹a, if one of 1−(λ⁻¹a)b and 1−b(λ⁻¹a) is invertible, so is the other. So λ−ab is invertible if and only if λ−ba is invertible. This proves (ii).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Eigenspaces. Let λ≠0 and ab x=λx. Then ba(bx)=b(abx)=λbx. If bx=0 then λx=abx=0, so x=0. Hence x↦bx is an injective map from ker(λ−ab) to ker(λ−ba). Exchange the roles of a and b to get an injective map the other way. So the two kernels have the same finite or infinite dimension. This proves (iii).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Zero can differ. Let S be the right shift on ℓ²(ℕ), S(x₀,x₁,…)=(0,x₀,x₁,…), and let S* be the left shift. Put a=S* and b=S. Then ab=S*S=1 is invertible, so 0∉σ(ab). But ba=SS* sends e₀ to 0, so it is not injective, and 0∈σ(ba). This proves (iv).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Matrices of different sizes with equal nonzero spectrum",
+    "goal": "Check Jacobson inverse formula and the shared nonzero eigenvalues for a 3×2 matrix a and a 2×3 matrix b, with exact arithmetic.",
+    "hypotheses": [
+     "a=[[1,2],[0,1],[3,1]] and b=[[1,0,2],[1,1,0]].",
+     "The products are ab of size 3×3 and ba of size 2×2.",
+     "To apply part (i), scale a by t=1/10. Then 1−t·ab is invertible because its determinant is 17/100."
+    ],
+    "why_theorem_applies": "The theorem says that ab and ba share every nonzero eigenvalue and that the inverse formula holds. It says nothing about 0.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The products are ab=[[3,2,2],[1,1,0],[4,1,6]] and ba=[[7,4],[1,3]].",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The characteristic polynomials are x(x²−10x+17) for ab and x²−10x+17 for ba. The roots of the quadratic are 5±2√2=7.8284 and 2.1716, and they are the nonzero eigenvalues of both products.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Zero is an eigenvalue of ab only. A kernel vector is (−2,2,1). But det(ba)=17≠0, so 0 is not in σ(ba). This matches part (iv).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Inverse formula. Put a′=t·a with t=1/10. Then det(1−a′b)=17/100=det(1−ba′). The formula 1+b(1−a′b)⁻¹a′ gives [[70/17,40/17],[10/17,30/17]]. Its difference from (1−ba′)⁻¹ is the zero matrix in exact arithmetic.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Eigenspaces. For λ=5+2√2 both kernels ker(λ−ab) and ker(λ−ba) have dimension 1, as part (iii) predicts. The rank of both products is 2.",
+      "uses": []
+     }
+    ],
+    "result": "The nonzero spectra of ab and ba are both {5+2√2, 5−2√2}. The extra eigenvalue 0 occurs only for the 3×3 product.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The lemma says nothing about 0. The shift example shows that 0 can lie in exactly one of the two spectra.",
+    "Part (iii) compares eigenspaces of an eigenvalue. It does not compare generalized eigenspaces. The finite-size identity for characteristic polynomials needs a separate determinant argument that this entry does not give.",
+    "For rings without a unit the identity needs a quasi-inverse form, which this entry does not treat."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nl:28017",
+      "relation": "refines",
+      "reason": "The catalog record is Jacobson's lemma about units. This entry adds the inverse formula, the spectrum statement and the eigenspace comparison."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-polynomial-spectral-mapping-banach",
+   "name": "Spectral mapping theorem for polynomials in a complex Banach algebra",
+   "aliases": [
+    "Spectral mapping for polynomials",
+    "σ(p(a))=p(σ(a))"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.OA"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.OA"
+   ],
+   "statement": "Let A be a complex unital Banach algebra with ‖1‖=1 and A≠{0}. Let a∈A and let p be a polynomial with complex coefficients. Then σ(p(a))=p(σ(a)). Consequently the spectral radius satisfies r(p(a))=max{|p(λ)| : λ∈σ(a)}.",
+   "hypotheses": [
+    "The scalar field is ℂ. Over ℝ only one inclusion survives.",
+    "The algebra A is complete with ‖1‖=1 and has at least two elements.",
+    "The polynomial p may be constant. Then p(a)=c·1."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-spectrum-nonempty-compact-resolvent",
+     "reason": "The constant case needs σ(a) nonempty, which this earlier entry proves."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "spectral radius",
+    "polynomial calculus"
+   ],
+   "concept_prerequisites": [
+    "c:banach-algebra",
+    "c:spectrum-of-an-operator",
+    "c:polynomial"
+   ],
+   "definitions": [
+    {
+     "name": "spectral radius",
+     "text": "r(x)=max{|λ| : λ∈σ(x)}, which is finite since σ(x) is compact."
+    },
+    {
+     "name": "polynomial calculus",
+     "text": "p(a)=c₀·1+c₁a+…+c_ma^m for p(t)=c₀+c₁t+…+c_mt^m."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/IsAlgClosed/Spectrum.lean#L116-L123",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.FieldTheory.IsAlgClosed.Spectrum",
+    "declaration": "map_polynomial_aeval_of_nonempty",
+    "lines": [
+     116,
+     123
+    ],
+    "module_sha256": "793f45f5da3deb03bddc9fdd352cb5fe9863644ba647f192293b528d2c600485",
+    "excerpt": "/-- In this version of the spectral mapping theorem, we assume the spectrum\nis nonempty instead of assuming the degree of the polynomial is positive. -/\ntheorem map_polynomial_aeval_of_nonempty [IsAlgClosed 𝕜] (a : A) (p : 𝕜[X])\n    (hnon : (σ a).Nonempty) : σ (aeval a p) = (fun k => eval k p) '' σ a := by\n  nontriviality A\n  refine Or.elim (le_or_gt (degree p) 0) (fun h => ?_) (map_polynomial_aeval_of_degree_pos a p)\n  rw [eq_C_of_degree_le_zero h]\n  simp only [eval_C, aeval_C, scalar_eq, Set.Nonempty.image_const hnon]",
+    "excerpt_sha256": "eec3c88eaa345ec694e006b62ac4183c3cbd19a9378e36a13e687dcc7bb68601",
+    "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves σ(p(a))=p(σ(a)) over an algebraically closed field when σ(a) is nonempty. It is the statement of this entry for nonconstant and for constant p."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/GelfandFormula.lean#L174-L177",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.GelfandFormula",
+     "declaration": "map_polynomial_aeval",
+     "lines": [
+      174,
+      177
+     ],
+     "module_sha256": "80fdf47d172fdb710debe14ef36da2ead73f281583df3c5c9b25f713f128e405",
+     "excerpt": "/-- The **spectral mapping theorem** for polynomials in a Banach algebra over `ℂ`. -/\ntheorem map_polynomial_aeval (a : A) (p : ℂ[X]) :\n    spectrum ℂ (aeval a p) = (fun k => eval k p) '' spectrum ℂ a :=\n  map_polynomial_aeval_of_nonempty a p (spectrum.nonempty a)",
+     "excerpt_sha256": "0cd3d16b7a613f236c1c645fa188c293d9719d3dc4fd5f429d8d9e8d6f761aec",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the same equality for every element of a complex Banach algebra, with the nonempty hypothesis removed by the Gelfand theorem."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Factorization. Let p be nonconstant of degree m and let μ∈ℂ. Then p(t)−μ=c(t−α₁)…(t−α_m) with c≠0, and the α_i are exactly the numbers λ with p(λ)=μ. So p(a)−μ=c(a−α₁)…(a−α_m) in A. The factors commute, because they are polynomials in a.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Commuting products. Let x₁,…,x_m be pairwise commuting elements with an invertible product Π. Then Π⁻¹ commutes with each x_i, since Π does. So x_i has the inverse (∏_{j≠i}x_j)Π⁻¹. Conversely, a product of invertible commuting elements is invertible. So the product is invertible if and only if every factor is.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Nonconstant case. By steps 1 and 2, μ∈σ(p(a)) if and only if some α_i belongs to σ(a). That holds if and only if there is λ∈σ(a) with p(λ)=μ, which says μ∈p(σ(a)). So σ(p(a))=p(σ(a)).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Constant case. If p=c then σ(p(a))=σ(c·1)={c}, because c·1−μ is invertible for μ≠c and zero for μ=c. Also σ(a)≠∅, by the nonempty spectrum theorem. So p(σ(a))={c}.",
+      "uses": [
+       "nm:technique-spectrum-nonempty-compact-resolvent"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Spectral radius. The set σ(a) is compact and p is continuous. So |p| attains a maximum on σ(a). By the equality σ(p(a))=p(σ(a)), the largest modulus of a point of σ(p(a)) is max|p| on σ(a). This is r(p(a)).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A 3×3 matrix with a polynomial that merges two eigenvalues",
+    "goal": "Compute σ(p(M)) for M=[[2,1,0],[0,−1,1],[0,0,1]] and p(t)=t³−3t, and compare ‖p(M)^k‖^{1/k} with r(p(M)).",
+    "hypotheses": [
+     "The algebra is M₃(ℂ) with the spectral norm.",
+     "M is upper triangular, so σ(M)={2,−1,1}.",
+     "Exact arithmetic gives the matrix p(M). Norms come from double precision."
+    ],
+    "why_theorem_applies": "The theorem predicts the exact spectrum of p(M). It also predicts the limit of the norm sequence.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Evaluate p at the eigenvalues. p(2)=2, p(−1)=2 and p(1)=−2. So p(σ(M))={2,−2}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Direct computation gives p(M)=M³−3M=[[2,0,2],[0,2,−2],[0,0,−2]]. Its characteristic polynomial is (x−2)²(x+2). So σ(p(M))={2,−2}, which equals p(σ(M)). The eigenvalue 2 has algebraic multiplicity 2, because two eigenvalues of M merge.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Spectral radius. The theorem gives r(p(M))=max(|2|,|−2|)=2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Norm sequence. One finds p(M)²=4·I. So ‖p(M)^k‖=2^k for even k. For odd k, ‖p(M)^k‖=2^{k−1}‖p(M)‖ with ‖p(M)‖=√6+√2=3.8637033.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Then ‖p(M)^k‖^{1/k}=2·(1.9318517)^{1/k} for odd k. The values are 3.8637 for k=1, 2.2815 for k=5 and 2.0000 for k=80 (even). The sequence tends to 2=r(p(M)), as the Gelfand formula and the theorem require.",
+      "uses": []
+     }
+    ],
+    "result": "σ(p(M))={2,−2}=p(σ(M)) and r(p(M))=2, although ‖p(M)‖=3.8637. The norm is above the spectral radius because p(M) is not normal.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Over ℝ only p(σ(a))⊂σ(p(a)) holds in general. The rotation matrix [[0,−1],[1,0]] has empty real spectrum, but p(t)=t²+1 gives p(a)=0 with spectrum {0}.",
+    "The theorem concerns the set σ(p(a)) and not multiplicities. In the example two eigenvalues of M merge to one.",
+    "The theorem gives the spectral radius, not the norm. The norm of p(a) can be much larger than max|p| on σ(a) when a is not normal.",
+    "Only polynomials are treated. Rational and analytic functions need the holomorphic functional calculus."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:spectral-mapping-theorem",
+      "relation": "distinct from",
+      "reason": "That catalog record is the continuous functional calculus for normal elements of a C*-algebra. This entry treats polynomials in any complex Banach algebra."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-cstar-spectral-radius-equals-norm",
+   "name": "Spectral radius equals norm for normal elements of a C*-algebra",
+   "aliases": [
+    "Norm equals spectral radius for normal elements",
+    "C*-identity and spectral radius"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.OA",
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.OA",
+    "math.FA"
+   ],
+   "statement": "Let A be a unital C*-algebra, so A is a complex Banach algebra with an involution a↦a* and ‖a*a‖=‖a‖² for all a. Let a∈A be normal, that is a*a=aa*. Then ‖a^{2^k}‖=‖a‖^{2^k} for all k≥0, and the spectral radius satisfies r(a)=‖a‖. Consequently ‖p(a)‖=max{|p(λ)| : λ∈σ(a)} for every polynomial p, and ‖a‖=max{|λ| : λ∈σ(a)}.",
+   "hypotheses": [
+    "The C* identity ‖a*a‖=‖a‖² holds for every a∈A.",
+    "The element a is normal. Without normality the result fails.",
+    "The algebra is unital. The proof uses the spectrum of a only through the Gelfand formula."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:gelfand-s-formula",
+     "reason": "Step 4 uses the limit formula r(a)=lim‖aⁿ‖^{1/n}."
+    },
+    {
+     "id": "nm:technique-polynomial-spectral-mapping-banach",
+     "reason": "Step 5 uses σ(p(a))=p(σ(a)) to find the spectral radius of p(a)."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "C*-algebra",
+    "normal element"
+   ],
+   "concept_prerequisites": [
+    "c:c-star-algebra",
+    "c:banach-algebra",
+    "c:norm"
+   ],
+   "definitions": [
+    {
+     "name": "C*-algebra",
+     "text": "A complex Banach algebra with an antilinear involution a↦a*, with (ab)*=b*a*, such that ‖a*a‖=‖a‖²."
+    },
+    {
+     "name": "normal element",
+     "text": "An element a with a*a=aa*. Self-adjoint and unitary elements are normal."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/CStarAlgebra/Spectrum.lean#L124-L129",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.CStarAlgebra.Spectrum",
+    "declaration": "IsSelfAdjoint.toReal_spectralRadius_complex_eq_norm",
+    "lines": [
+     124,
+     129
+    ],
+    "module_sha256": "867be37a8b64cdc2568a43f886cd0f9e158b643e8b671475b6343f352de7413a",
+    "excerpt": "/-- In a C⋆-algebra, the spectral radius of a self-adjoint element is equal to its norm.\nSee `IsSelfAdjoint.toReal_spectralRadius_eq_norm` for a version involving\n`spectralRadius ℝ a`. -/\nlemma IsSelfAdjoint.toReal_spectralRadius_complex_eq_norm {a : A} (ha : IsSelfAdjoint a) :\n    (spectralRadius ℂ a).toReal = ‖a‖ := by\n  simp [ha.spectralRadius_eq_nnnorm]",
+    "excerpt_sha256": "4052ab411f535496dea33109a1c1f822cfde6a9f566d35b338e0d29bd82c3eaa",
+    "attribution": "/-\nCopyright (c) 2022 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves that the spectral radius of a self-adjoint element of a C*-algebra equals its norm. It is the doubling argument of step 1 in its final form."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/CStarAlgebra/Spectrum.lean#L149-L152",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.CStarAlgebra.Spectrum",
+     "declaration": "toReal_spectralRadius_star_mul_self_eq_norm_sq",
+     "lines": [
+      149,
+      152
+     ],
+     "module_sha256": "867be37a8b64cdc2568a43f886cd0f9e158b643e8b671475b6343f352de7413a",
+     "excerpt": "theorem toReal_spectralRadius_star_mul_self_eq_norm_sq (a : A) :\n    (spectralRadius ℂ (a⋆ * a)).toReal = ‖a‖ ^ 2 := by\n  rw [(IsSelfAdjoint.star_mul_self a).toReal_spectralRadius_complex_eq_norm,\n    CStarRing.norm_star_mul_self, ← pow_two]",
+     "excerpt_sha256": "d41f2f3045ae4f05894052316d9dbdd22c2a4beeeba9e91f1f0d26106dbc8e8e",
+     "attribution": "/-\nCopyright (c) 2022 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the spectral radius of a*a is the square of the norm of a. The Mathlib proof of the normal case in the same file, IsStarNormal.spectralRadius_eq_nnnorm, is the main claim of this entry."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Self-adjoint doubling. Let h=h*. Then ‖h²‖=‖h*h‖=‖h‖². The element h² is also self-adjoint. By induction, ‖h^{2^k}‖=‖h‖^{2^k} for all k≥0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Powers of a normal element. If a is normal, then (aⁿ)*aⁿ=(a*)ⁿaⁿ=(a*a)ⁿ, since a and a* commute. The element a*a is self-adjoint.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Norm of the 2^k-th power. Apply the C* identity to a^{2^k} and use step 2: ‖a^{2^k}‖²=‖(a^{2^k})*a^{2^k}‖=‖(a*a)^{2^k}‖. By step 1 with h=a*a, this equals ‖a*a‖^{2^k}=‖a‖^{2^{k+1}}. So ‖a^{2^k}‖=‖a‖^{2^k}.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Spectral radius. By the Gelfand formula, r(a)=lim ‖aⁿ‖^{1/n}. A subsequence has the same limit. Along n=2^k step 3 gives ‖a^{2^k}‖^{2^{−k}}=‖a‖. So r(a)=‖a‖.",
+      "uses": [
+       "nm:gelfand-s-formula"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Polynomials. If a is normal, so is p(a), because p(a) and its adjoint are polynomials in the commuting elements a and a*. By step 4, ‖p(a)‖=r(p(a)). By the polynomial spectral mapping theorem, r(p(a))=max|p| on σ(a).",
+      "uses": [
+       "nm:technique-polynomial-spectral-mapping-banach"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Norm and spectral radius of three 2×2 matrices",
+    "goal": "Compare ‖a‖, r(a) and the doubling identity for a rotation-scaling matrix N, a symmetric matrix H and a non-normal Jordan block J in M₂(ℂ) with the spectral norm, which is a C*-algebra.",
+    "hypotheses": [
+     "The matrices are N=[[3,−4],[4,3]], H=[[2,1],[1,2]] and J=[[1,1],[0,1]].",
+     "N and H are normal. J is not normal, since JJ*=[[2,1],[1,1]] differs from J*J.",
+     "Norms come from double precision computation."
+    ],
+    "why_theorem_applies": "For N and H the norm equals the spectral radius. For J the theorem does not apply, and the norm is above the spectral radius.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "N has eigenvalues 3±4i of modulus 5, so r(N)=5. The spectral norm is ‖N‖=5. Also N*N=25·I.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Doubling. N²=[[−7,−24],[24,−7]] and ‖N²‖=25=‖N‖². This is step 3 with k=1.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "H is symmetric with eigenvalues 3 and 1. So r(H)=3=‖H‖. The theorem also gives ‖H²−4H‖=max over {3,1} of |t²−4t|=3, since 3²−12=−3 and 1−4=−3.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Non-normal case. J has the single eigenvalue 1, so r(J)=1. But ‖J‖=(1+√5)/2=1.6180340. The doubling identity fails: ‖J²‖=2.4142136, while ‖J‖²=2.6180340.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The sequence ‖Jᵏ‖^{1/k} is 1.6180 for k=1, 1.3902 for k=5, 1.2602 for k=10, 1.0814 for k=50 and 1.0069 for k=1000. It tends to r(J)=1, as the Gelfand formula requires. But it is above 1 for each k.",
+      "uses": []
+     }
+    ],
+    "result": "For the normal matrices ‖N‖=r(N)=5 and ‖H‖=r(H)=3. For the Jordan block ‖J‖=1.618 exceeds r(J)=1.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Normality is needed. The Jordan block J has r(J)=1<1.618=‖J‖.",
+    "The proof of the norm formula for p(a) uses that p(a) is normal. For a non-normal a the norm of p(a) is not determined by σ(a).",
+    "The statement is for one normal element. For a family of normal elements that do not commute, no common formula follows.",
+    "The proof uses the Gelfand formula for the spectral radius, which is cited and not reproved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:spectral-mapping-theorem",
+      "relation": "distinct from",
+      "reason": "That record is the continuous functional calculus. This entry proves the norm identity that makes the functional calculus isometric."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-fredholm-alternative-compact-operators",
+   "name": "Fredholm alternative for compact operators on a Banach space",
+   "aliases": [
+    "Riesz–Schauder alternative",
+    "Fredholm alternative"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "statement": "Let X be a Banach space over ℂ and let T:X→X be a compact linear operator. Let μ≠0. Then exactly one of the following holds. (a) μ is an eigenvalue of T, so ker(μ−T)≠{0}. (b) μ−T is bijective, and its inverse is bounded, so μ lies in the resolvent set of T. In particular every nonzero point of σ(T) is an eigenvalue, and μ−T is injective if and only if it is surjective. Equivalently, for λ≠0 the equation u−λTu=f has a unique solution for every f∈X, or the homogeneous equation u=λTu has a nonzero solution.",
+   "hypotheses": [
+    "X is complete. The proof uses completeness to show that ranges are closed.",
+    "T is compact: T maps bounded sets to relatively compact sets.",
+    "The scalar μ is nonzero. For μ=0 the statement fails, since T can be injective without being surjective."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:riesz-s-theorem",
+     "reason": "Step 4 uses the Riesz lemma for a proper closed subspace, which belongs to this catalog record."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "compact operator",
+    "bounded below"
+   ],
+   "concept_prerequisites": [
+    "c:compact-operator",
+    "c:banach-space",
+    "c:eigenvalue"
+   ],
+   "definitions": [
+    {
+     "name": "compact operator",
+     "text": "A bounded linear map T such that T(B) has compact closure for the unit ball B. In a metric space this means every bounded sequence (xₙ) has a subsequence for which (Txₙ) converges."
+    },
+    {
+     "name": "bounded below",
+     "text": "An operator S is bounded below if there is c>0 with ‖Sx‖≥c‖x‖ for all x."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/FredholmAlternative.lean#L158-L215",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative",
+    "declaration": "hasEigenvalue_or_mem_resolventSet",
+    "lines": [
+     158,
+     215
+    ],
+    "module_sha256": "1c1f0fc8c90fa6caae4c9a4dd77dcd6a08352e7f5e280233c955a3f70f5c7db7",
+    "excerpt": "/--\nThe **Fredholm alternative** for compact operators: if `T` is a compact operator and `μ ≠ 0`,\nthen either `μ` is an eigenvalue of `T`, or `μ` is in the resolvent set of `T`.\nSee also `hasEigenvalue_iff_mem_spectrum`, which says that the nonzero eigenvalues of a compact\noperator are exactly the nonzero points in the spectrum of the operator.\n-/\ntheorem hasEigenvalue_or_mem_resolventSet (hT : IsCompactOperator T) (hμ : μ ≠ 0) :\n    HasEigenvalue (T : End 𝕜 X) μ ∨ μ ∈ resolventSet 𝕜 T := by\n  -- Suppose not, then `μ` is not an eigenvalue and is in the spectrum.\n  by_contra!\n  obtain ⟨h₁, h₂⟩ := this\n  -- Defining S := `T - μ • 1`, we deduce that S is antilipschitz and not surjective.\n  let S := T - μ • 1\n  obtain ⟨K, hK : AntilipschitzWith K S⟩ := antilipschitz_of_not_hasEigenvalue hT hμ h₁\n  replace h₂ : ¬ (S : X → X).Bijective := by\n    rw [spectrum.mem_resolventSet_iff, ← IsUnit.neg_iff,\n      ContinuousLinearMap.isUnit_iff_bijective] at h₂\n    convert h₂\n    ext x\n    simp [S]\n  replace h₂ : ¬ (S : X → X).Surjective := by grind [Function.Bijective, hK.injective]\n  -- Take a sequence of vectors `f n` in the range of `S ^ n` such that `‖f n‖` is in the\n  -- interval `[1, ‖c‖ + 1]` and such that `f n` is at least `1` away from any vector in the range\n  -- of `S ^ (n + 1)`.\n  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜\n  obtain ⟨f, hf_norm_lower, hf_norm_upper, hf_mem, hf_far⟩ := exists_seq h₂\n    (hK.isClosedEmbedding S.uniformContinuous) hc (R := ‖c‖ + 1) (by simp)\n  replace hf_mem {n m : ℕ} (h : m ≤ n) : f n ∈ ((S : End 𝕜 X) ^ m).range :=\n    (S : End 𝕜 X).iterateRange.monotone (by lia) (hf_mem _)\n  have hf_mem' {n m : ℕ} (h : m ≤ n) : S (f n) ∈ ((S : End 𝕜 X) ^ (m + 1)).range := by\n    rw [iterate_succ', LinearMap.range_comp]\n    exact ⟨f n, hf_mem h, rfl⟩\n  -- Then the points `T (f n)` are bounded away from each other, using the separation property\n  -- of the `f n` and the lower bound on their norms.\n  have hp : Pairwise fun x₁ x₂ ↦ ‖μ‖ ≤ ‖T (f x₁) - T (f x₂)‖ := by\n    have : Std.Symm fun x₁ x₂ ↦ ‖μ‖ ≤ ‖T (f x₁) - T (f x₂)‖ := by grind [symm_def, norm_sub_rev]\n    apply Pairwise.of_lt\n    intro m n hmn\n    let u : X := μ⁻¹ • (S (f n) - S (f m) + μ • f n)\n    have hu : μ • (f m - u) = T (f m) - T (f n) := by\n      rw [smul_sub, smul_inv_smul₀ hμ]\n      simp [S]\n      linear_combination (norm := module)\n    have : u ∈ ((S : End 𝕜 X) ^ (m + 1)).range := by\n      apply Submodule.smul_mem _ _ (Submodule.add_mem _ _ _)\n      · exact Submodule.sub_mem _ (hf_mem' hmn.le) (hf_mem' le_rfl)\n      · exact Submodule.smul_mem _ μ (hf_mem hmn)\n    grw [← hu, norm_smul, mul_comm, ← hf_far _ u this, one_mul]\n  -- However the `f n` are contained in a compact set, so their image under the compact operator `T`\n  -- must contain a Cauchy subsequence, which is a contradiction.\n  obtain ⟨K, hK, hK'⟩ := hT.image_closedBall_subset_compact (‖c‖ + 1)\n  obtain ⟨y, hyK, ψ, hψ, hψy⟩ := hK.tendsto_subseq (fun n ↦ hK' ⟨f n, by simp [*], rfl⟩)\n  replace hψy := hψy.cauchySeq\n  rw [Metric.cauchySeq_iff'] at hψy\n  obtain ⟨N, hN⟩ := hψy ‖μ‖ (by positivity)\n  have : ‖T (f (ψ (N + 1))) - T (f (ψ N))‖ < ‖μ‖ := by simpa [dist_eq_norm_sub] using hN (N + 1)\n  refine this.not_ge (hp ?_)\n  simp [hψ.injective.eq_iff]",
+    "excerpt_sha256": "5c2fd8b86f8f35d29bac47abe770c163aae98a8341699fec91120962535e90cb",
+    "attribution": "/-\nCopyright (c) 2026 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves that a nonzero μ is an eigenvalue of a compact operator on a Banach space or lies in its resolvent set. It is the statement of this entry."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/FredholmAlternative.lean#L217-L227",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative",
+     "declaration": "hasEigenvalue_iff_mem_spectrum",
+     "lines": [
+      217,
+      227
+     ],
+     "module_sha256": "1c1f0fc8c90fa6caae4c9a4dd77dcd6a08352e7f5e280233c955a3f70f5c7db7",
+     "excerpt": "/--\nIf `T` is a compact operator on a Banach space, then the nonzero eigenvalues of `T` are exactly\nthe nonzero points in the spectrum of `T`. This is a consequence of the Fredholm alternative for\ncompact operators. -/\ntheorem hasEigenvalue_iff_mem_spectrum (hT : IsCompactOperator T) (hμ : μ ≠ 0) :\n    HasEigenvalue (T : End 𝕜 X) μ ↔ μ ∈ spectrum 𝕜 T := by\n  constructor\n  · intro hμ'\n    rw [ContinuousLinearMap.spectrum_eq]\n    exact hμ'.mem_spectrum\n  · exact (hasEigenvalue_or_mem_resolventSet hT hμ).resolve_right",
+     "excerpt_sha256": "20ba787a81c09f6c4fd9fea8469b2f09d17a1790a642f5635388828963f0aaa2",
+     "attribution": "/-\nCopyright (c) 2026 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the nonzero points of the spectrum of a compact operator are exactly its nonzero eigenvalues."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Set S=μ−T and assume that μ is not an eigenvalue, so S is injective. We show S is bijective with a bounded inverse. The other cases then give (a), and (a) and (b) exclude each other, because (a) says S is not injective.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "S is bounded below. Suppose not. Then there are xₙ with ‖xₙ‖=1 and Sxₙ→0. By compactness, a subsequence satisfies Txₙₖ→y. So μxₙₖ=Sxₙₖ+Txₙₖ→y, and xₙₖ→x:=y/μ with ‖x‖=1. By continuity Sx=lim Sxₙₖ=0. This contradicts injectivity.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Ranges are closed. Each power Sⁿ is injective and bounded below, as a composition of such maps. The range of a bounded below operator on a complete space is closed. Let (Sⁿxₖ) converge. Then (xₖ) is Cauchy, so xₖ→x, and the limit is Sⁿx. So Vₙ:=Sⁿ(X) is a closed subspace, and Vₙ₊₁⊂Vₙ.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Surjectivity. Suppose V₁≠X. Since Sⁿ is injective, Vₙ₊₁=Sⁿ(V₁)≠Sⁿ(X)=Vₙ. So the chain is strictly decreasing and consists of closed subspaces. By the Riesz lemma, there are yₙ∈Vₙ with ‖yₙ‖=1 and dist(yₙ,Vₙ₊₁)≥1/2.",
+      "uses": [
+       "nm:riesz-s-theorem"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "No convergent subsequence. Let m>n. Then Tyₙ−Tyₘ=μ(yₙ−z) with z=yₘ+(Syₙ−Syₘ)/μ. The vector yₘ lies in Vₘ⊂Vₙ₊₁. The vectors Syₙ and Syₘ lie in Vₙ₊₁ and Vₘ₊₁⊂Vₙ₊₁. So z∈Vₙ₊₁ and ‖Tyₙ−Tyₘ‖≥|μ|/2. So (Tyₙ) has no Cauchy subsequence. This contradicts the compactness of T for the bounded sequence (yₙ).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Conclusion. S is injective and surjective, so S⁻¹ exists. By step 2, ‖S⁻¹y‖≤‖y‖/c, so S⁻¹ is bounded. So μ is in the resolvent set. For the integral equation form, divide by μ=1/λ.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Integral equation with the kernel xy on [0,1]",
+    "goal": "Solve u(x)−λ∫₀¹xy u(y)dy=f(x) for several λ and f, and see the two cases of the alternative.",
+    "hypotheses": [
+     "The operator (Tu)(x)=x∫₀¹y u(y)dy has rank one on L²(0,1), so it is compact.",
+     "Its only nonzero eigenvalue is 1/3. The eigenfunction is x, because ∫₀¹y·y dy=1/3. So λ=3 is the critical value.",
+     "All integrals are exact."
+    ],
+    "why_theorem_applies": "For λ≠3 the equation has a unique solution for every f. For λ=3 it has either no solution or a line of solutions.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Reduce to a scalar. Put c=∫₀¹y u(y)dy. Then u=f+λcx, and c=∫₀¹yf dy+λc/3. So c(1−λ/3)=∫₀¹yf dy.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Case λ=1, f=1. Here ∫yf=1/2, so c=3/4 and u=1+3x/4. Check: Tu=x∫₀¹y(1+3y/4)dy=x(1/2+1/4)=3x/4. So u−Tu=1.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Case λ=2, f=1. Then c=(1/2)/(1−2/3)=3/2 and u=1+3x. Check: 2Tu=2x(1/2+1)=3x, so u−2Tu=1. The solution is unique, because the homogeneous equation u=2Tu has only u=0.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Case λ=3, f=1. The equation becomes c·0=1/2, which has no solution. So (a) holds and the equation is not solvable for this f.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Case λ=3, f=1−3x/2. Now ∫₀¹yf dy=1/2−(3/2)(1/3)=0, and every u=f+tx solves the equation. Check: u−3Tu=f+tx−3x(0+t/3)=f. This is a line of solutions. It is the kernel direction x added to one solution.",
+      "uses": []
+     }
+    ],
+    "result": "The integral equation is uniquely solvable for λ≠3. At the eigenvalue λ=3 it has no solution for f=1 and a one-parameter family for f=1−3x/2.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The case μ=0 is excluded. A compact operator on an infinite dimensional space is never surjective, and 0 is always in the spectrum.",
+    "Compactness cannot be dropped. The right shift on ℓ² is injective but not surjective.",
+    "The proof does not show that the eigenspace ker(μ−T) is finite dimensional, and it does not prove that the range is the annihilator of the adjoint kernel. These are further parts of the Riesz–Schauder theory.",
+    "The example uses a rank-one kernel, where the alternative reduces to one scalar equation."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-compact-operators-norm-closed",
+      "relation": "distinct from",
+      "reason": "That entry shows that norm limits of compact operators are compact. This entry studies the equation (μ−T)u=f for one compact operator."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-compact-operators-norm-closed",
+   "name": "Norm limits of compact operators are compact",
+   "aliases": [
+    "Compact operators form a closed ideal",
+    "Approximation of compact operators by finite rank operators"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.FA"
+   ],
+   "statement": "Let X be a normed space and let Y be a Banach space. Let Tₙ:X→Y be compact linear operators and let T:X→Y be a bounded linear operator with ‖Tₙ−T‖→0. Then T is compact. In particular, the set K(X,Y) of compact operators is a closed subspace of B(X,Y) in the operator norm, and every operator that is a norm limit of finite rank operators is compact. Strong convergence is not enough.",
+   "hypotheses": [
+    "Y is complete. Completeness is used to pass from total boundedness to relative compactness.",
+    "Convergence is in the operator norm. Strong convergence Tₙx→Tx for each x does not suffice.",
+    "The domain X can be any normed space."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof is a direct three-epsilon argument from the definition of compactness, so no earlier catalog entry is a prerequisite.",
+   "concepts": [
+    "totally bounded set",
+    "finite rank operator"
+   ],
+   "concept_prerequisites": [
+    "c:compact-operator",
+    "c:banach-space",
+    "c:norm"
+   ],
+   "definitions": [
+    {
+     "name": "totally bounded set",
+     "text": "A set K is totally bounded if for each ε>0 it is covered by finitely many balls of radius ε. In a complete space a set is relatively compact if and only if it is totally bounded."
+    },
+    {
+     "name": "finite rank operator",
+     "text": "A bounded operator whose range is finite dimensional. Every bounded finite rank operator is compact."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/Compact/Basic.lean#L414-L450",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Normed.Operator.Compact.Basic",
+    "declaration": "isClosed_setOfPred_isCompactOperator",
+    "lines": [
+     414,
+     450
+    ],
+    "module_sha256": "d2b83f36e032c863672b9b04afa0d435fee3c7b7ad761331dd03f6098736ff1e",
+    "excerpt": "/-- The set of compact operators from a normed space to a complete topological vector space is\nclosed. -/\ntheorem isClosed_setOfPred_isCompactOperator {𝕜₁ 𝕜₂ : Type*} [NontriviallyNormedField 𝕜₁]\n    [NormedField 𝕜₂] {σ₁₂ : 𝕜₁ →+* 𝕜₂} {M₁ M₂ : Type*} [SeminormedAddCommGroup M₁]\n    [AddCommGroup M₂] [NormedSpace 𝕜₁ M₁] [Module 𝕜₂ M₂] [UniformSpace M₂] [IsUniformAddGroup M₂]\n    [ContinuousConstSMul 𝕜₂ M₂] [T2Space M₂] [CompleteSpace M₂] :\n    IsClosed { f : M₁ →SL[σ₁₂] M₂ | IsCompactOperator f } := by\n  refine isClosed_of_closure_subset ?_\n  rintro u hu\n  rw [mem_closure_iff_nhds_zero] at hu\n  suffices TotallyBounded (u '' Metric.closedBall 0 1) by\n    change IsCompactOperator (u : M₁ →ₛₗ[σ₁₂] M₂)\n    rw [isCompactOperator_iff_isCompact_closure_image_closedBall (u : M₁ →ₛₗ[σ₁₂] M₂) zero_lt_one]\n    exact this.closure.isCompact_of_isClosed isClosed_closure\n  rw [totallyBounded_iff_subset_finite_iUnion_nhds_zero]\n  intro U hU\n  rcases exists_nhds_zero_half hU with ⟨V, hV, hVU⟩\n  let SV : Set M₁ × Set M₂ := ⟨closedBall 0 1, -V⟩\n  rcases hu { f | ∀ x ∈ SV.1, f x ∈ SV.2 }\n      (ContinuousLinearMap.hasBasis_nhds_zero.mem_of_mem\n        ⟨NormedSpace.isVonNBounded_closedBall _ _ _, neg_mem_nhds_zero M₂ hV⟩) with\n    ⟨v, hv, huv⟩\n  rcases totallyBounded_iff_subset_finite_iUnion_nhds_zero.mp\n      (hv.isCompact_closure_image_closedBall 1).totallyBounded V hV with\n    ⟨T, hT, hTv⟩\n  have hTv : v '' closedBall 0 1 ⊆ _ := subset_closure.trans hTv\n  refine ⟨T, hT, ?_⟩\n  rw [image_subset_iff, preimage_iUnion₂] at hTv ⊢\n  intro x hx\n  specialize hTv hx\n  rw [mem_iUnion₂] at hTv ⊢\n  rcases hTv with ⟨t, ht, htx⟩\n  refine ⟨t, ht, ?_⟩\n  rw [mem_preimage, mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub] at htx ⊢\n  convert hVU _ htx _ (huv x hx) using 1\n  rw [sub_apply]\n  abel",
+    "excerpt_sha256": "d0fe7d1f2e71a9bc7fa8cd65ef8404300157d622d75388a17879b57e94aaf4b4",
+    "attribution": "/-\nCopyright (c) 2022 Anatole Dedecker. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anatole Dedecker\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves that the set of compact operators is closed for the operator norm. It is the statement of this entry."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Criterion. Let B be the closed unit ball of X. An operator T is compact if T(B) is relatively compact. Since Y is complete, this holds if and only if T(B) is totally bounded.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Choice of n. Let ε>0. Pick n with ‖T−Tₙ‖<ε/3. The set Tₙ(B) is totally bounded, because Tₙ is compact.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Finite net. Choose x₁,…,x_N∈B such that the balls of radius ε/3 around Tₙx₁,…,Tₙx_N cover Tₙ(B). This is possible by the total boundedness of Tₙ(B), since each ball can be centered at a point of Tₙ(B).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Estimate. Let x∈B. Pick i with ‖Tₙx−Tₙxᵢ‖<ε/3. Then ‖Tx−Txᵢ‖≤‖Tx−Tₙx‖+‖Tₙx−Tₙxᵢ‖+‖Tₙxᵢ−Txᵢ‖<ε/3+ε/3+ε/3=ε. So the balls of radius ε around Tx₁,…,Tx_N cover T(B).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Conclusion. Every ε gives a finite ε-net of T(B), so T(B) is totally bounded and T is compact by step 1. For the closed subspace statement, note that K(X,Y) is a linear subspace, since sums and scalar multiples of compact operators are compact.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Strong limits. Let P_N be the orthogonal projection of ℓ² onto span(e₁,…,e_N). Each P_N has finite rank, and P_Nx→x for every x. But the limit is the identity, which is not compact on ℓ², because the sequence (eₖ) has no convergent image subsequence. So norm convergence cannot be replaced by strong convergence.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Weighted shift on ℓ² as a norm limit of finite rank operators",
+    "goal": "Show that the weighted shift W:eₖ↦e_{k+1}/(k+1) on ℓ²(ℕ) is compact by approximating it with finite rank truncations, and compute the error exactly.",
+    "hypotheses": [
+     "Index k runs over k≥1 and (eₖ) is the standard orthonormal basis of ℓ².",
+     "Wₙ is W restricted to span(e₁,…,eₙ), that is Wₙeₖ=Weₖ for k≤n and Wₙeₖ=0 for k>n.",
+     "Norms of finite sections are computed numerically for size 400."
+    ],
+    "why_theorem_applies": "The truncation error is exactly 1/(n+2), which tends to 0. By the theorem W is compact.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "(W−Wₙ) sends eₖ to e_{k+1}/(k+1) for k>n and sends the other basis vectors to 0. The images for different k are orthogonal. So ‖(W−Wₙ)x‖²=∑_{k>n}|xₖ|²/(k+1)² ≤ (n+2)⁻²‖x‖². Taking x=e_{n+1} gives equality.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "So ‖W−Wₙ‖=1/(n+2). The numerical norm of the finite section confirms this: 0.083333 for n=10, 0.019231 for n=50 and 0.0099010 for n=99, equal to 1/12, 1/52 and 1/101.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Each Wₙ has rank n, so it is compact. By the theorem, W is compact. To get an error below 0.01 one needs n≥99.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Contrast with the projections. ‖I−P_N‖=1 for all N, so P_N does not converge to I in norm, and I is not compact. This agrees with the theorem.",
+      "uses": []
+     }
+    ],
+    "result": "The weighted shift W is compact and ‖W−Wₙ‖=1/(n+2). The identity on ℓ² is a strong limit of finite rank operators but is not compact.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Completeness of Y is needed. Without it a totally bounded image need not have compact closure in Y.",
+    "The result concerns operator norm limits only. Strong or weak limits of compact operators can fail to be compact.",
+    "The converse is false in general Banach spaces. A compact operator need not be a norm limit of finite rank operators. It is true in Hilbert spaces.",
+    "The theorem does not give a rate. The rate depends on the operator and is computed case by case."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-fourier-derivative-multiplier-decay",
+   "name": "Fourier transform of a derivative and the decay of the transform",
+   "aliases": [
+    "Differentiation and decay under the Fourier transform",
+    "Smoothness and decay duality"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.FA"
+   ],
+   "statement": "For f∈L¹(ℝ) put f̂(ξ)=∫f(x)e^{−2πixξ}dx. (A) Let m≥1 and let f∈Cᵐ(ℝ) with f,f′,…,f^{(m)} all in L¹. Then (f^{(j)})^(ξ)=(2πiξ)ʲf̂(ξ) for 0≤j≤m. So |f̂(ξ)|≤‖f^{(m)}‖₁/(2π|ξ|)ᵐ for ξ≠0, and |ξ|ᵐf̂(ξ)→0 as |ξ|→∞. (B) Let m≥0 and let xʲf(x)∈L¹ for 0≤j≤m. Then f̂∈Cᵐ(ℝ) and f̂^{(j)}(ξ)=∫(−2πix)ʲf(x)e^{−2πixξ}dx. So smoothness of f̂ corresponds to decay of f, and decay of f̂ corresponds to smoothness of f.",
+   "hypotheses": [
+    "In (A) the derivatives are classical and the functions f^{(j)} are continuous and integrable.",
+    "In (B) the functions xʲf are integrable, not only f.",
+    "The convention of the Fourier transform has the factor 2π in the exponent."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:riemann-lebesgue-lemma",
+     "reason": "Step 3 uses the Riemann–Lebesgue lemma to turn the bound into little-o decay."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Fourier transform",
+    "little-o decay"
+   ],
+   "concept_prerequisites": [
+    "c:fourier-transform",
+    "c:derivative",
+    "c:lebesgue-integral"
+   ],
+   "definitions": [
+    {
+     "name": "Fourier transform",
+     "text": "f̂(ξ)=∫_ℝ f(x)e^{−2πixξ}dx for f∈L¹(ℝ). With this convention e^{−πx²} is its own transform."
+    },
+    {
+     "name": "little-o decay",
+     "text": "|ξ|ᵐf̂(ξ)→0 means that f̂ decays faster than every constant multiple of |ξ|⁻ᵐ."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/FourierTransformDeriv.lean#L253-L280",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Fourier.FourierTransformDeriv",
+    "declaration": "fourierIntegral_fderiv",
+    "lines": [
+     253,
+     280
+    ],
+    "module_sha256": "86c581a6926dddf6b540195217e54648bf54aaace698b9d2da9967f517c11baf",
+    "excerpt": "/-- The Fourier integral of the derivative of a function is obtained by multiplying the Fourier\nintegral of the original function by `-L w v`. -/\ntheorem fourierIntegral_fderiv [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]\n    {μ : Measure V} [Measure.IsAddHaarMeasure μ]\n    (hf : Integrable f μ) (h'f : Differentiable ℝ f) (hf' : Integrable (fderiv ℝ f) μ) :\n    fourierIntegral 𝐞 μ L.toLinearMap₁₂ (fderiv ℝ f)\n      = fourierSMulRight (-L.flip) (fourierIntegral 𝐞 μ L.toLinearMap₁₂ f) := by\n  ext w y\n  let g (v : V) : ℂ := 𝐞 (-L v w)\n  /- First rewrite things in a simplified form, without any real change. -/\n  suffices ∫ x, g x • fderiv ℝ f x y ∂μ = ∫ x, (2 * ↑π * I * L y w * g x) • f x ∂μ by\n    rw [fourierIntegral_continuousLinearMap_apply' hf']\n    simpa only [fourierIntegral, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,\n      fourierSMulRight_apply, neg_apply, ContinuousLinearMap.flip_apply, ← integral_smul, neg_smul,\n      smul_neg, ← smul_smul, coe_smul, neg_neg]\n  -- Key step: integrate by parts with respect to `y` to switch the derivative from `f` to `g`.\n  have A x : fderiv ℝ g x y = - 2 * ↑π * I * L y w * g x :=\n    fderiv_fourierChar_neg_bilinear_left_apply _ _ _ _\n  rw [integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable, ← integral_neg]\n  · simp only [A, neg_mul, neg_smul, neg_neg]\n  · have : Integrable (fun x ↦ (-(2 * ↑π * I * ↑((L y) w)) • ((g x : ℂ) • f x))) μ :=\n      ((fourierIntegral_convergent_iff' _ _).2 hf).smul _\n    convert! this using 2 with x\n    simp only [A, neg_mul, neg_smul, smul_smul]\n  · exact (fourierIntegral_convergent_iff' _ _).2 (hf'.apply_continuousLinearMap _)\n  · exact (fourierIntegral_convergent_iff' _ _).2 hf\n  · exact fun _ _ ↦ (differentiable_fourierChar_neg_bilinear_left _ _).differentiableAt\n  · exact fun _ _ ↦ h'f.differentiableAt",
+    "excerpt_sha256": "c4bca2f4c7c5a024b005efeff417f73cbde0969d9933f9792fe3cf3f4fa54be6",
+    "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex Kontorovich, David Loeffler, Heather Macbeth, Sébastien Gouëzel\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves that the Fourier transform of the derivative is the multiplier 2πi·ξ times the transform, for a differentiable integrable function with integrable derivative. It is part (A) for j=1."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/FourierTransformDeriv.lean#L209-L237",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.FourierTransformDeriv",
+     "declaration": "hasFDerivAt_fourierIntegral",
+     "lines": [
+      209,
+      237
+     ],
+     "module_sha256": "86c581a6926dddf6b540195217e54648bf54aaace698b9d2da9967f517c11baf",
+     "excerpt": "/-- Main theorem of this section: if both `f` and `x ↦ ‖x‖ * ‖f x‖` are integrable, then the\nFourier transform of `f` has a Fréchet derivative (everywhere in its domain) and its derivative is\nthe Fourier transform of `smulRight L f`. -/\ntheorem hasFDerivAt_fourierIntegral\n    [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V] {μ : Measure V}\n    (hf : Integrable f μ) (hf' : Integrable (fun v : V ↦ ‖v‖ * ‖f v‖) μ) (w : W) :\n    HasFDerivAt (fourierIntegral 𝐞 μ L.toLinearMap₁₂ f)\n      (fourierIntegral 𝐞 μ L.toLinearMap₁₂ (fourierSMulRight L f) w) w := by\n  let F : W → V → E := fun w' v ↦ 𝐞 (-L v w') • f v\n  let F' : W → V → W →L[ℝ] E := fun w' v ↦ 𝐞 (-L v w') • fourierSMulRight L f v\n  let B : V → ℝ := fun v ↦ 2 * π * ‖L‖ * ‖v‖ * ‖f v‖\n  have h0 (w' : W) : Integrable (F w') μ :=\n    (fourierIntegral_convergent_iff continuous_fourierChar\n      (by apply L.continuous₂ : Continuous (fun p : V × W ↦ L.toLinearMap₁₂ p.1 p.2)) w').2 hf\n  have h1 : ∀ᶠ w' in 𝓝 w, AEStronglyMeasurable (F w') μ :=\n    Eventually.of_forall (fun w' ↦ (h0 w').aestronglyMeasurable)\n  have h3 : AEStronglyMeasurable (F' w) μ := by\n    refine .fun_smul ?_ hf.1.fourierSMulRight\n    refine (continuous_fourierChar.comp ?_).aestronglyMeasurable\n    fun_prop\n  have h4 : (∀ᵐ v ∂μ, ∀ (w' : W), w' ∈ Metric.ball w 1 → ‖F' w' v‖ ≤ B v) := by\n    filter_upwards with v w' _\n    rw [Circle.norm_smul _ (fourierSMulRight L f v)]\n    exact norm_fourierSMulRight_le L f v\n  have h5 : Integrable B μ := by simpa only [← mul_assoc] using hf'.const_mul (2 * π * ‖L‖)\n  have h6 : ∀ᵐ v ∂μ, ∀ w', w' ∈ Metric.ball w 1 → HasFDerivAt (fun x ↦ F x v) (F' w' v) w' :=\n    ae_of_all _ (fun v w' _ ↦ hasFDerivAt_fourierChar_smul L f v w')\n  exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds _ one_pos) h1 (h0 w)\n    h3 h4 h5 h6",
+     "excerpt_sha256": "ed29f49c850e7a13d44e8db9d607c85459657214b1bb3ae7f13a43a3e8b9ab78",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex Kontorovich, David Loeffler, Heather Macbeth, Sébastien Gouëzel\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves that the Fourier transform of f is differentiable when f and x·f are integrable. It is part (B) for j=1."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Boundary values. Let g∈C¹ with g,g′∈L¹. Then g(x)=g(0)+∫₀ˣg′ has limits at ±∞, because g′ is integrable. Since g is integrable, both limits are 0. Apply this to g=f^{(j)} for j<m: f^{(j)}(x)→0 as |x|→∞.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Integration by parts. For j<m and R>0, ∫_{−R}^{R}f^{(j+1)}(x)e^{−2πixξ}dx=[f^{(j)}(x)e^{−2πixξ}]_{−R}^{R}+2πiξ∫_{−R}^{R}f^{(j)}(x)e^{−2πixξ}dx. Let R→∞. The boundary term tends to 0 by step 1. So (f^{(j+1)})^(ξ)=2πiξ(f^{(j)})^(ξ). By induction, (f^{(j)})^(ξ)=(2πiξ)ʲf̂(ξ).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Decay. By step 2, |2πξ|ᵐ|f̂(ξ)|=|(f^{(m)})^(ξ)|≤‖f^{(m)}‖₁. This is the bound in (A). Since f^{(m)}∈L¹, the Riemann–Lebesgue lemma gives (f^{(m)})^(ξ)→0. So |2πξ|ᵐ|f̂(ξ)|→0.",
+      "uses": [
+       "nm:riemann-lebesgue-lemma"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Differentiation under the integral, one step. Let xf∈L¹. For h≠0, (f̂(ξ+h)−f̂(ξ))/h=∫f(x)e^{−2πixξ}(e^{−2πixh}−1)/h dx. The integrand tends to −2πix f(x)e^{−2πixξ} pointwise. Also |e^{−2πixh}−1|≤2π|x||h|, so the integrand is bounded by 2π|x||f(x)|, which is integrable. By dominated convergence, f̂′(ξ)=∫(−2πix)f(x)e^{−2πixξ}dx.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Induction for (B). The function (−2πix)ʲf is integrable for j≤m. Apply step 4 to it repeatedly. This gives f̂^{(j)} for j≤m. Each f̂^{(j)} is continuous, as a Fourier transform of an L¹ function, again by dominated convergence. So f̂∈Cᵐ.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Gaussian decay bounds against the exact transform",
+    "goal": "Compare |f̂(ξ)| with the bounds of part (A) for f(x)=e^{−πx²}, which has f̂=f.",
+    "hypotheses": [
+     "For f(x)=e^{−πx²} one has f′(x)=−2πxf(x) and f″(x)=(4π²x²−2π)f(x).",
+     "The integrals ‖f′‖₁ and ‖f″‖₁ are exact, and decimals come from 30 digit arithmetic.",
+     "The bound for m=1 is ‖f′‖₁/(2π|ξ|) and the bound for m=2 is ‖f″‖₁/(4π²ξ²)."
+    ],
+    "why_theorem_applies": "The bounds hold at every test point, and the true transform decays much faster than either bound.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "‖f′‖₁=2f(0)=2, because f′ has one sign change at 0 and f vanishes at infinity.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "‖f″‖₁=4|f′(x₀)| with x₀=1/√(2π), the point where f″ changes sign. This equals 4√(2π)e^{−1/2}=6.0813876.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "At ξ=1 the true value is f̂(1)=e^{−π}=0.0432139. The m=1 bound is 0.318310 and the m=2 bound is 0.154043.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "At ξ=0.5 the values are 0.455938 (true), 0.636620 (m=1) and 0.616173 (m=2). At ξ=2 they are 3.4873·10⁻⁶ (true), 0.159155 (m=1) and 0.038511 (m=2). At ξ=3 they are 5.2555·10⁻¹³ (true), 0.106103 (m=1) and 0.017116 (m=2).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "All bounds hold. The higher m gives the faster decay of the bound for large ξ, but the true decay is Gaussian. A smooth function in the class of part (B) gives the same speed on the other side: f has all moments, so f̂ is C^∞.",
+      "uses": []
+     }
+    ],
+    "result": "The bound |f̂(ξ)|≤‖f″‖₁/(4π²ξ²) holds at ξ=0.5, 1, 2 and 3. The true values fall from 0.456 to 5.3·10⁻¹³, far below the polynomial bound.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Part (A) needs f^{(j)}∈L¹ for every j≤m. Integrability of f^{(m)} alone does not give the bound.",
+    "Part (B) needs moments xʲf∈L¹. Exponential decay of f gives analyticity of f̂ in a strip, which this entry does not prove.",
+    "The bound is one-sided. The true decay can be much faster, as for the Gaussian.",
+    "The statement is on ℝ. The same proof works on ℝⁿ with multi-indices, but the notation changes."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-wirtinger-inequality-parseval",
+      "relation": "distinct from",
+      "reason": "That entry applies the derivative-multiplier rule for Fourier series on the circle. This entry treats the Fourier transform on the line."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-lyapunov-lp-interpolation",
+   "name": "Lyapunov interpolation inequality for Lp norms",
+   "aliases": [
+    "Log-convexity of Lp norms",
+    "Hölder interpolation of Lp norms"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "statement": "Let (Ω,μ) be a measure space and let 0<p<r<q≤∞. Define θ∈(0,1) by 1/r=(1−θ)/p+θ/q. Then every measurable f satisfies ‖f‖_r ≤ ‖f‖_p^{1−θ}‖f‖_q^θ. Hence L^p∩L^q⊂L^r. Also the function 1/s↦log‖f‖_s is convex on the set of 1/s with f∈L^s.",
+   "hypotheses": [
+    "The exponents satisfy p<r<q with q finite or infinite.",
+    "The norm may be infinite. Then the right side is infinite or the left side is covered by the finite factors.",
+    "If q=∞ then θ=1−p/r."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:weighted-holder-inequality",
+     "reason": "Step 2 applies Hölder inequality with the conjugate pair P and Q."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Lp norm",
+    "Hölder inequality"
+   ],
+   "concept_prerequisites": [
+    "c:lp-space",
+    "c:norm",
+    "c:integrable-function"
+   ],
+   "definitions": [
+    {
+     "name": "Lp norm",
+     "text": "‖f‖_s=(∫|f|^s dμ)^{1/s} for 0<s<∞ and ‖f‖_∞ is the essential supremum."
+    },
+    {
+     "name": "Hölder inequality",
+     "text": "For P,Q>1 with 1/P+1/Q=1, ∫|gh|≤‖g‖_P‖h‖_Q."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/MeanInequalities.lean#L329-L360",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.MeasureTheory.Integral.MeanInequalities",
+    "declaration": "lintegral_Lp_mul_le_Lq_mul_Lr",
+    "lines": [
+     329,
+     360
+    ],
+    "module_sha256": "fe70c74c7f684a0ead0c87157dbea3cd648a624c1cdd1cdc52fccad8adc596d7",
+    "excerpt": "theorem lintegral_Lp_mul_le_Lq_mul_Lr {α} [MeasurableSpace α] {p q r : ℝ} (hp0_lt : 0 < p)\n    (hpq : p < q) (hpqr : 1 / p = 1 / q + 1 / r) (μ : Measure α) {f g : α → ℝ≥0∞}\n    (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :\n    (∫⁻ a, (f * g) a ^ p ∂μ) ^ (1 / p) ≤\n      (∫⁻ a, f a ^ q ∂μ) ^ (1 / q) * (∫⁻ a, g a ^ r ∂μ) ^ (1 / r) := by\n  have hp0_ne : p ≠ 0 := (ne_of_lt hp0_lt).symm\n  have hp0 : 0 ≤ p := le_of_lt hp0_lt\n  have hq0_lt : 0 < q := lt_of_le_of_lt hp0 hpq\n  have hq0_ne : q ≠ 0 := (ne_of_lt hq0_lt).symm\n  have h_one_div_r : 1 / r = 1 / p - 1 / q := by rw [hpqr]; simp\n  let p2 := q / p\n  let q2 := p2.conjExponent\n  have hp2q2 : p2.HolderConjugate q2 :=\n    .conjExponent (by simp [p2, _root_.lt_div_iff₀, hpq, hp0_lt])\n  calc\n    (∫⁻ a : α, (f * g) a ^ p ∂μ) ^ (1 / p) = (∫⁻ a : α, f a ^ p * g a ^ p ∂μ) ^ (1 / p) := by\n      simp_rw [Pi.mul_apply, ENNReal.mul_rpow_of_nonneg _ _ hp0]\n    _ ≤ ((∫⁻ a, f a ^ (p * p2) ∂μ) ^ (1 / p2) *\n        (∫⁻ a, g a ^ (p * q2) ∂μ) ^ (1 / q2)) ^ (1 / p) := by\n      gcongr\n      simp_rw [ENNReal.rpow_mul]\n      exact ENNReal.lintegral_mul_le_Lp_mul_Lq μ hp2q2 (hf.pow_const _) (hg.pow_const _)\n    _ = (∫⁻ a : α, f a ^ q ∂μ) ^ (1 / q) * (∫⁻ a : α, g a ^ r ∂μ) ^ (1 / r) := by\n      rw [@ENNReal.mul_rpow_of_nonneg _ _ (1 / p) (by simp [hp0]), ← ENNReal.rpow_mul, ←\n        ENNReal.rpow_mul]\n      have hpp2 : p * p2 = q := by\n        symm\n        rw [mul_comm, ← div_eq_iff hp0_ne]\n      have hpq2 : p * q2 = r := by\n        rw [← inv_inv r, ← one_div, ← one_div, h_one_div_r]\n        simp [field, p2, q2, Real.conjExponent]\n      simp_rw [div_mul_div_comm, mul_one, mul_comm p2, mul_comm q2, hpp2, hpq2]",
+    "excerpt_sha256": "142565f2d9adbaa309fed768cfe08965b0f6d2196ee4e6815f1fd3cd6231f416",
+    "attribution": "/-\nCopyright (c) 2020 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves the generalized Hölder inequality for products with exponents 1/p=1/q+1/r. It is the engine for the interpolation of Lp norms but is not the statement itself."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/MeanInequalities.lean#L146-L157",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.MeanInequalities",
+     "declaration": "lintegral_mul_le_Lp_mul_Lq_of_ne_zero_of_ne_top",
+     "lines": [
+      146,
+      157
+     ],
+     "module_sha256": "fe70c74c7f684a0ead0c87157dbea3cd648a624c1cdd1cdc52fccad8adc596d7",
+     "excerpt": "/-- Hölder's inequality in case of finite non-zero integrals -/\ntheorem lintegral_mul_le_Lp_mul_Lq_of_ne_zero_of_ne_top {p q : ℝ} (hpq : p.HolderConjugate q)\n    {f g : α → ℝ≥0∞} (hf : AEMeasurable f μ) (hf_nontop : ∫⁻ a, f a ^ p ∂μ ≠ ⊤)\n    (hg_nontop : ∫⁻ a, g a ^ q ∂μ ≠ ⊤) (hf_nonzero : ∫⁻ a, f a ^ p ∂μ ≠ 0)\n    (hg_nonzero : ∫⁻ a, g a ^ q ∂μ ≠ 0) :\n    ∫⁻ a, (f * g) a ∂μ ≤ (∫⁻ a, f a ^ p ∂μ) ^ (1 / p) * (∫⁻ a, g a ^ q ∂μ) ^ (1 / q) := by\n  rw [lintegral_mul_eq_lintegral_funMulInvSnorm_mul_funMulInvSnorm_mul_Lp_mul_Lq hf_nontop hg_nontop\n      hf_nonzero hg_nonzero]\n  apply mul_le_of_le_one_left'\n  have hf1 := lintegral_rpow_funMulInvSnorm_eq_one hpq.pos hf_nonzero hf_nontop\n  have hg1 := lintegral_rpow_funMulInvSnorm_eq_one hpq.symm.pos hg_nonzero hg_nontop\n  exact lintegral_mul_le_one_of_lintegral_rpow_eq_one hpq (hf.mul_const _) hf1 hg1",
+     "excerpt_sha256": "07413ab88e6b4ad1814b2708895e7af50683d67aa458828e9b6e0e4faaf81fec",
+     "attribution": "/-\nCopyright (c) 2020 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "Mathlib proves the Hölder inequality for conjugate exponents when the integrals are finite and nonzero. It is used in step 2."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Exponents. For q<∞, put s=r(1−θ)/p and t=rθ/q. The relation 1/r=(1−θ)/p+θ/q gives s+t=1, with s,t∈(0,1). Put P=1/s and Q=1/t. Then P,Q>1 and 1/P+1/Q=1.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Hölder with the split of |f|^r. Write |f|^r=|f|^{(1−θ)r}·|f|^{θr}. Hölder gives ∫|f|^r ≤ (∫|f|^{(1−θ)rP})^{1/P}(∫|f|^{θrQ})^{1/Q}. Now (1−θ)rP=p and θrQ=q, because P=p/((1−θ)r) and Q=q/(θr). So ∫|f|^r ≤ (∫|f|^p)^{(1−θ)r/p}(∫|f|^q)^{θr/q}.",
+      "uses": [
+       "nm:weighted-holder-inequality"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Take the r-th root. The exponents become (1−θ)/p·p=1−θ and θ/q·q=θ after the root: ‖f‖_r ≤ ‖f‖_p^{1−θ}‖f‖_q^θ. If one of the norms on the right is infinite the inequality is trivial, so assume both are finite.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The case q=∞. Here |f|^r ≤ |f|^p‖f‖_∞^{r−p} almost everywhere. So ‖f‖_r^r ≤ ‖f‖_p^p‖f‖_∞^{r−p}. Take the r-th root. The exponents are p/r=1−θ and 1−p/r=θ.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Inclusion and convexity. If f∈L^p∩L^q then the right side is finite, so f∈L^r and ‖f‖_r≤max(‖f‖_p,‖f‖_q). Put t=1/s. The identity 1/r=(1−θ)/p+θ/q says t_r=(1−θ)t_p+θt_q. So the inequality says log‖f‖_{1/t} is a convex function of t on its domain.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Interpolating the norms of a power-type function",
+    "goal": "Test the inequality for f(x)=x^{−1/6} on (0,1) and f(x)=x^{−1/2} on (1,∞), with exponents p=3, r=4, q=5.",
+    "hypotheses": [
+     "f lies in L^s for 2<s<6, with ∫f^s=1/(1−s/6)+1/(s/2−1).",
+     "The parameter θ comes from 1/4=(1−θ)/3+θ/5.",
+     "All numbers are exact, with decimals shown to 6 digits."
+    ],
+    "why_theorem_applies": "The inequality is 4^{1/4}≤(80/3)^{1/8}, which holds because 16<80/3.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Parameter. From 1/4=1/3−θ·(2/15) one gets θ=5/8.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Norms. ∫f³=1/(1/2)+1/(1/2)=4. ∫f⁴=1/(1/3)+1/1=4. ∫f⁵=1/(1/6)+1/(3/2)=6+2/3=20/3. So ‖f‖₃=4^{1/3}=1.587401, ‖f‖₄=4^{1/4}=1.414214 and ‖f‖₅=(20/3)^{1/5}=1.461443.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Right side. ‖f‖₃^{3/8}=4^{1/8}=1.189207 and ‖f‖₅^{5/8}=(20/3)^{1/8}=1.267619. The product is (80/3)^{1/8}=1.507461.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Left side. ‖f‖₄=4^{1/4}=1.414214. The inequality 1.414214≤1.507461 holds. Raised to the 8th power it reads 16≤80/3.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The gap shows that f is not constant on its support. For a function with |f| constant on its support, Hölder is an equality and the two sides agree.",
+      "uses": []
+     }
+    ],
+    "result": "The three norms 1.587401, 1.414214 and 1.461443 obey ‖f‖₄≤‖f‖₃^{3/8}‖f‖₅^{5/8}, that is 1.414214≤1.507461.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The inequality needs r between p and q. For r outside [p,q] the right side has no meaning as an interpolation.",
+    "The Lyapunov inequality is for a fixed function. It does not interpolate operators, which is the subject of the Riesz–Thorin theorem.",
+    "Equality conditions are not proved here.",
+    "On a space with finite measure, inclusions L^q⊂L^p for p<q also hold, but this needs the measure to be finite and is a different statement."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q245902",
+      "relation": "distinct from",
+      "reason": "The Riesz–Thorin theorem interpolates the norm of a linear operator. This entry interpolates the norm of one function."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-heisenberg-uncertainty-fourier",
+   "name": "Heisenberg uncertainty principle for the Fourier transform",
+   "aliases": [
+    "Heisenberg inequality",
+    "Uncertainty principle of harmonic analysis"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.FA"
+   ],
+   "statement": "Let f be a Schwartz function on ℝ, with f̂(ξ)=∫f(x)e^{−2πixξ}dx. Then ‖f‖₂² ≤ 4π ‖xf‖₂ ‖ξf̂‖₂. Equivalently ‖f‖₂² ≤ 2‖xf‖₂‖f′‖₂. Equality holds if and only if f(x)=Ce^{−ax²} for some C∈ℂ and a>0.",
+   "hypotheses": [
+    "f is a smooth function with f and all its derivatives decaying faster than any polynomial.",
+    "The Fourier transform uses the exponent −2πixξ, so Plancherel holds with constant 1.",
+    "The norms are L² norms on ℝ."
+   ],
+   "prerequisites": [
+    {
+     "id": "nl:16121",
+     "reason": "Step 2 applies the Cauchy–Schwarz inequality in L²."
+    },
+    {
+     "id": "wd:Q2096184",
+     "reason": "Step 3 applies the Plancherel identity."
+    },
+    {
+     "id": "nm:technique-fourier-derivative-multiplier-decay",
+     "reason": "Step 3 uses the rule that the transform of f′ is 2πiξf̂."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Schwartz function",
+    "Plancherel identity"
+   ],
+   "concept_prerequisites": [
+    "c:fourier-transform",
+    "c:schwartz-space",
+    "c:hilbert-space"
+   ],
+   "definitions": [
+    {
+     "name": "Schwartz function",
+     "text": "A C^∞ function f such that xʲf^{(k)}(x) is bounded for all j,k≥0."
+    },
+    {
+     "name": "Plancherel identity",
+     "text": "‖f̂‖₂=‖f‖₂ for the transform with exponent −2πixξ."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/LpSpace.lean#L88-L91",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Fourier.LpSpace",
+    "declaration": "norm_fourier_eq",
+    "lines": [
+     88,
+     91
+    ],
+    "module_sha256": "7d86b8c70d21c45877f37792f9f81789c5f4551f41706afb4493958bb104065f",
+    "excerpt": "/-- Plancherel's theorem for `L2` functions. -/\n@[simp]\ntheorem norm_fourier_eq (f : Lp (α := E) F 2) : ‖𝓕 f‖ = ‖f‖ :=\n  (Lp.fourierTransformₗᵢ E F).norm_map f",
+    "excerpt_sha256": "b2f8949256e0ef778fb3356b5a4c81ca5eb9a933af367daa2eddddbd8f97a120",
+    "attribution": "/-\nCopyright (c) 2025 Moritz Doll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Moritz Doll\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves the Plancherel identity ‖f̂‖₂=‖f‖₂ for L² functions. It supplies step 3 only. Mathlib does not prove the uncertainty inequality itself."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Integration by parts. Since |f|²=f f̄ has derivative 2Re(f′ f̄), and x|f|²→0 at infinity, ∫|f|² dx=[x|f|²]_{−∞}^{∞}−∫x(|f|²)′dx=−2Re∫x f′ f̄ dx.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Cauchy–Schwarz. Then ‖f‖₂²=−2Re∫(xf̄)f′ ≤ 2|∫(xf̄)f′| ≤ 2‖xf‖₂‖f′‖₂.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Plancherel. The transform of f′ is 2πiξf̂(ξ), by the derivative rule. By Plancherel, ‖f′‖₂=‖(f′)^‖₂=2π‖ξf̂‖₂. Put this into step 2: ‖f‖₂² ≤ 2‖xf‖₂·2π‖ξf̂‖₂=4π‖xf‖₂‖ξf̂‖₂.",
+      "uses": [
+       "wd:Q2096184",
+       "nm:technique-fourier-derivative-multiplier-decay"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Equality, necessity. Equality needs equality in both inequalities of step 2. Equality in Cauchy–Schwarz gives f′=λxf almost everywhere for some λ∈ℂ. Then ∫x f′ f̄=λ∫x²|f|², which must be real and negative. So λ=−2a with a>0. Solving f′=−2axf gives f=Ce^{−ax²}.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Equality, sufficiency. For f=e^{−ax²} one has ∫x f′ f̄=−2a∫x²e^{−2ax²}dx and ‖f‖₂²=−2Re∫x f′ f̄ by step 1. Both Cauchy–Schwarz and the real part step are equalities, because f′=−2axf is a real multiple of xf. So equality holds.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Uncertainty product for two Gaussian-type functions",
+    "goal": "Compute ‖f‖₂², ‖xf‖₂² and ‖f′‖₂² exactly for g₀(x)=e^{−πx²} and g₁(x)=x e^{−πx²}, and compare ‖g‖₂² with 2‖xg‖₂‖g′‖₂.",
+    "hypotheses": [
+     "Both functions are Schwartz functions.",
+     "Gaussian moments ∫e^{−2πx²}dx=1/√2 and ∫x²e^{−2πx²}dx=1/(4π√2) and ∫x⁴e^{−2πx²}dx=3/(16π²√2) are exact.",
+     "The inequality in the form ‖f‖₂²≤2‖xf‖₂‖f′‖₂ is tested."
+    ],
+    "why_theorem_applies": "The Gaussian g₀ gives equality. The function g₁ gives a strict inequality with ratio 1/3.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For g₀: ‖g₀‖₂²=1/√2=0.707107. ‖xg₀‖₂²=1/(4π√2)=0.0562698. ‖g₀′‖₂²=∫4π²x²e^{−2πx²}=π/√2=2.221441.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Product for g₀: 2√(0.0562698·2.221441)=2√(0.125)=0.707107. This equals ‖g₀‖₂², so equality holds.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For g₁: ‖g₁‖₂²=1/(4π√2)=0.0562698. ‖xg₁‖₂²=3/(16π²√2)=0.0134334. ‖g₁′‖₂²=3/(4√2)=0.530330.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Product for g₁: 2√(0.0134334·0.530330)=2·0.0844047=0.168809. The inequality 0.0562698≤0.168809 holds, and the ratio is exactly 1/3.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "In Fourier variables, ‖ξĝ‖₂=‖g′‖₂/(2π). The inequality ‖g‖₂² ≤ 4π‖xg‖₂‖ξĝ‖₂ is the same statement and gives the same numbers.",
+      "uses": []
+     }
+    ],
+    "result": "The Gaussian attains the bound 0.707107. The odd function xe^{−πx²} has product 0.168809, three times its squared norm 0.0562698.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The inequality is for the line. In ℝⁿ the same proof works with the dot product x·∇f and gives the constant n/(4π) in a different form.",
+    "Equality holds only for centered Gaussians in this form. For translated and modulated Gaussians, replace x by x−x₀ and ξ by ξ−ξ₀.",
+    "The proof is for Schwartz functions. For general f in L² the weights xf and ξf̂ must be in L², and a density argument is needed that this entry does not give.",
+    "The result does not forbid a sharp peak in both variables for a function that is not in the class. It limits the product of the two spreads."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:fourier-transform-on-mathrm-l-2-r-d",
+      "relation": "distinct from",
+      "reason": "That record defines the L² Fourier transform as an isometry. This entry derives an inequality from it."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-polya-quadrature-uniform-boundedness",
+   "name": "Polya theorem: convergence of quadrature rules via Banach–Steinhaus",
+   "aliases": [
+    "Polya quadrature theorem",
+    "Convergence theorem for quadrature rules"
+   ],
+   "type": "theorem",
+   "cats": [
+    "math.NA",
+    "math.FA"
+   ],
+   "application_cats": [
+    "math.NA",
+    "math.FA"
+   ],
+   "statement": "Let Qₙ(f)=∑_{i=1}^{mₙ}w_{n,i}f(x_{n,i}) be quadrature rules on C[a,b], with distinct nodes x_{n,i}∈[a,b] in each rule. Then Qₙ(f)→∫ₐᵇf for every f∈C[a,b] if and only if (i) Qₙ(p)→∫ₐᵇp for every polynomial p, and (ii) supₙ∑ᵢ|w_{n,i}|<∞. In particular, if all weights are positive and the rules are exact on constants, condition (ii) holds with value b−a, and convergence for polynomials implies convergence for every continuous function.",
+   "hypotheses": [
+    "Each rule has distinct nodes, so that ‖Qₙ‖ can be computed exactly.",
+    "C[a,b] has the sup norm and is complete.",
+    "Condition (i) can be checked on the monomials 1,x,x²,…."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1426292",
+     "reason": "Step 2 applies the uniform boundedness principle to the sequence of rules."
+    },
+    {
+     "id": "nm:weierstrass-approximation-theorem",
+     "reason": "Step 4 approximates a continuous function by a polynomial."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "quadrature rule",
+    "operator norm of a rule"
+   ],
+   "concept_prerequisites": [
+    "c:continuous-function",
+    "c:banach-space",
+    "c:norm"
+   ],
+   "definitions": [
+    {
+     "name": "quadrature rule",
+     "text": "A linear functional Qₙ(f)=∑w_{n,i}f(x_{n,i}) on C[a,b], with nodes x_{n,i} and weights w_{n,i}."
+    },
+    {
+     "name": "operator norm of a rule",
+     "text": "‖Qₙ‖=sup{|Qₙ(f)| : ‖f‖_∞≤1}."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Operator/BanachSteinhaus.lean#L31-L40",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Normed.Operator.BanachSteinhaus",
+    "declaration": "banach_steinhaus",
+    "lines": [
+     31,
+     40
+    ],
+    "module_sha256": "23313a6a69e39dfa231cf3cafe45656b9accf63b8767c6366de2a45cc1aa9393",
+    "excerpt": "/-- This is the standard Banach-Steinhaus theorem, or Uniform Boundedness Principle.\nIf a family of continuous linear maps from a Banach space into a normed space is pointwise\nbounded, then the norms of these linear maps are uniformly bounded.\n\nSee also `WithSeminorms.banach_steinhaus` for the general statement in barrelled spaces. -/\ntheorem banach_steinhaus {ι : Type*} [CompleteSpace E] {g : ι → E →SL[σ₁₂] F}\n    (h : ∀ x, ∃ C, ∀ i, ‖g i x‖ ≤ C) : ∃ C', ∀ i, ‖g i‖ ≤ C' := by\n  rw [show (∃ C, ∀ i, ‖g i‖ ≤ C) ↔ _ from (NormedSpace.equicontinuous_TFAE g).out 6 3]\n  refine (norm_withSeminorms 𝕜₂ F).banach_steinhaus (fun _ x ↦ ?_)\n  simpa [bddAbove_def, forall_mem_range] using h x",
+    "excerpt_sha256": "c9bb7ba802921265aa63d66130b38e5fadade45bb8d09240430d0bfea1fa30a6",
+    "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "Mathlib proves the uniform boundedness principle for families of continuous linear maps from a Banach space. It is the engine of the necessity of (ii). Mathlib does not prove the quadrature theorem."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Norm of a rule. For f with ‖f‖_∞≤1, |Qₙ(f)|≤∑|w_{n,i}|. For the converse, let f be the piecewise linear function that interpolates the values sgn(w_{n,i}) at the distinct nodes and is constant outside them. Then ‖f‖_∞=1 and Qₙ(f)=∑|w_{n,i}|. So ‖Qₙ‖=∑ᵢ|w_{n,i}|.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Necessity of (ii). Suppose Qₙ(f)→∫f for each f. Then (Qₙ(f))ₙ is bounded for each f, because convergent sequences are bounded. C[a,b] is a Banach space. By the Banach–Steinhaus theorem, supₙ‖Qₙ‖<∞. By step 1 this is (ii).",
+      "uses": [
+       "wd:Q1426292"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Necessity of (i). Polynomials are continuous functions, so convergence for all f includes convergence for polynomials.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Sufficiency, approximation. Assume (i) and (ii) and put M=supₙ‖Qₙ‖. Let f∈C[a,b] and ε>0. By the Weierstrass theorem there is a polynomial p with ‖f−p‖_∞<ε. Then |Qₙ(f)−∫f| ≤ |Qₙ(f−p)|+|Qₙ(p)−∫p|+|∫(p−f)| ≤ Mε+|Qₙ(p)−∫p|+(b−a)ε.",
+      "uses": [
+       "nm:weierstrass-approximation-theorem"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Sufficiency, conclusion. By (i), the middle term is below ε for n large. So the error is below (M+1+b−a)ε for large n. Since ε is arbitrary, Qₙ(f)→∫f.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Positive weights. If wᵢ>0 and Qₙ(1)=b−a for all n, then ∑|w_{n,i}|=∑w_{n,i}=Qₙ(1)=b−a. So (ii) holds with value b−a.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Newton–Cotes rules fail on the Runge function while Gauss rules converge",
+    "goal": "Compute ∑|w| and the quadrature error for equispaced Newton–Cotes rules of several orders on [−1,1] and test them on f(x)=1/(1+25x²). Compare with Gauss–Legendre rules.",
+    "hypotheses": [
+     "The exact integral is (2/5)arctan 5=0.5493603.",
+     "The Newton–Cotes rule of order n uses n+1 equispaced nodes −1+2i/n and is exact for polynomials of degree n. Weights are computed in exact rational arithmetic.",
+     "Gauss–Legendre rules have positive weights and are exact on polynomials. They are computed in double precision."
+    ],
+    "why_theorem_applies": "The weight norm ∑|w| stays 2 up to n=4 and then grows. The quadrature error grows with it. For Gauss rules ∑|w|=2 for every size.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Weight sums. ∑|w| is 2 for n=2 and n=4 (all weights are positive), then 2.9024 for n=8, 6.1296 for n=10, 15.063 for n=12, 116.91 for n=16 and 1088.4 for n=20. Every Newton–Cotes weight sums to 2, so the sums above 2 come from negative weights.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For n=8 the weights are 989/14175, 5888/14175, −928/14175, 10496/14175, −908/2835, and the same values in reverse order. For n=20 the smallest weight is −1.684·10¹⁵/9.355·10¹⁵=−180.01.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Errors for the Runge function. The error Qₙ(f)−0.5493603 is −0.07456 for n=4, −0.24926 for n=8, −0.61195 for n=12, −1.79765 for n=16 and −5.91927 for n=20.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Gauss–Legendre rules. ∑|w|=2 for every size, so (ii) holds. The errors are 0.15759 for 5 nodes, −0.018988 for 10 nodes and −0.000363 for 20 nodes, and they tend to 0.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Reading by the theorem. A uniformly bounded ∑|w| and exactness on polynomials give convergence for all continuous f. For the Newton–Cotes sequence, the computed sums grow without sign of a bound up to n=20. If ∑|w| tends to infinity along the full sequence, the theorem gives a continuous function with divergent Qₙ(f). This computation does not prove that.",
+      "uses": []
+     }
+    ],
+    "result": "Gauss–Legendre errors fall from 0.158 to 0.00036 as the size grows from 5 to 20. Newton–Cotes errors grow from 0.075 to 5.9 on the same function.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Distinct nodes are assumed so that the norm of a rule equals ∑|w|. With repeated nodes, first combine the weights.",
+    "The theorem concerns convergence for every continuous function. A single function such as an analytic one can be integrated well by rules with unbounded ∑|w|.",
+    "The proof of the divergence for a specific rule sequence needs the growth of ∑|w| for that sequence. This is known for Newton–Cotes rules but is not proved here.",
+    "The theorem does not give rates of convergence. For rates one needs smoothness of f."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q939927",
+      "relation": "distinct from",
+      "reason": "The Stone–Weierstrass theorem gives density of polynomials. This entry uses density together with a uniform bound to prove convergence of rules."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
