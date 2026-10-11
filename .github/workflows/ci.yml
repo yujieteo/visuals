@@ -124,6 +124,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Cargo loads every member of the workspace, so a sealed artifact builds only with the folders of the others.
+      - name: Check out the members of the Cargo workspace
+        run: git sparse-checkout add $(python3 -c 'import tomllib; print(*tomllib.load(open("Cargo.toml", "rb"))["workspace"]["members"])')
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

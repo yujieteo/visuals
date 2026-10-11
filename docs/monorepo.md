@@ -10,7 +10,7 @@ and copied the same tooling into every repository.
 | Concern | How it is designed out |
 | --- | --- |
 | Every test on every change | `scripts/changed.py` maps the diff to the visuals it touches; CI runs one job per touched visual, plus repository-wide jobs on Python 3.9 and 3.12. A change to shared tooling runs every visual. |
-| One visual's tests affecting another's | Each visual's checks run in their own job, from its folder, on a sparse checkout holding only the shared tooling and that folder, so a test that reads another visual's folder fails. Type checks run one `tsc` project per visual. |
+| One visual's tests affecting another's | Each visual's checks run in their own job, from its folder, on a sparse checkout holding only the shared tooling, that folder and the crates of the Cargo workspace (Cargo loads every member to build one), so a test that reads another visual's folder fails. Type checks run one `tsc` project per visual. |
 | Merge conflicts between parallel changes | Nothing shared lists the visuals. A visual is added or changed inside its folder only; the catalogue, gallery and any combined list are generated from the folders and never committed. |
 | Mechanical steps done by agents | No ports, pins or manifest entries: the site builds every visual straight from this repository. What remains mechanical runs in CI (below). |
 
