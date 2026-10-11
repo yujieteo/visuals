@@ -5,7 +5,7 @@ description: Use Theorem Explorer: which result to learn next to explore the vie
 
 # Use Theorem Explorer: which result to learn next
 
-The planned address after deployment is <https://teoyujie.org/visuals/theorem-explorer/>. A sortable, evidence-linked catalog of mathematical results from mathlib4, Wikidata, Wikipedia, nLab and the TheoremSearch dataset, and of 11,913 mathematical concepts from nLab, mathlib and the results, with rubric scores, prerequisite trees that join results to concepts, popularity per arXiv category, archive and group, concrete comparisons, field shares over time and JSON, CSV and beamdswitch exports. Works offline. To change the page, read [AGENTS.md](AGENTS.md).
+The site page <https://teoyujie.org/play/theorems/> ports this page. A sortable, evidence-linked catalog of mathematical results from mathlib4, Wikidata, Wikipedia, nLab and the TheoremSearch dataset, and of 11,913 mathematical concepts from nLab, mathlib and the results, with rubric scores, prerequisite trees that join results to concepts, popularity per arXiv category, archive and group, concrete comparisons, field shares over time and JSON, CSV and beamdswitch exports. Works offline. To change the page, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 
@@ -54,4 +54,4 @@ All read-only.
 - **Concept CSV:** `theorem-explorer-concepts.csv`, the concepts that the concept table shows, in its order, with the same formula guard.
 - **Table CSV:** `theorem-explorer-table.csv`, the rows and columns that the table shows. A cell that starts with `=`, `+`, `-` or `@` gets a `'` prefix.
 - **Result JSON and profile JSON:** one result with its evidence, and the known results with the identity map of the snapshot.
-- **Data:** [data.json](https://teoyujie.org/visuals/theorem-explorer/data.json) (`raw.json` here).
+- **Data:** [raw.json](raw.json).

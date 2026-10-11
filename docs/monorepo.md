@@ -42,7 +42,7 @@ tsconfig.base.json     compiler options every visual's tsconfig.json extends
 ```
 
 `visual.json` carries the site's catalogue fields (`title`, `summary`, `source_url`, `fetched`, `data`,
-`webmcp_tools`, `tags`, `category`, optional `links`, `assets`, `downloads`) and the tooling fields: `checks`
+`webmcp_tools`, `tags`, `category`, optional `assets`, `downloads`) and the tooling fields: `checks`
 (commands run from the folder, when the defaults do not fit), `typecheck` (what the shared extractor
 reads: `page`, the HTML when not `index.html`, such as a builder's template; and `skip`, the inline blocks
 it leaves out, by id or by the folder file they copy: a builder's inlined `src/*.js`, checked from `src/`,

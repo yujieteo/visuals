@@ -40,6 +40,7 @@ MECHANICAL_TEMPLATES = kit.KIT / "mechanical"
 KIT_TOOLS = ["get_metadata", "get_state", "get_markdown"]
 TITLE = re.compile(r"[^\"`\\$<>&*_#|{}\n]{1,120}")
 TAG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+CANONICAL = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*/")
 DEFAULT_PURPOSE = ("explore the view, read its state and the values derived from it, and keep it as JSON, a "
                    "Markdown record or a narrated beamdswitch deck.")
 
@@ -156,6 +157,8 @@ def generate(args, root=ROOT):
     if folder.exists():
         raise SystemExit(f"viz/{args.slug} exists; --check or --update an existing visual instead")
     options = {"slug": args.slug, "title": args.title, "subject": args.subject, "mathjax": args.mathjax}
+    if args.canonical:
+        options["canonical"] = args.canonical
     values = {"slug": args.slug, "title": args.title, "lede": args.lede or args.summary, "purpose": args.purpose}
     in_html = {**values, "lede": html.escape(values["lede"], quote=False)}
     flags = {"mathjax": args.mathjax}
@@ -266,6 +269,8 @@ def parse(argv):
     parser.add_argument("--fetched", default=datetime.date.today().isoformat(), help="the data's date, YYYY-MM-DD (default: today)")
     parser.add_argument("--mathjax", action="store_true", help="embed MathJax 4.1.3 with its Fira font and licences")
     parser.add_argument("--unpublished", action="store_true", help='write "published": false')
+    parser.add_argument("--canonical", help="the site page that ports the visual, as a path under teoyujie.org such as "
+                        "play/theorems/: the page's canonical URL (default: none)")
     args = parser.parse_args(argv)
     if args.check or args.update:
         if args.all and args.update:
@@ -284,6 +289,8 @@ def parse(argv):
         parser.error("--summary is required, on one line")
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.fetched):
         parser.error("--fetched is a date, YYYY-MM-DD")
+    if args.canonical is not None and not CANONICAL.fullmatch(args.canonical):
+        parser.error("--canonical is a path under teoyujie.org such as play/theorems/")
     args.tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
     if not args.tags or not all(TAG.fullmatch(tag) for tag in args.tags):
         parser.error("--tags are lowercase hyphenated words, separated by commas")

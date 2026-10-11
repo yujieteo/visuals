@@ -3,7 +3,8 @@
 A visual that scripts/new_visual.py generated has a two-line build.py that calls main() here. The page is the
 kit's shell (scripts/kit/shell.html) with, in order:
 
-  head      the title, description, canonical URL and Open Graph tags from visual.json, and the site's theme script
+  head      the title, description and Open Graph tags from visual.json, the canonical URL of the site page that
+            ports the visual (generated.json's canonical option, else none), and the site's theme script
   style     the style guide's tokens (kit/style-tokens.css), the kit's layout (kit/kit.css), then src/style.css
   body      the eyebrow and title, the toolbar of exports, src/body.html, and the licences when MathJax is embedded
   scripts   raw.json as <script id="dataset" type="application/json">, then kit/kit.js, beamdswitch.js,
@@ -41,6 +42,15 @@ def options(folder):
     return json.loads(read(folder, "generated.json"))["options"]
 
 
+def canonical(path):
+    """The head lines that give the site page that ports the visual, ``path`` under teoyujie.org, as the page's
+    canonical URL. A visual that no site page ports gets none."""
+    if not path:
+        return ""
+    url = html.escape(f"https://teoyujie.org/{path}")
+    return f'<link rel="canonical" href="{url}">\n<meta property="og:url" content="{url}">\n'
+
+
 def page(folder):
     """The text of the visual's index.html."""
     folder = Path(folder)
@@ -56,7 +66,6 @@ def page(folder):
     parts = {
         "TITLE": html.escape(meta["title"]),
         "DESCRIPTION": html.escape(meta["summary"]),
-        "SLUG": folder.name,
         "SUBJECT": html.escape(opts["subject"]),
         "THEME_SCRIPT": kit.theme_script(),
         "STYLE_TOKENS": kit.read(kit.KIT / "style-tokens.css").rstrip("\n"),
@@ -66,7 +75,7 @@ def page(folder):
         "LICENCES": kit.licences_html() if opts.get("mathjax") else "",
         "SCRIPTS": "\n".join(blocks),
     }
-    out = kit.read(kit.KIT / "shell.html")
+    out = kit.read(kit.KIT / "shell.html").replace("@@CANONICAL@@\n", canonical(opts.get("canonical")))
     for name, value in parts.items():
         out = out.replace(f"@@{name}@@", value)
     return out.replace("\n\n</main>", "\n</main>")

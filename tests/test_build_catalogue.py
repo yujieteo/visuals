@@ -22,7 +22,6 @@ class CatalogueTest(unittest.TestCase):
             "bad date": (metadata(fetched="1 Oct 2026"), "fetched"),
             "too few tools": (metadata(webmcp_tools=["get_data"]), "at least 3"),
             "duplicate tag": (metadata(tags=["a", "a"]), "duplicate"),
-            "bad link": (metadata(links=[{"rel": "likes", "target": "note:x"}]), "must be one of"),
             "uses inside viz": (metadata(uses=["viz/other/index.html"]), "uses[0]"),
             "wrong type": (metadata(published="no"), "expected boolean"),
             "bad site page": (metadata(site_page="/play/alpha", webmcp_tools=None), "site_page"),

@@ -118,6 +118,16 @@ class GenerateTest(unittest.TestCase):
         self.assertEqual(parser.text, lede)
         self.assertIn(f"{lede} To change the page", (folder / "SKILLS.md").read_text(encoding="utf-8"))
 
+    def test_the_canonical_url_is_the_site_page_given_else_none(self):
+        html = (generated(self.root, "tide-clock", "--canonical", "play/tides/") / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<link rel="canonical" href="https://teoyujie.org/play/tides/">\n'
+                      '<meta property="og:url" content="https://teoyujie.org/play/tides/">\n', html)
+        html = (generated(self.root, "tide-table") / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn('rel="canonical"', html)
+        self.assertNotIn("og:url", html)
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            new_visual.parse(["other", *ARGS, "--canonical", "/play/tides"])
+
     def test_an_existing_folder_or_an_unsafe_title_is_refused(self):
         generated(self.root)
         with self.assertRaises(SystemExit):
