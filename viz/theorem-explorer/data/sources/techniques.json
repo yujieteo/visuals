@@ -3307,6 +3307,2182 @@
      "alignment": "The source proves that the discriminant equals the square of the determinant of the matrix of embeddings. This is Step 1."
     }
    ]
+  },
+  {
+   "id": "nm:technique-picard-iteration-factorial-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/ODE/PicardLindelof.lean#L329-L360",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.ODE.PicardLindelof",
+     "declaration": "dist_iterate_next_apply_le",
+     "lines": [
+      329,
+      360
+     ],
+     "module_sha256": "86ff56166a1957e89485a69eb930fa7b6bd4de27e9236cb9f508458f03d6a838",
+     "excerpt": "/-- A time-dependent bound on the distance between the `n`-th iterates of `next` on two curves -/\nlemma dist_iterate_next_apply_le (hf : IsPicardLindelof f t₀ x₀ a r L K)\n    (hx : x ∈ closedBall x₀ r) (α β : FunSpace t₀ x₀ r L) (n : ℕ) (t : Icc tmin tmax) :\n    dist ((next hf hx)^[n] α t) ((next hf hx)^[n] β t) ≤\n      (K * |t.1 - t₀.1|) ^ n / n ! * dist α β := by\n  induction n generalizing t with\n  | zero => simpa using!\n      ContinuousMap.dist_apply_le_dist (f := toContinuousMap α) (g := toContinuousMap β) _\n  | succ n hn =>\n    rw [iterate_succ_apply', iterate_succ_apply', dist_eq_norm, next_apply,\n      next_apply, picard_apply, picard_apply, add_sub_add_left_eq_sub,\n      ← intervalIntegral.integral_sub (intervalIntegrable_comp_compProj hf _ t)\n        (intervalIntegrable_comp_compProj hf _ t)]\n    calc\n      _ ≤ ∫ τ in uIoc t₀.1 t.1, K ^ (n + 1) * |τ - t₀| ^ n / n ! * dist α β := by\n        rw [intervalIntegral.norm_intervalIntegral_eq]\n        apply MeasureTheory.norm_integral_le_of_norm_le (Continuous.integrableOn_uIoc (by fun_prop))\n        apply ae_restrict_mem measurableSet_Ioc |>.mono\n        intro t' ht'\n        -- Can `grind` do this in the future?\n        have ht' : t' ∈ Icc tmin tmax :=\n          subset_trans uIoc_subset_uIcc (uIcc_subset_Icc t₀.2 t.2) ht'\n        rw [← dist_eq_norm, compProj_of_mem, compProj_of_mem]\n        exact dist_comp_iterate_next_le hf hx _ ⟨t', ht'⟩ (hn _)\n      _ ≤ (K * |t.1 - t₀.1|) ^ (n + 1) / (n + 1) ! * dist α β := by\n        apply le_of_abs_le\n        -- critical: `integral_pow_abs_sub_uIoc`\n        rw [← intervalIntegral.abs_intervalIntegral_eq, intervalIntegral.integral_mul_const,\n          intervalIntegral.integral_div, intervalIntegral.integral_const_mul, abs_mul, abs_div,\n          abs_mul, intervalIntegral.abs_intervalIntegral_eq, integral_pow_abs_sub_uIoc, abs_div,\n          abs_pow, abs_pow, abs_dist, NNReal.abs_eq, abs_abs, mul_div, div_div, ← abs_mul,\n          ← Nat.cast_succ, ← Nat.cast_mul, ← Nat.factorial_succ, Nat.abs_cast, ← mul_pow]",
+     "excerpt_sha256": "814eb87c2af3831134bd7bfa400aaf90eab8f5d18458dd8a948e9bdd46a93dd9",
+     "attribution": "/-\nCopyright (c) 2021 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov, Winston Yin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves dist(next^[n] α t, next^[n] β t) ≤ (K|t−t₀|)ⁿ/n!·dist α β. This is the factorial estimate in step 6. The source works with a local ball and the map next, not with global Lipschitz fields."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/ODE/PicardLindelof.lean#L717-L725",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.ODE.PicardLindelof",
+     "declaration": "exists_eq_forall_mem_Icc_eq_picard",
+     "lines": [
+      717,
+      725
+     ],
+     "module_sha256": "86ff56166a1957e89485a69eb930fa7b6bd4de27e9236cb9f508458f03d6a838",
+     "excerpt": "/-- **Picard-Lindelöf (Cauchy-Lipschitz) theorem**, integral form. This version shows the existence\nof a local solution whose initial point `x` may be different from the centre `x₀` of the closed\nball within which the properties of the vector field hold. -/\ntheorem exists_eq_forall_mem_Icc_eq_picard\n    (hf : IsPicardLindelof f t₀ x₀ a r L K) (hx : x ∈ closedBall x₀ r) :\n    ∃ α : ℝ → E, α t₀ = x ∧ ∀ t ∈ Icc tmin tmax, α t = ODE.picard f t₀ x α t := by\n  obtain ⟨α, hα⟩ := FunSpace.exists_isFixedPt_next hf hx\n  refine ⟨(FunSpace.next hf hx α).compProj, by simp, fun t ht ↦ ?_⟩\n  rw [FunSpace.compProj_apply, FunSpace.next_apply, hα, projIcc_of_mem _ ht]",
+     "excerpt_sha256": "bdc6066b3dc9d182d78199bac09423534e9262d7a56d2df979836a3bbf472e2c",
+     "attribution": "/-\nCopyright (c) 2021 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov, Winston Yin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Picard map has a fixed point, which is a solution of the integral equation. This is the existence part (b) in the local setting."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-euler-method-global-error-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Complex/Exponential.lean#L632-L635",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Complex.Exponential",
+     "declaration": "add_one_le_exp",
+     "lines": [
+      632,
+      635
+     ],
+     "module_sha256": "f7dba5af45f61383f71883bf969858ee06dbd41c71ddfb17866f94a9c77e9b78",
+     "excerpt": "theorem add_one_le_exp (x : ℝ) : x + 1 ≤ Real.exp x := by\n  obtain rfl | hx := eq_or_ne x 0\n  · simp\n  · exact (add_one_lt_exp hx).le",
+     "excerpt_sha256": "54c0029aa107cddeb61d013fcdcdd63d891a58b6d9cf27eb10652b5121abda8e",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Abhimanyu Pallavi Sudhir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves x+1≤exp x for real x. It is used in step 6 to turn (1+hL)ⁿ into the exponential e^{L(tₙ−t₀)}."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-lyapunov-quadratic-linearization-stability",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/ODE/Gronwall.lean#L130-L139",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.ODE.Gronwall",
+     "declaration": "norm_le_gronwallBound_of_norm_deriv_right_le",
+     "lines": [
+      130,
+      139
+     ],
+     "module_sha256": "deda8b08f889c42472ed5f44b878d5a0bd2c91c1ec95153ed1773c6719351f67",
+     "excerpt": "/-- A Grönwall-like inequality: if `f : ℝ → E` is continuous on `[a, b]`, has right derivative\n`f' x` at every point `x ∈ [a, b)`, and satisfies the inequalities `‖f a‖ ≤ δ`,\n`∀ x ∈ [a, b), ‖f' x‖ ≤ K * ‖f x‖ + ε`, then `‖f x‖` is bounded by `gronwallBound δ K ε (x - a)`\non `[a, b]`. -/\ntheorem norm_le_gronwallBound_of_norm_deriv_right_le {f f' : ℝ → E} {δ K ε : ℝ} {a b : ℝ}\n    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ x ∈ Ico a b, HasDerivWithinAt f (f' x) (Ici x) x)\n    (ha : ‖f a‖ ≤ δ) (bound : ∀ x ∈ Ico a b, ‖f' x‖ ≤ K * ‖f x‖ + ε) :\n    ∀ x ∈ Icc a b, ‖f x‖ ≤ gronwallBound δ K ε (x - a) :=\n  le_gronwallBound_of_liminf_deriv_right_le (continuous_norm.comp_continuousOn hf)\n    (fun x hx _r hr => (hf' x hx).liminf_right_slope_norm_le hr) ha bound",
+     "excerpt_sha256": "72112629daf570640175e43be925385bb5164286a13a86dbfb204633be7bb0d5",
+     "attribution": "/-\nCopyright (c) 2020 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a function with norm of derivative at most K times its norm plus ε stays below gronwallBound. With ε=0 the bound is δe^{Kx}. This is the differential inequality step 4."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-liouville-formula-wronskian-determinant",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Charpoly/Coeff.lean#L206-L210",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff",
+     "declaration": "det_one_add_smul",
+     "lines": [
+      206,
+      210
+     ],
+     "module_sha256": "f6d135c572a42eeb9bbbe78590a1ace8578f3dd784f55fb2b7e3b355d400ab3b",
+     "excerpt": "/-- The first two terms of the Taylor expansion of `det (1 + r • M)` at `r = 0`. -/\nlemma det_one_add_smul (r : R) (M : Matrix n n R) :\n    det (1 + r • M) =\n      1 + trace M * r + (det (1 + (X : R[X]) • M.map C)).divX.divX.eval r * r ^ 2 := by\n  simpa [eval_det, ← smul_eq_mul_diagonal] using congr(eval r $(Matrix.det_one_add_X_smul M))",
+     "excerpt_sha256": "23b9840a011c720822f733b338b616227f08dfb42ba008835b8a3ff7491eda52",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson, Jalex Stark. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Jalex Stark, Slava Naprienko\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves det(1+r•M)=1+tr(M)r+(remainder)r². This is the first-order expansion of the determinant near the identity in step 1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Adjugate.lean#L262-L266",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Adjugate",
+     "declaration": "mul_adjugate",
+     "lines": [
+      262,
+      266
+     ],
+     "module_sha256": "47b8500f613128a6454dfa2c60086942c61daffe90467feecbc27e72fb83c8bb",
+     "excerpt": "set_option backward.isDefEq.respectTransparency false in\ntheorem mul_adjugate (A : Matrix n n α) : A * adjugate A = A.det • (1 : Matrix n n α) := by\n  ext i j\n  rw [mul_apply, Pi.smul_apply, Pi.smul_apply, one_apply, smul_eq_mul, mul_boole]\n  simp [mul_adjugate_apply, sum_cramer_apply, cramer_transpose_row_self, Pi.single_apply, eq_comm]",
+     "excerpt_sha256": "9054570a059b75d60c62aac4ad6ae5527f02502c76845814cbd2112fcb57cf52",
+     "attribution": "/-\nCopyright (c) 2019 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves A·adj(A)=det(A)•1. It gives the invertibility criterion used to pass between det X(t)≠0 and X(t) invertible."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-sturm-liouville-orthogonality-simple-eigenvalues",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/InnerProductSpace/Spectrum.lean#L92-L97",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.InnerProductSpace.Spectrum",
+     "declaration": "conj_eigenvalue_eq_self",
+     "lines": [
+      92,
+      97
+     ],
+     "module_sha256": "840de959041013f2efeca244fb1ab8ee058fb22c16e2aa914d40fbce5da9de4b",
+     "excerpt": "/-- The eigenvalues of a self-adjoint operator are real. -/\ntheorem conj_eigenvalue_eq_self (hT : T.IsSymmetric) {μ : 𝕜} (hμ : HasEigenvalue T μ) :\n    conj μ = μ := by\n  obtain ⟨v, hv₁, hv₂⟩ := hμ.exists_hasEigenvector\n  rw [mem_eigenspace_iff] at hv₁\n  simpa [hv₂, inner_smul_left, inner_smul_right, hv₁] using hT v v",
+     "excerpt_sha256": "d93a64fb8fe92074d9ccff32f99ce7368f8fb3d2ac79d4a09a9fcd81f00c3c79",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that an eigenvalue of a symmetric operator on an inner product space is real. This is the abstract form of step 3."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/InnerProductSpace/Spectrum.lean#L99-L108",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.InnerProductSpace.Spectrum",
+     "declaration": "orthogonalFamily_eigenspaces",
+     "lines": [
+      99,
+      108
+     ],
+     "module_sha256": "840de959041013f2efeca244fb1ab8ee058fb22c16e2aa914d40fbce5da9de4b",
+     "excerpt": "/-- The eigenspaces of a self-adjoint operator are mutually orthogonal. -/\ntheorem orthogonalFamily_eigenspaces (hT : T.IsSymmetric) :\n    OrthogonalFamily 𝕜 (fun μ => eigenspace T μ) fun μ => (eigenspace T μ).subtypeₗᵢ := by\n  rintro μ ν hμν ⟨v, hv⟩ ⟨w, hw⟩\n  by_cases hv' : v = 0\n  · simp [hv']\n  have H := hT.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector ⟨hv, hv'⟩)\n  rw [mem_eigenspace_iff] at hv hw\n  refine Or.resolve_left ?_ hμν.symm\n  simpa [inner_smul_left, inner_smul_right, hv, hw, H] using (hT v w).symm",
+     "excerpt_sha256": "2160689f0b576ce44478f367617b7f9726dece6764ade2879dda0d0fb20eac1e",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that eigenspaces of a symmetric operator for different eigenvalues are orthogonal. This is the abstract form of step 4."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-dirichlet-kernel-pointwise-fourier-convergence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/AddCircle.lean#L502-L506",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.AddCircle",
+     "declaration": "has_pointwise_sum_fourier_series_of_summable",
+     "lines": [
+      502,
+      506
+     ],
+     "module_sha256": "076762ca585bb1e7c38d4133da6d63ee395f4a92e69a04e1c2a47c9c4f79c3d8",
+     "excerpt": "/-- If the sequence of Fourier coefficients of `f` is summable, then the Fourier series of `f`\nconverges everywhere pointwise to `f`. -/\ntheorem has_pointwise_sum_fourier_series_of_summable (h : Summable (fourierCoeff f))\n    (x : AddCircle T) : HasSum (fun i => fourierCoeff f i • fourier i x) (f x) := by\n  convert! (ContinuousMap.evalCLM ℂ x).hasSum (hasSum_fourier_series_of_summable h)",
+     "excerpt_sha256": "d2e37f7dd3283679dbda111ddce49323914e608b87ea90133e55a929aa329a5e",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth, David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves pointwise convergence of the Fourier series to f when the coefficients are summable. This theorem gives pointwise convergence from a local Lipschitz condition instead."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/AddCircle.lean#L296-L299",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.AddCircle",
+     "declaration": "fourierCoeff",
+     "lines": [
+      296,
+      299
+     ],
+     "module_sha256": "076762ca585bb1e7c38d4133da6d63ee395f4a92e69a04e1c2a47c9c4f79c3d8",
+     "excerpt": "/-- The `n`-th Fourier coefficient of a function `AddCircle T → E`, for `E` a complete normed\n`ℂ`-vector space, defined as the integral over `AddCircle T` of `fourier (-n) t • f t`. -/\ndef fourierCoeff (f : AddCircle T → E) (n : ℤ) : E :=\n  ∫ t : AddCircle T, fourier (-n) t • f t ∂haarAddCircle",
+     "excerpt_sha256": "61e6adf308ba60303e3708a010e7b7432db0dbef8cd7a41d47fe73b0d2367b55",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth, David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the Fourier coefficients on the circle AddCircle T. They match c_n for T=2π by the substitution y∈[−π,π]."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-wirtinger-inequality-parseval-fourier",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/AddCircle.lean#L474-L477",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.AddCircle",
+     "declaration": "tsum_sq_fourierCoeffOn",
+     "lines": [
+      474,
+      477
+     ],
+     "module_sha256": "076762ca585bb1e7c38d4133da6d63ee395f4a92e69a04e1c2a47c9c4f79c3d8",
+     "excerpt": "theorem tsum_sq_fourierCoeffOn\n    {a b : ℝ} {f : ℝ → ℂ} (hab : a < b) (hL2 : MemLp f 2 (volume.restrict (Ioc a b))) :\n    ∑' (i : ℤ), ‖fourierCoeffOn hab f i‖ ^ 2 = (b - a)⁻¹ • ∫ x in a..b, ‖f x‖ ^ 2 :=\n  (hasSum_sq_fourierCoeffOn _ hL2).tsum_eq",
+     "excerpt_sha256": "d9a904ac2f870d0b28128bc3745a7e8f599e6e36b8275701b4c1f77726b54673",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth, David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves Parseval: the sum of squared norms of the Fourier coefficients on (a,b] equals the normalised L² norm. This is used for f and f′."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/AddCircle.lean#L595-L603",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.AddCircle",
+     "declaration": "fourierCoeffOn_of_hasDerivAt",
+     "lines": [
+      595,
+      603
+     ],
+     "module_sha256": "076762ca585bb1e7c38d4133da6d63ee395f4a92e69a04e1c2a47c9c4f79c3d8",
+     "excerpt": "/-- Express Fourier coefficients of `f` on an interval in terms of those of its derivative. -/\ntheorem fourierCoeffOn_of_hasDerivAt {a b : ℝ} (hab : a < b) {f f' : ℝ → ℂ} {n : ℤ} (hn : n ≠ 0)\n    (hf : ∀ x, x ∈ [[a, b]] → HasDerivAt f (f' x) x) (hf' : IntervalIntegrable f' volume a b) :\n    fourierCoeffOn hab f n = 1 / (-2 * π * I * n) *\n      (fourier (-n) (a : AddCircle (b - a)) * (f b - f a) - (b - a) * fourierCoeffOn hab f' n) :=\n  fourierCoeffOn_of_hasDerivAt_Ioo hab hn\n    (fun x hx ↦ hf x hx |>.continuousAt.continuousWithinAt)\n    (fun x hx ↦ hf x <| mem_Icc_of_Ioo hx)\n    hf'",
+     "excerpt_sha256": "66511af5f66aa339f2c3df690cf98e426b587ef14b88246ecd55a3e873b480c6",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth, David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the Fourier coefficient of f on an interval in terms of the coefficient of f′ and the boundary values. This is the derivative step 1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-beltrami-identity-catenoid",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Calculus/Deriv/Mul.lean#L282-L285",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Calculus.Deriv.Mul",
+     "declaration": "deriv_mul",
+     "lines": [
+      282,
+      285
+     ],
+     "module_sha256": "3ec644c8ee2f9100f2df33debfff1b45109482fe7130fee62f6d88cdf57e401e",
+     "excerpt": "@[simp]\ntheorem deriv_mul (hc : DifferentiableAt 𝕜 c x) (hd : DifferentiableAt 𝕜 d x) :\n    deriv (c * d) x = deriv c x * d x + c x * deriv d x :=\n  (hc.hasDerivAt.mul hd.hasDerivAt).deriv",
+     "excerpt_sha256": "5d6c957c4f59b5404e974eaa3b17a1f258c8d50522bd7561508fa297180a0b95",
+     "attribution": "/-\nCopyright (c) 2019 Gabriel Ebner. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Gabriel Ebner, Anatole Dedecker, Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the product rule for derivatives. It is the rule used in step 2 for the term y′F_p(y,y′)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-absolute-stability-region-one-step-methods",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Polynomial/Basic.lean#L126-L128",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Polynomial.Basic",
+     "declaration": "abs_tendsto_atBot",
+     "lines": [
+      126,
+      128
+     ],
+     "module_sha256": "1fd6c0689d0ef22c5ec3a0d6984080ddad8ee32a9b210a713308ff62026e1f49",
+     "excerpt": "theorem abs_tendsto_atBot (hdeg : 0 < P.degree) : Tendsto (|P.eval ·|) atBot atTop := by\n  convert! ((P.comp (-X)).abs_tendsto_atTop (by simp [hdeg])).comp tendsto_neg_atBot_atTop using 2\n  simp",
+     "excerpt_sha256": "bf6e87ee8fadd3c665d3ce73653a1ae49cdcfc67b8adeb30aa2ae15525cdb3e1",
+     "attribution": "/-\nCopyright (c) 2020 Anatole Dedecker. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anatole Dedecker, Devon Tuma\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that |P(x)| tends to infinity as x tends to −∞ for a real polynomial of positive degree. It is the growth fact in step 6."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-fourier-absolute-convergence-from-derivative",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Order/BigOperators/Ring/Finset.lean#L170-L175",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Order.BigOperators.Ring.Finset",
+     "declaration": "sum_mul_sq_le_sq_mul_sq",
+     "lines": [
+      170,
+      175
+     ],
+     "module_sha256": "aa14f233b0b83a55314925b119fd1cd2824a055cf1ebab8ec7f23fab96305f45",
+     "excerpt": "/-- **Cauchy-Schwarz inequality** for finsets, squared version. -/\nlemma sum_mul_sq_le_sq_mul_sq [CommSemiring R] [LinearOrder R] [IsStrictOrderedRing R]\n    [ExistsAddOfLE R] (s : Finset ι)\n    (f g : ι → R) : (∑ i ∈ s, f i * g i) ^ 2 ≤ (∑ i ∈ s, f i ^ 2) * ∑ i ∈ s, g i ^ 2 :=\n  sum_sq_le_sum_mul_sum_of_sq_le_mul s\n    (fun _ _ ↦ sq_nonneg _) (fun _ _ ↦ sq_nonneg _) (fun _ _ ↦ (mul_pow ..).le)",
+     "excerpt_sha256": "cb45442a190830a03d5772df864afe17c09a320c5731346dbf87aa3351c2699c",
+     "attribution": "/-\nCopyright (c) 2019 Floris van Doorn. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Floris van Doorn\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the Cauchy-Schwarz inequality for finite sums. It is the key inequality in step 3."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Fourier/AddCircle.lean#L595-L603",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Fourier.AddCircle",
+     "declaration": "fourierCoeffOn_of_hasDerivAt",
+     "lines": [
+      595,
+      603
+     ],
+     "module_sha256": "076762ca585bb1e7c38d4133da6d63ee395f4a92e69a04e1c2a47c9c4f79c3d8",
+     "excerpt": "/-- Express Fourier coefficients of `f` on an interval in terms of those of its derivative. -/\ntheorem fourierCoeffOn_of_hasDerivAt {a b : ℝ} (hab : a < b) {f f' : ℝ → ℂ} {n : ℤ} (hn : n ≠ 0)\n    (hf : ∀ x, x ∈ [[a, b]] → HasDerivAt f (f' x) x) (hf' : IntervalIntegrable f' volume a b) :\n    fourierCoeffOn hab f n = 1 / (-2 * π * I * n) *\n      (fourier (-n) (a : AddCircle (b - a)) * (f b - f a) - (b - a) * fourierCoeffOn hab f' n) :=\n  fourierCoeffOn_of_hasDerivAt_Ioo hab hn\n    (fun x hx ↦ hf x hx |>.continuousAt.continuousWithinAt)\n    (fun x hx ↦ hf x <| mem_Icc_of_Ioo hx)\n    hf'",
+     "excerpt_sha256": "66511af5f66aa339f2c3df690cf98e426b587ef14b88246ecd55a3e873b480c6",
+     "attribution": "/-\nCopyright (c) 2021 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth, David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source relates the Fourier coefficient of f on an interval to that of f′ and the boundary values. It is the integration by parts in step 1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-nonlinear-bvp-green-function-contraction",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/MetricSpace/Contracting.lean#L294-L299",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.MetricSpace.Contracting",
+     "declaration": "apriori_dist_iterate_fixedPoint_le",
+     "lines": [
+      294,
+      299
+     ],
+     "module_sha256": "11ba6d7d77875d57653eca4bd93f6d6bb0ee9d28532ee248aea1e37d079731d8",
+     "excerpt": "theorem apriori_dist_iterate_fixedPoint_le (x n) :\n    dist (f^[n] x) (fixedPoint f hf) ≤ dist x (f x) * (K : ℝ) ^ n / (1 - K) :=\n  calc\n    _ ≤ dist (f^[n] x) (f^[n + 1] x) / (1 - K) := hf.aposteriori_dist_iterate_fixedPoint_le x n\n    _ ≤ _ := by\n      gcongr; exacts [hf.one_sub_K_pos.le, hf.toLipschitzWith.dist_iterate_succ_le_geometric x n]",
+     "excerpt_sha256": "1590638fc16e85ce0adfc8e9823739bd6a9fa938c712a828160779719bec6d83",
+     "attribution": "/-\nCopyright (c) 2019 Rohan Mitta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rohan Mitta, Kevin Buzzard, Alistair Tucker, Johannes Hölzl, Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the a priori bound dist(T^n x,y*)≤dist(x,Tx)q^n/(1−q). It is the last bound in the statement."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/MetricSpace/Contracting.lean#L282-L283",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.MetricSpace.Contracting",
+     "declaration": "fixedPoint_unique",
+     "lines": [
+      282,
+      283
+     ],
+     "module_sha256": "11ba6d7d77875d57653eca4bd93f6d6bb0ee9d28532ee248aea1e37d079731d8",
+     "excerpt": "theorem fixedPoint_unique {x} (hx : IsFixedPt f x) : x = fixedPoint f hf :=\n  hf.fixedPoint_unique' hx hf.fixedPoint_isFixedPt",
+     "excerpt_sha256": "e4e15f293e04a61fc047506b16b34583f476650156e4ce9e3a6be506225b6017",
+     "attribution": "/-\nCopyright (c) 2019 Rohan Mitta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rohan Mitta, Kevin Buzzard, Alistair Tucker, Johannes Hölzl, Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a contraction has only one fixed point. It gives the uniqueness part of the statement."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-poset-mobius-function-inversion",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/IncidenceAlgebra.lean#L382-L383",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.IncidenceAlgebra",
+     "declaration": "mu_apply",
+     "lines": [
+      382,
+      383
+     ],
+     "module_sha256": "ffc9b9423b9bc9a4f97fbce4ac0bc86aeeb3b63b8f13359c30bf51fa301bc8d6",
+     "excerpt": "lemma mu_apply (a b : α) : mu 𝕜 a b = if a = b then 1 else -∑ x ∈ Ico a b, mu 𝕜 a x := by\n  rw [mu, coe_mk, muFun_apply, sum_attach]",
+     "excerpt_sha256": "918aa6bd07abc941da68c7472fe0203c1e46b89ec20dccd60d80e17c47c11a4f",
+     "attribution": "/-\nCopyright (c) 2022 Alex J. Best, Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex J. Best, Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the recursive formula for the Möbius function of a locally finite order. It is the definition used in the statement."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/IncidenceAlgebra.lean#L469-L473",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.IncidenceAlgebra",
+     "declaration": "mu_mul_zeta",
+     "lines": [
+      469,
+      473
+     ],
+     "module_sha256": "ffc9b9423b9bc9a4f97fbce4ac0bc86aeeb3b63b8f13359c30bf51fa301bc8d6",
+     "excerpt": "lemma mu_mul_zeta : (mu 𝕜 * zeta 𝕜 : IncidenceAlgebra 𝕜 α) = 1 := by\n  ext a b\n  calc\n    _ = ∑ x ∈ Icc a b, mu 𝕜 a x := by rw [mul_apply]; congr! with x hx; simp [(mem_Icc.1 hx).2]\n    _ = (1 : IncidenceAlgebra 𝕜 α) a b := sum_Icc_mu_right ..",
+     "excerpt_sha256": "d44e938153fb218e9802dc0737a97aa745eedd7dee157ec8809fff0ec712810f",
+     "attribution": "/-\nCopyright (c) 2022 Alex J. Best, Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex J. Best, Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that μ*ζ = 1 in the incidence algebra. This is step 1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/IncidenceAlgebra.lean#L496-L497",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.IncidenceAlgebra",
+     "declaration": "sum_Icc_mu_left",
+     "lines": [
+      496,
+      497
+     ],
+     "module_sha256": "ffc9b9423b9bc9a4f97fbce4ac0bc86aeeb3b63b8f13359c30bf51fa301bc8d6",
+     "excerpt": "lemma sum_Icc_mu_left (a b : α) : ∑ x ∈ Icc a b, mu 𝕜 x b = if a = b then 1 else 0 := by\n  rw [mu_eq_mu', sum_Icc_mu'_left]",
+     "excerpt_sha256": "c1066202cc30380e90177be3bf329162dc9d4dea110c03543a8c07dc12d2d28e",
+     "attribution": "/-\nCopyright (c) 2022 Alex J. Best, Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex J. Best, Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the second identity ∑_{a≤x≤b} μ(x,b) = δ_{ab}. This is step 3."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/IncidenceAlgebra.lean#L646-L652",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.IncidenceAlgebra",
+     "declaration": "mu_prod_mu",
+     "lines": [
+      646,
+      652
+     ],
+     "module_sha256": "ffc9b9423b9bc9a4f97fbce4ac0bc86aeeb3b63b8f13359c30bf51fa301bc8d6",
+     "excerpt": "/-- The Möbius function on a product order. Based on lemma 2.1.13 of Incidence Algebras by Spiegel\nand O'Donnell. -/\n@[simp]\nlemma mu_prod_mu : (mu 𝕜).prod (mu 𝕜) = (mu 𝕜 : IncidenceAlgebra 𝕜 (α × β)) := by\n  refine left_inv_eq_right_inv ?_ zeta_mul_mu\n  rw [← zeta_prod_zeta, prod_mul_prod', mu_mul_zeta, mu_mul_zeta, one_prod_one]\n  exact fun _ _ _ _ _ _ ↦ Commute.mul_mul_mul_comm (by simp : _ = _) _ _",
+     "excerpt_sha256": "297db0fd95519ebd8bdce4f9959c64b0b36f1692f461dafbf16fb8f34bd39863",
+     "attribution": "/-\nCopyright (c) 2022 Alex J. Best, Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alex J. Best, Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the product rule for the Möbius function of a product order. This is step 7."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-stirling-second-kind-falling-factorial-surjections",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Stirling.lean#L175-L194",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Stirling",
+     "declaration": "pow_eq_sum_stirlingSecond_mul_descFactorial",
+     "lines": [
+      175,
+      194
+     ],
+     "module_sha256": "4cd5c54d465dfb61feb7f235971ae3fd4b015f76aadcdb6c4af2c585c8e780cc",
+     "excerpt": "/-- Every power `n ^ k` is a linear combination of the descending factorials `n.descFactorial j`\nwith the Stirling numbers of the second kind `stirlingSecond k j` as coefficients. -/\ntheorem pow_eq_sum_stirlingSecond_mul_descFactorial (n k : ℕ) :\n    n ^ k = ∑ j ∈ Finset.range (k + 1), stirlingSecond k j * n.descFactorial j := by\n  induction k with\n  | zero => simp\n  | succ k ih =>\n    have : ∑ j ∈ Finset.range (k + 1), stirlingSecond k j * (j * n.descFactorial j)\n        = ∑ j ∈ Finset.range (k + 1),\n            (j + 1) * (stirlingSecond k (j + 1) * n.descFactorial (j + 1)) := by\n      rw [Finset.sum_range_succ' (fun j ↦ stirlingSecond k j * (j * n.descFactorial j)) k,\n        Finset.sum_range_succ (fun j ↦ (j + 1) * (stirlingSecond k (j + 1) *\n          n.descFactorial (j + 1))) k,\n        stirlingSecond_eq_zero_of_lt k.lt_add_one]\n      simp [mul_left_comm]\n    rw [pow_succ, ih, Finset.sum_mul,\n      Finset.sum_range_succ' (fun j ↦ stirlingSecond (k + 1) j * n.descFactorial j) (k + 1)]\n    simp only [mul_assoc, descFactorial_mul_self, mul_add, Finset.sum_add_distrib, this,\n      stirlingSecond_succ_succ, add_mul, stirlingSecond_succ_zero, zero_mul, add_zero]\n    exact add_comm _ _",
+     "excerpt_sha256": "d251ec696446e155a9111d1ba3b38149d070776e09c0ca7756a7400f4517fa37",
+     "attribution": "/-\nCopyright (c) 2025 Beibei Xiong. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Beibei Xiong, Yu Shao, Weijie Jiang, Zhengfeng Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves n^k = ∑_j S(k,j)·n.descFactorial j for natural n. This is statement (1) evaluated at natural numbers."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Stirling.lean#L147-L149",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Stirling",
+     "declaration": "stirlingSecond_succ_succ",
+     "lines": [
+      147,
+      149
+     ],
+     "module_sha256": "4cd5c54d465dfb61feb7f235971ae3fd4b015f76aadcdb6c4af2c585c8e780cc",
+     "excerpt": "theorem stirlingSecond_succ_succ (n k : ℕ) :\n    stirlingSecond (n + 1) (k + 1) =\n      (k + 1) * stirlingSecond n (k + 1) + stirlingSecond n k := rfl",
+     "excerpt_sha256": "a1a3faf95e6b6e292de20461d9d3c106ccc4e7d5e2102087a4384eae623948b8",
+     "attribution": "/-\nCopyright (c) 2025 Beibei Xiong. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Beibei Xiong, Yu Shao, Weijie Jiang, Zhengfeng Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the recursion S(n+1,k+1) = (k+1)·S(n,k+1) + S(n,k). This is the definition used in the statement."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-walk-counting-adjacency-matrix-powers",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/AdjMatrix.lean#L402-L420",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.AdjMatrix",
+     "declaration": "adjMatrix_pow_apply_eq_card_walk",
+     "lines": [
+      402,
+      420
+     ],
+     "module_sha256": "2d7cbab49efb1e1f8e74d93e3e8dbb2df79f389fa55aab224616b68814a41faf",
+     "excerpt": "theorem adjMatrix_pow_apply_eq_card_walk [DecidableEq V] [Semiring α] (n : ℕ) (u v : V) :\n    (G.adjMatrix α ^ n) u v = Fintype.card { p : G.Walk u v | p.length = n } := by\n  rw [card_set_walk_length_eq]\n  induction n generalizing u v with\n  | zero => obtain rfl | h := eq_or_ne u v <;> simp [finsetWalkLength, *]\n  | succ n ih =>\n    simp only [pow_succ', finsetWalkLength, ih, adjMatrix_mul_apply]\n    rw [Finset.card_biUnion]\n    · norm_cast\n      simp only [Nat.cast_sum, card_map, neighborFinset_def]\n      apply Finset.sum_toFinset_eq_subtype\n    -- Disjointness for card_bUnion\n    · rintro ⟨x, hx⟩ - ⟨y, hy⟩ - hxy\n      rw [Function.onFun, disjoint_iff_inf_le]\n      intro p hp\n      simp only [inf_eq_inter, mem_inter, mem_map] at hp\n      obtain ⟨⟨px, _, rfl⟩, ⟨py, hpy, hp⟩⟩ := hp\n      cases hp\n      simp at hxy",
+     "excerpt_sha256": "c09481c827fd748ca7a5b13d0de1dc7af2d8ced84edc6fdb985770a636a67c90",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Jalex Stark, Kyle Miller, Lu-Ming Zhang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves statement (1): the entry (A^n)_{uv} is the cardinality of the set of walks of length n from u to v."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/AdjMatrix.lean#L379-L381",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.AdjMatrix",
+     "declaration": "trace_adjMatrix",
+     "lines": [
+      379,
+      381
+     ],
+     "module_sha256": "2d7cbab49efb1e1f8e74d93e3e8dbb2df79f389fa55aab224616b68814a41faf",
+     "excerpt": "@[simp]\ntheorem trace_adjMatrix [AddCommMonoid α] [One α] : Matrix.trace (G.adjMatrix α) = 0 := by\n  simp [Matrix.trace]",
+     "excerpt_sha256": "7bfdbff34efcc8772dfd8262145cb0f1770ec437501edc3f7e6d791a235a71e5",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Jalex Stark, Kyle Miller, Lu-Ming Zhang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the trace of the adjacency matrix is zero. This is the case k = 1 of statement (2)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-finite-projective-plane-order-counting",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Configuration.lean#L437-L462",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Configuration",
+     "declaration": "card_points",
+     "lines": [
+      437,
+      462
+     ],
+     "module_sha256": "e4ef231471eb541f00932288e531b0d67a2d0da33476daa0eb78dd97cd97a99f",
+     "excerpt": "theorem card_points [Fintype P] [Finite L] : Fintype.card P = order P L ^ 2 + order P L + 1 := by\n  cases nonempty_fintype L\n  obtain ⟨p, -⟩ := @exists_config P L _ _\n  let ϕ : { q // q ≠ p } ≃ Σ l : { l : L // p ∈ l }, { q // q ∈ l.1 ∧ q ≠ p } :=\n    { toFun := fun q => ⟨⟨mkLine q.2, (mkLine_ax q.2).2⟩, q, (mkLine_ax q.2).1, q.2⟩\n      invFun := fun lq => ⟨lq.2, lq.2.2.2⟩\n      right_inv := fun lq =>\n        Sigma.subtype_ext\n          (Subtype.ext\n            ((eq_or_eq (mkLine_ax lq.2.2.2).1 (mkLine_ax lq.2.2.2).2 lq.2.2.1 lq.1.2).resolve_left\n              lq.2.2.2))\n          rfl }\n  classical\n    have h1 : Fintype.card { q // q ≠ p } + 1 = Fintype.card P := by\n      apply (eq_tsub_iff_add_eq_of_le (Nat.succ_le_of_lt (Fintype.card_pos_iff.mpr ⟨p⟩))).mp\n      convert (Fintype.card_subtype_compl _).trans (congr_arg _ (Fintype.card_subtype_eq p))\n    have h2 : ∀ l : { l : L // p ∈ l }, Fintype.card { q // q ∈ l.1 ∧ q ≠ p } = order P L := by\n      intro l\n      rw [← Fintype.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ l.val) (· ≠ p)),\n        Fintype.card_subtype_compl fun x : Subtype (· ∈ l.val) => x.val = p, ←\n        Nat.card_eq_fintype_card]\n      refine tsub_eq_of_eq_add ((pointCount_eq P l.1).trans ?_)\n      rw [← Fintype.card_subtype_eq (⟨p, l.2⟩ : { q : P // q ∈ l.1 })]\n      simp_rw [Subtype.ext_iff]\n    simp_rw [← h1, Fintype.card_congr ϕ, Fintype.card_sigma, h2, Finset.sum_const, Finset.card_univ]\n    rw [← Nat.card_eq_fintype_card, ← lineCount, lineCount_eq, smul_eq_mul, Nat.succ_mul, sq]",
+     "excerpt_sha256": "422633369fea2cc5e3f11de91ec8a2136f1e0f15b35eddaebd63516318fea355",
+     "attribution": "/-\nCopyright (c) 2021 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a finite projective plane of order n has n²+n+1 points. This is the first part of statement (3)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Configuration.lean#L400-L405",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Configuration",
+     "declaration": "lineCount_eq",
+     "lines": [
+      400,
+      405
+     ],
+     "module_sha256": "e4ef231471eb541f00932288e531b0d67a2d0da33476daa0eb78dd97cd97a99f",
+     "excerpt": "theorem lineCount_eq [Finite P] [Finite L] (p : P) : lineCount L p = order P L + 1 := by\n  obtain ⟨q, -, -, l, -, -, -, -, h, -⟩ := Classical.choose_spec (@exists_config P L _ _)\n  cases nonempty_fintype { l : L // q ∈ l }\n  rw [order, lineCount_eq_lineCount L p q, lineCount_eq_lineCount L (Classical.choose _) q,\n    lineCount, Nat.card_eq_fintype_card, Nat.sub_add_cancel]\n  exact Fintype.card_pos_iff.mpr ⟨⟨l, h⟩⟩",
+     "excerpt_sha256": "be8b385865add92a7527645dee1e5eb27f88a94bca07074406bb4e188c056c11",
+     "attribution": "/-\nCopyright (c) 2021 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that each point lies on order+1 lines. This is statement (2). Its non-degeneracy axiom is a configuration of three points and three lines. This entry uses four points no three collinear instead, and it does not claim that both axioms are equivalent."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-singleton-hamming-gilbert-varshamov-code-bounds",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/Hamming.lean#L58-L65",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.Hamming",
+     "declaration": "hammingDist_triangle",
+     "lines": [
+      58,
+      65
+     ],
+     "module_sha256": "7d247632b790bfc237d79d3c040fb7f21d9cff00d190a67e120ccb73056460a6",
+     "excerpt": "/-- Corresponds to `dist_triangle`. -/\ntheorem hammingDist_triangle (x y z : ∀ i, β i) :\n    hammingDist x z ≤ hammingDist x y + hammingDist y z := by\n  classical\n    unfold hammingDist\n    refine le_trans (card_mono ?_) (card_union_le _ _)\n    rw [← filter_or]\n    exact monotone_filter_right _ fun i _ h ↦ (h.ne_or_ne _).imp_right Ne.symm",
+     "excerpt_sha256": "d690055b522a2ffa2e022cb7d70a27df0d2f54d1027103c0d6cdeba5bfb93a70",
+     "attribution": "/-\nCopyright (c) 2022 Wrenna Robson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the triangle inequality for the Hamming distance. Step 3 uses this fact. The bounds themselves are not in the source."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/Hamming.lean#L40-L41",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.Hamming",
+     "declaration": "hammingDist",
+     "lines": [
+      40,
+      41
+     ],
+     "module_sha256": "7d247632b790bfc237d79d3c040fb7f21d9cff00d190a67e120ccb73056460a6",
+     "excerpt": "/-- The Hamming distance function to the naturals. -/\ndef hammingDist (x y : ∀ i, β i) : ℕ := #{i | x i ≠ y i}",
+     "excerpt_sha256": "939c0fae744bc3d58e639859ed53d54789b4e0314e96f9955a47c43c07c18eab",
+     "attribution": "/-\nCopyright (c) 2022 Wrenna Robson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the Hamming distance as the number of coordinates where two words differ. This is the distance used in all four bounds."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-plotkin-bound-pairwise-distance-averaging",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/Hamming.lean#L54-L56",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.Hamming",
+     "declaration": "hammingDist_comm",
+     "lines": [
+      54,
+      56
+     ],
+     "module_sha256": "7d247632b790bfc237d79d3c040fb7f21d9cff00d190a67e120ccb73056460a6",
+     "excerpt": "/-- Corresponds to `dist_comm`. -/\ntheorem hammingDist_comm (x y : ∀ i, β i) : hammingDist x y = hammingDist y x := by\n  simp_rw [hammingDist, ne_comm]",
+     "excerpt_sha256": "5881c2516cdba186b1edddd52e4dbfe7d60632dbf2b8f7f11d4434ccd8404a5d",
+     "attribution": "/-\nCopyright (c) 2022 Wrenna Robson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Hamming distance is symmetric. The proof uses this fact when it counts ordered pairs. The Plotkin bound itself is not in the source."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/Hamming.lean#L89-L94",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.Hamming",
+     "declaration": "hammingDist_eq_zero",
+     "lines": [
+      89,
+      94
+     ],
+     "module_sha256": "7d247632b790bfc237d79d3c040fb7f21d9cff00d190a67e120ccb73056460a6",
+     "excerpt": "/-- Corresponds to `dist_eq_zero`. -/\n@[simp]\ntheorem hammingDist_eq_zero {x y : ∀ i, β i} : hammingDist x y = 0 ↔ x = y :=\n  ⟨eq_of_hammingDist_eq_zero, fun H => by\n    rw [H]\n    exact hammingDist_self _⟩",
+     "excerpt_sha256": "27c532d3c512ac13c470c5c6d38de1317ec99f7aa91c8e105230cd12da2cce93",
+     "attribution": "/-\nCopyright (c) 2022 Wrenna Robson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source shows that the Hamming distance is zero only for equal words. So pairs with x = y add zero to S."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-weighted-partition-generating-function-euler-product",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Partition/GenFun.lean#L170-L187",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Partition.GenFun",
+     "declaration": "hasProd_genFun",
+     "lines": [
+      170,
+      187
+     ],
+     "module_sha256": "f8c3761c1ff99a2f3857aaeacf6904afec0271d6f07f5e841a4d68da8bc3eb86",
+     "excerpt": "theorem hasProd_genFun (f : ℕ → ℕ → R) :\n    HasProd (fun i ↦ 1 + ∑' j, f (i + 1) (j + 1) • X ^ ((i + 1) * (j + 1))) (genFun f) := by\n  rw [HasProd, WithPiTopology.tendsto_iff_coeff_tendsto]\n  refine fun d ↦ tendsto_atTop_of_eventually_const (fun s (hs : s ≥ range d) ↦ ?_)\n  have : ∏ i ∈ s, ((1 : R⟦X⟧) + ∑' j, f (i + 1) (j + 1) • X ^ ((i + 1) * (j + 1)))\n      = ∏ i ∈ s.map (addRightEmbedding 1), (1 + ∑' j, f i (j + 1) • X ^ (i * (j + 1))) := by simp\n  rw [this]\n  have hs : Icc 1 d ⊆ s.map (addRightEmbedding 1) := by\n    intro i\n    suffices 1 ≤ i → i ≤ d → ∃ a ∈ s, a + 1 = i by simpa\n    intro h1 h2\n    refine ⟨i - 1, mem_of_subset hs ?_, ?_⟩ <;> grind\n  rw [coeff_genFun, coeff_prod]\n  refine (sum_of_injOn toFinsuppAntidiag (toFinsuppAntidiag_injective d).injOn ?_ ?_ ?_).symm\n  · intro p _\n    exact mem_of_subset (finsuppAntidiag_mono hs _) p.toFinsuppAntidiag_mem_finsuppAntidiag\n  · exact fun g hg hg' ↦ aux_prod_coeff_eq_zero_of_notMem_range f (by simp) hg (by simpa using hg')\n  · exact fun p _ ↦ aux_prod_f_eq_prod_coeff f p hs (by simp)",
+     "excerpt_sha256": "502447aaab997e71ffc1fed172d9667dc34439742fdbdd890c9f669f85c5e403",
+     "attribution": "/-\nCopyright (c) 2025 Weiyi Wang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Weiyi Wang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the same Euler product for genFun f in a topological semiring, with a shifted index convention (f (i+1) (j+1)). This entry adds the explicit coefficient argument for a general commutative ring."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Partition/GenFun.lean#L59-L62",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Partition.GenFun",
+     "declaration": "coeff_genFun",
+     "lines": [
+      59,
+      62
+     ],
+     "module_sha256": "f8c3761c1ff99a2f3857aaeacf6904afec0271d6f07f5e841a4d68da8bc3eb86",
+     "excerpt": "@[simp]\nlemma coeff_genFun (f : ℕ → ℕ → R) (n : ℕ) :\n    (genFun f).coeff n = ∑ p : n.Partition, p.parts.toFinsupp.prod f :=\n  PowerSeries.coeff_mk _ _",
+     "excerpt_sha256": "a594c71306c5352fad87fb23859c28f28387dd7dbb1c9d369b8a12729e25e0e1",
+     "attribution": "/-\nCopyright (c) 2025 Weiyi Wang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Weiyi Wang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the coefficient of x^n in genFun as the sum over partitions of n of the product of f over the multiplicities. This is the left side of the theorem."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-large-schroder-paths-recurrence-and-flat-step-formula",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Schroder.lean#L62-L64",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Schroder",
+     "declaration": "largeSchroder_succ",
+     "lines": [
+      62,
+      64
+     ],
+     "module_sha256": "fbcc42b268e484032f7061e62ed8fd2c95eadf79ec7a8d3f33712e174c016143",
+     "excerpt": "theorem largeSchroder_succ (n : ℕ) :\n    largeSchroder (n + 1) = largeSchroder n + ∑ i ≤ n, largeSchroder i * largeSchroder (n - i) := by\n  simp [largeSchroder, ← Iio_add_one_eq_Iic, Nat.Iio_eq_range, ← Fin.sum_univ_eq_sum_range]",
+     "excerpt_sha256": "3ffe009e0b507b7c3028da30e24d3e590b428e4b7888872c87d8469123b8c109",
+     "attribution": "/-\nCopyright (c) 2025 Weijie Jiang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Weijie Jiang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the same recurrence for its definition of the large Schröder numbers. This entry shows that the path count obeys it, using a first-return argument."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Schroder.lean#L85-L86",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Schroder",
+     "declaration": "smallSchroder_succ_eq_largeSchroder_div_two",
+     "lines": [
+      85,
+      86
+     ],
+     "module_sha256": "fbcc42b268e484032f7061e62ed8fd2c95eadf79ec7a8d3f33712e174c016143",
+     "excerpt": "lemma smallSchroder_succ_eq_largeSchroder_div_two (h : n ≠ 0) :\n    smallSchroder (n + 1) = largeSchroder n / 2 := by simp [smallSchroder]",
+     "excerpt_sha256": "00774fee0f556e592acd30bb4ae51426ee136eff5ad9d7f96f112d73489d6e13",
+     "attribution": "/-\nCopyright (c) 2025 Weijie Jiang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Weijie Jiang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source relates the small and large Schröder numbers. This entry does not use it, but it shows the same sequence."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gallai-identities-vertex-cover-matching-edge-cover",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/VertexCover.lean#L58-L63",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.VertexCover",
+     "declaration": "isIndepSet_compl_iff_isVertexCover",
+     "lines": [
+      58,
+      63
+     ],
+     "module_sha256": "7268f991e3cdee5c19cc4356bd49e6aa477a99c11f3a65cc4ce8e9d28bc42b36",
+     "excerpt": "/-- A set `c` is a vertex cover iff the complement of `c` is an independent set. -/\n@[simp]\ntheorem isIndepSet_compl_iff_isVertexCover {c : Set V} : G.IsIndepSet cᶜ ↔ IsVertexCover G c := by\n  refine ⟨fun hi v w hadj ↦ ?_, by grind [IsVertexCover, Set.Pairwise]⟩\n  by_contra! hh\n  exact hi hh.1 hh.2 (Adj.ne hadj) hadj",
+     "excerpt_sha256": "c55b2128ca08514dc2b5e33789b5355ddccc046933e52471586d0383f3071e16",
+     "attribution": "/-\nCopyright (c) 2025 Vlad Tsyrklevich. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Vlad Tsyrklevich\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the complement of a set is independent if and only if the set is a vertex cover. This is the bijection in the proof of (1)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/VertexCover.lean#L99-L101",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.VertexCover",
+     "declaration": "IsVertexCover.vertexCoverNum_le",
+     "lines": [
+      99,
+      101
+     ],
+     "module_sha256": "7268f991e3cdee5c19cc4356bd49e6aa477a99c11f3a65cc4ce8e9d28bc42b36",
+     "excerpt": "theorem IsVertexCover.vertexCoverNum_le {c : Set V} (hc : IsVertexCover G c) :\n    vertexCoverNum G ≤ c.encard :=\n  vertexCoverNum_le_iff.mpr fun _ hm ↦ hm c hc",
+     "excerpt_sha256": "a4b0c777509cefc9532b1c3334f150effe920980ece7b684170442c84aafed60",
+     "attribution": "/-\nCopyright (c) 2025 Vlad Tsyrklevich. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Vlad Tsyrklevich\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source shows that the vertex cover number is at most the size of any vertex cover. This gives the minimum used for τ."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-nordhaus-gaddum-chromatic-number-complement-bounds",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/Coloring/Vertex.lean#L323-L327",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex",
+     "declaration": "Colorable.chromaticNumber_le",
+     "lines": [
+      323,
+      327
+     ],
+     "module_sha256": "9a803967ff799b1d5d47ecb14b1028e59436c7dbf5fdd3ad6071b7ca7cd71549",
+     "excerpt": "theorem Colorable.chromaticNumber_le {n : ℕ} (hc : G.Colorable n) : G.chromaticNumber ≤ n := by\n  rw [hc.chromaticNumber_eq_sInf]\n  norm_cast\n  apply csInf_le chromaticNumber_bddBelow\n  exact hc",
+     "excerpt_sha256": "fc608a9228d70a2f04e3a67edf458b3b829546d92484a7a965ebcac347cdbe82",
+     "attribution": "/-\nCopyright (c) 2021 Arthur Paulino. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Arthur Paulino, Kyle Miller\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that a colouring with n colours gives chromaticNumber ≤ n. The proof uses this to bound χ(G) by χ(H) + 1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/Coloring/Vertex.lean#L212-L213",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex",
+     "declaration": "le_chromaticNumber_iff_colorable",
+     "lines": [
+      212,
+      213
+     ],
+     "module_sha256": "9a803967ff799b1d5d47ecb14b1028e59436c7dbf5fdd3ad6071b7ca7cd71549",
+     "excerpt": "lemma le_chromaticNumber_iff_colorable : n ≤ G.chromaticNumber ↔ ∀ m, G.Colorable m → n ≤ m := by\n  simp [chromaticNumber]",
+     "excerpt_sha256": "48a6803c87593d948fda48177f2d7d3cb988f08cdde16fa6f0f0959703132b91",
+     "attribution": "/-\nCopyright (c) 2021 Arthur Paulino. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Arthur Paulino, Kyle Miller\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source characterises a lower bound on the chromatic number by non-existence of smaller colourings. The pair-map argument gives such a lower bound."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-commuting-pairs-conjugacy-classes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/GroupAction/CardCommute.lean#L76-L94",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.GroupAction.CardCommute",
+     "declaration": "card_comm_eq_card_conjClasses_mul_card",
+     "lines": [
+      76,
+      94
+     ],
+     "module_sha256": "309937b30da893ac3f718354c4bd6f0be42f38ecb525c1dd3c30391f17d00f38",
+     "excerpt": "theorem card_comm_eq_card_conjClasses_mul_card (G : Type*) [Group G] :\n    Nat.card { p : G × G // Commute p.1 p.2 } = Nat.card (ConjClasses G) * Nat.card G := by\n  classical\n  rcases fintypeOrInfinite G; swap\n  · rw [mul_comm, Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite, zero_mul]\n  simp only [Nat.card_eq_fintype_card]\n  calc card { p : G × G // Commute p.1 p.2 }\n      _ = card ((a : G) × { b // Commute a b }) :=\n            card_congr (Equiv.subtypeProdEquivSigmaSubtype Commute)\n      _ = ∑ i, card { b // Commute i b } := card_sigma\n      _ = ∑ x, card (MulAction.fixedBy G x) :=\n            sum_equiv ConjAct.toConjAct.toEquiv (fun a ↦ card { b // Commute a b })\n              (fun g ↦ card (MulAction.fixedBy G g))\n              fun g ↦ card_congr' <| congr_arg _ <| funext fun h ↦ mul_inv_eq_iff_eq_mul.symm.eq\n      _ = card (Quotient (MulAction.orbitRel (ConjAct G) G)) * card (ConjAct G) :=\n             MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group _ _\n      _ = card (ConjClasses G) * card G := by\n             congr 1; apply card_congr'; congr; ext\n             exact (Setoid.comm' _).trans isConj_iff.symm",
+     "excerpt_sha256": "71f4f71bd78ab84cee8906e72262ddc765a8a475e900e007dcb486c67b5c1ed0",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that the number of commuting pairs equals the number of conjugacy classes times the order of the group."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/CommutingProbability.lean#L96-L100",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.CommutingProbability",
+     "declaration": "commProb_def'",
+     "lines": [
+      96,
+      100
+     ],
+     "module_sha256": "6064464f823cc788215f09c69b6158ba857768340df05562196a250da815bd3d",
+     "excerpt": "theorem commProb_def' : commProb G = Nat.card (ConjClasses G) / Nat.card G := by\n  rw [commProb, card_comm_eq_card_conjClasses_mul_card, Nat.cast_mul, sq]\n  by_cases h : (Nat.card G : ℚ) = 0\n  · rw [h, zero_mul, div_zero, div_zero]\n  · exact mul_div_mul_right _ _ h",
+     "excerpt_sha256": "c9f836f5db888136f79244042bdc641f93bae8080bec60f2ac2f9f39d8528814",
+     "attribution": "/-\nCopyright (c) 2022 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the commuting probability as the number of conjugacy classes divided by the order."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-neumann-coset-covering-lemma",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/CosetCover.lean#L349-L366",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.CosetCover",
+     "declaration": "Subgroup.exists_index_le_card_of_leftCoset_cover",
+     "lines": [
+      349,
+      366
+     ],
+     "module_sha256": "c793794b232b9d5285f3c0a54f34a9aa4d3885475433c8582b1d801d449db782",
+     "excerpt": "theorem exists_index_le_card_of_leftCoset_cover :\n    ∃ i ∈ s, (H i).FiniteIndex ∧ (H i).index ≤ s.card := by\n  by_contra! h\n  apply (one_le_sum_inv_index_of_leftCoset_cover hcovers).not_gt\n  cases s.eq_empty_or_nonempty with\n  | inl hs => simp only [hs, Finset.sum_empty, zero_lt_one]\n  | inr hs =>\n  have hs' : 0 < s.card := hs.card_pos\n  have hlt : ∀ i ∈ s, ((H i).index : ℚ)⁻¹ < (s.card : ℚ)⁻¹ := fun i hi ↦ by\n    cases eq_or_ne (H i).index 0 with\n    | inl hindex =>\n      rwa [hindex, Nat.cast_zero, inv_zero, inv_pos, Nat.cast_pos]\n    | inr hindex =>\n      exact inv_strictAnti₀ (by exact_mod_cast hs') (by exact_mod_cast h i hi ⟨hindex⟩)\n  apply (Finset.sum_lt_sum_of_nonempty hs hlt).trans_eq\n  rw [Finset.sum_const, nsmul_eq_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.mpr hs'.ne')]\n\nend",
+     "excerpt_sha256": "8eb5e4d270fc47d9a48e7d038c3cf43355cee70102c6e20975175e6674a6b759",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir, Richard Copley. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir, Richard Copley\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (d), the index bound by the number of cosets."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/CosetCover.lean#L201-L214",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.CosetCover",
+     "declaration": "Subgroup.exists_finiteIndex_of_leftCoset_cover",
+     "lines": [
+      201,
+      214
+     ],
+     "module_sha256": "c793794b232b9d5285f3c0a54f34a9aa4d3885475433c8582b1d801d449db782",
+     "excerpt": "theorem exists_finiteIndex_of_leftCoset_cover : ∃ k ∈ s, (H k).FiniteIndex := by\n  classical\n  have ⟨j, hj⟩ : s.Nonempty := by\n    by_contra! rfl\n    rw [← Finset.set_biUnion_coe, Finset.coe_empty, Set.biUnion_empty] at hcovers\n    exact Set.empty_ne_univ hcovers\n  by_cases hcovers' : ⋃ i ∈ s.filter (H · = H j), g i • (H i : Set G) = Set.univ\n  · rw [Set.iUnion₂_congr fun i hi => by rw [(Finset.mem_filter.mp hi).right]] at hcovers'\n    exact ⟨j, hj, finiteIndex_of_leftCoset_cover_const hcovers'⟩\n  · have ⟨i, hi, _, hfi⟩ :=\n      exists_finiteIndex_of_leftCoset_cover_aux hcovers j hj hcovers'\n    exact ⟨i, hi, hfi⟩\n\n-- Auxiliary to `leftCoset_cover_filter_FiniteIndex` and `one_le_sum_inv_index_of_leftCoset_cover`.",
+     "excerpt_sha256": "7b99b2304cde70341a46afdf914fb03dc76e328c729192cb239ebfba98d7c485",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir, Richard Copley. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir, Richard Copley\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (a), that one subgroup has finite index."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/CosetCover.lean#L315-L318",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.CosetCover",
+     "declaration": "Subgroup.leftCoset_cover_filter_FiniteIndex",
+     "lines": [
+      315,
+      318
+     ],
+     "module_sha256": "c793794b232b9d5285f3c0a54f34a9aa4d3885475433c8582b1d801d449db782",
+     "excerpt": "theorem leftCoset_cover_filter_FiniteIndex\n    [DecidablePred (FiniteIndex : Subgroup G → Prop)] :\n    ⋃ k ∈ s.filter (fun i => (H i).FiniteIndex), g k • (H k : Set G) = Set.univ :=\n  (leftCoset_cover_filter_FiniteIndex_aux hcovers).1",
+     "excerpt_sha256": "39bbd5b6ab3f3551292ef1ab7330e56d5caa94535afd6a3f466107c603d7c7cb",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir, Richard Copley. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir, Richard Copley\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (b), that cosets of infinite index subgroups can be omitted."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/CosetCover.lean#L325-L328",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.CosetCover",
+     "declaration": "Subgroup.one_le_sum_inv_index_of_leftCoset_cover",
+     "lines": [
+      325,
+      328
+     ],
+     "module_sha256": "c793794b232b9d5285f3c0a54f34a9aa4d3885475433c8582b1d801d449db782",
+     "excerpt": "theorem one_le_sum_inv_index_of_leftCoset_cover :\n    1 ≤ ∑ i ∈ s, ((H i).index : ℚ)⁻¹ :=\n  have := Classical.decPred (FiniteIndex : Subgroup G → Prop)\n  (leftCoset_cover_filter_FiniteIndex_aux hcovers).2.1",
+     "excerpt_sha256": "70c1f405179fbf2b95ee16ab596f51da419d03d26e79d69d09e96dfd57d1e26f",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir, Richard Copley. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir, Richard Copley\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (c), the bound on the sum of the inverse indices."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-finite-nilpotent-group-characterizations",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Nilpotent.lean#L1307-L1325",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Nilpotent",
+     "declaration": "Group.isNilpotent_of_finite_tfae",
+     "lines": [
+      1307,
+      1325
+     ],
+     "module_sha256": "3744cd00998318431fd480dcbba42323fc41647f3f5ae481499885ceda221eac",
+     "excerpt": "/-- A finite group is nilpotent iff the normalizer condition holds, and iff all maximal groups are\nnormal and iff all Sylow groups are normal and iff the group is the direct product of its Sylow\ngroups. -/\ntheorem Group.isNilpotent_of_finite_tfae :\n    List.TFAE\n      [IsNilpotent G, NormalizerCondition G, ∀ H : Subgroup G, IsCoatom H → H.Normal,\n        ∀ (p : ℕ) (_hp : Fact p.Prime) (P : Sylow p G), (↑P : Subgroup G).Normal,\n        Nonempty\n          ((∀ p : (Nat.card G).primeFactors, ∀ P : Sylow p G, (↑P : Subgroup G)) ≃* G)] := by\n  tfae_have 1 → 2 := @normalizerCondition_of_isNilpotent _ _\n  tfae_have 2 → 3\n  | h, H => NormalizerCondition.normal_of_coatom H h\n  tfae_have 3 → 4\n  | h, p, _, P => Sylow.normal_of_all_max_subgroups_normal h _\n  tfae_have 4 → 5\n  | h => Nonempty.intro (Sylow.directProductOfNormal fun {p hp hP} => h p hp hP)\n  tfae_have 5 → 1\n  | ⟨e⟩ => isNilpotent_of_product_of_sylow_group e\n  tfae_finish",
+     "excerpt_sha256": "94d26af24d6c9a5891a4b90d2b93be1d25f2ce5ac08086358c87f7f179a02ffa",
+     "attribution": "/-\nCopyright (c) 2021 Kevin Buzzard. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kevin Buzzard, Ines Wright, Joachim Breitner\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the equivalence of nilpotency, the normalizer condition, normal maximal subgroups, normal Sylow subgroups and the direct product of the Sylow subgroups."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Nilpotent.lean#L1296-L1305",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Nilpotent",
+     "declaration": "Group.isNilpotent_of_product_of_sylow_group",
+     "lines": [
+      1296,
+      1305
+     ],
+     "module_sha256": "3744cd00998318431fd480dcbba42323fc41647f3f5ae481499885ceda221eac",
+     "excerpt": "/-- If a finite group is the direct product of its Sylow groups, it is nilpotent -/\ntheorem Group.isNilpotent_of_product_of_sylow_group\n    (e : (∀ p : (Nat.card G).primeFactors, ∀ P : Sylow p G, (↑P : Subgroup G)) ≃* G) :\n    IsNilpotent G := by\n  let ps := (Nat.card G).primeFactors\n  have : ∀ (p : ps) (P : Sylow p G), IsNilpotent (↑P : Subgroup G) := by\n    intro p P\n    have : Fact (Nat.Prime ↑p) := Fact.mk <| Nat.prime_of_mem_primeFactors p.2\n    exact P.isPGroup'.isNilpotent\n  exact nilpotent_of_mulEquiv e",
+     "excerpt_sha256": "5e51b36358ddd91090f8d8272169e955f1f6f11551d30dcbac91dd2d8ad9800a",
+     "attribution": "/-\nCopyright (c) 2021 Kevin Buzzard. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kevin Buzzard, Ines Wright, Joachim Breitner\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the implication from the direct product of Sylow subgroups to nilpotency."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-symmetric-group-unsolvable-perfect-alternating",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Solvable.lean#L297-L304",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Solvable",
+     "declaration": "Equiv.Perm.not_isSolvable",
+     "lines": [
+      297,
+      304
+     ],
+     "module_sha256": "69a5e26ef90429a32a214ca0ba6d03a3e00d2eabf48269a641af1d64ecc83ca8",
+     "excerpt": "theorem Equiv.Perm.not_isSolvable (X : Type*) (hX : 5 ≤ Cardinal.mk X) :\n    ¬Group.IsSolvable (Equiv.Perm X) := by\n  intro h\n  have key : Nonempty (Fin 5 ↪ X) := by\n    rwa [← Cardinal.lift_mk_le, Cardinal.mk_fin, Cardinal.lift_natCast, Cardinal.lift_id]\n  exact\n    Equiv.Perm.not_isSolvable_fin_5 (Group.isSolvable_of_isSolvable_injective\n      (Equiv.Perm.viaEmbeddingHom_injective (Nonempty.some key)))",
+     "excerpt_sha256": "0d78dc5333862940aef22525bfadc5651be43f247f13611d0b51358145fdf010",
+     "attribution": "/-\nCopyright (c) 2021 Jordan Brown, Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jordan Brown, Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that the group of permutations of a set of at least 5 elements is not solvable."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/SpecificGroups/Alternating.lean#L202-L222",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.SpecificGroups.Alternating",
+     "declaration": "Equiv.Perm.closure_three_cycles_eq_alternating",
+     "lines": [
+      202,
+      222
+     ],
+     "module_sha256": "ed02cb906aeb3d096798a3b87a647ada4647f730ee02802a32039f65d35a4ff4",
+     "excerpt": "@[simp]\ntheorem closure_three_cycles_eq_alternating :\n    closure { σ : Perm α | IsThreeCycle σ } = alternatingGroup α := by\n  refine closure_eq_of_le _ (fun _ ↦ IsThreeCycle.mem_alternatingGroup) fun σ hσ ↦ ?_\n  suffices hind :\n    ∀ (n : ℕ) (l : List (Perm α)) (_ : ∀ g, g ∈ l → IsSwap g) (_ : l.length = 2 * n),\n      l.prod ∈ closure { σ : Perm α | IsThreeCycle σ } by\n    obtain ⟨l, rfl, hl⟩ := truncSwapFactors σ\n    obtain ⟨n, hn⟩ := (prod_list_swap_mem_alternatingGroup_iff_even_length hl).1 hσ\n    rw [← two_mul] at hn\n    exact hind n l hl hn\n  intro n\n  induction n with intro l hl hn\n  | zero => simp [List.length_eq_zero_iff.1 hn, one_mem]\n  | succ n ih =>\n    rw [Nat.mul_succ] at hn\n    obtain ⟨a, l, rfl⟩ := l.exists_of_length_succ hn\n    rw [List.length_cons, Nat.succ_inj] at hn\n    obtain ⟨b, l, rfl⟩ := l.exists_of_length_succ hn\n    rw [List.prod_cons, List.prod_cons, ← mul_assoc]\n    apply mul_mem <;> grind [IsSwap.mul_mem_closure_three_cycles]",
+     "excerpt_sha256": "5a73ce4b5b7ae498b6bcd614ca1073c7bc1c2fca8bc5bcfd30b87314b167c830",
+     "attribution": "/-\nCopyright (c) 2021 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that 3-cycles generate the alternating group, which is step 1 and 2."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-iwasawa-simplicity-criterion",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/GroupAction/Iwasawa.lean#L80-L93",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.GroupAction.Iwasawa",
+     "declaration": "MulAction.IwasawaStructure.isSimpleGroup",
+     "lines": [
+      80,
+      93
+     ],
+     "module_sha256": "872914f707f12626c937829ed020dabfabf819dd7b6fc94b3a84be7ef5cd214a",
+     "excerpt": "/-- The Iwasawa criterion for simplicity -/\ntheorem isSimpleGroup [Nontrivial M] (is_perfect : commutator M = ⊤)\n    [IsQuasiPreprimitive M α] (IwaS : IwasawaStructure M α) (is_faithful : FaithfulSMul M α) :\n    IsSimpleGroup M := by\n  apply IsSimpleGroup.mk\n  intro N nN\n  cases or_iff_not_imp_left.mpr (IwaS.commutator_le N) with\n  | inl h =>\n    refine Or.inl (N.eq_bot_iff_forall.mpr fun n hn => ?_)\n    apply is_faithful.eq_of_smul_eq_smul\n    intro x\n    rw [one_smul]\n    exact Set.eq_univ_iff_forall.mp h x ⟨n, hn⟩\n  | inr h => exact Or.inr (top_le_iff.mp (le_trans (ge_of_eq is_perfect) h))",
+     "excerpt_sha256": "43d2fcae68ba58da0d535ca6cacd3aae2c3e90629d987c2ff8bfaa11ce0820cc",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the criterion for simplicity: a perfect faithful quasiprimitive action with an Iwasawa structure gives a simple group."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/GroupAction/Iwasawa.lean#L60-L78",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.GroupAction.Iwasawa",
+     "declaration": "MulAction.IwasawaStructure.commutator_le",
+     "lines": [
+      60,
+      78
+     ],
+     "module_sha256": "872914f707f12626c937829ed020dabfabf819dd7b6fc94b3a84be7ef5cd214a",
+     "excerpt": "/-- The Iwasawa criterion : If a quasiprimitive action of a group G on X\n  has an Iwasawa structure, then any normal subgroup that acts nontrivially\n  contains the group of commutators. -/\ntheorem commutator_le (IwaS : IwasawaStructure M α) [IsQuasiPreprimitive M α]\n    (N : Subgroup M) [nN : N.Normal] (hNX : MulAction.fixedPoints N α ≠ .univ) :\n    commutator M ≤ N := by\n  have is_transN := IsQuasiPreprimitive.isPretransitive_of_normal hNX\n  have ntα : Nontrivial α := nontrivial_of_fixedPoints_ne_univ hNX\n  obtain a : α := Nontrivial.to_nonempty.some\n  apply nN.commutator_le_of_self_sup_commutative_eq_top ?_ (IwaS.is_comm a)\n  -- We have to prove that N ⊔ IwaS.T x = ⊤\n  rw [eq_top_iff, ← IwaS.is_generator, iSup_le_iff]\n  intro x\n  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq N a x\n  rw [Subgroup.smul_def, IwaS.is_conj g a]\n  rintro _ ⟨k, hk, rfl⟩\n  have hg' : ↑g ∈ N ⊔ IwaS.T a := Subgroup.mem_sup_left (Subtype.mem g)\n  have hk' : k ∈ N ⊔ IwaS.T a := Subgroup.mem_sup_right hk\n  exact (N ⊔ IwaS.T a).mul_mem ((N ⊔ IwaS.T a).mul_mem hg' hk') ((N ⊔ IwaS.T a).inv_mem hg')",
+     "excerpt_sha256": "bc5926d676c98c2ea11c907c6a135f2129607a589b0700d05f2ed6b7f64fbace",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that a normal subgroup that acts non trivially contains the commutator subgroup."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-engel-theorem-nilpotent-lie-algebras",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Lie/Engel.lean#L216-L258",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Lie.Engel",
+     "declaration": "LieAlgebra.isEngelian_of_isNoetherian",
+     "lines": [
+      216,
+      258
+     ],
+     "module_sha256": "f11e2057cab35f465365fa0ef2b28fdbb5701eb2b11d0ffad787a334eadcda9a",
+     "excerpt": "/-- *Engel's theorem*.\n\nNote that this implies all traditional forms of Engel's theorem via\n`LieModule.nontrivial_max_triv_of_isNilpotent`, `LieModule.isNilpotent_iff_forall`,\n`LieAlgebra.isNilpotent_iff_forall`. -/\ntheorem LieAlgebra.isEngelian_of_isNoetherian [IsNoetherian R L] : LieAlgebra.IsEngelian R L := by\n  intro M _i1 _i2 _i3 _i4 h\n  rw [← isNilpotent_range_toEnd_iff R]\n  let L' := (toEnd R L M).range\n  replace h : ∀ y : L', IsNilpotent (y : Module.End R M) := by\n    rintro ⟨-, ⟨y, rfl⟩⟩\n    simp [h]\n  change LieModule.IsNilpotent L' M\n  let s := {K : LieSubalgebra R L' | LieAlgebra.IsEngelian R K}\n  have hs : s.Nonempty := ⟨⊥, LieAlgebra.isEngelian_of_subsingleton⟩\n  suffices ⊤ ∈ s by\n    rw [← isNilpotent_of_top_iff (R := R)]\n    apply this M\n    simp [LieSubalgebra.toEnd_eq, h]\n  have : ∀ K ∈ s, K ≠ ⊤ → ∃ K' ∈ s, K < K' := by\n    rintro K (hK₁ : LieAlgebra.IsEngelian R K) hK₂\n    apply LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer hK₁\n    apply lt_of_le_of_ne K.le_normalizer\n    rw [Ne, eq_comm, K.normalizer_eq_self_iff, ← Ne, ←\n      LieSubmodule.nontrivial_iff_ne_bot R K]\n    have : Nontrivial (L' ⧸ K.toLieSubmodule) := Submodule.Quotient.nontrivial_iff.2 <| by simpa\n    have : LieModule.IsNilpotent K (L' ⧸ K.toLieSubmodule) := by\n      refine hK₁ _ fun x => ?_\n      have hx := LieAlgebra.isNilpotent_ad_of_isNilpotent (h x)\n      apply Module.End.IsNilpotent.mapQ ?_ hx\n      intro X HX\n      simp only [LieSubalgebra.coe_toLieSubmodule, LieSubalgebra.mem_toSubmodule] at HX\n      simp only [LieSubalgebra.coe_toLieSubmodule, Submodule.mem_comap, ad_apply,\n        LieSubalgebra.mem_toSubmodule]\n      exact LieSubalgebra.lie_mem K x.prop HX\n    exact nontrivial_max_triv_of_isNilpotent R K (L' ⧸ K.toLieSubmodule)\n  have _i5 : IsNoetherian R L' := by\n    refine isNoetherian_of_surjective (LieHom.rangeRestrict (toEnd R L M)).toLinearMap ?_\n    simp only [LinearMap.range_eq_top]\n    exact LieHom.surjective_rangeRestrict (toEnd R L M)\n  obtain ⟨K, hK₁, hK₂⟩ := (LieSubalgebra.wellFoundedGT_of_noetherian R L').has_min s hs\n  obtain rfl : K = ⊤ := by grind\n  exact hK₁",
+     "excerpt_sha256": "3861d2a99b2304d5c2e97313ca46d62ccc9c156bc140448f0f3bfa7342c9ed5b",
+     "attribution": "/-\nCopyright (c) 2022 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states Engel theorem in its module form for a Noetherian Lie algebra."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Lie/Engel.lean#L268-L271",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Lie.Engel",
+     "declaration": "LieModule.isNilpotent_iff_forall'",
+     "lines": [
+      268,
+      271
+     ],
+     "module_sha256": "f11e2057cab35f465365fa0ef2b28fdbb5701eb2b11d0ffad787a334eadcda9a",
+     "excerpt": "/-- Engel's theorem. -/\ntheorem LieModule.isNilpotent_iff_forall' [IsNoetherian R M] :\n    LieModule.IsNilpotent L M ↔ ∀ x, _root_.IsNilpotent <| toEnd R L M x := by\n  rw [← isNilpotent_range_toEnd_iff (R := R), LieModule.isNilpotent_iff_forall (R := R)]; simp",
+     "excerpt_sha256": "3fbbe447fb380a5ea21048f8f0aa3622bd24884e5a72c7d6e106c1c6914f8c32",
+     "attribution": "/-\nCopyright (c) 2022 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that a Lie module with Noetherian underlying module is nilpotent if and only if every element acts nilpotently."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-free-group-reduced-word-normal-form",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/FreeGroup/Reduce.lean#L172-L173",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.FreeGroup.Reduce",
+     "declaration": "FreeGroup.reduce.exact",
+     "lines": [
+      172,
+      173
+     ],
+     "module_sha256": "21932dfcaa061e055fbdb356bbaaca2109d3d24633ec0a2f543355f33f035566",
+     "excerpt": "theorem reduce.exact (H : reduce L₁ = reduce L₂) : mk L₁ = mk L₂ :=\n  Red.exact.2 ⟨reduce L₂, H ▸ reduce.red, reduce.red⟩",
+     "excerpt_sha256": "7bcb09a4db5bb96c99ef257a30bc251dd71cdb7ba586543da8c424f5fdc18ad0",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that two words with the same reduced word represent the same class."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/FreeGroup/Reduce.lean#L197-L199",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.FreeGroup.Reduce",
+     "declaration": "FreeGroup.toWord_injective",
+     "lines": [
+      197,
+      199
+     ],
+     "module_sha256": "21932dfcaa061e055fbdb356bbaaca2109d3d24633ec0a2f543355f33f035566",
+     "excerpt": "@[to_additive]\ntheorem toWord_injective : Function.Injective (toWord : FreeGroup α → List (α × Bool)) := by\n  rintro ⟨L₁⟩ ⟨L₂⟩; exact reduce.exact",
+     "excerpt_sha256": "08f415f7072953c9b19a929102bd1d15b5da53e92e9412f3b450a5e5af04a601",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a class is determined by its reduced word."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-schur-finite-index-center-transfer",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Transfer.lean#L222-L225",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Transfer",
+     "declaration": "Subgroup.transfer_center_eq_pow",
+     "lines": [
+      222,
+      225
+     ],
+     "module_sha256": "b8d1137c80cf1cfb37f5d4269c67413196554f5f004bb2df03cca3af34d15619",
+     "excerpt": "theorem transfer_center_eq_pow [FiniteIndex (center G)] (g : G) :\n    transfer (MonoidHom.id (center G)) g = ⟨g ^ (center G).index, (center G).pow_index_mem g⟩ :=\n  transfer_eq_pow (id (center G)) g fun k _ hk => by rw [← mul_right_inj, ← hk.comm,\n    mul_inv_cancel_right]",
+     "excerpt_sha256": "f1a38bd380bfc53f8c4f4c4d11d45a01feccc701907a7f7ce1fb47e40b750f77",
+     "attribution": "/-\nCopyright (c) 2022 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the transfer to the center equals the n-th power map."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Transfer.lean#L234-L237",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Transfer",
+     "declaration": "Subgroup.transferCenterPow_apply",
+     "lines": [
+      234,
+      237
+     ],
+     "module_sha256": "b8d1137c80cf1cfb37f5d4269c67413196554f5f004bb2df03cca3af34d15619",
+     "excerpt": "@[simp]\ntheorem transferCenterPow_apply [FiniteIndex (center G)] (g : G) :\n    ↑(transferCenterPow G g) = g ^ (center G).index :=\n  rfl",
+     "excerpt_sha256": "d03d8a8e83820b98ade095a3f83257e5c82fc7fe6aa1661df209653c56a4bc65",
+     "attribution": "/-\nCopyright (c) 2022 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the power map as a homomorphism to the center."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-symmetric-group-conjugacy-cycle-type-class-sizes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/GroupTheory/Perm/Cycle/Type.lean#L290-L293",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.GroupTheory.Perm.Cycle.Type",
+     "declaration": "Equiv.Perm.isConj_iff_cycleType_eq",
+     "lines": [
+      290,
+      293
+     ],
+     "module_sha256": "9213f3ffe6322ec7bcc36f80c552bc72b43fe7d1db68cf0d28f48c351f238902",
+     "excerpt": "theorem isConj_iff_cycleType_eq {σ τ : Perm α} : IsConj σ τ ↔ σ.cycleType = τ.cycleType :=\n  ⟨fun h => by\n    obtain ⟨π, rfl⟩ := isConj_iff.1 h\n    rw [cycleType_conj], isConj_of_cycleType_eq⟩",
+     "excerpt_sha256": "c9689835f9536509c2f21ad3c31848d2dc2ec94072d36779f04218283b1ff874",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that two permutations are conjugate if and only if they have the same cycle type."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-nondegenerate-killing-form-no-solvable-ideals",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Lie/Killing.lean#L70-L74",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Lie.Killing",
+     "declaration": "LieAlgebra.IsKilling.ideal_eq_bot_of_isLieAbelian",
+     "lines": [
+      70,
+      74
+     ],
+     "module_sha256": "4dd8693292afe8959d2a449189f1c198f03407998915391a7c157117a2b412b4",
+     "excerpt": "lemma ideal_eq_bot_of_isLieAbelian\n    [Module.Free R L] [Module.Finite R L] [IsDomain R] [IsPrincipalIdealRing R]\n    (I : LieIdeal R L) [IsLieAbelian I] : I = ⊥ := by\n  rw [eq_bot_iff, ← killingCompl_top_eq_bot]\n  exact I.le_killingCompl_top_of_isLieAbelian",
+     "excerpt_sha256": "877046b9558a0f3ecb73cf1257dfb3b495d7a6d47fe90f494d5315f4b7f26866",
+     "attribution": "/-\nCopyright (c) 2023 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that an abelian ideal of a Lie algebra with nondegenerate Killing form is zero."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Lie/Killing.lean#L84-L93",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Lie.Killing",
+     "declaration": "LieAlgebra.IsKilling.instHasTrivialRadical",
+     "lines": [
+      84,
+      93
+     ],
+     "module_sha256": "4dd8693292afe8959d2a449189f1c198f03407998915391a7c157117a2b412b4",
+     "excerpt": "/-- The converse of this is true in characteristic zero; it is\n`LieAlgebra.HasTrivialRadical.instIsKilling`. There are counterexamples\nover fields with positive characteristic.\n\nNote that when the coefficients are a field this instance is redundant since we have\n`LieAlgebra.IsKilling.instSemisimple` and `LieAlgebra.IsSemisimple.instHasTrivialRadical`. -/\ninstance instHasTrivialRadical\n    [Module.Free R L] [Module.Finite R L] [IsDomain R] [IsPrincipalIdealRing R] :\n    HasTrivialRadical R L :=\n  (hasTrivialRadical_iff_no_abelian_ideals R L).mpr IsKilling.ideal_eq_bot_of_isLieAbelian",
+     "excerpt_sha256": "bb1e22ac51da9b02f97133cf6ef755626fc8f1fd604aa2185f7ec812acfa357e",
+     "attribution": "/-\nCopyright (c) 2023 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a Lie algebra with nondegenerate Killing form has trivial radical."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-multivariate-division-algorithm-monomial-order",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/MvPolynomial/Groebner.lean#L121-L215",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.MvPolynomial.Groebner",
+     "declaration": "MonomialOrder.div",
+     "lines": [
+      121,
+      215
+     ],
+     "module_sha256": "7432fc15a04a97ff1ee732caa32eafe612d0a3ddc6428c444489e34f4b730e65",
+     "excerpt": "/-- Division by a family of multivariate polynomials\nwhose leading coefficients are invertible with respect to a monomial order -/\ntheorem div {ι : Type*} {b : ι → MvPolynomial σ R}\n    (hb : ∀ i, IsUnit (m.leadingCoeff (b i))) (f : MvPolynomial σ R) :\n    ∃ (g : ι →₀ (MvPolynomial σ R)) (r : MvPolynomial σ R),\n      f = Finsupp.linearCombination _ b g + r ∧\n        (∀ i, m.degree (b i * (g i)) ≼[m] m.degree f) ∧\n        (∀ c ∈ r.support, ∀ i, ¬ (m.degree (b i) ≤ c)) := by\n  by_cases! hb' : ∃ i, m.degree (b i) = 0\n  · obtain ⟨i, hb0⟩ := hb'\n    use Finsupp.single i ((hb i).unit⁻¹ • f), 0\n    constructor\n    · simp only [Finsupp.linearCombination_single, smul_eq_mul, add_zero]\n      simp only [smul_mul_assoc, ← smul_eq_iff_eq_inv_smul, Units.smul_isUnit]\n      nth_rewrite 2 [eq_C_of_degree_eq_zero hb0]\n      rw [mul_comm, smul_eq_C_mul]\n    constructor\n    · intro j\n      by_cases hj : j = i\n      · apply le_trans degree_mul_le\n        simp only [hj, hb0, Finsupp.single_eq_same, zero_add]\n        apply le_of_eq\n        simp only [EmbeddingLike.apply_eq_iff_eq]\n        apply degree_smul_of_isRegular (Units.isRegular _)\n      · simp only [Finsupp.single_eq_of_ne hj, mul_zero, degree_zero, map_zero]\n        apply bot_le\n    · simp\n  by_cases hf0 : f = 0\n  · refine ⟨0, 0, by simp [hf0], ?_, by simp⟩\n    intro b\n    simp only [Finsupp.coe_zero, Pi.zero_apply, mul_zero, degree_zero, map_zero]\n    exact bot_le\n  by_cases! hf : ∃ i, m.degree (b i) ≤ m.degree f\n  · obtain ⟨i, hf⟩ := hf\n    have deg_reduce : m.degree (m.reduce (hb i) f) ≺[m] m.degree f := by\n      apply degree_reduce_lt (hb i) hf\n      intro hf0'\n      apply hb' i\n      simpa [hf0'] using hf\n    obtain ⟨g', r', H'⟩ := div hb (m.reduce (hb i) f)\n    use g' +\n      Finsupp.single i (monomial (m.degree f - m.degree (b i)) ((hb i).unit⁻¹ * m.leadingCoeff f))\n    use r'\n    constructor\n    · rw [map_add, add_assoc, add_comm _ r', ← add_assoc, ← H'.1]\n      simp [reduce]\n    constructor\n    · rintro j\n      simp only [Finsupp.coe_add, Pi.add_apply]\n      rw [mul_add]\n      apply le_trans degree_add_le\n      simp only [sup_le_iff]\n      constructor\n      · exact le_trans (H'.2.1 _) (le_of_lt deg_reduce)\n      · classical\n        rw [Finsupp.single_apply]\n        split_ifs with hc\n        · subst j\n          grw [degree_mul_le, map_add, degree_monomial_le, ← map_add, add_tsub_cancel_of_le hf]\n        · simp only [mul_zero, degree_zero, map_zero]\n          exact bot_le\n    · exact H'.2.2\n  · suffices ∃ (g' : ι →₀ MvPolynomial σ R), ∃ r',\n        (m.subLTerm f = Finsupp.linearCombination (MvPolynomial σ R) b g' + r') ∧\n        (∀ i, m.degree ((b i) * (g' i)) ≼[m] m.degree (m.subLTerm f)) ∧\n        (∀ c ∈ r'.support, ∀ i, ¬ m.degree (b i) ≤ c) by\n      obtain ⟨g', r', H'⟩ := this\n      use g', r' + monomial (m.degree f) (m.leadingCoeff f)\n      constructor\n      · simp [← add_assoc, ← H'.1, subLTerm]\n      constructor\n      · exact fun b ↦ le_trans (H'.2.1 b) (degree_sub_LTerm_le f)\n      · intro c hc i\n        by_cases hc' : c ∈ r'.support\n        · exact H'.2.2 c hc' i\n        · convert hf i\n          classical\n          have := MvPolynomial.support_add hc\n          rw [Finset.mem_union, Classical.or_iff_not_imp_left] at this\n          simpa only [Finset.mem_singleton] using support_monomial_subset (this hc')\n    by_cases hf'0 : m.subLTerm f = 0\n    · refine ⟨0, 0, by simp [hf'0], ?_, by simp⟩\n      intro b\n      simp only [Finsupp.coe_zero, Pi.zero_apply, mul_zero, degree_zero, map_zero]\n      exact bot_le\n    · exact (div hb) (m.subLTerm f)\ntermination_by WellFounded.wrap m.wellFoundedLT_syn (m.toSyn (m.degree f))\ndecreasing_by\n  · exact deg_reduce\n  · apply degree_sub_LTerm_lt\n    intro hf0\n    apply hf'0\n    simp only [subLTerm, sub_eq_zero]\n    nth_rewrite 1 [eq_C_of_degree_eq_zero hf0, hf0]\n    simp",
+     "excerpt_sha256": "b787c6898cfbebdbad7fc1ea6825a6822330647f1d2a1a8de8237f7815397e55",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the existence of a quotient family and a remainder, with the degree bound and the remainder condition. It allows any index type for the divisors and any variable type."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-resultant-bezout-identity-elimination",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Resultant/Basic.lean#L878-L888",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Resultant.Basic",
+     "declaration": "Polynomial.exists_mul_add_mul_eq_C_resultant",
+     "lines": [
+      878,
+      888
+     ],
+     "module_sha256": "4be3ed232a517633f68df38adca6a32f9476a5b1b4da21952d6e9ec717535f3c",
+     "excerpt": "/-- Note that if `n = m = 0` then `resultant = 1` but `f` and `g` aren't necessarily coprime. -/\nlemma exists_mul_add_mul_eq_C_resultant\n    (f g : R[X]) (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) (H : m ≠ 0 ∨ n ≠ 0) :\n    ∃ p q, p.degree < ↑n ∧ q.degree < ↑m ∧ f * p + g * q = C (f.resultant g m n) := by\n  nontriviality R\n  let X := adjSylvester f g ⟨1, by simpa [Polynomial.mem_degreeLT,\n    ← Nat.cast_add, Nat.pos_iff_ne_zero, not_and_or, -not_and] using H⟩\n  have : ((sylvesterMap f g hf hg X)).1 = _ :=\n    congr(($(sylvesterMap_comp_adjSylvester f g hf hg) _).1)\n  refine ⟨X.2, X.1, by simpa [-SetLike.coe_mem] using X.2.2,\n    by simpa [-SetLike.coe_mem] using X.1.2, by simpa [Algebra.smul_def] using this⟩",
+     "excerpt_sha256": "e081dbfcdc0935fb31e49b4adf1324a0fb3cc48b8e182d9dc5158881831744b7",
+     "attribution": "/-\nCopyright (c) 2025 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Anne Baanen, Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (a) for polynomials with degree bounds m and n and a resultant over any commutative ring."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Resultant/Basic.lean#L913-L924",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Resultant.Basic",
+     "declaration": "Polynomial.resultant_eq_zero_iff",
+     "lines": [
+      913,
+      924
+     ],
+     "module_sha256": "4be3ed232a517633f68df38adca6a32f9476a5b1b4da21952d6e9ec717535f3c",
+     "excerpt": "lemma resultant_eq_zero_iff {K : Type*} [Field K] {f g : K[X]} :\n    resultant f g = 0 ↔ (f ≠ 0 ∨ g ≠ 0) ∧ ¬ IsCoprime f g := by\n  obtain rfl | hf := eq_or_ne f 0\n  · obtain rfl | hg := eq_or_ne g 0; · simp\n    simpa [isCoprime_zero_left, isUnit_iff, hg, natDegree_eq_zero] using\n      show (∀ x, C x ≠ g) ↔ ∀ x ≠ 0, C x ≠ g by aesop\n  have H : (C f.leadingCoeff⁻¹ * f).Monic := by\n    rw [Monic, ← coeff_natDegree, natDegree_C_mul (by simpa), coeff_C_mul]; simp [hf]\n  have := isUnit_resultant_iff_isCoprime (f := C f.leadingCoeff⁻¹ * f) (g := g) H\n  rw [resultant_C_mul_left, IsUnit.mul_iff, natDegree_C_mul (by simp [hf]),\n    isCoprime_mul_unit_left_left (isUnit_C.mpr (by simp [hf]))] at this\n  simp [← this, hf]",
+     "excerpt_sha256": "856853e00e3293647f768790f1469c2c1826a22a8b4b822b7e4f8344b2b4d02e",
+     "attribution": "/-\nCopyright (c) 2025 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Anne Baanen, Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (b): over a field the resultant vanishes if and only if the polynomials are not coprime."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-prime-avoidance-union-of-primes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Operations.lean#L1161-L1216",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Operations",
+     "declaration": "Ideal.subset_union_prime",
+     "lines": [
+      1161,
+      1216
+     ],
+     "module_sha256": "73f6a597697d94652087ca0c8553369de87edb02814fdf8f81ce56911e0624a3",
+     "excerpt": "/-- Prime avoidance. Atiyah-Macdonald 1.11, Eisenbud 3.3, Matsumura Ex.1.6. -/\n@[stacks 00DS]\ntheorem subset_union_prime {R : Type u} [CommRing R] {s : Finset ι} {f : ι → Ideal R} (a b : ι)\n    (hp : ∀ i ∈ s, i ≠ a → i ≠ b → IsPrime (f i)) {I : Ideal R} :\n    ((I : Set R) ⊆ ⋃ i ∈ (↑s : Set ι), f i) ↔ ∃ i ∈ s, I ≤ f i :=\n  suffices ((I : Set R) ⊆ ⋃ i ∈ (↑s : Set ι), f i) → ∃ i, i ∈ s ∧ I ≤ f i by\n    have aux := fun h => (bex_def.2 <| this h)\n    simp_rw [exists_prop] at aux\n    refine ⟨aux, fun ⟨i, his, hi⟩ ↦ Set.Subset.trans hi ?_⟩\n    apply Set.subset_biUnion_of_mem (show i ∈ (↑s : Set ι) from his)\n  fun h : (I : Set R) ⊆ ⋃ i ∈ (↑s : Set ι), f i => by\n  classical\n    by_cases has : a ∈ s\n    · obtain ⟨t, hat, rfl⟩ : ∃ t, a ∉ t ∧ insert a t = s :=\n        ⟨s.erase a, Finset.notMem_erase a s, Finset.insert_erase has⟩\n      by_cases hbt : b ∈ t\n      · obtain ⟨u, hbu, rfl⟩ : ∃ u, b ∉ u ∧ insert b u = t :=\n          ⟨t.erase b, Finset.notMem_erase b t, Finset.insert_erase hbt⟩\n        have hp' : ∀ i ∈ u, IsPrime (f i) := by\n          intro i hiu\n          refine hp i (Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hiu)) ?_ ?_ <;>\n              rintro rfl <;>\n            solve_by_elim only [Finset.mem_insert_of_mem, *]\n        rw [Finset.coe_insert, Finset.coe_insert, Set.biUnion_insert, Set.biUnion_insert, ←\n          Set.union_assoc, subset_union_prime' hp'] at h\n        rwa [Finset.exists_mem_insert, Finset.exists_mem_insert]\n      · have hp' : ∀ j ∈ t, IsPrime (f j) := by\n          intro j hj\n          refine hp j (Finset.mem_insert_of_mem hj) ?_ ?_ <;> rintro rfl <;>\n            solve_by_elim only [Finset.mem_insert_of_mem, *]\n        rw [Finset.coe_insert, Set.biUnion_insert, ← Set.union_self (f a : Set R),\n          subset_union_prime' hp', ← or_assoc, or_self_iff] at h\n        rwa [Finset.exists_mem_insert]\n    · by_cases hbs : b ∈ s\n      · obtain ⟨t, hbt, rfl⟩ : ∃ t, b ∉ t ∧ insert b t = s :=\n          ⟨s.erase b, Finset.notMem_erase b s, Finset.insert_erase hbs⟩\n        have hp' : ∀ j ∈ t, IsPrime (f j) := by\n          intro j hj\n          refine hp j (Finset.mem_insert_of_mem hj) ?_ ?_ <;> rintro rfl <;>\n            solve_by_elim only [Finset.mem_insert_of_mem, *]\n        rw [Finset.coe_insert, Set.biUnion_insert, ← Set.union_self (f b : Set R),\n          subset_union_prime' hp', ← or_assoc, or_self_iff] at h\n        rwa [Finset.exists_mem_insert]\n      rcases s.eq_empty_or_nonempty with rfl | hsne\n      · rw [Finset.coe_empty, Set.biUnion_empty] at h\n        exact (h I.zero_mem).elim\n      · obtain ⟨i, his⟩ := hsne\n        obtain ⟨t, _, rfl⟩ : ∃ t, i ∉ t ∧ insert i t = s :=\n          ⟨s.erase i, Finset.notMem_erase i s, Finset.insert_erase his⟩\n        have hp' : ∀ j ∈ t, IsPrime (f j) := by\n          intro j hj\n          refine hp j (Finset.mem_insert_of_mem hj) ?_ ?_ <;> rintro rfl <;>\n            solve_by_elim only [Finset.mem_insert_of_mem, *]\n        rw [Finset.coe_insert, Set.biUnion_insert, ← Set.union_self (f i : Set R),\n          subset_union_prime' hp', ← or_assoc, or_self_iff] at h\n        rwa [Finset.exists_mem_insert]",
+     "excerpt_sha256": "6427adadb4f8088c67289a3ca7e522a1673bd73ce6062f4bb8603410de1ad73c",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves a stronger statement. It allows two of the ideals to be non prime. The entry proves the case with all ideals prime."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-prime-spectrum-basic-opens-quasi-compact",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Spectrum/Prime/Topology.lean#L606-L608",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Spectrum.Prime.Topology",
+     "declaration": "PrimeSpectrum.isCompact_basicOpen",
+     "lines": [
+      606,
+      608
+     ],
+     "module_sha256": "a2d30ff8e291b196af6189b19e4b75beaaf6f8e66319fbf319360d6d108a6519",
+     "excerpt": "theorem isCompact_basicOpen (f : R) : IsCompact (basicOpen f : Set (PrimeSpectrum R)) := by\n  rw [← localization_away_comap_range (Localization (Submonoid.powers f))]\n  exact isCompact_range (continuous_comap _)",
+     "excerpt_sha256": "e8c039ab9a1bdba77c190ba361133c7b4e2b045317d7f7f2406a28d021af1835",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that every basic open set of the prime spectrum is compact."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Spectrum/Prime/Topology.lean#L580-L585",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Spectrum.Prime.Topology",
+     "declaration": "PrimeSpectrum.basicOpen_eq_bot_iff",
+     "lines": [
+      580,
+      585
+     ],
+     "module_sha256": "a2d30ff8e291b196af6189b19e4b75beaaf6f8e66319fbf319360d6d108a6519",
+     "excerpt": "@[simp]\ntheorem basicOpen_eq_bot_iff (f : R) : basicOpen f = ⊥ ↔ IsNilpotent f := by\n  rw [← TopologicalSpace.Opens.coe_inj, basicOpen_eq_zeroLocus_compl]\n  simp only [Set.eq_univ_iff_forall, Set.singleton_subset_iff, TopologicalSpace.Opens.coe_bot,\n    nilpotent_iff_mem_prime, Set.compl_empty_iff, mem_zeroLocus, SetLike.mem_coe]\n  exact ⟨fun h I hI => h ⟨I, hI⟩, fun h ⟨I, hI⟩ => h I hI⟩",
+     "excerpt_sha256": "1ade63e988a65679fdea63778da414dd5b56082cd384c5b9c7ac4c6eb77dcf2e",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that a basic open set is empty if and only if the element is nilpotent."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-noetherian-ring-minimal-primes-irreducible-components",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/MinimalPrime/Noetherian.lean#L26-L41",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian",
+     "declaration": "Ideal.finite_minimalPrimes_of_isNoetherianRing",
+     "lines": [
+      26,
+      41
+     ],
+     "module_sha256": "9e4813dbc85747411b577082601ab00cd1488a29e18ac0be7a7fa2fe35b856c4",
+     "excerpt": "lemma Ideal.finite_minimalPrimes_of_isNoetherianRing (I : Ideal R) :\n    I.minimalPrimes.Finite := by\n  by_contra hI\n  obtain ⟨I : Ideal R, hI : ¬ I.minimalPrimes.Finite, hmax⟩ :=\n    set_has_maximal_iff_noetherian.mpr hR {I : Ideal R | ¬ I.minimalPrimes.Finite} ⟨I, hI⟩\n  simp only [Set.mem_ofPred_eq, not_imp_not] at hmax\n  have h1 : ¬ I.IsPrime := by contrapose hI; simp [minimalPrimes_eq_subsingleton_self]\n  have h2 : I ≠ ⊤ := by contrapose hI; simp [hI, minimalPrimes_top]\n  obtain ⟨x, hx, y, hy, h⟩ := (not_isPrime_iff.mp h1).resolve_left h2\n  rw [← Ideal.span_singleton_le_iff_mem, ← left_lt_sup] at hx hy\n  refine hI (((hmax _ hx).union (hmax _ hy)).subset fun p ⟨⟨hp, hI⟩, hmin⟩ ↦ ?_)\n  rcases hp.2 (hI h) with hxp | hyp\n  · exact Or.inl ⟨⟨hp, sup_le hI (p.span_singleton_le_iff_mem.mpr hxp)⟩,\n      fun q hq hqp ↦ hmin ⟨hq.1, hx.le.trans hq.2⟩ hqp⟩\n  · exact Or.inr ⟨⟨hp, sup_le hI (p.span_singleton_le_iff_mem.mpr hyp)⟩,\n      fun q hq hqp ↦ hmin ⟨hq.1, hy.le.trans hq.2⟩ hqp⟩",
+     "excerpt_sha256": "4c53415d2557cf8ac65abf517c1f58dbbcd70d21da90f2b8fff30308c0a67b2f",
+     "attribution": "/-\nCopyright (c) 2026 Thomas Browning. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a Noetherian ring has finitely many minimal primes over any ideal."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Spectrum/Prime/Topology.lean#L1279-L1283",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Spectrum.Prime.Topology",
+     "declaration": "PrimeSpectrum.zeroLocus_ideal_mem_irreducibleComponents",
+     "lines": [
+      1279,
+      1283
+     ],
+     "module_sha256": "a2d30ff8e291b196af6189b19e4b75beaaf6f8e66319fbf319360d6d108a6519",
+     "excerpt": "lemma zeroLocus_ideal_mem_irreducibleComponents {I : Ideal R} :\n    zeroLocus I ∈ irreducibleComponents (PrimeSpectrum R) ↔ I.radical ∈ minimalPrimes R := by\n  rw [← vanishingIdeal_zeroLocus_eq_radical]\n  conv_lhs => rw [← (isClosed_zeroLocus _).closure_eq]\n  exact vanishingIdeal_mem_minimalPrimes.symm",
+     "excerpt_sha256": "2397de20ee97ac2477824be425c701a6a3a32efb28fcc7097a4747c1290387da",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source characterises the sets V(I) that are irreducible components of Spec R."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-artinian-ring-primes-maximal-nilpotent-radical",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Artinian/Module.lean#L545-L546",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Artinian.Module",
+     "declaration": "IsArtinianRing.isPrime_iff_isMaximal",
+     "lines": [
+      545,
+      546
+     ],
+     "module_sha256": "9b36909f587e45491b9257f2f8162f9f6163fa2809dd99e93f3813f0ff1cd33a",
+     "excerpt": "lemma isPrime_iff_isMaximal (p : Ideal R) : p.IsPrime ↔ p.IsMaximal :=\n  ⟨fun _ ↦ isMaximal_of_isPrime p, fun h ↦ h.isPrime⟩",
+     "excerpt_sha256": "50a010824f676c67aabced2c3e6e9d01fb0bf4abe1baee086b9d228afa5a4324",
+     "attribution": "/-\nCopyright (c) 2021 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that in an Artinian ring a prime ideal is maximal."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Artinian/Module.lean#L507-L512",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Artinian.Module",
+     "declaration": "IsArtinianRing.setOfPred_isMaximal_finite",
+     "lines": [
+      507,
+      512
+     ],
+     "module_sha256": "9b36909f587e45491b9257f2f8162f9f6163fa2809dd99e93f3813f0ff1cd33a",
+     "excerpt": "@[stacks 00J7]\nlemma setOfPred_isMaximal_finite : {I : Ideal R | I.IsMaximal}.Finite := by\n  have ⟨s, H⟩ := Finset.exists_inf_le (Subtype.val (p := fun I : Ideal R ↦ I.IsMaximal))\n  refine Set.finite_def.2 ⟨s, fun p ↦ ?_⟩\n  have ⟨q, hq1, hq2⟩ := p.2.isPrime.inf_le'.mp (H p)\n  rwa [← Subtype.ext <| q.2.eq_of_le p.2.ne_top hq2]",
+     "excerpt_sha256": "427101d5bb31e05e653d1540676d4f28bd9dc8739a3d67b999d86c7bacedefc9",
+     "attribution": "/-\nCopyright (c) 2021 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that an Artinian ring has finitely many maximal ideals."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Artinian/Ring.lean#L53-L56",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Artinian.Ring",
+     "declaration": "IsArtinianRing.isNilpotent_jacobson_bot",
+     "lines": [
+      53,
+      56
+     ],
+     "module_sha256": "068d9effcc18c82602f82d8d7af0c5c9558022ca377afc4d9aab9dd3d94be0f0",
+     "excerpt": "@[stacks 00J8]\ntheorem isNilpotent_jacobson_bot {R} [Ring R] [IsArtinianRing R] :\n    IsNilpotent (Ideal.jacobson (⊥ : Ideal R)) :=\n  Ideal.jacobson_bot (R := R) ▸ IsSemiprimaryRing.isNilpotent",
+     "excerpt_sha256": "b57786ea7d6adb5fb6cafa96e3438369ed04bca4d7a5ae3645f1f922d59ac42d",
+     "attribution": "/-\nCopyright (c) 2021 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Junyan Xu, Jujian Zhang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that the Jacobson radical of an Artinian ring is nilpotent."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-integral-extension-incomparability-maximal-primes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/GoingUp.lean#L237-L240",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.GoingUp",
+     "declaration": "Ideal.IsIntegral.under_lt_under",
+     "lines": [
+      237,
+      240
+     ],
+     "module_sha256": "f16627f7950e5b6e7fb36d9eb585f526aba013b3064ec20889966bcac4a5bb67",
+     "excerpt": "theorem IsIntegral.under_lt_under {I J : Ideal A} [I.IsPrime] (I_lt_J : I < J) :\n    I.under R < J.under R :=\n  let ⟨I_le_J, x, hxJ, hxI⟩ := IsConcreteLE.lt_iff_le_and_exists.mp I_lt_J\n  under_lt_under_of_integral_mem_sdiff I_le_J ⟨hxJ, hxI⟩ (Algebra.IsIntegral.isIntegral x)",
+     "excerpt_sha256": "4cb11f0845d2cc03d865608125d44cdc1fca7a060623497e7a68ba378b011087",
+     "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Yongle Hu\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (a): in an integral extension, a strict inclusion of primes gives a strict inclusion of contractions."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/GoingUp.lean#L247-L249",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.GoingUp",
+     "declaration": "Ideal.IsIntegral.isMaximal_of_isMaximal_under",
+     "lines": [
+      247,
+      249
+     ],
+     "module_sha256": "f16627f7950e5b6e7fb36d9eb585f526aba013b3064ec20889966bcac4a5bb67",
+     "excerpt": "theorem IsIntegral.isMaximal_of_isMaximal_under (I : Ideal A) [I.IsPrime]\n    (hI : IsMaximal (I.under R)) : IsMaximal I :=\n  isMaximal_of_isIntegral_of_isMaximal_under I hI",
+     "excerpt_sha256": "6d5d9d5807c68ad66b396be938b2ceff9c529a8915e026cf253b31a2dfcee849",
+     "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Yongle Hu\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states one direction of part (b): a prime of S with a maximal contraction is maximal."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/GoingUp.lean#L218-L222",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.GoingUp",
+     "declaration": "Ideal.isMaximal_under_of_isIntegral_of_isMaximal",
+     "lines": [
+      218,
+      222
+     ],
+     "module_sha256": "f16627f7950e5b6e7fb36d9eb585f526aba013b3064ec20889966bcac4a5bb67",
+     "excerpt": "theorem isMaximal_under_of_isIntegral_of_isMaximal [Algebra.IsIntegral R S] (I : Ideal S)\n    [hI : I.IsMaximal] : IsMaximal (I.under R) := by\n  refine Ideal.Quotient.maximal_of_isField _ ?_\n  exact isField_of_isIntegral_of_isField\n    algebraMap_quotient_injective (by rwa [← Quotient.maximal_ideal_iff_isField_quotient])",
+     "excerpt_sha256": "3fbd4bfc828aa8087dd8b9783d72c7eef35622aa325207c184a082d8f2bbf878",
+     "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Yongle Hu\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the other direction of part (b): the contraction of a maximal ideal of S is maximal."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-noetherian-module-exact-sequence-two-out-of-three",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Noetherian/Basic.lean#L197-L211",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Noetherian.Basic",
+     "declaration": "isNoetherian_of_range_eq_ker",
+     "lines": [
+      197,
+      211
+     ],
+     "module_sha256": "cd8459d918962dd539163602c05b93e0b5d83e261516e9a2d46c9c29f3e94f88",
+     "excerpt": "/-- If the first and final modules in an exact sequence are Noetherian,\n  then the middle module is also Noetherian. -/\ntheorem isNoetherian_of_range_eq_ker {P : Type*} [AddCommGroup P] [Module R P] [IsNoetherian R M]\n    [IsNoetherian R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P) (h : LinearMap.range f = LinearMap.ker g) :\n    IsNoetherian R N :=\n  isNoetherian_mk <|\n    wellFounded_gt_exact_sequence\n      (LinearMap.range f)\n      (Submodule.map ((LinearMap.ker f).liftQ f le_rfl))\n      (Submodule.comap ((LinearMap.ker f).liftQ f le_rfl))\n      (Submodule.comap g.rangeRestrict) (Submodule.map g.rangeRestrict)\n      (Submodule.gciMapComap <| LinearMap.ker_eq_bot.mp <| Submodule.ker_liftQ_eq_bot _ _ _ le_rfl)\n      (Submodule.giMapComap g.surjective_rangeRestrict)\n      (by simp [Submodule.map_comap_eq, inf_comm, Submodule.range_liftQ])\n      (by simp [Submodule.comap_map_eq, h])",
+     "excerpt_sha256": "c5873dbc36e9a043e320d5c6c8e52136745413b6d7efdc92c68cf3c751df4592",
+     "attribution": "/-\nCopyright (c) 2018 Mario Carneiro, Kevin Buzzard. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Mario Carneiro, Kevin Buzzard, María Inés de Frutos-Fernández\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the backward direction of part (a): if the outer modules of an exact sequence are Noetherian, the middle module is Noetherian."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-local-global-vanishing-maximal-ideals",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/LocalProperties/Submodule.lean#L94-L97",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.LocalProperties.Submodule",
+     "declaration": "Module.eq_zero_of_localization_maximal",
+     "lines": [
+      94,
+      97
+     ],
+     "module_sha256": "db51cda2df6998f9b8d8782ffad56af7163690780b5413bbf852b385fd784b96",
+     "excerpt": "theorem Module.eq_zero_of_localization_maximal (m : M)\n    (h : ∀ (P : Ideal R) [P.IsMaximal], f P m = 0) :\n    m = 0 :=\n  eq_of_localization_maximal _ f _ _ fun P _ ↦ by rw [h, map_zero]",
+     "excerpt_sha256": "ef5e4bf868339af569e2bc388639beeced30c7a06feed286e6fa39653dfbed1d",
+     "attribution": "/-\nCopyright (c) 2024 Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Andrew Yang, David Swinarski\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (a) for modules."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/LocalProperties/Basic.lean#L576-L579",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.LocalProperties.Basic",
+     "declaration": "Ideal.eq_zero_of_localization",
+     "lines": [
+      576,
+      579
+     ],
+     "module_sha256": "70d4cd3ed0e1b7d9d385ed71878ebbffd2f6abcf8e7a898a7c7d25ee504d43ef",
+     "excerpt": "theorem eq_zero_of_localization (r : R)\n    (h : ∀ (J : Ideal R) (_ : J.IsMaximal), algebraMap R (Localization.AtPrime J) r = 0) :\n    r = 0 :=\n  Module.eq_zero_of_localization_maximal _ (fun _ _ ↦ Algebra.linearMap R _) r h",
+     "excerpt_sha256": "fe3f38509ec0f1779d062efeeb1760d1263e01c6662a158d6aaee1dd24929cab",
+     "attribution": "/-\nCopyright (c) 2021 Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states part (d) for ring elements."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-clopen-subsets-of-spec-idempotents",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Spectrum/Prime/Topology.lean#L1021-L1023",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Spectrum.Prime.Topology",
+     "declaration": "PrimeSpectrum.isClopen_basicOpen_of_mul_add",
+     "lines": [
+      1021,
+      1023
+     ],
+     "module_sha256": "a2d30ff8e291b196af6189b19e4b75beaaf6f8e66319fbf319360d6d108a6519",
+     "excerpt": "lemma isClopen_basicOpen_of_mul_add (e f : R) (mul : e * f = 0) (add : e + f = 1) :\n    IsClopen (basicOpen e : Set (PrimeSpectrum R)) :=\n  ⟨basicOpen_eq_zeroLocus_of_mul_add e f mul add ▸ isClosed_zeroLocus _, (basicOpen e).2⟩",
+     "excerpt_sha256": "840c3b406915a00a44e88942a71bda8d91fc54ca172566298db64eedeaf3c389",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that D(e) is clopen when e·f = 0 and e + f = 1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Spectrum/Prime/Topology.lean#L1078-L1083",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Spectrum.Prime.Topology",
+     "declaration": "PrimeSpectrum.existsUnique_idempotent_basicOpen_eq_of_isClopen",
+     "lines": [
+      1078,
+      1083
+     ],
+     "module_sha256": "a2d30ff8e291b196af6189b19e4b75beaaf6f8e66319fbf319360d6d108a6519",
+     "excerpt": "@[stacks 00EE]\nlemma existsUnique_idempotent_basicOpen_eq_of_isClopen {s : Set (PrimeSpectrum R)}\n    (hs : IsClopen s) : ∃! e : R, IsIdempotentElem e ∧ s = basicOpen e := by\n  refine existsUnique_of_exists_of_unique (exists_idempotent_basicOpen_eq_of_isClopen hs) ?_\n  rintro x y ⟨hx, rfl⟩ ⟨hy, eq⟩\n  exact basicOpen_injOn_isIdempotentElem hx hy (SetLike.ext' eq)",
+     "excerpt_sha256": "772f1f776ddc973da7fb5284331730b40aad4f384500bcb30b2ec5ac2fcd27c4",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that every clopen set equals D(e) for a unique idempotent e."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-ext-of-cyclic-module-by-nonzerodivisor",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Homology/DerivedCategory/Ext/ExactSequences.lean#L304-L309",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences",
+     "declaration": "CategoryTheory.Abelian.Ext.contravariant_sequence_exact₃",
+     "lines": [
+      304,
+      309
+     ],
+     "module_sha256": "29037a4bb3559712b6933623fc410a60b2750b87cbf13c952da0933988aaee6c",
+     "excerpt": "lemma contravariant_sequence_exact₃ {n₁ : ℕ} (x₃ : Ext S.X₃ Y n₁)\n    (hx₃ : (mk₀ S.g).comp x₃ (zero_add n₁) = 0) {n₀ : ℕ} (hn₀ : 1 + n₀ = n₁) :\n    ∃ (x₁ : Ext S.X₁ Y n₀), hS.extClass.comp x₁ hn₀ = x₃ := by\n  have := contravariant_sequence_exact₃' hS Y n₀ n₁ hn₀\n  rw [ShortComplex.ab_exact_iff] at this\n  exact this x₃ hx₃",
+     "excerpt_sha256": "caee5f24e1d8fffc2769b1e42ed7b720362760720b7eb00bffce56ce0d56eac7",
+     "attribution": "/-\nCopyright (c) 2024 Joël Riou. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Joël Riou\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states exactness of the contravariant long exact sequence at the third term of a short exact sequence."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Homology/DerivedCategory/Ext/ExactSequences.lean#L289-L294",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences",
+     "declaration": "CategoryTheory.Abelian.Ext.contravariant_sequence_exact₁",
+     "lines": [
+      289,
+      294
+     ],
+     "module_sha256": "29037a4bb3559712b6933623fc410a60b2750b87cbf13c952da0933988aaee6c",
+     "excerpt": "lemma contravariant_sequence_exact₁ {n₀ : ℕ} (x₁ : Ext S.X₁ Y n₀) {n₁ : ℕ} (hn₁ : 1 + n₀ = n₁)\n    (hx₁ : hS.extClass.comp x₁ hn₁ = 0) :\n    ∃ (x₂ : Ext S.X₂ Y n₀), (mk₀ S.f).comp x₂ (zero_add n₀) = x₁ := by\n  have := contravariant_sequence_exact₁' hS Y n₀ n₁ hn₁\n  rw [ShortComplex.ab_exact_iff] at this\n  exact this x₁ hx₁",
+     "excerpt_sha256": "6892bc6f25e2696e9cb2c8c7a8281844091bbf1a1cb3f67b80b2a6ad07dc6dc5",
+     "attribution": "/-\nCopyright (c) 2024 Joël Riou. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Joël Riou\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states exactness of the contravariant long exact sequence at the first term of a short exact sequence."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-zero-divisors-union-of-associated-primes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/AssociatedPrime/Basic.lean#L225-L234",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.AssociatedPrime.Basic",
+     "declaration": "biUnion_associatedPrimes_eq_zero_divisors",
+     "lines": [
+      225,
+      234
+     ],
+     "module_sha256": "fb95f0b0ffa1abe0dc1f1f0ded9fcbf0a18d167e6971cfec821b3bc95668c367",
+     "excerpt": "theorem biUnion_associatedPrimes_eq_zero_divisors [IsNoetherianRing R] :\n    ⋃ p ∈ associatedPrimes R M, p = { r : R | ∃ x : M, x ≠ 0 ∧ r • x = 0 } := by\n  simp only [AssociatedPrimes.mem_iff, isAssociatedPrime_iff]\n  refine subset_antisymm (Set.iUnion₂_subset ?_) ?_\n  · rintro _ ⟨h, x, ⟨⟩⟩ r h'\n    exact ⟨x, by simpa using h.ne_top, by simpa using h'⟩\n  · intro r ⟨x, h, h'⟩\n    obtain ⟨P, hP, hx⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R x h\n    rw [isAssociatedPrime_iff] at hP\n    exact Set.mem_iUnion₂_of_mem hP (hx (by rwa [mem_colon_singleton]))",
+     "excerpt_sha256": "b1b162a8d843ce326af897bdf2e633386dff1ab378156df57f22a8b45b154763",
+     "attribution": "/-\nCopyright (c) 2022 Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that the union of the associated primes of a Noetherian ring equals its set of zero divisors."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/AssociatedPrime/Basic.lean#L135-L152",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.AssociatedPrime.Basic",
+     "declaration": "exists_le_isAssociatedPrime_of_isNoetherianRing",
+     "lines": [
+      135,
+      152
+     ],
+     "module_sha256": "fb95f0b0ffa1abe0dc1f1f0ded9fcbf0a18d167e6971cfec821b3bc95668c367",
+     "excerpt": "theorem exists_le_isAssociatedPrime_of_isNoetherianRing [H : IsNoetherianRing R] (x : M)\n    (hx : x ≠ 0) : ∃ P : Ideal R, IsAssociatedPrime P M ∧ (⊥ : Submodule R M).colon {x} ≤ P := by\n  simp only [isAssociatedPrime_iff]\n  obtain ⟨P, ⟨l, h₁, y, rfl⟩, h₃⟩ :=\n    set_has_maximal_iff_noetherian.mpr H\n      { P | (⊥ : Submodule R M).colon {x} ≤ P ∧ P ≠ ⊤ ∧ ∃ y : M, P = (⊥ : Submodule R M).colon {y} }\n      ⟨_, rfl.le, by simpa, x, rfl⟩\n  refine ⟨_, ⟨⟨h₁, ?_⟩, y, rfl⟩, l⟩\n  intro a b hab\n  rw [or_iff_not_imp_left]\n  intro ha\n  rw [mem_colon_singleton] at ha hab\n  have H₁ : (⊥ : Submodule R M).colon {y} ≤ (⊥ : Submodule R M).colon {a • y} := by\n    intro c hc\n    rw [mem_colon_singleton, mem_bot] at hc ⊢\n    rw [smul_comm, hc, smul_zero]\n  rwa [H₁.eq_of_not_lt (h₃ _ ⟨l.trans H₁, by simpa, _, rfl⟩),\n    mem_colon_singleton, smul_comm, smul_smul]",
+     "excerpt_sha256": "703a6ca4dd4ba086e293a6aeb355a4b39b2f0321ec6070350a411384c97f9928",
+     "attribution": "/-\nCopyright (c) 2022 Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that, in a Noetherian ring, each annihilator of a nonzero element lies in an associated prime."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-chebyshev-minimax-monic",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Chebyshev.lean#L104-L107",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Chebyshev",
+     "declaration": "T_add_two",
+     "lines": [
+      104,
+      107
+     ],
+     "module_sha256": "69e5ceb62dcda89b8d7c8a1ee63e66ab0da1c069244551ac10ff2a226e25742f",
+     "excerpt": "@[simp]\ntheorem T_add_two : ∀ n, T R (n + 2) = 2 * X * T R (n + 1) - T R n\n  | (k : ℕ) => T.eq_3 R k\n  | -(k + 1 : ℕ) => by linear_combination (norm := (simp [Int.negSucc_eq]; ring_nf)) T.eq_4 R k",
+     "excerpt_sha256": "ecf207685945f754b0e946d86c7ad7e74fc2eba92fd2e96e6fb514fd7e7bb62e",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin, Julian Kuelshammer, Heather Macbeth, Mitchell Lee\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the Chebyshev polynomials over a commutative ring and proves the recurrence T_{n+2} = 2X·T_{n+1} − T_n. This is the recurrence of the statement. The source does not state the cosine form in this file or the minimax property."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Chebyshev.lean#L1113-L1127",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Chebyshev",
+     "declaration": "T_mul",
+     "lines": [
+      1113,
+      1127
+     ],
+     "module_sha256": "69e5ceb62dcda89b8d7c8a1ee63e66ab0da1c069244551ac10ff2a226e25742f",
+     "excerpt": "/-- The `(m * n)`-th Chebyshev `T` polynomial is the composition of the `m`-th and `n`-th. -/\ntheorem T_mul (m n : ℤ) : T R (m * n) = (T R m).comp (T R n) := by\n  induction m using Polynomial.Chebyshev.induct with\n  | zero => simp\n  | one => simp\n  | add_two m ih1 ih2 =>\n    have h₁ := T_mul_T R ((m + 1) * n) n\n    have h₂ := congr(comp $(T_add_two R m) (T R n))\n    simp only [sub_comp, mul_comp, ofNat_comp, X_comp] at h₂\n    linear_combination (norm := ring_nf) -ih2 - h₂ - h₁ + 2 * T R n * ih1\n  | neg_add_one m ih1 ih2 =>\n    have h₁ := T_mul_T R ((-m) * n) n\n    have h₂ := congr(comp $(T_add_two R (-m - 1)) (T R n))\n    simp only [sub_comp, mul_comp, ofNat_comp, X_comp] at h₂\n    linear_combination (norm := ring_nf) -ih2 - h₂ - h₁ + 2 * T R n * ih1",
+     "excerpt_sha256": "0aad12ee55928a00cd1d14faa5fcab53e3324fded6fc0c6e6f00d354899a9b57",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin, Julian Kuelshammer, Heather Macbeth, Mitchell Lee\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves T_{mn} = T_m∘T_n. It is related by the cosine form, because cos(mnθ) = cos(m(nθ)). It is not used in the proof."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-interpolation-remainder-chebyshev-nodes",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Lagrange.lean#L361-L364",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Lagrange",
+     "declaration": "eq_interpolate",
+     "lines": [
+      361,
+      364
+     ],
+     "module_sha256": "0ece65f1da89db325b216f7aba8503da76a25f5882c7e0db2c092b663228c8b3",
+     "excerpt": "theorem eq_interpolate {f : F[X]} (hvs : Set.InjOn v s) (degree_f_lt : f.degree < #s) :\n    f = interpolate s v fun i => f.eval (v i) :=\n  eq_of_degrees_lt_of_eval_index_eq _ hvs degree_f_lt (degree_interpolate_lt _ hvs) fun _ hi =>\n    (eval_interpolate_at_node (fun x ↦ eval (v x) f) hvs hi).symm",
+     "excerpt_sha256": "08586d8ce86054da057fa22aaf318dfbd9672e1063e3ed1dfa6b46ffe7a1f57c",
+     "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a polynomial of degree below the number of nodes equals its interpolant. This gives the existence and uniqueness part, and the Lagrange form of p."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Lagrange.lean#L562-L563",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Lagrange",
+     "declaration": "nodal_monic",
+     "lines": [
+      562,
+      563
+     ],
+     "module_sha256": "0ece65f1da89db325b216f7aba8503da76a25f5882c7e0db2c092b663228c8b3",
+     "excerpt": "theorem nodal_monic : (nodal s v).Monic :=\n  monic_prod_of_monic s (fun i ↦ X - C (v i)) fun i _ ↦ monic_X_sub_C (v i)",
+     "excerpt_sha256": "f43cca1008387271189957de203dfd2f6b433ed7b6125ea163187ca99f358bb5",
+     "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the node polynomial is monic. This is the fact that ω^{(n+1)} = (n+1)! in the proof."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Calculus/LocalExtr/Rolle.lean#L59-L64",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Calculus.LocalExtr.Rolle",
+     "declaration": "exists_deriv_eq_zero",
+     "lines": [
+      59,
+      64
+     ],
+     "module_sha256": "30e76f2c08ee6d0f19c6eeb93f2484154accb9862b4563d040664efa32f0057b",
+     "excerpt": "/-- **Rolle's Theorem** `deriv` version -/\n@[wikidata Q193286]\ntheorem exists_deriv_eq_zero (hab : a < b) (hfc : ContinuousOn f (Icc a b)) (hfI : f a = f b) :\n    ∃ c ∈ Ioo a b, deriv f c = 0 :=\n  let ⟨c, cmem, hc⟩ := exists_isLocalExtr_Ioo hab hfc hfI\n  ⟨c, cmem, hc.deriv_eq_zero⟩",
+     "excerpt_sha256": "ebdf4759b23486b63202f0eaf8fb53f721367e67f2f32463584da4465b1bb8e2",
+     "attribution": "/-\nCopyright (c) 2019 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov, Anatole Dedecker\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves Rolle theorem, which is the engine of the repeated step. The remainder formula itself is not in the source."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gauss-quadrature-orthogonal-roots",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Lagrange.lean#L361-L364",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Lagrange",
+     "declaration": "eq_interpolate",
+     "lines": [
+      361,
+      364
+     ],
+     "module_sha256": "0ece65f1da89db325b216f7aba8503da76a25f5882c7e0db2c092b663228c8b3",
+     "excerpt": "theorem eq_interpolate {f : F[X]} (hvs : Set.InjOn v s) (degree_f_lt : f.degree < #s) :\n    f = interpolate s v fun i => f.eval (v i) :=\n  eq_of_degrees_lt_of_eval_index_eq _ hvs degree_f_lt (degree_interpolate_lt _ hvs) fun _ hi =>\n    (eval_interpolate_at_node (fun x ↦ eval (v x) f) hvs hi).symm",
+     "excerpt_sha256": "08586d8ce86054da057fa22aaf318dfbd9672e1063e3ed1dfa6b46ffe7a1f57c",
+     "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a polynomial of degree below the number of nodes equals the interpolant of its values. This is the step that expresses r by r(x_i)ℓ_i. The quadrature statement is not in the source."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Lagrange.lean#L540-L541",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Lagrange",
+     "declaration": "nodal_eq",
+     "lines": [
+      540,
+      541
+     ],
+     "module_sha256": "0ece65f1da89db325b216f7aba8503da76a25f5882c7e0db2c092b663228c8b3",
+     "excerpt": "theorem nodal_eq (s : Finset ι) (v : ι → R) : nodal s v = ∏ i ∈ s, (X - C (v i)) :=\n  rfl",
+     "excerpt_sha256": "473b29a5af83ebf045b14f903b3b36d6c5a50179a272d7166bace00be291cece",
+     "attribution": "/-\nCopyright (c) 2020 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Wrenna Robson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the node polynomial as ∏(X − C v_i). This is the polynomial ω used in the converse part."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-golub-welsch-jacobi-matrix-gauss-rule",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Matrix/Spectrum.lean#L210-L215",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Matrix.Spectrum",
+     "declaration": "spectrum_real_eq_range_eigenvalues",
+     "lines": [
+      210,
+      215
+     ],
+     "module_sha256": "1e4dab921c0f16ed1699505fa3e2ec4d490e3960150a29a173aeab14d069175a",
+     "excerpt": "/-- The `ℝ`-spectrum of a Hermitian matrix over `RCLike` field is the range of the eigenvalue\nfunction. -/\ntheorem spectrum_real_eq_range_eigenvalues :\n    spectrum ℝ A = Set.range hA.eigenvalues := Set.ext fun x => by\n  conv_lhs => rw [hA.spectral_theorem, ← spectrum.algebraMap_mem_iff 𝕜]\n  simp",
+     "excerpt_sha256": "d1fb065be005d08a4b5571454a08373aeb49d9075b9a797ce3d9cf4abb2d96c7",
+     "attribution": "/-\nCopyright (c) 2022 Alexander Bentkamp. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alexander Bentkamp\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states that the real spectrum of a Hermitian matrix is the set of its eigenvalues. It supports the use of the symmetric matrix J_n. The three-term recurrence and the link to quadrature are not in the source."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Matrix/Spectrum.lean#L156-L158",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Matrix.Spectrum",
+     "declaration": "charpoly_eq",
+     "lines": [
+      156,
+      158
+     ],
+     "module_sha256": "1e4dab921c0f16ed1699505fa3e2ec4d490e3960150a29a173aeab14d069175a",
+     "excerpt": "lemma charpoly_eq : A.charpoly = ∏ i, (X - C (hA.eigenvalues i : 𝕜)) := by\n  conv_lhs => rw [hA.spectral_theorem, conjStarAlgAut_apply, charpoly_mul_comm, ← mul_assoc]\n  simp [charpoly_diagonal]",
+     "excerpt_sha256": "a28075028d203f2dc8595455447691cae237d826c8f4a965394015d3cc77e71a",
+     "attribution": "/-\nCopyright (c) 2022 Alexander Bentkamp. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alexander Bentkamp\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source writes the characteristic polynomial of a Hermitian matrix as a product over its eigenvalues. This fits part (2)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-legendre-rodrigues-orthogonality-recurrence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/IntervalIntegral/IntegrationByParts.lean#L134-L146",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts",
+     "declaration": "integral_mul_deriv_eq_deriv_mul",
+     "lines": [
+      134,
+      146
+     ],
+     "module_sha256": "8ce8948f4fa1423d1a0e1ba4e653087c670ea7de1b48a0b44ec9959c63b09e2d",
+     "excerpt": "/-- **Integration by parts**. Special case of\n`intervalIntegrable.integral_mul_deriv_eq_deriv_mul_of_hasDeriv_right`\nwhere the functions have a derivative also at the endpoints.\nFor improper integrals, see\n`MeasureTheory.integral_mul_deriv_eq_deriv_mul`,\n`MeasureTheory.integral_Ioi_mul_deriv_eq_deriv_mul`,\nand `MeasureTheory.integral_Iic_mul_deriv_eq_deriv_mul`. -/\ntheorem integral_mul_deriv_eq_deriv_mul\n    (hu : ∀ x ∈ [[a, b]], HasDerivAt u (u' x) x) (hv : ∀ x ∈ [[a, b]], HasDerivAt v (v' x) x)\n    (hu' : IntervalIntegrable u' volume a b) (hv' : IntervalIntegrable v' volume a b) :\n    ∫ x in a..b, u x * v' x = u b * v b - u a * v a - ∫ x in a..b, u' x * v x :=\n  integral_mul_deriv_eq_deriv_mul_of_hasDerivWithinAt\n    (fun x hx ↦ (hu x hx).hasDerivWithinAt) (fun x hx ↦ (hv x hx).hasDerivWithinAt) hu' hv'",
+     "excerpt_sha256": "3322fa0508623013d5d00ac1cc8943036f61d40a37a58691b2c2b8c9215f3d7c",
+     "attribution": "/-\nCopyright (c) 2020 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov, Patrick Massot, Sébastien Gouëzel\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves integration by parts for interval integrals with differentiable functions. This is the tool for the n-fold step. The Legendre polynomials are not in the source."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Chebyshev.lean#L104-L107",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Chebyshev",
+     "declaration": "T_add_two",
+     "lines": [
+      104,
+      107
+     ],
+     "module_sha256": "69e5ceb62dcda89b8d7c8a1ee63e66ab0da1c069244551ac10ff2a226e25742f",
+     "excerpt": "@[simp]\ntheorem T_add_two : ∀ n, T R (n + 2) = 2 * X * T R (n + 1) - T R n\n  | (k : ℕ) => T.eq_3 R k\n  | -(k + 1 : ℕ) => by linear_combination (norm := (simp [Int.negSucc_eq]; ring_nf)) T.eq_4 R k",
+     "excerpt_sha256": "ecf207685945f754b0e946d86c7ad7e74fc2eba92fd2e96e6fb514fd7e7bb62e",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin, Julian Kuelshammer, Heather Macbeth, Mitchell Lee\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the three-term recurrence of the Chebyshev polynomials of the first kind. The recurrence in (c) has the same form with different coefficients."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-bernstein-operator-modulus-of-continuity-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Bernstein.lean#L173-L270",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Bernstein",
+     "declaration": "bernsteinApproximation_uniform",
+     "lines": [
+      173,
+      270
+     ],
+     "module_sha256": "65115a64e48c4257be7e98e309519eb5e4b4455822da83099522236d30153db2",
+     "excerpt": "/-- The Bernstein approximations\n```\n∑ k : Fin (n+1), f (k/n : ℝ) * n.choose k * x^k * (1-x)^(n-k)\n```\nfor a continuous function `f : C([0,1], ℝ)` converge uniformly to `f` as `n` tends to infinity.\n\nThis is the proof given in [Richard Beals' *Analysis, an introduction*][beals-analysis], §7D,\nand reproduced on wikipedia.\n-/\ntheorem bernsteinApproximation_uniform [LocallyConvexSpace ℝ E] (f : C(I, E)) :\n    Tendsto (fun n : ℕ => bernsteinApproximation n f) atTop (𝓝 f) := by\n  let : UniformSpace E := IsTopologicalAddGroup.rightUniformSpace E\n  have : IsUniformAddGroup E := isUniformAddGroup_of_addCommGroup\n  /- Topology on a locally convex TVS is given by a family of seminorms `‖x‖_U = gauge U x`,\n  where the open symmetric convex sets `U` form a basis of neighborhoods in this topology,\n  and are the open unit balls for the corresponding seminorms.\n  For technical reasons, we neither assume `U`s to be open, nor symmetric. -/\n  suffices ∀ U ∈ 𝓝 (0 : E), Convex ℝ U →\n      ∀ᶠ n in atTop, ∀ x : I, gauge U (bernsteinApproximation n f x - f x) < 1 by\n    rw [(LocallyConvexSpace.convex_basis_zero ℝ E).uniformity_of_nhds_zero_swapped\n      |>.compactConvergenceUniformity_of_compact |> nhds_basis_uniformity |>.tendsto_right_iff]\n    rintro U ⟨hU₀, hcU⟩\n    filter_upwards [this U hU₀ hcU] with n hn x\n    exact setOfPred_gauge_lt_one_subset_self hcU (mem_of_mem_nhds hU₀) (absorbent_nhds_zero hU₀)\n      (hn x)\n  intro U hU₀ hUc\n  /- Choose a constant `C` such that `‖f x - f y‖_U ≤ C` for all `x`, `y`.\n  For a normed space, this would be twice the norm of `f`. -/\n  obtain ⟨C, hC⟩ : ∃ C, ∀ x y, gauge U (f x - f y) ≤ C := by\n    have : Continuous fun (x, y) ↦ gauge U (f x - f y) := by fun_prop\n    simpa only [BddAbove, Set.Nonempty, mem_upperBounds, Set.forall_mem_range, Prod.forall]\n      using isCompact_range this |>.bddAbove\n  have hC₀ : 0 ≤ C := le_trans (gauge_nonneg _) (hC 0 0)\n  /- Use uniform continuity of `f` to choose `δ > 0` such that `‖f x - f y‖_U < 1 / 2`\n  whenever `dist x y < δ`. -/\n  obtain ⟨δ, hδ₀, hδ⟩ : ∃ δ > 0, ∀ x y : I, dist x y < δ → gauge U (f x - f y) < 1 / 2 := by\n    have := CompactSpace.uniformContinuous_of_continuous (map_continuous f)\n    rw [Metric.uniformity_basis_dist.uniformContinuous_iff\n      (basis_sets _).uniformity_of_nhds_zero_swapped] at this\n    exact this {z | gauge U z < 1 / 2} <| tendsto_gauge_nhds_zero hU₀\n      |>.eventually_lt_const <| by positivity\n  -- Take `n ≠ 0` such that `C / δ ^ 2 / n < 1 / 2`.\n  have nhds_zero := tendsto_const_div_atTop_nhds_zero_nat (C / δ ^ 2)\n  filter_upwards [nhds_zero.eventually_lt_const (half_pos one_pos), eventually_ne_atTop 0]\n    with n nh hn₀ x\n  -- The idea is to split up the sum over `k` into two sets,\n  -- `S`, where `x - k/n < δ`, and its complement.\n  set S : Finset (Fin (n + 1)) := {k : Fin (n + 1) | dist k/ₙ x < δ}\n  calc\n    gauge U (bernsteinApproximation n f x - f x)\n      = gauge U (∑ k : Fin (n + 1), bernstein n k x • (f k/ₙ - f x)) := by\n      simp [bernsteinApproximation.apply, smul_sub, ← Finset.sum_smul]\n    _ ≤ ∑ k : Fin (n + 1), gauge U (bernstein n k x • (f k/ₙ - f x)) :=\n      gauge_sum_le hUc (absorbent_nhds_zero hU₀) _ _\n    _ = ∑ k : Fin (n + 1), bernstein n k x * gauge U (f k/ₙ - f x) := by\n      simp only [gauge_smul_of_nonneg, bernstein_nonneg, smul_eq_mul]\n    _ = (∑ k ∈ S, bernstein n k x * gauge U (f k/ₙ - f x)) +\n          ∑ k ∈ Sᶜ, bernstein n k x * gauge U (f k/ₙ - f x) :=\n      (S.sum_add_sum_compl _).symm\n    -- We'll now deal with the terms in `S` and the terms in `Sᶜ` in separate calc blocks.\n    _ < 1 / 2 + 1 / 2 := add_lt_add_of_le_of_lt ?_ ?_\n    _ = 1 := add_halves 1\n  · -- We now work on the terms in `S`: uniform continuity and `bernstein.probability`\n    -- quickly give us a bound.\n    calc\n      ∑ k ∈ S, bernstein n k x * gauge U (f k/ₙ - f x) ≤ ∑ k ∈ S, bernstein n k x * (1 / 2) := by\n        gcongr with k hk\n        refine (hδ _ _ ?_).le\n        simpa [S] using hk\n      _ = 1 / 2 * ∑ k ∈ S, bernstein n k x := by rw [mul_comm, Finset.sum_mul]\n      -- In this step we increase the sum over `S` back to a sum over all of `Fin (n+1)`,\n      -- so that we can use `bernstein.probability`.\n      _ ≤ 1 / 2 * ∑ k : Fin (n + 1), bernstein n k x := by gcongr; exact S.subset_univ\n      _ = 1 / 2 := by rw [bernstein.probability, mul_one]\n  · -- We now turn to working on `Sᶜ`: we control the difference term just using `C`,\n    -- and then insert a `(x - k/n)^2 / δ^2` factor\n    -- (which is at least one because we are not in `S`).\n    calc\n      ∑ k ∈ Sᶜ, bernstein n k x * gauge U (f k/ₙ - f x) ≤ ∑ k ∈ Sᶜ, C * bernstein n k x := by\n        simp only [mul_comm (bernstein n _ x)]\n        gcongr\n        apply hC\n      _ = C * ∑ k ∈ Sᶜ, bernstein n k x := by rw [Finset.mul_sum]\n      _ ≤ C * ∑ k ∈ Sᶜ, ((x : ℝ) - k/ₙ) ^ 2 / δ ^ 2 * bernstein n k x := by\n        gcongr with k hk\n        conv_lhs => rw [← one_mul (bernstein _ _ _)]\n        gcongr\n        simpa [one_le_div₀, hδ₀, sq_le_sq, S, abs_of_pos, ← Real.dist_eq, dist_comm (x : ℝ)]\n          using! hk\n      -- Again enlarging the sum from `Sᶜ` to all of `Fin (n+1)`\n      _ ≤ C * ∑ k : Fin (n + 1), ((x : ℝ) - k/ₙ) ^ 2 / δ ^ 2 * bernstein n k x := by\n        gcongr; exact Sᶜ.subset_univ\n      _ = C * (∑ k : Fin (n + 1), ((x : ℝ) - k/ₙ) ^ 2 * bernstein n k x) / δ ^ 2 := by\n        simp only [← mul_div_right_comm, ← mul_div_assoc, ← Finset.sum_div]\n      -- `bernstein.variance` and `x ∈ [0,1]` gives the uniform bound\n      _ = C / δ ^ 2 * x * (1 - x) / n := by rw [variance hn₀]; ring\n      _ ≤ C / δ ^ 2 * 1 * 1 / n := by gcongr <;> unit_interval\n      _ < 1 / 2 := by simpa only [mul_one]",
+     "excerpt_sha256": "244bab6129f06a9a9bef146965f1a1b12ab62b0499e792a13ca061f139349599",
+     "attribution": "/-\nCopyright (c) 2021 Kim Morrison. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kim Morrison\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Bernstein approximations of a continuous function converge uniformly. This is the qualitative consequence of the statement. The source does not give a rate."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Bernstein.lean#L114-L124",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Bernstein",
+     "declaration": "variance",
+     "lines": [
+      114,
+      124
+     ],
+     "module_sha256": "65115a64e48c4257be7e98e309519eb5e4b4455822da83099522236d30153db2",
+     "excerpt": "theorem variance {n : ℕ} (hn : n ≠ 0) (x : I) :\n    (∑ k : Fin (n + 1), (x - k/ₙ : ℝ) ^ 2 * bernstein n k x) = (x : ℝ) * (1 - x) / n := by\n  convert congr(Polynomial.aeval (x : ℝ) $(bernsteinPolynomial.variance ℝ n) / n ^ 2) using 1\n  · simp only [z, bernstein_apply, nsmul_eq_mul, bernsteinPolynomial, Finset.sum_range, map_sum,\n      Polynomial.coe_aeval_eq_eval, Polynomial.eval_mul, Polynomial.eval_pow, Polynomial.eval_sub,\n      Polynomial.eval_natCast, Polynomial.eval_X, Polynomial.eval_one]\n    field_simp\n    rw [← Finset.sum_div]\n    field\n  · simp\n    field",
+     "excerpt_sha256": "98dc600dbb2f3c12670ceade21e0b61a188241968a12a4a5fdef3baa4939b69c",
+     "attribution": "/-\nCopyright (c) 2021 Kim Morrison. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kim Morrison\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the variance identity ∑ (x − k/n)² b_k = x(1−x)/n for Bernstein weights. This is the variance step of the proof."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-newton-method-quadratic-convergence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Dynamics/Newton.lean#L79-L99",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Dynamics.Newton",
+     "declaration": "aeval_pow_two_pow_dvd_aeval_iterate_newtonMap",
+     "lines": [
+      79,
+      99
+     ],
+     "module_sha256": "0b4e4a77300e4269b63138dbab4aeaa457e703926f87b2017bfc8d29cf057ebf",
+     "excerpt": "/-- This is really an auxiliary result, en route to\n`Polynomial.existsUnique_nilpotent_sub_and_aeval_eq_zero`. -/\ntheorem aeval_pow_two_pow_dvd_aeval_iterate_newtonMap\n    (h : IsNilpotent (aeval x P)) (h' : IsUnit (aeval x <| derivative P)) (n : ℕ) :\n    (aeval x P) ^ (2 ^ n) ∣ aeval (P.newtonMap^[n] x) P := by\n  induction n with\n  | zero => simp\n  | succ n ih =>\n    have ⟨d, hd⟩ := binomExpansion (P.map (algebraMap R S)) (P.newtonMap^[n] x)\n      (-Ring.inverse (aeval (P.newtonMap^[n] x) <| derivative P) * aeval (P.newtonMap^[n] x) P)\n    rw [eval_map_algebraMap, eval_map_algebraMap] at hd\n    rw [iterate_succ', comp_apply, newtonMap_apply, sub_eq_add_neg, neg_mul_eq_neg_mul, hd]\n    refine dvd_add ?_ (dvd_mul_of_dvd_right ?_ _)\n    · convert dvd_zero _\n      have : IsUnit (aeval (P.newtonMap^[n] x) <| derivative P) :=\n        isUnit_aeval_of_isUnit_aeval_of_isNilpotent_sub h' <|\n        isNilpotent_iterate_newtonMap_sub_of_isNilpotent h n\n      rw [derivative_map, eval_map_algebraMap, ← mul_assoc, mul_neg, Ring.mul_inverse_cancel _ this,\n        neg_mul, one_mul, add_neg_cancel]\n    · rw [neg_mul, even_two.neg_pow, mul_pow, pow_succ, pow_mul]\n      exact dvd_mul_of_dvd_right (pow_dvd_pow_of_dvd ih 2) _",
+     "excerpt_sha256": "ba9535b1094b5a0bb79bf5c564446e236e0e2615db92870d2fc229357e4333e0",
+     "attribution": "/-\nCopyright (c) 2024 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir, Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves a Newton iteration doubles the nilpotency order, in a commutative ring with a nilpotent value of P and a unit derivative. This is the algebraic analogue of the quadratic convergence. The entry proves the real-analysis version, and the source does not."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-condition-number-perturbation-bounds",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Ring/Units.lean#L97-L98",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Ring.Units",
+     "declaration": "inverse_one_sub",
+     "lines": [
+      97,
+      98
+     ],
+     "module_sha256": "ae1c678092cd0d1f2081f063175e042e8a7e6271d4cf89deeaac33c285ec3dd3",
+     "excerpt": "theorem inverse_one_sub (t : R) (h : ‖t‖ < 1) : inverse (1 - t) = ↑(Units.oneSub t h)⁻¹ := by\n  rw [← inverse_unit (Units.oneSub t h), Units.val_oneSub]",
+     "excerpt_sha256": "7e41473407f62681e4c1fb6ba10e2a636865658b1fcd62f28c502ca8e7e16b07",
+     "attribution": "/-\nCopyright (c) 2020 Heather Macbeth. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Heather Macbeth\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that 1 − t is invertible with inverse the geometric series when ‖t‖ < 1 in a complete normed ring. This is the Neumann step 3 of the proof."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-root-bounds-cauchy-sum-fujiwara",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Normed/Algebra/Spectrum.lean#L184-L185",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Normed.Algebra.Spectrum",
+     "declaration": "norm_le_norm_mul_of_mem",
+     "lines": [
+      184,
+      185
+     ],
+     "module_sha256": "d279ce0dd68eb5a0af6bdbaad138d36420ea15d25a3a26b0bdb1a3bdefb88cad",
+     "excerpt": "theorem norm_le_norm_mul_of_mem {a : A} {k : 𝕜} (hk : k ∈ σ a) : ‖k‖ ≤ ‖a‖ * ‖(1 : A)‖ :=\n  le_of_not_gt <| mt mem_resolventSet_of_norm_lt_mul hk",
+     "excerpt_sha256": "e870202861e015749b80c53d215ca4e2ce466dbe06b37f7a8de53464c9e6c9eb",
+     "attribution": "/-\nCopyright (c) 2021 Jireh Loreaux. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jireh Loreaux\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source bounds each spectral value of an element by its norm. For the companion matrix of p, the spectrum is the set of roots, so this gives a root bound of the same kind. The entry proves the bounds directly."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-vallee-poussin-equioscillation-sufficiency-uniqueness",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Polynomial/Roots.lean#L134-L136",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Polynomial.Roots",
+     "declaration": "card_le_degree_of_subset_roots",
+     "lines": [
+      134,
+      136
+     ],
+     "module_sha256": "14c4c0ecc253dd749c00e2f931aa561b6d76954adb6f7bbb7d599452e84a49bc",
+     "excerpt": "theorem card_le_degree_of_subset_roots {p : R[X]} {Z : Finset R} (h : Z.val ⊆ p.roots) :\n    #Z ≤ p.natDegree :=\n  (Multiset.card_le_card (Finset.val_le_iff_val_subset.2 h)).trans (Polynomial.card_roots' p)",
+     "excerpt_sha256": "3ea521067b3ed6cebb8904eed316d76890be6c9953e7da40826e8369d09350fc",
+     "attribution": "/-\nCopyright (c) 2018 Chris Hughes. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Chris Hughes, Johannes Hölzl, Kim Morrison, Jens Wagemaker, Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source bounds the number of distinct roots of a non-zero polynomial by its degree. This gives the final step of the uniqueness proof."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-peano-kernel-simpson-error",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Calculus/Taylor.lean#L503-L526",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Calculus.Taylor",
+     "declaration": "taylor_integral_remainder_of_absolutelyContinuous",
+     "lines": [
+      503,
+      526
+     ],
+     "module_sha256": "a1cf4e88e5cc738f9c7699cf7ca9165b6cfbea8ac621d31f3a2b18fcaaeb13b5",
+     "excerpt": "/-- **Taylor's theorem** with the Integral form of the remainder.\n\nWe assume that `f` is `n`-times continuously differentiable on the closed set `uIcc x₀ x` and\nits `n`-th derivative is absolutely continuous on `uIcc x₀ x`. Then\n$$f(x) - (P_n f)(x₀, x) = \\int_{x_0}^x \\frac{f^{(n+1)}(t) (x - t)^n}{n!} dt,$$\nwhere $P_n f$ denotes the Taylor polynomial of degree $n$ and $f^{(n+1)}$ is the $n+1$-th iterated\nderivative. -/\ntheorem taylor_integral_remainder_of_absolutelyContinuous {f : ℝ → ℝ} {x x₀ : ℝ} {n : ℕ}\n    (hf₁ : ContDiffOn ℝ n f (uIcc x₀ x))\n    (hf₂ : AbsolutelyContinuousOnInterval (iteratedDerivWithin n f (uIcc x₀ x)) x₀ x) :\n    f x - taylorWithinEval f n (uIcc x₀ x) x₀ x =\n      ∫ t in x₀..x, ((x - t) ^ n / n !) * iteratedDerivWithin (n + 1) f (uIcc x₀ x) t := by\n  rcases eq_or_ne x₀ x with rfl | this\n  · simp\n  apply taylor_integral_remainder_aux\n  intro k hk\n  apply AbsolutelyContinuousOnInterval.integral_mul_deriv_eq_deriv_mul\n  · apply ContDiffOn.absolutelyContinuousOnInterval\n    fun_prop\n  · rcases hk.eq_or_lt with rfl | hk\n    · exact hf₂\n    replace hf₁ := hf₁.of_le (m := k.succ) (by norm_cast)\n    grind [ContDiffOn.absolutelyContinuousOnInterval, uniqueDiffOn_uIcc,\n      contDiffOn_nat_succ_iff_contDiffOn_one_iteratedDerivWithin]",
+     "excerpt_sha256": "5f7ff14de915c7d5efa1156df4a2a3b7b45b054158495f6f9514e4e884733d89",
+     "attribution": "/-\nCopyright (c) 2022 Moritz Doll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Moritz Doll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves Taylor's theorem with the integral form of the remainder. This is step 2 of the proof. The entry adds the kernel computation and the sign argument."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-layer-cake-tail-integral",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/Layercake.lean#L466-L487",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.Layercake",
+     "declaration": "lintegral_comp_eq_lintegral_meas_lt_mul",
+     "lines": [
+      466,
+      487
+     ],
+     "module_sha256": "dfcc76610fb5c95ff3dd8c6716dfe570f0e0954631fd558c338b2f6f80476836",
+     "excerpt": "/-- The layer cake formula / Cavalieri's principle / tail probability formula:\n\nLet `f` be a non-negative measurable function on a measure space. Let `G` be an\nincreasing absolutely continuous function on the positive real line, vanishing at the origin,\nwith derivative `G' = g`. Then the integral of the composition `G ∘ f` can be written as\nthe integral over the positive real line of the \"tail measures\" `μ {ω | f(ω) > t}` of `f`\nweighted by `g`.\n\nRoughly speaking, the statement is: `∫⁻ (G ∘ f) ∂μ = ∫⁻ t in 0..∞, g(t) * μ {ω | f(ω) > t}`.\n\nSee `lintegral_comp_eq_lintegral_meas_le_mul` for a version with sets of the form `{ω | f(ω) ≥ t}`\ninstead. -/\ntheorem lintegral_comp_eq_lintegral_meas_lt_mul (μ : Measure α) (f_nn : 0 ≤ᵐ[μ] f)\n    (f_mble : AEMeasurable f μ) (g_intble : ∀ t > 0, IntervalIntegrable g volume 0 t)\n    (g_nn : ∀ᵐ t ∂volume.restrict (Ioi 0), 0 ≤ g t) :\n    ∫⁻ ω, ENNReal.ofReal (∫ t in 0..f ω, g t) ∂μ =\n      ∫⁻ t in Ioi 0, μ {a : α | t < f a} * ENNReal.ofReal (g t) := by\n  rw [lintegral_comp_eq_lintegral_meas_le_mul μ f_nn f_mble g_intble g_nn]\n  apply lintegral_congr_ae\n  filter_upwards [meas_le_ae_eq_meas_lt μ (volume.restrict (Ioi 0)) f]\n    with t ht\n  rw [ht]",
+     "excerpt_sha256": "e95117cd5c47a85d68e7eade8a8e8a8cc4daf10850ea5961a6c584388773001c",
+     "attribution": "/-\nCopyright (c) 2022 Kalle Kytölä. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kalle Kytölä\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the identity ∫⁻ofReal(∫₀^{f}g)dμ=∫⁻_{Ioi 0}μ{t<f}·ofReal(g) for a.e. nonnegative measurable f and locally interval integrable nonnegative g. This is the main identity of the entry, in extended nonnegative reals."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Integral/Layercake.lean#L511-L537",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Integral.Layercake",
+     "declaration": "Integrable.integral_eq_integral_meas_lt",
+     "lines": [
+      511,
+      537
+     ],
+     "module_sha256": "dfcc76610fb5c95ff3dd8c6716dfe570f0e0954631fd558c338b2f6f80476836",
+     "excerpt": "/-- The standard case of the layer cake formula / Cavalieri's principle / tail probability formula:\n\nFor an integrable a.e.-nonnegative real-valued function `f`, the Bochner integral of `f` can be\nwritten (roughly speaking) as: `∫ f ∂μ = ∫ t in 0..∞, μ {ω | f(ω) > t}`.\n\nSee `MeasureTheory.lintegral_eq_lintegral_meas_lt` for a version with Lebesgue integral `∫⁻`\ninstead. -/\ntheorem Integrable.integral_eq_integral_meas_lt\n    (f_intble : Integrable f μ) (f_nn : 0 ≤ᵐ[μ] f) :\n    ∫ ω, f ω ∂μ = ∫ t in Set.Ioi 0, μ.real {a : α | t < f a} := by\n  have key := lintegral_eq_lintegral_meas_lt μ f_nn f_intble.aemeasurable\n  have lhs_finite : ∫⁻ (ω : α), ENNReal.ofReal (f ω) ∂μ < ∞ := Integrable.lintegral_lt_top f_intble\n  have rhs_finite : ∫⁻ (t : ℝ) in Set.Ioi 0, μ {a | t < f a} < ∞ := by simp only [← key, lhs_finite]\n  have rhs_integrand_finite : ∀ (t : ℝ), t > 0 → μ {a | t < f a} < ∞ :=\n    fun t ht ↦ measure_gt_lt_top f_intble ht\n  convert (ENNReal.toReal_eq_toReal_iff' lhs_finite.ne rhs_finite.ne).mpr key\n  · exact integral_eq_lintegral_of_nonneg_ae f_nn f_intble.aestronglyMeasurable\n  · have aux := @integral_eq_lintegral_of_nonneg_ae _ _ ((volume : Measure ℝ).restrict (Set.Ioi 0))\n      (fun t ↦ μ.real {a : α | t < f a}) ?_ ?_\n    · rw [aux]\n      congr 1\n      apply setLIntegral_congr_fun measurableSet_Ioi\n      exact fun t t_pos ↦ ENNReal.ofReal_toReal (rhs_integrand_finite t t_pos).ne\n    · exact Eventually.of_forall (fun x ↦ by positivity)\n    · apply Measurable.aestronglyMeasurable\n      refine Measurable.ennreal_toReal ?_\n      exact Antitone.measurable (fun _ _ hst ↦ measure_mono (fun _ h ↦ lt_of_le_of_lt hst h))",
+     "excerpt_sha256": "62e336451577f70a0cfbb638ba776f885d2640c06dd0cc6f6ac47c06828ec8a5",
+     "attribution": "/-\nCopyright (c) 2022 Kalle Kytölä. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kalle Kytölä\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states case (a) for an integrable nonnegative f as a Bochner integral."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-ergodicity-rotation-doubling-fourier",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Dynamics/Ergodic/AddCircleAdd.lean#L28-L29",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Dynamics.Ergodic.AddCircleAdd",
+     "declaration": "ergodic_add_left",
+     "lines": [
+      28,
+      29
+     ],
+     "module_sha256": "8a23e3c4dc8b8212653f9c58c75d2998cf8036bb75b590b7a3bef9899ea02974",
+     "excerpt": "theorem ergodic_add_left {a : AddCircle p} : Ergodic (a + ·) ↔ addOrderOf a = 0 := by\n  rw [← denseRange_zsmul_iff, ergodic_add_left_iff_denseRange_zsmul]",
+     "excerpt_sha256": "09596b15d75ae16b9cd1bf336db29ae0436f2445813eaf6a1c7fbff03953ac36",
+     "attribution": "/-\nCopyright (c) 2025 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a rotation of the additive circle is ergodic if and only if the angle has infinite additive order, which is irrationality of α."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Dynamics/Ergodic/AddCircle.lean#L104-L121",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Dynamics.Ergodic.AddCircle",
+     "declaration": "ergodic_zsmul",
+     "lines": [
+      104,
+      121
+     ],
+     "module_sha256": "cdefce2186255bdc23dd649a9f4abb85a41de35e7a59a4add3c5b90d03127ad3",
+     "excerpt": "theorem ergodic_zsmul {n : ℤ} (hn : 1 < |n|) : Ergodic fun y : AddCircle T => n • y :=\n  Ergodic.of_preimage_eq (measurePreserving_zsmul volume (abs_pos.mp <| lt_trans zero_lt_one hn))\n    fun s hs hs' => by\n      let u : ℕ → AddCircle T := fun j => ↑((↑1 : ℝ) / ↑(n.natAbs ^ j) * T)\n      replace hn : 1 < n.natAbs := by rwa [Int.abs_eq_natAbs, Nat.one_lt_cast] at hn\n      have hu₀ : ∀ j, addOrderOf (u j) = n.natAbs ^ j := fun j => by\n        convert\n          addOrderOf_div_of_gcd_eq_one (p := T) (m := 1) (pow_pos (pos_of_gt hn) j) (gcd_one_left _)\n        norm_cast\n      have hnu : ∀ j, n ^ j • u j = 0 := fun j => by\n        rw [← addOrderOf_dvd_iff_zsmul_eq_zero, hu₀, Int.natCast_pow, Int.natCast_natAbs, ← abs_pow,\n          abs_dvd]\n      have hu₁ : ∀ j, (u j +ᵥ s : Set _) =ᵐ[volume] s := fun j =>\n        (vadd_eq_self_of_preimage_zsmul_eq_self hs' (hnu j)).eventuallyEq\n      have hu₂ : Tendsto (fun j => addOrderOf <| u j) atTop atTop := by\n        simp_rw [hu₀]; exact tendsto_pow_atTop_atTop_of_one_lt hn\n      rw [eventuallyEmptyOrUniv_iff']\n      exact ae_empty_or_univ_of_forall_vadd_ae_eq_self hs.nullMeasurableSet hu₁ hu₂",
+     "excerpt_sha256": "732a8f210f69949ee7982e4704ad50e5aefe28080774171c5edb026d1f9b8369",
+     "attribution": "/-\nCopyright (c) 2022 Oliver Nash. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Oliver Nash\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves ergodicity of x↦n·x on the circle for |n|>1. Its proof uses torsion points, not Fourier coefficients."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-ergodic-measures-extreme-points",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Dynamics/Ergodic/Extreme.lean#L110-L112",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Dynamics.Ergodic.Extreme",
+     "declaration": "iff_mem_extremePoints",
+     "lines": [
+      110,
+      112
+     ],
+     "module_sha256": "8d2b8e2645c66d2a8c948976850c4510668dc4933cb4fe5de5c8d2ad359a4668",
+     "excerpt": "theorem iff_mem_extremePoints [IsProbabilityMeasure μ] :\n    Ergodic f μ ↔ μ ∈ extremePoints ℝ≥0∞ {ν | MeasurePreserving f ν ν ∧ IsProbabilityMeasure ν} :=\n  ⟨mem_extremePoints, of_mem_extremePoints⟩",
+     "excerpt_sha256": "598a4339b2c42fee30a6807eda5f6a5f888d563a0656f2bffc124a1eb7e0fab2",
+     "attribution": "/-\nCopyright (c) 2025 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the equivalence for a measure preserving f and a probability measure μ. It uses the extreme points of the set of invariant probability measures."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-kl-divergence-chain-rule",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/KullbackLeibler/ChainRule.lean#L200-L234",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.KullbackLeibler.ChainRule",
+     "declaration": "klDiv_compProd_eq_add",
+     "lines": [
+      200,
+      234
+     ],
+     "module_sha256": "9779d1da7ca614ff402f1f83bee6477d06e5048c14c75879304f9aaf5eda99fe",
+     "excerpt": "/-- **Chain rule** for the Kullback-Leibler divergence, with conditional KL expressed using\ncomposition-products.\nThis version holds without any assumption on the measurable spaces. -/\ntheorem klDiv_compProd_eq_add : klDiv (μ ⊗ₘ κ) (ν ⊗ₘ η) = klDiv μ ν + klDiv (μ ⊗ₘ κ) (μ ⊗ₘ η) := by\n  -- first, if we don't have absolute continuity, both sides are `∞`\n  by_cases h_ac : μ ⊗ₘ κ ≪ ν ⊗ₘ η\n  swap\n  · rw [klDiv_of_not_ac h_ac]\n    rw [Measure.absolutelyContinuous_compProd_iff] at h_ac\n    simp only [not_and_or] at h_ac\n    cases h_ac with\n    | inl h => simp [h]\n    | inr h => simp [h]\n  -- same if we don't have integrability\n  by_cases h_int : Integrable (llr (μ ⊗ₘ κ) (ν ⊗ₘ η)) (μ ⊗ₘ κ)\n  swap\n  · rw [klDiv_of_not_integrable h_int]\n    rw [integrable_llr_compProd_iff h_ac] at h_int\n    simp only [not_and_or] at h_int\n    cases h_int with\n    | inl h => simp [h]\n    | inr h => simp [h]\n  -- now we can use express the KL divergences with an integral of a log-likelihood ratio\n  have ⟨h_ac_μν, h_ac_κη⟩ := Measure.absolutelyContinuous_compProd_iff.mp h_ac\n  have ⟨h_int_μν, h_int_κη⟩ := (integrable_llr_compProd_iff h_ac).mp h_int\n  simp_rw [klDiv_of_ac_of_integrable h_ac h_int, klDiv_of_ac_of_integrable h_ac_μν h_int_μν,\n    klDiv_of_ac_of_integrable h_ac_κη h_int_κη,\n    ← ENNReal.ofReal_add (integral_llr_add_sub_measure_univ_nonneg h_ac_μν h_int_μν)\n    (integral_llr_add_sub_measure_univ_nonneg h_ac_κη h_int_κη), measureReal_def,\n    Measure.compProd_apply_univ, add_sub_cancel_right]\n  -- it suffices to prove the chain rule for the integrals of log-likelihood ratios\n  suffices ∫ p, llr (μ ⊗ₘ κ) (ν ⊗ₘ η) p ∂μ ⊗ₘ κ =\n      ∫ a, llr μ ν a ∂μ + ∫ p, llr (μ ⊗ₘ κ) (μ ⊗ₘ η) p ∂(μ ⊗ₘ κ) by rw [this]; ring_nf\n  -- the result follows from a previous lemma\n  exact integral_llr_compProd_eq_add h_ac h_int",
+     "excerpt_sha256": "693a6331a6e4063c11c197b6eeed1f8988cd2958591fbe8f6a8463cb9f4d648e",
+     "attribution": "/-\nCopyright (c) 2026 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne, Lorenzo Luccioli\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves klDiv(μ⊗ₘκ ‖ ν⊗ₘη)=klDiv μ ν + klDiv(μ⊗ₘκ ‖ μ⊗ₘη). It is the measure-theoretic form of the chain rule. This entry proves the finite case in the averaged form."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/KullbackLeibler/Basic.lean#L374-L386",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.KullbackLeibler.Basic",
+     "declaration": "klDiv_eq_zero_iff",
+     "lines": [
+      374,
+      386
+     ],
+     "module_sha256": "a3f5e6073c4861c97f83c76d548eca9aa2a566cce391dfbb8359b77acea2494f",
+     "excerpt": "/-- **Converse Gibbs' inequality**: the Kullback-Leibler divergence between two finite measures is\nzero if and only if the two measures are equal. -/\nlemma klDiv_eq_zero_iff [IsFiniteMeasure μ] [IsFiniteMeasure ν] :\n    klDiv μ ν = 0 ↔ μ = ν := by\n  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ klDiv_self _⟩\n  have h_ne : klDiv μ ν ≠ ⊤ := by simp [h]\n  rw [klDiv_ne_top_iff] at h_ne\n  rw [klDiv_eq_lintegral_klFun, ite_eq_left h_ne.1, lintegral_eq_zero_iff (by fun_prop)] at h\n  refine (Measure.rnDeriv_eq_one_iff_eq h_ne.1).mp ?_\n  filter_upwards [h] with x hx\n  simp only [Pi.zero_apply, ENNReal.ofReal_eq_zero] at hx\n  have hx' : klFun (μ.rnDeriv ν x).toReal = 0 := le_antisymm hx (klFun_nonneg ENNReal.toReal_nonneg)\n  rwa [klFun_eq_zero_iff ENNReal.toReal_nonneg, ENNReal.toReal_eq_one_iff] at hx'",
+     "excerpt_sha256": "c7c3d43ad1b024b28ab9773e0bd61f57f2be833f67ae659cc5c74c8d7e392de4",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne, Lorenzo Luccioli\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that klDiv μ ν=0 if and only if μ=ν for finite measures. This is the equality case that step 5 uses."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-maximum-entropy-gibbs-pythagoras",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/KullbackLeibler/Basic.lean#L374-L386",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.KullbackLeibler.Basic",
+     "declaration": "klDiv_eq_zero_iff",
+     "lines": [
+      374,
+      386
+     ],
+     "module_sha256": "a3f5e6073c4861c97f83c76d548eca9aa2a566cce391dfbb8359b77acea2494f",
+     "excerpt": "/-- **Converse Gibbs' inequality**: the Kullback-Leibler divergence between two finite measures is\nzero if and only if the two measures are equal. -/\nlemma klDiv_eq_zero_iff [IsFiniteMeasure μ] [IsFiniteMeasure ν] :\n    klDiv μ ν = 0 ↔ μ = ν := by\n  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ klDiv_self _⟩\n  have h_ne : klDiv μ ν ≠ ⊤ := by simp [h]\n  rw [klDiv_ne_top_iff] at h_ne\n  rw [klDiv_eq_lintegral_klFun, ite_eq_left h_ne.1, lintegral_eq_zero_iff (by fun_prop)] at h\n  refine (Measure.rnDeriv_eq_one_iff_eq h_ne.1).mp ?_\n  filter_upwards [h] with x hx\n  simp only [Pi.zero_apply, ENNReal.ofReal_eq_zero] at hx\n  have hx' : klFun (μ.rnDeriv ν x).toReal = 0 := le_antisymm hx (klFun_nonneg ENNReal.toReal_nonneg)\n  rwa [klFun_eq_zero_iff ENNReal.toReal_nonneg, ENNReal.toReal_eq_one_iff] at hx'",
+     "excerpt_sha256": "c7c3d43ad1b024b28ab9773e0bd61f57f2be833f67ae659cc5c74c8d7e392de4",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne, Lorenzo Luccioli\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves klDiv μ ν=0 if and only if μ=ν for finite measures. This gives the equality case of the final step."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/InformationTheory/KullbackLeibler/Basic.lean#L359-L370",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.InformationTheory.KullbackLeibler.Basic",
+     "declaration": "mul_log_le_klDiv",
+     "lines": [
+      359,
+      370
+     ],
+     "module_sha256": "a3f5e6073c4861c97f83c76d548eca9aa2a566cce391dfbb8359b77acea2494f",
+     "excerpt": "lemma mul_log_le_klDiv (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :\n    ENNReal.ofReal (μ.real univ * log (μ.real univ / ν.real univ)\n        + ν.real univ - μ.real univ)\n      ≤ klDiv μ ν := by\n  by_cases hμν : μ ≪ ν\n  swap; · simp [hμν]\n  by_cases h_int : Integrable (llr μ ν) μ\n  swap; · simp [h_int]\n  rw [← ENNReal.ofReal_toReal (a := klDiv μ ν)]\n  · exact ENNReal.ofReal_le_ofReal (mul_log_le_toReal_klDiv hμν h_int)\n  · rw [klDiv_ne_top_iff]\n    exact ⟨hμν, h_int⟩",
+     "excerpt_sha256": "6b653a8e6e28494310173a7bafd6715032db164c75b94b37a5c64654edab8e68",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne, Lorenzo Luccioli\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the log-sum lower bound on klDiv for finite measures. For probability measures its right side is 0, which is the nonnegativity that the final step uses."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-poisson-superposition-thinning",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Distributions/Poisson/Basic.lean#L173-L177",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Distributions.Poisson.Basic",
+     "declaration": "poissonMeasure_conv_poissonMeasure",
+     "lines": [
+      173,
+      177
+     ],
+     "module_sha256": "77572511ddc328c64782c449f517057980f66835a79e8fb6705c6c9242fdb757",
+     "excerpt": "theorem poissonMeasure_conv_poissonMeasure (r₁ r₂ : ℝ≥0) :\n    Po(r₁) ∗ Po(r₂) = Po(r₁ + r₂) := by\n  apply (MeasurableEmbedding.natCast (α := ℝ)).map_injective\n  rw [← Nat.coe_castAddMonoidHom, Measure.map_conv_addMonoidHom _ (by fun_prop)]\n  exact map_cast_poissonMeasure_conv_real _ _",
+     "excerpt_sha256": "83feaff31c13c2806b19f76c43724e00956f0594d90d2aabe1fcdad8503652d7",
+     "attribution": "/-\nCopyright (c) 2024 Josha Dekker. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Josha Dekker, Etienne Marion, Hanzhang Cheng\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves poissonMeasure r₁ ∗ poissonMeasure r₂ = poissonMeasure (r₁+r₂), which is part (a) as a convolution of measures."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gaussian-convolution-variance-addition",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Distributions/Gaussian/Real.lean#L638-L647",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Distributions.Gaussian.Real",
+     "declaration": "gaussianReal_conv_gaussianReal",
+     "lines": [
+      638,
+      647
+     ],
+     "module_sha256": "9edebfff169cb577b6dab1a7912f2e8fec0e70a8dac39db105263e1a0f31b383",
+     "excerpt": "/-- The convolution of two real Gaussian distributions with means `m₁, m₂` and variances `v₁, v₂`\nis a real Gaussian distribution with mean `m₁ + m₂` and variance `v₁ + v₂`. -/\nlemma gaussianReal_conv_gaussianReal {m₁ m₂ : ℝ} {v₁ v₂ : ℝ≥0} :\n    (gaussianReal m₁ v₁) ∗ (gaussianReal m₂ v₂) = gaussianReal (m₁ + m₂) (v₁ + v₂) := by\n  refine Measure.ext_of_charFun ?_\n  ext t\n  simp_rw [charFun_conv, charFun_gaussianReal]\n  rw [← Complex.exp_add]\n  simp only [Complex.ofReal_add, NNReal.coe_add]\n  ring_nf",
+     "excerpt_sha256": "147d519ca5c527d7a0f81c2d962ce88b8b59cb14f1f83be541d465731eecebb1",
+     "attribution": "/-\nCopyright (c) 2023 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Lorenzo Luccioli, Rémy Degenne, Alexander Bentkamp\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves gaussianReal m₁ v₁ ∗ gaussianReal m₂ v₂ = gaussianReal (m₁+m₂) (v₁+v₂) for all variances in the nonnegative reals. This is the statement of the entry."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-holder-image-hausdorff-dimension",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/MetricSpace/HausdorffDimension.lean#L310-L321",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.MetricSpace.HausdorffDimension",
+     "declaration": "dimH_image_le_of_locally_holder_on",
+     "lines": [
+      310,
+      321
+     ],
+     "module_sha256": "2399f41ce6460bd368c3bf6ad052d0c57e43472a93e02855a87c05f28b800abf",
+     "excerpt": "/-- If `s` is a set in a space `X` with second countable topology and `f : X → Y` is Hölder\ncontinuous in a neighborhood within `s` of every point `x ∈ s` with the same positive exponent `r`\nbut possibly different coefficients, then the Hausdorff dimension of the image `f '' s` is at most\nthe Hausdorff dimension of `s` divided by `r`. -/\ntheorem dimH_image_le_of_locally_holder_on [SecondCountableTopology X] {r : ℝ≥0} {f : X → Y}\n    (hr : 0 < r) {s : Set X} (hf : ∀ x ∈ s, ∃ C : ℝ≥0, ∃ t ∈ 𝓝[s] x, HolderOnWith C r f t) :\n    dimH (f '' s) ≤ dimH s / r := by\n  choose! C t htn hC using hf\n  rcases countable_cover_nhdsWithin htn with ⟨u, hus, huc, huU⟩\n  replace huU := inter_eq_self_of_subset_left huU; rw [inter_iUnion₂] at huU\n  rw [← huU, image_iUnion₂, dimH_bUnion huc, dimH_bUnion huc]; simp only [ENNReal.iSup_div]\n  exact iSup₂_mono fun x hx => ((hC x (hus hx)).mono inter_subset_right).dimH_image_le hr",
+     "excerpt_sha256": "feea6864443015ef50e3f198f2a795788632c2b3af50b8e6b2d6b00f922e68e2",
+     "attribution": "/-\nCopyright (c) 2021 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves dim_H(f(s)) ≤ dim_H(s)/r when f is locally Hölder of exponent r on s in a second countable space. This entry proves the global Hölder case directly."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-binomial-sum-binary-entropy-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/BinaryEntropy.lean#L71-L72",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.BinaryEntropy",
+     "declaration": "binEntropy_eq_negMulLog_add_negMulLog_one_sub",
+     "lines": [
+      71,
+      72
+     ],
+     "module_sha256": "0d75a430c7b3973b188d3d911cd14d1ccd25bb9f6d599a80df192e9d91f28db6",
+     "excerpt": "lemma binEntropy_eq_negMulLog_add_negMulLog_one_sub (p : ℝ) :\n    binEntropy p = negMulLog p + negMulLog (1 - p) := by simp [binEntropy, negMulLog, ← neg_mul]",
+     "excerpt_sha256": "4855e7e37f968a3eac01e12385114e46b5a48b0ea5a50309357c2dba9f74aea5",
+     "attribution": "/-\nCopyright (c) 2023 Adomas Baliuka. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Adomas Baliuka\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source rewrites binEntropy p as negMulLog p + negMulLog (1−p). This is the entropy function used in the bound, in nats."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-competing-exponential-clocks",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Distributions/Exponential.lean#L162-L170",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Distributions.Exponential",
+     "declaration": "cdf_expMeasure_eq",
+     "lines": [
+      162,
+      170
+     ],
+     "module_sha256": "3d48a2a7b95fcfea7a422d4a8100837606b7498047ad26b10e27124cbaf34023",
+     "excerpt": "/-- The CDF of the exponential distribution equals ``1 - exp (-(r * x))`` -/\nlemma cdf_expMeasure_eq {r : ℝ} (hr : 0 < r) (x : ℝ) :\n    cdf (expMeasure r) x = if 0 ≤ x then 1 - exp (-(r * x)) else 0 := by\n  rw [cdf_expMeasure_eq_lintegral hr, lintegral_exponentialPDF_eq_antiDeriv hr x,\n    ENNReal.toReal_ofReal_eq_iff]\n  split_ifs with h\n  · simp only [sub_nonneg, exp_le_one_iff, Left.neg_nonpos_iff]\n    exact mul_nonneg hr.le h\n  · exact le_rfl",
+     "excerpt_sha256": "9e222d40ec3b0df7aa40bbf02cfa6c61dcf0a860f9ec59a9f3a810346f4d2967",
+     "attribution": "/-\nCopyright (c) 2023 Claus Clausen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Claus Clausen, Patrick Massot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the cumulative distribution function of the exponential measure, 1−e^{−rx} for x≥0. This gives the survival function e^{−λt} used in step 1."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [
