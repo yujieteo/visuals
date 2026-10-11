@@ -229,12 +229,19 @@ def concepts(log):
     return {"unjudged_concepts": len(todo)}
 
 
-def answer_rows(folder):
+def answer_rows(folder, identities=None):
     """Every raw answer row in <work>/judge/<folder>/, by result id."""
+    import judge
     rows = {}
     for path in sorted((WORK / "judge" / folder).glob("*.toon")):
+        meta = read_json(path.with_suffix(".json")) if path.with_suffix(".json").is_file() else judge.provenance()
         for row in from_toon(path.read_text(encoding="utf-8")).get("answers", []):
-            rows[str(row["id"])] = row
+            rid = str(row["id"])
+            if rid in rows or set(row) != set(judge.FIELDS):
+                raise StepFailed("duplicate IDs or malformed answer fields")
+            rows[rid] = row
+            if identities is not None:
+                identities[rid] = judge.provenance(config=meta["judges"].get(rid) if "judges" in meta else meta)
     return rows
 
 
@@ -248,9 +255,10 @@ def carry_answers(keys):
     config = json.dumps(judge.JUDGE, sort_keys=True)
     todo = {}
     for folder in ("answers", "answers-2"):
-        old = answer_rows(folder)
+        identities = {}
+        old = answer_rows(folder, identities)
         if not old:
-            todo[folder] = []
+            todo[folder] = [rid for entry in index for rid in entry["ids"]] if folder == "answers" else []
             continue
         need, out = [], {}
         for entry in index:
@@ -258,6 +266,7 @@ def carry_answers(keys):
             rows = judge.packet_rows(packet)
             kept = []
             for rid in entry["ids"]:
+                config = json.dumps(identities.get(rid, judge.provenance()), sort_keys=True)
                 key = sha256_bytes("\n".join([rows.get(rid, ""), prompt, judge.RUBRIC_VERSION, config]).encode())
                 if rid in old and keys.get(folder, {}).get(rid, key) == key:
                     kept.append(old[rid])
@@ -270,6 +279,7 @@ def carry_answers(keys):
         for batch, kept in out.items():
             if kept:
                 (target / f"{batch}.toon").write_text(to_toon({"answers": kept}) + "\n", encoding="utf-8")
+                write_json(target / f"{batch}.json", {"judges": {r["id"]: identities[r["id"]] for r in kept}})
         todo[folder] = need
     return todo
 
@@ -406,7 +416,12 @@ def assemble(log):
     return {"snapshot": new["snapshot"]["id"], "previous": new["snapshot"]["previous"]}
 
 
-def publish(log):
+def publish(log, apply_supplement=True):
+    if apply_supplement and (VISUAL / "raw.json").is_file():
+        import supplement
+        raw = read_json(OUT / "raw.json")
+        raw, _, _ = supplement.overlay(raw)
+        write_json(OUT / "raw.json", raw, indent=None)
     shutil.copy(OUT / "raw.json", VISUAL / "raw.json")
     run([sys.executable, VISUAL / "build.py"], log, cwd=VISUAL)
     run([sys.executable, VISUAL / "build.py", "--verify"], log, cwd=VISUAL)
@@ -418,6 +433,10 @@ ACTIONS = {"resolve": resolve, "fetch": fetch, "extract": extract, "stages": sta
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "--supplement":
+        import supplement
+        return supplement.main(argv[1:])
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true", help="skip resolve and fetch: use the pins and the work directory")
     ap.add_argument("--from", dest="start", choices=STEPS, default="resolve", help="the first step to run")

@@ -1513,6 +1513,7 @@
       return {
         id: r.id, name: r.n, type: r.t, aliases: x.al, arxiv_categories: r.cat.map((/** @type {number} */ k) => tax.categories[k][0]), application_categories: r.acat.map((/** @type {number} */ k) => tax.categories[k][0]),
         statement: { declaration: x.sig, conclusion: x.concl, hypotheses: x.hyps, typeclasses: x.cls, module: x.mod, declarations: x.decls, restatements: x.rs },
+        ...(x.proof ? { authored: { statement: x.authored_statement, hypotheses: x.authored_hypotheses, proof: x.proof, definitions: x.definitions, applications: x.applications, prerequisite_evidence: x.prerequisite_evidence } } : {}),
         evidence: x.evs, relations: Object.values(relationsOf(ix, i)).flat(),
         assessments: [{ judge: data.snapshot.judge.id, scores: r.s, confidence: r.c, explanation: x.why }, ...(r.s2 ? [{ judge: data.snapshot.judge.id, pass: 2, scores: r.s2, confidence: r.c2, explanation: x.why2 }] : [])],
         aggregate: aggregate(ix.scores[i], d.weights), consistency: consistency(ix, i), measures: d.selected.i === i ? d.selected.measures : null,

@@ -180,6 +180,29 @@
       tell("Could not copy here: use the Save button instead.");
     }
   }
+  /**
+   * The authored statement, proof, definitions, prerequisite evidence and worked applications of a result pack entry.
+   * Authored text is labelled apart from the source text and from the formal declaration.
+   * @param {any} x
+   */
+  function authoredSection(x) {
+    const p = x.proof;
+    return h("section", { class: "authored" },
+      h("h3", { text: "Authored statement and proof" }),
+      h("p", { text: x.authored_statement }),
+      x.authored_hypotheses?.length ? h("ul", null, x.authored_hypotheses.map((/** @type {string} */ t) => h("li", { text: t }))) : null,
+      x.definitions?.length ? h("dl", null, x.definitions.flatMap((/** @type {any} */ d) => [h("dt", { text: d.term ?? d.name }), h("dd", { text: d.text ?? d.definition })])) : null,
+      h("p", { class: "note", text: `Proof kind: ${p.kind}. Scope: ${p.scope} Status: ${p.verification}.` }),
+      h("ol", { class: "proof" }, p.steps.map((/** @type {any} */ st) => h("li", { id: `step-${st.id}` }, st.text, st.uses.length ? h("span", { class: "note", text: ` Uses: ${st.uses.join(", ")}.` }) : null))),
+      x.prerequisite_evidence?.length ? h("ul", { class: "prereq-evidence" }, x.prerequisite_evidence.map((/** @type {any} */ q) => h("li", null, h("code", { text: q.id }), `: ${q.reason}`))) : null,
+      (x.applications ?? []).map((/** @type {any} */ a) => h("section", { class: "application" },
+        h("h4", { text: `Worked application: ${a.title}` }),
+        h("p", { text: `Inputs: ${a.inputs}` }), h("p", { text: `Why the hypotheses hold: ${a.hypotheses}` }),
+        h("ol", null, a.steps.map((/** @type {any} */ st) => h("li", null, st.text, st.expression ? h("code", { text: ` ${st.expression} = ${st.expected}` }) : null))),
+        h("p", { text: `Conclusion: ${a.conclusion}` }))),
+      x.assessment?.review ? h("p", { class: "note", text: `Proof review (${x.assessment.review.decision}, agent inference, not a formal proof): ${x.assessment.review.why}` }) : null);
+  }
+
   /** @param {string} id */
   function togglePin(id) {
     const pins = Model.splitList(app.state.pins);
@@ -561,13 +584,14 @@
         ["Hypotheses (explicit)", x.hyps.length ? h("ul", null, x.hyps.map((/** @type {string} */ y) => h("li", null, h("code", { text: y })))) : "none"],
         ["Typeclass assumptions", x.cls.length ? x.cls.join(", ") : "none"],
         ["Module", x.mod], ["Related declarations", `${x.ndecls} (${x.decls.slice(0, 6).join(", ")}${x.ndecls > 6 ? ", ..." : ""})`]]) : null,
+      x.proof ? authoredSection(x) : null,
       h("h3", { text: "Scores" }),
       h("p", null, `Aggregate under the active weights: `, h("strong", { class: "num", text: fmt(s.score) }),
         s.score === null ? ` (interval ${num(s.lo, 2)} to ${num(s.hi, 2)}; missing: ${s.missing.join(", ")})` : ` (rank ${s.rank} of the scored results)`,
         `. Confidence ${r.c}${r.c2 ? `; second assessment ${r.c2}` : ""}. Assessment consistency: ${s.consistency}${sens && sens.shift !== null ? `; the second assessment moves the rank by ${sens.shift > 0 ? "+" : ""}${sens.shift}` : ""}. Evidence: ${r.ev}.`),
       table(["Component", "Score", "Second assessment", "Weight", "Anchor for this score"], comp),
       r.s2 ? h("p", { class: "note", text: `Second assessment: ${x.why2}` }) : null,
-      h("p", { class: "note", text: `${D.rubric.confidence.note} Judge: ${D.snapshot.judge.model} (${D.snapshot.judge.access}), rubric ${D.rubric.version}, prompt ${D.snapshot.prompt_version}, evidence cutoff ${D.snapshot.evidence_cutoff}.` }),
+      h("p", { class: "note", text: `${D.rubric.confidence.note} Judge: ${(x.assessment?.judge ?? D.snapshot.judge).model} (${(x.assessment?.judge ?? D.snapshot.judge).access}), rubric ${D.rubric.version}, prompt ${D.snapshot.prompt_version}, evidence cutoff ${D.snapshot.evidence_cutoff}.` }),
       h("h3", { text: "Measurements" }),
       dl([["Statement length", m.statement === null ? "unknown" : `${m.statement} tokens (${m.statementBasis})`],
         ["Proof length", m.proof === null ? `none (${m.proofBasis})` : `${m.proof} tokens (${m.proofBasis}); proof term ${m.proofTerm ?? "unknown"} nodes`],

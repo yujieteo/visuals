@@ -49,11 +49,11 @@ def score(cell):
 
 
 class Checker:
-    def __init__(self):
+    def __init__(self, ids=None):
         tax = read_json(DATA / "arxiv-taxonomy.json")
         self.known = {c["id"] for c in tax["categories"]}
         self.aliases = tax["aliases"]
-        self.ids = {e["id"] for e in json.loads((STAGE / "evidence.json").read_text(encoding="utf-8"))}
+        self.ids = set(ids) if ids is not None else {e["id"] for e in json.loads((STAGE / "evidence.json").read_text(encoding="utf-8"))}
 
     def cats(self, cell, notes):
         out = []
@@ -123,6 +123,32 @@ def packet_rows(text):
         if m:
             out[m[1]] = block
     return out
+
+
+def provenance(path=None, config=None):
+    """Return the judge configuration, optionally from a file."""
+    if config is not None:
+        return config
+    if path and path.is_file():
+        return read_json(path)
+    return dict(JUDGE)
+
+
+def validate_batch(toon_text, batch_ids, checker):
+    """Parse and validate a batch of answers in TOON format."""
+    try:
+        table = from_toon(toon_text).get("answers", [])
+    except Exception as e:
+        raise ValueError(f"invalid TOON format: {e}")
+
+    if len(table) != len(batch_ids) or {r.get("id") for r in table} != set(batch_ids):
+        raise ValueError(f"batch must contain exactly {len(batch_ids)} rows with matching IDs")
+
+    for row in table:
+        if set(row.keys()) != set(FIELDS):
+            raise ValueError(f"row {row.get('id')}: field mismatch")
+
+    return [checker.row(row, set(batch_ids)) for row in table]
 
 
 def collect(folder="answers"):
