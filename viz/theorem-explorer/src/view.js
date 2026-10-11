@@ -90,6 +90,7 @@
   }
   loading.hidden = true;
   const IX = Model.index(D);
+  const DEP = Model.dependency(IX);
   const DET = Model.detail(D);
   const CX = Model.cindex(D);
   const TAX = D.taxonomy;
@@ -101,6 +102,8 @@
   let storageOk = true;
   /** @type {Record<string, number>} */
   let known = {};
+  /** The results the reader checked off: id -> 1. @type {Record<string, number>} */
+  let done = {};
   /** @type {string[]} */
   let unresolvedIds = [];
   try {
@@ -108,13 +111,14 @@
     if (saved) {
       const p = Model.readProfile(saved, D);
       known = p.known;
+      done = p.done;
       unresolvedIds = p.unresolved;
     }
   } catch (e) {
     storageOk = !(e instanceof DOMException);
     if (!storageOk) unresolvedIds = [];
   }
-  D.profile = { known };
+  D.profile = { known, done };
   /** The view saved by an earlier visit. It is offered, not loaded, so a shared link opens as sent. */
   let savedView = "";
   try { savedView = localStorage.getItem(VIEW_KEY) ?? ""; } catch { savedView = ""; }
@@ -134,7 +138,15 @@
   function setKnown(id, depth) {
     if (depth === null) delete known[id];
     else known[id] = Math.max(known[id] ?? -1, depth);
-    D.profile = { known };
+    D.profile = { known, done };
+    storeProfile();
+    app.set({}, "replace");
+  }
+  /** Check a result off (it hides from the list) or put it back. @param {string} id @param {boolean} on */
+  function setDone(id, on) {
+    if (on) done[id] = 1;
+    else delete done[id];
+    D.profile = { known, done };
     storeProfile();
     app.set({}, "replace");
   }
@@ -244,6 +256,7 @@
 
   /** Column definitions: label, sort key (or null) and cell text. @type {Record<string, { label: string, sort: string | null, cell: (i: number, a: any) => string }>} */
   const COLS = {
+    depth: { label: "Depth", sort: "order", cell: (i) => `${DEP.depth[i]}${DEP.cyclic.has(i) ? " (cycle)" : ""}` },
     type: { label: "Type", sort: null, cell: (i) => IX.rows[i].t.replace("not-a-result:", "not a result: ") },
     score: { label: "Score", sort: "score", cell: (_i, a) => fmt(a.v) },
     interval: { label: "Interval", sort: "lo", cell: (_i, a) => (a.v === null && a.missing[0] !== "weights" ? `${num(a.lo, 2)} to ${num(a.hi, 2)}` : "") },
@@ -264,13 +277,15 @@
   /** @type {{ order: number[], cols: string[], weights: number[], ok: boolean, sel: string }} */
   let tableModel = { order: [], cols: [], weights: [], ok: true, sel: "" };
   let tableFrame = 0;
+  /** The row to focus after a check-off redraws the list, so the keyboard reader keeps their place. */
+  let focusRow = -1;
 
   function drawRows() {
     const wrap = $("table-wrap");
     const { order, cols, weights, ok, sel } = tableModel;
     const first = Math.max(0, Math.floor(wrap.scrollTop / ROW) - 10);
     const last = Math.min(order.length, first + Math.ceil((wrap.clientHeight || 600) / ROW) + 20);
-    const span = cols.length + 1;
+    const span = cols.length + 2;
     const rows = [h("tr", { class: "spacer", "aria-hidden": "true" }, h("td", { colspan: span, style: `height:${first * ROW}px` }))];
     for (let k = first; k < last; k++) {
       const i = order[k];
@@ -278,6 +293,7 @@
       const a = ok ? Model.aggregate(IX.scores[i], weights) : { v: null, lo: 0, hi: 100, missing: ["weights"] };
       const preview = DET[i].concl ?? (DET[i].evs.find((/** @type {any} */ e) => e.kind === "source statement")?.claim ?? DET[i].wd ?? "");
       rows.push(h("tr", { class: r.id === sel ? "sel" : null, "aria-rowindex": k + 2, "aria-selected": r.id === sel ? "true" : null },
+        h("td", { class: "check" }, h("input", { type: "checkbox", "data-k": String(k), checked: r.id in done, "aria-label": `Known: ${r.n}`, onchange: (/** @type {Event} */ e) => { focusRow = k; setDone(r.id, /** @type {HTMLInputElement} */ (e.target).checked); } })),
         h("th", { scope: "row", class: "name" },
           h("button", { type: "button", class: "link", onclick: () => { app.set({ sel: r.id }); $("result").scrollIntoView({ block: "start" }); } }, r.n),
           h("span", { class: "preview", text: preview.replace(/\s+/g, " ").slice(0, 160) })),
@@ -371,6 +387,7 @@
     const cols = Model.splitList(state.cols).filter((c) => c in COLS);
     for (const box of document.querySelectorAll("#col-boxes input")) if (box instanceof HTMLInputElement) box.checked = cols.includes(box.value);
     put($("catalog-head"), h("tr", null,
+      h("th", { scope: "col", class: "check" }, "Known"),
       h("th", { scope: "col", "aria-sort": state.sort === "name" ? (state.dir === "asc" ? "ascending" : "descending") : null },
         h("button", { type: "button", class: "sort", onclick: () => sortBy("name") }, "Result")),
       cols.map((c) => {
@@ -380,15 +397,70 @@
           s ? h("button", { type: "button", class: "sort", onclick: () => sortBy(s) }, COLS[c].label, on ? (state.dir === "asc" ? " ▲" : " ▼") : "") : COLS[c].label);
       })));
     $("catalog").setAttribute("aria-rowcount", String(d.order.length + 1));
-    tableModel = { order: d.order, cols, weights: d.weights, ok: d.weightsOk, sel: d.selected.id };
+    const scope = scopeKey(state, d);
+    const view = `${scope}|${d.page.number}`;
+    if (lastView !== view) $("table-wrap").scrollTop = 0;
+    lastView = view;
+    $("catalog").setAttribute("aria-rowcount", String(d.page.order.length + 1));
+    tableModel = { order: d.page.order, cols, weights: d.weights, ok: d.weightsOk, sel: d.selected.id };
     drawRows();
+    if (focusRow >= 0) {
+      // The list shrank by one row (the checked row hid), so the same position holds the next result.
+      const box = /** @type {HTMLElement | null} */ (document.querySelector(`#catalog-body input[data-k="${Math.min(focusRow, d.page.order.length - 1)}"]`));
+      focusRow = -1;
+      if (box) box.focus();
+    }
+    renderStudy(state, d);
+    const moved = lastScope !== null && lastScope !== scope;
+    lastScope = scope;
+    if (moved && state.page !== 1) app.set({ page: 1 }, "replace");
     drawEffort(state, d);
   }
 
   /** @param {string} key */
   function sortBy(key) {
     const s = app.state;
-    app.set(s.sort === key ? { dir: s.dir === "asc" ? "desc" : "asc" } : { sort: key, dir: key === "name" ? "asc" : "desc" });
+    app.set(s.sort === key ? { dir: s.dir === "asc" ? "desc" : "asc" } : { sort: key, dir: key === "name" || key === "order" ? "asc" : "desc" });
+  }
+
+  /* ---------- study: topics, pages and check-off ---------- */
+
+  /** What the page number belongs to: when a filter, the sort or the page size changes, the page goes back to 1. @param {Record<string, any>} state @param {any} d */
+  const scopeKey = (state, d) => JSON.stringify([d.filters, state.sort, state.dir, state.psize, state.showdone, state.preset, d.weights]);
+  /** @type {string | null} */
+  let lastScope = null;
+  /** @type {string | null} */
+  let lastView = null;
+
+  /** @param {Record<string, any>} state @param {any} d */
+  function renderPager(state, d) {
+    const P = d.page;
+    for (const id of ["pager-top", "pager-bottom"]) {
+      const go = (/** @type {number} */ n) => app.set({ page: n });
+      put($(id),
+        h("button", { type: "button", disabled: P.number <= 1, "aria-label": "Previous page", onclick: () => go(P.number - 1) }, "← Previous"),
+        h("button", { type: "button", disabled: P.number >= P.pages, "aria-label": "Next page", onclick: () => go(P.number + 1) }, "Next →"),
+        h("p", { class: "where note", role: "status", text: P.total ? `Rows ${P.from} to ${P.to} of ${P.total.toLocaleString("en")}. Page ${P.number} of ${P.pages}.` : "No row after the filters." }),
+        h("label", { class: "inline" }, "Rows per page ",
+          h("select", { "aria-label": `Rows per page (${id === "pager-top" ? "top" : "bottom"})`, onchange: (/** @type {Event} */ e) => app.set({ psize: /** @type {HTMLSelectElement} */ (e.target).value, page: 1 }) },
+            ...Model.PAGE_SIZES.map((v) => h("option", { value: v, selected: v === state.psize, text: v === "all" ? "All" : v })))));
+    }
+  }
+
+  /** @param {Record<string, any>} state @param {any} d */
+  function renderStudy(state, d) {
+    renderPager(state, d);
+    $("show-done").checked = state.showdone === "show";
+    const topics = Model.splitList(state.topics);
+    put($("topic-chips"), ...topics.map((t) => h("li", null,
+      h("button", { type: "button", class: "chip", "aria-label": `Remove the topic ${t}`, onclick: () => app.set({ topics: topics.filter((x) => x !== t).join(",") }) }, `${t} ×`))));
+    $("f-topic").value = "";
+    const S = d.study;
+    $("study-summary").textContent = S
+      ? `${S.members} records in ${S.topics.join(", ") || "no known topic"} (${S.memberResults} results) and ${S.prerequisites} prerequisites from any topic (${S.prerequisiteResults} results): ${S.total} in all before the other filters.`
+      : "No topic chosen: the list holds every record that passes the filters.";
+    $("done-summary").textContent = `${d.counts.done} checked off in this browser${storageOk ? "" : " (the browser blocks storage, so the checks last until you close the page)"}. ${state.showdone === "hide" ? `${d.counts.doneHidden} hidden from this list.` : "They show in the list."}`;
+    $("clear-done").disabled = d.counts.done === 0;
   }
 
   /** Impact (aggregate score) against effort (judged band): two ordinal axes, no ratio (spec section 8). */
@@ -1113,6 +1185,16 @@
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       annotations: { readOnlyHint: true },
       execute: async () => out(app.derived.learn) },
+    { name: "get_study_order", description: "Return the rows of a study list in dependency order (each result after all its prerequisites, most basic first): the results of the given arXiv topics and every prerequisite they need, minus the results the reader checked off. Reports the counts and one page of rows.",
+      inputSchema: { type: "object", properties: { topics: { type: "string", description: "comma-separated arXiv category, archive or group ids, for example math.FA" }, offset: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 500 } }, additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {{ topics?: string, offset?: number, limit?: number }} */ input = {}) => {
+        const st = VisualKit.normalize(Model.FIELDS, { ...app.state, view: "catalog", sort: "order", dir: "asc", topics: input.topics ?? app.state.topics, psize: "all", page: 1 }).state;
+        const d = Model.derive(st, D);
+        const from = input.offset ?? 0;
+        return out({ study: d.study, shown: d.order.length, checkedOff: d.counts.done, hiddenAsChecked: d.counts.doneHidden, cycles: d.depth, notes: d.notes,
+          rows: d.order.slice(from, from + (input.limit ?? 50)).map((/** @type {number} */ i, /** @type {number} */ k) => ({ position: from + k + 1, id: IX.rows[i].id, name: IX.rows[i].n, depth: DEP.depth[i], inCycle: DEP.cyclic.has(i), topics: IX.rows[i].cat.map((/** @type {number} */ c) => TAX.categories[c][0]), prerequisites: IX.pre[i].map((/** @type {number} */ j) => IX.rows[j].id) })) });
+      } },
     { name: "get_learning_path", description: "Return the prerequisite path to a result, with cycles and the count of supported and uncertain edges.",
       inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false },
       annotations: { readOnlyHint: true },
@@ -1201,6 +1283,15 @@
       put($("f-arch"), ...opts(TAX.archives, "Any archive"));
       put($("f-cat"), ...opts(TAX.categories, "Any category"));
       put($("f-acat"), ...opts(TAX.categories, "Any application category"));
+      const group = (/** @type {string} */ label, /** @type {any[][]} */ list) => h("optgroup", { label }, ...list.map((x) => h("option", { value: x[0], text: `${x[0]}: ${x[1]}` })));
+      put($("f-topic"), h("option", { value: "", text: "Choose a topic" }), group("Categories", TAX.categories), group("Archives", TAX.archives), group("Groups", TAX.groups));
+      $("f-topic").addEventListener("change", () => {
+        const t = $("f-topic").value;
+        if (t) a.set({ topics: [...new Set([...Model.splitList(a.state.topics), t])].join(",") });
+      });
+      $("order-deps").addEventListener("click", () => a.set({ sort: "order", dir: "asc" }));
+      $("show-done").addEventListener("change", () => a.set({ showdone: $("show-done").checked ? "show" : "hide" }));
+      $("clear-done").addEventListener("click", () => { done = {}; D.profile = { known, done }; storeProfile(); a.set({}, "replace"); });
       for (const key of ["grp", "arch", "cat", "acat"]) $(`f-${key}`).addEventListener("change", (/** @type {Event} */ e) => a.set({ [key]: /** @type {HTMLSelectElement} */ (e.target).value }));
       put($("taxonomy-ids"), ...[...TAX.groups, ...TAX.archives, ...TAX.categories].map((x) => h("option", { value: x[0], text: x[1] })));
       put($("result-names"), ...IX.rows.map((/** @type {any} */ r) => h("option", { value: r.n })));
@@ -1221,7 +1312,7 @@
       $("save-csv").addEventListener("click", () => save(`${Model.SLUG}-table.csv`, Model.csv(a.state, a.derived, D), "text/csv"));
       $("copy-csv").addEventListener("click", () => copy(Model.csv(a.state, a.derived, D), "Copied the table CSV."));
       $("save-profile").addEventListener("click", () => save(`${Model.SLUG}-profile.json`, `${JSON.stringify(Model.profileOf(a.state, D), null, 2)}\n`, "application/json"));
-      $("reset-known").addEventListener("click", () => { known = {}; unresolvedIds = []; D.profile = { known }; storeProfile(); a.set({}, "replace"); $("profile-status").textContent = "Cleared the known results."; });
+      $("reset-known").addEventListener("click", () => { known = {}; unresolvedIds = []; D.profile = { known, done }; storeProfile(); a.set({}, "replace"); $("profile-status").textContent = "Cleared the known results."; });
       const file = $("load-profile");
       file.addEventListener("change", async () => {
         const chosen = file.files?.[0];
@@ -1229,8 +1320,9 @@
         try {
           const p = Model.readProfile(await chosen.text(), D);
           known = p.known;
+          done = p.done;
           unresolvedIds = p.unresolved;
-          D.profile = { known };
+          D.profile = { known, done };
           a.set(p.state);
           tell(`Loaded ${chosen.name}: ${Object.keys(p.known).length} known results${p.migrated ? ` (from snapshot ${p.from}, through the identity map)` : ""}${p.unresolved.length ? `; ${p.unresolved.length} identities not in this snapshot` : ""}.`);
         } catch (e) {

@@ -22,6 +22,7 @@ The site page <https://teoyujie.org/play/theorems/> ports this page. A sortable,
 | Read one history series of the field shares | `get_field_series` |
 | Read one concept: scores, definition, prerequisites, the results that name it, its nLab, mathlib and arXiv evidence | `get_concept` |
 | Find concepts by name, alias, kind, Lean name, nLab page or category | `search_concepts` |
+| Read a topic's results and prerequisites in dependency order | `get_study_order` |
 | Read the prerequisite tree of a result or a concept, with its study order | `get_prerequisite_tree` |
 | Read the popularity of concepts or results in arXiv categories, archives or groups | `get_tag_popularity` |
 | Keep the view as a talk or a document | the beamdswitch and Markdown buttons |
@@ -43,6 +44,7 @@ All read-only.
 | `get_field_series` | `view`, `by`, `level`, `mode` | The shares and counts per year, or the bars or steps, for one history view |
 | `get_concept` | `id` (required), for example `c:hilbert-space` | The kind, the scores under tc-rubric/1 (0 to 4, `u`, `na`), the aggregate under the current concept weights, the definition and its basis (judge, quoted nLab Idea passage or quoted mathlib doc comment), the prerequisites and their basis, the concepts that need it, the results that name it, and the nLab, mathlib and arXiv evidence |
 | `search_concepts` | `query` (required), `limit` (1 to 100) | The ids, names, kinds, assessments (full or light) and aggregates of the matched concepts, in the current concept sort order |
+| `get_study_order` | `topics` (arXiv ids), `offset`, `limit` (1 to 500) | The study list: the results of the topics and every prerequisite, each after its prerequisites, minus the checked-off results; the counts, the cycles and one page of rows |
 | `get_prerequisite_tree` | `id` (required): a result or concept id; `depth` (1 to 8); `show` (`both`, `results`, `concepts`) | The nested tree (each item expanded once, known items not expanded, at most 400 nodes) and the study order of its unknown items |
 | `get_tag_popularity` | `tags` (comma-separated arXiv ids at any level), `kind` (`concepts` or `results`), `metric` (`rate`, `count`, `lift`), `item` | The tags with their paper counts, the top items by the measure, the top 10 per tag, and one item's trend and most over-represented categories |
 
@@ -54,4 +56,5 @@ All read-only.
 - **Concept CSV:** `theorem-explorer-concepts.csv`, the concepts that the concept table shows, in its order, with the same formula guard.
 - **Table CSV:** `theorem-explorer-table.csv`, the rows and columns that the table shows. A cell that starts with `=`, `+`, `-` or `@` gets a `'` prefix.
 - **Result JSON and profile JSON:** one result with its evidence, and the known results with the identity map of the snapshot.
+- **Study list:** the catalog view holds a topic filter, the dependency sort (`sort=order`), pages of 100, 250, 500 or all rows, and a check-off box on each row. The checks live in browser storage and in the profile JSON (`done`).
 - **Data:** [raw.json](raw.json).

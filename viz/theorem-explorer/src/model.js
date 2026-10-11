@@ -41,10 +41,11 @@
   const VIEWS = ["learn", "catalog", "concepts", "compare", "connections", "tree", "fields", "popularity", "about"];
   const CASES = ["tail-binomial", "existence-ksat", "union-three", "euler-genus-two"];
   const SOURCES = ["any", "mathlib", "wikidata", "wikipedia", "nlab", "theoremsearch", "theoremgraph", "freek100", "overview", "undergrad", "curated"];
-  const SORTS = ["score", "learn", "lo", "hi", "name", ...COMPONENTS, "level", "statement", "proof", "dependents", "uses", "year"];
-  const COLUMNS = ["type", "score", "interval", ...COMPONENTS, "conf", "formal", "level", "effort", "statement", "proof", "dependents", "uses", "year", "fields"];
-  const DEFAULT_COLUMNS = "type,score,interval,eff,res,pra,rea,hyp,pro,app,conf,formal,level";
+  const SORTS = ["score", "learn", "order", "lo", "hi", "name", ...COMPONENTS, "level", "statement", "proof", "dependents", "uses", "year"];
+  const COLUMNS = ["depth", "type", "score", "interval", ...COMPONENTS, "conf", "formal", "level", "effort", "statement", "proof", "dependents", "uses", "year", "fields"];
+  const DEFAULT_COLUMNS = "depth,type,score,interval,eff,res,pra,rea,hyp,pro,app,conf,formal,level";
   const NO_YEAR = 2100;
+  const PAGE_SIZES = ["100", "250", "500", "all"];
 
   /* The concept catalog (tc-rubric/1): the same seven-slot rubric, with concept components. */
   const CONCEPT_COMPONENTS = ["uni", "res", "pra", "rea", "lpb", "exa", "cmp"];
@@ -120,6 +121,7 @@
     grp: str("arXiv group"),
     arch: str("arXiv archive"),
     cat: str("arXiv category"),
+    topics: str("Study topics (arXiv ids): their results and every prerequisite"),
     acat: str("Application category"),
     level: en("level", "Needed reader level at most", ["any", ...LEVELS], "any"),
     formal: en("formal", "Formalization", ["any", "formal", "informal"], "any"),
@@ -133,6 +135,9 @@
     y1: int("To year (2100: no limit)", NO_YEAR, 0, NO_YEAR),
     incase: en("incase", "Comparison case", ["any", ...CASES], "any"),
     known: en("known", "Known-result status", ["any", "known", "unknown"], "any"),
+    showdone: en("showdone", "Checked-off results", ["hide", "show"], "hide"),
+    psize: en("psize", "Rows per page", PAGE_SIZES, "100"),
+    page: int("Page", 1, 1, 100000),
     cols: str("Visible columns", DEFAULT_COLUMNS),
     sel: str("Selected result"),
     pins: str("Pinned results"),
@@ -268,6 +273,86 @@
     return s.index;
   }
 
+  /* ---------- dependency order ---------- */
+
+  /**
+   * The depth of every record in the prerequisite graph (ix.pre, the judged prerequisite results). A record with no
+   * prerequisite has depth 0, else its depth is 1 plus the largest depth of its prerequisites, so each result sorts
+   * after all its prerequisites. Records on a cycle share one depth: the strongly connected component counts as one
+   * node, its members are listed in `cyclic`, and the cycle never loops the sort. A prerequisite id that is not in
+   * the snapshot was dropped by index(). The order is stable: the depth does not depend on the filters or weights.
+   * @param {any} ix @returns {{ depth: number[], cyclic: Set<number>, cycles: number }}
+   */
+  function dependency(ix) {
+    if (ix.dependency) return ix.dependency;
+    const n = ix.rows.length;
+    const idx = new Array(n).fill(-1), low = new Array(n).fill(0), onStack = new Array(n).fill(false), comp = new Array(n).fill(-1);
+    /** @type {number[]} */ const stack = [];
+    /** @type {number[][]} */ const comps = [];
+    let counter = 0;
+    for (let root = 0; root < n; root++) {
+      if (idx[root] >= 0) continue;
+      /** @type {number[][]} */ const work = [[root, 0]];
+      idx[root] = low[root] = counter++; stack.push(root); onStack[root] = true;
+      while (work.length) {
+        const frame = work[work.length - 1];
+        const v = frame[0];
+        if (frame[1] < ix.pre[v].length) {
+          const w = ix.pre[v][frame[1]++];
+          if (idx[w] < 0) { idx[w] = low[w] = counter++; stack.push(w); onStack[w] = true; work.push([w, 0]); }
+          else if (onStack[w]) low[v] = Math.min(low[v], idx[w]);
+        } else {
+          work.pop();
+          if (work.length) { const u = work[work.length - 1][0]; low[u] = Math.min(low[u], low[v]); }
+          if (low[v] === idx[v]) {
+            /** @type {number[]} */ const members = [];
+            for (let w = -1; w !== v;) { w = /** @type {number} */ (stack.pop()); onStack[w] = false; comp[w] = comps.length; members.push(w); }
+            comps.push(members);
+          }
+        }
+      }
+    }
+    // Tarjan emits a component after every component it reaches, so the prerequisites' depths are known.
+    const cdepth = comps.map(() => 0);
+    comps.forEach((members, c) => {
+      let d = 0;
+      for (const v of members) for (const w of ix.pre[v]) if (comp[w] !== c) d = Math.max(d, cdepth[comp[w]] + 1);
+      cdepth[c] = d;
+    });
+    const cyclic = new Set(comps.filter((m) => m.length > 1).flat());
+    ix.dependency = { depth: comp.map((c) => cdepth[c]), cyclic, cycles: comps.filter((m) => m.length > 1).length };
+    return ix.dependency;
+  }
+
+  /**
+   * The study scope of a topic list: the records tagged with a topic (a category, archive or group id) and every
+   * prerequisite they need at any depth, even when it has another topic. Returns null when no topic is set.
+   * @param {Record<string, any>} state @param {any} data @param {any} ix @param {string[]} notes
+   * @returns {{ members: Set<number>, scope: Set<number>, topics: string[] } | null}
+   */
+  function studyScope(state, data, ix, notes) {
+    const tags = splitList(state.topics);
+    if (!tags.length) return null;
+    const cats = new Set(), archs = new Set(), grps = new Set();
+    const topics = [];
+    for (const raw of tags) {
+      const id = data.taxonomy.aliases?.[raw] ?? raw;
+      if (ix.catIdx.has(id)) cats.add(ix.catIdx.get(id));
+      else if (ix.archIdx.has(id)) archs.add(ix.archIdx.get(id));
+      else if (ix.grpIdx.has(id)) grps.add(ix.grpIdx.get(id));
+      else { notes.push(`The topic "${raw.slice(0, 40)}" is not in the pinned taxonomy and is ignored.`); continue; }
+      topics.push(id);
+    }
+    const members = new Set();
+    ix.rows.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
+      if (r.cat.some((/** @type {number} */ c) => cats.has(c) || archs.has(ix.catArch[c]) || grps.has(ix.catGrp[c]))) members.add(i);
+    });
+    const scope = new Set(members);
+    const todo = [...members];
+    while (todo.length) for (const j of ix.pre[/** @type {number} */ (todo.pop())]) if (!scope.has(j)) { scope.add(j); todo.push(j); }
+    return { members, scope, topics };
+  }
+
   /* ---------- scores ---------- */
 
   /** The active weights in component order. @param {Record<string, any>} state @returns {number[]} */
@@ -325,6 +410,9 @@
   /** The known results of the profile: id -> the deepest known depth index. @param {any} data @returns {Record<string, number>} */
   const knownOf = (data) => data.profile?.known ?? {};
 
+  /** The results that the reader checked off: id -> 1. @param {any} data @returns {Record<string, number>} */
+  const doneOf = (data) => data.profile?.done ?? {};
+
   /** @param {string} list @returns {string[]} */
   const splitList = (list) => [...new Set(String(list ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
 
@@ -370,7 +458,7 @@
   function activeFilters(state) {
     /** @type {{ key: string, label: string, value: string }[]} */
     const out = [];
-    for (const key of ["q", "rtype", "grp", "arch", "cat", "acat", "level", "formal", "source", "ev", "cons", "min_hyp", "min_pro", "min_app", "y0", "y1", "incase", "known"]) {
+    for (const key of ["q", "rtype", "grp", "arch", "cat", "acat", "level", "formal", "source", "ev", "cons", "min_hyp", "min_pro", "min_app", "y0", "y1", "incase", "known", "topics"]) {
       if (state[key] !== FIELDS[key].default) out.push({ key, label: FIELDS[key].label, value: String(state[key]) });
     }
     return out;
@@ -401,6 +489,7 @@
     if ((state.y0 > 0 || state.y1 < NO_YEAR) && !(r.yr !== null && r.yr >= state.y0 && r.yr <= state.y1)) return false;
     if (state.incase !== "any" && !ix.cases.get(state.incase)?.has(r.id)) return false;
     if (state.known !== "any" && (r.id in ctx.known) !== (state.known === "known")) return false;
+    if (ctx.study && !ctx.study.scope.has(i)) return false;
     if (ctx.words.length && !ctx.words.every((/** @type {string} */ w) => ix.text[i].includes(w))) return false;
     return true;
   }
@@ -423,6 +512,7 @@
       case "lo": return a.lo;
       case "hi": return a.hi;
       case "learn": return ctx.learn.get(i)?.key ?? null;
+      case "order": return ctx.depth[i];
       case "level": return r.lv;
       case "statement": return r.st;
       case "proof": return r.sp;
@@ -1149,14 +1239,21 @@
       if (v === undefined) { notes.push(`${what} "${id.slice(0, 40)}" is not in the pinned taxonomy, so the filter matches nothing.`); return -2; }
       return v;
     };
+    const study = studyScope(state, data, ix, notes);
     const ctx = {
-      agg, learn: learn.out, known: knownOf(data),
+      agg, learn: learn.out, known: knownOf(data), study, depth: dependency(ix).depth,
       grp: lookup(state.grp, tax.grpIdx, "The group"), arch: lookup(state.arch, tax.archIdx, "The archive"),
       cat: lookup(state.cat, tax.catIdx, "The category"), acat: lookup(state.acat, tax.catIdx, "The application category"),
       words: String(state.q).toLowerCase().split(/\s+/).filter(Boolean),
     };
     const order = [];
-    for (let i = 0; i < ix.rows.length; i++) if (passes(state, ix, i, ctx)) order.push(i);
+    const done = doneOf(data);
+    let doneHidden = 0;
+    for (let i = 0; i < ix.rows.length; i++) {
+      if (!passes(state, ix, i, ctx)) continue;
+      if (state.showdone === "hide" && ix.rows[i].id in done) doneHidden++;
+      else order.push(i);
+    }
     const sign = state.dir === "asc" ? 1 : -1;
     const keys = new Map(order.map((i) => [i, sortKey(state.sort, ix, i, ctx)]));
     order.sort((a, b) => {
@@ -1176,9 +1273,25 @@
       shown: order.length,
       shownUnknown: order.filter((i) => agg[i].v === null).length,
       known: Object.keys(knownMap).filter((id) => ix.byId.has(id)).length,
+      done: Object.keys(done).filter((id) => ix.byId.has(id)).length,
+      doneHidden,
       knownConcepts: Object.keys(knownMap).filter((id) => cindex(data)?.byId.has(id)).length,
       formalUnnamed: data.coverage.formal.unnamed_unscored,
     };
+
+    // The study scope and the page of rows: the whole order stays in `order` for the exports.
+    const dep = dependency(ix);
+    const sizeN = state.psize === "all" ? Math.max(1, order.length) : Number(state.psize);
+    const pages = Math.max(1, Math.ceil(order.length / sizeN));
+    const number = Math.min(Math.max(1, state.page), pages);
+    const first = (number - 1) * sizeN;
+    const pageOrder = order.slice(first, first + sizeN);
+    const studyInfo = study && {
+      topics: study.topics, members: study.members.size, prerequisites: study.scope.size - study.members.size, total: study.scope.size,
+      memberResults: [...study.members].filter((i) => ix.isResult[i]).length,
+      prerequisiteResults: [...study.scope].filter((i) => !study.members.has(i) && ix.isResult[i]).length,
+    };
+    if (state.sort === "order" && dep.cycles) notes.push(`${dep.cycles} groups of results need each other in a cycle. Each group has one depth, and its members sort by score, then name.`);
 
     // Learn next: the filtered results in priority order.
     const recIdx = order.filter((i) => learn.out.has(i)).sort((a, b) => learn.out.get(b).key - learn.out.get(a).key || learn.out.get(b).hi - learn.out.get(a).hi || ix.rows[a].n.localeCompare(ix.rows[b].n) || a - b);
@@ -1213,6 +1326,9 @@
       filters: activeFilters(state),
       counts,
       order,
+      page: { size: state.psize === "all" ? "all" : sizeN, number, pages, from: order.length ? first + 1 : 0, to: first + pageOrder.length, total: order.length, order: pageOrder },
+      study: studyInfo,
+      depth: { cycles: dep.cycles, cyclic: dep.cyclic.size },
       learn: {
         baseline: !learn.interests.length, interests: learn.interests.map((x) => x.id), depth: state.depth, reader: state.reader, budget: state.budget,
         excludedKnown: learn.excludedKnown, candidates: recIdx.length, incomplete: recIdx.filter((i) => learn.out.get(i).p === null).length, recs,
@@ -1337,7 +1453,7 @@
 
   /** A profile from the state and the known results. @param {Record<string, any>} state @param {any} data */
   function profileOf(state, data) {
-    return { schema: PROFILE_SCHEMA, snapshot: data.snapshot.id, known: { ...knownOf(data) }, interests: state.interests, stance: state.preset, depth: state.depth, reader: state.reader, budget: state.budget, weights: weightsOf(state) };
+    return { schema: PROFILE_SCHEMA, snapshot: data.snapshot.id, known: { ...knownOf(data) }, done: Object.keys(doneOf(data)), interests: state.interests, stance: state.preset, depth: state.depth, reader: state.reader, budget: state.budget, weights: weightsOf(state) };
   }
 
   /**
@@ -1363,6 +1479,13 @@
       if (ix.byId.has(now) || cindex(data)?.byId.has(now)) known[now] = Math.max(known[now] ?? 0, /** @type {number} */ (depth));
       else unresolved.push(id);
     }
+    /** @type {string[]} */
+    const done = [];
+    if (Array.isArray(doc.done)) for (const id of doc.done) {
+      const now = typeof id === "string" ? migrate(data, id) : "";
+      if (ix.byId.has(now) && !done.includes(now)) done.push(now);
+      else if (typeof id === "string") unresolved.push(id);
+    }
     /** @type {Record<string, any>} */
     const state = {};
     if (typeof doc.interests === "string") state.interests = doc.interests;
@@ -1371,7 +1494,7 @@
     if (Number.isInteger(doc.budget)) state.budget = doc.budget;
     if (typeof doc.stance === "string") state.preset = doc.stance;
     if (doc.stance === "custom" && Array.isArray(doc.weights)) COMPONENTS.forEach((k, j) => { state[`w_${k}`] = doc.weights[j]; });
-    return { known, state, unresolved, from: doc.snapshot ?? null, migrated: doc.snapshot !== data.snapshot.id };
+    return { known, done: Object.fromEntries(done.map((id) => [id, 1])), state, unresolved, from: doc.snapshot ?? null, migrated: doc.snapshot !== data.snapshot.id };
   }
 
   /**
@@ -1414,10 +1537,10 @@
 
   return {
     SLUG, SCHEMA_VERSION, FIELDS, EXAMPLES, COMPONENTS, COMPONENT_NAMES, PRESETS, LEVELS, LEVEL_NAMES, DEPTHS, BANDS, RESULT_TYPES, COLUMNS, DEFAULT_COLUMNS,
-    LEARN_WEIGHTS, LEARN_RULES, SEARCH_HELP, REL_PHRASES, REL_ORDER, CASE_FORMULAS, PROFILE_SCHEMA, EXPORT_SCHEMA, NO_YEAR,
+    LEARN_WEIGHTS, LEARN_RULES, SEARCH_HELP, REL_PHRASES, REL_ORDER, CASE_FORMULAS, PROFILE_SCHEMA, EXPORT_SCHEMA, NO_YEAR, PAGE_SIZES,
     CONCEPT_COMPONENTS, CONCEPT_COMPONENT_NAMES, CONCEPT_PRESETS, CONCEPT_KINDS, PER, LIFT_MIN, TREE_NODES,
     conceptPack, popularityPack, cindex, conceptWeightsOf, conceptsOf, conceptOf, treeOf, popularityOf, popTags, itemOf, tagOf, conceptCsv,
-    derive, prime, pack, core, detail, index, aggregate, weightsOf, consistency, relevance, interestsOf, comparison, history,
+    dependency, studyScope, derive, prime, pack, core, detail, index, aggregate, weightsOf, consistency, relevance, interestsOf, comparison, history,
     prerequisitePath, relationsOf, csv, csvCell, profileOf, readProfile, exportJson, splitList, scoreLabel, bandLabel, scoreText, migrate,
   };
 });

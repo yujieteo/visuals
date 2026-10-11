@@ -306,3 +306,100 @@ test("popularity: unknown tags are reported and ignored", () => {
   assert.deepEqual(d.popularity.tags.map((/** @type {any} */ t) => t.id), ["math.PR"]);
   assert.ok(d.notes.some((/** @type {string} */ n) => /not\.ATAG/.test(n)));
 });
+
+test("study order: each result sorts after all its prerequisites, and a cycle shares one depth", () => {
+  const d = at({ sort: "order", dir: "asc", rtype: "all" });
+  const pos = new Map(d.order.map((/** @type {number} */ i, /** @type {number} */ k) => [i, k]));
+  const dep = Model.dependency(ix);
+  assert.equal(d.order.length, ix.rows.length);
+  let checked = 0;
+  for (const i of d.order) for (const j of ix.pre[i]) {
+    checked++;
+    if (dep.cyclic.has(i) && dep.cyclic.has(j) && dep.depth[i] === dep.depth[j]) continue;
+    assert.ok(pos.get(j) < pos.get(i), `${ix.rows[j].id} must come before ${ix.rows[i].id}`);
+    assert.ok(dep.depth[j] < dep.depth[i]);
+  }
+  assert.ok(checked > 500);
+  // A record with no prerequisite has depth 0; a depth is 1 plus the deepest prerequisite outside its cycle.
+  for (const i of d.order) if (!ix.pre[i].length) assert.equal(dep.depth[i], 0);
+  const reversed = at({ sort: "order", dir: "desc", rtype: "all" });
+  assert.ok(dep.depth[reversed.order[0]] >= dep.depth[reversed.order[reversed.order.length - 1]]);
+});
+
+test("study order: ties break by the aggregate score, then the name, and the order is stable", () => {
+  const a = at({ sort: "order", dir: "asc" }), b = at({ sort: "order", dir: "asc" });
+  assert.deepEqual(a.order, b.order);
+  const dep = Model.dependency(ix);
+  for (let k = 1; k < a.order.length; k++) {
+    const p = a.order[k - 1], q = a.order[k];
+    if (dep.depth[p] !== dep.depth[q]) continue;
+    const ap = Model.aggregate(ix.scores[p], a.weights), aq = Model.aggregate(ix.scores[q], a.weights);
+    assert.ok(ap.hi >= aq.hi, "the higher upper score comes first inside one depth");
+  }
+});
+
+test("topics: the list holds the topic's results and every prerequisite, even from another topic", () => {
+  const fa = ix.catIdx.get("math.FA");
+  const members = ix.rows.map((/** @type {any} */ r, /** @type {number} */ i) => i).filter((/** @type {number} */ i) => ix.rows[i].cat.includes(fa));
+  const d = at({ topics: "math.FA", rtype: "all", sort: "order", dir: "asc" });
+  const shown = new Set(d.order);
+  for (const i of members) assert.ok(shown.has(i));
+  // Every prerequisite of every shown record is shown, at any depth.
+  for (const i of d.order) for (const j of ix.pre[i]) assert.ok(shown.has(j));
+  assert.equal(d.study.members, members.length);
+  assert.equal(d.study.total, d.order.length);
+  assert.ok(d.study.prerequisites > 0 && [...shown].some((/** @type {number} */ i) => !ix.rows[i].cat.includes(fa)));
+  // Two topics add up: the union of both lists.
+  const pr = at({ topics: "math.PR", rtype: "all" }), both = at({ topics: "math.FA,math.PR", rtype: "all" });
+  assert.equal(both.order.length, new Set([...d.order, ...pr.order]).size);
+  // An unknown topic is reported and ignored, so nothing matches.
+  const none = at({ topics: "math.ZZ", rtype: "all" });
+  assert.equal(none.order.length, 0);
+  assert.ok(none.notes.some((/** @type {string} */ n) => n.includes("math.ZZ")));
+});
+
+test("check-off: a checked result hides, shows again on request, and the counts agree", () => {
+  const all = at({ topics: "math.FA", sort: "order", dir: "asc" });
+  const first = all.order[0], second = all.order[1];
+  const withDone = { ...D, profile: { known: {}, done: { [ix.rows[first].id]: 1 } } };
+  const hidden = at({ topics: "math.FA", sort: "order", dir: "asc" }, withDone);
+  assert.equal(hidden.order.length, all.order.length - 1);
+  assert.equal(hidden.order[0], second);
+  assert.equal(hidden.counts.done, 1);
+  assert.equal(hidden.counts.doneHidden, 1);
+  const shown = at({ topics: "math.FA", sort: "order", dir: "asc", showdone: "show" }, withDone);
+  assert.deepEqual(shown.order, all.order);
+  assert.equal(shown.counts.doneHidden, 0);
+  // The prerequisites of a checked result stay in the list.
+  const dep = Model.dependency(ix);
+  assert.ok(dep.depth[first] >= 0);
+});
+
+test("pages: 100, 250, 500 or all rows, with a clamped page and the position", () => {
+  const n = at({ rtype: "all" }).order.length;
+  const p1 = at({ rtype: "all" });
+  assert.deepEqual([p1.page.from, p1.page.to, p1.page.number, p1.page.pages], [1, 100, 1, Math.ceil(n / 100)]);
+  const p2 = at({ rtype: "all", page: 2 });
+  assert.equal(p2.page.order[0], p1.order[100]);
+  assert.equal(at({ rtype: "all", psize: "250", page: 3 }).page.order.length, 250);
+  const last = at({ rtype: "all", psize: "500", page: 100000 });
+  assert.equal(last.page.number, last.page.pages);
+  assert.equal(last.page.to, n);
+  const every = at({ rtype: "all", psize: "all" });
+  assert.deepEqual([every.page.order.length, every.page.pages, every.page.from, every.page.to], [n, 1, 1, n]);
+  assert.equal(at({ rtype: "all" }).order.length, n);
+  assert.equal(at({ q: "zzzzqqq" }).page.from, 0);
+});
+
+test("profile: the checked-off results are in the profile JSON and come back through readProfile", () => {
+  const ids = [ix.rows[3].id, ix.rows[7].id];
+  const data = { ...D, profile: { known: {}, done: Object.fromEntries(ids.map((id) => [id, 1])) } };
+  const profile = Model.profileOf(at({}, data), data);
+  assert.deepEqual(profile.done, ids);
+  const back = Model.readProfile(JSON.stringify(profile), D);
+  assert.deepEqual(Object.keys(back.done), ids);
+  const mixed = Model.readProfile(JSON.stringify({ ...profile, done: [...ids, "no:such-id", 5] }), D);
+  assert.deepEqual(Object.keys(mixed.done), ids);
+  assert.deepEqual(mixed.unresolved, ["no:such-id"]);
+  assert.deepEqual(Object.keys(Model.readProfile(JSON.stringify({ ...profile, done: undefined }), D).done), []);
+});
