@@ -726,6 +726,493 @@
      "alignment": "The source proves the radical of an ideal is the infimum of the primes above it."
     }
    ]
+  },
+  {
+   "id": "nm:technique-euler-trail-criterion",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/Trails.lean#L123-L127",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.Trails",
+     "declaration": "IsEulerian.even_degree_iff",
+     "lines": [
+      123,
+      127
+     ],
+     "module_sha256": "f09c31089aa636586f9feb5bd9031c9d44bf83d804688b1f17664d69b863edb6",
+     "excerpt": "theorem IsEulerian.even_degree_iff (ht : p.IsEulerian) [Fintype V] [DecidableRel G.Adj] :\n    Even (G.degree w) ↔ u ≠ v → w ≠ u ∧ w ≠ v := by\n  rw [← ht.isTrail.even_countP_edges_iff, ← Multiset.coe_countP, Multiset.countP_eq_card_filter,\n    ← card_incidenceFinset_eq_degree, incidenceFinset_eq_filter, ← ht.edgesFinset_eq]\n  simp [Finset.card_def]",
+     "excerpt_sha256": "71c6884ebe549af2d882877834307fef6794c7f35ac2195ea40db640ddec87e1",
+     "attribution": "/-\nCopyright (c) 2022 Kyle Miller. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kyle Miller\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the counting lemma and necessity: in an Euler trail a vertex has even degree if and only if it is not an end of an open trail."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/Trails.lean#L137-L141",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.Trails",
+     "declaration": "IsEulerian.card_odd_degree",
+     "lines": [
+      137,
+      141
+     ],
+     "module_sha256": "f09c31089aa636586f9feb5bd9031c9d44bf83d804688b1f17664d69b863edb6",
+     "excerpt": "theorem IsEulerian.card_odd_degree [Fintype V] [DecidableRel G.Adj] (ht : p.IsEulerian) :\n    Fintype.card { v | Odd (G.degree v) } = 0 ∨ Fintype.card { v | Odd (G.degree v) } = 2 := by\n  rw [← Set.toFinset_card]\n  apply ht.card_filter_odd_degree\n  simp",
+     "excerpt_sha256": "80a1067eee5bbefcb4132490f5847b6e5f91a7708f432b4b224ec74ae973390f",
+     "attribution": "/-\nCopyright (c) 2022 Kyle Miller. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kyle Miller\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the last sentence: an Euler trail forces 0 or 2 vertices of odd degree."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/Trails.lean#L51-L55",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.Trails",
+     "declaration": "IsTrail.even_countP_edges_iff",
+     "lines": [
+      51,
+      55
+     ],
+     "module_sha256": "f09c31089aa636586f9feb5bd9031c9d44bf83d804688b1f17664d69b863edb6",
+     "excerpt": "theorem IsTrail.even_countP_edges_iff (ht : p.IsTrail) (x : V) :\n    Even (p.edges.countP fun e ↦ x ∈ e) ↔ u ≠ v → x ≠ u ∧ x ≠ v := by\n  induction p with\n  | nil => simp\n  | cons huv p ih => grind [isTrail_cons, edges_cons, G.irrefl]",
+     "excerpt_sha256": "b3a4b69efb97dff3f177eb748068a835dd4cbc71eedaffa0d666332884b36c6a",
+     "attribution": "/-\nCopyright (c) 2022 Kyle Miller. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kyle Miller\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the counting lemma in parity form: the number of edges of a trail at a vertex is even if and only if the vertex is not an end of an open trail."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-graph-laplacian-kernel-components",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/LapMatrix.lean#L282-L286",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.LapMatrix",
+     "declaration": "card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix",
+     "lines": [
+      282,
+      286
+     ],
+     "module_sha256": "f0e7218642db04bd2843cecbcad54b5b7fd00e0f09d9b37e25f9ad91cf26d5a4",
+     "excerpt": "/-- The number of connected components in `G` is the dimension of the nullspace of its Laplacian. -/\ntheorem card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix :\n    Fintype.card G.ConnectedComponent = Module.finrank ℝ (G.lapMatrix ℝ).toLin'.ker := by\n  classical\n  rw [Module.finrank_eq_card_basis G.lapMatrix_ker_basis]",
+     "excerpt_sha256": "b3b915a579bdd55c4204ed3da49bcd54cf9a4f335a17e03774e3a12bc1de40a6",
+     "attribution": "/-\nCopyright (c) 2023 Adrian Wüthrich. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Adrian Wüthrich\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the number of connected components equals the dimension of the kernel of the Laplacian over the reals."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/LapMatrix.lean#L190-L196",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.LapMatrix",
+     "declaration": "posSemidef_lapMatrix",
+     "lines": [
+      190,
+      196
+     ],
+     "module_sha256": "f0e7218642db04bd2843cecbcad54b5b7fd00e0f09d9b37e25f9ad91cf26d5a4",
+     "excerpt": "/-- The Laplacian matrix is positive semidefinite -/\ntheorem posSemidef_lapMatrix [Field R] [LinearOrder R] [IsStrictOrderedRing R] [StarRing R]\n    [TrivialStar R] : PosSemidef (G.lapMatrix R) := by\n  refine .of_dotProduct_mulVec_nonneg ?_ (fun x ↦ ?_)\n  · rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, isSymm_lapMatrix]\n  · rw [star_trivial, ← toLinearMap₂'_apply', lapMatrix_toLinearMap₂']\n    positivity",
+     "excerpt_sha256": "59dc1c071d4904d247553900289d44b36368f03ab59e608c6532c84ca26730d2",
+     "attribution": "/-\nCopyright (c) 2023 Adrian Wüthrich. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Adrian Wüthrich\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Laplacian is positive semidefinite."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/LapMatrix.lean#L209-L217",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.LapMatrix",
+     "declaration": "lapMatrix_toLinearMap₂'_apply'_eq_zero_iff_forall_reachable",
+     "lines": [
+      209,
+      217
+     ],
+     "module_sha256": "f0e7218642db04bd2843cecbcad54b5b7fd00e0f09d9b37e25f9ad91cf26d5a4",
+     "excerpt": "theorem lapMatrix_toLinearMap₂'_apply'_eq_zero_iff_forall_reachable [Field R] [LinearOrder R]\n    [IsStrictOrderedRing R] (x : V → R) :\n    (G.lapMatrix R).toLinearMap₂' R x x = 0 ↔ ∀ i j, G.Reachable i j → x i = x j := by\n  rw [lapMatrix_toLinearMap₂'_apply'_eq_zero_iff_forall_adj]\n  refine ⟨?_, fun h i j hA ↦ h i j hA.reachable⟩\n  intro h i j ⟨w⟩\n  induction w with\n  | nil => rfl\n  | cons hA _ h' => exact (h _ _ hA).trans h'",
+     "excerpt_sha256": "aeb3fdcc9bbae35bfbeb02b78b382d7ef685bdb642e8a7ee013a872a62788b2a",
+     "attribution": "/-\nCopyright (c) 2023 Adrian Wüthrich. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Adrian Wüthrich\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the quadratic form is 0 exactly for vectors constant on each reachability class."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-strongly-regular-graph-parameters",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/StronglyRegular.lean#L166-L198",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.StronglyRegular",
+     "declaration": "IsSRGWith.param_eq",
+     "lines": [
+      166,
+      198
+     ],
+     "module_sha256": "84cf5c9c3360fd4c4de3697f4e3d3f2967e4ff5df0f521eab0e91a14f40a1590",
+     "excerpt": "/-- The parameters of a strongly regular graph with at least one vertex satisfy\n`k * (k - ℓ - 1) = (n - k - 1) * μ`. -/\ntheorem IsSRGWith.param_eq\n    {V : Type u} [Fintype V] (G : SimpleGraph V) [DecidableRel G.Adj]\n    (h : G.IsSRGWith n k ℓ μ) (hn : 0 < n) :\n    k * (k - ℓ - 1) = (n - k - 1) * μ := by\n  let := Classical.decEq V\n  rw [← h.card, Fintype.card_pos_iff] at hn\n  obtain ⟨v⟩ := hn\n  convert card_mul_eq_card_mul G.Adj (s := G.neighborFinset v) (t := Gᶜ.neighborFinset v) _ _\n  · simp [h.regular v]\n  · simp [h.compl.regular v]\n  · intro w hw\n    rw [mem_neighborFinset] at hw\n    simp_rw [bipartiteAbove, ← mem_neighborFinset, filter_mem_eq_inter]\n    have s : {v} ⊆ G.neighborFinset w \\ G.neighborFinset v := by\n      rw [singleton_subset_iff, mem_sdiff, mem_neighborFinset]\n      exact ⟨hw.symm, G.notMem_neighborFinset_self v⟩\n    rw [inter_comm, neighborFinset_compl, ← inter_sdiff_assoc, ← sdiff_eq_inter_compl,\n      card_sdiff_of_subset s, card_singleton, ← sdiff_inter_self_left,\n      card_sdiff_of_subset inter_subset_left]\n    congr\n    · simp [h.regular w]\n    · simp_rw [inter_comm, neighborFinset_def, ← Set.toFinset_inter, ← h.of_adj v w hw,\n        ← Set.toFinset_card]\n      congr!\n  · intro w hw\n    simp_rw [neighborFinset_compl, mem_sdiff, mem_compl, mem_singleton, mem_neighborFinset,\n      ← Ne.eq_def] at hw\n    simp_rw [bipartiteBelow, adj_comm, ← mem_neighborFinset, filter_mem_eq_inter,\n      neighborFinset_def, ← Set.toFinset_inter, ← h.of_not_adj hw.2.symm hw.1,\n      ← Set.toFinset_card]\n    congr!",
+     "excerpt_sha256": "4ae64f2caf1865a87893c0942c7e037dbaa7bab794d11c23554ef98f0b98e644",
+     "attribution": "/-\nCopyright (c) 2021 Alena Gusakov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alena Gusakov, Jeremy Tan\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves identity (b): k(k−ℓ−1)=(n−k−1)μ."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/SimpleGraph/StronglyRegular.lean#L201-L220",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.SimpleGraph.StronglyRegular",
+     "declaration": "IsSRGWith.matrix_eq",
+     "lines": [
+      201,
+      220
+     ],
+     "module_sha256": "84cf5c9c3360fd4c4de3697f4e3d3f2967e4ff5df0f521eab0e91a14f40a1590",
+     "excerpt": "/-- Let `A` and `C` be the adjacency matrices of a strongly regular graph with parameters `n k ℓ μ`\nand its complement respectively and `I` be the identity matrix,\nthen `A ^ 2 = k • I + ℓ • A + μ • C`. `C` is equivalent to the expression `J - I - A`\nmore often found in the literature, where `J` is the all-ones matrix. -/\ntheorem IsSRGWith.matrix_eq {α : Type*} [Semiring α] (h : G.IsSRGWith n k ℓ μ) :\n    G.adjMatrix α ^ 2 = k • (1 : Matrix V V α) + ℓ • G.adjMatrix α + μ • Gᶜ.adjMatrix α := by\n  ext v w\n  simp only [adjMatrix_pow_apply_eq_card_walk, Matrix.add_apply, Matrix.smul_apply,\n    adjMatrix_apply, compl_adj]\n  rw [@Fintype.card_congr _ _ (G.fintypeSetWalkLength v w 2) _\n    (G.walkLengthTwoEquivCommonNeighbors v w)]\n  obtain rfl | hn := eq_or_ne v w\n  · rw [← Set.toFinset_card]\n    simp [commonNeighbors, ← neighborFinset_def, h.regular v]\n  · simp only [Matrix.one_apply_ne' hn.symm, ne_eq, hn]\n    by_cases ha : G.Adj v w <;>\n      simp only [ha, ite_true, ite_false, add_zero, zero_add, nsmul_eq_mul, smul_zero, mul_one,\n        not_true_eq_false, not_false_eq_true, and_false, and_self]\n    · rw [h.of_adj v w ha]\n    · rw [h.of_not_adj hn ha]",
+     "excerpt_sha256": "da73d2f141d9040642c774c5d22606e8f307dba25af9aff676dec5199096fd9d",
+     "attribution": "/-\nCopyright (c) 2021 Alena Gusakov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alena Gusakov, Jeremy Tan\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves identity (a) for the adjacency matrix and the complement adjacency matrix."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-hadamard-order-divisible-by-four",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/HadamardMatrix.lean#L238-L258",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.HadamardMatrix",
+     "declaration": "IsHadamard.four_dvd_card",
+     "lines": [
+      238,
+      258
+     ],
+     "module_sha256": "c3d14de289f003a570f187786c9308208eb51d973502882dc25f2e2c30409c97",
+     "excerpt": "/-- An integer Hadamard matrix of order greater than two has order divisible by four.\n\nThis is the standard divisibility obstruction in [Section 2.3][deLauneyFlannery2011]. -/\ntheorem IsHadamard.four_dvd_card {A : Matrix n n ℤ}\n    (hA : A.IsHadamard) (hcard : 2 < Fintype.card n) : 4 ∣ Fintype.card n := by\n  have hpm : ∀ i j, A i j = 1 ∨ A i j = -1 := fun i j =>\n    Unitary.mem_iff_eq_one_or_eq_neg_one.mp (hA.apply_mem i j)\n  obtain ⟨r, s, t, hrs, hrt, hst⟩ := Fintype.two_lt_card_iff.mp hcard\n  have horth ⦃i k : n⦄ (hik : i ≠ k) : ∑ j, A i j * A k j = 0 := by\n    simpa [Matrix.mul_apply, hik] using congr($hA.mul_conjTranspose i k)\n  have hexpand : ∀ j, (1 + A s j * A r j) * (1 + A t j * A r j) =\n      1 + A s j * A r j + A t j * A r j + A s j * A t j := fun j => by\n    obtain hr | hr := hpm r j <;> simp [hr] <;> ring\n  have hdvd : ∀ j, (4 : ℤ) ∣ (1 + A s j * A r j) * (1 + A t j * A r j) := fun j => by\n    obtain hs | hs := hpm s j <;> obtain hr | hr := hpm r j <;>\n      obtain ht | ht := hpm t j <;> simp [hs, hr, ht]\n  have hsum : ∑ j, (1 + A s j * A r j) * (1 + A t j * A r j) = (Fintype.card n : ℤ) := by\n    simp_rw [hexpand]\n    simp [Finset.sum_add_distrib, horth hrs.symm, horth hrt.symm, horth hst]\n  rw [← Int.ofNat_dvd, ← hsum]\n  exact Finset.dvd_sum fun j _ => hdvd j",
+     "excerpt_sha256": "7ab429931daeedc62013383591442920edb1652d52d73f0ffbfb03784a08cb56",
+     "attribution": "/-\nCopyright (c) 2026 Dennj Osele. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Dennj Osele\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the theorem for integer matrices with unitary entries. The Mathlib proof picks three rows and counts columns in the same way."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-combinatorial-nullstellensatz",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Nullstellensatz.lean#L228-L272",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Nullstellensatz",
+     "declaration": "combinatorial_nullstellensatz_exists_eval_nonzero",
+     "lines": [
+      228,
+      272
+     ],
+     "module_sha256": "fa8881386302039b0f64470d5041773b0bf8556054ff51f022e45578411e3b21",
+     "excerpt": "/-- The **Combinatorial Nullstellensatz**.\n\nGiven a multi-index `t : σ →₀ ℕ` such that `t s < (S s).card` for all `s`,\n`f.totalDegree = t.degree` and `f.coeff t ≠ 0`,\nthere exists a point `x : σ → R` such that `x s ∈ S s` for all `s` and `f.eval s ≠ 0`.\n\n[Alon_1999], theorem 2 -/\ntheorem combinatorial_nullstellensatz_exists_eval_nonzero [IsDomain R]\n    (f : MvPolynomial σ R)\n    (t : σ →₀ ℕ) (ht : f.coeff t ≠ 0) (ht' : f.totalDegree = t.degree)\n    (S : σ → Finset R) (htS : ∀ i, t i < #(S i)) :\n    ∃ s : σ → R, (∀ i, s i ∈ S i) ∧ eval s f ≠ 0 := by\n  let _ : LinearOrder σ := WellOrderingRel.isWellOrder.linearOrder\n  by_contra! Heval\n  apply ht\n  obtain ⟨h, hh, hf⟩ := combinatorial_nullstellensatz_exists_linearCombination S\n    (fun i ↦ by rw [← Finset.card_pos]; exact Nat.zero_lt_of_lt (htS i)) f Heval\n  rw [hf]\n  rw [linearCombination_apply, Finsupp.sum, coeff_sum]\n  apply Finset.sum_eq_zero\n  intro i _\n  set g := h i * Alon.P (S i) i with hg\n  by_cases hi : h i = 0\n  · simp [hi]\n  have : g.totalDegree ≤ f.totalDegree := by\n    rw [hg, mul_comm]\n    exact hh i\n  -- one could simplify this by proving `totalDegree_mul_eq` (at least in a domain)\n  rw [hg, ← degree_degLexDegree,\n    degree_mul_of_isRegular_right hi (by simp only [(Alon.monic_P ..).leadingCoeff_eq_one,\n      isRegular_one]),\n    Alon.degree_P, map_add, degree_degLexDegree, degree_single, ht'] at this\n  rw [smul_eq_mul, coeff_mul, Finset.sum_eq_zero]\n  rintro ⟨p, q⟩ hpq\n  simp only [Finset.mem_antidiagonal] at hpq\n  simp only [mul_eq_zero, Classical.or_iff_not_imp_right]\n  rw [← ne_eq, ← mem_support_iff]\n  intro hq\n  obtain ⟨e, hq', hq⟩ := Alon.of_mem_P_support _ _ _ hq\n  apply coeff_eq_zero_of_totalDegree_lt\n  rw [← Finsupp.degree_apply]\n  apply lt_of_add_lt_add_right (lt_of_le_of_lt this _)\n  rw [← hpq, map_add, add_lt_add_iff_left, hq, degree_single]\n  apply lt_of_le_of_lt _ (htS i)\n  simp [← hpq, hq]",
+     "excerpt_sha256": "e90bc8a591ed546b3f680a4e4094e1fae6a4a76371f71780c607d60c54353026",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the theorem for an integral domain, with the same hypotheses."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Nullstellensatz.lean#L191-L226",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Nullstellensatz",
+     "declaration": "combinatorial_nullstellensatz_exists_linearCombination",
+     "lines": [
+      191,
+      226
+     ],
+     "module_sha256": "fa8881386302039b0f64470d5041773b0bf8556054ff51f022e45578411e3b21",
+     "excerpt": "/-- The **Combinatorial Nullstellensatz**.\n\nIf `f` vanishes at every point `x : σ → R` such that `x s ∈ S s` for all `s`,\nthen it can be written as a linear combination\n`f = linearCombination (MvPolynomial σ R) (fun i ↦ (∏ r ∈ S i, (X i - C r))) h`,\nfor some `h : σ →₀ MvPolynomial σ R` such that\n`((∏ r ∈ S s, (X i - C r)) * h i).totalDegree ≤ f.totalDegree` for all `s`.\n\n[Alon_1999], theorem 1. -/\ntheorem combinatorial_nullstellensatz_exists_linearCombination\n    [IsDomain R] (S : σ → Finset R) (Sne : ∀ i, (S i).Nonempty)\n    (f : MvPolynomial σ R) (Heval : ∀ (x : σ → R), (∀ i, x i ∈ S i) → eval x f = 0) :\n    ∃ (h : σ →₀ MvPolynomial σ R),\n      (∀ i, ((∏ s ∈ S i, (X i - C s)) * h i).totalDegree ≤ f.totalDegree) ∧\n      f = linearCombination (MvPolynomial σ R) (fun i ↦ ∏ r ∈ S i, (X i - C r)) h := by\n  let : LinearOrder σ := WellOrderingRel.isWellOrder.linearOrder\n  obtain ⟨h, r, hf, hh, hr⟩ := degLex.div (b := fun i ↦ Alon.P (S i) i)\n      (fun i ↦ by simp only [(Alon.monic_P ..).leadingCoeff_eq_one, isUnit_one]) f\n  use h\n  suffices r = 0 by\n    rw [this, add_zero] at hf\n    exact ⟨fun i ↦ degLex_totalDegree_monotone (hh i), hf⟩\n  apply eq_zero_of_eval_zero_at_prod_finset r S\n  · intro i\n    rw [degreeOf_eq_sup, Finset.sup_lt_iff (by simp [Sne i])]\n    aesop (add simp [Alon.degree_P])\n  · intro x hx\n    rw [Iff.symm sub_eq_iff_eq_add'] at hf\n    rw [← hf, map_sub, Heval x hx, zero_sub, neg_eq_zero,\n      linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_zero]\n    intro i _\n    rw [smul_eq_mul, map_mul]\n    convert mul_zero _\n    rw [Alon.P, _root_.map_prod]\n    apply Finset.prod_eq_zero (hx i)\n    simp",
+     "excerpt_sha256": "c97a403fe90e93c92e0e9eb70b6350298acff903f9c33801b6d7184b1ec4af9b",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the division step: f is a combination of the gi plus a remainder when f vanishes on the grid."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Nullstellensatz.lean#L61-L136",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Nullstellensatz",
+     "declaration": "eq_zero_of_eval_zero_at_prod_finset",
+     "lines": [
+      61,
+      136
+     ],
+     "module_sha256": "fa8881386302039b0f64470d5041773b0bf8556054ff51f022e45578411e3b21",
+     "excerpt": "/-- A multivariate polynomial that vanishes on a large product finset is the zero polynomial. -/\ntheorem eq_zero_of_eval_zero_at_prod_finset {σ : Type*} [Finite σ] [IsDomain R]\n    (P : MvPolynomial σ R) (S : σ → Finset R)\n    (Hdeg : ∀ i, P.degreeOf i < #(S i))\n    (Heval : ∀ (x : σ → R), (∀ i, x i ∈ S i) → eval x P = 0) :\n    P = 0 := by\n  induction σ using Finite.induction_empty_option with\n  | @of_equiv σ τ e h =>\n    suffices MvPolynomial.rename e.symm P = 0 by\n      have that := MvPolynomial.rename_injective (R := R) e.symm (e.symm.injective)\n      rw [RingHom.injective_iff_ker_eq_bot] at that\n      rwa [← RingHom.mem_ker, that] at this\n    apply h _ (fun i ↦ S (e i))\n    · intro i\n      convert Hdeg (e i)\n      conv_lhs => rw [← e.symm_apply_apply i, degreeOf_rename_of_injective e.symm.injective]\n    · intro x hx\n      simp only [MvPolynomial.eval_rename]\n      apply Heval\n      intro s\n      simp only [Function.comp_apply]\n      convert hx (e.symm s)\n      simp only [Equiv.apply_symm_apply]\n  | h_empty =>\n    suffices P = C (constantCoeff P) by\n      specialize Heval default (fun i ↦ PEmpty.elim i)\n      rw [this, eval_C] at Heval\n      rw [this, Heval, C_0]\n    ext m\n    suffices m = 0 by simp [this, constantCoeff_eq]\n    ext d; exact PEmpty.elim d\n  | @h_option σ _ h =>\n    set Q := optionEquivLeft R σ P with hQ\n    suffices Q = 0 by\n      rw [← AlgEquiv.symm_apply_apply (optionEquivLeft R σ) P, ← hQ, this, map_zero]\n    have Heval' (x : σ → R) (hx : ∀ i, x i ∈ S (some i)) : Polynomial.map (eval x) Q = 0 := by\n      apply Polynomial.eq_zero_of_natDegree_lt_card_of_eval_eq_zero' _ (S none)\n      · intro y hy\n        rw [← optionEquivLeft_elim_eval]\n        apply Heval\n        simp only [Option.forall, Option.elim_none, hy, Option.elim_some, hx, implies_true,\n          and_self]\n      · apply lt_of_le_of_lt _ (Hdeg none)\n        rw [Polynomial.natDegree_le_iff_coeff_eq_zero]\n        intro d hd\n        simp only [hQ]\n        rw [MvPolynomial.coeff_eval_eq_eval_coeff]\n        convert map_zero (MvPolynomial.eval x)\n        ext m\n        simp only [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]\n        set n := (embDomain Function.Embedding.some m).update none d with hn\n        rw [eq_option_embedding_update_none_iff] at hn\n        rw [← hn.1, ← hn.2, optionEquivLeft_coeff_some_coeff_none]\n        by_contra hm\n        apply not_le.mpr hd\n        rw [MvPolynomial.degreeOf_eq_sup]\n        rw [← ne_eq, ← MvPolynomial.mem_support_iff] at hm\n        convert Finset.le_sup hm\n        exact hn.1.symm\n    ext m d\n    suffices Q.coeff m = 0 by simp [this]\n    apply h _ (fun i ↦ S (some i))\n    · intro i\n      apply lt_of_le_of_lt _ (Hdeg (some i))\n      simp only [degreeOf_eq_sup, Finset.sup_le_iff, mem_support_iff, ne_eq]\n      intro e he\n      set n := (embDomain Function.Embedding.some e).update none m with hn\n      rw [eq_option_embedding_update_none_iff] at hn\n      rw [hQ, ← hn.1, ← hn.2, optionEquivLeft_coeff_some_coeff_none, ← ne_eq,\n        ← MvPolynomial.mem_support_iff] at he\n      convert Finset.le_sup he\n      rw [← hn.2, some_apply]\n    · intro x hx\n      specialize Heval' x hx\n      rw [Polynomial.ext_iff] at Heval'\n      simpa only [Polynomial.coeff_map, Polynomial.coeff_zero] using Heval' m",
+     "excerpt_sha256": "b502448ee96c9330ad0b46b95538aab969981d2efffae06b6b1667e61c9761a0",
+     "attribution": "/-\nCopyright (c) 2024 Antoine Chambert-Loir. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Antoine Chambert-Loir\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the zero lemma."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gauge-minkowski-functional",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Gauge.lean#L201-L213",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Gauge",
+     "declaration": "gauge_add_le",
+     "lines": [
+      201,
+      213
+     ],
+     "module_sha256": "db2184ebc82c68514d98443b031bfb67edf7c39291aed703084dc8eba9fef3b9",
+     "excerpt": "/-- Gauge is subadditive. -/\ntheorem gauge_add_le (hs : Convex ℝ s) (absorbs : Absorbent ℝ s) (x y : E) :\n    gauge s (x + y) ≤ gauge s x + gauge s y := by\n  refine le_of_forall_pos_lt_add fun ε hε => ?_\n  obtain ⟨a, ha, ha', x, hx, rfl⟩ :=\n    exists_lt_of_gauge_lt absorbs (lt_add_of_pos_right (gauge s x) (half_pos hε))\n  obtain ⟨b, hb, hb', y, hy, rfl⟩ :=\n    exists_lt_of_gauge_lt absorbs (lt_add_of_pos_right (gauge s y) (half_pos hε))\n  calc\n    gauge s (a • x + b • y) ≤ a + b := gauge_le_of_mem (by positivity) <| by\n      rw [hs.add_smul ha.le hb.le]\n      exact add_mem_add (smul_mem_smul_set hx) (smul_mem_smul_set hy)\n    _ < gauge s (a • x) + gauge s (b • y) + ε := by linarith",
+     "excerpt_sha256": "8d7489454bfab1b09688120ea90a87bfc5bed51771bedc885925ff5a80d73ecc",
+     "attribution": "/-\nCopyright (c) 2021 Yaël Dillies, Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (c) for a convex absorbent set."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Gauge.lean#L264-L286",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Gauge",
+     "declaration": "gauge_smul_of_nonneg",
+     "lines": [
+      264,
+      286
+     ],
+     "module_sha256": "db2184ebc82c68514d98443b031bfb67edf7c39291aed703084dc8eba9fef3b9",
+     "excerpt": "theorem gauge_smul_of_nonneg [MulActionWithZero α E] [IsScalarTower α ℝ (Set E)] {s : Set E} {a : α}\n    (ha : 0 ≤ a) (x : E) : gauge s (a • x) = a • gauge s x := by\n  obtain rfl | ha' := ha.eq_or_lt\n  · rw [zero_smul, gauge_zero, zero_smul]\n  rw [gauge_def', gauge_def', ← Real.sInf_smul_of_nonneg ha]\n  congr 1\n  ext r\n  simp_rw [Set.mem_smul_set, Set.mem_sep_iff]\n  constructor\n  · rintro ⟨hr, hx⟩\n    simp_rw [mem_Ioi] at hr ⊢\n    rw [← mem_smul_set_iff_inv_smul_mem₀ hr.ne'] at hx\n    have := smul_pos (inv_pos.2 ha') hr\n    refine ⟨a⁻¹ • r, ⟨this, ?_⟩, smul_inv_smul₀ ha'.ne' _⟩\n    rwa [← mem_smul_set_iff_inv_smul_mem₀ this.ne', smul_assoc,\n      mem_smul_set_iff_inv_smul_mem₀ (inv_ne_zero ha'.ne'), inv_inv]\n  · rintro ⟨r, ⟨hr, hx⟩, rfl⟩\n    rw [mem_Ioi] at hr ⊢\n    rw [← mem_smul_set_iff_inv_smul_mem₀ hr.ne'] at hx\n    have := smul_pos ha' hr\n    refine ⟨this, ?_⟩\n    rw [← mem_smul_set_iff_inv_smul_mem₀ this.ne', smul_assoc]\n    exact smul_mem_smul_set hx",
+     "excerpt_sha256": "8da624f2f698f224172977b34fa6ce0d16e9befd18ae92cd21cbda8a3c1bec1b",
+     "attribution": "/-\nCopyright (c) 2021 Yaël Dillies, Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (b)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Gauge.lean#L187-L190",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Gauge",
+     "declaration": "setOfPred_gauge_lt_one_subset_self",
+     "lines": [
+      187,
+      190
+     ],
+     "module_sha256": "db2184ebc82c68514d98443b031bfb67edf7c39291aed703084dc8eba9fef3b9",
+     "excerpt": "theorem setOfPred_gauge_lt_one_subset_self (hs : Convex ℝ s) (h₀ : (0 : E) ∈ s)\n    (absorbs : Absorbent ℝ s) : { x | gauge s x < 1 } ⊆ s := fun _x hx ↦\n  let ⟨_y, hys, hx⟩ := mem_openSegment_of_gauge_lt_one absorbs hx\n  hs.openSegment_subset h₀ hys hx",
+     "excerpt_sha256": "f76e157317899bf0eeae667ae2f9121e1d8557ee216c1227c8d031e696619c15",
+     "attribution": "/-\nCopyright (c) 2021 Yaël Dillies, Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the first inclusion of part (d)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Gauge.lean#L219-L220",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Gauge",
+     "declaration": "self_subset_setOfPred_gauge_le_one",
+     "lines": [
+      219,
+      220
+     ],
+     "module_sha256": "db2184ebc82c68514d98443b031bfb67edf7c39291aed703084dc8eba9fef3b9",
+     "excerpt": "theorem self_subset_setOfPred_gauge_le_one : s ⊆ { x | gauge s x ≤ 1 } :=\n  fun _ => gauge_le_one_of_mem",
+     "excerpt_sha256": "b0e397a4d54df8313fc39ea2a3e4368cf6e8787952709e9f76e6ff180ec1a038",
+     "attribution": "/-\nCopyright (c) 2021 Yaël Dillies, Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the second inclusion of part (d)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-birkhoff-von-neumann",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Birkhoff.lean#L157-L171",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Birkhoff",
+     "declaration": "doublyStochastic_eq_convexHull_permMatrix",
+     "lines": [
+      157,
+      171
+     ],
+     "module_sha256": "2e08062c4f153029b61a08b73dd212e0cfc130db5d3812cae367b4385ec30370",
+     "excerpt": "/--\n**Birkhoff's theorem**\nThe set of doubly stochastic matrices is the convex hull of the permutation matrices.  Note\n`exists_eq_sum_perm_of_mem_doublyStochastic` gives a convex weighting of each permutation matrix\ndirectly.  To show `doublyStochastic n` is convex, use `convex_doublyStochastic`.\n-/\ntheorem doublyStochastic_eq_convexHull_permMatrix :\n    doublyStochastic R n = convexHull R {σ.permMatrix R | σ : Equiv.Perm n} := by\n  refine (convexHull_min ?g1 convex_doublyStochastic).antisymm' fun M hM => ?g2\n  case g1 =>\n    rintro x ⟨h, rfl⟩\n    exact permMatrix_mem_doublyStochastic\n  case g2 =>\n    obtain ⟨w, hw1, hw2, hw3⟩ := exists_eq_sum_perm_of_mem_doublyStochastic hM\n    exact mem_convexHull_of_exists_fintype w (·.permMatrix R) hw1 hw2 (by simp) hw3",
+     "excerpt_sha256": "118fe4b8dcafeecdb9c9c7347305973f3576f2ff3fa99386852ef0336aba971c",
+     "attribution": "/-\nCopyright (c) 2024 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the doubly stochastic matrices are the convex hull of the permutation matrices."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Birkhoff.lean#L139-L155",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Birkhoff",
+     "declaration": "exists_eq_sum_perm_of_mem_doublyStochastic",
+     "lines": [
+      139,
+      155
+     ],
+     "module_sha256": "2e08062c4f153029b61a08b73dd212e0cfc130db5d3812cae367b4385ec30370",
+     "excerpt": "/--\nIf M is a doubly stochastic matrix, then it is a convex combination of permutation matrices. Note\n`doublyStochastic_eq_convexHull_permMatrix` shows `doublyStochastic n` is exactly the convex hull of\nthe permutation matrices, and this lemma is instead most useful for accessing the coefficients of\neach permutation matrices directly.\n-/\nlemma exists_eq_sum_perm_of_mem_doublyStochastic (hM : M ∈ doublyStochastic R n) :\n    ∃ w : Equiv.Perm n → R, (∀ σ, 0 ≤ w σ) ∧ ∑ σ, w σ = 1 ∧ ∑ σ, w σ • σ.permMatrix R = M := by\n  rcases isEmpty_or_nonempty n\n  case inl => exact ⟨fun _ => 1, by simp, by simp, Subsingleton.elim _ _⟩\n  obtain ⟨w, hw1, hw3⟩ := doublyStochastic_sum_perm_aux M 1 (by simp) ⟨M, hM, by simp⟩\n  refine ⟨w, hw1, ?_, hw3⟩\n  inhabit n\n  have : ∑ j, ∑ σ : Equiv.Perm n, w σ • σ.permMatrix R default j = 1 := by\n    simp only [← smul_apply (m := n), ← Finset.sum_apply, hw3]\n    rw [sum_row_of_mem_doublyStochastic hM]\n  simpa [sum_comm (γ := n), Equiv.toPEquiv_apply] using this",
+     "excerpt_sha256": "beda8455239affdf74789bf90cfce6c6617d3ed1b4f6d1331c9ba782f6fae537",
+     "attribution": "/-\nCopyright (c) 2024 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the decomposition as a sum over permutations with positive weights."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Birkhoff.lean#L173-L195",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Birkhoff",
+     "declaration": "extremePoints_doublyStochastic",
+     "lines": [
+      173,
+      195
+     ],
+     "module_sha256": "2e08062c4f153029b61a08b73dd212e0cfc130db5d3812cae367b4385ec30370",
+     "excerpt": "/--\nThe set of extreme points of the doubly stochastic matrices is the set of permutation matrices.\n-/\ntheorem extremePoints_doublyStochastic :\n    Set.extremePoints R (doublyStochastic R n) = {σ.permMatrix R | σ : Equiv.Perm n} := by\n  refine subset_antisymm ?_ ?_\n  · rw [doublyStochastic_eq_convexHull_permMatrix]\n    exact extremePoints_convexHull_subset\n  rintro _ ⟨σ, rfl⟩\n  refine ⟨permMatrix_mem_doublyStochastic, fun x₁ hx₁ x₂ hx₂ hσ ↦ ?_⟩\n  suffices ∀ i j : n, x₁ i j = x₂ i j by\n    obtain rfl : x₁ = x₂ := by simpa [← Matrix.ext_iff]\n    simp_all\n  intro i j\n  have h₁ : σ.permMatrix R i j ∈ openSegment R (x₁ i j) (x₂ i j) :=\n    image_openSegment _ (entryLinearMap R R i j).toAffineMap x₁ x₂ ▸ ⟨_, hσ, rfl⟩\n  by_contra! h\n  have h₂ : openSegment R (x₁ i j) (x₂ i j) ⊆ Set.Ioo 0 1 := by\n    rw [openSegment_eq_Ioo' h]\n    apply Set.Ioo_subset_Ioo <;>\n    simp_all [nonneg_of_mem_doublyStochastic, le_one_of_mem_doublyStochastic]\n  specialize h₂ h₁\n  aesop",
+     "excerpt_sha256": "9778d2513832c57fb24f668cbacc327f00b5716d21d7619c6ee269b4d2cbbebb",
+     "attribution": "/-\nCopyright (c) 2024 Bhavik Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Bhavik Mehta\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the extreme points are the permutation matrices."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-transvection-diagonalisation",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Transvection.lean#L664-L670",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Transvection",
+     "declaration": "exists_list_transvec_mul_mul_list_transvec_eq_diagonal",
+     "lines": [
+      664,
+      670
+     ],
+     "module_sha256": "3649ffde99449adfca2aff3571afff970f9ffe93fe0056df2b72d752ac1d2bd2",
+     "excerpt": "/-- Any matrix can be reduced to diagonal form by elementary operations. -/\ntheorem exists_list_transvec_mul_mul_list_transvec_eq_diagonal (M : Matrix n n 𝕜) :\n    ∃ (L L' : List (TransvectionStruct n 𝕜)) (D : n → 𝕜),\n      (L.map toMatrix).prod * M * (L'.map toMatrix).prod = diagonal D := by\n  have e : n ≃ Fin (Fintype.card n) := Fintype.equivOfCardEq (by simp)\n  apply reindex_exists_list_transvec_mul_mul_list_transvec_eq_diagonal M e\n  apply exists_list_transvec_mul_mul_list_transvec_eq_diagonal_aux",
+     "excerpt_sha256": "fbe5829cbb572fc41e17039f41301db1f8272fa7b2862d7be24b482563c6756d",
+     "attribution": "/-\nCopyright (c) 2021 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the decomposition for any matrix over a field."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-catalan-cycle-lemma",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/Catalan/Basic.lean#L102-L124",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.Catalan.Basic",
+     "declaration": "catalan_eq_centralBinom_div",
+     "lines": [
+      102,
+      124
+     ],
+     "module_sha256": "c17e8579e7a891e3b676fd3df771f96ea231649e92cc1505120a42d9704570ac",
+     "excerpt": "theorem catalan_eq_centralBinom_div (n : ℕ) : catalan n = n.centralBinom / (n + 1) := by\n  suffices (catalan n : ℚ) = Nat.centralBinom n / (n + 1) by\n    have h := Nat.succ_dvd_centralBinom n\n    exact mod_cast this\n  induction n using Nat.caseStrongRecOn with\n  | zero => simp\n  | ind d hd =>\n    simp_rw [catalan_succ, Nat.cast_sum, Nat.cast_mul]\n    trans (∑ i : Fin d.succ, Nat.centralBinom i / (i + 1) *\n                            (Nat.centralBinom (d - i) / (d - i + 1)) : ℚ)\n    · congr\n      ext1 x\n      have m_le_d : x.val ≤ d := by lia\n      have d_minus_x_le_d : (d - x.val) ≤ d := tsub_le_self\n      rw [hd _ m_le_d, hd _ d_minus_x_le_d]\n      norm_cast\n    · trans (∑ i : Fin d.succ, (gosperCatalan (d + 1) (i + 1) - gosperCatalan (d + 1) i))\n      · refine sum_congr rfl fun i _ => ?_\n        rw [gosper_trick i.is_le, mul_div]\n      · rw [← sum_range fun i => gosperCatalan (d + 1) (i + 1) - gosperCatalan (d + 1) i,\n            sum_range_sub, Nat.succ_eq_add_one]\n        rw [gosper_catalan_sub_eq_central_binom_div d]\n        norm_cast",
+     "excerpt_sha256": "a6391ead225928923287dcbbc924734744ff1b9778a3eac9402d671e4de3764b",
+     "attribution": "/-\nCopyright (c) 2022 Julian Kuelshammer. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Julian Kuelshammer\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the closed formula Cn=C(2n,n)/(n+1)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/DyckWord.lean#L544-L548",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.DyckWord",
+     "declaration": "DyckWord.card_dyckWord_semilength_eq_catalan",
+     "lines": [
+      544,
+      548
+     ],
+     "module_sha256": "6606189ca02bec4598a0df10a837391d20e3a1d53390615e2e9c233b753e7844",
+     "excerpt": "/-- There are `catalan n` Dyck words of semilength `n` (or length `2 * n`). -/\ntheorem card_dyckWord_semilength_eq_catalan (n : ℕ) :\n    Fintype.card { p : DyckWord // p.semilength = n } = catalan n := by\n  rw [← Fintype.ofEquiv_card (equivTreesOfNumNodesEq n), ← treesOfNumNodesEq_card_eq_catalan]\n  convert Fintype.card_coe _",
+     "excerpt_sha256": "3e71d3e6697c968b2f884ae201ad8c3d3859e4ff7ecd15583b5788c93dfe25f7",
+     "attribution": "/-\nCopyright (c) 2024 Jeremy Tan. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jeremy Tan\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the number of Dyck words of semilength n is the Catalan number."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-kst-c4-free-edge-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/DoubleCounting.lean#L87-L89",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.DoubleCounting",
+     "declaration": "sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow",
+     "lines": [
+      87,
+      89
+     ],
+     "module_sha256": "7b2177666ad3691894e1324859c8beca8024ab70c40f109ab42af60add6b84f0",
+     "excerpt": "theorem sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow [∀ a b, Decidable (r a b)] :\n    (∑ a ∈ s, #(t.bipartiteAbove r a)) = ∑ b ∈ t, #(s.bipartiteBelow r b) := by\n  simp_rw [card_eq_sum_ones, sum_sum_bipartiteAbove_eq_sum_sum_bipartiteBelow]",
+     "excerpt_sha256": "213d4f24a23b22248dafd8af15323cd28252abcd62428f38d12a299d353dbcf0",
+     "attribution": "/-\nCopyright (c) 2022 Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the two ways of counting the edges of a relation give the same total. This is the double counting used here."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Combinatorics/Enumerative/DoubleCounting.lean#L170-L177",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Combinatorics.Enumerative.DoubleCounting",
+     "declaration": "card_mul_le_card_mul",
+     "lines": [
+      170,
+      177
+     ],
+     "module_sha256": "7b2177666ad3691894e1324859c8beca8024ab70c40f109ab42af60add6b84f0",
+     "excerpt": "/-- **Double counting** argument.\n\nConsidering `r` as a bipartite graph, the LHS is a lower bound on the number of edges while the RHS\nis an upper bound. -/\ntheorem card_mul_le_card_mul [∀ a b, Decidable (r a b)]\n    (hm : ∀ a ∈ s, m ≤ #(t.bipartiteAbove r a))\n    (hn : ∀ b ∈ t, #(s.bipartiteBelow r b) ≤ n) : #s * m ≤ #t * n :=\n  card_nsmul_le_card_nsmul _ hm hn",
+     "excerpt_sha256": "5e4b3100291a6aa13e29564dec91ca9651239c4037f70da40ee9cc10a2a0f933",
+     "attribution": "/-\nCopyright (c) 2022 Yaël Dillies. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves a bound from degree inequalities in a bipartite relation."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-fundamental-group-circle",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/Covering/FundamentalGroupCircle.lean#L46-L53",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.Covering.FundamentalGroupCircle",
+     "declaration": "AddCircle.windingNumberIso",
+     "lines": [
+      46,
+      53
+     ],
+     "module_sha256": "33cfe1a9fa44634a4134c8dc9bdcf1351ef9a4282fd8d41ea291519ce472c194",
+     "excerpt": "/-- **The fundamental group of the circle is `ℤ`**: the isomorphism sends the class of a loop to\nits winding number (`windingNumber_eq_div`). It does not depend on the choice of a lift of the\nbasepoint (`IsAddQuotientCoveringMap.fundamentalGroupEquiv_eq`). -/\nnoncomputable def windingNumberIso (x : AddCircle p) :\n    FundamentalGroup (AddCircle p) x ≃* Multiplicative ℤ :=\n  ((isAddQuotientCoveringMap_coe p).fundamentalGroupEquiv (x := x)\n      ⟨(equivIco p 0 x : ℝ), coe_equivIco⟩).trans <|\n    MulOpposite.opMulEquiv.symm.trans (AddSubgroup.zmultiplesEquivInt hp.out.ne').toMultiplicative",
+     "excerpt_sha256": "af1bc176ee4b3d994d9a11e86d5a6cd8b4dc57061eef8b87dd063e7c1d85a093",
+     "attribution": "/-\nCopyright (c) 2026 Ruize Chen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Ruize Chen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the isomorphism between the fundamental group of the circle and the integers. The circle there is ℝ/pℤ for a real p>0."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/Covering/FundamentalGroupCircle.lean#L59-L72",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.Covering.FundamentalGroupCircle",
+     "declaration": "AddCircle.windingNumber_eq_div",
+     "lines": [
+      59,
+      72
+     ],
+     "module_sha256": "33cfe1a9fa44634a4134c8dc9bdcf1351ef9a4282fd8d41ea291519ce472c194",
+     "excerpt": "/-- The winding number of a loop in `AddCircle p` is `(f 1 - f 0) / p`, for any continuous lift\n`f` of the loop to `ℝ`. -/\ntheorem windingNumber_eq_div {x : AddCircle p} (γ : Path x x) (f : C(I, ℝ)) (hf : (↑) ∘ f = γ) :\n    (windingNumber (.mk γ) : ℝ) = (f 1 - f 0) / p := by\n  have h0 : (f 0 : AddCircle p) = x := congr($hf 0).trans γ.source\n  obtain ⟨n, hn⟩ : ∃ n : ℤ, n • p = f 1 - f 0 :=\n    AddSubgroup.mem_zmultiples_iff.mp <| QuotientAddGroup.eq_iff_sub_mem.mp <|\n      congr($hf 1).trans <| γ.target.trans h0.symm\n  have h : (isAddQuotientCoveringMap_coe p).fundamentalGroupEquiv (x := x) ⟨f 0, h0⟩ (.mk γ) =\n      .op (.ofAdd ⟨n • p, n, rfl⟩) :=\n    (isAddQuotientCoveringMap_coe p).fundamentalGroupToMulOpposite_apply_mk_eq hf rfl (by simp [hn])\n  simp [windingNumber, windingNumberIso, AddSubgroup.zmultiplesEquivInt_apply_zsmul hp.out.ne' n,\n    (isAddQuotientCoveringMap_coe p).fundamentalGroupEquiv_eq _ ⟨f 0, h0⟩, h,\n    eq_div_iff hp.out.ne', ← zsmul_eq_mul, ← hn]",
+     "excerpt_sha256": "64d67f2deade19c1eaeac5b62c4f097c55a7c2a67376222ccf8c62cf0f198376",
+     "attribution": "/-\nCopyright (c) 2026 Ruize Chen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Ruize Chen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the winding number is the difference of the end points of any lift, divided by p."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Topology/Covering/FundamentalGroupCircle.lean#L74-L78",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Topology.Covering.FundamentalGroupCircle",
+     "declaration": "AddCircle.windingNumber_zsmulLoop",
+     "lines": [
+      74,
+      78
+     ],
+     "module_sha256": "33cfe1a9fa44634a4134c8dc9bdcf1351ef9a4282fd8d41ea291519ce472c194",
+     "excerpt": "/-- The loop `t ↦ n • (t * p) + x` has winding number `n`. -/\ntheorem windingNumber_zsmulLoop (x : ℝ) (n : ℤ) :\n    windingNumber (x := x) (.mk (zsmulLoop p x n)) = n := by\n  simpa [hp.out.ne'] using windingNumber_eq_div (zsmulLoop p x n)\n    ⟨fun t ↦ n • (t * p) + x, by fun_prop⟩ rfl",
+     "excerpt_sha256": "736d0ad518b0cd8916c6dab7778e6c73c84d2f4a39a4fc9f96922c2a09024893",
+     "attribution": "/-\nCopyright (c) 2026 Ruize Chen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Ruize Chen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the loop that goes n times around has winding number n."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [
