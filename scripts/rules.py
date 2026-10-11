@@ -264,7 +264,9 @@ def pairs():
     return out
 
 
-CSS_RULE = re.compile(r"([^{};]+)\{([^{}]*)\}")
+# A selector starts only after {, } or ; (the lookbehind): the same matches, but a long run without them, such as
+# a sealed page's base64, is read once and not again from each of its characters.
+CSS_RULE = re.compile(r"(?<![^{};])([^{};]+)\{([^{}]*)\}")
 NATIVE_CONTROL = re.compile(r"(?:^|[\s,>+~(])(?:input|select|textarea|button)\b")
 TAG_CLASSES = re.compile(r"<(\w+)\b[^>]*?\bclass=[\"']([^\"']+)[\"']")
 CLASS = re.compile(r"\.([\w-]+)")
