@@ -1,0 +1,3384 @@
+[
+ {
+  "id": "nm:technique-vandermonde-determinant",
+  "statement": "For a [field](c:field) $K$ and nodes $a_0,\\dots,a_{n-1}\\in K$, the [Vandermonde matrix](c:vandermonde-determinant) $V_{ij}=a_i^j$ has $\\det V=\\prod_{i<j}(a_j-a_i)$. So $V$ is invertible exactly when the nodes are distinct. For distinct nodes, each data vector has exactly one [polynomial](c:polynomial) of degree below $n$ with those values.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The set $K$ is a [field](c:field).",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:size",
+    "text": "The number $n$ is a nonnegative integer.",
+    "concept": null
+   },
+   {
+    "id": "h:distinct",
+    "text": "For the interpolation claim, the nodes are pairwise distinct.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [determinant](c:determinant) of $V$ is the product of the differences $a_j-a_i$, and distinct nodes give exactly one interpolating polynomial.",
+  "formal": {
+   "decl": "Matrix.det_vandermonde",
+   "difference": "The declaration states the determinant formula only. It does not state the invertibility criterion or the interpolation claim."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Induction on the number of nodes",
+    "slogan": "Replace the last node by a variable, find its roots, and read the determinant as a product.",
+    "scope": "The whole theorem. Repeated nodes make two rows equal, so both sides are $0$ and the formula still holds.",
+    "mechanisms": [
+     "m:induction",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Cofactor expansion and division by $X-a_i$ work over a field.",
+      "steps": [
+       "s:expand",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:size",
+      "why": "The cases $n=0$ and $n=1$ start the induction.",
+      "steps": [
+       "s:base"
+      ]
+     },
+     {
+      "h": "h:distinct",
+      "why": "Distinct nodes make $\\det V$ nonzero, so the system $Vc=y$ has one solution.",
+      "steps": [
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the cases $n=0$ and $n=1$.",
+      "detail": "For $n=0$ the determinant is $1$, which equals the empty product. For $n=1$ it is also $1$. Assume the formula for $n-1$ nodes.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Replace the last node by a variable and expand along the last row.",
+      "detail": "This gives a polynomial $D(X)$ of degree at most $n-1$. Its leading coefficient is the [determinant](c:determinant) of the first $n-1$ nodes, because the last cofactor has sign $+$.",
+      "uses": []
+     },
+     {
+      "id": "s:roots",
+      "slogan": "Show that $D$ vanishes at each earlier node.",
+      "detail": "For $X=a_i$ with $i<n-1$, two rows of the matrix are equal. Swap them in each permutation term of the determinant and pair terms of opposite sign. So $D(a_i)=0$ for each earlier node, and the polynomial $D$ has these roots.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor $D$ by its distinct roots and read off the product.",
+      "detail": "For distinct earlier nodes, each root gives a factor $X-a_i$, because $X^k-a^k$ is divisible by $X-a$. So $D(X)$ is its leading coefficient times $\\prod_{i<n-1}(X-a_i)$. The induction hypothesis gives that coefficient. Set $X=a_{n-1}$. If earlier nodes repeat, two rows are equal and both sides are $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the interpolation system with the adjugate of $V$.",
+      "detail": "If $\\det V\\ne0$, the inverse is $\\operatorname{adj}(V)/\\det V$, so $Vc=y$ has exactly one solution $c$. That $c$ is the coefficient vector of the [polynomial](c:polynomial). If $\\det V=0$, the nodes repeat and the rows of $V$ are dependent.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:factor"
+     ],
+     [
+      "s:expand",
+      "s:roots"
+     ],
+     [
+      "s:expand",
+      "s:factor"
+     ],
+     [
+      "s:roots",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:field": "Division by $X-a_i$ and cofactor expansion need a field.",
+     "c:vandermonde-determinant": "The matrix with powers of the nodes is the object of the formula.",
+     "c:polynomial": "The interpolating object is a polynomial of degree below $n$.",
+     "c:determinant": "The product formula and the invertibility test both come from the determinant."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-gauss-lemma-primitive-polynomials",
+  "statement": "A [primitive polynomial](c:primitive-polynomial) in $\\mathbb{Z}[x]$ has coprime coefficients. (1) A product of primitive polynomials is primitive. (2) A primitive $f$ is [irreducible](c:irreducible) in $\\mathbb{Z}[x]$ if and only if it is irreducible in $\\mathbb{Q}[x]$. (3) If $f$ is monic and irreducible modulo a prime $p$, then $f$ is irreducible in $\\mathbb{Q}[x]$.",
+  "hypotheses": [
+   {
+    "id": "h:primitive",
+    "text": "In (1) and (2), the polynomials are [primitive](c:primitive-polynomial) and nonzero.",
+    "concept": "c:primitive-polynomial"
+   },
+   {
+    "id": "h:monic",
+    "text": "In (3), the polynomial $f$ is monic with integer coefficients.",
+    "concept": null
+   },
+   {
+    "id": "h:modp",
+    "text": "In (3), the reduction of $f$ modulo the prime $p$ is irreducible in $\\mathbb{F}_p[x]$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Products of primitive polynomials are primitive, irreducibility over $\\mathbb{Z}$ and $\\mathbb{Q}$ agree for primitive polynomials, and a monic $f$ that is irreducible modulo $p$ is irreducible over $\\mathbb{Q}$.",
+  "formal": {
+   "decl": "IsPrimitive.mul",
+   "difference": "The declaration states part (1) only, for polynomials over a general ring with a suitable gcd structure. Parts (2) and (3) are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Reduce modulo a prime",
+    "slogan": "Show that a prime cannot divide a product of primitive polynomials, then clear denominators and reduce modulo $p$.",
+    "scope": "The whole theorem, in three parts. Part (3) uses part (2) and the degree-preserving reduction of a monic polynomial.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:primitive",
+      "why": "Primitivity says that no prime divides all coefficients, which drives parts (1) and (2).",
+      "steps": [
+       "s:prod",
+       "s:z2q",
+       "s:q2z"
+      ]
+     },
+     {
+      "h": "h:monic",
+      "why": "A monic polynomial is primitive, and its degree survives reduction modulo $p$.",
+      "steps": [
+       "s:monic",
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:modp",
+      "why": "Irreducibility of the reduction contradicts a proper factorization of $f$.",
+      "steps": [
+       "s:reduce"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:prod",
+      "slogan": "Show that a product of primitive polynomials is primitive.",
+      "detail": "Suppose a prime $p$ divides every coefficient of $fg$. Reduce modulo $p$ in $\\mathbb{F}_p[x]$, which is an [integral domain](c:integral-domain). Then $\\bar f\\bar g=0$, so $\\bar f=0$ or $\\bar g=0$. That contradicts primitivity of $f$ or $g$.",
+      "uses": []
+     },
+     {
+      "id": "s:z2q",
+      "slogan": "Clear denominators to carry irreducibility from the integers to the rationals.",
+      "detail": "Let $f=GH$ in $\\mathbb{Q}[x]$ with both degrees positive. Write $G=(a/b)G_1$ and $H=(c/d)H_1$ with $G_1,H_1$ primitive. Then $f=rG_1H_1$ with $G_1H_1$ primitive by step 1. Since $f$ is also primitive, $r=\\pm1$. So $f=\\pm G_1H_1$ is a proper factorization in $\\mathbb{Z}[x]$.",
+      "uses": []
+     },
+     {
+      "id": "s:q2z",
+      "slogan": "Carry irreducibility from the rationals back to the integers.",
+      "detail": "Let $f=gh$ in $\\mathbb{Z}[x]$. Over $\\mathbb{Q}$ one factor, say $g=c$, is a nonzero constant. The integer $c$ divides every coefficient of $f$. Since $f$ is primitive, $c=\\pm1$, so $g$ is a unit of $\\mathbb{Z}[x]$.",
+      "uses": []
+     },
+     {
+      "id": "s:monic",
+      "slogan": "Make the factors of a monic integer factorization monic.",
+      "detail": "Let $f=gh$ in $\\mathbb{Z}[x]$ with $g,h$ not units. The leading coefficients multiply to $1$, so they are equal and equal to $\\pm1$. Replace $(g,h)$ by $(-g,-h)$ if needed. Both are then monic of degree at least $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the monic factorization modulo $p$ to contradict irreducibility.",
+      "detail": "The leading coefficient $1$ survives, so $\\bar f=\\bar g\\bar h$ with $\\deg\\bar g=\\deg g\\ge1$ and $\\deg\\bar h=\\deg h\\ge1$. This is a proper factorization of $\\bar f$, against the hypothesis. So $f$ is irreducible in $\\mathbb{Z}[x]$, and by step 2 in $\\mathbb{Q}[x]$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the three parts of the theorem.",
+      "detail": "Part (1) is step 1. Part (2) is steps 2 and 3. Part (3) is step 5.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:prod",
+      "s:z2q"
+     ],
+     [
+      "s:z2q",
+      "s:done"
+     ],
+     [
+      "s:q2z",
+      "s:done"
+     ],
+     [
+      "s:monic",
+      "s:reduce"
+     ],
+     [
+      "s:z2q",
+      "s:reduce"
+     ],
+     [
+      "s:reduce",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:primitive-polynomial": "Primitivity is what stops a prime from dividing every coefficient.",
+     "c:irreducible": "The theorem compares irreducibility over $\\mathbb{Z}$ and over $\\mathbb{Q}$.",
+     "c:integral-domain": "The ring $\\mathbb{F}_p[x]$ has no zero divisors, so a product is zero only if a factor is zero."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-euler-criterion-root-counting",
+  "statement": "Let $p$ be an odd prime and $p\\nmid a$. Then $a^{(p-1)/2}\\equiv\\pm1\\pmod p$, and $a$ is a [quadratic residue](c:quadratic-residue) if and only if the sign is $+1$. Exactly $(p-1)/2$ nonzero residues are squares. If $p\\equiv3\\pmod4$ and $a$ is a square, then $a^{(p+1)/4}$ is a square root of $a$.",
+  "hypotheses": [
+   {
+    "id": "h:prime",
+    "text": "The number $p$ is an odd [prime number](c:prime-number).",
+    "concept": "c:prime-number"
+   },
+   {
+    "id": "h:coprime",
+    "text": "The integer $a$ is not divisible by $p$.",
+    "concept": null
+   },
+   {
+    "id": "h:mod4",
+    "text": "For the square root formula, $p\\equiv3\\pmod4$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [Legendre symbol](c:legendre-symbol) $(a/p)$ equals $a^{(p-1)/2}$ modulo $p$, half of the nonzero residues are squares, and the explicit root formula holds.",
+  "formal": {
+   "decl": "ZMod.euler_criterion",
+   "difference": "The declaration states the criterion for squares in the field ZMod p. The count of squares and the root formula for $p\\equiv3\\pmod4$ are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Root counting in a finite field",
+    "slogan": "Count squares by the two-to-one squaring map, then count roots of $X^{(p-1)/2}-1$ to identify them.",
+    "scope": "The whole theorem, in the [finite field](c:finite-field) $\\mathbb{Z}/p$. The remark that $-1$ is a square exactly when $p\\equiv1\\pmod4$ is the case $a=-1$.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:prime",
+      "why": "Oddness gives $x\\ne-x$, and primality makes $\\mathbb{Z}/p$ a field with no zero divisors.",
+      "steps": [
+       "s:two",
+       "s:count",
+       "s:sign"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "A residue prime to $p$ is a unit, so Fermat's little theorem applies to it.",
+      "steps": [
+       "s:roots",
+       "s:sign"
+      ]
+     },
+     {
+      "h": "h:mod4",
+      "why": "The exponent $(p+1)/4$ is an integer only when $p\\equiv3\\pmod4$.",
+      "steps": [
+       "s:root"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:two",
+      "slogan": "Show that squaring is exactly two to one on the nonzero residues.",
+      "detail": "In the field $F=\\mathbb{Z}/p$, $x^2=y^2$ gives $(x-y)(x+y)=0$, so $y=\\pm x$. Since $p$ is odd, $x\\ne-x$ for $x\\ne0$. So the set $S$ of nonzero squares has $(p-1)/2$ elements.",
+      "uses": []
+     },
+     {
+      "id": "s:roots",
+      "slogan": "Show that every nonzero square is a root of $X^{(p-1)/2}-1$.",
+      "detail": "A square $s=x^2$ has $s^{(p-1)/2}=x^{p-1}=1$ by Fermat's little theorem. So every nonzero square is a root of this polynomial.",
+      "uses": [
+       "wd:Q188295"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count roots to identify the squares with the roots.",
+      "detail": "The polynomial $X^{(p-1)/2}-1$ has degree $(p-1)/2$, so at most $(p-1)/2$ roots in the [finite field](c:finite-field). It has the $(p-1)/2$ elements of $S$ as roots. So its roots are exactly $S$, and $a$ is a square if and only if $a^{(p-1)/2}=1$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Show that the power $a^{(p-1)/2}$ is $1$ or $-1$.",
+      "detail": "Put $b=a^{(p-1)/2}$. Then $b^2=a^{p-1}=1$ by Fermat's little theorem, so $(b-1)(b+1)=0$ and $b=\\pm1$. By step 3, a non-square gives $b\\ne1$, so $b=-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:root",
+      "slogan": "Build a square root of $a$ when $p\\equiv3\\pmod4$.",
+      "detail": "Then $(p+1)/4$ is an integer. For a square $a$, put $r=a^{(p+1)/4}$. So $r^2=a^{(p+1)/2}=a\\cdot a^{(p-1)/2}=a$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the four claims of the theorem.",
+      "detail": "The sign claim is step 4. The criterion and the count are steps 3 and 1. The root formula is step 5.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:two",
+      "s:count"
+     ],
+     [
+      "s:roots",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:sign"
+     ],
+     [
+      "s:sign",
+      "s:done"
+     ],
+     [
+      "s:two",
+      "s:done"
+     ],
+     [
+      "s:count",
+      "s:root"
+     ],
+     [
+      "s:root",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:prime-number": "Primality makes $\\mathbb{Z}/p$ a field, which the root count needs.",
+     "c:quadratic-residue": "The theorem decides which residues are squares.",
+     "c:legendre-symbol": "The symbol records the sign of $a^{(p-1)/2}$.",
+     "c:finite-field": "A nonzero polynomial over a field has at most as many roots as its degree."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-nilradical-intersection-of-primes",
+  "statement": "In a [commutative ring](c:commutative-ring) $R$, the [nilpotent elements](c:nilpotent-element) are exactly the elements that lie in every [prime ideal](c:prime-ideal). More generally, the radical of an [ideal](c:ideal) $I$ is the intersection of the prime ideals that contain $I$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The ring $R$ is a [commutative ring](c:commutative-ring) with $1$.",
+    "concept": "c:commutative-ring"
+   },
+   {
+    "id": "h:ideal",
+    "text": "For the general form, $I$ is an [ideal](c:ideal) of $R$.",
+    "concept": "c:ideal"
+   }
+  ],
+  "conclusion": "The set of nilpotent elements equals the intersection of all prime ideals, and $\\sqrt I$ equals the intersection of the prime ideals that contain $I$.",
+  "formal": {
+   "decl": "nilradical_eq_sInf",
+   "difference": "The declaration states the nilradical form for a commutative ring. The general form for an ideal $I$ follows by passing to $R/I$."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Zorn's lemma on ideals that avoid the powers",
+    "slogan": "Avoid the powers of a non-nilpotent element by a maximal ideal, and show that this ideal is prime.",
+    "scope": "Both inclusions. The ring $R=0$ is allowed: it has no prime ideal and every element is nilpotent.",
+    "mechanisms": [
+     "m:zorn",
+     "m:contrapositive",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity lets a maximal ideal that avoids the powers be shown prime.",
+      "steps": [
+       "s:prime"
+      ]
+     },
+     {
+      "h": "h:ideal",
+      "why": "The general form follows by applying the nilradical case to $R/I$.",
+      "steps": [
+       "s:quotient"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Show that a nilpotent element lies in every prime ideal.",
+      "detail": "If $x^n=0$ lies in a prime ideal $P$, then $x\\in P$ by repeated use of primality.",
+      "uses": []
+     },
+     {
+      "id": "s:powers",
+      "slogan": "Fix a non-nilpotent $x$ and form the set of its powers.",
+      "detail": "Let $S=\\{x,x^2,x^3,\\dots\\}$. Since $x$ is not nilpotent, no power of $x$ is zero, so $0\\notin S$.",
+      "uses": []
+     },
+     {
+      "id": "s:zorn",
+      "slogan": "Choose an ideal maximal among those that avoid the powers.",
+      "detail": "The set $\\Sigma$ of ideals that do not meet $S$ contains $(0)$. A union of a chain in $\\Sigma$ is again in $\\Sigma$. By Zorn's lemma, $\\Sigma$ has a maximal element $P$.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:prime",
+      "slogan": "Show that the maximal ideal $P$ is prime.",
+      "detail": "The ideal $P$ is proper, since $x\\notin P$. Take $a,b\\notin P$. Then $P+(a)$ and $P+(b)$ meet $S$, so $x^m=p+ra$ and $x^k=q+sb$ with $p,q\\in P$. Then $x^{m+k}\\in P+(ab)$. If $ab\\in P$, then $x^{m+k}\\in P$, a contradiction. So $ab\\notin P$.",
+      "uses": []
+     },
+     {
+      "id": "s:miss",
+      "slogan": "Conclude that $x$ misses a prime ideal.",
+      "detail": "Since $x\\in S$ and $P\\cap S=\\varnothing$, the element $x$ is not in $P$. So a non-nilpotent element is not in the intersection of all primes. With step 1, the nilradical equals that intersection.",
+      "uses": []
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Pass to the quotient ring $R/I$ for the general form.",
+      "detail": "The prime ideals of $R/I$ correspond to the prime ideals of $R$ that contain $I$. The nilradical of $R/I$ corresponds to $\\sqrt I$. The first case then gives the general form.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:easy",
+      "s:quotient"
+     ],
+     [
+      "s:powers",
+      "s:zorn"
+     ],
+     [
+      "s:zorn",
+      "s:prime"
+     ],
+     [
+      "s:prime",
+      "s:miss"
+     ],
+     [
+      "s:miss",
+      "s:quotient"
+     ]
+    ],
+    "conclusion": "s:quotient",
+    "concepts": {
+     "c:commutative-ring": "The multiplicative set argument needs commutativity.",
+     "c:nilpotent-element": "Nilpotent elements are the elements that the theorem identifies.",
+     "c:prime-ideal": "The maximal ideal that avoids the powers is shown to be a prime ideal.",
+     "c:ideal": "The general form is about the radical of an ideal."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-birkhoff-von-neumann",
+  "statement": "Every [doubly stochastic matrix](c:doubly-stochastic-matrix) is a convex combination of [permutation matrices](c:permutation-matrix). Conversely, every such combination is doubly stochastic. So the [extreme points](c:extreme-point) of the set of doubly stochastic matrices are exactly the permutation matrices.",
+  "hypotheses": [
+   {
+    "id": "h:nonneg",
+    "text": "The real $n\\times n$ matrix $M$ has nonnegative entries.",
+    "concept": null
+   },
+   {
+    "id": "h:sums",
+    "text": "Every row sum and every column sum of $M$ is $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:size",
+    "text": "The size $n$ is at least $1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The matrix $M=\\sum_k\\theta_kP_{\\sigma_k}$ with $\\theta_k>0$ and $\\sum\\theta_k=1$, and the extreme points are the permutation matrices.",
+  "formal": {
+   "decl": "doublyStochastic_eq_convexHull_permMatrix",
+   "difference": "The declaration states that the set of doubly stochastic matrices is the convex hull of the permutation matrices. The statement about extreme points is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Peel off one permutation matrix at a time",
+    "slogan": "Find a permutation in the support by Hall's theorem, subtract it, and repeat on fewer positive entries.",
+    "scope": "The whole theorem. The induction runs on the number of positive entries of $M$, which is at least $n$.",
+    "mechanisms": [
+     "m:induction",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegativity makes the support graph meaningful and keeps the peeled matrix nonnegative.",
+      "steps": [
+       "s:match",
+       "s:peel"
+      ]
+     },
+     {
+      "h": "h:sums",
+      "why": "Equal row and column sums give Hall's condition and keep the peeled matrix doubly stochastic.",
+      "steps": [
+       "s:match",
+       "s:peel"
+      ]
+     },
+     {
+      "h": "h:size",
+      "why": "The permutation matrices are $n\\times n$, and $n\\ge1$ makes the support nonempty.",
+      "steps": [
+       "s:match"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:conv",
+      "slogan": "Check that convex combinations of permutation matrices are doubly stochastic.",
+      "detail": "A permutation matrix has one entry $1$ in each row and column, and zeros elsewhere. A convex combination of nonnegative matrices with all line sums $1$ is nonnegative with all line sums $\\sum\\theta_k=1$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Find a permutation inside the support of $M$.",
+      "detail": "Join row $i$ to column $j$ when $M_{ij}>0$. For a set $R$ of rows with neighbor columns $N(R)$, $|R|=\\sum_{i\\in R,j\\in N(R)}M_{ij}\\le\\sum_{j\\in N(R)}\\sum_iM_{ij}=|N(R)|$. By Hall's marriage theorem there is a perfect matching, that is, a permutation $\\sigma$ with $M_{i,\\sigma(i)}>0$.",
+      "uses": [
+       "wd:Q536640"
+      ]
+     },
+     {
+      "id": "s:peel",
+      "slogan": "Subtract the smallest matched entry times the permutation matrix, then repeat.",
+      "detail": "Let $\\theta=\\min_iM_{i,\\sigma(i)}$ and $P$ the matrix of $\\sigma$. If $\\theta=1$, then $M=P$. Otherwise $M'=(M-\\theta P)/(1-\\theta)$ is nonnegative with all line sums $1$, and it has fewer positive entries. By induction $M'$ is a convex combination, so $M=\\theta P+(1-\\theta)M'$ is one.",
+      "uses": []
+     },
+     {
+      "id": "s:perm-ext",
+      "slogan": "Show that every permutation matrix is an extreme point.",
+      "detail": "Let $P=tA+(1-t)B$ with $0<t<1$ and $A,B$ doubly stochastic. Where $P$ is $0$, both $A$ and $B$ are $0$ by nonnegativity. Where $P$ is $1$, both entries are at most $1$ with weighted mean $1$, so both are $1$. So $A=B=P$.",
+      "uses": []
+     },
+     {
+      "id": "s:ext-perm",
+      "slogan": "Show that every extreme point is a permutation matrix.",
+      "detail": "Write an extreme point $M=\\sum_{k=1}^r\\theta_kP_k$ with distinct $P_k$. If $r\\ge2$, put $M'=\\sum_{k\\ge2}\\frac{\\theta_k}{1-\\theta_1}P_k$, doubly stochastic by step 1. Then $M=\\theta_1P_1+(1-\\theta_1)M'$, so extremality forces $M'=P_1$ and $M=P_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the three claims of the theorem.",
+      "detail": "The decomposition is step 3. The converse is step 1. The extreme points are steps 4 and 5.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:match",
+      "s:peel"
+     ],
+     [
+      "s:peel",
+      "s:ext-perm"
+     ],
+     [
+      "s:conv",
+      "s:ext-perm"
+     ],
+     [
+      "s:ext-perm",
+      "s:done"
+     ],
+     [
+      "s:perm-ext",
+      "s:done"
+     ],
+     [
+      "s:conv",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:doubly-stochastic-matrix": "These matrices are the objects that the theorem decomposes.",
+     "c:permutation-matrix": "Permutation matrices are the building blocks and the extreme points.",
+     "c:extreme-point": "The theorem identifies the extreme points of the set."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-fekete-subadditive-lemma",
+  "statement": "Let $u(n)$ be a [sequence](c:sequence) of reals with $u(m+n)\\le u(m)+u(n)$ for all $m,n\\ge1$. Then $u(n)/n$ has a [limit](c:limit-of-a-sequence) in $[-\\infty,\\infty)$, and this limit equals $\\inf_{n\\ge1}u(n)/n$. If $u(n)/n$ is bounded below, the limit is a real number.",
+  "hypotheses": [
+   {
+    "id": "h:sub",
+    "text": "The [sequence](c:sequence) satisfies $u(m+n)\\le u(m)+u(n)$ for all positive integers $m$ and $n$.",
+    "concept": "c:sequence"
+   }
+  ],
+  "conclusion": "The [limit](c:limit-of-a-sequence) of $u(n)/n$ exists and equals $\\inf_{n\\ge1}u(n)/n$.",
+  "formal": {
+   "decl": "Subadditive.lim_le_div",
+   "difference": "The declaration states the inequality that the limit is at most each $u(n)/n$. The full statement that the limit equals the infimum is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Blocks of a fixed length",
+    "slogan": "Cut each large index into blocks of a fixed length $n$, bound $u$ by the blocks, and let the index grow.",
+    "scope": "The whole theorem, including the case of infimum $-\\infty$. No growth bound on $u$ is needed.",
+    "mechanisms": [
+     "m:induction",
+     "m:supremum"
+    ],
+    "roles": [
+     {
+      "h": "h:sub",
+      "why": "Subadditivity bounds $u(kn+r)$ by $k\\,u(n)+u(r)$.",
+      "steps": [
+       "s:blocks"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lower",
+      "slogan": "Bound the limit inferior from below by the infimum.",
+      "detail": "Put $L=\\inf_{n\\ge1}u(n)/n\\in[-\\infty,\\infty)$. By definition $u(N)/N\\ge L$ for every $N$, so $\\liminf u(N)/N\\ge L$.",
+      "uses": []
+     },
+     {
+      "id": "s:blocks",
+      "slogan": "Split an index into blocks of a fixed length $n$.",
+      "detail": "By induction on $k$, $u(kn+r)\\le k\\,u(n)+u(r)$. Indeed $u((k+1)n+r)\\le u(n)+u(kn+r)$. Write $N=kn+r$ with $1\\le r\\le n$ and let $M_n=\\max_{r\\le n}u(r)$. Then $u(N)\\le k\\,u(n)+M_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by $N$ and let $N$ grow with $n$ fixed.",
+      "detail": "We get $u(N)/N\\le(kn/N)(u(n)/n)+M_n/N$. As $N\\to\\infty$, $kn/N\\to1$ and $M_n/N\\to0$. So $\\limsup u(N)/N\\le u(n)/n$ for every $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:squeeze",
+      "slogan": "Take the infimum over $n$ to squeeze the limit.",
+      "detail": "Step 3 gives $\\limsup u(N)/N\\le L$. With step 1, $\\limsup\\le L\\le\\liminf$. So the limit exists and equals $L$. If $L=-\\infty$, then $u(N)/N\\to-\\infty$. If $u(n)/n$ is bounded below, $L$ is real.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:lower",
+      "s:squeeze"
+     ],
+     [
+      "s:blocks",
+      "s:divide"
+     ],
+     [
+      "s:divide",
+      "s:squeeze"
+     ]
+    ],
+    "conclusion": "s:squeeze",
+    "concepts": {
+     "c:sequence": "The theorem concerns the sequence $u(n)/n$ built from a subadditive $u$.",
+     "c:limit-of-a-sequence": "The proof squeezes the limit between the limit inferior and the limit superior."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-gronwall-continuous-dependence",
+  "statement": "Let $f\\colon[a,b]\\times E\\to E$ be [Lipschitz](c:lipschitz-function) in the second variable with constant $K$. If $x$ and $y$ solve the [ordinary differential equation](c:ordinary-differential-equation) $z'=f(t,z)$ on $[a,b]$, then $\\|x(t)-y(t)\\|\\le\\|x(a)-y(a)\\|e^{K(t-a)}$. So a solution of the [initial value problem](c:initial-value-problem) is unique.",
+  "hypotheses": [
+   {
+    "id": "h:lip",
+    "text": "The map $f$ is [Lipschitz](c:lipschitz-function) in the second variable, with a constant $K\\ge0$ that does not depend on $t$.",
+    "concept": "c:lipschitz-function"
+   },
+   {
+    "id": "h:sol",
+    "text": "The functions $x,y\\colon[a,b]\\to E$ are continuous, differentiable on $(a,b)$, and solve the [ordinary differential equation](c:ordinary-differential-equation) $z'=f(t,z)$ there.",
+    "concept": "c:ordinary-differential-equation"
+   }
+  ],
+  "conclusion": "For every $t\\in[a,b]$, $\\|x(t)-y(t)\\|\\le\\|x(a)-y(a)\\|e^{K(t-a)}$, and equal initial values give equal solutions.",
+  "formal": {
+   "decl": "dist_le_of_trajectories_ODE",
+   "difference": "The declaration states a comparison bound for trajectories of a Lipschitz field, in a related form. The exponential bound for continuous dependence and the uniqueness claim are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Barrier and mean value inequality",
+    "slogan": "Trap the norm of the difference below an exponential barrier by a last-time argument.",
+    "scope": "The whole theorem on $[a,b]$. The Lipschitz bound is used only at the points $x(t)$ and $y(t)$.",
+    "mechanisms": [
+     "m:a-priori-estimate",
+     "m:mean-value",
+     "m:supremum",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:lip",
+      "why": "The Lipschitz bound turns $\\|v'\\|$ into at most $K\\|v\\|$.",
+      "steps": [
+       "s:setup"
+      ]
+     },
+     {
+      "h": "h:sol",
+      "why": "The equations give the derivative of the difference $v=x-y$.",
+      "steps": [
+       "s:setup",
+       "s:barrier"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Subtract the two solutions and bound the derivative of the difference.",
+      "detail": "Put $v=x-y$ and $\\delta=\\|v(a)\\|$. Then $v'(t)=f(t,x(t))-f(t,y(t))$, and the [Lipschitz](c:lipschitz-function) bound gives $\\|v'(t)\\|\\le K\\|v(t)\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:barrier",
+      "slogan": "Compare $\\|v\\|$ with a slightly larger exponential barrier.",
+      "detail": "Fix $\\varepsilon>0$ and put $B(t)=(\\delta+\\varepsilon)e^{K(t-a)}$. Then $B'=KB$ and $\\|v(a)\\|<B(a)$. Let $T$ be the supremum of the times $\\tau$ with $\\|v\\|\\le B$ on $[a,\\tau]$. By continuity $\\|v\\|\\le B$ on $[a,T]$.",
+      "uses": []
+     },
+     {
+      "id": "s:mvi",
+      "slogan": "Bound the growth of $v$ on $[a,T]$ by the mean value inequality.",
+      "detail": "On $(a,T)$, $\\|v'\\|\\le K\\|v\\|\\le KB=B'$. The mean value inequality with boundary function $B$ gives $\\|v(t)-v(a)\\|\\le B(t)-B(a)$. So $\\|v(t)\\|\\le B(t)-\\varepsilon$ for $t\\in(a,T]$, and $\\|v(T)\\|<B(T)$.",
+      "uses": [
+       "nm:technique-vector-mean-value-inequality"
+      ]
+     },
+     {
+      "id": "s:reach",
+      "slogan": "Show that $T=b$ by continuity.",
+      "detail": "If $T<b$, continuity and $\\|v(T)\\|<B(T)$ give $\\|v\\|<B$ on $[T,T+\\eta)$ for some $\\eta>0$. This contradicts the choice of $T$. So $\\|v(t)\\|\\le(\\delta+\\varepsilon)e^{K(t-a)}$ on $[a,b]$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $\u000barepsilon$ tend to $0$ and read the uniqueness.",
+      "detail": "The bound holds for every $\\varepsilon>0$, so $\\|v(t)\\|\\le\\delta e^{K(t-a)}$. If $x(a)=y(a)$, then $\\delta=0$ and $x=y$ on $[a,b]$. This is uniqueness for the [initial value problem](c:initial-value-problem).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:barrier"
+     ],
+     [
+      "s:setup",
+      "s:mvi"
+     ],
+     [
+      "s:barrier",
+      "s:mvi"
+     ],
+     [
+      "s:mvi",
+      "s:reach"
+     ],
+     [
+      "s:reach",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:lipschitz-function": "The Lipschitz bound controls the derivative of the difference by its size.",
+     "c:ordinary-differential-equation": "Both functions solve the same equation, so their difference has a controlled derivative.",
+     "c:initial-value-problem": "Uniqueness for the initial value problem follows from the bound."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-gamma-reflection-formula",
+  "statement": "For every complex $z\\notin\\mathbb{Z}$, $\\Gamma(z)\\Gamma(1-z)=\\pi/\\sin(\\pi z)$, where $\\Gamma$ is the [Gamma function](c:gamma-function). Hence $\\Gamma$ has no zeros, $\\Gamma(1/2)=\\sqrt\\pi$, and $|\\Gamma(1/2+it)|^2=\\pi/\\cosh(\\pi t)$ for real $t$.",
+  "hypotheses": [
+   {
+    "id": "h:z-hyp",
+    "text": "The number $z$ is complex and not an integer.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The product $\\Gamma(z)\\Gamma(1-z)$ equals $\\pi/\\sin(\\pi z)$, the [Gamma function](c:gamma-function) has no zeros, $\\Gamma(1/2)=\\sqrt\\pi$, and $|\\Gamma(1/2+it)|^2=\\pi/\\cosh(\\pi t)$.",
+  "formal": {
+   "decl": "Gamma_mul_Gamma_one_sub",
+   "difference": "The declaration states the reflection formula. The statements on zeros, on $\\Gamma(1/2)$ and on the modulus on the critical line are consequences proved here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Gauss products and the sine product",
+    "slogan": "Multiply the Gauss products for $z$ and $1-z$ into an exact identity, then pass to the limit with the sine product.",
+    "scope": "All complex $z\\notin\\mathbb{Z}$. At integers one factor is at a pole and $\\sin(\\pi z)=0$.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:z-hyp",
+      "why": "For $z\\notin\\mathbb{Z}$, neither $z$ nor $1-z$ is a pole and every denominator is nonzero.",
+      "steps": [
+       "s:gauss",
+       "s:exact",
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gauss",
+      "slogan": "Write both Gamma values as limits of Gauss products.",
+      "detail": "The Gauss limit formula gives $G_n(z)\\to\\Gamma(z)$ and $G_n(1-z)\\to\\Gamma(1-z)$. So the product $G_n(z)G_n(1-z)$ tends to $\\Gamma(z)\\Gamma(1-z)$ as $n$ grows.",
+      "uses": [
+       "nm:technique-gamma-gauss-limit-formula"
+      ]
+     },
+     {
+      "id": "s:exact",
+      "slogan": "Multiply the two Gauss products into an exact finite identity.",
+      "detail": "The factors $n^z$ and $n^{1-z}$ multiply to $n$. Pulling out the last factor $n+1-z$ leaves $\\prod_{j\\le n}(j^2-z^2)=(n!)^2\\prod_{j\\le n}(1-z^2/j^2)$. So $G_n(z)G_n(1-z)=n\\big/\\big((n+1-z)\\,z\\prod_{j\\le n}(1-z^2/j^2)\\big)$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to the limit with the Euler sine product.",
+      "detail": "We have $n/(n+1-z)\\to1$, and the partial [infinite product](c:infinite-product) tends to $\\sin(\\pi z)/(\\pi z)\\ne0$. So the right side tends to $\\pi/\\sin(\\pi z)$. With step 1, $\\Gamma(z)\\Gamma(1-z)=\\pi/\\sin(\\pi z)$.",
+      "uses": [
+       "nm:technique-euler-sine-product"
+      ]
+     },
+     {
+      "id": "s:zeros",
+      "slogan": "Show that the Gamma function has no zeros.",
+      "detail": "For $z\\notin\\mathbb{Z}$, the product $\\pi/\\sin(\\pi z)$ is finite and nonzero, so $\\Gamma(z)\\ne0$. At positive integers $\\Gamma(n)=(n-1)!>0$. At $0,-1,-2,\\dots$ the function $\\Gamma$ has a simple pole, so it takes no value there.",
+      "uses": []
+     },
+     {
+      "id": "s:special",
+      "slogan": "Evaluate $\\Gamma(1/2)$ and the modulus on the critical line.",
+      "detail": "At $z=1/2$, $\\Gamma(1/2)^2=\\pi$, and $\\Gamma(1/2)>0$ gives $\\sqrt\\pi$. For $z=1/2+it$, $1-z=\\bar z$ and $\\Gamma(\\bar z)=\\overline{\\Gamma(z)}$, so $|\\Gamma(z)|^2=\\pi/\\sin(\\pi/2+i\\pi t)=\\pi/\\cosh(\\pi t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the claims of the theorem.",
+      "detail": "The reflection formula is step 3. The absence of zeros is step 4. The special values are step 5.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:gauss",
+      "s:exact"
+     ],
+     [
+      "s:exact",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:zeros"
+     ],
+     [
+      "s:limit",
+      "s:special"
+     ],
+     [
+      "s:zeros",
+      "s:done"
+     ],
+     [
+      "s:special",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:gamma-function": "The theorem is about the product $\\Gamma(z)\\Gamma(1-z)$.",
+     "c:infinite-product": "The sine function is the limit of a product that the proof uses."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-yoneda-lemma-representable-functors",
+  "statement": "Let $C$ be a locally small [category](c:category) and $F\\colon C^{op}\\to\\mathrm{Set}$ a [functor](c:functor). Then $\\eta\\mapsto\\eta_X(\\mathrm{id}_X)$ is a bijection from $\\mathrm{Nat}(\\mathrm{Hom}(-,X),F)$ to $F(X)$, natural in $X$ and $F$. So $X\\mapsto\\mathrm{Hom}(-,X)$ is fully faithful, and $\\mathrm{Hom}(-,X)\\cong\\mathrm{Hom}(-,Y)$ if and only if $X\\cong Y$.",
+  "hypotheses": [
+   {
+    "id": "h:small",
+    "text": "The [category](c:category) $C$ is locally small, so each $\\mathrm{Hom}(X,Y)$ is a set.",
+    "concept": "c:category"
+   },
+   {
+    "id": "h:functor",
+    "text": "The map $F$ is a [functor](c:functor) from $C^{op}$ to sets.",
+    "concept": "c:functor"
+   }
+  ],
+  "conclusion": "The evaluation at $\\mathrm{id}_X$ is a natural bijection, the Yoneda embedding is fully faithful, and [representable functors](c:representable-functor) determine their objects up to isomorphism.",
+  "formal": {
+   "decl": "yonedaEquiv",
+   "difference": "The declaration states the bijection for the contravariant functor in the same form. The naturality, the full faithfulness and the isomorphism criterion are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Evaluate at the identity",
+    "slogan": "Evaluate a natural transformation at the identity, invert by acting with $F$, and read the consequences.",
+    "scope": "The contravariant form. The covariant form follows by applying the result to $C^{op}$.",
+    "mechanisms": [
+     "m:yoneda",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:small",
+      "why": "Local smallness makes $\\mathrm{Nat}(\\mathrm{Hom}(-,X),F)$ a set.",
+      "steps": [
+       "s:inverse"
+      ]
+     },
+     {
+      "h": "h:functor",
+      "why": "The functor $F$ supplies the maps $F(f)$ that define the inverse.",
+      "steps": [
+       "s:inverse",
+       "s:natural"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:inverse",
+      "slogan": "Define the inverse map and show that it is inverse to evaluation.",
+      "detail": "For $x\\in F(X)$ put $\\Psi(x)_Y(f)=F(f)(x)$. It is natural because $F(f\\circ g)=F(g)\\circ F(f)$. Then $\\Phi(\\Psi(x))=F(\\mathrm{id}_X)(x)=x$. For natural $\\eta$, the naturality square for $f\\colon Y\\to X$ at $h=\\mathrm{id}_X$ gives $\\eta_Y(f)=F(f)(\\eta_X(\\mathrm{id}_X))$.",
+      "uses": []
+     },
+     {
+      "id": "s:natural",
+      "slogan": "Check that the bijection is natural in $F$ and in $X$.",
+      "detail": "For $\\theta\\colon F\\to G$, $\\Phi(\\theta\\circ\\eta)=\\theta_X(\\Phi(\\eta))$. For $h\\colon X'\\to X$, the naturality square of $\\eta$ gives $\\Phi(\\eta\\circ y(h))=F(h)(\\Phi(\\eta))$, where $y(X)=\\mathrm{Hom}(-,X)$.",
+      "uses": []
+     },
+     {
+      "id": "s:faithful",
+      "slogan": "Take $F=\\mathrm{Hom}(-,Y)$ to get full faithfulness.",
+      "detail": "Then $\\Phi\\colon\\mathrm{Nat}(y(X),y(Y))\\to\\mathrm{Hom}(X,Y)$ is a bijection with $\\Phi(y(g))=g$. So $g\\mapsto y(g)$ is a bijection onto $\\mathrm{Nat}(y(X),y(Y))$, and the embedding $y$ is fully faithful.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Reflect isomorphisms along the fully faithful embedding.",
+      "detail": "A functor keeps isomorphisms, so $X\\cong Y$ gives $y(X)\\cong y(Y)$. Conversely an isomorphism $\\eta=y(g)$ with inverse $y(h)$ gives $y(h\\circ g)=y(\\mathrm{id}_X)$. Faithfulness gives $h\\circ g=\\mathrm{id}_X$, and likewise $g\\circ h=\\mathrm{id}_Y$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the claims of the theorem.",
+      "detail": "The bijection is step 1 and its naturality is step 2. Full faithfulness is step 3 and the isomorphism criterion is step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:inverse",
+      "s:natural"
+     ],
+     [
+      "s:inverse",
+      "s:faithful"
+     ],
+     [
+      "s:faithful",
+      "s:iso"
+     ],
+     [
+      "s:natural",
+      "s:done"
+     ],
+     [
+      "s:iso",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:category": "The theorem holds for every locally small category.",
+     "c:functor": "The functor $F$ and the embedding $y$ are the two functors compared.",
+     "c:representable-functor": "The functor $\\mathrm{Hom}(-,X)$ is the representable functor that the lemma studies."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-circumcenter-gram-system",
+  "statement": "Let $p_0,\\dots,p_n$ be [affinely independent](c:affine-independence) points of a real [Euclidean space](c:euclidean-space). Exactly one point $c$ of their affine span is equally distant from all $p_i$. This is the [circumcenter](c:circumcenter). With $v_j=p_j-p_0$, we have $c=p_0+\\sum\\lambda_jv_j$ where $G\\lambda=b$, $G_{ij}=\\langle v_i,v_j\\rangle$ and $b_i=|v_i|^2/2$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The ambient space is a real [Euclidean space](c:euclidean-space).",
+    "concept": "c:euclidean-space"
+   },
+   {
+    "id": "h:indep",
+    "text": "The points $p_0,\\dots,p_n$ are [affinely independent](c:affine-independence), that is, $v_1,\\dots,v_n$ are linearly independent.",
+    "concept": "c:affine-independence"
+   }
+  ],
+  "conclusion": "There is exactly one equidistant point $c$ in the affine span, the matrix $G$ is invertible, and every equidistant point of the whole space is $c$ plus a vector orthogonal to the span.",
+  "formal": {
+   "decl": "AffineIndependent.existsUnique_dist_eq",
+   "difference": "The declaration states existence and uniqueness of the circumcenter in the span. The Gram system and the description of equidistant points outside the span are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Linear system with the Gram matrix",
+    "slogan": "Turn equal distances into a linear system with a Gram matrix, and solve it because the Gram matrix is invertible.",
+    "scope": "The whole theorem. The point $c$ must lie in the affine span, or it is not unique when $n$ is below the dimension.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "The inner product gives the squared distances and the Gram matrix.",
+      "steps": [
+       "s:linear",
+       "s:gram"
+      ]
+     },
+     {
+      "h": "h:indep",
+      "why": "Independence of the $v_j$ makes the kernel of $G$ trivial.",
+      "steps": [
+       "s:gram"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:linear",
+      "slogan": "Turn equal distance into linear equations in the coordinates.",
+      "detail": "Write $c=p_0+u$ with $u=\\sum\\lambda_jv_j$. The condition $|c-p_i|=|c-p_0|$ becomes $|u-v_i|^2=|u|^2$, that is $\\langle u,v_i\\rangle=|v_i|^2/2$. So the conditions for $i=1,\\dots,n$ read $G\\lambda=b$.",
+      "uses": []
+     },
+     {
+      "id": "s:gram",
+      "slogan": "Show that the Gram matrix is invertible.",
+      "detail": "If $Gx=0$, then $x^TGx=|\\sum x_jv_j|^2=0$, so $\\sum x_jv_j=0$. By [linear independence](c:linear-independence), $x=0$. So $G$ has trivial kernel.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the system to get exactly one circumcenter.",
+      "detail": "Since $G$ is invertible, $G\\lambda=b$ has exactly one solution. So exactly one $c$ in the affine span has equal distance to all $p_i$. The common distance $r=|u|$ is the circumradius of the [circumcenter](c:circumcenter).",
+      "uses": []
+     },
+     {
+      "id": "s:outside",
+      "slogan": "Project an equidistant point of the whole space onto the span.",
+      "detail": "Let $q$ be equidistant from all $p_i$ and let $c'$ be its orthogonal projection on the affine span. By Pythagoras, $|q-p_i|^2=|q-c'|^2+|c'-p_i|^2$, so $c'$ is also equidistant. By step 3, $c'=c$. So $q=c+w$ with $w$ orthogonal to the span.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:linear",
+      "s:solve"
+     ],
+     [
+      "s:gram",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:outside"
+     ]
+    ],
+    "conclusion": "s:outside",
+    "concepts": {
+     "c:euclidean-space": "The inner product defines distances and the Gram matrix.",
+     "c:affine-independence": "Affine independence makes the vectors $v_j$ independent, so $G$ is invertible.",
+     "c:linear-independence": "Independence of the $v_j$ gives the trivial kernel of $G$.",
+     "c:circumcenter": "The theorem proves that the circumcenter exists and is unique."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-convex-boundary-null",
+  "statement": "The [boundary](c:boundary) of a [convex set](c:convex-set) $C\\subset\\mathbb{R}^d$ has [Lebesgue measure](c:lebesgue-measure) zero. So $C$ is Lebesgue measurable. If $C$ is bounded, the cubes of the lattice $h\\mathbb{Z}^d$ that meet $C$ but are not inside it have total volume at most $\\varepsilon(h)$, where $\\varepsilon(h)\\to0$ as $h\\to0$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The set $C\\subset\\mathbb{R}^d$ is [convex](c:convex-set). It need not be open, closed or bounded.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:bounded",
+    "text": "For the grid claim only, $C$ is bounded.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The boundary of $C$ has measure zero, $C$ is measurable, and the outer and inner grid approximations of the volume differ by at most $\\varepsilon(h)\\to0$.",
+  "formal": {
+   "decl": "Convex.addHaar_frontier",
+   "difference": "The declaration states that the frontier of a convex set has zero Haar measure. The measurability and the grid statement are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Shrink the closure into the interior",
+    "slogan": "Show that a shrunken copy of the closure lies in the interior, so the boundary lies in a thin shell.",
+    "scope": "The whole theorem. A convex set with empty interior lies in a hyperplane, which is a separate easy case.",
+    "mechanisms": [
+     "m:similarity",
+     "m:convexity",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes $tk+(1-t)B_{r/2}$ lie in $C$, which puts $tK$ in the interior.",
+      "steps": [
+       "s:shrink",
+       "s:grid"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Boundedness gives a finite measure for the closure and for the neighborhoods of the boundary.",
+      "steps": [
+       "s:shell",
+       "s:grid"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:flat",
+      "slogan": "Treat the case of empty interior.",
+      "detail": "If the affine hull of $C$ is a proper subspace, it lies in a hyperplane. Then the closure lies in the same hyperplane, which has measure $0$. So the [boundary](c:boundary) has measure $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce to a bounded set that contains a ball.",
+      "detail": "Otherwise translate an interior point to $0$ and pick $B_r\\subset C$. The sets $C_n=C\\cap B(0,n)$ are convex, bounded and contain $B_r$, and $\\partial C\\subset\\bigcup_n\\partial C_n$. A countable union of null sets is null.",
+      "uses": []
+     },
+     {
+      "id": "s:shrink",
+      "slogan": "Show that the shrunken closure lies in the interior.",
+      "detail": "Let $K=\\overline C$ and $0<t<1$. For $k\\in K$ pick $c\\in C$ close to $k$. Then $tk+(1-t)b=tc+(1-t)b'$ with $b'\\in B_r\\subset C$, for all small $b$. So $tk+(1-t)B_{r/2}\\subset C$, and $tK\\subset\\operatorname{int}C$.",
+      "uses": []
+     },
+     {
+      "id": "s:shell",
+      "slogan": "Bound the boundary by a thin shell and measure the shell.",
+      "detail": "By step 3, $\\partial C\\subset K\\setminus tK$. The map $x\\mapsto tx$ scales [Lebesgue measure](c:lebesgue-measure) by $t^d$, so the shell has measure $(1-t^d)\\operatorname{Leb}(K)$. Let $t\\to1$ to get $\\operatorname{Leb}(\\partial C)=0$. Then $C=\\operatorname{int}C\\cup(C\\cap\\partial C)$ is measurable.",
+      "uses": []
+     },
+     {
+      "id": "s:grid",
+      "slogan": "Cover the boundary cubes by a neighborhood of the boundary.",
+      "detail": "A cube $Q$ of $h\\mathbb{Z}^d$ that meets $C$ and its complement meets $\\partial C$, by [connectedness](c:connected-space) of a segment in $Q$. So $Q$ lies in $N(\\sqrt d\\,h)=\\{x:\\operatorname{dist}(x,\\partial C)\\le\\sqrt d\\,h\\}$. These closed bounded sets decrease to $\\partial C$ with measure $0$, so $\\varepsilon(h)=\\operatorname{Leb}N(\\sqrt d\\,h)\\to0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:flat",
+      "s:shell"
+     ],
+     [
+      "s:reduce",
+      "s:shrink"
+     ],
+     [
+      "s:shrink",
+      "s:shell"
+     ],
+     [
+      "s:shell",
+      "s:grid"
+     ]
+    ],
+    "conclusion": "s:grid",
+    "concepts": {
+     "c:boundary": "The theorem says that the boundary of a convex set is null.",
+     "c:convex-set": "Convexity is the property that puts the shrunken closure inside the set.",
+     "c:lebesgue-measure": "Scaling changes Lebesgue measure by a power of the factor.",
+     "c:connected-space": "A segment is connected, so it meets the boundary if it meets both sides."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-projection-variational-inequality",
+  "statement": "Let $K$ be a nonempty closed [convex set](c:convex-set) in a real [Hilbert space](c:hilbert-space). A point $v\\in K$ is nearest to $u$ iff $\\langle u-v,w-v\\rangle\\le0$ for all $w\\in K$. This point $P_Ku$ exists, is unique and is 1-Lipschitz in $u$. For convex differentiable $f$, $v$ minimizes $f$ on $K$ iff $v=P_K(v-\\eta\\nabla f(v))$ for any $\\eta>0$.",
+  "hypotheses": [
+   {
+    "id": "h:k-hyp",
+    "text": "The set $K$ is a nonempty closed [convex set](c:convex-set) in a real Hilbert space.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:f-hyp",
+    "text": "In part (c) the function $f$ is [convex](c:convex-function) and differentiable.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:eta",
+    "text": "The step size $\\eta>0$ is arbitrary, and the [gradient](c:gradient) test does not depend on it.",
+    "concept": "c:gradient"
+   }
+  ],
+  "conclusion": "The nearest point $P_Ku$ exists, is unique, is characterized by the variational inequality, is nonexpansive, and gives the fixed-point test for minimizers.",
+  "formal": {
+   "decl": "norm_eq_iInf_iff_real_inner_le_zero",
+   "difference": "The declaration states only the equivalence of the nearest-point property and the variational inequality. Existence, nonexpansiveness and the fixed-point test are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Perturb along a segment",
+    "slogan": "Move along segments inside the set, read off the variational inequality, then derive each consequence.",
+    "scope": "The full statement (a), (b), (c). The Hilbert projection theorem supplies existence.",
+    "mechanisms": [
+     "m:convexity",
+     "m:orthogonal-projection",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:k-hyp",
+      "why": "Convexity keeps the segment from $v$ to $w$ inside $K$, and closedness gives existence.",
+      "steps": [
+       "s:char",
+       "s:exist"
+      ]
+     },
+     {
+      "h": "h:f-hyp",
+      "why": "Convexity of $f$ gives the sufficiency of the first-order condition.",
+      "steps": [
+       "s:fo"
+      ]
+     },
+     {
+      "h": "h:eta",
+      "why": "The factor $\\eta$ only scales the inner product, so it does not change the sign test.",
+      "steps": [
+       "s:fixed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:char",
+      "slogan": "Test a nearest point along segments to get the inequality.",
+      "detail": "Let $v$ be nearest and $w\\in K$. For $\\theta\\in(0,1]$, $v+\\theta(w-v)\\in K$. So $\\|u-v\\|^2\\le\\|u-v\\|^2-2\\theta\\langle u-v,w-v\\rangle+\\theta^2\\|w-v\\|^2$. Divide by $\\theta$ and let $\\theta\\to0$. Conversely, if the inequality holds, $\\|u-w\\|^2\\ge\\|u-v\\|^2+\\|w-v\\|^2$, so $v$ is nearest and unique.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Get a nearest point from the projection theorem.",
+      "detail": "A nonempty closed convex set in a Hilbert space has a nearest point to $u$. With step 1 it is unique. Call it $P_Ku$.",
+      "uses": [
+       "wd:Q3527215"
+      ]
+     },
+     {
+      "id": "s:contract",
+      "slogan": "Add the two inequalities for $u$ and $u'$ to show nonexpansiveness.",
+      "detail": "Put $p=P_Ku$ and $p'=P_Ku'$. The inequalities $\\langle u-p,p'-p\\rangle\\le0$ and $\\langle u'-p',p-p'\\rangle\\le0$ add up to $\\|p-p'\\|^2\\le\\langle u-u',p-p'\\rangle$. The Cauchy-Schwarz inequality then gives $\\|p-p'\\|\\le\\|u-u'\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:fo",
+      "slogan": "Show that the first-order condition characterizes minimizers.",
+      "detail": "If $v$ minimizes $f$ on $K$, then $g(\\theta)=f(v+\\theta(w-v))$ has its minimum at $0$, so $g'(0)=\\langle\\nabla f(v),w-v\\rangle\\ge0$. Conversely, convexity gives $f(w)\\ge f(v)+\\langle\\nabla f(v),w-v\\rangle\\ge f(v)$.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Rewrite the first-order condition as a projection fixed-point test.",
+      "detail": "Put $u=v-\\eta\\nabla f(v)$. Then $\\langle u-v,w-v\\rangle=-\\eta\\langle\\nabla f(v),w-v\\rangle$. This is at most $0$ for all $w\\in K$ exactly when the first-order condition holds. By step 1, that is exactly $v=P_Ku$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the parts (a), (b) and (c).",
+      "detail": "Steps 1 and 2 give part (a). Step 3 gives part (b). Steps 4 and 5 give part (c).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:char",
+      "s:exist"
+     ],
+     [
+      "s:exist",
+      "s:contract"
+     ],
+     [
+      "s:char",
+      "s:contract"
+     ],
+     [
+      "s:fo",
+      "s:fixed"
+     ],
+     [
+      "s:char",
+      "s:fixed"
+     ],
+     [
+      "s:exist",
+      "s:fixed"
+     ],
+     [
+      "s:contract",
+      "s:done"
+     ],
+     [
+      "s:fixed",
+      "s:done"
+     ],
+     [
+      "s:exist",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:convex-set": "Convexity keeps segments from the nearest point inside the set.",
+     "c:hilbert-space": "The inner product and completeness give the inequality and the nearest point.",
+     "c:convex-function": "Convexity of $f$ gives the converse of the first-order condition.",
+     "c:gradient": "The gradient of $f$ defines the projection fixed-point test."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-similarity-invariant-factors-rational-canonical-form",
+  "statement": "Let $k$ be a [field](c:field) and $A,B$ be $n\\times n$ [matrices](c:matrix) over $k$. Then $A,B$ are similar iff $xI-A$ and $xI-B$ have the same invariant factors $d_1\\mid\\dots\\mid d_n$ of the [Smith normal form](c:smith-normal-form). The product of the $d_i$ is the [characteristic polynomial](c:characteristic-polynomial), $d_n$ is the [minimal polynomial](c:minimal-polynomial), and $A$ is similar to the block matrix of companion matrices.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The ring $k[x]$ over the [field](c:field) $k$ is a Euclidean domain, so Smith normal form exists.",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:sq-hyp",
+    "text": "The [matrices](c:matrix) $A$ and $B$ are square of the same size $n$.",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:sim",
+    "text": "Similar means $B=PAP^{-1}$ for an invertible $P$ over $k$.",
+    "concept": "c:similarity-transformation"
+   }
+  ],
+  "conclusion": "Similarity of $A$ and $B$ is equivalent to equality of their invariant factors, which give the characteristic polynomial, the minimal polynomial and the rational canonical form.",
+  "formal": {
+   "decl": "Matrix.matPolyEquiv_charmatrix",
+   "difference": "The declaration relates the characteristic matrix to a polynomial matrix. The classification by invariant factors is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Turn a matrix into a module",
+    "slogan": "Turn $A$ into a $k[x]$-module, present it by $xI-A$, and read all data from Smith normal form.",
+    "scope": "The full statement over any field. The Smith normal form theorem over $k[x]$ is cited.",
+    "mechanisms": [
+     "m:similarity",
+     "m:quotient-construction",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "The Euclidean property of $k[x]$ gives Smith normal form of $xI-A$.",
+      "steps": [
+       "s:smith"
+      ]
+     },
+     {
+      "h": "h:sq-hyp",
+      "why": "Both matrices act on $k^n$, so both give modules of the same rank.",
+      "steps": [
+       "s:pres",
+       "s:equiv"
+      ]
+     },
+     {
+      "h": "h:sim",
+      "why": "Similarity is the same as an isomorphism of the modules $V_A$ and $V_B$.",
+      "steps": [
+       "s:pres",
+       "s:equiv"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pres",
+      "slogan": "Make $k^n$ a $k[x]$-module and present it by $xI-A$.",
+      "detail": "Let $x$ act on $V_A=k^n$ as $A$. Then $A,B$ are similar iff $V_A\\cong V_B$. The map $\\varphi\\colon k[x]^n\\to V_A$, $\\sum x^mv_m\\mapsto\\sum A^mv_m$, is $k[x]$-linear and onto. Its kernel is the image of $xI-A$, and $xI-A$ is injective because its determinant is nonzero. So $V_A\\cong\\operatorname{coker}(xI-A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:equiv",
+      "slogan": "Show that similarity equals equivalence of the characteristic matrices.",
+      "detail": "If $B=PAP^{-1}$, then $P(xI-A)P^{-1}=xI-B$, and $P$ is invertible over $k[x]$. Conversely, if $U(xI-A)V=xI-B$ with $U,V$ invertible, then $U$ induces an isomorphism of the cokernels. By step 1, $V_A\\cong V_B$, so $A,B$ are similar.",
+      "uses": []
+     },
+     {
+      "id": "s:smith",
+      "slogan": "Compare the Smith normal forms.",
+      "detail": "Matrices over $k[x]$ are equivalent iff they have the same Smith normal form. So $A,B$ are similar iff their monic invariant factors agree.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s:charmin",
+      "slogan": "Read the characteristic and minimal polynomials from the invariant factors.",
+      "detail": "The last determinantal divisor of $xI-A$ is $\\det(xI-A)=\\chi_A$, and it equals $d_1\\cdots d_n$. Also $V_A\\cong\\bigoplus k[x]/(d_i)$, and $d_n$ kills every summand, but no proper divisor of $d_n$ kills $k[x]/(d_n)$. So the annihilator of $V_A$ is $(d_n)$, and $d_n$ is the minimal polynomial.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s:rcf",
+      "slogan": "Choose a basis of each summand to get the block form.",
+      "detail": "For monic $d$ of degree $m$, the classes of $1,x,\\dots,x^{m-1}$ form a $k$-basis of $k[x]/(d)$, and $x$ acts as the companion matrix $C(d)$. Joining these bases gives a basis in which $A$ is $\\operatorname{diag}(C(d_i))$. By step 3 this block form depends only on the similarity class.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the claims of the theorem.",
+      "detail": "Steps 2 and 3 give the similarity criteria. Step 4 gives the characteristic and minimal polynomials. Step 5 gives the rational canonical form.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pres",
+      "s:equiv"
+     ],
+     [
+      "s:equiv",
+      "s:smith"
+     ],
+     [
+      "s:smith",
+      "s:charmin"
+     ],
+     [
+      "s:pres",
+      "s:rcf"
+     ],
+     [
+      "s:smith",
+      "s:rcf"
+     ],
+     [
+      "s:charmin",
+      "s:done"
+     ],
+     [
+      "s:rcf",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:field": "The ground field makes $k[x]$ a Euclidean domain.",
+     "c:matrix": "The matrices $A$ and $B$ define the modules and their presentations.",
+     "c:similarity-transformation": "Similarity is what the module isomorphism encodes.",
+     "c:smith-normal-form": "Smith normal form of $xI-A$ gives the invariant factors.",
+     "c:characteristic-polynomial": "It equals the product of the invariant factors.",
+     "c:minimal-polynomial": "It equals the last invariant factor."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-cyclotomic-field-galois-group-units-mod-n",
+  "statement": "Let $\\zeta$ be a [primitive root of unity](c:is-primitive-root) of order $n\\ge1$. Then $\\Phi_n$ is irreducible over $\\mathbb Q$, so $[\\mathbb Q(\\zeta):\\mathbb Q]=\\varphi(n)$. The extension is a [Galois extension](c:galois-extension), and $a\\mapsto\\sigma_a$ with $\\sigma_a(\\zeta)=\\zeta^a$ is a group isomorphism $(\\mathbb Z/n)^\\times\\to\\operatorname{Gal}(\\mathbb Q(\\zeta)/\\mathbb Q)$. In particular the extension is abelian.",
+  "hypotheses": [
+   {
+    "id": "h:n-hyp",
+    "text": "The order $n$ is a positive integer, and $\\varphi$ is the [Euler totient function](c:euler-s-totient-function).",
+    "concept": "c:euler-s-totient-function"
+   },
+   {
+    "id": "h:zeta",
+    "text": "The number $\\zeta\\in\\mathbb C$ is a [primitive root of unity](c:is-primitive-root) of order $n$.",
+    "concept": "c:is-primitive-root"
+   }
+  ],
+  "conclusion": "The cyclotomic polynomial $\\Phi_n$ is irreducible, and the Galois group of $\\mathbb Q(\\zeta)/\\mathbb Q$ is isomorphic to $(\\mathbb Z/n)^\\times$.",
+  "formal": {
+   "decl": "galCyclotomicEquivUnitsZMod",
+   "difference": "The declaration states the isomorphism of the Galois group with the units, for a cyclotomic extension in which $\\Phi_n$ is known to be irreducible. The irreducibility proof is given here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Frobenius and a squarefree reduction",
+    "slogan": "Show that the minimal polynomial of $\\zeta$ is stable under $p$-th powers, then count automorphisms.",
+    "scope": "The full statement for every $n\\ge1$. Gauss lemma and the factorization of $x^n-1$ are cited.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:contradiction",
+     "m:field-extension-degree",
+     "m:galois-correspondence"
+    ],
+    "roles": [
+     {
+      "h": "h:n-hyp",
+      "why": "The assumption $p\\nmid n$ makes $x^n-1$ squarefree modulo $p$, and $\\varphi(n)$ counts the primitive roots.",
+      "steps": [
+       "s:square",
+       "s:all"
+      ]
+     },
+     {
+      "h": "h:zeta",
+      "why": "The primitive root generates the field and every power coprime to $n$ is again primitive.",
+      "steps": [
+       "s:facts",
+       "s:power",
+       "s:all",
+       "s:galois"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:facts",
+      "slogan": "Show that the minimal polynomial of $\\zeta$ divides $\\Phi_n$ and has integer coefficients.",
+      "detail": "$\\Phi_n$ is monic in $\\mathbb Z[x]$, has degree $\\varphi(n)$, and its roots are the primitive $n$-th roots of unity. Let $f$ be the minimal polynomial of $\\zeta$. Then $f\\mid\\Phi_n$. By Gauss lemma, $f$ equals a monic irreducible factor of $\\Phi_n$ in $\\mathbb Z[x]$, so $f\\in\\mathbb Z[x]$.",
+      "uses": [
+       "nm:technique-cyclotomic-factorization-of-x-n-minus-1",
+       "nm:technique-gauss-lemma-primitive-polynomials"
+      ]
+     },
+     {
+      "id": "s:power",
+      "slogan": "Reduce modulo a prime to compare $f$ with the minimal polynomial of $\\eta^p$.",
+      "detail": "Let $\\eta$ be a root of $f$, let $p\\nmid n$ be prime, and let $g$ be the minimal polynomial of $\\eta^p$. Suppose $g\\ne f$. Then $g(x^p)=f\\,k$ in $\\mathbb Z[x]$, and $f g\\mid x^n-1$. Modulo $p$, the [Frobenius](c:frobenius) identity gives $\\bar g^p=\\bar g(x^p)=\\bar f\\bar k$. So an irreducible factor $\\pi$ of $\\bar f$ divides $\\bar g$, and $\\pi^2\\mid x^n-1$ in $\\mathbb F_p[x]$.",
+      "uses": []
+     },
+     {
+      "id": "s:square",
+      "slogan": "Contradict this with squarefreeness of $x^n-1$ modulo $p$.",
+      "detail": "The derivative of $x^n-1$ is $nx^{n-1}$, and $n\\ne0$ in $\\mathbb F_p$. The derivative has only the root $0$, which is not a root of $x^n-1$. So $x^n-1$ is squarefree in $\\mathbb F_p[x]$. This contradicts the first claim. Hence $g=f$.",
+      "uses": []
+     },
+     {
+      "id": "s:all",
+      "slogan": "Move from $\\zeta$ to every primitive root and conclude irreducibility.",
+      "detail": "Every primitive root is $\\zeta^k$ with $\\gcd(k,n)=1$. Write $k=p_1\\cdots p_r$ with primes $p_i\\nmid n$. Apply step 3 $r$ times to get that $\\zeta^k$ is a root of $f$. So $f$ has all $\\varphi(n)$ primitive roots as roots, $\\Phi_n\\mid f$, and $f=\\Phi_n$. Thus $[\\mathbb Q(\\zeta):\\mathbb Q]=\\varphi(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:galois",
+      "slogan": "Count the automorphisms and build the isomorphism.",
+      "detail": "$\\mathbb Q(\\zeta)$ is the splitting field of $x^n-1$, so the extension is Galois of degree $\\varphi(n)$. Each automorphism $\\sigma$ sends $\\zeta$ to a root $\\zeta^a$ of $\\Phi_n$ with $a\\in(\\mathbb Z/n)^\\times$, and is determined by $a$. Since $\\sigma_a\\sigma_b(\\zeta)=\\zeta^{ab}$, the map $a\\mapsto\\sigma_a$ is an injective homomorphism between groups of order $\\varphi(n)$. So it is an isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:facts",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:square"
+     ],
+     [
+      "s:square",
+      "s:all"
+     ],
+     [
+      "s:facts",
+      "s:all"
+     ],
+     [
+      "s:all",
+      "s:galois"
+     ]
+    ],
+    "conclusion": "s:galois",
+    "concepts": {
+     "c:euler-s-totient-function": "It gives the degree of $\\Phi_n$ and the order of the Galois group.",
+     "c:is-primitive-root": "The primitive root generates the field and its powers coprime to $n$ are the roots of $\\Phi_n$.",
+     "c:galois-extension": "The extension is Galois because the field splits $x^n-1$.",
+     "c:frobenius": "The $p$-th power map in characteristic $p$ turns $g(x^p)$ into $g^p$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-sturm-liouville-orthogonality-simple-eigenvalues",
+  "statement": "Take a regular [Sturm-Liouville problem](c:sturm-liouville-problem) $-(py')'+qy=\\lambda wy$ on $[a,b]$ with $p,w>0$ and real separated boundary conditions. Then every eigenvalue is real. [Eigenfunctions](c:eigenvector) for different eigenvalues are [orthogonal](c:orthogonality) for the weight $w$. Each eigenspace has dimension $1$.",
+  "hypotheses": [
+   {
+    "id": "h:reg",
+    "text": "The problem is regular: $p,q,w$ are continuous, real, and $p,w>0$ on the closed interval.",
+    "concept": "c:sturm-liouville-problem"
+   },
+   {
+    "id": "h:bc-hyp",
+    "text": "The boundary conditions are separated and real, each with a nonzero coefficient pair.",
+    "concept": "c:sturm-liouville-problem"
+   },
+   {
+    "id": "h:ex-hyp",
+    "text": "The theorem does not claim that an [eigenfunction](c:eigenvector) exists.",
+    "concept": "c:eigenvector"
+   }
+  ],
+  "conclusion": "Eigenvalues are real, eigenfunctions of different eigenvalues are orthogonal with weight $w$, and each eigenspace is one dimensional.",
+  "formal": {
+   "decl": "conj_eigenvalue_eq_self",
+   "difference": "The declaration states that eigenvalues of a self-adjoint operator on an inner product space are real. The orthogonality and simplicity parts, and the boundary-value setting, are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Lagrange identity and the Wronskian",
+    "slogan": "Show that the operator is symmetric on the boundary conditions, then read all three claims.",
+    "scope": "Real and complex valued $C^2$ eigenfunctions on a regular interval. Existence of eigenvalues is not claimed.",
+    "mechanisms": [
+     "m:a-priori-estimate",
+     "m:orthogonal-projection",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:reg",
+      "why": "Real coefficients and positive $w$ make the Lagrange identity and positive integrals work.",
+      "steps": [
+       "s:lagrange",
+       "s:real",
+       "s:simple"
+      ]
+     },
+     {
+      "h": "h:bc-hyp",
+      "why": "The real separated conditions kill the boundary terms and give a one-dimensional kernel at $a$.",
+      "steps": [
+       "s:boundary",
+       "s:simple"
+      ]
+     },
+     {
+      "h": "h:ex-hyp",
+      "why": "The proof does not need existence, so it only treats given eigenfunctions.",
+      "unused": true
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lagrange",
+      "slogan": "Derive the Lagrange identity for the operator.",
+      "detail": "Put $B(u,v)=p(u\\bar v'-u'\\bar v)$. A direct derivative gives $B'=u(p\\bar v')'-(pu')'\\bar v$. Since $p,q$ are real, $\\int_a^b[(Lu)\\bar v-u\\,\\overline{Lv}]\\,dx=B(u,v)(b)-B(u,v)(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:boundary",
+      "slogan": "Show that the boundary terms vanish.",
+      "detail": "At $a$, the vectors $(u(a),p(a)u'(a))$ and $(\\bar v(a),p(a)\\bar v'(a))$ are killed by one nonzero real functional. So both lie in a one-dimensional kernel, and their determinant $B(u,v)(a)$ is $0$. The same holds at $b$. Hence $\\int(Lu)\\bar v=\\int u\\,\\overline{Lv}$.",
+      "uses": []
+     },
+     {
+      "id": "s:real",
+      "slogan": "Prove reality of eigenvalues.",
+      "detail": "Put $u=v=y$ with $Ly=\\lambda wy$. Then $(\\lambda-\\bar\\lambda)\\int_a^bw|y|^2dx=0$. The integral is positive because $y\\ne0$ is continuous and $w>0$. So $\\lambda=\\bar\\lambda$.",
+      "uses": []
+     },
+     {
+      "id": "s:orth",
+      "slogan": "Prove orthogonality for different eigenvalues.",
+      "detail": "Let $Ly=\\lambda wy$ and $Lz=\\mu wz$ with $\\lambda\\ne\\mu$ real. Step 2 gives $(\\lambda-\\mu)\\int wy\\bar z=0$. So $\\int_a^bwy\\bar z\\,dx=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:simple",
+      "slogan": "Prove that each eigenspace has dimension one.",
+      "detail": "Let $y,z$ have the same eigenvalue. Their initial vectors at $a$ lie in the same one-dimensional kernel, so $u=c_1y+c_2z$ with $(c_1,c_2)\\ne0$ has $u(a)=pu'(a)=0$. It solves a linear first-order system with continuous coefficients, so uniqueness for the initial value problem gives $u\\equiv0$. Hence $y,z$ are dependent.",
+      "uses": [
+       "wd:Q530152"
+      ]
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the three claims.",
+      "detail": "Step 3 gives reality. Step 4 gives orthogonality. Step 5 gives simplicity.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:lagrange",
+      "s:boundary"
+     ],
+     [
+      "s:boundary",
+      "s:real"
+     ],
+     [
+      "s:boundary",
+      "s:orth"
+     ],
+     [
+      "s:boundary",
+      "s:simple"
+     ],
+     [
+      "s:real",
+      "s:orth"
+     ],
+     [
+      "s:real",
+      "s:done"
+     ],
+     [
+      "s:orth",
+      "s:done"
+     ],
+     [
+      "s:simple",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:sturm-liouville-problem": "It is the problem class whose operator is symmetric under the boundary conditions.",
+     "c:eigenvector": "The claims concern eigenfunctions and their eigenvalues.",
+     "c:orthogonality": "The weighted integral of two eigenfunctions is shown to vanish."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-nonlinear-bvp-green-function-contraction",
+  "statement": "Let $f\\colon[0,1]\\times\\mathbb R\\to\\mathbb R$ be continuous and [Lipschitz](c:lipschitz-function) in the second variable with constant $L<8$. Then $y''=f(x,y)$, $y(0)=y(1)=0$ has exactly one $C^2$ solution. The iteration $y_{k+1}=Ty_k$ with the Green kernel converges to it uniformly, with $\\|y_k-y\\|_\\infty\\le(L/8)^k(1-L/8)^{-1}\\|y_1-y_0\\|_\\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:lip",
+    "text": "The function $f$ is continuous and [Lipschitz](c:lipschitz-function) in $u$ with a global constant $L<8$.",
+    "concept": "c:lipschitz-function"
+   },
+   {
+    "id": "h:bvp",
+    "text": "The problem is the [ordinary differential equation](c:ordinary-differential-equation) $y''=f(x,y)$ with Dirichlet conditions on $[0,1]$.",
+    "concept": "c:ordinary-differential-equation"
+   },
+   {
+    "id": "h:start",
+    "text": "The starting function $y_0$ is any continuous function.",
+    "concept": "c:fixed-point"
+   }
+  ],
+  "conclusion": "The boundary value problem has a unique solution, and the Green function iteration converges to it with the stated geometric bound.",
+  "formal": {
+   "decl": "apriori_dist_iterate_fixedPoint_le",
+   "difference": "The declaration states the a priori bound for iterates of a contraction. The Green function reduction and the contraction constant $L/8$ are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Green function and contraction",
+    "slogan": "Rewrite the problem as a fixed-point equation and show that the integral operator contracts for $L<8$.",
+    "scope": "The whole statement on $[0,1]$ with Dirichlet conditions. The Banach fixed-point theorem is cited.",
+    "mechanisms": [
+     "m:contraction-iteration",
+     "m:fixed-point",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:lip",
+      "why": "The Lipschitz constant gives the contraction factor $L/8$ of $T$.",
+      "steps": [
+       "s:contract"
+      ]
+     },
+     {
+      "h": "h:bvp",
+      "why": "The equation and conditions are solved by the linear Green formula, which gives the integral form.",
+      "steps": [
+       "s:green",
+       "s:equiv"
+      ]
+     },
+     {
+      "h": "h:start",
+      "why": "Any continuous start converges, because the fixed-point theorem allows any initial point.",
+      "steps": [
+       "s:banach"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:green",
+      "slogan": "Solve the linear problem with the Green function.",
+      "detail": "For continuous $g$, put $u(x)=-(1-x)\\int_0^xt\\,g(t)dt-x\\int_x^1(1-t)g(t)dt$. Two derivatives give $u''=g$, and $u(0)=u(1)=0$. If $u_1,u_2$ both solve it, $u_1-u_2$ is affine with two zeros, so it is $0$. Hence $u=-\\int G\\,g$.",
+      "uses": []
+     },
+     {
+      "id": "s:equiv",
+      "slogan": "Show that solutions of the problem are the fixed points of $T$.",
+      "detail": "If $y\\in C^2$ solves the problem, then $g=f(\\cdot,y)$ is continuous and $y=-\\int G\\,g=Ty$. If $y=Ty$ with $y$ continuous, then step 1 shows $y\\in C^2$ and $y''=f(\\cdot,y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Compute the size of the kernel integral.",
+      "detail": "For $x\\in[0,1]$, $\\int_0^1|G(x,t)|dt$ splits at $t=x$ into $(1-x)x^2/2$ and $x(1-x)^2/2$. The sum is $x(1-x)/2$. This is at most $1/8$ for every $x$, with equality at $x=1/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:contract",
+      "slogan": "Show that $T$ is a contraction in the sup norm.",
+      "detail": "$T$ maps $C[0,1]$ to itself. For $y,z$, $|(Ty-Tz)(x)|\\le\\int|G(x,t)|L|y(t)-z(t)|dt\\le(L/8)\\|y-z\\|_\\infty$. So $T$ is a [contraction](c:contraction-mapping) with $q=L/8<1$.",
+      "uses": []
+     },
+     {
+      "id": "s:banach",
+      "slogan": "Apply the fixed-point theorem in the complete space $C[0,1]$.",
+      "detail": "$C[0,1]$ with the sup norm is a [Banach space](c:banach-space), so $T$ has one fixed point $y$ and $y_k\\to y$ for every $y_0$. By step 2, $y$ is the unique $C^2$ solution. The standard estimate gives $\\|y_k-y\\|\\le q^k(1-q)^{-1}\\|y_1-y_0\\|$.",
+      "uses": [
+       "wd:Q220680"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:green",
+      "s:equiv"
+     ],
+     [
+      "s:kernel",
+      "s:contract"
+     ],
+     [
+      "s:equiv",
+      "s:banach"
+     ],
+     [
+      "s:contract",
+      "s:banach"
+     ]
+    ],
+    "conclusion": "s:banach",
+    "concepts": {
+     "c:lipschitz-function": "The Lipschitz bound on $f$ makes $T$ a contraction.",
+     "c:ordinary-differential-equation": "The problem is a boundary value problem for a second-order equation.",
+     "c:fixed-point": "Solutions of the problem are fixed points of $T$.",
+     "c:contraction-mapping": "A contraction has a unique fixed point and geometric iteration error.",
+     "c:banach-space": "Completeness of $C[0,1]$ is needed for the fixed-point theorem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-plotkin-bound-pairwise-distance-averaging",
+  "statement": "Let $C\\subseteq A^n$ be a [code](c:error-correcting-code) with $M\\ge2$ words over an alphabet of $q$ symbols, with minimum Hamming distance $d$. Put $\\theta=(q-1)/q$. If $d>\\theta n$, then $M\\le d/(d-\\theta n)$.",
+  "hypotheses": [
+   {
+    "id": "h:q-hyp",
+    "text": "The alphabet has $q\\ge2$ symbols.",
+    "concept": "c:error-correcting-code"
+   },
+   {
+    "id": "h:d-hyp",
+    "text": "Distinct codewords of the [code](c:error-correcting-code) have Hamming distance at least $d$.",
+    "concept": "c:error-correcting-code"
+   },
+   {
+    "id": "h:gap",
+    "text": "The bound $d>\\theta n$ holds, so the right side is positive and finite.",
+    "concept": "c:error-correcting-code"
+   }
+  ],
+  "conclusion": "The number of codewords satisfies $M\\le d/(d-\\theta n)$.",
+  "formal": {
+   "decl": "hammingDist_comm",
+   "difference": "The declaration states only that Hamming distance is symmetric. The Plotkin bound is stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Count the sum of distances twice",
+    "slogan": "Bound the sum of all pairwise distances from below by $d$ and from above by a coordinate count.",
+    "scope": "The whole bound for every alphabet size $q\\ge2$. The proof is a double count of ordered pairs.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:averaging",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:q-hyp",
+      "why": "The alphabet size gives the Cauchy-Schwarz factor $q$ in each coordinate.",
+      "steps": [
+       "s:cs"
+      ]
+     },
+     {
+      "h": "h:d-hyp",
+      "why": "The minimum distance gives the lower bound on the sum of distances.",
+      "steps": [
+       "s:lower"
+      ]
+     },
+     {
+      "h": "h:gap",
+      "why": "The positive gap lets the last step divide by $d-\\theta n$.",
+      "steps": [
+       "s:combine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lower",
+      "slogan": "Bound the sum of ordered-pair distances from below.",
+      "detail": "Let $S$ be the sum of $d(x,y)$ over ordered pairs of distinct codewords. There are $M(M-1)$ such pairs, each with distance at least $d$. So $S\\ge M(M-1)d$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split $S$ by coordinate.",
+      "detail": "The distance $d(x,y)$ counts the coordinates $i$ with $x_i\\ne y_i$. So $S=\\sum_{i=1}^nS_i$, where $S_i$ counts ordered pairs of codewords that differ at coordinate $i$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the pairs that agree at a coordinate.",
+      "detail": "Fix $i$. Let $m_a$ be the number of codewords with symbol $a$ at coordinate $i$, so $\\sum_am_a=M$. The ordered pairs that agree number $\\sum_am_a^2$. So $S_i=M^2-\\sum_am_a^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:cs",
+      "slogan": "Bound the squares from below by Cauchy-Schwarz.",
+      "detail": "The Cauchy-Schwarz inequality for $(m_a)$ and the all-ones vector in $\\mathbb R^q$ gives $M^2\\le q\\sum_am_a^2$. So $S_i\\le M^2-M^2/q=\\theta M^2$, and $S\\le\\theta nM^2$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Compare the two bounds and divide.",
+      "detail": "We get $M(M-1)d\\le\\theta nM^2$, so $(M-1)d\\le\\theta nM$, which is $M(d-\\theta n)\\le d$. Divide by $d-\\theta n>0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:cs"
+     ],
+     [
+      "s:cs",
+      "s:combine"
+     ],
+     [
+      "s:lower",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:error-correcting-code": "The theorem bounds the size of a code from its minimum distance."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-neumann-coset-covering-lemma",
+  "statement": "Let a group $G$ be covered by $n$ left [cosets](c:coset) $g_iH_i$. Then some $H_i$ has finite [index](c:index-of-a-subgroup). The cosets with finite index already cover $G$, and $\\sum 1/[G:H_i]\\ge1$ over those. In particular some $[G:H_i]\\le n$.",
+  "hypotheses": [
+   {
+    "id": "h:g-hyp",
+    "text": "The group $G$ is any group. It may be infinite and non-abelian.",
+    "concept": "c:coset"
+   },
+   {
+    "id": "h:fam",
+    "text": "The family of [cosets](c:coset) is finite with $n\\ge1$ members, and repeated subgroups are allowed.",
+    "concept": "c:coset"
+   },
+   {
+    "id": "h:add",
+    "text": "The additive form for abelian groups is the same statement.",
+    "concept": "c:coset"
+   }
+  ],
+  "conclusion": "A finite coset cover has a member of finite index at most $n$, the finite-index members cover $G$, and their reciprocal indices sum to at least $1$.",
+  "formal": {
+   "decl": "Subgroup.exists_index_le_card_of_leftCoset_cover",
+   "difference": "The declaration states the existence of a member of index at most the cardinality of the cover. The covering by finite-index members and the sum inequality are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Induction on the number of distinct subgroups",
+    "slogan": "Remove one subgroup at a time by induction, then count cosets of the common subgroup of finite-index members.",
+    "scope": "The full statement (a) to (d) for every group and every finite cover.",
+    "mechanisms": [
+     "m:induction",
+     "m:double-counting",
+     "m:lagrange-counting",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:g-hyp",
+      "why": "The group is arbitrary, so the induction works for every group.",
+      "steps": [
+       "s:induct",
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:fam",
+      "why": "The cover is finite, so the intersection of finite-index members has finite index.",
+      "steps": [
+       "s:induct",
+       "s:finite",
+       "s:small"
+      ]
+     },
+     {
+      "h": "h:add",
+      "why": "The additive form follows by the same proof in an abelian group, so it is not used here.",
+      "unused": true
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induct",
+      "slogan": "Start an induction on the number of distinct subgroups.",
+      "detail": "Claim: a cover that uses at most $m$ distinct subgroups has a member of finite index. For $m=0$ the union is empty, which is impossible. For the step fix a member subgroup $H$. If the cosets of $H$ in the cover cover $G$, then $H$ has finite index and we are done.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Replace the cosets of $H$ by cosets of the other subgroups.",
+      "detail": "Otherwise some coset $xH$ is not in the cover. For $z\\in yH$, $xy^{-1}z\\in xH$ lies in a member $g_iH_i$ with $H_i\\ne H$, so $z\\in(yx^{-1}g_i)H_i$. So a cover with at most $m-1$ subgroups exists. By induction one of the $H_i$ has finite index.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that the finite-index members already cover.",
+      "detail": "Let $F$ be the set of $i$ with $[G:H_i]$ finite, and $D=\\bigcap_{i\\in F}H_i$. Then $[G:D]$ is finite and each $g_iH_i$ with $i\\in F$ is a union of cosets of $D$. If these cosets did not cover $G$, the argument of step 2 with $H=D$ would give a cover by infinite-index subgroups only. This contradicts the first claim.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Count the cosets of $D$ to get the sum inequality.",
+      "detail": "$G$ has $[G:D]$ cosets of $D$, and each lies in some $g_iH_i$ with $i\\in F$, which holds $[H_i:D]$ of them. So $[G:D]\\le\\sum_{F}[H_i:D]$. Divide by $[G:D]=[G:H_i][H_i:D]$ to get $1\\le\\sum_{F}1/[G:H_i]$.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Deduce a member of index at most $n$.",
+      "detail": "Suppose $[G:H_i]>n$ for every finite-index $H_i$. Then each term of the sum is less than $1/n$, and the other terms are $0<1/n$. The sum of $n$ terms is less than $1$. This contradicts step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induct",
+      "s:shift"
+     ],
+     [
+      "s:shift",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:small"
+     ]
+    ],
+    "conclusion": "s:small",
+    "concepts": {
+     "c:coset": "The cover uses cosets, and the proof counts cosets of the common subgroup.",
+     "c:index-of-a-subgroup": "Finite index is what the induction finds and the sum bounds."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-schur-finite-index-center-transfer",
+  "statement": "Let $G$ be a group whose [center](c:center) $Z$ has finite [index](c:index-of-a-subgroup) $n$. Then $g\\mapsto g^n$ is a group homomorphism $G\\to Z$, the [transfer homomorphism](c:transfer-homomorphism). Every element of the [commutator subgroup](c:commutator-subgroup) $G'$ satisfies $g^n=1$. Moreover $G'$ is finite.",
+  "hypotheses": [
+   {
+    "id": "h:z-hyp",
+    "text": "The subgroup $Z$ is the [center](c:center) of $G$.",
+    "concept": "c:center"
+   },
+   {
+    "id": "h:n-hyp",
+    "text": "The [index](c:index-of-a-subgroup) $n=[G:Z]$ is finite and at least $1$.",
+    "concept": "c:index-of-a-subgroup"
+   },
+   {
+    "id": "h:g-hyp",
+    "text": "The group $G$ may be infinite, and $G'$ is generated by all commutators $[x,y]$.",
+    "concept": "c:commutator-subgroup"
+   }
+  ],
+  "conclusion": "The map $g\\mapsto g^n$ is a homomorphism into $Z$, it kills $G'$, and $G'$ is finite.",
+  "formal": {
+   "decl": "Subgroup.transfer_center_eq_pow",
+   "difference": "The declaration states that the transfer to the center is the $n$-th power map. The finiteness of $G'$ and the exponent of $G'$ are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Transfer to the center",
+    "slogan": "Show that the transfer to the center is the power map, then bound the commutators and use Schreier.",
+    "scope": "The full statement for every group with $[G:Z]=n<\\infty$.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:lagrange-counting",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:z-hyp",
+      "why": "Centrality makes the transfer product multiplicative and makes commutators depend only on cosets.",
+      "steps": [
+       "s:transfer",
+       "s:commut"
+      ]
+     },
+     {
+      "h": "h:n-hyp",
+      "why": "Finite index gives a finite transversal, at most $n^2$ commutators, and the exponent $n$.",
+      "steps": [
+       "s:transfer",
+       "s:power",
+       "s:commut",
+       "s:schreier"
+      ]
+     },
+     {
+      "h": "h:g-hyp",
+      "why": "The subgroup $G'$ lies in the kernel of the map to the abelian group $Z$, and it is the group to bound.",
+      "steps": [
+       "s:exponent",
+       "s:schreier"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:transfer",
+      "slogan": "Define the transfer and prove it is a homomorphism.",
+      "detail": "Choose coset representatives $t_1,\\dots,t_n$ of $Z$. Write $g\\,t_i=t_{\\sigma_g(i)}z_i(g)$ with $z_i(g)\\in Z$. Because $Z$ is central and abelian, $V(g)=\\prod_iz_i(g)$ satisfies $V(gh)=V(g)V(h)$.",
+      "uses": []
+     },
+     {
+      "id": "s:power",
+      "slogan": "Show that $V(g)=g^n$ by splitting into cycles.",
+      "detail": "Split $\\{1,\\dots,n\\}$ into cycles of $\\sigma_g$. For a cycle of length $m$, $g^mt_{i_1}=t_{i_1}z_{i_1}(g)\\cdots z_{i_m}(g)$, and the product is central. So $g^m$ equals that product. Multiplying over the cycles gives $V(g)=g^n$ because the lengths add up to $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:exponent",
+      "slogan": "Show that every commutator has order dividing $n$.",
+      "detail": "The target $Z$ is abelian, so $G'$ lies in the kernel of $V$. Hence $g^n=1$ for all $g\\in G'$.",
+      "uses": []
+     },
+     {
+      "id": "s:commut",
+      "slogan": "Bound the number of commutators by $n^2$.",
+      "detail": "For central $z,w$, $[xz,yw]=[x,y]$. So $[x,y]$ depends only on the cosets $xZ$ and $yZ$, and there are at most $n^2$ commutators. So $G'$ is generated by at most $n^2$ elements.",
+      "uses": []
+     },
+     {
+      "id": "s:schreier",
+      "slogan": "Apply the Schreier lemma to bound $G'\\cap Z$ and $G'$.",
+      "detail": "The index $[G':G'\\cap Z]$ is at most $n$, because $G'/(G'\\cap Z)$ embeds in $G/Z$. By Schreier's lemma, $G'\\cap Z$ is generated by at most $n^3$ elements. It is abelian of exponent dividing $n$, so it is finite. Hence $G'$ is finite.",
+      "uses": [
+       "nm:schreier-s-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:transfer",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:exponent"
+     ],
+     [
+      "s:commut",
+      "s:schreier"
+     ],
+     [
+      "s:exponent",
+      "s:schreier"
+     ]
+    ],
+    "conclusion": "s:schreier",
+    "concepts": {
+     "c:center": "Central elements make the transfer multiplicative and commutators depend only on cosets.",
+     "c:index-of-a-subgroup": "The finite index $n$ bounds the cosets, the commutators and the exponent.",
+     "c:transfer-homomorphism": "The transfer to the center becomes the $n$-th power map.",
+     "c:commutator-subgroup": "It is the subgroup shown to be finite of exponent dividing $n$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-prime-spectrum-basic-opens-quasi-compact",
+  "statement": "Let $R$ be a commutative ring and $D(f)$ the [basic open set](c:basic-open) of the [prime spectrum](c:prime-spectrum). Then $D(f)=\\emptyset$ iff $f$ is nilpotent. Also $D(f)\\subseteq\\bigcup D(f_i)$ iff $f$ lies in the radical of $(f_i)$, and then finitely many $f_i$ suffice. Every $D(f)$ and Spec $R$ itself are [quasi-compact](c:quasi-compact).",
+  "hypotheses": [
+   {
+    "id": "h:r-hyp",
+    "text": "The ring $R$ is commutative with $1$, and its [prime spectrum](c:prime-spectrum) is empty if $R=0$.",
+    "concept": "c:prime-spectrum"
+   },
+   {
+    "id": "h:top",
+    "text": "The prime spectrum carries the [Zariski topology](c:zariski-topology), with closed sets $V(I)$.",
+    "concept": "c:zariski-topology"
+   },
+   {
+    "id": "h:lim",
+    "text": "The theorem does not claim that every open set is [quasi-compact](c:quasi-compact).",
+    "concept": "c:quasi-compact"
+   }
+  ],
+  "conclusion": "The set $D(f)$ is empty iff $f$ is nilpotent, covers by basic opens reduce to the radical, and every basic open set and Spec $R$ is quasi-compact.",
+  "formal": {
+   "decl": "PrimeSpectrum.isCompact_basicOpen",
+   "difference": "The declaration states that a basic open set is compact. The criteria for emptiness and for covers are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Radical of the generated ideal",
+    "slogan": "Turn a cover of $D(f)$ into a statement about the radical of an ideal, then use finite generation.",
+    "scope": "All commutative rings, including $R=0$.",
+    "mechanisms": [
+     "m:quotient-construction",
+     "m:local-to-global",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:r-hyp",
+      "why": "Maximal ideals exist in a nonzero ring, and the nilradical is the intersection of the primes.",
+      "steps": [
+       "s:units",
+       "s:complement",
+       "s:radical"
+      ]
+     },
+     {
+      "h": "h:top",
+      "why": "The closed sets $V(I)$ turn covers into containments of closed sets.",
+      "steps": [
+       "s:complement",
+       "s:qc"
+      ]
+     },
+     {
+      "h": "h:lim",
+      "why": "This hypothesis is a warning only. The proof treats basic open sets, so it is not used.",
+      "unused": true
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:units",
+      "slogan": "Prove the two criteria for $D(f)$.",
+      "detail": "$D(f)=\\emptyset$ iff $f$ lies in every prime, iff $f$ is in the [nilradical](c:nilradical), iff $f$ is nilpotent. If $f$ is a unit, no prime contains $f$. If $f$ is not a unit, $(f)$ lies in a maximal ideal, which is prime, so $D(f)\\ne\\operatorname{Spec}R$.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes",
+       "nm:krull-s-theorem"
+      ]
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Take complements of a cover.",
+      "detail": "Let $I=(f_i)$. A prime lies outside $\\bigcup D(f_i)$ iff it contains $I$, and outside $D(f)$ iff it contains $f$. So $D(f)\\subseteq\\bigcup D(f_i)$ iff $V(I)\\subseteq V(f)$.",
+      "uses": []
+     },
+     {
+      "id": "s:radical",
+      "slogan": "Read the containment as membership in the radical.",
+      "detail": "$V(I)\\subseteq V(f)$ says that $f$ lies in every prime containing $I$. The primes of $R/I$ are these primes, so the nilradical result for $R/I$ shows that this holds iff $f\\in\\sqrt I$.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes"
+      ]
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Extract a finite subfamily.",
+      "detail": "If $f\\in\\sqrt I$, then $f^N\\in I$ for some $N$. An element of $I$ is a finite combination $\\sum_{i\\in F}a_if_i$. So $f^N\\in(f_i:i\\in F)$, and the equivalence above gives $D(f)\\subseteq\\bigcup_{i\\in F}D(f_i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:qc",
+      "slogan": "Reduce an open cover to basic opens and conclude.",
+      "detail": "Cover $D(f)$ by open sets $U_j$. The basic open sets inside some $U_j$ cover $D(f)$. By the finite step, finitely many of them cover $D(f)$, so finitely many $U_j$ do. Since Spec $R=D(1)$, it is quasi-compact too.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the criteria and the compactness.",
+      "detail": "Step 1 gives part (a). Steps 2 to 4 give part (b). Step 5 gives part (c).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:units",
+      "s:done"
+     ],
+     [
+      "s:complement",
+      "s:radical"
+     ],
+     [
+      "s:radical",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:qc"
+     ],
+     [
+      "s:qc",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:basic-open": "The sets $D(f)$ form a basis and are the sets shown to be quasi-compact.",
+     "c:prime-spectrum": "It is the space on which all the statements live.",
+     "c:quasi-compact": "Finite subcovers are the goal of the last step.",
+     "c:zariski-topology": "Closed sets $V(I)$ turn covers into containments.",
+     "c:nilradical": "It is the intersection of all primes and identifies empty basic opens."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-clopen-subsets-of-spec-idempotents",
+  "statement": "Let $R$ be a commutative ring. For each [idempotent](c:idempotent) $e$, the [basic open set](c:basic-open) $D(e)$ is [clopen](c:clopen-subset), with complement $D(1-e)$. Every clopen subset of the [prime spectrum](c:prime-spectrum) equals $D(e)$ for exactly one idempotent $e$. So $e\\mapsto D(e)$ is a bijection from idempotents to clopen subsets.",
+  "hypotheses": [
+   {
+    "id": "h:r-hyp",
+    "text": "The ring $R$ is commutative with $1$, and $R=0$ is allowed.",
+    "concept": "c:idempotent"
+   },
+   {
+    "id": "h:top",
+    "text": "The prime spectrum carries the Zariski topology with closed sets $V(I)$.",
+    "concept": "c:prime-spectrum"
+   }
+  ],
+  "conclusion": "The map $e\\mapsto D(e)$ is a bijection from the idempotents of $R$ to the clopen subsets of Spec $R$.",
+  "formal": {
+   "decl": "PrimeSpectrum.isClopen_basicOpen_of_mul_add",
+   "difference": "The declaration states that a basic open set is clopen under a related product-and-sum condition. The bijection with all clopen subsets is stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Comaximal ideals with nilpotent product",
+    "slogan": "Split a clopen set into two closed sets, use quasi-compactness, then build the idempotent.",
+    "scope": "All commutative rings. For $R=0$ both sides are the single empty set.",
+    "mechanisms": [
+     "m:local-to-global",
+     "m:contradiction",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:r-hyp",
+      "why": "Idempotents and nilpotents in a commutative ring behave as in the steps, and $1=e+(1-e)$.",
+      "steps": [
+       "s:clopen",
+       "s:unique",
+       "s:comax",
+       "s:idem"
+      ]
+     },
+     {
+      "h": "h:top",
+      "why": "The topology gives the closed sets $V(I)$ and quasi-compactness of closed sets.",
+      "steps": [
+       "s:fg",
+       "s:comax",
+       "s:equal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:clopen",
+      "slogan": "Show that $D(e)$ is clopen.",
+      "detail": "If $e^2=e$, then $e(1-e)=0$ and $e+(1-e)=1$. A prime contains exactly one of $e$ and $1-e$. So Spec $R$ is the disjoint union of the open sets $D(e)$ and $D(1-e)$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that $e$ is determined by $D(e)$.",
+      "detail": "Let $D(e)=D(e')$. Every prime contains $e$ or $1-e'$, so $e(1-e')$ is in every prime and is nilpotent. It is also idempotent, so it is $0$, and $e=ee'$. By symmetry $e'=e'e$, so $e=e'$.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes"
+      ]
+     },
+     {
+      "id": "s:fg",
+      "slogan": "Write both parts of a clopen set as zero sets of finitely generated ideals.",
+      "detail": "Let $U$ be clopen. Both $U$ and its complement are closed in the [quasi-compact](c:quasi-compact) Spec $R$, so they are quasi-compact. Each is open, so each is a finite union of basic open sets. This gives finitely generated ideals $I'$, $J'$ with $V(I')=U$ and $V(J')=U^c$.",
+      "uses": [
+       "nm:technique-prime-spectrum-basic-opens-quasi-compact"
+      ]
+     },
+     {
+      "id": "s:comax",
+      "slogan": "Prove that $I'+J'=R$ and that a power of $I'J'$ is $0$.",
+      "detail": "The sets $V(I')$ and $V(J')$ are disjoint, so no maximal ideal contains $I'+J'$, hence $I'+J'=R$. They cover Spec $R$, so $I'J'$ lies in every prime. By the nilradical result and finite generation, $(I'J')^k=0$ for some $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:idem",
+      "slogan": "Build an idempotent from a comaximal pair.",
+      "detail": "From $I'+J'=R$ we get $I'^k+J'^k=R$. Choose $i\\in I'^k$ and $j\\in J'^k$ with $i+j=1$. Then $ij\\in(I'J')^k=0$, so $j=j(i+j)=j^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Show that the clopen set equals $D(j)$.",
+      "detail": "If $P\\in U=V(I')$, then $i\\in P$, so $j\\notin P$ and $P\\in D(j)$. If $P\\notin U$, then $P\\in V(J')$, so $j\\in P$ and $P\\notin D(j)$. Hence $U=D(j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the three parts of the bijection.",
+      "detail": "Step 1 shows that the map lands in clopen sets. Step 2 shows that it is injective. Step 6 shows that it is onto.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fg",
+      "s:comax"
+     ],
+     [
+      "s:comax",
+      "s:idem"
+     ],
+     [
+      "s:idem",
+      "s:equal"
+     ],
+     [
+      "s:clopen",
+      "s:done"
+     ],
+     [
+      "s:unique",
+      "s:done"
+     ],
+     [
+      "s:equal",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:idempotent": "Idempotents give the decomposition $1=e+(1-e)$ and the clopen sets.",
+     "c:basic-open": "The sets $D(e)$ are the clopen sets of the bijection.",
+     "c:clopen-subset": "Clopen sets are the targets of the map.",
+     "c:prime-spectrum": "It is the space whose clopen sets are classified.",
+     "c:quasi-compact": "It gives finite generation of the ideals."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-golub-welsch-jacobi-matrix-gauss-rule",
+  "statement": "Let $\\pi_k$ be the monic [orthogonal](c:orthogonality) polynomials of a weight $w$, with $x\\pi_k=\\pi_{k+1}+\\alpha_k\\pi_k+\\beta_k\\pi_{k-1}$. The Jacobi matrix $J_n$ is a [symmetric matrix](c:symmetric-matrix) with $\\det(xI-J_n)=\\pi_n$. So its [eigenvalues](c:eigenvalue) are the Gauss nodes, and the Gauss weight at a node is $\\int w$ times the squared first entry of a unit [eigenvector](c:eigenvector).",
+  "hypotheses": [
+   {
+    "id": "h:w-hyp",
+    "text": "The weight satisfies the hypotheses of Gauss quadrature, so $\\pi_k$ exists and $h_k>0$.",
+    "concept": "c:orthogonality"
+   },
+   {
+    "id": "h:n-hyp",
+    "text": "The size $n\\ge1$, and the [characteristic polynomial](c:characteristic-polynomial) of $J_n$ is monic of degree $n$.",
+    "concept": "c:characteristic-polynomial"
+   },
+   {
+    "id": "h:ev-hyp",
+    "text": "Eigenvectors are taken in $\\mathbb R^n$ with the standard inner product.",
+    "concept": "c:eigenvector"
+   }
+  ],
+  "conclusion": "Orthogonal polynomials satisfy a three-term recurrence, the eigenvalues of $J_n$ are the Gauss nodes, and the Gauss weights come from the first entries of unit eigenvectors.",
+  "formal": {
+   "decl": "spectrum_real_eq_range_eigenvalues",
+   "difference": "The declaration states that the real spectrum of a self-adjoint operator is the range of its eigenvalues. The recurrence, the determinant identity and the weight formula are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Recurrence, determinant and eigenvector",
+    "slogan": "Derive the recurrence, match it with a determinant recurrence, then read the nodes and weights.",
+    "scope": "The three parts for each $n\\ge1$. Real and simple roots come from the Gauss quadrature theorem.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:determinant",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:w-hyp",
+      "why": "The weight defines the inner product, so multiplication by $x$ is symmetric and $h_k>0$.",
+      "steps": [
+       "s:rec",
+       "s:christ"
+      ]
+     },
+     {
+      "h": "h:n-hyp",
+      "why": "The determinant of $xI-J_n$ is the monic polynomial compared with $\\pi_n$.",
+      "steps": [
+       "s:det"
+      ]
+     },
+     {
+      "h": "h:ev-hyp",
+      "why": "Unit eigenvectors in $\\mathbb R^n$ give the squared first entry.",
+      "steps": [
+       "s:vec",
+       "s:norm"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rec",
+      "slogan": "Derive the three-term recurrence.",
+      "detail": "$\\langle xf,g\\rangle=\\langle f,xg\\rangle$. Expand $x\\pi_k-\\pi_{k+1}$ in $\\pi_0,\\dots,\\pi_k$. The coefficient of $\\pi_j$ is $\\langle x\\pi_k,\\pi_j\\rangle/h_j$, which is $0$ for $j<k-1$, is $\\alpha_k$ for $j=k$, and is $h_k/h_{k-1}=\\beta_k$ for $j=k-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:det",
+      "slogan": "Show that the characteristic polynomials satisfy the same recurrence.",
+      "detail": "Expand $D_{k+1}=\\det(xI-J_{k+1})$ along the last row to get $D_{k+1}=(x-\\alpha_k)D_k-\\beta_kD_{k-1}$. With $D_0=1=\\pi_0$ and $D_1=\\pi_1$, induction gives $D_k=\\pi_k$. So $\\det(xI-J_n)=\\pi_n$, and the eigenvalues are the nodes.",
+      "uses": []
+     },
+     {
+      "id": "s:vec",
+      "slogan": "Build an eigenvector from the orthonormal polynomials.",
+      "detail": "Divide the recurrence by $\\sqrt{h_k}$ to get $xp_k=\\sqrt{\\beta_{k+1}}p_{k+1}+\\alpha_kp_k+\\sqrt{\\beta_k}p_{k-1}$. Let $P(x)=(p_0,\\dots,p_{n-1})^T$. At a root $x_i$ of $\\pi_n$, $p_n(x_i)=0$, so $J_nP(x_i)=x_iP(x_i)$. Its first entry is $h_0^{-1/2}\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Normalize the eigenvector to unit length.",
+      "detail": "The eigenvalue $x_i$ is simple, so the eigenspace is spanned by $P(x_i)$. The unit vector has $v_{i,1}^2=h_0^{-1}/\\sum_kp_k(x_i)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:christ",
+      "slogan": "Find the Christoffel formula for the weights.",
+      "detail": "Expand the Lagrange polynomial $\\ell_i$ in $p_0,\\dots,p_{n-1}$. Exactness of the Gauss rule for degree $2n-2$ gives the coefficients $\\lambda_ip_k(x_i)$. Evaluating at $x_i$ gives $\\lambda_i=1/\\sum_kp_k(x_i)^2$.",
+      "uses": [
+       "nm:technique-gauss-quadrature-orthogonal-roots"
+      ]
+     },
+     {
+      "id": "s:done",
+      "slogan": "Compare the two formulas for the weight.",
+      "detail": "Steps 4 and 5 give two formulas for the weight, $\\lambda_i=1/\\sum p_k(x_i)^2$ and $\\lambda_i=h_0v_{i,1}^2$. Here $h_0=\\int w$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rec",
+      "s:det"
+     ],
+     [
+      "s:det",
+      "s:vec"
+     ],
+     [
+      "s:rec",
+      "s:vec"
+     ],
+     [
+      "s:vec",
+      "s:norm"
+     ],
+     [
+      "s:norm",
+      "s:done"
+     ],
+     [
+      "s:christ",
+      "s:done"
+     ],
+     [
+      "s:rec",
+      "s:christ"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:orthogonality": "The polynomials are orthogonal for the weight inner product.",
+     "c:symmetric-matrix": "The Jacobi matrix is symmetric, so it has real eigenvalues.",
+     "c:eigenvalue": "The nodes of the Gauss rule are the eigenvalues of $J_n$.",
+     "c:eigenvector": "The weights come from the first entries of unit eigenvectors.",
+     "c:characteristic-polynomial": "The characteristic polynomial of $J_n$ is shown to be $\\pi_n$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-vallee-poussin-equioscillation-sufficiency-uniqueness",
+  "statement": "Let $f$ be [continuous](c:continuous-function) on $[a,b]$ and $p$ a real [polynomial](c:polynomial) of degree at most $n$, with $e=f-p$. Take $n+2$ points $t_0<\\dots<t_{n+1}$ where $e(t_i)$ is nonzero with alternating signs. Then every polynomial $q$ of degree at most $n$ has $\\max|f-q|\\ge\\min|e(t_i)|$. If also $|e(t_i)|=\\max|e|$, then $p$ is the unique [best approximation](c:best-approximation).",
+  "hypotheses": [
+   {
+    "id": "h:f-hyp",
+    "text": "The function $f$ is real and [continuous](c:continuous-function) on the closed interval $[a,b]$.",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:pq-hyp",
+    "text": "The functions $p$ and $q$ are real [polynomials](c:polynomial) of degree at most $n$.",
+    "concept": "c:polynomial"
+   },
+   {
+    "id": "h:t-hyp",
+    "text": "The points $t_0<\\dots<t_{n+1}$ are $n+2$ distinct points of $[a,b]$.",
+    "concept": "c:best-approximation"
+   }
+  ],
+  "conclusion": "Alternating errors give a lower bound for every competitor, and equioscillation at maximal error makes $p$ the unique best uniform approximation.",
+  "formal": {
+   "decl": "card_le_degree_of_subset_roots",
+   "difference": "The declaration states that a nonzero polynomial has at most as many roots as its degree. The alternation bound and the uniqueness claim are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Divided differences and alternating signs",
+    "slogan": "Use the vanishing divided difference of a polynomial of degree at most $n$ on $n+2$ nodes, and compare signs.",
+    "scope": "Parts (a) and (b), for every $n\\ge0$ and every interval $[a,b]$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:coordinates",
+     "m:supremum"
+    ],
+    "roles": [
+     {
+      "h": "h:f-hyp",
+      "why": "Continuity makes the maximum of $|e|$ exist, so equioscillation at the maximum is meaningful.",
+      "steps": [
+       "s:best",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:pq-hyp",
+      "why": "Degree at most $n$ makes $r=p-q$ have vanishing divided difference on $n+2$ nodes.",
+      "steps": [
+       "s:ident",
+       "s:lower",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:t-hyp",
+      "why": "The $n+2$ nodes carry the alternating signs and the identity.",
+      "steps": [
+       "s:weights",
+       "s:ident",
+       "s:lower",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:weights",
+      "slogan": "Find the signs of the node weights.",
+      "detail": "Put $w(x)=\\prod_j(x-t_j)$ and $w_i=w'(t_i)$. Exactly $n+1-i$ factors of $w_i$ are negative, so $\\operatorname{sign}w_i=(-1)^{n+1-i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:ident",
+      "slogan": "Prove the identity $\\sum r(t_i)/w_i=0$ for degree at most $n$.",
+      "detail": "The interpolating polynomial of degree at most $n+1$ at the $n+2$ nodes is unique, and Lagrange gives it as $\\sum r(t_i)\\prod_{j\\ne i}(x-t_j)/w_i$. The polynomial $r$ itself interpolates. The coefficient of $x^{n+1}$ is $0$ on the left and $\\sum r(t_i)/w_i$ on the right.",
+      "uses": [
+       "nm:technique-vandermonde-determinant"
+      ]
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Prove the lower bound (a) by contradiction.",
+      "detail": "Suppose $\\max|f-q|<\\lambda=\\min|e(t_i)|$ and put $r=p-q$. At each node $r(t_i)$ has the sign of $-e(t_i)$. Then the terms $r(t_i)/w_i$ have one common nonzero sign, so their sum is nonzero. This contradicts the identity.",
+      "uses": []
+     },
+     {
+      "id": "s:best",
+      "slogan": "Show that $p$ is a best approximation.",
+      "detail": "If $|e(t_i)|=E=\\max|e|$, part (a) gives $\\max|f-q|\\ge E=\\max|f-p|$ for every $q$. So no polynomial of degree at most $n$ has a smaller maximal error than $p$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that a second best approximation equals $p$.",
+      "detail": "Let $\\max|f-q|=E$ and $r=p-q$. At the nodes, $s(-1)^ir(t_i)\\le0$. So all terms $r(t_i)/w_i$ have the same weak sign, and their sum is $0$ by the identity. Hence $r(t_i)=0$ at $n+2$ nodes. A nonzero polynomial of degree at most $n$ has at most $n$ roots, so $r=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the lower bound and the uniqueness.",
+      "detail": "Step 3 gives part (a). Steps 4 and 5 give part (b).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:weights",
+      "s:lower"
+     ],
+     [
+      "s:ident",
+      "s:lower"
+     ],
+     [
+      "s:lower",
+      "s:best"
+     ],
+     [
+      "s:weights",
+      "s:unique"
+     ],
+     [
+      "s:ident",
+      "s:unique"
+     ],
+     [
+      "s:best",
+      "s:done"
+     ],
+     [
+      "s:unique",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:continuous-function": "Continuity makes the maximum error exist.",
+     "c:polynomial": "Degree at most $n$ makes the divided difference vanish.",
+     "c:best-approximation": "The theorem identifies the unique best uniform approximation."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-maximum-entropy-gibbs-pythagoras",
+  "statement": "Let $X$ be a [finite set](c:finite-set) and $f\\colon X\\to\\mathbb R^k$. Let $p^*(x)\\propto e^{-\\beta\\cdot f(x)}$ be the [Gibbs distribution](c:gibbs-distribution) with mean $m$ of $f$. For every [probability distribution](c:probability-distribution) $q$ with the same mean, $H(q)=H(p^*)-D(q\\|p^*)$. So $H(q)\\le H(p^*)$, with equality iff $q=p^*$.",
+  "hypotheses": [
+   {
+    "id": "h:x-hyp",
+    "text": "The set $X$ is a [finite set](c:finite-set) and $f$ takes real values.",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:q-hyp",
+    "text": "The competitor $q$ is a [probability distribution](c:probability-distribution) with the same mean of $f$ as $p^*$.",
+    "concept": "c:probability-distribution"
+   },
+   {
+    "id": "h:pos",
+    "text": "Every $p^*(x)$ is strictly positive, so $D(q\\|p^*)$ is finite.",
+    "concept": "c:gibbs-distribution"
+   }
+  ],
+  "conclusion": "The entropy of $q$ is the entropy of $p^*$ minus the divergence, so $p^*$ is the unique maximizer of entropy with the mean constraint.",
+  "formal": {
+   "decl": "klDiv_eq_zero_iff",
+   "difference": "The declaration states that the divergence is zero iff the two measures are equal. The entropy identity and the maximum are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Log of the Gibbs law is affine",
+    "slogan": "Use that the log of the Gibbs law is affine in $f$, so the cross term depends only on the mean.",
+    "scope": "The whole statement, including $k=0$, where $p^*$ is uniform.",
+    "mechanisms": [
+     "m:convexity",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:x-hyp",
+      "why": "Finiteness makes all sums finite and the entropy well defined.",
+      "steps": [
+       "s:affine",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:q-hyp",
+      "why": "The equal mean makes the cross term the same for $q$ and $p^*$.",
+      "steps": [
+       "s:evaluate",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:pos",
+      "why": "Positivity makes $\\log p^*$ finite and the divergence finite.",
+      "steps": [
+       "s:affine",
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:affine",
+      "slogan": "Show that $\\log p^*$ is affine in $f$.",
+      "detail": "Since $p^*(x)=e^{-\\beta\\cdot f(x)}/Z>0$, $\\log p^*(x)=-\\beta\\cdot f(x)-\\log Z$. So for any $q$, $-\\sum_xq\\log p^*=\\beta\\cdot\\sum_xqf+\\log Z$.",
+      "uses": []
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Evaluate the cross term for $p^*$ and for $q$.",
+      "detail": "For $q=p^*$ we get $H(p^*)=\\beta\\cdot m+\\log Z$. If $q$ has mean $m$, the cross term $-\\sum q\\log p^*$ is the same number $H(p^*)$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the divergence into entropy terms.",
+      "detail": "$D(q\\|p^*)=\\sum q\\log q-\\sum q\\log p^*=-H(q)+H(p^*)$. This is the identity $H(q)=H(p^*)-D(q\\|p^*)$, because the cross term equals $H(p^*)$ by step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Apply nonnegativity of the divergence.",
+      "detail": "Gibbs' inequality gives $D(q\\|p^*)\\ge0$ with equality iff $q=p^*$. So $H(q)\\le H(p^*)$, with equality only for $q=p^*$.",
+      "uses": [
+       "nm:gibbs-inequality"
+      ]
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Read the case without constraints.",
+      "detail": "For $k=0$ or $\\beta=0$, $Z=|X|$ and $p^*$ is uniform. So $H(q)=\\log|X|-D(q\\|u)\\le\\log|X|$, with equality only for the uniform law.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:affine",
+      "s:evaluate"
+     ],
+     [
+      "s:evaluate",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:uniform"
+     ]
+    ],
+    "conclusion": "s:uniform",
+    "concepts": {
+     "c:finite-set": "Finiteness makes all sums finite.",
+     "c:gibbs-distribution": "Its log is affine in $f$, which makes the identity work.",
+     "c:probability-distribution": "The competitor $q$ ranges over probability distributions with the same mean."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-spectrum-nonempty-compact-resolvent",
+  "statement": "Let $A\\ne0$ be a complex [Banach algebra](c:banach-algebra) with unit of norm $1$, and $a\\in A$. Then the [spectrum](c:spectrum-of-an-operator) $\\sigma(a)$ is a compact subset of $\\{|\\lambda|\\le\\|a\\|\\}$. The [resolvent](c:resolvent) $R(\\lambda)=(\\lambda-a)^{-1}$ satisfies $R(\\lambda)-R(\\mu)=(\\mu-\\lambda)R(\\lambda)R(\\mu)$ and is [holomorphic](c:holomorphic-function) with $R'=-R^2$. Also $\\sigma(a)\\ne\\emptyset$.",
+  "hypotheses": [
+   {
+    "id": "h:norm",
+    "text": "The algebra $A$ is complete for a submultiplicative norm, so $\\|xy\\|\\le\\|x\\|\\|y\\|$.",
+    "concept": "c:banach-algebra"
+   },
+   {
+    "id": "h:cx-hyp",
+    "text": "The scalar field is $\\mathbb C$, the unit has norm $1$ and $1\\ne0$.",
+    "concept": "c:norm"
+   },
+   {
+    "id": "h:nc-hyp",
+    "text": "The algebra $A$ need not be commutative.",
+    "concept": "c:banach-algebra"
+   }
+  ],
+  "conclusion": "The spectrum is compact and nonempty, and the resolvent obeys the resolvent identity and is holomorphic with the stated bounds.",
+  "formal": {
+   "decl": "nonempty",
+   "difference": "The declaration states that the spectrum of an element of a complex Banach algebra is nonempty. The compactness, the resolvent identity and the bounds are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Neumann series and Liouville",
+    "slogan": "Build the resolvent from Neumann series, then use Liouville and Hahn-Banach to exclude an empty spectrum.",
+    "scope": "All five parts. The scalar field must be $\\mathbb C$, because part (v) is false over $\\mathbb R$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:complex-integration",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:norm",
+      "why": "Submultiplicativity and completeness make the Neumann series converge.",
+      "steps": [
+       "s:neumann",
+       "s:infinity",
+       "s:open"
+      ]
+     },
+     {
+      "h": "h:cx-hyp",
+      "why": "Complex scalars allow Liouville's theorem, and norm $1$ of the unit gives the series bound.",
+      "steps": [
+       "s:liouville",
+       "s:contra"
+      ]
+     },
+     {
+      "h": "h:nc-hyp",
+      "why": "The proof uses only powers of one element, so it never needs commutativity.",
+      "unused": true
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:neumann",
+      "slogan": "Sum the Neumann series.",
+      "detail": "If $\\|x\\|<1$, then $\\|x^n\\|\\le\\|x\\|^n$, so $\\sum x^n$ converges in the complete algebra to an inverse of $1-x$, with norm at most $1/(1-\\|x\\|)$.",
+      "uses": []
+     },
+     {
+      "id": "s:infinity",
+      "slogan": "Bound the resolvent outside the disc.",
+      "detail": "For $|\\lambda|>\\|a\\|$, write $\\lambda-a=\\lambda(1-a/\\lambda)$. Step 1 gives invertibility and $\\|R(\\lambda)\\|\\le1/(|\\lambda|-\\|a\\|)$. So $\\sigma(a)\\subseteq\\{|\\lambda|\\le\\|a\\|\\}$.",
+      "uses": []
+     },
+     {
+      "id": "s:open",
+      "slogan": "Show that the resolvent set is open and give the power series.",
+      "detail": "For $\\lambda_0\\in\\rho(a)$ and $|\\lambda-\\lambda_0|<1/\\|R(\\lambda_0)\\|$, step 1 gives $R(\\lambda)=\\sum(-1)^n(\\lambda-\\lambda_0)^nR(\\lambda_0)^{n+1}$. So $\\rho(a)$ is open, $\\sigma(a)$ is compact, and $\\operatorname{dist}(\\lambda_0,\\sigma(a))\\ge1/\\|R(\\lambda_0)\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:ident",
+      "slogan": "Prove the resolvent identity and holomorphy.",
+      "detail": "$R(\\lambda)-R(\\mu)=R(\\lambda)[(\\mu-a)-(\\lambda-a)]R(\\mu)=(\\mu-\\lambda)R(\\lambda)R(\\mu)$. The linear coefficient of the series is $-R(\\lambda_0)^2$, so $R$ is holomorphic with $R'=-R^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:liouville",
+      "slogan": "Assume an empty spectrum and apply Liouville.",
+      "detail": "Let $\\sigma(a)=\\emptyset$ and let $\\varphi$ be a bounded linear functional. Then $f=\\varphi\\circ R$ is entire, bounded and tends to $0$ at infinity. By Liouville's theorem $f\\equiv0$.",
+      "uses": [
+       "wd:Q576478"
+      ]
+     },
+     {
+      "id": "s:contra",
+      "slogan": "Reach a contradiction with Hahn-Banach.",
+      "detail": "Step 5 gives $\\varphi(R(0))=0$ for every bounded $\\varphi$. By the Hahn-Banach theorem, $R(0)=0$. But $R(0)(-a)=1\\ne0$. So $\\sigma(a)\\ne\\emptyset$.",
+      "uses": [
+       "wd:Q866116"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:neumann",
+      "s:infinity"
+     ],
+     [
+      "s:neumann",
+      "s:open"
+     ],
+     [
+      "s:infinity",
+      "s:open"
+     ],
+     [
+      "s:open",
+      "s:ident"
+     ],
+     [
+      "s:open",
+      "s:liouville"
+     ],
+     [
+      "s:infinity",
+      "s:liouville"
+     ],
+     [
+      "s:ident",
+      "s:liouville"
+     ],
+     [
+      "s:liouville",
+      "s:contra"
+     ]
+    ],
+    "conclusion": "s:contra",
+    "concepts": {
+     "c:banach-algebra": "Completeness and submultiplicativity make the Neumann series converge.",
+     "c:spectrum-of-an-operator": "The spectrum is the set shown compact and nonempty.",
+     "c:resolvent": "The resolvent is the holomorphic function studied.",
+     "c:holomorphic-function": "Holomorphy lets Liouville's theorem apply.",
+     "c:norm": "The norm bounds the Neumann series."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-fourier-derivative-multiplier-decay",
+  "statement": "For $f\\in L^1(\\mathbb R)$ let $\\hat f(\\xi)=\\int f(x)e^{-2\\pi ix\\xi}dx$ be the [Fourier transform](c:fourier-transform). If $f,f',\\dots,f^{(m)}$ are [integrable](c:lebesgue-integral), then $\\widehat{f^{(j)}}=(2\\pi i\\xi)^j\\hat f$, so $|\\xi|^m\\hat f(\\xi)\\to0$. If $x^jf$ is integrable for $j\\le m$, then $\\hat f\\in C^m$ and $\\hat f^{(j)}=\\widehat{(-2\\pi ix)^jf}$.",
+  "hypotheses": [
+   {
+    "id": "h:a-hyp",
+    "text": "In part (A) the [derivatives](c:derivative) $f^{(j)}$ are classical, continuous and integrable.",
+    "concept": "c:derivative"
+   },
+   {
+    "id": "h:b-hyp",
+    "text": "In part (B) the functions $x^jf$ are integrable, not only $f$.",
+    "concept": "c:lebesgue-integral"
+   },
+   {
+    "id": "h:conv",
+    "text": "The convention of the [Fourier transform](c:fourier-transform) has the factor $2\\pi$ in the exponent.",
+    "concept": "c:fourier-transform"
+   }
+  ],
+  "conclusion": "Derivatives of $f$ become multiplication by $2\\pi i\\xi$ and give decay of $\\hat f$. Multiplication by $x$ becomes differentiation of $\\hat f$ and gives smoothness.",
+  "formal": {
+   "decl": "fourierIntegral_fderiv",
+   "difference": "The declaration states the derivative rule of the Fourier integral in a related form. The decay claim and the smoothness claim are stated here."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Integrate by parts and differentiate under the integral",
+    "slogan": "Trade derivatives for multipliers by integration by parts, and multipliers for derivatives by dominated convergence.",
+    "scope": "Parts (A) and (B) on the real line. The Riemann-Lebesgue lemma is cited.",
+    "mechanisms": [
+     "m:dominated-convergence",
+     "m:a-priori-estimate",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:a-hyp",
+      "why": "Integrable continuous derivatives let the boundary terms vanish and give the decay bound.",
+      "steps": [
+       "s:bounds",
+       "s:ibp",
+       "s:decay"
+      ]
+     },
+     {
+      "h": "h:b-hyp",
+      "why": "Integrability of $x^jf$ gives the dominating function for differentiation.",
+      "steps": [
+       "s:diff",
+       "s:induct"
+      ]
+     },
+     {
+      "h": "h:conv",
+      "why": "The factor $2\\pi$ in the exponent produces the multiplier $2\\pi i\\xi$.",
+      "steps": [
+       "s:ibp",
+       "s:diff"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bounds",
+      "slogan": "Show that the boundary values vanish.",
+      "detail": "If $g,g'\\in L^1$ with $g$ continuous, $g(x)=g(0)+\\int_0^xg'$ has limits at $\\pm\\infty$. Since $g$ is integrable, both limits are $0$. Apply this to $g=f^{(j)}$ for $j<m$.",
+      "uses": []
+     },
+     {
+      "id": "s:ibp",
+      "slogan": "Integrate by parts and iterate.",
+      "detail": "On $[-R,R]$, $\\int f^{(j+1)}e^{-2\\pi ix\\xi}dx$ equals a boundary term plus $2\\pi i\\xi\\int f^{(j)}e^{-2\\pi ix\\xi}dx$. Let $R\\to\\infty$. The boundary term vanishes, so $\\widehat{f^{(j+1)}}=2\\pi i\\xi\\widehat{f^{(j)}}$. By induction $\\widehat{f^{(j)}}=(2\\pi i\\xi)^j\\hat f$.",
+      "uses": []
+     },
+     {
+      "id": "s:decay",
+      "slogan": "Bound and decay of $\\hat f$.",
+      "detail": "By step 2, $|2\\pi\\xi|^m|\\hat f(\\xi)|=|\\widehat{f^{(m)}}(\\xi)|\\le\\|f^{(m)}\\|_1$. The Riemann-Lebesgue lemma gives $\\widehat{f^{(m)}}(\\xi)\\to0$, so $|\\xi|^m\\hat f(\\xi)\\to0$.",
+      "uses": [
+       "nm:riemann-lebesgue-lemma"
+      ]
+     },
+     {
+      "id": "s:diff",
+      "slogan": "Differentiate under the integral once.",
+      "detail": "If $xf\\in L^1$, the difference quotient $\\int f(x)e^{-2\\pi ix\\xi}(e^{-2\\pi ixh}-1)/h\\,dx$ has integrand bounded by $2\\pi|x||f(x)|$ and tends to $-2\\pi ixf(x)e^{-2\\pi ix\\xi}$. Dominated convergence gives $\\hat f'(\\xi)=\\int(-2\\pi ix)f(x)e^{-2\\pi ix\\xi}dx$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Repeat for higher derivatives.",
+      "detail": "Apply step 4 to $(-2\\pi ix)^jf$ for $j<m$. Each $\\hat f^{(j)}$ is continuous, again by dominated convergence. So $\\hat f\\in C^m$.",
+      "uses": []
+     },
+     {
+      "id": "s:done",
+      "slogan": "Collect the parts (A) and (B).",
+      "detail": "Steps 1 to 3 give part (A). Steps 4 and 5 give part (B).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bounds",
+      "s:ibp"
+     ],
+     [
+      "s:ibp",
+      "s:decay"
+     ],
+     [
+      "s:diff",
+      "s:induct"
+     ],
+     [
+      "s:decay",
+      "s:done"
+     ],
+     [
+      "s:induct",
+      "s:done"
+     ]
+    ],
+    "conclusion": "s:done",
+    "concepts": {
+     "c:derivative": "Derivatives of $f$ become multipliers of $\\hat f$.",
+     "c:lebesgue-integral": "Integrability gives the dominating functions.",
+     "c:fourier-transform": "It exchanges differentiation with multiplication."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]

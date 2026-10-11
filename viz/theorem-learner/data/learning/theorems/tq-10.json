@@ -1,0 +1,836 @@
+[
+ {
+  "id": "nm:technique-dfa-pumping-lemma",
+  "statement": "Let $M$ be a [deterministic finite automaton](c:dfa) with $n$ states. Let $M$ accept a word $x$ with $|x| \\ge n$. Then $x = abc$ with $|ab| \\le n$ and $b \\ne \\varepsilon$, and $M$ accepts $a b^k c$ for every $k \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:dfa",
+    "text": "$M$ is a complete [deterministic automaton](c:deterministic-automaton): each state and letter give exactly one next state.",
+    "concept": "c:deterministic-automaton"
+   },
+   {
+    "id": "h:accepts",
+    "text": "$M$ accepts the word $x$.",
+    "concept": null
+   },
+   {
+    "id": "h:long",
+    "text": "The length of $x$ is at least the number $n$ of states.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some split $x = abc$ with $|ab| \\le n$ and $b \\ne \\varepsilon$ has $a b^k c$ accepted by $M$ for every $k \\ge 0$.",
+  "formal": {
+   "decl": "pumping_lemma",
+   "difference": "The declaration states the same fact in language form: the set $\\{a\\}\\{b\\}^*\\{c\\}$ lies in the accepted language. It uses a finite state type, so it is a related statement, not a word-for-word match."
+  },
+  "proofs": [
+   {
+    "id": "pigeonhole-loop",
+    "name": "Pigeonhole on the run",
+    "slogan": "Two of the first $n+1$ states of the run are equal, so the word between them is a loop that can repeat.",
+    "scope": "The whole statement. The case $b = \\varepsilon$ cannot occur because the two equal states have different indices.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:dfa",
+      "why": "Each prefix of $x$ has one well-defined state, and equal states give equal futures.",
+      "steps": [
+       "s:run",
+       "s:loop"
+      ]
+     },
+     {
+      "h": "h:long",
+      "why": "The first $n+1$ prefix states exist only when $|x| \\ge n$.",
+      "steps": [
+       "s:pigeon"
+      ]
+     },
+     {
+      "h": "h:accepts",
+      "why": "The final state of $x$ lies in the accepting set, and every pumped word ends there.",
+      "steps": [
+       "s:accept"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:run",
+      "slogan": "Record the state of $M$ after each prefix of the word $x$.",
+      "detail": "Write $x = \\sigma_1 \\cdots \\sigma_N$ with $N \\ge n$. Let $s_i$ be the state after the first $i$ letters. The machine is deterministic, so each $s_i$ is unique.",
+      "uses": []
+     },
+     {
+      "id": "s:pigeon",
+      "slogan": "Find two equal states among the first $n+1$ states of the run.",
+      "detail": "The states $s_0, \\dots, s_n$ are $n+1$ states of $M$, and $M$ has only $n$ states. By the pigeonhole principle, $s_i = s_j$ for some $i < j \\le n$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Cut $x$ at the two equal states into three parts $a$, $b$ and $c$.",
+      "detail": "Put $a = \\sigma_1 \\cdots \\sigma_i$, $b = \\sigma_{i+1} \\cdots \\sigma_j$ and $c = \\sigma_{j+1} \\cdots \\sigma_N$. Then $x = abc$, $|ab| = j \\le n$ and $|b| = j - i \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:loop",
+      "slogan": "Show by induction that reading $b$ any number of times returns to the same state.",
+      "detail": "Reading $b$ from $s_i$ gives $s_j = s_i$. If $b^k$ returns to $s_i$, then $b^{k+1}$ returns to $s_i$ by one more pass. So $b^k$ returns to $s_i$ for every $k \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:accept",
+      "slogan": "Follow the pumped word $a b^k c$ to the same final state as $x$.",
+      "detail": "Reading $a$ gives $s_i$. Reading $b^k$ returns to $s_i$. Reading $c$ from $s_j = s_i$ gives the final state of $x$, which is accepting. So $a b^k c$ is accepted. A failed pumping decomposition shows that a language is not [regular](c:regular-language).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:run",
+      "s:pigeon"
+     ],
+     [
+      "s:pigeon",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:loop"
+     ],
+     [
+      "s:loop",
+      "s:accept"
+     ],
+     [
+      "s:split",
+      "s:accept"
+     ]
+    ],
+    "conclusion": "s:accept",
+    "concepts": {
+     "c:dfa": "The proof counts the states of one deterministic finite automaton.",
+     "c:deterministic-automaton": "Determinism gives one state per prefix and equal futures from equal states.",
+     "c:regular-language": "The lemma gives a test that proves a language is not regular."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-modular-lattice-diamond-isomorphism",
+  "statement": "Let $L$ be a [modular lattice](c:is-modular-lattice) and $a, b \\in L$. Then $x \\mapsto x \\vee b$ is an order isomorphism from the [interval](c:interval) $[a \\wedge b, a]$ onto $[b, a \\vee b]$, with inverse $y \\mapsto y \\wedge a$. So $a$ covers $a \\wedge b$ if and only if $a \\vee b$ covers $b$.",
+  "hypotheses": [
+   {
+    "id": "h:lattice",
+    "text": "$L$ is a [lattice](c:lattice) with meet $\\wedge$ and join $\\vee$.",
+    "concept": "c:lattice"
+   },
+   {
+    "id": "h:modular",
+    "text": "$L$ is [modular](c:is-modular-lattice): $x \\le z$ implies $x \\vee (y \\wedge z) = (x \\vee y) \\wedge z$.",
+    "concept": "c:is-modular-lattice"
+   },
+   {
+    "id": "h:elements",
+    "text": "The elements $a$ and $b$ lie in $L$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The two maps are inverse order isomorphisms between the intervals, and $a \\wedge b \\lessdot a$ if and only if $b \\lessdot a \\vee b$.",
+  "formal": {
+   "decl": "infIccOrderIsoIccSup",
+   "difference": "The declaration gives the order isomorphism of the two intervals. It does not state the consequence for the cover relation."
+  },
+  "proofs": [
+   {
+    "id": "modular-law",
+    "name": "Modular law both ways",
+    "slogan": "The modular law makes the two maps inverse to each other, so the intervals are isomorphic.",
+    "scope": "The whole statement, for all $a$ and $b$ in $L$. The cover statement uses only the order isomorphism.",
+    "mechanisms": [
+     "m:bijection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:lattice",
+      "why": "Join and meet are monotone, so both maps are well defined and keep the order.",
+      "steps": [
+       "s:maps"
+      ]
+     },
+     {
+      "h": "h:elements",
+      "why": "The elements $a$ and $b$ fix the two intervals.",
+      "steps": [
+       "s:maps"
+      ]
+     },
+     {
+      "h": "h:modular",
+      "why": "The modular law shows that each composite map is the identity.",
+      "steps": [
+       "s:left",
+       "s:right"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:maps",
+      "slogan": "Show that both maps land in the stated intervals and keep the order.",
+      "detail": "For $x \\in [a \\wedge b, a]$, we get $b \\le x \\vee b \\le a \\vee b$. For $y \\in [b, a \\vee b]$, we get $a \\wedge b \\le y \\wedge a \\le a$. Join and meet are monotone, so both maps keep the order.",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Apply modularity to show that the inverse map after the forward map is the identity.",
+      "detail": "Let $x \\in [a \\wedge b, a]$. Because $x \\le a$, modularity gives $(x \\vee b) \\wedge a = x \\vee (b \\wedge a)$. This is $x$, because $a \\wedge b \\le x$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Apply modularity again to show that the forward map after the inverse map is the identity.",
+      "detail": "Let $y \\in [b, a \\vee b]$. Because $b \\le y$, modularity gives $(y \\wedge a) \\vee b = y \\wedge (a \\vee b)$. This is $y$, because $y \\le a \\vee b$.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Conclude that the two maps are inverse order isomorphisms of the intervals.",
+      "detail": "Each map keeps the order and each is the inverse of the other. So each is a bijection that keeps the order in both directions.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Transfer the cover relation across the isomorphism.",
+      "detail": "An order isomorphism keeps covers, because a cover uses only the order. The map sends $a \\wedge b$ to $b$ and $a$ to $a \\vee b$. A cover in an interval is a cover in $L$, so $a \\wedge b \\lessdot a$ if and only if $b \\lessdot a \\vee b$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:maps",
+      "s:left"
+     ],
+     [
+      "s:maps",
+      "s:right"
+     ],
+     [
+      "s:left",
+      "s:iso"
+     ],
+     [
+      "s:right",
+      "s:iso"
+     ],
+     [
+      "s:maps",
+      "s:iso"
+     ],
+     [
+      "s:iso",
+      "s:cover"
+     ]
+    ],
+    "conclusion": "s:cover",
+    "concepts": {
+     "c:is-modular-lattice": "The modular law is the identity that inverts the two maps.",
+     "c:interval": "The two intervals are the domain and the codomain of the isomorphism.",
+     "c:lattice": "Meet and join define both maps."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-translation-number-circle-degree-one-lift",
+  "statement": "Let $f\\colon \\mathbb{R} \\to \\mathbb{R}$ be a [monotone](c:monotone-function) [lift of a degree-one circle map](c:circle-deg1-lift), so $f(x+1) = f(x) + 1$. Then $\\tau(f) = \\lim_n (f^n(x) - x)/n$ exists for every $x$, and $|f^n(0) - n\\tau(f)| \\le 1$. Also $\\tau(f^k) = k\\tau(f)$. If $f^q(x) = x + p$, then $\\tau(f) = p/q$. If $f \\le g$, then $\\tau(f) \\le \\tau(g)$.",
+  "hypotheses": [
+   {
+    "id": "h:monotone",
+    "text": "The map $f$ is [nondecreasing](c:monotone-function); it need not be continuous.",
+    "concept": "c:monotone-function"
+   },
+   {
+    "id": "h:shift",
+    "text": "The map $f$ satisfies $f(x+1) = f(x) + 1$ for all $x$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The limit $\\tau(f)$ exists and does not depend on $x$, with $|f^n(0) - n\\tau(f)| \\le 1$, $\\tau(f^k) = k\\tau(f)$, $\\tau(f) = p/q$ for a point with $f^q(x) = x+p$, and $\\tau$ is monotone in $f$.",
+  "formal": {
+   "decl": "tendsto_translationNumber",
+   "difference": "The declaration states part (a) only: the limit exists for every starting point and does not depend on it. It does not state parts (b) to (e)."
+  },
+  "proofs": [
+   {
+    "id": "quasi-additive",
+    "name": "Quasi-additive sequence",
+    "slogan": "The orbit of $0$ is almost additive, so $u_n/n$ is Cauchy, and its limit has all the stated properties.",
+    "scope": "The whole statement. Here $u_n = f^n(0)$ and $f^0$ is the identity. The proof uses no continuity.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:monotone",
+      "why": "Monotone iterates compare $f^n(x)$ with the values at nearby integers, and they keep the order of $f \\le g$.",
+      "steps": [
+       "s:shift",
+       "s:compare"
+      ]
+     },
+     {
+      "h": "h:shift",
+      "why": "The shift rule moves integers out of the iterates, so displacement of $x$ is displacement of $0$ plus a bounded error.",
+      "steps": [
+       "s:shift",
+       "s:power"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:shift",
+      "slogan": "Show that iterates commute with integer shifts and displace every point within 1 of $f^n(0)$.",
+      "detail": "By induction $f^n(x+k) = f^n(x) + k$ for integers $k$, and $f^n$ is nondecreasing. Then $f^n(\\lfloor x \\rfloor) \\le f^n(x) \\le f^n(\\lceil x \\rceil)$ gives $|f^n(x) - x - u_n| < 1$ for all $x$ and $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:quasi",
+      "slogan": "Show that the sequence $u_n = f^n(0)$ is almost additive with error below 1.",
+      "detail": "We have $u_{m+n} = f^m(u_n)$. The bound of the first step for $f^m$ at $x = u_n$ gives $|u_{m+n} - u_n - u_m| < 1$ for all $m, n \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Show that $u_n/n$ is a [Cauchy sequence](c:cauchy-sequence) and define $\\tau(f)$ as its limit.",
+      "detail": "By induction on $k$, $|u_{kn} - k u_n| \\le k - 1$, so $|u_{kn}/(kn) - u_n/n| < 1/n$. Using this for $(k,n)=(m,n)$ and $(n,m)$ gives $|u_n/n - u_m/m| < 1/n + 1/m$. The reals are complete, so the limit $\\tau$ exists.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Read parts (a) and (b) from the Cauchy estimate and the displacement bound.",
+      "detail": "Fix $n$ and let $m \\to \\infty$ in the Cauchy estimate. This gives $|u_n/n - \\tau| \\le 1/n$, which is $|u_n - n\\tau| \\le 1$. For any $x$, $|(f^n(x) - x)/n - u_n/n| < 1/n$, so the [limit](c:limit-of-a-sequence) is $\\tau$ for every $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:power",
+      "slogan": "Derive the power rule and the formula for a [periodic orbit](c:periodic-orbit).",
+      "detail": "The map $f^k$ is nondecreasing with the shift property, and $(f^k)^n(0) = u_{kn}$. So $\\tau(f^k) = k\\tau(f)$, because $u_{kn}/(kn)$ is a subsequence of a convergent sequence. If $f^q(x) = x + p$, then $(f^q)^n(x) = x + np$ by the shift rule. So $\\tau(f^q) = p$ and $q\\tau(f) = p$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the iterates of $f$ and $g$ to prove that $\\tau$ is monotone.",
+      "detail": "Let $f \\le g$. By induction $f^n(0) \\le g^n(0)$, because $g^{n+1}(0) = g(g^n(0)) \\ge f(g^n(0)) \\ge f(f^n(0))$ and $f$ is nondecreasing. Divide by $n$ and let $n \\to \\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect parts (a) to (e) as the conclusion.",
+      "detail": "Steps 4, 5 and 6 give the limit and its bound, the power and periodic orbit rules, and the comparison.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:shift",
+      "s:quasi"
+     ],
+     [
+      "s:quasi",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ],
+     [
+      "s:shift",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:power"
+     ],
+     [
+      "s:shift",
+      "s:power"
+     ],
+     [
+      "s:cauchy",
+      "s:compare"
+     ],
+     [
+      "s:limit",
+      "s:collect"
+     ],
+     [
+      "s:power",
+      "s:collect"
+     ],
+     [
+      "s:compare",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:monotone-function": "Monotone maps compare iterates at nearby points.",
+     "c:circle-deg1-lift": "The shift rule of the lift gives the uniform displacement bound.",
+     "c:cauchy-sequence": "The Cauchy property gives the existence of the limit.",
+     "c:limit-of-a-sequence": "The limit does not depend on the starting point.",
+     "c:periodic-orbit": "A periodic orbit on the circle gives the rational value $p/q$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-omega-limit-set-compact-flow-properties",
+  "statement": "Let $\\phi$ be a [flow](c:flow) on $X$ and $S \\subseteq X$. Put $\\omega(S) = \\bigcap_T \\operatorname{cl} \\phi([T,\\infty) \\times S)$. Then $\\omega(S)$ is closed and [invariant](c:invariant-set). If $X$ is [compact](c:compact-space) and $S \\ne \\emptyset$, then $\\omega(S) \\ne \\emptyset$. If $X$ is also Hausdorff and $N \\supseteq \\omega(S)$ is open, then $\\phi_t(S) \\subseteq N$ for all large $t$.",
+  "hypotheses": [
+   {
+    "id": "h:flow",
+    "text": "The family $\\phi_t$ is a [flow](c:flow): each $\\phi_t$ is continuous, $\\phi_0 = \\mathrm{id}$ and $\\phi_{s+t} = \\phi_s \\circ \\phi_t$.",
+    "concept": "c:flow"
+   },
+   {
+    "id": "h:compact",
+    "text": "For nonemptiness and attraction, $X$ is [compact](c:compact-space).",
+    "concept": "c:compact-space"
+   },
+   {
+    "id": "h:nonempty",
+    "text": "For nonemptiness, the set $S$ is nonempty.",
+    "concept": null
+   },
+   {
+    "id": "h:hausdorff",
+    "text": "For attraction, $X$ is a [Hausdorff space](c:hausdorff-space).",
+    "concept": "c:hausdorff-space"
+   }
+  ],
+  "conclusion": "The set $\\omega(S)$ is closed with $\\phi_t(\\omega(S)) = \\omega(S)$; it is nonempty when $X$ is compact and $S$ is nonempty; and it attracts $S$ into each open neighborhood.",
+  "formal": {
+   "decl": "isClosed_omegaLimit",
+   "difference": "The declaration states part (i) only: the set $\\omega(S)$ is closed. It does not state invariance, nonemptiness or attraction."
+  },
+  "proofs": [
+   {
+    "id": "tail-closures",
+    "name": "Tail closures",
+    "slogan": "Write the limit set as a decreasing intersection of closed tail closures, then use the flow law and compactness.",
+    "scope": "All four parts. Joint continuity in $(t,x)$ is not used. The Hausdorff hypothesis is not used by this proof.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:flow",
+      "why": "The flow law and the continuity of each $\\phi_t$ move the tail closures by time $t$.",
+      "steps": [
+       "s:forward",
+       "s:invariant"
+      ]
+     },
+     {
+      "h": "h:compact",
+      "why": "Compactness gives a point in a decreasing family of nonempty closed sets.",
+      "steps": [
+       "s:nonempty",
+       "s:attract"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "A point of $S$ gives a point in every tail closure.",
+      "steps": [
+       "s:nonempty"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "unused": true,
+      "why": "The proof of attraction works without it; the source states the part with this hypothesis."
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tails",
+      "slogan": "Write $\\omega(S)$ as the intersection of the decreasing closed sets $K_T$.",
+      "detail": "Let $K_T$ be the [closure](c:closure) of $\\phi([T,\\infty) \\times S)$. If $T \\le T'$, then $K_{T'} \\subseteq K_T$, and $\\omega(S) = \\bigcap_T K_T$. An intersection of [closed sets](c:closed-set) is closed, which proves part (i).",
+      "uses": []
+     },
+     {
+      "id": "s:forward",
+      "slogan": "Show that $\\phi_t$ maps $\\omega(S)$ into $\\omega(S)$.",
+      "detail": "Let $y \\in \\omega(S)$ and fix $T$. Then $y \\in K_{T-t}$. The map $\\phi_t$ is continuous, so $\\phi_t(K_{T-t})$ lies in the closure of $\\phi_t(\\phi([T-t,\\infty) \\times S))$. The flow law makes this set equal to $\\phi([T,\\infty) \\times S)$, so $\\phi_t(y) \\in K_T$ for every $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:invariant",
+      "slogan": "Apply the inclusion to $-t$ to get equality $\\phi_t(\\omega(S)) = \\omega(S)$.",
+      "detail": "The inclusion for $-t$ gives $\\phi_{-t}(\\omega) \\subseteq \\omega$. Then $\\omega = \\phi_t(\\phi_{-t}(\\omega)) \\subseteq \\phi_t(\\omega)$, because $\\phi_t \\circ \\phi_{-t} = \\phi_0 = \\mathrm{id}$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonempty",
+      "slogan": "Use the [finite intersection property](c:finite-intersection-property) to show that $\\omega(S)$ is nonempty.",
+      "detail": "Pick $s \\in S$. Each $K_n$ is closed and contains $\\phi_n(s)$, and the sets $K_n$ decrease. A finite family of them has a nonempty intersection, so compactness gives a point in all $K_n$. For real $T$ choose $n \\ge T$, and then $K_n \\subseteq K_T$, so the point lies in $\\omega(S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:attract",
+      "slogan": "Show that some tail closure $K_n$ lies inside the open set $N$.",
+      "detail": "The closed sets $K_n \\setminus N$ decrease, and their intersection is $\\omega(S) \\setminus N = \\emptyset$. If all were nonempty, the finite intersection property would give a common point. So $K_n \\subseteq N$ for some $n$, and then $\\phi_t(s) \\in K_n \\subseteq N$ for $t \\ge n$ and $s \\in S$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the four parts: closed, invariant, nonempty and attracting.",
+      "detail": "Step 1 gives closedness, steps 2 and 3 give invariance, step 4 gives nonemptiness, and step 5 gives attraction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tails",
+      "s:forward"
+     ],
+     [
+      "s:forward",
+      "s:invariant"
+     ],
+     [
+      "s:tails",
+      "s:nonempty"
+     ],
+     [
+      "s:tails",
+      "s:attract"
+     ],
+     [
+      "s:tails",
+      "s:collect"
+     ],
+     [
+      "s:invariant",
+      "s:collect"
+     ],
+     [
+      "s:nonempty",
+      "s:collect"
+     ],
+     [
+      "s:attract",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:flow": "The flow law $\\phi_{s+t} = \\phi_s \\circ \\phi_t$ shifts the tails by time $t$.",
+     "c:invariant-set": "Invariance means that every $\\phi_t$ maps the set onto itself.",
+     "c:compact-space": "Compactness turns nonempty closed tails into a nonempty intersection.",
+     "c:hausdorff-space": "The source states attraction for Hausdorff spaces; this proof does not need it.",
+     "c:closure": "Each tail is closed because it is a closure.",
+     "c:closed-set": "An intersection of closed sets is closed.",
+     "c:finite-intersection-property": "Decreasing nonempty closed sets in a compact space meet."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-cofinality-power-bounds-konig-diagonal",
+  "statement": "Let $\\kappa$ be an infinite [cardinal](c:cardinal-number). Then $\\kappa < \\kappa^{\\operatorname{cf}(\\kappa)}$, where $\\operatorname{cf}$ is the [cofinality](c:cofinality). For an infinite cardinal $a$ and a cardinal $b \\ge 2$, $\\operatorname{cf}(b^a) > a$. In particular $\\operatorname{cf}(2^\\kappa) > \\kappa$.",
+  "hypotheses": [
+   {
+    "id": "h:choice",
+    "text": "The [axiom of choice](c:axiom-of-choice) holds.",
+    "concept": "c:axiom-of-choice"
+   },
+   {
+    "id": "h:kappa",
+    "text": "For part (i), $\\kappa$ is an infinite cardinal.",
+    "concept": null
+   },
+   {
+    "id": "h:ab",
+    "text": "For part (ii), $a$ is an infinite cardinal and $b \\ge 2$ is a cardinal.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Part (i): $\\kappa < \\kappa^{\\operatorname{cf}(\\kappa)}$. Part (ii): $\\operatorname{cf}(b^a) > a$, so $\\operatorname{cf}(2^\\kappa) > \\kappa$.",
+  "formal": {
+   "decl": "lt_power_cof_ord",
+   "difference": "The declaration states part (i) only, for a cardinal $c \\ge \\aleph_0$ and the cofinality of its initial ordinal. Part (ii) is not part of it."
+  },
+  "proofs": [
+   {
+    "id": "diagonal",
+    "name": "Diagonal against a cofinal sequence",
+    "slogan": "Diagonalize against a cofinal sequence of bounds to prove part (i), then use part (i) and a contradiction for part (ii).",
+    "scope": "Both parts, for infinite cardinals. The cardinals are initial ordinals, so every ordinal below $\\kappa$ has size below $\\kappa$.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:choice",
+      "why": "Choice gives a cofinal sequence of length $\\operatorname{cf}(\\kappa)$ and lets cardinals be compared.",
+      "steps": [
+       "s:setup",
+       "s:power"
+      ]
+     },
+     {
+      "h": "h:kappa",
+      "why": "The cardinal $\\kappa$ supplies the cofinal sequence and the target of the diagonal function.",
+      "steps": [
+       "s:setup",
+       "s:diagonal"
+      ]
+     },
+     {
+      "h": "h:ab",
+      "why": "The cardinals $a$ and $b$ give the power $\\mu = b^a$ and the rule $a \\cdot a = a$.",
+      "steps": [
+       "s:assume",
+       "s:power"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Choose a cofinal sequence of length $\\theta = \\operatorname{cf}(\\kappa)$ in $\\kappa$.",
+      "detail": "Take a cofinal set of size $\\theta$ and index it as $(\\lambda_i)_{i<\\theta}$. Each $\\lambda_i < \\kappa$, and every ordinal $\\alpha < \\kappa$ lies below some $\\lambda_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Build from any list of $\\kappa$ functions a function $h\\colon \\theta \\to \\kappa$ that avoids bounded values.",
+      "detail": "Let $(g_\\alpha)_{\\alpha<\\kappa}$ list functions $\\theta \\to \\kappa$. The set $B_i = \\{g_\\alpha(i) : \\alpha < \\lambda_i\\}$ has size at most $|\\lambda_i| < \\kappa$, so $B_i \\ne \\kappa$. Let $h(i)$ be the least ordinal of $\\kappa \\setminus B_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:miss",
+      "slogan": "Show that $h$ differs from every listed function $g_\\alpha$.",
+      "detail": "Suppose $h = g_\\alpha$. Choose $i$ with $\\alpha < \\lambda_i$. Then $g_\\alpha(i) \\in B_i$, but $h(i) \\notin B_i$, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:strict",
+      "slogan": "Conclude part (i): $\\kappa$ is smaller than $\\kappa^\\theta$.",
+      "detail": "Constant functions give $\\kappa \\le \\kappa^\\theta$. If equality held, a bijection would list all functions $\\theta \\to \\kappa$ by $\\kappa$. The function $h$ would then be missing from the list, so $\\kappa < \\kappa^\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:assume",
+      "slogan": "Assume for contradiction that $\\operatorname{cf}(\\mu) \\le a$ for $\\mu = b^a$.",
+      "detail": "Cantor's theorem gives $a < 2^a \\le b^a = \\mu$, so $\\mu$ is infinite. Put $\\theta = \\operatorname{cf}(\\mu)$ and suppose $\\theta \\le a$.",
+      "uses": [
+       "wd:Q474881"
+      ]
+     },
+     {
+      "id": "s:power",
+      "slogan": "Bound $\\mu^\\theta$ above by $\\mu^a$ and compute $\\mu^a = \\mu$ by [cardinal arithmetic](c:cardinal-arithmetic).",
+      "detail": "Since $\\theta \\le a$, extending a function by $0$ gives an injection $\\mu^\\theta \\to \\mu^a$. Then $\\mu^a = (b^a)^a = b^{a \\cdot a} = b^a = \\mu$, because $a \\cdot a = a$ for infinite $a$. So $\\mu^\\theta \\le \\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:contra",
+      "slogan": "Compare with part (i) to reach a contradiction, so $\\operatorname{cf}(b^a) > a$.",
+      "detail": "Part (i) for $\\mu$ gives $\\mu < \\mu^\\theta$. With $\\mu^\\theta \\le \\mu$ this gives $\\mu < \\mu$, which is false. So $\\theta > a$. The case $b = 2$ and $a = \\kappa$ gives $\\operatorname{cf}(2^\\kappa) > \\kappa$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:diagonal"
+     ],
+     [
+      "s:diagonal",
+      "s:miss"
+     ],
+     [
+      "s:miss",
+      "s:strict"
+     ],
+     [
+      "s:strict",
+      "s:contra"
+     ],
+     [
+      "s:assume",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:contra"
+     ]
+    ],
+    "conclusion": "s:contra",
+    "concepts": {
+     "c:axiom-of-choice": "Choice supplies the cofinal sequence and the comparison of cardinals.",
+     "c:cardinal-number": "Cardinals are initial ordinals, so ordinals below $\\kappa$ have smaller size.",
+     "c:cofinality": "The cofinal sequence is the family of bounds that the diagonal function escapes.",
+     "c:cardinal-arithmetic": "The rule $(b^a)^a = b^{a \\cdot a}$ gives $\\mu^a = \\mu$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-well-quasi-order-ramsey-characterisation",
+  "statement": "For a preorder $(Q, \\le)$ these are equivalent: (1) every infinite sequence has $i < j$ with $q_i \\le q_j$; (2) every infinite sequence has a [nondecreasing subsequence](c:monotone-subsequence); (3) $Q$ has no infinite strictly descending sequence and no infinite [antichain](c:antichain). Such a $Q$ is a [well-quasi-order](c:well-quasi-ordered-le). A product of two well-quasi-orders is one.",
+  "hypotheses": [
+   {
+    "id": "h:preorder",
+    "text": "The relation $\\le$ on $Q$ is reflexive and transitive; it need not be antisymmetric.",
+    "concept": null
+   },
+   {
+    "id": "h:factors",
+    "text": "For the product, $Q_1$ and $Q_2$ are [well-quasi-orders](c:well-quasi-ordered-le).",
+    "concept": "c:well-quasi-ordered-le"
+   }
+  ],
+  "conclusion": "Forms (1), (2) and (3) are equivalent, and $Q_1 \\times Q_2$ with the componentwise order is a well-quasi-order.",
+  "formal": {
+   "decl": "Set.partiallyWellOrderedOn_iff_exists_monotone_subseq",
+   "difference": "The declaration states a related and smaller fact: forms (1) and (2) are equivalent, for a set and a relation. It does not state form (3) or the product."
+  },
+  "proofs": [
+   {
+    "id": "ramsey",
+    "name": "Ramsey for pairs",
+    "slogan": "Colour pairs of indices by three comparisons, and Ramsey's theorem gives a monotone subsequence.",
+    "scope": "The equivalence is a cycle of implications (1) to (3) to (2) to (1). The product part needs the equivalence for the factors.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:case-analysis",
+     "m:subsequence"
+    ],
+    "roles": [
+     {
+      "h": "h:preorder",
+      "why": "Any two elements are comparable, strictly smaller or incomparable, which gives exactly three colours.",
+      "steps": [
+       "s:colour",
+       "s:red"
+      ]
+     },
+     {
+      "h": "h:factors",
+      "why": "Form (2) in the first factor and form (1) in the second factor give form (1) in the product.",
+      "steps": [
+       "s:product"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Show that (2) gives (1) by reading two terms of the subsequence.",
+      "detail": "Take a nondecreasing subsequence $q_{n_0} \\le q_{n_1} \\le \\cdots$. Then $i = n_0$ and $j = n_1$ satisfy $i < j$ and $q_i \\le q_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:exclude",
+      "slogan": "Show that (1) excludes infinite descending sequences and infinite antichains.",
+      "detail": "If $q_0 > q_1 > \\cdots$ and $i < j$, then $q_j < q_i$, so $q_i \\le q_j$ fails. If $A$ is an infinite antichain, list distinct elements of $A$. Then (1) gives two comparable terms, which is false.",
+      "uses": []
+     },
+     {
+      "id": "s:colour",
+      "slogan": "Colour pairs of indices by three comparisons and take an infinite homogeneous set.",
+      "detail": "For $i < j$ colour $\\{i,j\\}$ red if $q_i \\le q_j$, blue if $q_j < q_i$, and green if they are incomparable. Exactly one holds. Ramsey's theorem for pairs gives an infinite set $H = \\{h_0 < h_1 < \\cdots\\}$ with one colour.",
+      "uses": [
+       "wd:Q918099"
+      ]
+     },
+     {
+      "id": "s:red",
+      "slogan": "Rule out blue and green by (3), so the set is red and gives a nondecreasing subsequence.",
+      "detail": "Blue gives $q_{h_0} > q_{h_1} > \\cdots$, which (3) excludes. Green gives infinitely many pairwise incomparable, hence distinct, elements, which (3) excludes. So $H$ is red and $q_{h_0} \\le q_{h_1} \\le \\cdots$, which is (2).",
+      "uses": []
+     },
+     {
+      "id": "s:equiv",
+      "slogan": "Combine the three implications into the equivalence of (1), (2) and (3).",
+      "detail": "Steps 1, 2 and 4 give (2) to (1), (1) to (3) and (3) to (2). These implications form a cycle, so all three forms are equivalent.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Prove (1) for a product by using (2) in one factor and (1) in the other.",
+      "detail": "Let $q_n = (x_n, y_n)$. By (2) in $Q_1$ there are $n_0 < n_1 < \\cdots$ with $x_{n_0} \\le x_{n_1} \\le \\cdots$. By (1) in $Q_2$ for $(y_{n_k})$ there are $k < l$ with $y_{n_k} \\le y_{n_l}$. Then $n_k < n_l$ and $q_{n_k} \\le q_{n_l}$ in both coordinates.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exclude",
+      "s:red"
+     ],
+     [
+      "s:colour",
+      "s:red"
+     ],
+     [
+      "s:easy",
+      "s:equiv"
+     ],
+     [
+      "s:red",
+      "s:equiv"
+     ],
+     [
+      "s:equiv",
+      "s:product"
+     ]
+    ],
+    "conclusion": "s:product",
+    "concepts": {
+     "c:monotone-subsequence": "Form (2) is the existence of a nondecreasing subsequence.",
+     "c:antichain": "An infinite antichain is one of the two obstructions in form (3).",
+     "c:well-quasi-ordered-le": "The factors and the product are the well-quasi-orders of the statement."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]

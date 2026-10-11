@@ -1,0 +1,840 @@
+[
+ {
+  "id": "nm:technique-newton-iteration-nilpotent-unique-root",
+  "statement": "Let $R$ be a [commutative ring](c:commutative-ring), $P \\in R[X]$ and $x \\in R$. Assume that $P(x)$ is [nilpotent](c:nilpotent-element) and $P'(x)$ is a [unit](c:unit). Then the [Newton](c:newton-s-method) iterates $x_n$ have $P'(x_n)$ a unit and $P(x_n) \\in (P(x))^{2^n}$. For large $n$, $x_n$ is a root of $P$ and $x_n - x$ is nilpotent. No other root differs from $x$ by a nilpotent element.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The ring $R$ is a [commutative ring](c:commutative-ring) with $1$, and $P'$ is the formal derivative.",
+    "concept": "c:commutative-ring"
+   },
+   {
+    "id": "h:nilpotent",
+    "text": "The element $P(x)$ is [nilpotent](c:nilpotent-element).",
+    "concept": "c:nilpotent-element"
+   },
+   {
+    "id": "h:unit",
+    "text": "The element $P'(x)$ is a [unit](c:unit) of $R$.",
+    "concept": "c:unit"
+   }
+  ],
+  "conclusion": "The iterates satisfy $P(x_n) \\in (P(x))^{2^n}$, some $x_n$ is a root of $P$ with $x_n - x$ nilpotent, and this root is the only one with that property.",
+  "formal": {
+   "decl": "existsUnique_nilpotent_sub_and_aeval_eq_zero",
+   "difference": "The declaration states the existence and uniqueness of the root. It does not state the quadratic estimate $P(x_n) \\in (P(x))^{2^n}$ for the iterates."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Expand $P$ at the current point to square the error at each Newton step, then show that the root is unique by a unit argument.",
+    "scope": "The whole theorem. Let $I = (P(x))$ and let $m$ be such that $I^m = 0$.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity gives the Taylor identity and makes a sum of nilpotent elements nilpotent.",
+      "steps": [
+       "s:taylor",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:nilpotent",
+      "why": "A nilpotent $P(x)$ makes $I$ nilpotent, so the squared errors reach $0$.",
+      "steps": [
+       "s:step",
+       "s:induct",
+       "s:root"
+      ]
+     },
+     {
+      "h": "h:unit",
+      "why": "A unit $P'(x)$ lets each Newton step run and gives a unit $P'(r)$ at a root.",
+      "steps": [
+       "s:step",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:taylor",
+      "slogan": "Write $P(X+Y)$ and $P'(X+Y)$ with polynomial remainders in $Y$.",
+      "detail": "There are polynomials $Q, Q_1$ with $P(X+Y) = P(X) + P'(X)Y + Y^2 Q(X,Y)$ and $P'(X+Y) = P'(X) + Y\\,Q_1(X,Y)$. For $P = X^k$ this is the binomial theorem. The general case follows by linearity.",
+      "uses": []
+     },
+     {
+      "id": "s:step",
+      "slogan": "Show that one Newton step squares the error and keeps the derivative a unit.",
+      "detail": "Let $e = P(y)$ be nilpotent, $d = P'(y)$ a unit, $h = -e d^{-1}$ and $y' = y + h$. Then $P(y') = e + dh + h^2 Q = h^2 Q \\in (e)^2$. Also $P'(y') = d(1 + d^{-1} h Q_1)$, and $1 + n$ is a unit for nilpotent $n$, so $P'(y')$ is a unit.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Prove by induction that every iterate keeps the unit derivative and the square power.",
+      "detail": "Let $I = (P(x))$, so $I^m = 0$. Assume $P'(x_n)$ is a unit and $P(x_n) \\in I^{2^n}$. The one-step estimate gives $P(x_{n+1}) \\in I^{2^{n+1}}$ and a unit $P'(x_{n+1})$, and $x_n - x$ is a sum of elements of $I$, so it is nilpotent.",
+      "uses": []
+     },
+     {
+      "id": "s:root",
+      "slogan": "Choose $n$ with $2^n \\ge m$ to make the iterate a root.",
+      "detail": "Then $I^{2^n} \\subseteq I^m = 0$, so $P(x_n) = 0$. Also $x_n - x$ is nilpotent by the previous step.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that two roots with nilpotent differences from $x$ are equal.",
+      "detail": "Let $r, s$ be such roots and $h = s - r$, which is nilpotent. The Taylor identity at $r$ gives $0 = h(P'(r) + hQ(r,h))$. Here $P'(r) = P'(x) + (r-x)Q_1$ is a unit plus a nilpotent element, so a unit, and the whole factor is a unit. Hence $h = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the existence of the root and its uniqueness.",
+      "detail": "The root $x_n$ exists by the root step. By the uniqueness step it is the only root that differs from $x$ by a nilpotent element.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:taylor",
+      "s:step"
+     ],
+     [
+      "s:step",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:root"
+     ],
+     [
+      "s:taylor",
+      "s:unique"
+     ],
+     [
+      "s:root",
+      "s:conclude"
+     ],
+     [
+      "s:unique",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:commutative-ring": "Commutativity gives the Taylor identity and sums of nilpotent elements.",
+     "c:nilpotent-element": "Nilpotency of $P(x)$ makes the squared errors reach zero.",
+     "c:unit": "A unit derivative makes the Newton step defined and the uniqueness factor invertible.",
+     "c:newton-s-method": "The proof follows the Newton iterates and their quadratic error."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-polynomial-flt-mason-stothers",
+  "statement": "Let $k$ be a [field](c:field) and $n \\ge 3$ an integer with $n \\neq 0$ in $k$. Let $a, b, c$ be nonzero [polynomials](c:polynomial) in $k[X]$ with $a, b$ coprime and $a^n + b^n = c^n$. Then $a$, $b$ and $c$ are constants.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The ring $k$ is a [field](c:field).",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:exponent",
+    "text": "The integer $n$ is at least $3$.",
+    "concept": null
+   },
+   {
+    "id": "h:char",
+    "text": "The image of $n$ in $k$ is not zero. In [characteristic](c:characteristic) $p$ this means that $p$ does not divide $n$.",
+    "concept": "c:characteristic"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "The polynomials $a, b, c$ are nonzero.",
+    "concept": null
+   },
+   {
+    "id": "h:coprime",
+    "text": "The polynomials $a$ and $b$ generate the unit ideal.",
+    "concept": null
+   },
+   {
+    "id": "h:equation",
+    "text": "The equation $a^n + b^n = c^n$ holds.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The polynomials $a$, $b$ and $c$ have degree $0$.",
+  "formal": {
+   "decl": "Polynomial.flt",
+   "difference": "The declaration states the conclusion as natural degree zero for the three polynomials. It is the same fact in a different form."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Apply the Mason-Stothers bound to $a^n, b^n, -c^n$; the degree count excludes one case, and descent through $p$-th powers handles the other.",
+    "scope": "The whole theorem, in characteristic $0$ and in characteristic $p > 0$. Let $S = \\deg a + \\deg b + \\deg c$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:strong-induction",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "The ring $k[X]$ is a domain, and the field gives the Mason-Stothers theorem.",
+      "steps": [
+       "s:mason",
+       "s:char0"
+      ]
+     },
+     {
+      "h": "h:exponent",
+      "why": "The inequality $n \\ge 3$ makes the degree count of Case 1 false.",
+      "steps": [
+       "s:degree"
+      ]
+     },
+     {
+      "h": "h:char",
+      "why": "The condition $n \\neq 0$ in $k$ lets the product rule give $a' = 0$ from $A' = 0$.",
+      "steps": [
+       "s:derivs"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "Nonzero polynomials keep $A, B, C$ nonzero and allow cancellation.",
+      "steps": [
+       "s:abc",
+       "s:derivs"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "Coprime $a, b$ give coprime $A, B$, and coprime $a_1, b_1$ for the descent.",
+      "steps": [
+       "s:abc",
+       "s:charp"
+      ]
+     },
+     {
+      "h": "h:equation",
+      "why": "The equation gives $A + B + C = 0$.",
+      "steps": [
+       "s:abc"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:abc",
+      "slogan": "Set $A = a^n$, $B = b^n$, $C = -c^n$ and show that $A, B$ are coprime.",
+      "detail": "Then $A + B + C = 0$, and all three are nonzero because $k[X]$ is a domain. If $ua + vb = 1$, expand $1 = (ua + vb)^{2n-1}$. Each term has $a^n$ or $b^n$ as a factor, so $A$ and $B$ are coprime.",
+      "uses": []
+     },
+     {
+      "id": "s:mason",
+      "slogan": "Apply the Mason-Stothers bound to the triple $A, B, C$.",
+      "detail": "The theorem gives one of two cases. In Case 1, each of $\\deg A + 1$, $\\deg B + 1$ and $\\deg C + 1$ is at most the degree of the radical of $ABC$. In Case 2, the derivatives $A', B', C'$ are all zero.",
+      "uses": [
+       "wd:Q6783821"
+      ]
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Show by a degree count that Case 1 is impossible.",
+      "detail": "The [radical](c:radical) of $ABC$ is the radical of $abc$, and it divides $abc$, so its degree is at most $S$. The three bounds read $n\\deg a + 1 \\le S$, $n \\deg b + 1 \\le S$ and $n \\deg c + 1 \\le S$. Their sum gives $nS + 3 \\le 3S$, which contradicts $n \\ge 3$.",
+      "uses": []
+     },
+     {
+      "id": "s:derivs",
+      "slogan": "Show from Case 2 that $a'$, $b'$ and $c'$ are zero.",
+      "detail": "The product rule gives $A' = n a^{n-1} a'$. Since $k[X]$ is a domain, $a \\neq 0$ and $n \\neq 0$ in $k$, the equation $A' = 0$ gives $a' = 0$. The same argument gives $b' = 0$ and $c' = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:char0",
+      "slogan": "Show that a polynomial with zero derivative is constant in characteristic $0$.",
+      "detail": "If $f' = 0$ then $m f_m = 0$ for $m \\ge 1$. Each integer $m \\ge 1$ is invertible in $k$, so $f_m = 0$. Thus $a, b, c$ are constants.",
+      "uses": []
+     },
+     {
+      "id": "s:charp",
+      "slogan": "Descend through $p$-th powers in characteristic $p$ by strong induction on $S$.",
+      "detail": "A polynomial with zero derivative equals $\\mathrm{expand}_p(f_1)$ for some $f_1$. So $a = \\mathrm{expand}_p(a_1)$ and likewise for $b, c$, and $a_1^n + b_1^n = c_1^n$ with $a_1, b_1$ coprime and $S_1 = S/p$. If $S = 0$ the polynomials are constants. If $S > 0$, then $S/p < S$ and the induction hypothesis makes $a_1, b_1, c_1$ constant, which gives $S = 0$, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two characteristics to get constant $a$, $b$ and $c$.",
+      "detail": "In characteristic $0$, the characteristic-zero step gives constants. In characteristic $p$, the descent step gives constants. So $a$, $b$ and $c$ are constant in every case.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:abc",
+      "s:mason"
+     ],
+     [
+      "s:mason",
+      "s:degree"
+     ],
+     [
+      "s:degree",
+      "s:derivs"
+     ],
+     [
+      "s:mason",
+      "s:derivs"
+     ],
+     [
+      "s:derivs",
+      "s:char0"
+     ],
+     [
+      "s:derivs",
+      "s:charp"
+     ],
+     [
+      "s:char0",
+      "s:conclude"
+     ],
+     [
+      "s:charp",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:field": "The Mason-Stothers theorem and the domain property need a field of coefficients.",
+     "c:polynomial": "The proof counts degrees of polynomials and takes their derivatives.",
+     "c:characteristic": "The characteristic splits the proof into the cases $0$ and $p$.",
+     "c:radical": "The radical bounds the degree through the Mason-Stothers inequality."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-fermat-exponent-four-infinite-descent",
+  "statement": "There are no [integers](c:integer) $a, b, c$ with $ab \\neq 0$ and $a^4 + b^4 = c^2$. So $x^4 + y^4 = z^4$ has no integer solution with $xy \\neq 0$, and $x^n + y^n = z^n$ has none when $4$ divides $n$.",
+  "hypotheses": [
+   {
+    "id": "h:integers",
+    "text": "The numbers $a, b, c$ are [integers](c:integer).",
+    "concept": "c:integer"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "The product $ab$ is not zero.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The equation $a^4 + b^4 = c^2$ has no solution, and the equations $x^4 + y^4 = z^4$ and $x^n + y^n = z^n$ (with $4 \\mid n$) have none with $xy \\neq 0$.",
+  "formal": {
+   "decl": "not_fermat_42",
+   "difference": "The declaration states only that $a^4 + b^4 \\neq c^2$ for nonzero $a, b$. The consequences for $x^4 + y^4 = z^4$ and for exponents divisible by $4$ are separate."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Take a solution with least $c$, build a smaller one from two Pythagorean triples, and contradict the choice.",
+    "scope": "The whole theorem. The proof uses only positive $a, b, c$; the signs change nothing.",
+    "mechanisms": [
+     "m:infinite-descent",
+     "m:extremal-choice",
+     "m:unique-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:integers",
+      "why": "Integer solutions allow a least $c$ and the parametrization of Pythagorean triples.",
+      "steps": [
+       "s:minimal",
+       "s:triple"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "The condition $ab \\neq 0$ keeps $m > n > 0$ and makes the new solution have $xy \\neq 0$.",
+      "steps": [
+       "s:minimal",
+       "s:squares"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimal",
+      "slogan": "Assume a solution exists and take one with least $c$ and $\\gcd(a,b) = 1$.",
+      "detail": "Replace $a, b, c$ by their absolute values and choose $c > 0$ least. If a prime $p$ divides $a$ and $b$, then $p^2 \\mid c$ and $(a/p, b/p, c/p^2)$ is a smaller solution. So $\\gcd(a,b) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:triple",
+      "slogan": "Read $(a^2, b^2, c)$ as a primitive [Pythagorean triple](c:pythagorean-triple).",
+      "detail": "The triple is primitive because $\\gcd(a^2, b^2) = 1$. Swap $a$ and $b$ so that $b$ is even. Then $a^2 = m^2 - n^2$, $b^2 = 2mn$ and $c = m^2 + n^2$ for [coprime](c:coprime-integers) $m > n > 0$ of opposite parity.",
+      "uses": [
+       "nm:formula-for-pythagorean-triples"
+      ]
+     },
+     {
+      "id": "s:parity",
+      "slogan": "Show that $m$ is odd and $n$ is even.",
+      "detail": "The number $a$ is odd, so $a^2 \\equiv 1 \\pmod 4$. If $m$ were even and $n$ odd, then $m^2 - n^2 \\equiv 3 \\pmod 4$, which no square has. So $m$ is odd and $n$ is even.",
+      "uses": []
+     },
+     {
+      "id": "s:second",
+      "slogan": "Read $(a, n, m)$ as a second primitive Pythagorean triple.",
+      "detail": "We have $a^2 + n^2 = m^2$, and a prime that divides $a$ and $n$ divides $m$, against $\\gcd(m,n) = 1$. With $n$ even, the classification gives coprime $r > s > 0$ with $a = r^2 - s^2$, $n = 2rs$ and $m = r^2 + s^2$.",
+      "uses": [
+       "nm:formula-for-pythagorean-triples"
+      ]
+     },
+     {
+      "id": "s:squares",
+      "slogan": "Show that $r$, $s$ and $r^2 + s^2$ are squares.",
+      "detail": "From $b^2 = 2mn = 4mrs$ we get $(b/2)^2 = rs(r^2 + s^2)$. The three factors are pairwise coprime, so by [unique factorization](c:unique-factorization) each is a square: $r = x^2$, $s = y^2$ and $r^2 + s^2 = z^2$. Then $x^4 + y^4 = z^2$ with $xy \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:descent",
+      "slogan": "Compare $z$ with $c$ to contradict the minimality of $c$.",
+      "detail": "We have $z \\le z^2 = r^2 + s^2 = m \\le m^2 < m^2 + n^2 = c$, because $n > 0$. So $(x, y, z)$ is a solution with $z < c$, which is impossible.",
+      "uses": []
+     },
+     {
+      "id": "s:consequence",
+      "slogan": "Derive the cases $x^4 + y^4 = z^4$ and exponents divisible by $4$.",
+      "detail": "If $x^4 + y^4 = z^4$ with $xy \\neq 0$, then $(x, y, z^2)$ solves $a^4 + b^4 = c^2$. If $4 \\mid n$, then the fourth powers $x^{n/4}, y^{n/4}, z^{n/4}$ solve the exponent-$4$ equation. Both are impossible.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimal",
+      "s:triple"
+     ],
+     [
+      "s:triple",
+      "s:parity"
+     ],
+     [
+      "s:parity",
+      "s:second"
+     ],
+     [
+      "s:second",
+      "s:squares"
+     ],
+     [
+      "s:squares",
+      "s:descent"
+     ],
+     [
+      "s:minimal",
+      "s:descent"
+     ],
+     [
+      "s:descent",
+      "s:consequence"
+     ]
+    ],
+    "conclusion": "s:consequence",
+    "concepts": {
+     "c:integer": "The descent works on positive integers, which have a least element.",
+     "c:pythagorean-triple": "Two Pythagorean triples give the new smaller solution.",
+     "c:coprime-integers": "Coprime $m, n$ are the parameters of a primitive triple.",
+     "c:unique-factorization": "Unique factorization shows that coprime factors of a square are squares."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-siegel-lemma-small-integer-kernel-vector",
+  "statement": "Let $A$ be an $m \\times n$ [matrix](c:matrix) with [integer](c:integer) entries and $0 < m < n$. Put $C = \\max(1, \\max |a_{ij}|)$. Then the [linear system](c:system-of-linear-equations) $At = 0$ has a solution $t \\neq 0$ in integers with $\\max_j |t_j| \\le (nC)^{m/(n-m)}$.",
+  "hypotheses": [
+   {
+    "id": "h:integer",
+    "text": "All entries of $A$ are [integers](c:integer).",
+    "concept": "c:integer"
+   },
+   {
+    "id": "h:shape",
+    "text": "The sizes satisfy $0 < m < n$: the system has fewer equations than unknowns.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some integer vector $t \\neq 0$ has $At = 0$ and $\\max_j |t_j| \\le (nC)^{m/(n-m)}$.",
+  "formal": {
+   "decl": "Int.Matrix.exists_ne_zero_int_vec_norm_le",
+   "difference": "The declaration states the lemma for matrices indexed by finite types, with the maximum norm. It is the same fact in a more general form."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Count the integer vectors in a box and the values that $A$ can take, then subtract two vectors with the same image.",
+    "scope": "The whole lemma. Let $X = (nC)^{m/(n-m)}$ and $B = \\lfloor X \\rfloor$.",
+    "mechanisms": [
+     "m:pigeonhole"
+    ],
+    "roles": [
+     {
+      "h": "h:integer",
+      "why": "Integer entries make $Ax$ an integer vector, and $x - y$ an integer vector.",
+      "steps": [
+       "s:image",
+       "s:difference"
+      ]
+     },
+     {
+      "h": "h:shape",
+      "why": "The inequality $m < n$ makes the exponent positive and the box larger than the image.",
+      "steps": [
+       "s:box",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:box",
+      "slogan": "Fix the bound $B$ and the box $\\Omega = \\{0, \\dots, B\\}^n$ of integer vectors.",
+      "detail": "We have $nC \\ge 2$ and a positive exponent, so $X > 1$ and $B \\ge 1$. The box $\\Omega$ has $(B+1)^n$ elements.",
+      "uses": []
+     },
+     {
+      "id": "s:image",
+      "slogan": "Bound the number of values of $Ax$ for $x$ in the box.",
+      "detail": "The $i$-th entry $\\sum_j a_{ij} x_j$ lies in an interval of length at most $B \\sum_j |a_{ij}| \\le nCB$. This interval holds at most $nCB + 1$ integers, so $A\\Omega$ has at most $(nCB + 1)^m$ elements.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Show that the box has more elements than the image.",
+      "detail": "Since $B + 1 > X$, we have $(B+1)^{n-m} > (nC)^m$. Multiply by $(B+1)^m$ to get $(B+1)^n > (nC(B+1))^m \\ge (nCB + 1)^m$.",
+      "uses": []
+     },
+     {
+      "id": "s:pigeon",
+      "slogan": "Find two different box vectors with the same image.",
+      "detail": "The box has more elements than the set of possible images. By the pigeonhole principle there are $x \\neq y$ in $\\Omega$ with $Ax = Ay$.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     },
+     {
+      "id": "s:difference",
+      "slogan": "Subtract the two vectors to get a short kernel vector.",
+      "detail": "Put $t = x - y$. Then $t \\neq 0$ is an integer vector with $At = 0$. Each $x_j, y_j$ lies in $[0, B]$, so $|t_j| \\le B \\le X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:box",
+      "s:image"
+     ],
+     [
+      "s:box",
+      "s:count"
+     ],
+     [
+      "s:image",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:pigeon"
+     ],
+     [
+      "s:pigeon",
+      "s:difference"
+     ],
+     [
+      "s:box",
+      "s:difference"
+     ]
+    ],
+    "conclusion": "s:difference",
+    "concepts": {
+     "c:matrix": "The matrix $A$ defines the map whose values the proof counts.",
+     "c:integer": "Integer entries and integer vectors make the images lie in a finite set.",
+     "c:system-of-linear-equations": "The kernel vector $t$ is a nonzero solution of the system."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-dirichlet-series-coefficients-uniqueness",
+  "statement": "Let $f, g$ be [arithmetic functions](c:arithmetic-function) with $\\sum |f(n)| n^{-\\sigma_0}$ and $\\sum |g(n)| n^{-\\sigma_0}$ convergent. Let $F, G$ be their [Dirichlet series](c:dirichlet-series). If $F(x) = G(x)$ for all real $x \\ge x_1 \\ge \\sigma_0$, then $f = g$. If $f(1) = \\dots = f(N-1) = 0$, then $N^x F(x) \\to f(N)$ as $x \\to \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:abs",
+    "text": "Both series converge [absolutely](c:absolute-convergence) at the real point $\\sigma_0$.",
+    "concept": "c:absolute-convergence"
+   },
+   {
+    "id": "h:agree",
+    "text": "The functions $F$ and $G$ agree for all real $x \\ge x_1$, where $x_1 \\ge \\sigma_0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The coefficients agree: $f(n) = g(n)$ for all $n \\ge 1$, and $N^x F(x) \\to f(N)$ when $f$ vanishes below $N$.",
+  "formal": {
+   "decl": "LSeries_injOn",
+   "difference": "The declaration states that the L-series map is injective on functions with a finite abscissa of absolute convergence. It does not state the limit formula for the coefficients."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Subtract the two series, isolate the first nonzero coefficient with a factor $N^x$, and let $x$ go to infinity.",
+    "scope": "The whole theorem. The limit formula is the same computation with $h = f$.",
+    "mechanisms": [
+     "m:well-ordering",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:abs",
+      "why": "Absolute convergence at $\\sigma_0$ bounds the tail sum for all larger $x$.",
+      "steps": [
+       "s:bound",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:agree",
+      "why": "Agreement for large $x$ makes $H(x) = 0$ there.",
+      "steps": [
+       "s:reduce",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Subtract the two series and take the first nonzero coefficient.",
+      "detail": "Put $h = f - g$ and $H = F - G$. Then $H(x) = 0$ for $x \\ge x_1$. If $h \\neq 0$, let $N$ be the least index with $h(N) \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Multiply by $N^x$ to isolate $h(N)$.",
+      "detail": "For $x \\ge x_2 = \\max(x_1, \\sigma_0 + 1)$ we have $N^x H(x) = h(N) + \\sum_{n > N} h(n) (N/n)^x$, because $h(n) = 0$ for $n < N$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the tail by a factor that goes to zero.",
+      "detail": "For $n > N$, $(N/n)^x \\le (N/(N+1))^{x - x_2} (N/n)^{x_2}$. So the tail is at most $T N^{x_2} (N/(N+1))^{x - x_2}$, where $T = \\sum_{n>N} |h(n)| n^{-x_2}$ is finite because $x_2 \\ge \\sigma_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $x$ go to infinity to get $N^x H(x) \\to h(N)$.",
+      "detail": "The bound of the tail has a factor $(N/(N+1))^{x - x_2}$, which tends to $0$. So $N^x H(x) \\to h(N)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Compare with $H(x) = 0$ to contradict $h(N) \\neq 0$.",
+      "detail": "Since $H(x) = 0$ for $x \\ge x_1$, the limit is $0$, so $h(N) = 0$. This is a contradiction. Hence $h = 0$ and $f = g$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:normalize"
+     ],
+     [
+      "s:normalize",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:conclude"
+     ],
+     [
+      "s:reduce",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:arithmetic-function": "The coefficients $f$ and $g$ are arithmetic functions that the series encode.",
+     "c:dirichlet-series": "The proof studies the Dirichlet series as a function of real $x$.",
+     "c:absolute-convergence": "Absolute convergence bounds the tail for all $x$ at least $\\sigma_0$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-euler-product-multiplicative-series",
+  "statement": "Let $f$ be a multiplicative [arithmetic function](c:arithmetic-function) with $\\sum |f(n)|$ convergent. Then each $\\sum_k f(p^k)$ converges absolutely, and $\\prod_{p<N} \\sum_{k \\ge 0} f(p^k) \\to \\sum_n f(n)$ as $N \\to \\infty$. If $f$ is completely multiplicative, then $|f(p)| < 1$ and $\\sum_n f(n) = \\prod_p (1 - f(p))^{-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:mult",
+    "text": "The function $f$ is multiplicative: $f(1) = 1$ and $f(mn) = f(m) f(n)$ when $\\gcd(m,n) = 1$.",
+    "concept": "c:arithmetic-function"
+   },
+   {
+    "id": "h:summable",
+    "text": "The series $\\sum |f(n)|$ [converges](c:absolute-convergence).",
+    "concept": "c:absolute-convergence"
+   },
+   {
+    "id": "h:completely",
+    "text": "For the last claim, $f(mn) = f(m) f(n)$ for all $m, n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The partial [Euler products](c:euler-product) converge to $\\sum_n f(n)$, and in the completely multiplicative case $\\sum_n f(n) = \\prod_p (1 - f(p))^{-1}$.",
+  "formal": {
+   "decl": "eulerProduct_hasProd_mulIndicator",
+   "difference": "The declaration states the product over all primes in a complete normed commutative ring. It does not state the limit over $p < N$ or the closed form for a completely multiplicative function."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Authored proof",
+    "slogan": "Expand the finite product of local series into a sum over smooth numbers, then bound the missing terms by a tail.",
+    "scope": "The whole theorem. The closed form uses that $f(p^k) = f(p)^k$.",
+    "mechanisms": [
+     "m:unique-factorization",
+     "m:bijection",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:mult",
+      "why": "Multiplicativity turns the product of local terms into $f$ of the product of prime powers.",
+      "steps": [
+       "s:smooth"
+      ]
+     },
+     {
+      "h": "h:summable",
+      "why": "Summability makes each local series absolutely convergent and the tail small.",
+      "steps": [
+       "s:local",
+       "s:product",
+       "s:tail"
+      ]
+     },
+     {
+      "h": "h:completely",
+      "why": "Complete multiplicativity gives $f(p^k) = f(p)^k$, so each local series is geometric.",
+      "steps": [
+       "s:geometric"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:local",
+      "slogan": "Show that each local series converges absolutely.",
+      "detail": "For each prime $p$, the terms $f(p^k)$ are a subfamily of the terms $f(n)$. So $\\sum_k |f(p^k)| \\le \\sum_n |f(n)| < \\infty$. Call $L_p = \\sum_k f(p^k)$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Expand the finite product of local series into one sum over tuples.",
+      "detail": "Let $p_1, \\dots, p_r$ be the primes below $N$. A finite product of absolutely convergent series equals the sum over all tuples $(k_1, \\dots, k_r)$ of the products of the terms, in any order.",
+      "uses": []
+     },
+     {
+      "id": "s:smooth",
+      "slogan": "Match the tuples with the $N$-smooth numbers to get a partial sum of $\\sum f(n)$.",
+      "detail": "By [unique factorization](c:unique-factorization), $(k_i) \\mapsto \\prod p_i^{k_i}$ is a bijection onto the set $S_N$ of $N$-smooth integers. The prime powers are pairwise coprime, so $f(\\prod p_i^{k_i}) = \\prod f(p_i^{k_i})$. Hence $\\prod_{p<N} L_p = \\sum_{n \\in S_N} f(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:tail",
+      "slogan": "Bound the missing terms by the tail of the convergent series.",
+      "detail": "An integer that is not $N$-smooth has a prime factor at least $N$, so it is at least $N$. Thus $|\\sum_n f(n) - \\prod_{p<N} L_p| \\le \\sum_{n \\ge N} |f(n)|$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:geometric",
+      "slogan": "Sum the local series as [geometric series](c:geometric-series) when $f$ is completely multiplicative.",
+      "detail": "Then $f(p^k) = f(p)^k$. The local series converges absolutely, so $|f(p)| < 1$, and $L_p = 1/(1 - f(p))$. Insert this in the limit to get $\\sum_n f(n) = \\prod_p (1 - f(p))^{-1}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:local",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:smooth"
+     ],
+     [
+      "s:smooth",
+      "s:tail"
+     ],
+     [
+      "s:tail",
+      "s:geometric"
+     ],
+     [
+      "s:local",
+      "s:geometric"
+     ]
+    ],
+    "conclusion": "s:geometric",
+    "concepts": {
+     "c:arithmetic-function": "The function $f$ is the multiplicative arithmetic function whose sum is factored.",
+     "c:absolute-convergence": "Absolute convergence allows any order of summation and a small tail.",
+     "c:euler-product": "The Euler product is the limit of the partial products of local sums.",
+     "c:unique-factorization": "Unique factorization matches tuples of exponents with smooth integers.",
+     "c:geometric-series": "A completely multiplicative local series is a geometric series."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]

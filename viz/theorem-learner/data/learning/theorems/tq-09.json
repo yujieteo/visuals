@@ -1,0 +1,849 @@
+[
+ {
+  "id": "nm:technique-regular-graph-adjacency-spectrum",
+  "statement": "Let $G$ be a finite simple $d$-[regular graph](c:regular-graph) with $d \\ge 1$ and $n$ vertices. Then $d$ is an [eigenvalue](c:eigenvalue) of the [adjacency matrix](c:adjacency-matrix), all eigenvalues $\\lambda_i$ satisfy $|\\lambda_i| \\le d$, and $d$ occurs as many times as $G$ has [components](c:connected-component). The value $-d$ occurs as many times as $G$ has [bipartite](c:bipartite-graph) components. Also $\\sum \\lambda_i = 0$ and $\\sum \\lambda_i^2 = nd$.",
+  "hypotheses": [
+   {
+    "id": "h:regular",
+    "text": "The graph $G$ is finite, simple and $d$-[regular](c:regular-graph) with $d \\ge 1$.",
+    "concept": "c:regular-graph"
+   },
+   {
+    "id": "h:symmetric",
+    "text": "The [adjacency matrix](c:adjacency-matrix) $A$ is real symmetric, so its eigenvalues are real.",
+    "concept": "c:adjacency-matrix"
+   }
+  ],
+  "conclusion": "The spectrum obeys $|\\lambda_i| \\le d$, the multiplicity of $d$ counts components, the multiplicity of $-d$ counts bipartite components, and $\\sum \\lambda_i = 0$, $\\sum \\lambda_i^2 = nd$.",
+  "formal": {
+   "decl": "IsRegularOfDegree.mem_spectrum_adjMatrix",
+   "difference": "The declaration states only that $d$ is in the spectrum of the adjacency matrix of a $d$-regular graph. The bound, the multiplicities and the trace formulas are not in it."
+  },
+  "proofs": [
+   {
+    "id": "extremal-entry",
+    "name": "Maximal entry of an eigenvector",
+    "slogan": "Read the spectrum from the largest entry of an eigenvector and from the trace of $A$ and $A^2$.",
+    "scope": "The whole theorem. A bipartite component can be one edge, but never one vertex, because $d \\ge 1$.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:determinant",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:regular",
+      "why": "Every row of $A$ sums to $d$, and every vertex has $d$ neighbours in its own component.",
+      "steps": [
+       "s:bound",
+       "s:constant",
+       "s:indicators",
+       "s:alternate",
+       "s:trace"
+      ]
+     },
+     {
+      "h": "h:symmetric",
+      "why": "Real eigenvalues and real eigenvectors make the maximal-entry argument work, and $A$ is diagonalizable for the trace step.",
+      "steps": [
+       "s:bound",
+       "s:trace"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bound",
+      "slogan": "Show that $d$ is an eigenvalue and that every eigenvalue has absolute value at most $d$.",
+      "detail": "Every row of $A$ sums to $d$, so $A\\mathbf{1} = d\\mathbf{1}$ and $\\mathbf{1}$ is an [eigenvector](c:eigenvector) for $d$. Let $Av = \\lambda v$ with $v$ real and $v \\ne 0$. Choose $i$ with $|v_i|$ maximal. Then $|\\lambda||v_i| = |\\sum_{j \\sim i} v_j| \\le d|v_i|$, so $|\\lambda| \\le d$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Show that every eigenvector for $d$ is constant on each component.",
+      "detail": "Let $Av = dv$, let $C$ be a component and let $v_i = M$ be the maximum of $v$ on $C$. Then $dM = \\sum_{j \\sim i} v_j \\le dM$, so $v_j = M$ for all $d$ neighbours $j$. Repeat along paths. Because $C$ is connected, $v = M$ on all of $C$.",
+      "uses": []
+     },
+     {
+      "id": "s:indicators",
+      "slogan": "Count the eigenvectors for $d$ with the indicators of the components.",
+      "detail": "Each indicator $\\chi_C$ satisfies $A\\chi_C = d\\chi_C$, because every vertex has all its $d$ neighbours in its own component. The indicators are [linearly independent](c:linear-independence) and, by the previous step, they span the eigenspace. So the multiplicity of $d$ is the number of components.",
+      "uses": []
+     },
+     {
+      "id": "s:alternate",
+      "slogan": "Show that an eigenvector for $-d$ has constant size and alternating sign on a component.",
+      "detail": "Let $Av = -dv$ and let $|v_i| = m$ be maximal on a component $C$. Then $dm = |\\sum_{j \\sim i} v_j| \\le dm$, so $v_j = -v_i$ for every neighbour $j$. Repeat along paths. Then $|v| = m$ on $C$ and adjacent vertices carry opposite values.",
+      "uses": []
+     },
+     {
+      "id": "s:bipartite",
+      "slogan": "Show that the component carries a $-d$ eigenvector exactly when it is bipartite.",
+      "detail": "If $m > 0$, the sign of $v$ splits $C$ into two classes with every edge between them, so $C$ is [bipartite](c:bipartite-graph). On a non-bipartite component $v = 0$. On a bipartite component with parts $X$ and $Y$, the value at one vertex fixes $v = v_i(\\chi_X - \\chi_Y)$, and this vector is a $-d$ eigenvector. So the multiplicity of $-d$ is the number of bipartite components.",
+      "uses": []
+     },
+     {
+      "id": "s:trace",
+      "slogan": "Compute the trace of $A$ and of $A^2$ as sums over the eigenvalues.",
+      "detail": "The diagonal of $A$ is zero, so $\\operatorname{tr} A = \\sum \\lambda_i = 0$. The entry $(A^2)_{vv}$ counts the walks of length 2 from $v$ to $v$, which is $d$. So $\\operatorname{tr} A^2 = nd$, and $A$ is diagonalizable, so $\\operatorname{tr} A^2 = \\sum \\lambda_i^2$.",
+      "uses": [
+       "nm:diagonalization-theorem"
+      ]
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Combine the bound, the two multiplicity counts and the two trace formulas.",
+      "detail": "The bound and the eigenvalue $d$ come from the first step. The multiplicity of $d$ comes from the indicators. The multiplicity of $-d$ comes from the bipartite components. The sums of $\\lambda_i$ and $\\lambda_i^2$ come from the trace step. Together these give the whole statement.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:constant",
+      "s:indicators"
+     ],
+     [
+      "s:alternate",
+      "s:bipartite"
+     ],
+     [
+      "s:bound",
+      "s:collect"
+     ],
+     [
+      "s:indicators",
+      "s:collect"
+     ],
+     [
+      "s:bipartite",
+      "s:collect"
+     ],
+     [
+      "s:trace",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:regular-graph": "Regularity gives equal row sums and a full neighbourhood inside each component.",
+     "c:adjacency-matrix": "The theorem reads the spectrum of this matrix.",
+     "c:eigenvalue": "The multiplicities of $d$ and $-d$ are the quantities that the proof counts.",
+     "c:eigenvector": "The maximal entry of an eigenvector gives the bound and the structure.",
+     "c:connected-component": "Eigenvectors for $d$ are constant on each component.",
+     "c:bipartite-graph": "A $-d$ eigenvector exists on a component exactly when it is bipartite.",
+     "c:linear-independence": "Independent indicators give the full dimension of the eigenspace."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-support-function-closed-convex-sets",
+  "statement": "Let $E$ be a finite dimensional real inner product space. Let $K, L \\subseteq E$ be nonempty, closed and [convex](c:convex-set), with [support function](c:support-function) $\\sigma_K(u) = \\sup_{x \\in K} \\langle u, x \\rangle$. Then (a) $K = \\{x : \\langle u, x \\rangle \\le \\sigma_K(u)\\ \\forall u\\}$. (b) $K \\subseteq L$ iff $\\sigma_K \\le \\sigma_L$. (c) $\\sigma_{K+L} = \\sigma_K + \\sigma_L$ and $\\sigma_{\\operatorname{conv}(K \\cup L)} = \\max(\\sigma_K, \\sigma_L)$. (d) $\\operatorname{dist}(x, K) = \\sup_{\\|u\\| = 1} \\max(\\langle u, x \\rangle - \\sigma_K(u), 0)$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The space $E$ is a finite dimensional real inner product space.",
+    "concept": null
+   },
+   {
+    "id": "h:convex",
+    "text": "The sets $K$ and $L$ are nonempty, closed and [convex](c:convex-set).",
+    "concept": "c:convex-set"
+   }
+  ],
+  "conclusion": "Parts (a) to (d) hold: half-space description, inclusion test, sum and hull rules, and the distance formula.",
+  "formal": {
+   "decl": "iInter_halfSpaces_eq",
+   "difference": "The declaration states part (a) only: a closed convex set is the intersection of the half-spaces that contain it, in a locally convex space. Parts (b), (c) and (d) are not in it."
+  },
+  "proofs": [
+   {
+    "id": "projection",
+    "name": "Nearest point and supporting direction",
+    "slogan": "Project a point outside $K$ onto $K$ to get a direction that separates it from $K$.",
+    "scope": "The whole theorem. Part (c) does not need closedness. A value $\\sigma_K(u) = +\\infty$ is allowed, and the inequalities are read in the extended reals.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:separation",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "Finite dimension gives a nearest point of a closed set and an inner product to measure distance.",
+      "steps": [
+       "s:project",
+       "s:distance"
+      ]
+     },
+     {
+      "h": "h:convex",
+      "why": "Closedness gives a nearest point and convexity gives the variational inequality. Closed convex sets are determined by their half-spaces.",
+      "steps": [
+       "s:project",
+       "s:halfspaces",
+       "s:inclusion"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:project",
+      "slogan": "Project a point $x$ outside $K$ onto its nearest point $p$ of $K$.",
+      "detail": "Put $d = \\|x - p\\| > 0$ and $u = (x - p)/d$. The variational inequality gives $\\langle x - p, y - p \\rangle \\le 0$ for all $y \\in K$, so $\\langle u, y \\rangle \\le \\langle u, p \\rangle$. Hence $\\sigma_K(u) = \\langle u, p \\rangle$ and $\\langle u, x \\rangle - \\sigma_K(u) = d > 0$. So $u$ defines a [separating hyperplane](c:separating-hyperplane).",
+      "uses": [
+       "nm:technique-projection-variational-inequality"
+      ]
+     },
+     {
+      "id": "s:halfspaces",
+      "slogan": "Prove part (a) from the separating direction.",
+      "detail": "If $x \\in K$, then $\\langle u, x \\rangle \\le \\sigma_K(u)$ for all $u$ by definition. If $x \\notin K$, the previous step gives a $u$ with $\\langle u, x \\rangle > \\sigma_K(u)$. So $x$ lies outside the right side.",
+      "uses": []
+     },
+     {
+      "id": "s:distance",
+      "slogan": "Prove part (d) with an upper bound for the gap and the attaining direction.",
+      "detail": "For a unit vector $u$ and $y \\in K$, $\\langle u, x \\rangle - \\sigma_K(u) \\le \\langle u, x - y \\rangle \\le \\|x - y\\|$ by the Cauchy-Schwarz inequality. Taking the infimum over $y$ gives at most $\\operatorname{dist}(x, K)$, and $0$ is also at most the distance. If $x \\notin K$, the direction $u$ of the first step gives the gap $d = \\operatorname{dist}(x, K)$. If $x \\in K$, both sides are $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:inclusion",
+      "slogan": "Prove part (b) by comparing the half-space descriptions.",
+      "detail": "If $K \\subseteq L$, each supremum over $K$ is at most the supremum over $L$, so $\\sigma_K \\le \\sigma_L$. Conversely, let $x \\in K$. Then $\\langle u, x \\rangle \\le \\sigma_K(u) \\le \\sigma_L(u)$ for all $u$, so $x \\in L$ by part (a) for $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:sums",
+      "slogan": "Prove part (c) by splitting the supremum over the two sets.",
+      "detail": "The supremum of $\\langle u, x \\rangle + \\langle u, y \\rangle$ over $x \\in K$ and $y \\in L$ splits into $\\sigma_K(u) + \\sigma_L(u)$, because the two choices are independent. A linear function on a convex combination is the same combination of its values, so its supremum over $\\operatorname{conv}(K \\cup L)$ equals its supremum over $K \\cup L$, which is $\\max(\\sigma_K(u), \\sigma_L(u))$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Combine parts (a), (b), (c) and (d) into the theorem.",
+      "detail": "Part (a) is the half-space description. Part (b) gives the inclusion test and, applied twice, the equality test. Part (c) gives the sum and hull rules. Part (d) gives the distance formula. Together they state the whole theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:project",
+      "s:halfspaces"
+     ],
+     [
+      "s:project",
+      "s:distance"
+     ],
+     [
+      "s:halfspaces",
+      "s:inclusion"
+     ],
+     [
+      "s:inclusion",
+      "s:collect"
+     ],
+     [
+      "s:distance",
+      "s:collect"
+     ],
+     [
+      "s:sums",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:convex-set": "Convexity gives the variational inequality of the projection.",
+     "c:support-function": "The support function is the object that the four parts describe.",
+     "c:separating-hyperplane": "The direction $u$ separates the outside point from $K$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:support-function",
+    "name": "support function",
+    "reminder": "The support function of a set gives, for each direction, the largest inner product with a point of the set.",
+    "definition": "For a nonempty set $K$ in a real inner product space, the support function is $\\sigma_K(u) = \\sup_{x \\in K} \\langle u, x \\rangle$, with values in $(-\\infty, +\\infty]$.",
+    "requires": [
+     "c:inner-product-space"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-slater-strong-duality-convex-programs",
+  "statement": "Let $C \\subseteq \\mathbb{R}^n$ be [convex](c:convex-set) and $f, g_1, \\dots, g_m$ real [convex functions](c:convex-function) on $C$. Let $p^*$ be the infimum of $f$ over $\\{x \\in C : g(x) \\le 0\\}$, $q(\\lambda) = \\inf_{x \\in C} [f + \\sum \\lambda_i g_i]$ and $d^* = \\sup_{\\lambda \\ge 0} q$. Then $d^* \\le p^*$. If a [Slater point](c:slater-condition) exists and $p^* > -\\infty$, then $d^* = p^*$, attained at some $\\lambda^* \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The set $C$ is [convex](c:convex-set) and the real functions $f$ and $g_i$ are [convex](c:convex-function) on $C$.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:slater",
+    "text": "A point $x_0 \\in C$ has $g_i(x_0) < 0$ for all $i$, the [Slater condition](c:slater-condition).",
+    "concept": "c:slater-condition"
+   },
+   {
+    "id": "h:finite",
+    "text": "The primal value satisfies $p^* > -\\infty$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Weak duality $d^* \\le p^*$ holds. Under the Slater condition $d^* = p^*$ and some $\\lambda^* \\ge 0$ has $q(\\lambda^*) = d^*$. At a primal minimizer $x^*$, $\\lambda^*_i g_i(x^*) = 0$ and $x^*$ minimizes $f + \\sum \\lambda^*_i g_i$.",
+  "formal": {
+   "decl": "geometric_hahn_banach_of_nonempty_interior_point",
+   "difference": "The declaration states only the supporting hyperplane fact that the proof uses in one step: a convex set with nonempty interior and a point outside its interior are separated by a nonzero continuous linear functional. The duality theorem is not in it."
+  },
+  "proofs": [
+   {
+    "id": "separation",
+    "name": "Separation of the value set",
+    "slogan": "Separate the point $(0, p^*)$ from the convex set of attainable constraint and objective values.",
+    "scope": "The whole theorem. If $p^* = -\\infty$, then $d^* = -\\infty$ by weak duality and nothing more is to prove.",
+    "mechanisms": [
+     "m:separation",
+     "m:duality",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity of $C$, $f$ and $g_i$ makes the value set $A$ convex, so that it can be separated.",
+      "steps": [
+       "s:set"
+      ]
+     },
+     {
+      "h": "h:slater",
+      "why": "The Slater point gives an interior point of $A$ and forces the multiplier of $f$ to be positive.",
+      "steps": [
+       "s:interior",
+       "s:positive"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite $p^*$ gives the point $(0, p^*)$ to separate.",
+      "steps": [
+       "s:interior",
+       "s:separate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:weak",
+      "slogan": "Prove weak duality by bounding $q(\\lambda)$ with every feasible point.",
+      "detail": "If $x$ is feasible and $\\lambda \\ge 0$, then $\\sum \\lambda_i g_i(x) \\le 0$. So $q(\\lambda) \\le f(x) + \\sum \\lambda_i g_i(x) \\le f(x)$. Taking the infimum over feasible $x$ gives $q(\\lambda) \\le p^*$, and then $d^* \\le p^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:set",
+      "slogan": "Define the set $A$ of attainable values and show that it is convex.",
+      "detail": "Let $A = \\{(u, t) : \\exists x \\in C,\\ g(x) \\le u,\\ f(x) \\le t\\}$. For witnesses $x, x'$ and $\\theta \\in [0,1]$, the point $z = \\theta x + (1-\\theta)x'$ lies in $C$. [Convexity](c:convex-function) of $g_i$ and $f$ gives $g_i(z) \\le \\theta u_i + (1-\\theta)u'_i$ and $f(z) \\le \\theta t + (1-\\theta)t'$. So $A$ is convex.",
+      "uses": []
+     },
+     {
+      "id": "s:interior",
+      "slogan": "Show that $A$ has interior points and that $(0, p^*)$ is not one of them.",
+      "detail": "The open set of $(u, t)$ with $u_i > g_i(x_0)$ and $t > f(x_0)$ lies in $A$ with witness $x_0$, so $A$ has nonempty interior. If $(0, p^*)$ were interior, then $(0, p^* - \\varepsilon) \\in A$ for some $\\varepsilon > 0$. This gives a feasible $x$ with $f(x) \\le p^* - \\varepsilon$, which contradicts the definition of $p^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Separate $(0, p^*)$ from $A$ and show that the multipliers are not negative.",
+      "detail": "The supporting hyperplane form of the [Hahn-Banach separation theorem](c:separating-hyperplane) gives $(\\lambda, \\mu) \\ne 0$ with $\\lambda \\cdot u + \\mu t \\ge \\mu p^*$ on $A$. The set $A$ is closed upward in every coordinate. If a coefficient were negative, letting that coordinate grow would break the bound. So $\\lambda \\ge 0$ and $\\mu \\ge 0$.",
+      "uses": [
+       "nl:10213"
+      ]
+     },
+     {
+      "id": "s:positive",
+      "slogan": "Show that $\\mu > 0$ with the Slater point.",
+      "detail": "Suppose $\\mu = 0$. Then $\\lambda \\cdot u \\ge 0$ on $A$, so $\\lambda \\cdot g(x_0) \\ge 0$. But $g_i(x_0) < 0$ and $\\lambda_i \\ge 0$, so $\\lambda \\cdot g(x_0) \\le 0$ with equality only if $\\lambda = 0$. Then $(\\lambda, \\mu) = 0$, which is false. So $\\mu > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Divide by $\\mu$ to get $\\lambda^*$ with $q(\\lambda^*) = p^*$.",
+      "detail": "Put $\\lambda^* = \\lambda/\\mu \\ge 0$. For each $x \\in C$ the point $(g(x), f(x))$ is in $A$, so $f(x) + \\lambda^* \\cdot g(x) \\ge p^*$. Hence $q(\\lambda^*) \\ge p^*$. With weak duality, $p^* \\ge d^* \\ge q(\\lambda^*) \\ge p^*$, so $d^* = p^* = q(\\lambda^*)$.",
+      "uses": []
+     },
+     {
+      "id": "s:slack",
+      "slogan": "Derive complementary slackness at a primal minimizer.",
+      "detail": "Let $x^*$ be a minimizer. Then $p^* = q(\\lambda^*) \\le f(x^*) + \\lambda^* \\cdot g(x^*) \\le f(x^*) = p^*$, because $\\lambda^* \\ge 0$ and $g(x^*) \\le 0$. All inequalities are equalities. A sum of terms $\\le 0$ equal to $0$ has all terms $0$, so $\\lambda^*_i g_i(x^*) = 0$. Also $x^*$ attains $q(\\lambda^*)$ in the [Lagrangian](c:lagrangian).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:set",
+      "s:interior"
+     ],
+     [
+      "s:interior",
+      "s:separate"
+     ],
+     [
+      "s:separate",
+      "s:positive"
+     ],
+     [
+      "s:positive",
+      "s:dual"
+     ],
+     [
+      "s:weak",
+      "s:dual"
+     ],
+     [
+      "s:dual",
+      "s:slack"
+     ]
+    ],
+    "conclusion": "s:slack",
+    "concepts": {
+     "c:convex-set": "The value set $A$ is convex, so a hyperplane can separate it.",
+     "c:convex-function": "Convex functions make the value set $A$ convex.",
+     "c:slater-condition": "A strictly feasible point gives an interior point of $A$ and $\\mu > 0$.",
+     "c:separating-hyperplane": "The separating functional supplies the multipliers.",
+     "c:lagrangian": "The minimizer also minimizes the Lagrangian at the optimal multiplier."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:slater-condition",
+    "name": "Slater condition",
+    "reminder": "A convex program satisfies the Slater condition when some point satisfies every inequality constraint strictly.",
+    "definition": "A convex program with constraints $g_i(x) \\le 0$ satisfies the Slater condition when some point $x_0$ in its domain has $g_i(x_0) < 0$ for every $i$.",
+    "requires": [
+     "c:convex-function"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-los-vaught-categoricity-completeness-test",
+  "statement": "Let $T$ be a first-order [theory](c:first-order-theory) in a language $L$. Let $\\kappa \\ge \\aleph_0$ be a [cardinal](c:cardinal-number) with $\\kappa \\ge |L|$. Assume that $T$ has a [model](c:model), that every model is infinite, and that any two models of cardinality $\\kappa$ are [isomorphic](c:isomorphism). Then $T$ is a [complete theory](c:complete-theory): each sentence holds in all models or fails in all models.",
+  "hypotheses": [
+   {
+    "id": "h:kappa",
+    "text": "The cardinal $\\kappa$ is infinite and at least $|L|$.",
+    "concept": "c:cardinal-number"
+   },
+   {
+    "id": "h:model",
+    "text": "The theory $T$ has a [model](c:model).",
+    "concept": "c:model"
+   },
+   {
+    "id": "h:infinite",
+    "text": "Every model of $T$ is infinite.",
+    "concept": null
+   },
+   {
+    "id": "h:categorical",
+    "text": "Any two models of $T$ of cardinality $\\kappa$ are [isomorphic](c:isomorphism).",
+    "concept": "c:isomorphism"
+   }
+  ],
+  "conclusion": "For every sentence $\\varphi$, either every model of $T$ satisfies $\\varphi$, or every model of $T$ satisfies $\\neg\\varphi$.",
+  "formal": {
+   "decl": "Categorical",
+   "difference": "The declaration defines $\\kappa$-categoricity only, a related smaller fact. The test itself is the next theorem of the same module, Cardinal.Categorical.isComplete."
+  },
+  "proofs": [
+   {
+    "id": "resize-models",
+    "name": "Resize two models to size kappa",
+    "slogan": "Assume two models disagree on a sentence, resize both to size $\\kappa$, and find an isomorphism that cannot exist.",
+    "scope": "The whole theorem. The hypothesis that $T$ has a model only rules out the empty case, where completeness holds for a trivial reason.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:symmetry",
+     "m:structural-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:model",
+      "why": "The proof does not use it. A theory with no model has no sentence that models disagree on.",
+      "unused": true
+     },
+     {
+      "h": "h:infinite",
+      "why": "Infinite models allow the Lowenheim-Skolem theorems to resize them.",
+      "steps": [
+       "s:split",
+       "s:resize"
+      ]
+     },
+     {
+      "h": "h:kappa",
+      "why": "The size $\\kappa \\ge |L|$ is a target that both Lowenheim-Skolem theorems reach.",
+      "steps": [
+       "s:resize"
+      ]
+     },
+     {
+      "h": "h:categorical",
+      "why": "It gives an isomorphism between the two resized models.",
+      "steps": [
+       "s:iso"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Assume that $T$ is not complete and pick two models that disagree on a sentence.",
+      "detail": "Some sentence $\\varphi$ has $T \\not\\models \\varphi$ and $T \\not\\models \\neg\\varphi$. So there is a model $A$ of $T$ with $A \\models \\neg\\varphi$ and a model $B$ of $T$ with $B \\models \\varphi$. Both are infinite.",
+      "uses": []
+     },
+     {
+      "id": "s:resize",
+      "slogan": "Resize $A$ and $B$ to structures of cardinality $\\kappa$ with the same sentences.",
+      "detail": "For an infinite $M$, take $N \\preceq M$ if $\\kappa \\le |M|$, by the downward theorem. Take $N \\succeq M$ if $|M| \\le \\kappa$, by the upward theorem. One case holds, and $N$ has size $\\kappa$ and satisfies the same sentences as $M$ ([elementarily equivalent](c:elementary-equivalence)). This gives $A'$ and $B'$.",
+      "uses": [
+       "nm:downward-lowenheim-skolem-theorem",
+       "nm:upward-lowenheim-skolem-theorem"
+      ]
+     },
+     {
+      "id": "s:models",
+      "slogan": "Check that $A'$ and $B'$ are models of $T$ that still disagree on $\\varphi$.",
+      "detail": "Every sentence of $T$ is true in $A$, so it is true in $A'$. The same holds for $B$ and $B'$. Also $A' \\models \\neg\\varphi$ and $B' \\models \\varphi$, because the resized structures satisfy the same sentences.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Get an isomorphism $A' \\to B'$ and show that it preserves all sentences.",
+      "detail": "The hypothesis of $\\kappa$-categoricity gives an isomorphism $h$. By induction on formulas, $A' \\models \\psi[a]$ iff $B' \\models \\psi[h(a)]$. Terms commute with $h$, atomic formulas are preserved because $h$ is injective and preserves relations both ways, and $h$ is a bijection, so witnesses of $\\exists x\\,\\psi$ transfer.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare the sentences of $A'$ and $B'$ to find a contradiction.",
+      "detail": "By the previous step, $A'$ and $B'$ satisfy the same sentences. But $A' \\models \\neg\\varphi$ and $B' \\models \\varphi$. This is false, so no such $\\varphi$ exists and $T$ is complete.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:resize"
+     ],
+     [
+      "s:resize",
+      "s:models"
+     ],
+     [
+      "s:split",
+      "s:models"
+     ],
+     [
+      "s:models",
+      "s:iso"
+     ],
+     [
+      "s:iso",
+      "s:contradict"
+     ],
+     [
+      "s:models",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:first-order-theory": "The theorem is about completeness of this kind of theory.",
+     "c:cardinal-number": "The cardinal $\\kappa$ is the common size of the two resized models.",
+     "c:model": "The proof compares two models of the theory.",
+     "c:isomorphism": "An isomorphism of the resized models forces them to agree on all sentences.",
+     "c:complete-theory": "Completeness is the conclusion that the contradiction proves.",
+     "c:elementary-equivalence": "Resizing keeps the set of true sentences, so it preserves the disagreement."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-perfect-set-cantor-space-injection",
+  "statement": "Let $C$ be a nonempty [perfect set](c:perfect) in a [complete metric space](c:complete-metric-space) $X$. Then a continuous injection $f$ from the [Cantor space](c:cantor-space) $\\{0,1\\}^{\\mathbb{N}}$ into $X$ has $f(\\{0,1\\}^{\\mathbb{N}}) \\subseteq C$, so $|C| \\ge \\mathfrak{c}$. If $X$ is a [Polish space](c:polish-space) and $C$ is closed and uncountable, the same map exists and $|C| = \\mathfrak{c}$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The space $X$ is a [complete metric space](c:complete-metric-space).",
+    "concept": "c:complete-metric-space"
+   },
+   {
+    "id": "h:perfect",
+    "text": "The set $C \\subseteq X$ is nonempty, closed and has no [isolated point](c:isolated-point).",
+    "concept": "c:isolated-point"
+   },
+   {
+    "id": "h:polish",
+    "text": "For the last claim, $X$ is a [Polish space](c:polish-space) and $C$ is closed and uncountable.",
+    "concept": "c:polish-space"
+   }
+  ],
+  "conclusion": "There is a continuous injection $f\\colon \\{0,1\\}^{\\mathbb{N}} \\to C$, so $|C| \\ge \\mathfrak{c}$. In the Polish case, also $|C| = \\mathfrak{c}$.",
+  "formal": {
+   "decl": "Perfect.exists_nat_bool_injection",
+   "difference": "The declaration states the first claim only, for a nonempty perfect set in a complete metric space. The Polish case and the equality $|C| = \\mathfrak{c}$ are not in it."
+  },
+  "proofs": [
+   {
+    "id": "cantor-scheme",
+    "name": "Cantor scheme",
+    "slogan": "Split the perfect set again and again into disjoint small perfect sets, and read each binary sequence as a branch.",
+    "scope": "The first claim for any nonempty perfect $C$ in a complete space, then the Polish case through the Cantor-Bendixson theorem.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:cauchy-completeness",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness turns a nested sequence of small closed sets into a single point.",
+      "steps": [
+       "s:define"
+      ]
+     },
+     {
+      "h": "h:perfect",
+      "why": "Having no isolated points lets every perfect set split into two disjoint perfect pieces.",
+      "steps": [
+       "s:split",
+       "s:perfect-pieces",
+       "s:scheme"
+      ]
+     },
+     {
+      "h": "h:polish",
+      "why": "Separability gives the upper bound, and Cantor-Bendixson gives a nonempty perfect part.",
+      "steps": [
+       "s:polish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split a nonempty perfect set $D$ into two disjoint closed pieces of small [diameter](c:diameter).",
+      "detail": "Choose $p \\in D$ and, because $p$ is not isolated, a point $y \\ne p$ of $D$. Let $r = \\min(d(p, y)/3, \\varepsilon/4)$. Put $D_0 = \\overline{B(p, r) \\cap D}$ and $D_1 = \\overline{B(y, r) \\cap D}$. They are closed and nonempty, they lie in $D$, they have diameter at most $\\varepsilon/2$, and they are disjoint because $2r < d(p, y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:perfect-pieces",
+      "slogan": "Show that each piece $D_0$ and $D_1$ is perfect.",
+      "detail": "Let $z \\in D_0$ and let $W$ be an open neighbourhood of $z$. The open set $W \\cap B(p, r)$ meets $D$ because $z$ is in the closure of $B(p, r) \\cap D$. At a point $q$ of this intersection with $D$, a neighbourhood has infinitely many points of $D$. So $W$ holds a point of $D_0$ other than $z$. The same argument works for $D_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:scheme",
+      "slogan": "Build the sets $D_s$ for all finite binary words $s$ by recursion.",
+      "detail": "Put $D_\\varnothing = C$. Given a nonempty perfect $D_s$, split it with $\\varepsilon = 2^{-(|s|+1)}$ into $D_{s0}$ and $D_{s1}$. They are nonempty perfect subsets of $D_s$, they are disjoint, and their diameters are at most $2^{-(|s|+1)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:define",
+      "slogan": "Define $f(x)$ as the single point of the nested sets $D_{x|n}$.",
+      "detail": "For $x \\in \\{0,1\\}^{\\mathbb{N}}$ pick $p_n \\in D_{x|n}$. For $m \\ge n$ we have $d(p_m, p_n) \\le 2^{-n}$, so $(p_n)$ is a [Cauchy sequence](c:cauchy-sequence) with a limit $p$ in the complete space. Each $D_{x|n}$ is closed and holds $p_m$ for $m \\ge n$, so $p$ is in it. The intersection has diameter $0$, so it is $\\{p\\}$. Put $f(x) = p$.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Show that $f$ is injective and continuous, and count the points of $C$.",
+      "detail": "If $x \\ne y$ first differ at place $n$, then $f(x)$ and $f(y)$ lie in the disjoint sets $D_{s0}$ and $D_{s1}$, so they differ. If $y$ agrees with $x$ on $n$ places, both images lie in a set of diameter at most $2^{-n}$, so $f$ is continuous. Hence $|C| \\ge 2^{\\aleph_0} = \\mathfrak{c}$.",
+      "uses": []
+     },
+     {
+      "id": "s:polish",
+      "slogan": "Pass to the Polish case with Cantor-Bendixson and a dense sequence.",
+      "detail": "Let $C$ be closed and uncountable in a Polish space. The Cantor-Bendixson theorem gives $C = P \\cup N$ with $P$ perfect and $N$ [countable](c:countable-set). So $P$ is nonempty, and the first claim for a complete metric of $X$ gives the injection. A countable dense set $Q$ gives an injection $X \\to Q^{\\mathbb{N}}$, so $|C| \\le \\mathfrak{c}$.",
+      "uses": [
+       "nm:cantor-bendixson-theorem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:perfect-pieces"
+     ],
+     [
+      "s:split",
+      "s:scheme"
+     ],
+     [
+      "s:perfect-pieces",
+      "s:scheme"
+     ],
+     [
+      "s:scheme",
+      "s:define"
+     ],
+     [
+      "s:define",
+      "s:inject"
+     ],
+     [
+      "s:inject",
+      "s:polish"
+     ]
+    ],
+    "conclusion": "s:polish",
+    "concepts": {
+     "c:perfect": "The splitting step needs a perfect set, and it keeps the pieces perfect.",
+     "c:complete-metric-space": "Completeness gives the limit point of each branch.",
+     "c:cantor-space": "The space $\\{0,1\\}^{\\mathbb{N}}$ is the domain of the injection.",
+     "c:polish-space": "The Polish case adds separability and the Cantor-Bendixson reduction.",
+     "c:isolated-point": "A point that is not isolated lets the set split in two.",
+     "c:diameter": "Small diameter makes the nested sets shrink to one point.",
+     "c:cauchy-sequence": "The points $p_n$ form a Cauchy sequence in the complete space.",
+     "c:countable-set": "The Cantor-Bendixson remainder is countable, and so is a dense set $Q$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-borel-sigma-algebra-cardinality-continuum",
+  "statement": "Let $S$ be a family of subsets of a set $X$ and let $\\sigma(S)$ be the [$\\sigma$-algebra](c:sigma-algebra) that it generates. Then $|\\sigma(S)| \\le \\max(|S|, 2)^{\\aleph_0}$. So $|S| \\le \\mathfrak{c}$ gives $|\\sigma(S)| \\le \\mathfrak{c}$. The [Borel sets](c:borel-set) of $\\mathbb{R}$ number exactly $\\mathfrak{c}$, and some Lebesgue measurable set is not Borel.",
+  "hypotheses": [
+   {
+    "id": "h:generated",
+    "text": "The family $\\sigma(S)$ is the smallest family that contains $S$ and is closed under complements and countable unions.",
+    "concept": "c:sigma-algebra"
+   },
+   {
+    "id": "h:complete-measure",
+    "text": "For the last claim, Lebesgue measure is complete: every subset of a null set is measurable.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The bound $|\\sigma(S)| \\le \\max(|S|, 2)^{\\aleph_0}$ holds, the Borel sets of $\\mathbb{R}$ number $\\mathfrak{c}$, and a non-Borel Lebesgue measurable set exists.",
+  "formal": {
+   "decl": "cardinal_generateMeasurable_le",
+   "difference": "The declaration states the bound $\\max(|S|,2)^{\\aleph_0}$ for the generated family only. The count of the Borel sets and the non-Borel measurable set are not in it."
+  },
+  "proofs": [
+   {
+    "id": "transfinite-generation",
+    "name": "Transfinite generation",
+    "slogan": "Build the generated family in countably many stages, bound each stage, and count the union.",
+    "scope": "The whole theorem. The size count uses $\\aleph_1 \\le 2^{\\aleph_0}$, and the last claim uses the Cantor ternary set.",
+    "mechanisms": [
+     "m:well-ordering",
+     "m:counterexample-family",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:generated",
+      "why": "The definition of $\\sigma(S)$ shows that the stages together build it.",
+      "steps": [
+       "s:stages",
+       "s:closed"
+      ]
+     },
+     {
+      "h": "h:complete-measure",
+      "why": "Completeness makes every subset of the Cantor set measurable.",
+      "steps": [
+       "s:nonborel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:stages",
+      "slogan": "Define the stages $G_\\alpha$ for every countable ordinal $\\alpha$ and bound them by $\\sigma(S)$.",
+      "detail": "Let $U_\\alpha = \\bigcup_{\\beta < \\alpha} G_\\beta$. Let $G_\\alpha$ hold $S$, $\\varnothing$, the complements of sets of $U_\\alpha$ and the countable unions of sets of $U_\\alpha$. By induction on $\\alpha$, each $G_\\alpha$ lies in $\\sigma(S)$, because $\\sigma(S)$ is closed under both operations. So $G = \\bigcup_{\\alpha<\\omega_1} G_\\alpha \\subseteq \\sigma(S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Show that $G$ is a $\\sigma$-algebra that contains $S$.",
+      "detail": "It contains $S$. If $A \\in G_\\beta$, then $X \\setminus A \\in G_{\\beta+1}$. Let $A_n \\in G_{\\beta_n}$. Because $\\omega_1$ is a [regular cardinal](c:is-regular), $\\gamma = \\sup_n \\beta_n < \\omega_1$. All $A_n$ lie in $U_{\\gamma+1}$, so $\\bigcup A_n \\in G_{\\gamma+1}$. Hence $G = \\sigma(S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:size",
+      "slogan": "Bound the size of each stage and of the union by $\\kappa = \\max(|S|,2)^{\\aleph_0}$.",
+      "detail": "Suppose $|U_\\alpha| \\le \\kappa$. The number of sequences in $U_\\alpha$ is at most $\\kappa^{\\aleph_0} = \\kappa$, by [cardinal arithmetic](c:cardinal-arithmetic), so $|G_\\alpha| \\le \\kappa$. Induction on $\\alpha$ gives $|U_\\alpha| \\le \\aleph_0 \\cdot \\kappa = \\kappa$. Since $\\aleph_1 \\le 2^{\\aleph_0} \\le \\kappa$, we get $|\\sigma(S)| \\le \\aleph_1 \\cdot \\kappa = \\kappa$.",
+      "uses": []
+     },
+     {
+      "id": "s:borel",
+      "slogan": "Count the Borel sets of $\\mathbb{R}$ with the rational intervals.",
+      "detail": "If $|S| \\le \\mathfrak{c}$, then $|\\sigma(S)| \\le (2^{\\aleph_0})^{\\aleph_0} = \\mathfrak{c}$. The open intervals with rational endpoints form a [countable](c:countable-set) family that generates the [Borel sets](c:borel-set), so there are at most $\\aleph_0^{\\aleph_0} = \\mathfrak{c}$ of them. Singletons are Borel, so there are at least $\\mathfrak{c}$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonborel",
+      "slogan": "Find a Lebesgue measurable set that is not Borel inside the Cantor ternary set.",
+      "detail": "The Cantor ternary set $K$ is closed, has measure $0$ and contains a copy of $\\{0,1\\}^{\\mathbb{N}}$, so $|K| = \\mathfrak{c}$. By completeness, all $2^{\\mathfrak{c}}$ subsets of $K$ are Lebesgue measurable. Cantor's theorem gives $2^{\\mathfrak{c}} > \\mathfrak{c}$, and only $\\mathfrak{c}$ sets are Borel. So some measurable subset of $K$ is not Borel.",
+      "uses": [
+       "wd:Q474881"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:stages",
+      "s:closed"
+     ],
+     [
+      "s:closed",
+      "s:size"
+     ],
+     [
+      "s:size",
+      "s:borel"
+     ],
+     [
+      "s:borel",
+      "s:nonborel"
+     ]
+    ],
+    "conclusion": "s:nonborel",
+    "concepts": {
+     "c:sigma-algebra": "The generated family is the object that the stages build and the proof counts.",
+     "c:is-regular": "Regularity of $\\omega_1$ keeps a countable union of stages inside one stage.",
+     "c:cardinal-arithmetic": "The identity $\\kappa^{\\aleph_0} = \\kappa$ bounds each stage.",
+     "c:countable-set": "A countable generating family gives the bound $\\mathfrak{c}$ for the Borel sets.",
+     "c:borel-set": "The Borel sets are fewer than the Lebesgue measurable sets."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]

@@ -1,0 +1,3418 @@
+[
+ {
+  "id": "nm:technique-schur-block-elimination",
+  "statement": "Let $K$ be a [field](c:field) and $M$ a [block matrix](c:partitioned-matrix) with blocks $A, B, C, D$ over $K$, where $A$ is invertible. Put $S = D - CA^{-1}B$. Then $M$ is invertible if and only if $S$ is invertible. The inverse of $M$ has an explicit block formula. The system $M(x,y)=(f,g)$ reduces to $Sy = g - CA^{-1}f$ and $x = A^{-1}(f-By)$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The scalars form a [field](c:field) $K$, and all block products have the stated sizes.",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:a-invertible",
+    "text": "The block $A$ has a two-sided [inverse](c:inverse-matrix).",
+    "concept": "c:inverse-matrix"
+   }
+  ],
+  "conclusion": "$M$ is invertible if and only if $S$ is invertible. Then $M^{-1}$ has top blocks $A^{-1}+A^{-1}BS^{-1}CA^{-1}$ and $-A^{-1}BS^{-1}$, and bottom blocks $-S^{-1}CA^{-1}$ and $S^{-1}$.",
+  "formal": {
+   "decl": "Matrix.fromBlocks_eq_of_invertible₁₁",
+   "difference": "The declaration states a related, smaller fact: the block factorization of $M$ when $A$ is invertible. It does not state the equivalence with $S$ or the inverse formula."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Block factorization",
+    "slogan": "Factor $M$ as a lower block triangular, a block diagonal and an upper block triangular matrix, then invert each factor.",
+    "scope": "The whole theorem. Empty blocks ($p=0$ or $q=0$) satisfy the same identities.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "The field supplies the block arithmetic, with the usual rules for sums and products of blocks.",
+      "steps": [
+       "s:factor",
+       "s:inverses"
+      ]
+     },
+     {
+      "h": "h:a-invertible",
+      "why": "The inverse of $A$ builds the factors $L$ and $U$ and the elimination of $x$.",
+      "steps": [
+       "s:factor",
+       "s:inverses",
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Factor $M$ as a product $LHU$ of three block matrices.",
+      "detail": "Let $L$ have blocks $I, 0, CA^{-1}, I$. Let $H$ be block diagonal with blocks $A$ and $S$. Let $U$ have blocks $I, A^{-1}B, 0, I$. Block multiplication gives $LH$ with blocks $A, 0, C, S$, and then $LHU = M$.",
+      "uses": []
+     },
+     {
+      "id": "s:inverses",
+      "slogan": "Invert the two triangular factors without using $S^{-1}$.",
+      "detail": "The matrix $L^{-1}$ has the blocks of $L$ with $CA^{-1}$ replaced by $-CA^{-1}$. The matrix $U^{-1}$ has $A^{-1}B$ replaced by $-A^{-1}B$. Multiply on both sides to get the identity. No inverse of $S$ enters.",
+      "uses": []
+     },
+     {
+      "id": "s:iff",
+      "slogan": "Show that $M$ and the block diagonal factor $H$ are invertible together.",
+      "detail": "If $S$ is invertible, $H^{-1}$ is block diagonal with blocks $A^{-1}$ and $S^{-1}$, so $U^{-1}H^{-1}L^{-1}$ inverts $M$. If $M$ is invertible, $H = L^{-1}MU^{-1}$ is invertible. The bottom right blocks of $HH^{-1}=I=H^{-1}H$ give $SJ=JS=I$, so $S$ is invertible.",
+      "uses": []
+     },
+     {
+      "id": "s:formula",
+      "slogan": "Multiply the inverse factors in the right order to get the block formula.",
+      "detail": "First, $U^{-1}H^{-1}$ has blocks $A^{-1}, -A^{-1}BS^{-1}, 0, S^{-1}$. Its product with $L^{-1}$ is the displayed inverse. The order of the factors matters.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the block equations by elimination and match them with the inverse.",
+      "detail": "The first block row is $Ax+By=f$, so $x=A^{-1}(f-By)$. Put this into $Cx+Dy=g$ to get $Sy=g-CA^{-1}f$. The two reduced equations imply both original rows, so the systems are equivalent. When $S$ is invertible, the solution agrees with $M^{-1}(f,g)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:inverses"
+     ],
+     [
+      "s:factor",
+      "s:iff"
+     ],
+     [
+      "s:inverses",
+      "s:iff"
+     ],
+     [
+      "s:iff",
+      "s:formula"
+     ],
+     [
+      "s:inverses",
+      "s:formula"
+     ],
+     [
+      "s:formula",
+      "s:solve"
+     ],
+     [
+      "s:factor",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:field": "The block arithmetic and the inverses live over a field.",
+     "c:partitioned-matrix": "The proof multiplies and inverts matrices block by block.",
+     "c:inverse-matrix": "Inverses of $A$, $L$, $U$, $H$ and $S$ drive the argument."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-gaussian-quadratic-integral",
+  "statement": "Let $d \\ge 1$, let $A$ be a real symmetric positive definite $d \\times d$ [matrix](c:matrix) and let $b \\in \\mathbb{R}^d$. Then $\\int_{\\mathbb{R}^d} e^{-x^{T}Ax/2 + b^{T}x}\\,dx = (2\\pi)^{d/2} e^{b^{T}A^{-1}b/2}/\\sqrt{\\det A}$. The integral is finite and positive.",
+  "hypotheses": [
+   {
+    "id": "h:spd",
+    "text": "The matrix $A$ is real and [symmetric](c:symmetric-matrix), and $x^{T}Ax>0$ for every $x \\ne 0$.",
+    "concept": "c:symmetric-matrix"
+   },
+   {
+    "id": "h:source",
+    "text": "The vector $b$ is any real vector. The integral uses $d$-dimensional [Lebesgue](c:lebesgue-integral) measure.",
+    "concept": "c:lebesgue-integral"
+   }
+  ],
+  "conclusion": "The integral is finite and positive, and it equals $(2\\pi)^{d/2} e^{b^{T}A^{-1}b/2}/\\sqrt{\\det A}$.",
+  "formal": {
+   "decl": "integral_gaussian",
+   "difference": "The declaration states a related, smaller fact: the one-variable Gaussian integral. The matrix and linear source case is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Diagonalize and complete the square",
+    "slogan": "Reduce the integral to a product of one-variable Gaussian integrals by completing the square and rotating.",
+    "scope": "The whole theorem for every $d \\ge 1$. The case $d=1$ is the scalar integral of the first step.",
+    "mechanisms": [
+     "m:change-of-variables",
+     "m:spectral-decomposition",
+     "m:fubini-swap",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:spd",
+      "why": "Positivity makes every eigenvalue positive, so $A$ is invertible and the Gaussian integrals converge.",
+      "steps": [
+       "s:diagonalize",
+       "s:rotate",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:source",
+      "why": "The vector $b$ sets the shift $\\mu = A^{-1}b$, and Lebesgue measure allows the substitution.",
+      "steps": [
+       "s:square",
+       "s:rotate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:scalar",
+      "slogan": "Compute the one-variable Gaussian integral by squaring it and passing to polar coordinates.",
+      "detail": "Let $J=\\int_{\\mathbb{R}} e^{-t^2}dt$. The integral is finite because $e^{-t^2}\\le e^{-|t|}$ for $|t|\\ge1$. The Tonelli theorem gives $J^2=\\int_{\\mathbb{R}^2}e^{-u^2-v^2}du\\,dv$, and polar coordinates give $2\\pi\\int_0^\\infty re^{-r^2}dr=\\pi$. So $J=\\sqrt\\pi$, and scaling gives $\\int e^{-\\lambda y^2/2}dy=\\sqrt{2\\pi/\\lambda}$ for $\\lambda>0$.",
+      "uses": [
+       "wd:Q7820874",
+       "nm:change-of-variables-to-polar-co-ordinates",
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:diagonalize",
+      "slogan": "Diagonalize $A$ to show that it is invertible with positive determinant.",
+      "detail": "The spectral theorem gives $A=Q\\Lambda Q^{T}$ with $Q$ orthogonal and $\\Lambda$ diagonal. Evaluating $x^{T}Ax$ on a unit eigenvector shows $\\lambda_i>0$. So $A$ is invertible and $\\det A=\\prod\\lambda_i>0$.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:square",
+      "slogan": "Complete the square in the exponent with the shift $\\mu = A^{-1}b$.",
+      "detail": "Expand $(x-\\mu)^{T}A(x-\\mu)=x^{T}Ax-2b^{T}x+b^{T}A^{-1}b$. So the exponent is $-(x-\\mu)^{T}A(x-\\mu)/2+b^{T}A^{-1}b/2$. The first term is the shifted quadratic form, and the second term does not depend on $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:rotate",
+      "slogan": "Shift by $\\mu$ and rotate by $Q$ to make the quadratic form diagonal.",
+      "detail": "Put $x=\\mu+Qy$. This map is a bijection with Jacobian determinant of absolute value $1$, because $Q^{T}Q=I$. The change of variables turns the integral into $e^{b^{T}A^{-1}b/2}\\int e^{-\\sum\\lambda_iy_i^2/2}dy$.",
+      "uses": [
+       "nm:change-of-variables-formula"
+      ]
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Split the diagonal integral into $d$ one-variable integrals and multiply them.",
+      "detail": "The integrand is a product of nonnegative functions of single variables, so the Tonelli theorem gives a product of $d$ integrals. The first step gives $\\prod\\sqrt{2\\pi/\\lambda_i}=(2\\pi)^{d/2}/\\sqrt{\\det A}$. Every factor is finite and positive.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:scalar",
+      "s:factor"
+     ],
+     [
+      "s:diagonalize",
+      "s:square"
+     ],
+     [
+      "s:diagonalize",
+      "s:rotate"
+     ],
+     [
+      "s:diagonalize",
+      "s:factor"
+     ],
+     [
+      "s:square",
+      "s:rotate"
+     ],
+     [
+      "s:rotate",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:matrix": "The quadratic form and its inverse are matrix objects.",
+     "c:symmetric-matrix": "Symmetry lets the spectral theorem diagonalize $A$ by an orthogonal matrix.",
+     "c:lebesgue-integral": "The change of variables and the Tonelli theorem act on Lebesgue integrals."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-wallis-product",
+  "statement": "For $n \\ge 1$ put $W_n=\\prod_{k=1}^{n}\\frac{(2k)^2}{(2k-1)(2k+1)}$. Then $\\frac{2n+1}{2n+2}\\cdot\\frac{\\pi}{2}\\le W_n\\le\\frac{\\pi}{2}$, so $W_n\\to\\pi/2$. Also the [binomial coefficient](c:binomial-coefficient) satisfies $\\binom{2n}{n}\\sqrt{\\pi n}/4^n\\to 1$.",
+  "hypotheses": [
+   {
+    "id": "h:n",
+    "text": "The number $n$ is a positive integer.",
+    "concept": null
+   },
+   {
+    "id": "h:integrals",
+    "text": "The integrals are $I_m=\\int_0^{\\pi/2}\\sin^m x\\,dx$ for $m \\ge 0$, the Wallis integrals of the [Riemann integral](c:riemann-integral).",
+    "concept": "c:riemann-integral"
+   }
+  ],
+  "conclusion": "The bounds on $W_n$ hold for every $n$, $W_n \\to \\pi/2$, and $\\binom{2n}{n}\\sqrt{\\pi n}/4^n \\to 1$.",
+  "formal": {
+   "decl": "tendsto_W_nhds_pi_div_two",
+   "difference": "The declaration states a related, smaller fact: the limit $W_n \\to \\pi/2$. It does not state the two-sided bound or the binomial asymptotics."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Wallis integrals",
+    "slogan": "Compare consecutive Wallis integrals, squeeze their ratio, and read the product and the binomial asymptotics from them.",
+    "scope": "The whole theorem. The reduction formula is proved for every $m \\ge 0$, and the boundary terms of integration by parts vanish.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:induction",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:integrals",
+      "why": "The integrals $I_m$ carry the reduction formula and the monotone chain.",
+      "steps": [
+       "s:reduce",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:n",
+      "why": "The index $n$ selects $I_{2n}$ and $I_{2n+1}$ and the product $W_n$.",
+      "steps": [
+       "s:evaluate",
+       "s:squeeze"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Derive the reduction formula $I_{m+2}=\\frac{m+1}{m+2}I_m$ by integration by parts.",
+      "detail": "Integrate by parts with $u=\\sin^{m+1}x$ and $dv=\\sin x\\,dx$. The boundary terms vanish at $0$ and $\\pi/2$. This gives $I_{m+2}=(m+1)(I_m-I_{m+2})$, and so $I_{m+2}=\\frac{m+1}{m+2}I_m$.",
+      "uses": []
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Iterate the reduction and write $W_n$ as a ratio of two Wallis integrals.",
+      "detail": "From $I_0=\\pi/2$ and $I_1=1$ we get $I_{2n}=\\frac{\\pi}{2}\\prod_{k=1}^n\\frac{2k-1}{2k}$ and $I_{2n+1}=\\prod_{k=1}^n\\frac{2k}{2k+1}$. Division gives $W_n=\\frac{\\pi}{2}\\,I_{2n+1}/I_{2n}$.",
+      "uses": []
+     },
+     {
+      "id": "s:squeeze",
+      "slogan": "Squeeze the ratio of consecutive integrals between $(2n+1)/(2n+2)$ and $1$.",
+      "detail": "On $[0,\\pi/2]$ we have $\\sin^{2n+2}x\\le\\sin^{2n+1}x\\le\\sin^{2n}x$, so $I_{2n+2}\\le I_{2n+1}\\le I_{2n}$. The reduction formula gives $I_{2n+2}=\\frac{2n+1}{2n+2}I_{2n}$. Divide by $I_{2n}$ and multiply by $\\pi/2$ to get the bounds on $W_n$ and the limit.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Show that $I_mI_{m+1}$ equals $\\pi/(2(m+1))$.",
+      "detail": "The reduction formula gives $(m+2)I_{m+2}I_{m+1}=(m+1)I_mI_{m+1}$. So $(m+1)I_mI_{m+1}$ is constant in $m$. At $m=0$ it equals $I_0I_1=\\pi/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:asymptotic",
+      "slogan": "Combine the product identity with the squeeze to get $I_{2n}^2\\sim\\pi/(4n)$.",
+      "detail": "Put $m=2n$ to get $I_{2n}I_{2n+1}=\\pi/(2(2n+1))$. The squeeze gives $I_{2n+1}/I_{2n}\\to1$. So $I_{2n}^2\\sim\\pi/(4n)$. This gives the growth of the Wallis integral.",
+      "uses": []
+     },
+     {
+      "id": "s:binomial",
+      "slogan": "Rewrite $I_{2n}$ with a [binomial coefficient](c:binomial-coefficient) and take square roots.",
+      "detail": "The product formula gives $I_{2n}=\\frac{\\pi}{2}\\binom{2n}{n}/4^n$. So $\\left(\\frac{\\pi}{2}\\binom{2n}{n}/4^n\\right)^2\\sim\\frac{\\pi}{4n}$, which gives $\\binom{2n}{n}^2\\sim 16^n/(\\pi n)$. Both sides are positive, so the square root gives the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:evaluate"
+     ],
+     [
+      "s:reduce",
+      "s:squeeze"
+     ],
+     [
+      "s:evaluate",
+      "s:squeeze"
+     ],
+     [
+      "s:reduce",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:asymptotic"
+     ],
+     [
+      "s:squeeze",
+      "s:asymptotic"
+     ],
+     [
+      "s:asymptotic",
+      "s:binomial"
+     ],
+     [
+      "s:evaluate",
+      "s:binomial"
+     ]
+    ],
+    "conclusion": "s:binomial",
+    "concepts": {
+     "c:binomial-coefficient": "The central binomial coefficient is the quantity whose growth the proof finds.",
+     "c:riemann-integral": "The Wallis integrals are Riemann integrals of powers of the sine."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-dedekind-independence-of-characters",
+  "statement": "Let $M$ be a [monoid](c:monoid) and $L$ a [field](c:field). Let $\\chi_1,\\dots,\\chi_k\\colon M\\to L$ be pairwise distinct monoid homomorphisms into the multiplicative monoid of $L$. Then $\\chi_1,\\dots,\\chi_k$ are [linearly independent](c:linear-independence) over $L$ as functions on $M$. So distinct [automorphisms](c:automorphism) of a field are independent.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The target $L$ is a [field](c:field). An integral domain suffices.",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:monoid",
+    "text": "The domain $M$ is a [monoid](c:monoid), not necessarily commutative.",
+    "concept": "c:monoid"
+   },
+   {
+    "id": "h:distinct",
+    "text": "The maps $\\chi_i$ are multiplicative with $\\chi_i(1)=1$, and they are pairwise distinct as functions.",
+    "concept": null
+   }
+  ],
+  "conclusion": "If $c_1\\chi_1+\\dots+c_k\\chi_k=0$ as a function on $M$, then every $c_i=0$. Distinct field automorphisms are independent.",
+  "formal": {
+   "decl": "linearIndependent_monoidHom",
+   "difference": "The declaration states the independence of distinct monoid homomorphisms into a field. The corollaries on field automorphisms and exponential sequences are separate."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Shortest relation",
+    "slogan": "Take a shortest nontrivial relation and cancel one term to get a shorter one.",
+    "scope": "The whole theorem. A relation with one nonzero term is excluded by evaluation at $1$, and the corollary on automorphisms follows by restriction.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "The field has no zero divisors, so the new coefficient $c_2(\\chi_2(h)-\\chi_1(h))$ is nonzero.",
+      "steps": [
+       "s:shorter"
+      ]
+     },
+     {
+      "h": "h:monoid",
+      "why": "The product $hx$ in $M$ turns multiplicativity into a shifted relation.",
+      "steps": [
+       "s:combine"
+      ]
+     },
+     {
+      "h": "h:distinct",
+      "why": "Distinctness of $\\chi_1$ and $\\chi_2$ gives the element $h$, and multiplicativity gives the shifted relation.",
+      "steps": [
+       "s:separate",
+       "s:combine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimal",
+      "slogan": "Choose a nontrivial relation with the fewest nonzero coefficients.",
+      "detail": "Suppose a nontrivial relation exists. Choose one with the smallest number $m$ of nonzero coefficients, and rename so that it is $c_1\\chi_1+\\dots+c_m\\chi_m=0$ with every $c_i\\ne0$. If $m=1$, evaluation at $1$ gives $c_1=0$, which is false. So $m\\ge2$.",
+      "uses": []
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Pick an element $h$ of $M$ on which $\\chi_1$ and $\\chi_2$ differ.",
+      "detail": "The maps $\\chi_1$ and $\\chi_2$ are distinct, so some $h\\in M$ has $\\chi_1(h)\\ne\\chi_2(h)$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Subtract $\\chi_1(h)$ times the relation from the relation evaluated at $hx$.",
+      "detail": "Evaluate the relation at $hx$ and use multiplicativity to get $\\sum c_i\\chi_i(h)\\chi_i(x)=0$. Multiply the original relation by $\\chi_1(h)$ to get $\\sum c_i\\chi_1(h)\\chi_i(x)=0$. The difference has no $\\chi_1$ term: $\\sum_{i\\ge2}c_i(\\chi_i(h)-\\chi_1(h))\\chi_i(x)=0$ for all $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:shorter",
+      "slogan": "Show that the new relation is nontrivial and shorter, which contradicts the choice of $m$.",
+      "detail": "The coefficient of $\\chi_2$ is $c_2(\\chi_2(h)-\\chi_1(h))$. It is nonzero because $c_2\\ne0$ and $\\chi_2(h)\\ne\\chi_1(h)$. So the new relation is nontrivial and has fewer than $m$ nonzero terms. This contradicts minimality, so no relation exists.",
+      "uses": []
+     },
+     {
+      "id": "s:automorphisms",
+      "slogan": "Restrict the result to field automorphisms.",
+      "detail": "An [automorphism](c:automorphism) of a field $F$ restricts to a monoid homomorphism from the multiplicative monoid of $F$ into $F$. Distinct automorphisms are distinct functions. So they are independent over $F$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimal",
+      "s:separate"
+     ],
+     [
+      "s:minimal",
+      "s:combine"
+     ],
+     [
+      "s:separate",
+      "s:combine"
+     ],
+     [
+      "s:combine",
+      "s:shorter"
+     ],
+     [
+      "s:shorter",
+      "s:automorphisms"
+     ]
+    ],
+    "conclusion": "s:automorphisms",
+    "concepts": {
+     "c:monoid": "The characters are homomorphisms out of a monoid, and the proof uses the product $hx$.",
+     "c:field": "Absence of zero divisors keeps the new coefficient nonzero.",
+     "c:linear-independence": "Independence is the property proved: no nontrivial relation exists.",
+     "c:automorphism": "Field automorphisms are the main example of distinct characters."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-strongly-regular-graph-parameters",
+  "statement": "Let $G$ be a finite simple [strongly regular graph](c:is-srg-with) with parameters $(n,k,\\lambda,\\mu)$ and [adjacency matrix](c:adjacency-matrix) $A$. Then $A^2=kI+\\lambda A+\\mu(J-I-A)$ and $k(k-\\lambda-1)=(n-k-1)\\mu$. Every [eigenvalue](c:eigenvalue) $\\theta$ of $A$ with an eigenvector orthogonal to the all-ones vector satisfies $\\theta^2-(\\lambda-\\mu)\\theta-(k-\\mu)=0$.",
+  "hypotheses": [
+   {
+    "id": "h:graph",
+    "text": "The graph $G$ is finite and simple, with $n$ vertices.",
+    "concept": null
+   },
+   {
+    "id": "h:srg",
+    "text": "The graph is regular of degree $k$. Adjacent vertices have $\\lambda$ common neighbors, and distinct non-adjacent vertices have $\\mu$ common neighbors.",
+    "concept": "c:is-srg-with"
+   },
+   {
+    "id": "h:vector",
+    "text": "For part (c), the [eigenvector](c:eigenvector) is real and orthogonal to the all-ones vector.",
+    "concept": "c:eigenvector"
+   }
+  ],
+  "conclusion": "The matrix identity $A^2=kI+\\lambda A+\\mu(J-I-A)$ holds, the relation $k(k-\\lambda-1)=(n-k-1)\\mu$ holds, and the quadratic equation holds for every such eigenvalue.",
+  "formal": {
+   "decl": "IsSRGWith.param_eq",
+   "difference": "The declaration states a related, smaller fact: the parameter relation $k(k-\\lambda-1)=(n-k-1)\\mu$. The matrix identity and the eigenvalue equation are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Walk counting",
+    "slogan": "Count walks of length two to get a matrix identity, then read the parameters and the eigenvalues from it.",
+    "scope": "The whole theorem for any strongly regular graph. The proof also gives the multiplicities of the two roots when they differ.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:algebraic-identity",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:graph",
+      "why": "Finiteness makes $A$ a finite symmetric matrix with entries $0$ and $1$ and zero diagonal.",
+      "steps": [
+       "s:walks",
+       "s:restrict"
+      ]
+     },
+     {
+      "h": "h:srg",
+      "why": "The three counts $k$, $\\lambda$ and $\\mu$ fix every entry of $A^2$.",
+      "steps": [
+       "s:walks",
+       "s:identity",
+       "s:parameter"
+      ]
+     },
+     {
+      "h": "h:vector",
+      "why": "An eigenvector orthogonal to the all-ones vector lies in the space where $J$ acts as zero.",
+      "steps": [
+       "s:restrict",
+       "s:quadratic"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:walks",
+      "slogan": "Count walks of length two to read the entries of $A^2$.",
+      "detail": "The entry $(A^2)_{vw}$ is the number of walks $v,x,w$, that is, the number of common neighbors of $v$ and $w$. It equals $k$ if $v=w$, $\\lambda$ if $v,w$ are adjacent, and $\\mu$ if they are distinct and not adjacent.",
+      "uses": []
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Write the three cases as one matrix identity.",
+      "detail": "The matrix $J-I-A$ has entry $1$ exactly at distinct non-adjacent pairs. So the three cases say $A^2=kI+\\lambda A+\\mu(J-I-A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:parameter",
+      "slogan": "Apply the identity to the all-ones vector to get the parameter relation.",
+      "detail": "We have $A\\mathbf 1=k\\mathbf 1$ and $J\\mathbf 1=n\\mathbf 1$. So $k^2=k+\\lambda k+\\mu(n-1-k)$, which is $k(k-\\lambda-1)=\\mu(n-k-1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:restrict",
+      "slogan": "Restrict $A$ to the space $W$ of vectors orthogonal to the all-ones vector.",
+      "detail": "Rewrite the identity as $A^2-(\\lambda-\\mu)A-(k-\\mu)I=\\mu J$. For $w\\in W$, $\\mathbf 1^{T}Aw=(A\\mathbf 1)^{T}w=0$, so $A$ maps $W$ to $W$. On $W$ the matrix $J$ is zero, and $A$ is symmetric there, so $W$ has an orthonormal basis of eigenvectors.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:quadratic",
+      "slogan": "Apply the rewritten identity to an eigenvector in $W$ to get the quadratic equation.",
+      "detail": "Let $Aw=\\theta w$ with $0\\ne w\\in W$. The left side of the rewritten identity gives $(\\theta^2-(\\lambda-\\mu)\\theta-(k-\\mu))w$. The right side is $\\mu Jw=0$. So the quadratic equation holds.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the identity, the parameter relation and the quadratic equation.",
+      "detail": "Steps 2, 3 and 5 give the three claims (a), (b) and (c) of the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:walks",
+      "s:identity"
+     ],
+     [
+      "s:identity",
+      "s:parameter"
+     ],
+     [
+      "s:identity",
+      "s:restrict"
+     ],
+     [
+      "s:restrict",
+      "s:quadratic"
+     ],
+     [
+      "s:identity",
+      "s:collect"
+     ],
+     [
+      "s:parameter",
+      "s:collect"
+     ],
+     [
+      "s:quadratic",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:is-srg-with": "The three regularity counts define the parameters of the graph.",
+     "c:adjacency-matrix": "Powers of the adjacency matrix count walks.",
+     "c:eigenvalue": "The equation restricts the eigenvalues that have an eigenvector in $W$.",
+     "c:eigenvector": "The quadratic equation comes from applying the identity to an eigenvector."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-catalan-cycle-lemma",
+  "statement": "Let $s$ be a sequence of $n$ steps $+1$ and $n+1$ steps $-1$. Exactly one of its $2n+1$ cyclic [rotations](c:rotation) has all [partial sums](c:partial-sum) negative. So $\\binom{2n+1}{n}/(2n+1)$ sequences have this property. This number is the [Catalan number](c:catalan-number) $C_n=\\binom{2n}{n}/(n+1)$, and it counts the [Dyck words](c:dyck-word) of semilength $n$.",
+  "hypotheses": [
+   {
+    "id": "h:steps",
+    "text": "The sequence has exactly $n$ steps $+1$ and $n+1$ steps $-1$.",
+    "concept": null
+   },
+   {
+    "id": "h:partial",
+    "text": "A [partial sum](c:partial-sum) is the sum of the first $j$ steps, for $1 \\le j \\le 2n+1$.",
+    "concept": "c:partial-sum"
+   },
+   {
+    "id": "h:dyck",
+    "text": "A [Dyck word](c:dyck-word) of semilength $n$ has $n$ steps $+1$ and $n$ steps $-1$, and its partial sums are never negative.",
+    "concept": "c:dyck-word"
+   }
+  ],
+  "conclusion": "Each sequence has exactly one rotation with all partial sums negative. The number of such sequences is $\\binom{2n+1}{n}/(2n+1)=C_n$, which is also the number of Dyck words of semilength $n$.",
+  "formal": {
+   "decl": "catalan_eq_centralBinom_div",
+   "difference": "The declaration states a related, smaller fact: the formula $C_n=\\binom{2n}{n}/(n+1)$. It does not state the cycle lemma or the count of Dyck words."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Cycle lemma",
+    "slogan": "Rotate each sequence to start after the last maximum of its partial sums, and show that this rotation is the only good one.",
+    "scope": "The whole theorem. The total $-1$ at the end makes the partial sums fall by $1$ in each period.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:group-action-orbits",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:steps",
+      "why": "The counts $n$ and $n+1$ make the total sum $-1$ and make the rotations distinct.",
+      "steps": [
+       "s:setup",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:partial",
+      "why": "Partial sums turn the rotation condition into a comparison of values.",
+      "steps": [
+       "s:setup",
+       "s:exist",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:dyck",
+      "why": "The definition of a Dyck word matches a good sequence with its first step removed.",
+      "steps": [
+       "s:dyck"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Write the condition on a rotation with the partial sums of the periodic sequence.",
+      "detail": "Let $S_j$ be the $j$-th partial sum, with $S_0=0$ and $S_{2n+1}=-1$. Extend $s$ periodically, so $S_{j+2n+1}=S_j-1$. The rotation after position $m$ has all partial sums negative if and only if $S_j<S_m$ for $m<j\\le m+2n+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Start after the last maximum of the partial sums to get a good rotation.",
+      "detail": "Among $0,\\dots,2n$ let $m$ be the last index where $S$ is maximal. For $m<j\\le2n$, $S_j<S_m$ by the choice of $m$. For larger $j$ write $j=j'+2n+1$ with $j'\\le m$ to get $S_j=S_{j'}-1<S_m$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that every good rotation starts after that last maximum.",
+      "detail": "Let the rotation after $m\\in\\{0,\\dots,2n\\}$ be good. For $j'\\le m$, the condition at $j'+2n+1$ gives $S_{j'}-1<S_m$, so $S_{j'}\\le S_m$. For $m<j\\le2n$ the condition gives $S_j<S_m$. So $m$ is the last index of the maximum, which is one index.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Group the sequences into classes of $2n+1$ distinct rotations and count the classes.",
+      "detail": "Since $\\gcd(n,n+1)=1$, a sequence is not a repeat of a shorter block, so its $2n+1$ rotations are distinct. The $\\binom{2n+1}{n}$ sequences split into classes of size $2n+1$. Each class has exactly one good member, so there are $\\binom{2n+1}{n}/(2n+1)$ good sequences.",
+      "uses": []
+     },
+     {
+      "id": "s:simplify",
+      "slogan": "Simplify the count to the [Catalan number](c:catalan-number).",
+      "detail": "We have $\\binom{2n+1}{n}/(2n+1)=\\frac{(2n)!}{n!\\,(n+1)!}=\\binom{2n}{n}/(n+1)=C_n$. All factorials are of positive integers, so the cancellation is valid.",
+      "uses": []
+     },
+     {
+      "id": "s:dyck",
+      "slogan": "Match the good sequences with the [Dyck words](c:dyck-word) of semilength $n$.",
+      "detail": "A good sequence starts with $-1$, and its partial sums are negative. Remove the first step and negate the rest. The $2n$ remaining steps give a Dyck word, because the partial sums $S_j+1$ are at most $0$ and the total is $0$. The map is reversible, so Dyck words are counted by $C_n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:exist"
+     ],
+     [
+      "s:setup",
+      "s:unique"
+     ],
+     [
+      "s:exist",
+      "s:count"
+     ],
+     [
+      "s:unique",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:simplify"
+     ],
+     [
+      "s:simplify",
+      "s:dyck"
+     ]
+    ],
+    "conclusion": "s:dyck",
+    "concepts": {
+     "c:rotation": "A cyclic rotation of the sequence is the object that the lemma selects.",
+     "c:partial-sum": "The partial sums decide which rotation is good.",
+     "c:catalan-number": "The count of good sequences is the Catalan number.",
+     "c:dyck-word": "Good sequences correspond to Dyck words."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-bessel-inequality",
+  "statement": "Let $(e_i)_{i\\in I}$ be an [orthonormal family](c:orthonormal-set) in an [inner product space](c:inner-product-space) $H$. Then $\\sum_{i\\in I}|\\langle e_i,x\\rangle|^2\\le\\|x\\|^2$ for every $x\\in H$, and only countably many coefficients $\\langle e_i,x\\rangle$ are nonzero. Equality holds for every $x$ if and only if the span of the family is dense in $H$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The space $H$ is a real or complex [inner product space](c:inner-product-space). It need not be complete.",
+    "concept": "c:inner-product-space"
+   },
+   {
+    "id": "h:orthonormal",
+    "text": "The family is [orthonormal](c:orthonormal-set): $\\langle e_i,e_j\\rangle=\\delta_{ij}$. The index set $I$ is arbitrary.",
+    "concept": "c:orthonormal-set"
+   }
+  ],
+  "conclusion": "The sum of the squared coefficients is at most $\\|x\\|^2$, only countably many coefficients are nonzero, and equality for all $x$ holds if and only if the span is dense.",
+  "formal": {
+   "decl": "Orthonormal.sum_inner_products_le",
+   "difference": "The declaration states a related, smaller fact: the inequality itself. The countable support and the equality case are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Projection onto a finite span",
+    "slogan": "Subtract the projection of $x$ onto a finite span, then use the Pythagorean identity.",
+    "scope": "The whole theorem. The sum over $I$ is the supremum of the finite partial sums, and completeness of $H$ is not used.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:supremum",
+     "m:density-extension"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "The inner product gives the coefficients, the Pythagorean identity and the best approximation.",
+      "steps": [
+       "s:finite",
+       "s:best"
+      ]
+     },
+     {
+      "h": "h:orthonormal",
+      "why": "Orthonormality makes the residual orthogonal and makes the norm of the partial sum a sum of squares.",
+      "steps": [
+       "s:finite",
+       "s:best",
+       "s:parseval"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite",
+      "slogan": "Subtract the partial Fourier sum over a finite set $F$ from $x$ and apply the Pythagorean identity.",
+      "detail": "Put $c_i=\\langle e_i,x\\rangle$, $p=\\sum_{i\\in F}c_ie_i$ and $r=x-p$. Orthonormality gives $\\langle e_j,r\\rangle=0$ for $j\\in F$, so $r\\perp p$. Then $\\|x\\|^2=\\|p\\|^2+\\|r\\|^2$ and $\\|p\\|^2=\\sum_{i\\in F}|c_i|^2$. Hence $\\sum_{i\\in F}|c_i|^2\\le\\|x\\|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:supremum",
+      "slogan": "Pass from finite sets to the whole index set by taking the supremum.",
+      "detail": "The sum of nonnegative terms over $I$ is the supremum of the sums over finite sets $F$. Each of these is at most $\\|x\\|^2$, so the supremum is too.",
+      "uses": []
+     },
+     {
+      "id": "s:countable",
+      "slogan": "Count the large coefficients to show that only countably many are nonzero.",
+      "detail": "For each $n\\ge1$ the set $\\{i:|c_i|^2>1/n\\}$ has at most $n\\|x\\|^2$ elements. The set $\\{i:c_i\\ne0\\}$ is a countable union of these finite sets.",
+      "uses": []
+     },
+     {
+      "id": "s:best",
+      "slogan": "Show that $p_F$ is the best approximation to $x$ from the span of $e_i$, $i\\in F$.",
+      "detail": "For $y$ in this span, $r_F=x-p_F$ is orthogonal to $p_F-y$. So $\\|x-y\\|^2=\\|r_F\\|^2+\\|p_F-y\\|^2\\ge\\|r_F\\|^2$, and $\\|r_F\\|^2=\\|x\\|^2-\\sum_{i\\in F}|c_i|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Link equality for all $x$ to density of the span.",
+      "detail": "If equality holds, then for each $\\varepsilon>0$ some $F$ has $\\|r_F\\|^2<\\varepsilon$, so $p_F$ is in the span within $\\sqrt\\varepsilon$ of $x$. Conversely, if the span is dense, pick $y$ in the span with $\\|x-y\\|<\\varepsilon$ using a finite set $F_0$. For every finite $F\\supseteq F_0$, $\\|r_F\\|\\le\\|x-y\\|<\\varepsilon$, so the supremum equals $\\|x\\|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the inequality, the countable support and the equality case.",
+      "detail": "The finite step and the supremum give the inequality. The counting step gives the countable support. The last step gives the equality case.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:finite",
+      "s:supremum"
+     ],
+     [
+      "s:supremum",
+      "s:countable"
+     ],
+     [
+      "s:finite",
+      "s:best"
+     ],
+     [
+      "s:best",
+      "s:parseval"
+     ],
+     [
+      "s:supremum",
+      "s:parseval"
+     ],
+     [
+      "s:supremum",
+      "s:collect"
+     ],
+     [
+      "s:countable",
+      "s:collect"
+     ],
+     [
+      "s:parseval",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:orthonormal-set": "Orthonormality makes the squared norm of $p$ the sum of the squared coefficients.",
+     "c:inner-product-space": "The inner product defines the coefficients and the norm."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-cotangent-partial-fractions",
+  "statement": "For every complex $z\\notin\\mathbb{Z}$, $\\pi\\cot\\pi z=\\frac1z+\\sum_{n\\ge1}\\frac{2z}{z^2-n^2}$. The series converges absolutely, and uniformly on compact subsets of $\\mathbb{C}\\setminus\\mathbb{Z}$. Equivalently, $\\pi\\cot\\pi z=\\lim_{N\\to\\infty}\\sum_{|n|\\le N}\\frac1{z+n}$. Here [cot](c:cotangent-function) is the cotangent function.",
+  "hypotheses": [
+   {
+    "id": "h:z",
+    "text": "The number $z$ is complex and not an integer. At each integer both sides have a simple pole with residue $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:symmetric",
+    "text": "The sum over $n\\in\\mathbb{Z}$ is symmetric: the terms for $n$ and $-n$ are added first, because the two-sided series does not converge absolutely.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The identity holds on $\\mathbb{C}\\setminus\\mathbb{Z}$, and the convergence is absolute and locally uniform.",
+  "formal": {
+   "decl": "cot_series_rep",
+   "difference": "The declaration states a related fact: the series representation of the cotangent in mathlib's own form. Its form of the sum and its domain can differ from this statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Duplication and a maximum",
+    "slogan": "Prove the identity on the real line from the duplication formula and a maximum argument, then extend to the complex plane.",
+    "scope": "The whole theorem. The real case is proved first; the complex case follows from the identity theorem on the connected set $\\mathbb{C}\\setminus\\mathbb{Z}$.",
+    "mechanisms": [
+     "m:maximum-principle",
+     "m:analytic-continuation",
+     "m:uniform-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:z",
+      "why": "Avoiding the integers keeps both sides finite and holomorphic, and the set stays open and connected.",
+      "steps": [
+       "s:converge",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:symmetric",
+      "why": "Pairing $n$ with $-n$ gives terms of size $1/n^2$ and the shift identity for the partial sums.",
+      "steps": [
+       "s:converge",
+       "s:duplication"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:converge",
+      "slogan": "Show by the M-test that the series converges locally uniformly, so its sum $G$ is [holomorphic](c:holomorphic-function).",
+      "detail": "Let $|z|\\le R$ and $n\\ge2R$. Then $n^2-|z|^2\\ge3n^2/4$, so $|2z/(z^2-n^2)|\\le8R/(3n^2)$. The M-test gives locally uniform convergence on $\\mathbb{C}\\setminus\\mathbb{Z}$, and each term is holomorphic. The terms for $n$ and $-n$ combine, so $G$ equals the symmetric limit.",
+      "uses": []
+     },
+     {
+      "id": "s:duplication",
+      "slogan": "Show that $f=\\pi\\cot\\pi x$ and $g=G$ are odd, have period $1$ and obey the same duplication formula.",
+      "detail": "Both are odd. For $g$, $S_N(x+1)-S_N(x)=\\frac1{x+N+1}-\\frac1{x-N}\\to0$ gives period $1$. For $f$, $\\cot u+\\cot(u+\\pi/2)=2\\cot2u$ gives $f(x/2)+f((x+1)/2)=2f(x)$. The sums for $g$ give $\\sum_{|n|\\le N}\\left(\\frac1{x/2+n}+\\frac1{(x+1)/2+n}\\right)=2S_{2N}(x)+\\frac2{x+2N+1}$, so $g$ has the same formula.",
+      "uses": []
+     },
+     {
+      "id": "s:difference",
+      "slogan": "Show that $d=f-g$ extends to a continuous function on $\\mathbb{R}$ with $d=0$ at the integers.",
+      "detail": "Near $0$, $\\pi\\cot\\pi x-\\frac1x\\to0$ because the numerator $\\pi x\\cos\\pi x-\\sin\\pi x$ is $O(x^3)$ and the denominator is $\\pi x^2+O(x^4)$. Also $g(x)-\\frac1x=\\sum\\frac{2x}{x^2-n^2}$ is continuous with value $0$ at $0$. So $d(x)\\to0$ at $0$, and by period $1$ at each integer. The duplication formula for $d$ holds on all of $\\mathbb{R}$ by continuity.",
+      "uses": []
+     },
+     {
+      "id": "s:max",
+      "slogan": "Use the maximum of $d$ and the duplication formula to show that $d=0$.",
+      "detail": "The function $d$ is continuous and periodic, so it has a maximum $M$ at some $x_0$. Then $2M=d(x_0/2)+d((x_0+1)/2)$ with both terms at most $M$, so $d(x_0/2)=M$, and by induction $d(x_0/2^k)=M$. Letting $k\\to\\infty$ gives $M=d(0)=0$. The same holds for $-d$, so $d=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend the identity to $\\mathbb{C}\\setminus\\mathbb{Z}$ by the identity theorem.",
+      "detail": "The function $H=\\pi\\cot\\pi z-G$ is holomorphic on the open connected set $\\mathbb{C}\\setminus\\mathbb{Z}$ and vanishes on $(0,1)$. The set where all derivatives of $H$ vanish is closed, nonempty and open (by the local power series), so it is the whole set. Hence $H=0$.",
+      "uses": [
+       "nm:local-identity-theorem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:converge",
+      "s:duplication"
+     ],
+     [
+      "s:duplication",
+      "s:difference"
+     ],
+     [
+      "s:converge",
+      "s:difference"
+     ],
+     [
+      "s:difference",
+      "s:max"
+     ],
+     [
+      "s:duplication",
+      "s:max"
+     ],
+     [
+      "s:max",
+      "s:extend"
+     ],
+     [
+      "s:converge",
+      "s:extend"
+     ]
+    ],
+    "conclusion": "s:extend",
+    "concepts": {
+     "c:cotangent-function": "The cotangent function is the function that the series represents.",
+     "c:holomorphic-function": "Holomorphy of the series and of the cotangent allows the identity theorem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-abel-partial-summation-formula",
+  "statement": "The [Abel summation](c:abel-summation) formula. Let $(a_n)$ be complex numbers and $A(t)=\\sum_{1\\le n\\le t}a_n$. Let $f$ be continuously differentiable on $[1,x]$. Then $\\sum_{1\\le n\\le x}a_nf(n)=A(x)f(x)-\\int_1^xA(t)f'(t)\\,dt$. If $A(x)f(x)\\to0$ and $\\int_1^\\infty|Af'|<\\infty$, the series $\\sum a_nf(n)$ converges to $-\\int_1^\\infty Af'$.",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The number $x\\ge1$ is real, and $f$ is $C^1$ on $[1,x]$.",
+    "concept": null
+   },
+   {
+    "id": "h:step",
+    "text": "The function $A$ is a step function: it is $0$ for $t<1$ and constant on each interval $[n,n+1)$.",
+    "concept": null
+   },
+   {
+    "id": "h:tail",
+    "text": "For the infinite version, $A(x)f(x)\\to0$ and the [improper integral](c:improper-integral) of $|Af'|$ converges.",
+    "concept": "c:improper-integral"
+   }
+  ],
+  "conclusion": "The finite formula holds for every $x\\ge1$. Under the tail conditions the series converges and equals $-\\int_1^\\infty A(t)f'(t)\\,dt$.",
+  "formal": {
+   "decl": "sum_mul_eq_sub_integral_mul'",
+   "difference": "The declaration states a related fact: the Abel summation formula in mathlib's own form. Its hypotheses and its form of the sum can differ from this statement, and it has no infinite version."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Integrate the derivative",
+    "slogan": "Write each value $f(n)$ as an integral of $f'$, sum, and swap the finite sum with the integral.",
+    "scope": "The whole theorem. The swap uses a finite sum, so no integrability condition is needed for the finite formula.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:fubini-swap",
+     "m:telescoping"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "The $C^1$ condition allows the fundamental theorem of calculus on each interval $[n,x]$.",
+      "steps": [
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:step",
+      "why": "The step form of $A$ turns the inner sum into $A(t)$ and makes $A f'$ integrable on bounded intervals.",
+      "steps": [
+       "s:swap"
+      ]
+     },
+     {
+      "h": "h:tail",
+      "why": "The tail conditions make the boundary term vanish and the integral converge as $x\\to\\infty$.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Write $f(n)$ as $f(x)$ minus an integral of $f'$, multiply by $a_n$ and sum.",
+      "detail": "For $1\\le n\\le x$, the fundamental theorem of calculus gives $f(n)=f(x)-\\int_n^xf'(t)\\,dt$. Multiply by $a_n$ and sum over $n\\le x$ to get $\\sum a_nf(n)=f(x)A(x)-\\sum_{n\\le x}a_n\\int_n^xf'(t)\\,dt$.",
+      "uses": [
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Swap the finite sum and the integral so that the inner sum becomes $A(t)$.",
+      "detail": "The sum is finite, so $\\sum_{n\\le x}a_n\\int_n^xf'(t)\\,dt=\\int_1^x\\left(\\sum_{n\\le t}a_n\\right)f'(t)\\,dt$, because $t\\in[n,x]$ exactly when $n\\le t$. The inner sum is $A(t)$, which gives the finite formula.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $x\\to\\infty$ and use the tail conditions.",
+      "detail": "The boundary term $A(x)f(x)$ tends to $0$ by assumption. The integral $\\int_1^xAf'$ converges as $x\\to\\infty$ because $Af'$ is absolutely integrable. So the partial sums converge to $-\\int_1^\\infty Af'$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:abel-summation": "The proof derives the Abel summation formula.",
+     "c:improper-integral": "The infinite version is an improper integral that must converge."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-snake-lemma-connecting-homomorphism",
+  "statement": "Let $R$ be a ring. Take a commutative diagram of $R$-modules with [exact](c:exact-sequence) rows $A\\xrightarrow{f}B\\xrightarrow{g}C\\to0$ and $0\\to A'\\xrightarrow{f'}B'\\xrightarrow{g'}C'$, and vertical maps $a,b,c$. Then there is a homomorphism $\\delta\\colon\\ker c\\to\\operatorname{coker}a$, the [connecting homomorphism](c:connecting-homomorphism), such that $\\ker a\\to\\ker b\\to\\ker c\\xrightarrow{\\delta}\\operatorname{coker}a\\to\\operatorname{coker}b\\to\\operatorname{coker}c$ is exact.",
+  "hypotheses": [
+   {
+    "id": "h:rows",
+    "text": "The rows are [exact](c:exact-sequence) where stated: $f(A)=\\ker g$, the map $g$ is surjective, $f'$ is injective, and $f'(A')=\\ker g'$.",
+    "concept": "c:exact-sequence"
+   },
+   {
+    "id": "h:squares",
+    "text": "Both squares commute: $b\\circ f=f'\\circ a$ and $c\\circ g=g'\\circ b$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The map $\\delta(z)=[x']$ is well defined, where $g(y)=z$ and $b(y)=f'(x')$, and the six term sequence is exact. If $f$ is injective, then $\\ker a\\to\\ker b$ is injective. If $g'$ is surjective, then $\\operatorname{coker}b\\to\\operatorname{coker}c$ is surjective.",
+  "formal": {
+   "decl": "SnakeLemma.δ",
+   "difference": "The declaration states a related, smaller fact about the connecting homomorphism $\\delta$. The exactness of the six term sequence is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Diagram chase",
+    "slogan": "Define the connecting map by lifting and pulling back, then chase elements through each of the four places of exactness.",
+    "scope": "The whole theorem for modules. The same result holds in every abelian category, and the proof here is an element chase.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:long-exact-sequence"
+    ],
+    "roles": [
+     {
+      "h": "h:rows",
+      "why": "Exactness of the rows gives the lift $y$, the unique pullback $x'$ and the vanishing of each composite.",
+      "steps": [
+       "s:delta",
+       "s:kerb",
+       "s:kerc",
+       "s:cokera",
+       "s:cokerb"
+      ]
+     },
+     {
+      "h": "h:squares",
+      "why": "Commuting squares give the induced maps and let the chase pass between the rows.",
+      "steps": [
+       "s:induced",
+       "s:delta",
+       "s:kerb",
+       "s:kerc",
+       "s:cokera",
+       "s:cokerb"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induced",
+      "slogan": "Show that $f,g,f',g'$ induce maps on kernels and cokernels.",
+      "detail": "If $a(x)=0$ then $b(f(x))=f'(a(x))=0$, so $f$ sends $\\ker a$ into $\\ker b$. In the same way $g$ sends $\\ker b$ into $\\ker c$. Also $f'(a(A))=b(f(A))\\subseteq b(B)$, so $f'$ induces $\\operatorname{coker}a\\to\\operatorname{coker}b$, and $g'$ induces $\\operatorname{coker}b\\to\\operatorname{coker}c$.",
+      "uses": []
+     },
+     {
+      "id": "s:delta",
+      "slogan": "Define $\\delta$ by a lift and a pullback, and show that it is well defined.",
+      "detail": "For $z\\in\\ker c$ choose $y$ with $g(y)=z$. Then $g'(b(y))=c(z)=0$, so $b(y)=f'(x')$ for a unique $x'$. Another lift $y_2$ has $y_2-y=f(x)$, so $b(y_2)=f'(x'+a(x))$, which gives the same class in $\\operatorname{coker}a$. The map $\\delta$ is additive and $R$-linear.",
+      "uses": []
+     },
+     {
+      "id": "s:kerb",
+      "slogan": "Prove exactness at $\\ker b$.",
+      "detail": "Since $g\\circ f=0$, the image of $\\ker a$ lies in $\\ker g$. Conversely let $y\\in\\ker b$ with $g(y)=0$. Then $y=f(x)$ and $f'(a(x))=b(y)=0$, so $a(x)=0$ because $f'$ is injective. Hence $y$ comes from $\\ker a$.",
+      "uses": []
+     },
+     {
+      "id": "s:kerc",
+      "slogan": "Prove exactness at $\\ker c$.",
+      "detail": "For $y\\in\\ker b$ take $z=g(y)$. Then $b(y)=0$, so $\\delta(z)=0$. Conversely let $\\delta(z)=0$, with lift $y$ and $b(y)=f'(a(x))=b(f(x))$ for some $x$. Then $y-f(x)\\in\\ker b$ and $g(y-f(x))=z$.",
+      "uses": []
+     },
+     {
+      "id": "s:cokera",
+      "slogan": "Prove exactness at $\\operatorname{coker}a$.",
+      "detail": "For $z\\in\\ker c$, the image of $\\delta(z)=[x']$ in $\\operatorname{coker}b$ is the class of $b(y)\\in b(B)$, which is zero. Conversely let $x'$ map to zero in $\\operatorname{coker}b$, so $f'(x')=b(y)$. Then $c(g(y))=g'(f'(x'))=0$, so $z=g(y)\\in\\ker c$ and $\\delta(z)=[x']$.",
+      "uses": []
+     },
+     {
+      "id": "s:cokerb",
+      "slogan": "Prove exactness at $\\operatorname{coker}b$.",
+      "detail": "The composite $\\operatorname{coker}a\\to\\operatorname{coker}b\\to\\operatorname{coker}c$ is induced by $g'\\circ f'=0$. Conversely let $y'\\in B'$ map to zero in $\\operatorname{coker}c$, so $g'(y')=c(z)$. Choose $y$ with $g(y)=z$. Then $g'(y'-b(y))=0$, so $y'-b(y)=f'(x')$ and the class of $y'$ comes from $\\operatorname{coker}a$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the exactness and the two extra claims.",
+      "detail": "The four exactness steps prove the six term sequence. If $f$ is injective, its restriction to $\\ker a$ is injective. If $g'$ is surjective, every element of $C'$ lifts to $B'$, so $\\operatorname{coker}b\\to\\operatorname{coker}c$ is surjective.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induced",
+      "s:delta"
+     ],
+     [
+      "s:delta",
+      "s:kerc"
+     ],
+     [
+      "s:delta",
+      "s:cokera"
+     ],
+     [
+      "s:induced",
+      "s:kerb"
+     ],
+     [
+      "s:induced",
+      "s:cokerb"
+     ],
+     [
+      "s:kerb",
+      "s:collect"
+     ],
+     [
+      "s:kerc",
+      "s:collect"
+     ],
+     [
+      "s:cokera",
+      "s:collect"
+     ],
+     [
+      "s:cokerb",
+      "s:collect"
+     ],
+     [
+      "s:induced",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:exact-sequence": "Exactness of the rows and of the result is the subject of the proof.",
+     "c:connecting-homomorphism": "The map $\\delta$ is the connecting homomorphism that joins the two rows."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-ultrafilter-extension-stone-cech",
+  "statement": "Let $X$ be a set and $\\beta X$ the set of [ultrafilters](c:ultrafilter) on $X$, with the basis $O_s=\\{U : s\\in U\\}$. Then $\\beta X$ is a [compact Hausdorff space](c:compact-hausdorff-space), and the principal ultrafilters form a dense copy of $X$. Every map $f$ from $X$ to a compact Hausdorff space $K$ extends uniquely to a continuous map $\\tilde f\\colon\\beta X\\to K$.",
+  "hypotheses": [
+   {
+    "id": "h:set",
+    "text": "The set $X$ is arbitrary. It carries the discrete topology, so every map from $X$ is continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:target",
+    "text": "The target $K$ is a [compact Hausdorff space](c:compact-hausdorff-space). Compactness gives limits, and the Hausdorff property gives their uniqueness.",
+    "concept": "c:compact-hausdorff-space"
+   },
+   {
+    "id": "h:lemma",
+    "text": "The ultrafilter lemma holds: every proper filter on a set lies in an [ultrafilter](c:ultrafilter).",
+    "concept": "c:ultrafilter"
+   }
+  ],
+  "conclusion": "The space $\\beta X$ is compact Hausdorff and contains a dense copy of $X$. The unique continuous extension is $\\tilde f(U)=\\lim f_*U$, the limit of the push-forward ultrafilter $f_*U$.",
+  "formal": {
+   "decl": "ultrafilter_converges_iff",
+   "difference": "The declaration states a related, smaller fact: an ultrafilter converges to a point if and only if a neighborhood condition holds. The construction of $\\beta X$ and its universal property are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Ultrafilters and limits",
+    "slogan": "Build the topology from the sets $O_s$, show compactness by convergence of ultrafilters, and define the extension as a limit.",
+    "scope": "The whole theorem. For infinite $X$ the cofinite filter extends to a nonprincipal ultrafilter, so $\\beta X$ has points outside the image of $X$.",
+    "mechanisms": [
+     "m:universal-property",
+     "m:density-extension",
+     "m:compactness-logic"
+    ],
+    "roles": [
+     {
+      "h": "h:set",
+      "why": "Discreteness makes every map from $X$ continuous and every $s\\subseteq X$ give a clopen set $O_s$.",
+      "steps": [
+       "s:topology",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:target",
+      "why": "Compactness gives limits of ultrafilters on $K$, and the Hausdorff property gives unique limits and regularity.",
+      "steps": [
+       "s:extend",
+       "s:continuous",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:lemma",
+      "why": "The lemma gives an ultrafilter that extends a proper filter, which proves compactness.",
+      "steps": [
+       "s:compact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:topology",
+      "slogan": "Show that the sets $O_s$ form a basis of clopen sets that separate points.",
+      "detail": "We have $O_s\\cap O_t=O_{s\\cap t}$ and $O_X=\\beta X$. An ultrafilter contains exactly one of $s$ and $X\\setminus s$, so $\\beta X$ is the disjoint union of $O_s$ and $O_{X\\setminus s}$, and both are open. If $U\\ne V$, some $s$ lies in $U$ but not in $V$, and $O_s$, $O_{X\\setminus s}$ separate them.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Prove compactness: every ultrafilter on $\\beta X$ converges, and this implies compactness.",
+      "detail": "Suppose an open cover has no finite subcover. The complements of finite unions generate a proper filter, which lies in an ultrafilter that cannot converge. Conversely let $\\mathfrak U$ be an ultrafilter on $\\beta X$ and $x=\\{s : O_s\\in\\mathfrak U\\}$. Since $O_s\\cup O_{X\\setminus s}=\\beta X$, the set $x$ is an ultrafilter, and $\\mathfrak U$ converges to $x$.",
+      "uses": [
+       "nl:1463"
+      ]
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Show that the principal ultrafilters form a dense image of $X$.",
+      "detail": "A nonempty basic set $O_s$ has $s\\ne\\emptyset$. For $a\\in s$ the principal ultrafilter at $a$ lies in $O_s$. So every nonempty open set meets the image of $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Define $\\tilde f(U)$ as the limit of the push-forward ultrafilter $f_*U$ on $K$.",
+      "detail": "The push-forward $f_*U$ is an ultrafilter on $K$. It converges because $K$ is compact, since otherwise finitely many open sets outside $f_*U$ would cover $K$. The limit is unique because $K$ is Hausdorff. For a principal ultrafilter at $a$, the limit is $f(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:continuous",
+      "slogan": "Prove that $\\tilde f$ is continuous by using regularity of $K$.",
+      "detail": "Let $V$ be an open neighborhood of $\\tilde f(U)$. A compact Hausdorff space is regular, so there is an open $W$ with $\\tilde f(U)\\in W$ and $\\overline W\\subseteq V$. Then $W\\in f_*U$, so $s=f^{-1}(W)\\in U$. For $U'\\in O_s$, the limit of $f_*U'$ lies in $\\overline W\\subseteq V$. So $O_s\\subseteq\\tilde f^{-1}(V)$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Prove uniqueness: two continuous extensions agree on a dense set.",
+      "detail": "Let $h$ be another continuous map with $h\\circ\\mathrm{pure}=f$. The set where $h$ and $\\tilde f$ agree is closed, because $K$ is Hausdorff. It contains the dense image of $X$, so it is all of $\\beta X$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the compact Hausdorff space and the unique extension.",
+      "detail": "The topology step gives the Hausdorff property and the basis. The compactness step gives compactness. The density, extension, continuity and uniqueness steps give the universal property.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:topology",
+      "s:compact"
+     ],
+     [
+      "s:topology",
+      "s:dense"
+     ],
+     [
+      "s:topology",
+      "s:continuous"
+     ],
+     [
+      "s:extend",
+      "s:continuous"
+     ],
+     [
+      "s:dense",
+      "s:unique"
+     ],
+     [
+      "s:continuous",
+      "s:unique"
+     ],
+     [
+      "s:compact",
+      "s:collect"
+     ],
+     [
+      "s:unique",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:ultrafilter": "The points of $\\beta X$ are ultrafilters, and their limits define the extension.",
+     "c:compact-hausdorff-space": "Compactness and the Hausdorff property of $K$ give existence and uniqueness of limits."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-exponential-tilting-chernoff",
+  "statement": "Let $X$ be a real random variable with [moment generating function](c:moment-generating-function) $M(t)=E e^{tX}$ finite on an open interval $I$, and $\\Lambda=\\ln M$. The tilted law $dP_t=e^{tX-\\Lambda(t)}dP$ is a probability law with mean $\\Lambda'(t)$ and variance $\\Lambda''(t)\\ge0$. For $t\\ge0$ in $I$, $P(X\\ge a)\\le e^{-(ta-\\Lambda(t))}$. For i.i.d. sums, $P(S_n\\ge na)\\le e^{-n(ta-\\Lambda(t))}$.",
+  "hypotheses": [
+   {
+    "id": "h:mgf",
+    "text": "The function $M(t)$ is finite on an open interval $I$. This gives all moments under every tilt.",
+    "concept": null
+   },
+   {
+    "id": "h:t",
+    "text": "In the bounds, the point $t$ lies in $I$ and $t\\ge0$.",
+    "concept": null
+   },
+   {
+    "id": "h:tstar",
+    "text": "For the exact identity, the tilt $t^*>0$ satisfies $\\Lambda'(t^*)=a$. Then $t^*$ gives the best exponent.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The tilted law is equivalent to $P$, $E_tX=\\Lambda'(t)$, $\\operatorname{Var}_tX=\\Lambda''(t)$, $\\Lambda$ is convex, and the Chernoff bounds hold. With $a=\\Lambda'(t^*)$ and $I=t^*a-\\Lambda(t^*)$, $P(S_n\\ge na)=e^{-nI}E_{t^*}[e^{-t^*(S_n-na)}1_{S_n\\ge na}]\\le e^{-nI}$.",
+  "formal": {
+   "decl": "integral_tilted_mul_self",
+   "difference": "The declaration states a related, smaller fact about tilted measures. The Chernoff bounds and the exact identity are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Tilt and Markov",
+    "slogan": "Differentiate the log moment generating function to get the tilted mean and variance, then apply Markov to $e^{tX}$.",
+    "scope": "The whole statement. The tilt is a change of measure, and the Chernoff bound is Markov's inequality for $e^{tX}$.",
+    "mechanisms": [
+     "m:dominated-convergence",
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:mgf",
+      "why": "Finiteness on an open interval gives domination, so differentiation under the integral sign is valid.",
+      "steps": [
+       "s:tilt",
+       "s:differentiate",
+       "s:cumulants"
+      ]
+     },
+     {
+      "h": "h:t",
+      "why": "Nonnegative $t$ keeps the map $x\\mapsto e^{tx}$ increasing, so Markov applies to the event.",
+      "steps": [
+       "s:markov",
+       "s:exact"
+      ]
+     },
+     {
+      "h": "h:tstar",
+      "why": "The condition $\\Lambda'(t^*)=a$ gives the exact exponent $I$.",
+      "steps": [
+       "s:exact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tilt",
+      "slogan": "Show that the tilted law is a probability law equivalent to $P$.",
+      "detail": "The density $e^{tX-\\Lambda(t)}$ is positive and has mean $M(t)e^{-\\Lambda(t)}=1$. So $P_t$ is a probability law with the same null sets as $P$. Dividing by the density gives $P(A)=E_t[e^{-tX+\\Lambda(t)}1_A]$.",
+      "uses": []
+     },
+     {
+      "id": "s:differentiate",
+      "slogan": "Dominate $|x|^ke^{sx}$ near $t$ to differentiate $M$ under the integral sign.",
+      "detail": "Fix $t$ in $I$ and $\\delta>0$ with $[t-\\delta,t+\\delta]\\subset I$. For $|s-t|\\le\\delta/2$, $|x|^ke^{sx}\\le C_k(e^{(t+\\delta)x}+e^{(t-\\delta)x})$, which is integrable. So $M$ is smooth on $I$ and $M^{(k)}(t)=E[X^ke^{tX}]$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:cumulants",
+      "slogan": "Compute the tilted mean and variance from derivatives of $\\Lambda$, and deduce that $\\Lambda$ is convex.",
+      "detail": "We have $\\Lambda'=M'/M=E_tX$ and $\\Lambda''=M''/M-(M'/M)^2=\\operatorname{Var}_tX$. A variance is nonnegative, so $\\Lambda''\\ge0$. So $\\Lambda$ is convex on $I$.",
+      "uses": []
+     },
+     {
+      "id": "s:markov",
+      "slogan": "Apply Markov's inequality to $e^{tX}$ to get the Chernoff bound.",
+      "detail": "For $t\\ge0$ the event $\\{X\\ge a\\}$ equals $\\{e^{tX}\\ge e^{ta}\\}$. Markov's inequality gives $P(X\\ge a)\\le e^{-ta}M(t)=e^{-(ta-\\Lambda(t))}$. For i.i.d. copies, $Ee^{tS_n}=M(t)^n$, so the same argument gives $e^{-n(ta-\\Lambda(t))}$.",
+      "uses": [
+       "nm:markov-s-inequality",
+       "nm:mean-of-product-of-independent-random-variables"
+      ]
+     },
+     {
+      "id": "s:exact",
+      "slogan": "Tilt the product law and write the tail as a tilted expectation.",
+      "detail": "Tilting $P^{\\otimes n}$ by $t^*$ has density $e^{t^*S_n-n\\Lambda(t^*)}$. The tilt identity gives $P(S_n\\ge na)=E_{t^*}[e^{-t^*S_n+n\\Lambda(t^*)}1_{S_n\\ge na}]$. Since $n\\Lambda(t^*)-t^*na=-nI$, this equals $e^{-nI}E_{t^*}[e^{-t^*(S_n-na)}1_{S_n\\ge na}]$. On the event the exponent is at most $0$, so the expectation is at most $1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tilt",
+      "s:differentiate"
+     ],
+     [
+      "s:differentiate",
+      "s:cumulants"
+     ],
+     [
+      "s:tilt",
+      "s:exact"
+     ],
+     [
+      "s:cumulants",
+      "s:exact"
+     ],
+     [
+      "s:markov",
+      "s:exact"
+     ]
+    ],
+    "conclusion": "s:exact",
+    "concepts": {
+     "c:moment-generating-function": "The function $M$ is differentiated and tilted, and it gives the Chernoff bound."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-polya-urn-beta-limit",
+  "statement": "An urn holds $a$ red and $b$ black balls. Draw a ball, then return it with one more ball of the same colour. Let $D_n$ be the number of red draws in $n$ steps and $X_n=(a+D_n)/(a+b+n)$. Then the draws are [exchangeable](c:exchangeability), $X_n$ is a bounded [martingale](c:martingale), and $X_n\\to X_\\infty$ almost surely, where $X_\\infty$ has the Beta$(a,b)$ law.",
+  "hypotheses": [
+   {
+    "id": "h:int",
+    "text": "The numbers $a$ and $b$ are positive integers. The reinforcement is exactly one ball.",
+    "concept": null
+   },
+   {
+    "id": "h:filt",
+    "text": "The filtration is generated by the draws.",
+    "concept": null
+   },
+   {
+    "id": "h:beta",
+    "text": "The Beta$(a,b)$ law has density $x^{a-1}(1-x)^{b-1}/B(a,b)$ on $[0,1]$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The colour sequence is exchangeable with $P(D_n=j)=\\binom nj a^{(j)}b^{(n-j)}/(a+b)^{(n)}$. The process $X_n$ is a martingale in $[0,1]$. It converges almost surely, and the limit has Beta$(a,b)$ law with $E[X_\\infty^k]=a^{(k)}/(a+b)^{(k)}$.",
+  "formal": {
+   "decl": "Submartingale.ae_tendsto_limitProcess",
+   "difference": "The declaration states a related, smaller fact: a submartingale bounded in $L^1$ converges almost surely. The urn model and the Beta law are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Martingale and moments",
+    "slogan": "Show that the urn fraction is a bounded martingale, then identify its limit by its moments.",
+    "scope": "The whole statement, for integer $a,b>0$ and one-ball reinforcement.",
+    "mechanisms": [
+     "m:martingale",
+     "m:dominated-convergence",
+     "m:density-extension",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:int",
+      "why": "Integer counts make every draw probability a ratio of counts, which gives the product formula and the martingale step.",
+      "steps": [
+       "s:prob",
+       "s:martingale"
+      ]
+     },
+     {
+      "h": "h:filt",
+      "why": "The draw filtration is the one for which the conditional mean of $X_{n+1}$ is computed.",
+      "steps": [
+       "s:martingale"
+      ]
+     },
+     {
+      "h": "h:beta",
+      "why": "The Beta density is the law that the proof compares with $X_\\infty$.",
+      "steps": [
+       "s:beta",
+       "s:determine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:prob",
+      "slogan": "Compute the probability of one colour sequence and show that it does not depend on order.",
+      "detail": "A sequence with $j$ red draws has probability $a^{(j)}b^{(n-j)}/(a+b)^{(n)}$, because red numerators are $a,a+1,\\dots$, black numerators are $b,b+1,\\dots$, and the denominators are $a+b,a+b+1,\\dots$. The value does not depend on order. This gives [exchangeability](c:exchangeability) and the formula for $P(D_n=j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:martingale",
+      "slogan": "Check that $X_n$ is a martingale in $[0,1]$.",
+      "detail": "Let $T_n=a+b+n$ and $R_n=a+D_n$. The red count after one more draw has conditional mean $R_n(T_n+1)/T_n$. So $E[X_{n+1}\\mid F_n]=R_n/T_n=X_n$, and $0\\le X_n\\le1$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the almost sure limit and pass moments to the limit.",
+      "detail": "A martingale bounded in $[0,1]$ converges almost surely to some $X_\\infty$ in $[0,1]$. The sequence is bounded, so dominated convergence gives $E[X_n^k]\\to E[X_\\infty^k]$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:moments",
+      "slogan": "Compute the moments of $D_n$ and show that $E[X_n^k]$ tends to $a^{(k)}/(a+b)^{(k)}$.",
+      "detail": "By exchangeability, the chance that $k$ chosen draws are all red is $m_k=a^{(k)}/(a+b)^{(k)}$. So $E[(D_n)_k]=(n)_km_k$. Falling powers differ from ordinary powers by lower terms of order $n^{k-1}$, so $E[(D_n/n)^k]\\to m_k$. Also $|X_n-D_n/n|\\le(a+b)/n$, so $E[X_n^k]\\to m_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:beta",
+      "slogan": "Compute the moments of the Beta law with the Beta-Gamma integral.",
+      "detail": "For $B$ with Beta$(a,b)$ law, $E[B^k]=B(a+k,b)/B(a,b)=\\Gamma(a+k)\\Gamma(a+b)/(\\Gamma(a)\\Gamma(a+b+k))=a^{(k)}/(a+b)^{(k)}$, because $\\Gamma(x+k)=x^{(k)}\\Gamma(x)$. So the Beta moments equal the urn moments $m_k$.",
+      "uses": [
+       "nm:technique-beta-gamma-integral"
+      ]
+     },
+     {
+      "id": "s:determine",
+      "slogan": "Show that equal moments on $[0,1]$ give equal laws.",
+      "detail": "The limit $X_\\infty$ and $B$ lie in $[0,1]$ and have equal moments, so they integrate every polynomial equally. Polynomials are uniformly dense in $C[0,1]$, so they integrate every continuous function equally. Hence the two laws are equal.",
+      "uses": [
+       "nm:weierstrass-approximation-theorem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:prob",
+      "s:moments"
+     ],
+     [
+      "s:martingale",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:moments"
+     ],
+     [
+      "s:moments",
+      "s:determine"
+     ],
+     [
+      "s:beta",
+      "s:determine"
+     ]
+    ],
+    "conclusion": "s:determine",
+    "concepts": {
+     "c:exchangeability": "Exchangeability makes the sequence probability depend only on the colour counts.",
+     "c:martingale": "The martingale property gives almost sure convergence of the red fraction."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-galois-group-prime-degree-two-nonreal-roots",
+  "statement": "Let $p$ be prime and let $f$ be an [irreducible polynomial](c:irreducible-polynomial) of degree $p$ over $\\mathbb Q$ with exactly $p-2$ real roots. Then $f$ has exactly two nonreal roots, and its [Galois group](c:galois-group) over $\\mathbb Q$ is the full [symmetric group](c:symmetric-group) $S_p$ on the roots. Its order is $p!$.",
+  "hypotheses": [
+   {
+    "id": "h:irr",
+    "text": "The polynomial $f$ is irreducible over $\\mathbb Q$, so it is separable and has $p$ distinct roots in $\\mathbb C$.",
+    "concept": "c:irreducible-polynomial"
+   },
+   {
+    "id": "h:prime",
+    "text": "The degree $p$ is prime.",
+    "concept": null
+   },
+   {
+    "id": "h:real",
+    "text": "Exactly $p-2$ of the roots are real.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The Galois group of $f$ over $\\mathbb Q$ is isomorphic to $S_p$ and has order $p!$.",
+  "formal": {
+   "decl": "Polynomial.Gal.galAction_isPretransitive",
+   "difference": "The declaration states a related, smaller fact: the Galois group of an irreducible polynomial acts transitively on the roots. The full group $S_p$ is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Transitivity and a transposition",
+    "slogan": "Embed the group in $S_p$, find a transitive action and a transposition, then show that these generate $S_p$.",
+    "scope": "The whole statement. The cases $p=2$ and $p=3$ also hold and are easy to check by hand.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:case-analysis",
+     "m:field-extension-degree"
+    ],
+    "roles": [
+     {
+      "h": "h:irr",
+      "why": "Irreducibility gives distinct roots and a field isomorphism between any two roots, so the action is transitive.",
+      "steps": [
+       "s:embed",
+       "s:transitive"
+      ]
+     },
+     {
+      "h": "h:prime",
+      "why": "Primality forces equal class sizes to be $1$ or $p$.",
+      "steps": [
+       "s:classes"
+      ]
+     },
+     {
+      "h": "h:real",
+      "why": "Real coefficients and $p-2$ real roots make complex conjugation a transposition.",
+      "steps": [
+       "s:transposition"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:embed",
+      "slogan": "Embed the Galois group in the symmetric group on the roots.",
+      "detail": "Let $\\Sigma\\subset\\mathbb C$ be the splitting field and $G=\\mathrm{Gal}(\\Sigma/\\mathbb Q)$. In characteristic $0$, $f$ and $f'$ are coprime, so $f$ has $p$ roots. An automorphism permutes the roots, and the roots generate $\\Sigma$. So $G$ embeds in $S_p$.",
+      "uses": []
+     },
+     {
+      "id": "s:transitive",
+      "slogan": "Show that $G$ is a [transitive](c:transitive-action) group on the roots.",
+      "detail": "Let $\\alpha,\\beta$ be roots. Both have minimal polynomial $f$ up to a scalar. So there is an isomorphism $\\mathbb Q(\\alpha)\\to\\mathbb Q(\\beta)$ with $\\alpha\\mapsto\\beta$. It extends to an automorphism of the normal extension $\\Sigma$.",
+      "uses": []
+     },
+     {
+      "id": "s:transposition",
+      "slogan": "Find a [transposition](c:transposition) in $G$ by using complex conjugation.",
+      "detail": "The coefficients of $f$ are real, so conjugation maps $\\Sigma$ to itself and lies in $G$. It fixes the $p-2$ real roots. It swaps the two nonreal roots, because they are conjugate. So it acts as a transposition.",
+      "uses": []
+     },
+     {
+      "id": "s:classes",
+      "slogan": "Split the roots into classes joined by transpositions in $G$, and show that the classes have equal size.",
+      "detail": "Write $x\\sim y$ if $x=y$ or $(x\\,y)\\in G$. This is an equivalence relation, because $(x\\,z)=(x\\,y)(y\\,z)(x\\,y)$. For $g\\in G$, $g(x\\,y)g^{-1}=(gx\\,gy)$, so $g$ maps classes to classes. Transitivity gives equal class sizes $s$ with $s\\cdot(\\text{number of classes})=p$. So $s=1$ or $s=p$.",
+      "uses": []
+     },
+     {
+      "id": "s:all",
+      "slogan": "Show that every transposition lies in $G$.",
+      "detail": "The transposition from conjugation shows $s\\ge2$. Hence $s=p$, so all roots are equivalent. So every transposition of the roots lies in $G$.",
+      "uses": []
+     },
+     {
+      "id": "s:generate",
+      "slogan": "Generate the full symmetric group from its transpositions.",
+      "detail": "Every permutation is a product of transpositions, so $G$ equals $S_p$. Thus $G\\cong S_p$ and $|G|=p!$.",
+      "uses": [
+       "nm:decomposition-into-transpositions"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:embed",
+      "s:transitive"
+     ],
+     [
+      "s:embed",
+      "s:transposition"
+     ],
+     [
+      "s:transitive",
+      "s:classes"
+     ],
+     [
+      "s:transposition",
+      "s:classes"
+     ],
+     [
+      "s:classes",
+      "s:all"
+     ],
+     [
+      "s:all",
+      "s:generate"
+     ]
+    ],
+    "conclusion": "s:generate",
+    "concepts": {
+     "c:irreducible-polynomial": "Irreducibility gives distinct roots and links any two roots.",
+     "c:galois-group": "The group permutes the roots, and the proof shows that it is all of $S_p$.",
+     "c:symmetric-group": "The group $S_p$ is the target that the Galois group fills.",
+     "c:transitive-action": "Transitivity makes all equivalence classes of roots equal in size.",
+     "c:transposition": "A transposition in the group, with transitivity, forces the whole group."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-picard-iteration-factorial-bound",
+  "statement": "Let $f\\colon[t_0,t_0+T]\\times\\mathbb R^n\\to\\mathbb R^n$ be continuous and [Lipschitz](c:lipschitz-continuous-function) in $x$ with constant $L>0$. Put $\\varphi_0\\equiv x_0$, $\\varphi_{k+1}(t)=x_0+\\int_{t_0}^tf(s,\\varphi_k(s))ds$, and $M=\\max\\|f(t,x_0)\\|$. Then $\\|\\varphi_{k+1}-\\varphi_k\\|\\le ML^k\\tau^{k+1}/(k+1)!$, and $\\varphi_k$ converges [uniformly](c:uniform-convergence) to the unique solution $\\varphi$ of the [initial value problem](c:initial-value-problem).",
+  "hypotheses": [
+   {
+    "id": "h:cont",
+    "text": "The field $f$ is continuous on $I\\times\\mathbb R^n$ with $I=[t_0,t_0+T]$.",
+    "concept": null
+   },
+   {
+    "id": "h:lip",
+    "text": "The field is [Lipschitz](c:lipschitz-continuous-function) in $x$ with a global constant $L>0$: $\\|f(t,x)-f(t,y)\\|\\le L\\|x-y\\|$.",
+    "concept": "c:lipschitz-continuous-function"
+   },
+   {
+    "id": "h:init",
+    "text": "The initial point $x_0$ is fixed, and $M=\\max_{t\\in I}\\|f(t,x_0)\\|$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The iterates obey the factorial bound. They converge uniformly on $I$ to a $C^1$ solution $\\varphi$ of $\\varphi'=f(t,\\varphi)$ with $\\varphi(t_0)=x_0$. The error satisfies $\\|\\varphi-\\varphi_k\\|\\le (M/L)(L\\tau)^{k+1}e^{L\\tau}/(k+1)!$. Every continuous solution of the integral equation equals $\\varphi$.",
+  "formal": {
+   "decl": "dist_iterate_next_apply_le",
+   "difference": "The declaration states a related, smaller fact: a distance bound for iterates of a Lipschitz map. The differential equation setting and the factorial bound are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Picard iteration",
+    "slogan": "Bound the successive differences by induction, sum them to get a uniform limit, and compare two solutions.",
+    "scope": "The whole statement. The global Lipschitz condition is essential, and no smallness condition on $T$ is needed.",
+    "mechanisms": [
+     "m:induction",
+     "m:uniform-convergence",
+     "m:fundamental-theorem-calculus",
+     "m:telescoping"
+    ],
+    "roles": [
+     {
+      "h": "h:cont",
+      "why": "Continuity makes each iterate well defined and continuous, and makes the limit $C^1$.",
+      "steps": [
+       "s:induct",
+       "s:solves"
+      ]
+     },
+     {
+      "h": "h:lip",
+      "why": "The Lipschitz bound turns each difference of iterates into an integral of the previous difference.",
+      "steps": [
+       "s:induct",
+       "s:solves",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:init",
+      "why": "The constant $M$ starts the induction at $k=0$.",
+      "steps": [
+       "s:induct"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induct",
+      "slogan": "Prove the factorial bound for successive differences by induction on $k$.",
+      "detail": "Each iterate is continuous, since an integral of a continuous function is continuous. For $k=0$, $\\|\\varphi_1-\\varphi_0\\|\\le M\\tau$. Assume the bound for $k$. The Lipschitz bound gives $\\|\\varphi_{k+2}(t)-\\varphi_{k+1}(t)\\|\\le L\\int_0^\\tau ML^k\\sigma^{k+1}/(k+1)!\\,d\\sigma=ML^{k+1}\\tau^{k+2}/(k+2)!$.",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Sum the bounds to get uniform convergence.",
+      "detail": "By the induction, $\\sup_I\\|\\varphi_{k+1}-\\varphi_k\\|\\le ML^kT^{k+1}/(k+1)!$. The sum over $k$ is $(M/L)(e^{LT}-1)$, which is finite. The Weierstrass M-test shows that $\\varphi_k$ converges uniformly to a continuous $\\varphi$.",
+      "uses": []
+     },
+     {
+      "id": "s:solves",
+      "slogan": "Pass to the limit in the integral equation to show that $\\varphi$ solves the problem.",
+      "detail": "We have $\\|f(s,\\varphi_k(s))-f(s,\\varphi(s))\\|\\le L\\|\\varphi_k(s)-\\varphi(s)\\|\\to0$ uniformly. So the integrals converge, and $\\varphi(t)=x_0+\\int_{t_0}^tf(s,\\varphi(s))ds$. The integrand is continuous, so the fundamental theorem of calculus gives $\\varphi'=f(t,\\varphi)$ and $\\varphi(t_0)=x_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:error",
+      "slogan": "Bound the error by the tail of the factorial series.",
+      "detail": "Write $\\varphi-\\varphi_k=\\sum_{j\\ge k}(\\varphi_{j+1}-\\varphi_j)$. The induction bound gives $(M/L)\\sum_{m\\ge k+1}(L\\tau)^m/m!$. Since $(k+1+i)!\\ge(k+1)!\\,i!$, the tail is at most $(L\\tau)^{k+1}e^{L\\tau}/(k+1)!$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that a continuous solution of the integral equation equals $\\varphi$.",
+      "detail": "Let $\\psi$ be a continuous solution and $D=\\max_I\\|\\varphi-\\psi\\|$. Subtracting the equations gives $\\|\\varphi(t)-\\psi(t)\\|\\le L\\int_{t_0}^t\\|\\varphi-\\psi\\|ds$. By induction, $\\|\\varphi(t)-\\psi(t)\\|\\le D(L\\tau)^k/k!\\to0$. So $\\varphi=\\psi$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the bound, the convergence, the solution, the error estimate and uniqueness.",
+      "detail": "The induction proves the factorial bound. The uniform step and the limit step prove convergence to a $C^1$ solution. The error step proves the explicit estimate. The uniqueness step proves that no other continuous solution exists.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induct",
+      "s:uniform"
+     ],
+     [
+      "s:uniform",
+      "s:solves"
+     ],
+     [
+      "s:induct",
+      "s:error"
+     ],
+     [
+      "s:induct",
+      "s:unique"
+     ],
+     [
+      "s:solves",
+      "s:unique"
+     ],
+     [
+      "s:induct",
+      "s:collect"
+     ],
+     [
+      "s:solves",
+      "s:collect"
+     ],
+     [
+      "s:error",
+      "s:collect"
+     ],
+     [
+      "s:unique",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:lipschitz-continuous-function": "The Lipschitz bound controls the difference of the field at two iterates.",
+     "c:uniform-convergence": "Uniform convergence lets the limit pass inside the integral.",
+     "c:initial-value-problem": "The limit solves this problem, and uniqueness identifies it."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-wirtinger-inequality-parseval-fourier",
+  "statement": "Let $f\\colon\\mathbb R\\to\\mathbb R$ be $C^1$ and 2π-[periodic](c:periodic-function) with $\\int_0^{2\\pi}f=0$. Then $\\int_0^{2\\pi}f'^2\\ge\\int_0^{2\\pi}f^2$. Equality holds if and only if $f(x)=a\\cos x+b\\sin x$ for some real $a,b$. The proof compares [Fourier coefficients](c:fourier-coefficients) by Parseval's identity.",
+  "hypotheses": [
+   {
+    "id": "h:c1",
+    "text": "The function $f$ is $C^1$ and 2π-periodic.",
+    "concept": "c:periodic-function"
+   },
+   {
+    "id": "h:mean",
+    "text": "The mean of $f$ is zero: $\\int_0^{2\\pi}f(x)dx=0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The inequality $\\int f'^2\\ge\\int f^2$ holds on $[0,2\\pi]$, with equality exactly for $a\\cos x+b\\sin x$.",
+  "formal": {
+   "decl": "tsum_sq_fourierCoeffOn",
+   "difference": "The declaration states a related, smaller fact: the sum of squares of Fourier coefficients. Wirtinger's inequality is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Parseval comparison",
+    "slogan": "Express both integrals by Fourier coefficients, then compare the coefficients term by term.",
+    "scope": "The whole statement, including the equality case. The same proof gives the constant $k^2$ when the coefficients with $|n|<k$ vanish.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:orthogonal-projection",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:c1",
+      "why": "Periodicity kills the boundary term in integration by parts, and $C^1$ makes both functions square integrable.",
+      "steps": [
+       "s:coeff",
+       "s:parseval"
+      ]
+     },
+     {
+      "h": "h:mean",
+      "why": "The zero mean removes the index $n=0$ from the sum for $f$.",
+      "steps": [
+       "s:parseval",
+       "s:ineq",
+       "s:trig"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:coeff",
+      "slogan": "Relate the [Fourier coefficients](c:fourier-coefficients) of $f'$ to those of $f$.",
+      "detail": "Fix $n\\ne0$. Integration by parts gives a boundary term in $f(2\\pi)-f(0)$, which is $0$ by periodicity. So $c_n(f')=in\\,c_n(f)$. Also $c_0(f)=0$ by the mean condition and $c_0(f')=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Apply Parseval's identity to $f$ and to $f'$.",
+      "detail": "Both functions are continuous, so they are square integrable. Parseval gives $\\frac1{2\\pi}\\int f^2=\\sum_{n\\ne0}|c_n|^2$ and $\\frac1{2\\pi}\\int f'^2=\\sum_{n\\ne0}n^2|c_n|^2$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     },
+     {
+      "id": "s:ineq",
+      "slogan": "Compare the two sums term by term to get the inequality.",
+      "detail": "For $n\\ne0$ we have $n^2\\ge1$. So $\\sum n^2|c_n|^2\\ge\\sum|c_n|^2$, which is $\\int f'^2\\ge\\int f^2$. The difference is $2\\pi\\sum_{n\\ne0}(n^2-1)|c_n|^2$, a sum of nonnegative terms.",
+      "uses": []
+     },
+     {
+      "id": "s:trig",
+      "slogan": "Show that equality forces all coefficients with $|n|\\ge2$ to vanish.",
+      "detail": "The difference is zero only if $c_n=0$ whenever $n^2-1>0$, that is, for $|n|\\ge2$. Only $c_1$ and $c_{-1}=\\bar c_1$ can remain, because $f$ is real.",
+      "uses": []
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify $f$ in the equality case, and check the converse.",
+      "detail": "Put $g=c_1e^{ix}+c_{-1}e^{-ix}=a\\cos x+b\\sin x$. Then $f-g$ is continuous with all Fourier coefficients zero, so Parseval gives $\\int|f-g|^2=0$ and $f=g$. Conversely, for $f=a\\cos x+b\\sin x$ both integrals equal $\\pi(a^2+b^2)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:coeff",
+      "s:parseval"
+     ],
+     [
+      "s:parseval",
+      "s:ineq"
+     ],
+     [
+      "s:ineq",
+      "s:trig"
+     ],
+     [
+      "s:trig",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:periodic-function": "Periodicity removes the boundary term when the coefficients of $f'$ are found.",
+     "c:fourier-coefficients": "The inequality is a comparison of the coefficient sums."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-stirling-second-kind-falling-factorial-surjections",
+  "statement": "Define $S(n,k)$ by $S(0,0)=1$, $S(n,0)=0$ for $n\\ge1$, $S(0,k)=0$ for $k\\ge1$, and $S(n+1,k+1)=(k+1)S(n,k+1)+S(n,k)$. Then $x^n=\\sum_kS(n,k)x^{\\underline k}$ in $\\mathbb Z[x]$, with unique coefficients, where $x^{\\underline k}$ is a [falling factorial](c:falling-factorial). Also $S(n,k)$ counts partitions of an $n$-set into $k$ blocks, and $k!S(n,k)=\\sum_j(-1)^{k-j}\\binom kj j^n$ counts surjections.",
+  "hypotheses": [
+   {
+    "id": "h:nk",
+    "text": "The numbers $n$ and $k$ are integers with $n,k\\ge0$.",
+    "concept": null
+   },
+   {
+    "id": "h:poly",
+    "text": "The identity is in the polynomial ring $\\mathbb Z[x]$, so it holds for every integer $x$.",
+    "concept": null
+   },
+   {
+    "id": "h:blocks",
+    "text": "A block of a set partition is nonempty, and blocks are not ordered.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The expansion $x^n=\\sum_kS(n,k)x^{\\underline k}$ is unique. The number $S(n,k)$ counts $k$-block partitions. The number of surjections is $k!S(n,k)=\\sum_{j}(-1)^{k-j}\\binom kj j^n$. Also $\\sum_{x<N}x^n=\\sum_{k=1}^nS(n,k)N^{\\underline{k+1}}/(k+1)$ for $n\\ge1$.",
+  "formal": {
+   "decl": "pow_eq_sum_stirlingSecond_mul_descFactorial",
+   "difference": "The declaration states a related, smaller fact: the power expansion in falling factorials. The surjection count and the power sums are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Basis, recursion, counting",
+    "slogan": "Expand powers in the falling factorial basis, match the recursion with a count of partitions, then count surjections and sum powers.",
+    "scope": "The whole statement. The count of set partitions is proved here, because the source does not define $S(n,k)$ that way.",
+    "mechanisms": [
+     "m:induction",
+     "m:bijection",
+     "m:inclusion-exclusion",
+     "m:telescoping"
+    ],
+    "roles": [
+     {
+      "h": "h:nk",
+      "why": "The indices $n,k$ start the induction and set the sizes of the sets in the counts.",
+      "steps": [
+       "s:expand",
+       "s:partition",
+       "s:surj"
+      ]
+     },
+     {
+      "h": "h:poly",
+      "why": "Working in $\\mathbb Z[x]$ makes the basis argument and the term by term sum valid.",
+      "steps": [
+       "s:expand",
+       "s:sums"
+      ]
+     },
+     {
+      "h": "h:blocks",
+      "why": "Nonempty unordered blocks make the count satisfy the recursion for $S$.",
+      "steps": [
+       "s:partition",
+       "s:surj"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Show that falling factorials form a basis and that the recursion gives the expansion of $x^n$.",
+      "detail": "The polynomial $x^{\\underline k}$ is monic of degree $k$, so these polynomials are a basis of $\\mathbb Z[x]$ and expansions are unique. Since $x=(x-k)+k$, we get $x\\cdot x^{\\underline k}=x^{\\underline{k+1}}+k\\,x^{\\underline k}$. Induction on $n$ then gives the coefficient $S(n,j-1)+jS(n,j)=S(n+1,j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:partition",
+      "slogan": "Show that the number of $k$-block partitions satisfies the same recursion.",
+      "detail": "Let $T(n,k)$ count partitions of $[n]$ into $k$ blocks. In a partition of $[n+1]$ into $k+1$ blocks, either $\\{n+1\\}$ is a block, giving $T(n,k)$ cases, or $n+1$ lies in one of $k+1$ blocks of a partition of $[n]$, giving $(k+1)T(n,k+1)$ cases. The start values agree, so $T=S$.",
+      "uses": []
+     },
+     {
+      "id": "s:surj",
+      "slogan": "Count surjections by ordering the blocks of a partition.",
+      "detail": "The fibers of a surjection $[n]\\to[k]$ form a partition into $k$ blocks, with an order on the blocks. Conversely, a partition and one of $k!$ orders give exactly one surjection. So there are $k!S(n,k)$ surjections.",
+      "uses": []
+     },
+     {
+      "id": "s:explicit",
+      "slogan": "Count surjections again by inclusion-exclusion to get the explicit sum.",
+      "detail": "For $M\\subseteq[k]$, exactly $(k-|M|)^n$ maps miss $M$. A map is a surjection if it misses no value. Inclusion-exclusion over the missed set gives $\\sum_{j=0}^k(-1)^{k-j}\\binom kj j^n$.",
+      "uses": [
+       "nm:principle-of-inclusion-exclusion"
+      ]
+     },
+     {
+      "id": "s:sums",
+      "slogan": "Telescope falling factorials to sum powers.",
+      "detail": "We have $(x+1)^{\\underline{k+1}}-x^{\\underline{k+1}}=(k+1)x^{\\underline k}$. Summing over $x=0,\\dots,N-1$ telescopes to $N^{\\underline{k+1}}$, so $\\sum x^{\\underline k}=N^{\\underline{k+1}}/(k+1)$. Sum the expansion of $x^n$ term by term. The term $k=0$ vanishes for $n\\ge1$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the expansion, the partition count, the surjection counts and the power sums.",
+      "detail": "The expansion step proves the unique expansion. The partition step identifies $S(n,k)$ with the block count. The two surjection steps give $k!S(n,k)$ and the alternating sum. The sums step gives the formula for power sums.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:partition"
+     ],
+     [
+      "s:partition",
+      "s:surj"
+     ],
+     [
+      "s:surj",
+      "s:explicit"
+     ],
+     [
+      "s:expand",
+      "s:sums"
+     ],
+     [
+      "s:expand",
+      "s:collect"
+     ],
+     [
+      "s:partition",
+      "s:collect"
+     ],
+     [
+      "s:surj",
+      "s:collect"
+     ],
+     [
+      "s:explicit",
+      "s:collect"
+     ],
+     [
+      "s:sums",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:falling-factorial": "Falling factorials are the basis in which powers are expanded and summed."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-large-schroder-paths-recurrence-and-flat-step-formula",
+  "statement": "A large Schröder path of semilength $n$ goes from $(0,0)$ to $(2n,0)$ with steps $U=(1,1)$, $D=(1,-1)$ and $F=(2,0)$, and stays on or above the axis. Let $s_n$ count them and $D_m$ count Dyck paths. Then $s_0=1$, $s_{n+1}=s_n+\\sum_is_is_{n-i}$, and $s_n=\\sum_jD_{n-j}\\binom{2n-j}{j}$. The [generating function](c:generating-function) $S$ satisfies $xS^2-(1-x)S+1=0$.",
+  "hypotheses": [
+   {
+    "id": "h:int",
+    "text": "The numbers $n$ and $j$ are nonnegative integers.",
+    "concept": null
+   },
+   {
+    "id": "h:above",
+    "text": "The path has no point with negative $y$-coordinate.",
+    "concept": null
+   },
+   {
+    "id": "h:empty",
+    "text": "The empty path is the only path of semilength $0$. It counts once in $s_0$ and in $D_0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The recurrence $s_{n+1}=s_n+\\sum_{i=0}^ns_is_{n-i}$ holds. The flat-step formula $s_n=\\sum_jD_{n-j}\\binom{2n-j}{j}$ holds. The series $S(x)=(1-x-\\sqrt{1-6x+x^2})/(2x)$.",
+  "formal": {
+   "decl": "largeSchroder_succ",
+   "difference": "The declaration states a related, smaller fact: the recurrence for large Schröder numbers. The flat-step formula and the closed form are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "First step and flat steps",
+    "slogan": "Split paths by the first step to get the recurrence, delete flat steps to get a Dyck path, and solve the generating function.",
+    "scope": "The whole statement. All three claims are proved by bijections and a quadratic equation for $S$.",
+    "mechanisms": [
+     "m:bijection",
+     "m:generating-function",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:int",
+      "why": "Integer sizes let the paths be counted by their semilength.",
+      "steps": [
+       "s:first",
+       "s:flat"
+      ]
+     },
+     {
+      "h": "h:above",
+      "why": "The nonnegative height condition makes the part after a first return a Schröder path and allows flat steps at every vertex.",
+      "steps": [
+       "s:first",
+       "s:insert"
+      ]
+     },
+     {
+      "h": "h:empty",
+      "why": "The empty path gives the base case $s_0=1$ and the term $D_0$.",
+      "steps": [
+       "s:first",
+       "s:flat"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:first",
+      "slogan": "Split by the first step and by the first return to the axis to get the recurrence.",
+      "detail": "If the first step is $F$, the rest is any path of semilength $n$, so there are $s_n$ paths. If the first step is $U$, let $D^*$ be the first return step. Lowering the part between $U$ and $D^*$ gives a path of semilength $i$, and the rest has semilength $n-i$. These choices are free, so there are $\\sum_is_is_{n-i}$ paths.",
+      "uses": []
+     },
+     {
+      "id": "s:flat",
+      "slogan": "Delete the flat steps of a path to get a Dyck path.",
+      "detail": "A Schröder path with $j$ flat steps becomes, after deleting them, a path with only $U$ and $D$ steps and $x$-length $2(n-j)$. It is a Dyck path of semilength $n-j$.",
+      "uses": []
+     },
+     {
+      "id": "s:insert",
+      "slogan": "Reverse the deletion by inserting $j$ flat steps at vertices, and count the choices.",
+      "detail": "A Dyck path of semilength $n-j$ has $2(n-j)+1$ vertices. Choose a multiset of size $j$ of vertices for the flat steps. Heights stay at least $0$, and different multisets give different paths. There are $\\binom{2n-j}{j}$ multisets, so $D_{n-j}\\binom{2n-j}{j}$ paths have $j$ flat steps. Sum over $j$.",
+      "uses": []
+     },
+     {
+      "id": "s:gf",
+      "slogan": "Turn the recurrence into a quadratic equation for the [generating function](c:generating-function).",
+      "detail": "Multiply the recurrence by $x^{n+1}$ and sum over $n\\ge0$. The left side is $S-1$. The right side is $xS+xS^2$. So $xS^2-(1-x)S+1=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:root",
+      "slogan": "Solve the quadratic by completing the square and choose the sign of the root.",
+      "detail": "We get $(2xS-(1-x))^2=1-6x+x^2$. The series $1-6x+x^2$ has one square root $Q$ with constant term $1$. The left side has constant term $-1$, so $2xS-(1-x)=-Q$. Hence $S=(1-x-Q)/(2x)$, and the numerator has zero constant term.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the recurrence, the flat-step formula and the closed form.",
+      "detail": "The first-step case split proves the recurrence. The flat-step count proves the sum with binomial coefficients. The quadratic step and the root step prove the closed form for $S$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:first",
+      "s:gf"
+     ],
+     [
+      "s:gf",
+      "s:root"
+     ],
+     [
+      "s:first",
+      "s:collect"
+     ],
+     [
+      "s:flat",
+      "s:insert"
+     ],
+     [
+      "s:insert",
+      "s:collect"
+     ],
+     [
+      "s:root",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:generating-function": "The series $S$ turns the recurrence into an algebraic equation."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-symmetric-group-unsolvable-perfect-alternating",
+  "statement": "Let $X$ be a set with at least $5$ elements. For $n\\ge5$, the [alternating group](c:alternating-group) $A_n$ equals its own [commutator subgroup](c:commutator-subgroup). So the [derived series](c:derived-series) of $S_n$ is $S_n>A_n=A_n=\\cdots$ and never reaches $1$. Hence $S_n$ and $A_n$ are not [solvable](c:solvable-group). The group of all permutations of $X$ is not solvable.",
+  "hypotheses": [
+   {
+    "id": "h:size",
+    "text": "The set has at least $5$ elements: $n\\ge5$ for $S_n$. The group $S_4$ is solvable.",
+    "concept": null
+   },
+   {
+    "id": "h:group",
+    "text": "The group is $S_n$ on $n$ letters, or the group of all permutations of a set $X$.",
+    "concept": null
+   },
+   {
+    "id": "h:solv",
+    "text": "A group is [solvable](c:solvable-group) if its derived series reaches the trivial group after finitely many steps.",
+    "concept": "c:solvable-group"
+   }
+  ],
+  "conclusion": "$A_n=[A_n,A_n]$ and $[S_n,S_n]=A_n$ for $n\\ge5$, so $S_n$ and $A_n$ are not solvable. The group $\\mathrm{Sym}(X)$ is not solvable for $|X|\\ge5$.",
+  "formal": {
+   "decl": "Equiv.Perm.not_isSolvable",
+   "difference": "The declaration states the unsolvability of the permutation group of a set with at least five elements. It does not state the derived series or that $A_n$ is perfect."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Perfect alternating group",
+    "slogan": "Write every 3-cycle as a commutator in $A_n$, so the derived series stops at $A_n$.",
+    "scope": "The whole statement for finite $n\\ge5$ and for any set with at least $5$ elements.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:algebraic-identity",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:size",
+      "why": "The condition $n\\ge5$ gives two points $d,e$ outside a 3-cycle, which builds the commutator.",
+      "steps": [
+       "s:commutator"
+      ]
+     },
+     {
+      "h": "h:group",
+      "why": "The group is $S_n$ or $\\mathrm{Sym}(X)$, and the last step embeds $S_5$ in the second group.",
+      "steps": [
+       "s:series",
+       "s:infinite"
+      ]
+     },
+     {
+      "h": "h:solv",
+      "why": "Solvability is the property that the proof refutes, by a derived series that never reaches $1$.",
+      "steps": [
+       "s:series",
+       "s:infinite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:generate",
+      "slogan": "Show that $A_n$ is generated by [3-cycles](c:3-cycle).",
+      "detail": "An element of $A_n$ is a product of an even number of transpositions. Pair them. We have $(a\\,b)(b\\,c)$ is a 3-cycle, and $(a\\,b)(c\\,d)=(a\\,b)(b\\,c)\\cdot(b\\,c)(c\\,d)$ is a product of two 3-cycles. So every element is a product of 3-cycles.",
+      "uses": []
+     },
+     {
+      "id": "s:commutator",
+      "slogan": "Write each 3-cycle as a commutator of elements of $A_n$.",
+      "detail": "Let $\\rho=(a\\,b\\,c)$. Choose points $d,e$ outside it, which exist for $n\\ge5$. Put $\\sigma=(b\\,c)(d\\,e)\\in A_n$. Conjugation by $\\sigma$ gives $\\sigma\\rho\\sigma^{-1}=\\rho^{-1}$. So $\\sigma\\rho\\sigma^{-1}\\rho^{-1}=\\rho^{-2}=\\rho$, which lies in $[A_n,A_n]$.",
+      "uses": []
+     },
+     {
+      "id": "s:perfect",
+      "slogan": "Conclude that $A_n=[A_n,A_n]$ and $[S_n,S_n]=A_n$.",
+      "detail": "The generators of $A_n$ lie in $[A_n,A_n]$, so $A_n\\le[A_n,A_n]$, and the other inclusion is clear. The sign map to an abelian group has kernel $A_n$, so $[S_n,S_n]\\le A_n$. Also $A_n=[A_n,A_n]\\le[S_n,S_n]$.",
+      "uses": []
+     },
+     {
+      "id": "s:series",
+      "slogan": "Show that the derived series never reaches the trivial group.",
+      "detail": "We have $S_n^{(1)}=A_n$ and $A_n^{(k)}=A_n$ for all $k$. So $S_n^{(k)}=A_n$ for $k\\ge1$. The group $A_n$ contains the 3-cycle $(1\\,2\\,3)$, so it is not trivial. Hence $S_n$ and $A_n$ are not solvable.",
+      "uses": []
+     },
+     {
+      "id": "s:infinite",
+      "slogan": "Pass to the group of all permutations of any set with at least $5$ elements.",
+      "detail": "Choose $5$ points of $X$. The permutations that fix every other point form a subgroup isomorphic to $S_5$. A subgroup of a solvable group is solvable, since $H^{(k)}\\le G^{(k)}$. So solvability of $\\mathrm{Sym}(X)$ would make $S_5$ solvable, which is false.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:generate",
+      "s:commutator"
+     ],
+     [
+      "s:commutator",
+      "s:perfect"
+     ],
+     [
+      "s:perfect",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:infinite"
+     ]
+    ],
+    "conclusion": "s:infinite",
+    "concepts": {
+     "c:alternating-group": "The group $A_n$ is shown to be perfect, which stops the derived series.",
+     "c:commutator-subgroup": "The derived series is built from commutator subgroups, and $A_n$ equals its own.",
+     "c:derived-series": "A derived series that stays at $A_n$ never reaches $1$.",
+     "c:solvable-group": "Solvability is the property that fails.",
+     "c:3-cycle": "The 3-cycles generate $A_n$ and are all commutators."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-nondegenerate-killing-form-no-solvable-ideals",
+  "statement": "Let $\\mathfrak g$ be a finite-dimensional Lie algebra over a field $F$ with [Killing form](c:killing-form) $\\kappa(x,y)=\\operatorname{tr}(\\operatorname{ad}x\\operatorname{ad}y)$. If $\\kappa$ is nondegenerate, then every [solvable](c:solvable-lie-algebra) ideal of $\\mathfrak g$ is $0$. In particular, every abelian ideal is $0$.",
+  "hypotheses": [
+   {
+    "id": "h:fd",
+    "text": "The Lie algebra $\\mathfrak g$ is finite-dimensional over a field $F$ of any characteristic.",
+    "concept": null
+   },
+   {
+    "id": "h:nd",
+    "text": "The [Killing form](c:killing-form) is nondegenerate: $\\kappa(x,y)=0$ for all $y$ forces $x=0$.",
+    "concept": "c:killing-form"
+   },
+   {
+    "id": "h:solv",
+    "text": "The ideal $I$ is [solvable](c:solvable-lie-algebra): its derived series reaches $0$.",
+    "concept": "c:solvable-lie-algebra"
+   }
+  ],
+  "conclusion": "Every solvable ideal of $\\mathfrak g$ is $0$, and so is every abelian ideal.",
+  "formal": {
+   "decl": "LieAlgebra.IsKilling.ideal_eq_bot_of_isLieAbelian",
+   "difference": "The declaration states a related, smaller fact: a nondegenerate Killing form gives no nonzero abelian ideal. Solvable ideals in general are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Last term of the derived series",
+    "slogan": "Take the last nonzero term of the derived series, an abelian ideal, and show that it lies in the kernel of the Killing form.",
+    "scope": "The whole statement in any characteristic. The proof uses that a nilpotent endomorphism has trace $0$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:extremal-choice",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:fd",
+      "why": "Finite dimension makes the trace and the Killing form defined.",
+      "steps": [
+       "s:trace"
+      ]
+     },
+     {
+      "h": "h:nd",
+      "why": "Nondegeneracy turns $\\kappa(x,y)=0$ for all $y$ into $x=0$.",
+      "steps": [
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:solv",
+      "why": "Solvability gives a last nonzero term of the derived series.",
+      "steps": [
+       "s:last"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:last",
+      "slogan": "Take the last nonzero derived term $J$ and show that it is an abelian ideal.",
+      "detail": "Suppose $I\\ne0$. Let $k$ be the largest index with $I^{(k)}\\ne0$ and put $J=I^{(k)}$. By induction and the Jacobi identity, $[x,[a,b]]=[[x,a],b]+[a,[x,b]]$ keeps each $I^{(j)}$ an ideal of $\\mathfrak g$. Also $[J,J]=I^{(k+1)}=0$, so $J$ is abelian.",
+      "uses": []
+     },
+     {
+      "id": "s:square",
+      "slogan": "Show that $(\\operatorname{ad}x\\operatorname{ad}y)^2=0$ for $x\\in J$ and $y\\in\\mathfrak g$.",
+      "detail": "The map $\\varphi=\\operatorname{ad}x\\operatorname{ad}y$ sends $\\mathfrak g$ into $J$, because $J$ is an ideal. For $w=\\varphi(z)\\in J$, $\\operatorname{ad}y(w)$ lies in $J$, and $[x,\\operatorname{ad}y(w)]=0$ because $J$ is abelian. So $\\varphi^2=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:trace",
+      "slogan": "Use that a nilpotent endomorphism has trace $0$.",
+      "detail": "The characteristic polynomial of a nilpotent endomorphism is a power of $t$, over any field. So $\\operatorname{tr}\\varphi=0$. Hence $\\kappa(x,y)=0$ for all $y\\in\\mathfrak g$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Use nondegeneracy to get a contradiction and the claim for abelian ideals.",
+      "detail": "Nondegeneracy gives $x=0$ for every $x\\in J$, so $J=0$. This contradicts the choice of $J$, so $I=0$. An abelian ideal has derived series $I\\supseteq0$, so it is solvable and also $0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:last",
+      "s:square"
+     ],
+     [
+      "s:square",
+      "s:trace"
+     ],
+     [
+      "s:trace",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:killing-form": "The vanishing of $\\kappa(x,y)$ on the last derived term contradicts nondegeneracy.",
+     "c:solvable-lie-algebra": "Solvability gives a last nonzero derived term, which is abelian."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-artinian-ring-primes-maximal-nilpotent-radical",
+  "statement": "Let $R$ be a commutative [Artinian ring](c:artinian-ring). Then every [prime ideal](c:prime-ideal) of $R$ is [maximal](c:maximal-ideal). The ring has only finitely many maximal ideals, so $\\operatorname{Spec}R$ is a finite discrete space. The [Jacobson radical](c:jacobson-radical) $J$ equals the nilradical, and $J^k=0$ for some $k\\ge1$.",
+  "hypotheses": [
+   {
+    "id": "h:comm",
+    "text": "The ring $R$ is commutative with $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:dcc",
+    "text": "Every descending chain of ideals $I_1\\supseteq I_2\\supseteq\\cdots$ stops, so $R$ is [Artinian](c:artinian-ring).",
+    "concept": "c:artinian-ring"
+   }
+  ],
+  "conclusion": "Primes are maximal, there are finitely many maximal ideals, $J$ equals the nilradical, and $J^k=0$ for some $k$.",
+  "formal": {
+   "decl": "IsArtinianRing.isPrime_iff_isMaximal",
+   "difference": "The declaration states a related, smaller fact: in an Artinian ring a prime ideal is maximal. Finiteness and nilpotence of $J$ are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Descending chains",
+    "slogan": "Use the descending chain condition on powers, intersections of maximal ideals, and powers of the radical.",
+    "scope": "The whole statement. The ring need not be Noetherian.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:comm",
+      "why": "Commutativity makes quotients by primes domains and lets the ideals $(x)$ and $xJ$ be compared.",
+      "steps": [
+       "s:prime",
+       "s:finite",
+       "s:nilpotent"
+      ]
+     },
+     {
+      "h": "h:dcc",
+      "why": "The descending chain condition gives stabilizing chains and minimal elements in every step.",
+      "steps": [
+       "s:prime",
+       "s:finite",
+       "s:nilpotent"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:prime",
+      "slogan": "Show that every prime ideal is maximal.",
+      "detail": "Let $P$ be prime. Then $D=R/P$ is an Artinian domain. For $a\\ne0$ in $D$, the chain $(a)\\supseteq(a^2)\\supseteq\\cdots$ stops, so $a^n=a^{n+1}b$ for some $b$. Then $a^n(1-ab)=0$, so $ab=1$. So $D$ is a field and $P$ is maximal.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that there are only finitely many maximal ideals.",
+      "detail": "Suppose $\\mathfrak m_1,\\mathfrak m_2,\\dots$ are distinct maximal ideals. The chain of finite intersections stops, so $\\mathfrak m_1\\cap\\cdots\\cap\\mathfrak m_n\\subseteq\\mathfrak m_{n+1}$ for some $n$. Then $\\mathfrak m_{n+1}$ is prime and contains the product, so it contains some $\\mathfrak m_i$. Both are maximal, so they are equal, which contradicts distinctness.",
+      "uses": []
+     },
+     {
+      "id": "s:discrete",
+      "slogan": "Show that $\\operatorname{Spec}R$ is finite and discrete.",
+      "detail": "Primes and maximal ideals are the same by the first step, and there are finitely many. Each point is closed, because $V(\\mathfrak m)=\\{\\mathfrak m\\}$. A finite space with all points closed is discrete.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes"
+      ]
+     },
+     {
+      "id": "s:radical",
+      "slogan": "Show that the Jacobson radical equals the nilradical.",
+      "detail": "The nilradical is the intersection of all primes. Since primes are the maximal ideals, this is the intersection of the maximal ideals, which is $J$.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes"
+      ]
+     },
+     {
+      "id": "s:nilpotent",
+      "slogan": "Show that some power of $J$ is zero by choosing a minimal ideal.",
+      "detail": "The chain $J\\supseteq J^2\\supseteq\\cdots$ stops, so $I=J^n=J^{n+1}$. Suppose $I\\ne0$. Among ideals $K$ with $KI\\ne0$ choose a minimal $K$, and $x\\in K$ with $xI\\ne0$. Then $(x)=K$ and $xJ=K$ by minimality, so $x=xj$ with $j\\in J$. Since $1-j$ is a unit, $x=0$, a contradiction. So $J^n=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the four claims of the theorem.",
+      "detail": "The prime step proves that primes are maximal. The finite step and the discrete step prove the finiteness of $\\operatorname{Spec}R$. The radical step and the nilpotent step prove that $J$ is the nilradical and that $J^k=0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:prime",
+      "s:discrete"
+     ],
+     [
+      "s:finite",
+      "s:discrete"
+     ],
+     [
+      "s:prime",
+      "s:radical"
+     ],
+     [
+      "s:discrete",
+      "s:collect"
+     ],
+     [
+      "s:radical",
+      "s:nilpotent"
+     ],
+     [
+      "s:nilpotent",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:artinian-ring": "The descending chain condition drives every step of the proof.",
+     "c:prime-ideal": "Primes are shown to be maximal and make up the spectrum.",
+     "c:maximal-ideal": "Maximal ideals are finite in number and their intersection is $J$.",
+     "c:jacobson-radical": "The radical $J$ is the nilradical and is nilpotent."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-zero-divisors-union-of-associated-primes",
+  "statement": "Let $R$ be a [Noetherian](c:noetherian-ring) commutative ring. An [associated prime](c:associated-prime) is a prime ideal of the form $\\operatorname{Ann}(m)=\\{r: rm=0\\}$ for some $m\\in R$. Then the set of [zero divisors](c:zero-divisor) of $R$ equals the union of all associated primes of $R$.",
+  "hypotheses": [
+   {
+    "id": "h:noeth",
+    "text": "The ring $R$ is commutative with $1$ and satisfies the ascending chain condition on ideals.",
+    "concept": "c:noetherian-ring"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "The ring is not the zero ring. Otherwise the union and the set of zero divisors are both empty.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The set of zero divisors of $R$ equals $\\bigcup_{P\\in\\mathrm{Ass}(R)}P$.",
+  "formal": {
+   "decl": "biUnion_associatedPrimes_eq_zero_divisors",
+   "difference": "The declaration states the same fact for modules in the Mathlib setting. Here the module is the ring itself."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Maximal annihilator",
+    "slogan": "Choose an annihilator that is maximal among the annihilators of nonzero elements, and show that it is prime.",
+    "scope": "The whole statement. The ring is Noetherian, but not necessarily a domain.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:noeth",
+      "why": "The ascending chain condition gives a maximal element in the family of annihilators.",
+      "steps": [
+       "s:maximal"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "A nonzero ring ensures that the annihilator of a nonzero element is a proper ideal.",
+      "steps": [
+       "s:assoc",
+       "s:prime"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assoc",
+      "slogan": "Show that every element of an [associated prime](c:associated-prime) is a zero divisor.",
+      "detail": "Let $P=\\operatorname{Ann}(m)$ be prime and $r\\in P$. Then $rm=0$. Also $m\\ne0$, because $\\operatorname{Ann}(0)=R$ is not prime. So $r$ is a zero divisor.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Choose a maximal annihilator above the annihilator of a witness.",
+      "detail": "Let $r$ be a zero divisor with $rm=0$ and $m\\ne0$. Consider the ideals $\\operatorname{Ann}(m')$ with $m'\\ne0$ and $\\operatorname{Ann}(m)\\subseteq\\operatorname{Ann}(m')$. The family is not empty, so a Noetherian ring gives a maximal element $Q=\\operatorname{Ann}(m')$.",
+      "uses": []
+     },
+     {
+      "id": "s:prime",
+      "slogan": "Show that $Q$ is a proper prime ideal.",
+      "detail": "Since $m'\\ne0$, $1\\notin Q$. Let $ab\\in Q$ and $b\\notin Q$. Then $bm'\\ne0$ and $Q\\subseteq\\operatorname{Ann}(bm')$. By maximality, $\\operatorname{Ann}(bm')=Q$. Since $a(bm')=0$, we get $a\\in Q$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Conclude that every zero divisor lies in an associated prime.",
+      "detail": "The prime $Q=\\operatorname{Ann}(m')$ is an associated prime. Since $rm=0$, $r\\in\\operatorname{Ann}(m)\\subseteq Q$. The first step gives the other inclusion, so the two sets are equal.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:maximal",
+      "s:prime"
+     ],
+     [
+      "s:prime",
+      "s:collect"
+     ],
+     [
+      "s:assoc",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:noetherian-ring": "The chain condition gives a maximal annihilator.",
+     "c:associated-prime": "Associated primes are the primes shown to cover all zero divisors.",
+     "c:zero-divisor": "The set of zero divisors is the set that the union must equal."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-layer-cake-tail-integral",
+  "statement": "Let $(\\Omega,\\mathcal F,\\mu)$ be a [$\\sigma$-finite](c:sigma-finite-measure) measure space, $f\\colon\\Omega\\to[0,\\infty)$ measurable, and $g\\ge0$ locally integrable with $G(x)=\\int_0^xg$. Then $\\int_\\Omega G(f)\\,d\\mu=\\int_0^\\infty\\mu(\\{f>t\\})g(t)\\,dt$ in $[0,\\infty]$. For a random variable $N$ in $\\{0,1,2,\\dots\\}$, the [expected value](c:expected-value) is $E[N]=\\sum_{k\\ge0}P(N>k)$.",
+  "hypotheses": [
+   {
+    "id": "h:sf",
+    "text": "The measure $\\mu$ is [$\\sigma$-finite](c:sigma-finite-measure). This lets the Tonelli theorem apply.",
+    "concept": "c:sigma-finite-measure"
+   },
+   {
+    "id": "h:f",
+    "text": "The function $f$ is measurable and finite everywhere. Both sides can be $+\\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:g",
+    "text": "The function $g$ is nonnegative and locally integrable on $[0,\\infty)$. A singularity like $t^{p-1}$ with $0<p<1$ is allowed.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\int_\\Omega G(f)\\,d\\mu=\\int_0^\\infty\\mu(\\{f>t\\})g(t)\\,dt$. In particular $\\int f\\,d\\mu=\\int_0^\\infty\\mu(\\{f>t\\})dt$, $\\int f^pd\\mu=p\\int_0^\\infty t^{p-1}\\mu(\\{f>t\\})dt$, and $E[N]=\\sum_{k\\ge0}P(N>k)$.",
+  "formal": {
+   "decl": "lintegral_comp_eq_lintegral_meas_lt_mul",
+   "difference": "The declaration states the same layer cake formula in Mathlib form. The special cases are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Tonelli on a region",
+    "slogan": "Write $G(f)$ as an integral of an indicator, then integrate the indicator of the region under the graph in both orders.",
+    "scope": "The whole statement. No integrability of $f$ is assumed.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:double-counting",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:sf",
+      "why": "Both measures in the product are $\\sigma$-finite, so Tonelli swaps the order of integration.",
+      "steps": [
+       "s:measure",
+       "s:tonelli"
+      ]
+     },
+     {
+      "h": "h:f",
+      "why": "Measurability of $f$ makes the region under its graph measurable.",
+      "steps": [
+       "s:region"
+      ]
+     },
+     {
+      "h": "h:g",
+      "why": "Local integrability makes the measure $g\\,dt$ $\\sigma$-finite and gives $G(x)$ finite.",
+      "steps": [
+       "s:layer",
+       "s:measure"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:layer",
+      "slogan": "Write $G(f(\\omega))$ as an integral of an indicator.",
+      "detail": "For $x\\ge0$, $G(x)=\\int_0^\\infty1_{\\{t<x\\}}g(t)\\,dt$, because the indicator cuts the range to $(0,x)$. Put $x=f(\\omega)$.",
+      "uses": []
+     },
+     {
+      "id": "s:measure",
+      "slogan": "Build the product of $\\mu$ and the measure $g\\,dt$.",
+      "detail": "Let $\\nu(dt)=g(t)\\,dt$ on $(0,\\infty)$. Since $g$ is integrable on each $(0,n]$, $\\nu$ is $\\sigma$-finite. So the product measure $\\mu\\otimes\\nu$ exists and is unique.",
+      "uses": []
+     },
+     {
+      "id": "s:region",
+      "slogan": "Show that the region $A=\\{(\\omega,t):t<f(\\omega)\\}$ is measurable.",
+      "detail": "The map $(\\omega,t)\\mapsto f(\\omega)-t$ is a difference of two measurable maps, each of one coordinate. So it is measurable for the product $\\sigma$-algebra, and $A=\\{f(\\omega)-t>0\\}$ is measurable.",
+      "uses": []
+     },
+     {
+      "id": "s:tonelli",
+      "slogan": "Integrate $1_A$ in both orders with the Tonelli theorem, and compute the sections.",
+      "detail": "The function $1_A$ is nonnegative and measurable, and both measures are $\\sigma$-finite. So Tonelli gives $\\int\\nu(A_\\omega)d\\mu=\\int\\mu(A^t)d\\nu$ in $[0,\\infty]$. The section $A_\\omega$ is $(0,f(\\omega))$, so $\\nu(A_\\omega)=G(f(\\omega))$. The section $A^t$ is $\\{f>t\\}$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:special",
+      "slogan": "Derive the special cases, including the sum for integer-valued variables.",
+      "detail": "For $g=1$, $G(x)=x$. For $g=pt^{p-1}$, $G(x)=x^p$. For $N$ integer valued, $P(N>t)=P(N>k)$ on $[k,k+1)$, so the integral of the tail is $\\sum_{k\\ge0}P(N>k)$, which also equals $\\sum_{k\\ge1}P(N\\ge k)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:layer",
+      "s:tonelli"
+     ],
+     [
+      "s:measure",
+      "s:tonelli"
+     ],
+     [
+      "s:region",
+      "s:tonelli"
+     ],
+     [
+      "s:tonelli",
+      "s:special"
+     ]
+    ],
+    "conclusion": "s:special",
+    "concepts": {
+     "c:sigma-finite-measure": "Sigma-finiteness of both measures allows the Tonelli swap.",
+     "c:expected-value": "The tail sum is the expected value of an integer-valued variable."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-gaussian-convolution-variance-addition",
+  "statement": "Let $\\varphi_{m,v}(x)=(2\\pi v)^{-1/2}e^{-(x-m)^2/(2v)}$ for $v>0$. Then the [convolution](c:convolution) $\\varphi_{m_1,v_1}*\\varphi_{m_2,v_2}=\\varphi_{m_1+m_2,v_1+v_2}$. So independent $X\\sim N(m_1,v_1)$ and $Y\\sim N(m_2,v_2)$ give $X+Y\\sim N(m_1+m_2,v_1+v_2)$. The mean of $n$ independent copies of $N(m,v)$ has law $N(m,v/n)$.",
+  "hypotheses": [
+   {
+    "id": "h:var",
+    "text": "The variances $v_1,v_2$ are positive. The case of zero variance is a point mass and a translation.",
+    "concept": null
+   },
+   {
+    "id": "h:ind",
+    "text": "The variables are [independent](c:independent-random-variables). For dependent [normal](c:normal-distribution) variables, the variance of the sum has a covariance term.",
+    "concept": "c:independent-random-variables"
+   }
+  ],
+  "conclusion": "The density of $X+Y$ is $\\varphi_{m_1+m_2,v_1+v_2}$. The sample mean of $n$ independent copies of $N(m,v)$ has law $N(m,v/n)$.",
+  "formal": {
+   "decl": "gaussianReal_conv_gaussianReal",
+   "difference": "The declaration states the same convolution identity for Gaussian measures in Mathlib form. The sample mean law is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Complete the square",
+    "slogan": "Write the density of the sum as a convolution, complete the square in the exponent, and integrate a Gaussian.",
+    "scope": "The whole statement. If $v_2=0$, the variable $Y$ is a constant and the sum is a translate of $X$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:change-of-variables",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:var",
+      "why": "Positive variances make both densities defined and the exponents negative definite, so the square can be completed.",
+      "steps": [
+       "s:square",
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:ind",
+      "why": "Independence makes the joint density a product, so the sum has the convolution density.",
+      "steps": [
+       "s:density"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:density",
+      "slogan": "Write the density of an independent sum as a convolution.",
+      "detail": "For independent $X,Y$ with densities $f,g$ and a Borel set $B$, $P(X+Y\\in B)=\\iint1_B(x+y)f(x)g(y)\\,dx\\,dy$. The change $y=z-x$ and the Tonelli theorem give $\\int_B(\\int f(x)g(z-x)dx)\\,dz$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Reduce to mean zero by translation.",
+      "detail": "Translation by $m_1$ in $x$ and $m_2$ in $y$ gives $(\\varphi_{m_1,v_1}*\\varphi_{m_2,v_2})(z)=(\\varphi_{0,v_1}*\\varphi_{0,v_2})(z-m_1-m_2)$. So it is enough to treat $m_1=m_2=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:square",
+      "slogan": "Complete the square in the exponent of the product.",
+      "detail": "Put $a=1/(2v_1)$ and $b=1/(2v_2)$. For all $x,z$, $ax^2+b(z-x)^2=(a+b)(x-bz/(a+b))^2+\\frac{ab}{a+b}z^2$, and $\\frac{ab}{a+b}=\\frac1{2(v_1+v_2)}$. So the exponent has one shifted square and one term in $z$ only.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the shifted Gaussian and collect the constants.",
+      "detail": "The integral $\\int e^{-(a+b)(x-c)^2}dx$ equals $\\sqrt{\\pi/(a+b)}$ for every $c$, by translation invariance and the Gaussian integral. The prefactor $(2\\pi)^{-1}(v_1v_2)^{-1/2}$ times $\\sqrt{2\\pi v_1v_2/(v_1+v_2)}$ is $(2\\pi(v_1+v_2))^{-1/2}$. With $e^{-z^2/(2(v_1+v_2))}$ this is $\\varphi_{0,v_1+v_2}(z)$.",
+      "uses": []
+     },
+     {
+      "id": "s:mean",
+      "slogan": "Derive the zero-variance case and the sample mean law.",
+      "detail": "If $v_2=0$, then $Y=m_2$ almost surely and $X+Y$ is a translate of $X$. By induction, $S_n$ has law $N(nm,nv)$. Scaling by $1/n$ uses $aN(m,v)=N(am,a^2v)$, so the mean has law $N(m,v/n)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:density",
+      "s:shift"
+     ],
+     [
+      "s:shift",
+      "s:square"
+     ],
+     [
+      "s:square",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:mean"
+     ]
+    ],
+    "conclusion": "s:mean",
+    "concepts": {
+     "c:convolution": "The density of the sum is the convolution of the two densities.",
+     "c:independent-random-variables": "Independence makes the joint density a product.",
+     "c:normal-distribution": "The law of the sum is again normal."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-polynomial-spectral-mapping-banach",
+  "statement": "Let $A$ be a complex unital [Banach algebra](c:banach-algebra) with $\\|1\\|=1$ and $A\\ne\\{0\\}$. Let $a\\in A$ and let $p$ be a complex polynomial. Then the [spectrum](c:spectrum-of-an-operator) obeys $\\sigma(p(a))=p(\\sigma(a))$. So the [spectral radius](c:spectral-radius) is $r(p(a))=\\max\\{|p(\\lambda)|:\\lambda\\in\\sigma(a)\\}$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The scalar field is $\\mathbb C$. Over $\\mathbb R$ only one inclusion survives.",
+    "concept": null
+   },
+   {
+    "id": "h:ba",
+    "text": "The algebra $A$ is a complete [Banach algebra](c:banach-algebra) with $\\|1\\|=1$ and at least two elements.",
+    "concept": "c:banach-algebra"
+   },
+   {
+    "id": "h:poly",
+    "text": "The polynomial $p$ may be constant. Then $p(a)=c\\cdot1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\sigma(p(a))=p(\\sigma(a))$ and $r(p(a))=\\max_{\\lambda\\in\\sigma(a)}|p(\\lambda)|$.",
+  "formal": {
+   "decl": "map_polynomial_aeval_of_nonempty",
+   "difference": "The declaration states a related, smaller fact: the spectral mapping for a polynomial when the spectrum is nonempty. The spectral radius formula is not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Factor and test invertibility",
+    "slogan": "Factor $p(t)-\\mu$ into linear terms, test invertibility of each commuting factor, and take the maximum on a compact set.",
+    "scope": "The whole statement, with a separate case for constant $p$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:case-analysis",
+     "m:compactness-extremum"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Over $\\mathbb C$ every nonconstant polynomial factors into linear terms.",
+      "steps": [
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:ba",
+      "why": "Completeness gives a nonempty compact spectrum, which handles the constant case and the maximum.",
+      "steps": [
+       "s:constant",
+       "s:radius"
+      ]
+     },
+     {
+      "h": "h:poly",
+      "why": "The case split on constant and nonconstant polynomials follows from the degree of $p$.",
+      "steps": [
+       "s:factor",
+       "s:constant"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Factor $p(t)-\\mu$ into linear factors of $a$ that commute.",
+      "detail": "Let $p$ have degree $m\\ge1$. Then $p(t)-\\mu=c(t-\\alpha_1)\\cdots(t-\\alpha_m)$ with $c\\ne0$, and the $\\alpha_i$ are exactly the $\\lambda$ with $p(\\lambda)=\\mu$. So $p(a)-\\mu=c(a-\\alpha_1)\\cdots(a-\\alpha_m)$, and the factors commute because they are polynomials in $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:commuting",
+      "slogan": "Show that a product of commuting elements is invertible if and only if every factor is.",
+      "detail": "A product of invertible commuting elements is invertible. Conversely, if the product $\\Pi$ is invertible, $\\Pi^{-1}$ commutes with each factor $x_i$. So $x_i$ has the inverse $(\\prod_{j\\ne i}x_j)\\Pi^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonconstant",
+      "slogan": "Prove the spectral mapping for nonconstant $p$.",
+      "detail": "The two steps above show that $\\mu\\in\\sigma(p(a))$ if and only if some $\\alpha_i\\in\\sigma(a)$. This holds if and only if some $\\lambda\\in\\sigma(a)$ has $p(\\lambda)=\\mu$. So $\\sigma(p(a))=p(\\sigma(a))$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Prove the spectral mapping for constant $p$.",
+      "detail": "If $p=c$, then $c\\cdot1-\\mu$ is invertible for $\\mu\\ne c$ and zero for $\\mu=c$. So $\\sigma(p(a))=\\{c\\}$. The spectrum $\\sigma(a)$ is nonempty, so $p(\\sigma(a))=\\{c\\}$.",
+      "uses": [
+       "nm:technique-spectrum-nonempty-compact-resolvent"
+      ]
+     },
+     {
+      "id": "s:radius",
+      "slogan": "Take the maximum of $|p|$ over the compact spectrum to get the [spectral radius](c:spectral-radius).",
+      "detail": "The set $\\sigma(a)$ is compact and $p$ is continuous, so $|p|$ attains a maximum on it. By the spectral mapping, the largest modulus of a point of $\\sigma(p(a))$ is this maximum. That is $r(p(a))$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:nonconstant"
+     ],
+     [
+      "s:commuting",
+      "s:nonconstant"
+     ],
+     [
+      "s:nonconstant",
+      "s:radius"
+     ],
+     [
+      "s:constant",
+      "s:radius"
+     ]
+    ],
+    "conclusion": "s:radius",
+    "concepts": {
+     "c:banach-algebra": "Completeness gives the nonempty compact spectrum that the proof uses.",
+     "c:spectrum-of-an-operator": "The theorem describes how the spectrum moves under a polynomial.",
+     "c:spectral-radius": "The spectral radius is the largest modulus on the spectrum."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-heisenberg-uncertainty-fourier",
+  "statement": "Let $f$ be a [Schwartz function](c:schwartz-function) on $\\mathbb R$ with [Fourier transform](c:fourier-transform) $\\hat f(\\xi)=\\int f(x)e^{-2\\pi ix\\xi}dx$. Then $\\|f\\|_2^2\\le4\\pi\\|xf\\|_2\\|\\xi\\hat f\\|_2$. Equivalently, $\\|f\\|_2^2\\le2\\|xf\\|_2\\|f'\\|_2$. Equality holds if and only if $f(x)=Ce^{-ax^2}$ with $C\\in\\mathbb C$ and $a>0$.",
+  "hypotheses": [
+   {
+    "id": "h:sch",
+    "text": "The function $f$ is smooth, and $f$ with all derivatives decays faster than any polynomial.",
+    "concept": "c:schwartz-function"
+   },
+   {
+    "id": "h:ft",
+    "text": "The Fourier transform uses the exponent $-2\\pi ix\\xi$, so Plancherel holds with constant $1$.",
+    "concept": "c:fourier-transform"
+   },
+   {
+    "id": "h:norm",
+    "text": "The norms are $L^2$ norms on $\\mathbb R$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\|f\\|_2^2\\le4\\pi\\|xf\\|_2\\|\\xi\\hat f\\|_2$, with equality exactly for $Ce^{-ax^2}$.",
+  "formal": {
+   "decl": "norm_fourier_eq",
+   "difference": "The declaration states a related, smaller fact about the norm of the Fourier transform. The uncertainty inequality and its equality case are not in it."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Integrate by parts and use Plancherel",
+    "slogan": "Integrate $|f|^2$ by parts, apply Cauchy-Schwarz, and move the derivative to the Fourier side with Plancherel.",
+    "scope": "The whole statement for Schwartz functions, including the equality case.",
+    "mechanisms": [
+     "m:cauchy-schwarz",
+     "m:algebraic-identity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:sch",
+      "why": "Rapid decay kills the boundary term and makes every integral finite.",
+      "steps": [
+       "s:parts"
+      ]
+     },
+     {
+      "h": "h:ft",
+      "why": "The normalized transform turns $f'$ into $2\\pi i\\xi\\hat f$ and keeps the $L^2$ norm.",
+      "steps": [
+       "s:plancherel"
+      ]
+     },
+     {
+      "h": "h:norm",
+      "why": "The $L^2$ norms are the quantities in Cauchy-Schwarz and Plancherel.",
+      "steps": [
+       "s:cs",
+       "s:plancherel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:parts",
+      "slogan": "Integrate $|f|^2$ by parts to relate it to $xf'\\bar f$.",
+      "detail": "The function $|f|^2$ has derivative $2\\operatorname{Re}(f'\\bar f)$, and $x|f|^2\\to0$ at infinity. So $\\int|f|^2dx=-\\int x(|f|^2)'dx=-2\\operatorname{Re}\\int xf'\\bar f\\,dx$.",
+      "uses": []
+     },
+     {
+      "id": "s:cs",
+      "slogan": "Bound the integral by the Cauchy-Schwarz inequality.",
+      "detail": "We have $\\|f\\|_2^2=-2\\operatorname{Re}\\int(x\\bar f)f'\\le2|\\int(x\\bar f)f'|\\le2\\|xf\\|_2\\|f'\\|_2$. This is the second form of the inequality.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:plancherel",
+      "slogan": "Move the derivative to the Fourier side with the Plancherel theorem.",
+      "detail": "The transform of $f'$ is $2\\pi i\\xi\\hat f(\\xi)$ by the derivative rule. Plancherel gives $\\|f'\\|_2=2\\pi\\|\\xi\\hat f\\|_2$. Put this into the bound: $\\|f\\|_2^2\\le4\\pi\\|xf\\|_2\\|\\xi\\hat f\\|_2$.",
+      "uses": [
+       "wd:Q2096184",
+       "nm:technique-fourier-derivative-multiplier-decay"
+      ]
+     },
+     {
+      "id": "s:necessity",
+      "slogan": "Show that equality forces a Gaussian.",
+      "detail": "Equality needs equality in both steps of Cauchy-Schwarz. So $f'=\\lambda xf$ almost everywhere, and $\\int xf'\\bar f=\\lambda\\int x^2|f|^2$ must be real and negative. So $\\lambda=-2a$ with $a>0$, and solving gives $f=Ce^{-ax^2}$.",
+      "uses": []
+     },
+     {
+      "id": "s:sufficiency",
+      "slogan": "Check that a Gaussian gives equality.",
+      "detail": "For $f=e^{-ax^2}$, $f'=-2axf$ is a real multiple of $xf$. So Cauchy-Schwarz and the real part step are both equalities, and equality holds.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the inequality and its equality case.",
+      "detail": "The parts step and the Cauchy-Schwarz step prove the second form. The Plancherel step proves the Fourier form. The necessity and sufficiency steps prove that equality holds exactly for the Gaussians.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:parts",
+      "s:cs"
+     ],
+     [
+      "s:cs",
+      "s:plancherel"
+     ],
+     [
+      "s:cs",
+      "s:necessity"
+     ],
+     [
+      "s:necessity",
+      "s:sufficiency"
+     ],
+     [
+      "s:plancherel",
+      "s:collect"
+     ],
+     [
+      "s:sufficiency",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:schwartz-function": "Rapid decay removes the boundary term and makes the transform well defined.",
+     "c:fourier-transform": "The transform converts the derivative of $f$ into multiplication by $\\xi$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]

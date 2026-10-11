@@ -1,0 +1,808 @@
+[
+ {
+  "id": "nm:technique-regular-lindelof-spaces-are-normal",
+  "statement": "Every [regular](c:regular-space) [Lindelöf space](c:lindelof-space) is [normal](c:normal-space). Any two disjoint [closed](c:closed-set) sets have disjoint open neighborhoods.",
+  "hypotheses": [
+   {
+    "id": "h:regular",
+    "text": "The space $X$ is [regular](c:regular-space): a point and a closed set that misses it have disjoint open neighborhoods.",
+    "concept": "c:regular-space"
+   },
+   {
+    "id": "h:lindelof",
+    "text": "The space $X$ is a [Lindelöf space](c:lindelof-space): every open cover has a countable subcover.",
+    "concept": "c:lindelof-space"
+   }
+  ],
+  "conclusion": "The space $X$ is [normal](c:normal-space): disjoint closed sets $A$ and $B$ have disjoint open neighborhoods.",
+  "formal": {
+   "decl": "IsClosed.HasSeparatingCover",
+   "difference": "The declaration states that two disjoint closed sets of a regular Lindelöf space have a separating cover. This is the key step of the proof, a related and smaller fact."
+  },
+  "proofs": [
+   {
+    "id": "separating-covers",
+    "name": "Countable separating covers",
+    "slogan": "Cover each closed set by countably many open sets whose closures miss the other set, then trim the overlaps.",
+    "scope": "The whole theorem. No $T_1$ or Hausdorff assumption is needed. A regular second countable space is Lindelöf, so it is normal too.",
+    "mechanisms": [
+     "m:local-to-global",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:regular",
+      "why": "Regularity gives, for each point of $A$, an open neighborhood whose closure misses $B$.",
+      "steps": [
+       "s:cover"
+      ]
+     },
+     {
+      "h": "h:lindelof",
+      "why": "The Lindelöf property reduces the cover of the closed set $A$ to a countable one.",
+      "steps": [
+       "s:countable"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cover",
+      "slogan": "Cover the closed set $A$ by open sets whose closures miss $B$.",
+      "detail": "Let $A$ and $B$ be disjoint [closed](c:closed-set) sets. For each $a \\in A$, regularity gives an open $U_a \\ni a$ with $\\overline{U_a} \\cap B = \\emptyset$. These sets and $X \\setminus A$ form an [open cover](c:open-cover) of $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:countable",
+      "slogan": "Select countable families of open sets that cover $A$ and $B$.",
+      "detail": "A countable subcover gives open sets $U_0, U_1, \\dots$ with $A \\subseteq \\bigcup U_n$ and $\\overline{U_n} \\cap B = \\emptyset$; drop $X \\setminus A$, which misses $A$. The same argument gives open sets $V_n$ with $B \\subseteq \\bigcup V_n$ and $\\overline{V_n} \\cap A = \\emptyset$.",
+      "uses": []
+     },
+     {
+      "id": "s:trim",
+      "slogan": "Trim each set by the closures of the earlier sets of the other family.",
+      "detail": "Put $U'_n = U_n \\setminus \\bigcup_{k \\le n} \\overline{V_k}$ and $V'_n = V_n \\setminus \\bigcup_{k \\le n} \\overline{U_k}$. A finite union of closed sets is closed, so these sets are open.",
+      "uses": []
+     },
+     {
+      "id": "s:contain",
+      "slogan": "Show that the trimmed unions still contain $A$ and $B$.",
+      "detail": "Put $U = \\bigcup U'_n$ and $V = \\bigcup V'_n$. A point $a \\in A$ lies in some $U_n$ and in no $\\overline{V_k}$, because $\\overline{V_k} \\cap A = \\emptyset$. So $a \\in U'_n$. In the same way $B \\subseteq V$.",
+      "uses": []
+     },
+     {
+      "id": "s:disjoint",
+      "slogan": "Show that the open sets $U$ and $V$ are disjoint.",
+      "detail": "Suppose $x \\in U'_n \\cap V'_m$. If $n \\le m$, then $x \\in U_n \\subseteq \\overline{U_n}$, but $V'_m$ excludes $\\overline{U_k}$ for every $k \\le m$, including $k = n$. This is a contradiction. If $m \\le n$, swap the roles. So $U \\cap V = \\emptyset$, and $X$ is [normal](c:normal-space).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cover",
+      "s:countable"
+     ],
+     [
+      "s:countable",
+      "s:trim"
+     ],
+     [
+      "s:trim",
+      "s:contain"
+     ],
+     [
+      "s:trim",
+      "s:disjoint"
+     ],
+     [
+      "s:contain",
+      "s:disjoint"
+     ]
+    ],
+    "conclusion": "s:disjoint",
+    "concepts": {
+     "c:regular-space": "Regularity separates each point of $A$ from $B$ by a closure.",
+     "c:lindelof-space": "The Lindelöf property makes the cover of $A$ countable.",
+     "c:normal-space": "Normality is the property that the proof builds.",
+     "c:closed-set": "The closed sets $A$ and $B$ are the sets to separate, and closures are closed.",
+     "c:open-cover": "The cover by the sets $U_a$ and $X \\setminus A$ is the input to the Lindelöf property."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-open-subsets-of-polish-spaces-are-polish",
+  "statement": "Let $X$ be a separable [complete metric space](c:complete-metric-space) with metric $d$. Let $U \\neq X$ be open, $\\delta(x) = \\inf\\{d(x,z) : z \\notin U\\}$, and $d'(x,y) = d(x,y) + |1/\\delta(x) - 1/\\delta(y)|$ on $U$. Then $d'$ is a metric that induces the subspace topology, and $(U, d')$ is complete. So $U$ is [Polish](c:polish-space).",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The metric space $(X, d)$ is [complete](c:complete-metric-space).",
+    "concept": "c:complete-metric-space"
+   },
+   {
+    "id": "h:separable",
+    "text": "The space $X$ is [separable](c:separable-metric-space).",
+    "concept": "c:separable-metric-space"
+   },
+   {
+    "id": "h:open",
+    "text": "The set $U \\neq X$ is open, so its complement is closed and nonempty.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The function $d'$ is a complete metric on $U$ that induces the subspace topology, so $U$ is separable and completely metrizable.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "blow-up-metric",
+    "name": "Metric that blows up at the boundary",
+    "slogan": "Add the term $|1/\\delta(x) - 1/\\delta(y)|$ to the metric, so Cauchy sequences stay away from the boundary.",
+    "scope": "The whole theorem for $U \\neq X$; for $U = X$ there is nothing to prove. The old metric $d$ on $U$ is not complete in general.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:triangle-inequality",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "The condition $x \\in U$ gives $\\delta(x) > 0$, so $d'$ is finite, and the complement of $U$ is closed.",
+      "steps": [
+       "s:metric",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness of $X$ gives a limit point of a $d'$-Cauchy sequence.",
+      "steps": [
+       "s:cauchy"
+      ]
+     },
+     {
+      "h": "h:separable",
+      "why": "Separability of $X$ passes to the subspace $U$.",
+      "steps": [
+       "s:separable"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:metric",
+      "slogan": "Check that $d'$ is a metric on $U$.",
+      "detail": "For $x, y \\in U$ we have $\\delta(x) > 0$, so $d'$ is finite and symmetric. The triangle inequality holds because $d$ and $(x,y) \\mapsto |1/\\delta(x) - 1/\\delta(y)|$ both satisfy it. If $d'(x,y) = 0$, then $d(x,y) = 0$, so $x = y$.",
+      "uses": []
+     },
+     {
+      "id": "s:topology",
+      "slogan": "Show that $d$ and $d'$ induce the same topology on $U$.",
+      "detail": "Since $d \\le d'$, every $d'$-ball lies in the $d$-ball of the same radius, so every $d$-open set is $d'$-open. Conversely fix $x \\in U$ and $\\varepsilon > 0$. The map $y \\mapsto 1/\\delta(y)$ is continuous at $x$, so a small $r$ gives $d(x,y) < \\varepsilon/2$ and $|1/\\delta(x) - 1/\\delta(y)| < \\varepsilon/2$ for $d(x,y) < r$. Then $d'(x,y) < \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Bound a $d'$-Cauchy sequence away from the boundary.",
+      "detail": "Let $(x_n)$ be $d'$-Cauchy in $U$. Since $d \\le d'$, it is $d$-Cauchy, so it converges to some $x \\in X$ by completeness. The sequence $(1/\\delta(x_n))$ is Cauchy in $\\mathbb{R}$, because $|1/\\delta(x_n) - 1/\\delta(x_m)| \\le d'(x_n, x_m)$. So it is bounded by some $C > 0$, and $\\delta(x_n) \\ge 1/C$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Show that the limit lies in $U$ and is a $d'$-limit.",
+      "detail": "The function $\\delta$ is continuous on $X$, so $\\delta(x) = \\lim \\delta(x_n) \\ge 1/C > 0$. The complement of $U$ is closed, so $\\delta(x) > 0$ gives $x \\in U$. By the topology step, $x_n \\to x$ in $d$ gives $d'(x_n, x) \\to 0$. So $(U, d')$ is complete.",
+      "uses": []
+     },
+     {
+      "id": "s:separable",
+      "slogan": "Pass separability to $U$ and conclude that $U$ is Polish.",
+      "detail": "A countable base of $X$ restricts to a countable base of $U$, and one point from each nonempty member gives a countable dense subset. The topology of $U$ is the same for $d$ and $d'$, so $U$ is separable and completely metrizable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:metric",
+      "s:topology"
+     ],
+     [
+      "s:metric",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ],
+     [
+      "s:topology",
+      "s:limit"
+     ],
+     [
+      "s:topology",
+      "s:separable"
+     ],
+     [
+      "s:limit",
+      "s:separable"
+     ]
+    ],
+    "conclusion": "s:separable",
+    "concepts": {
+     "c:complete-metric-space": "Completeness of $X$ gives the limit of the Cauchy sequence.",
+     "c:separable-metric-space": "Separability of $X$ gives a countable dense subset of $U$.",
+     "c:polish-space": "The proof shows that $U$ is separable and completely metrizable."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-stereographic-projection-charts-sphere",
+  "statement": "Let $E$ be a real [inner product space](c:inner-product-space), $v$ a unit vector, $H = v^\\perp$ and $S$ the unit [sphere](c:sphere). Then $\\sigma_v(x) = 2(x - \\langle x,v\\rangle v)/(1 - \\langle x,v\\rangle)$ is a [homeomorphism](c:homeomorphism) from $S \\setminus \\{v\\}$ onto $H$, with inverse $\\tau_v(w) = ((|w|^2-4)v + 4w)/(|w|^2+4)$. The transition map from $\\sigma_v$ to $\\sigma_{-v}$ is $w \\mapsto 4w/|w|^2$.",
+  "hypotheses": [
+   {
+    "id": "h:inner",
+    "text": "The space $E$ is a real [inner product space](c:inner-product-space).",
+    "concept": "c:inner-product-space"
+   },
+   {
+    "id": "h:unit",
+    "text": "The vector $v$ is a unit vector and $H$ is its orthogonal complement.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The map $\\sigma_v$ is a homeomorphism with inverse $\\tau_v$, the transition map on $H \\setminus \\{0\\}$ is $w \\mapsto 4w/|w|^2$, and the two charts form a smooth [atlas](c:atlas) of $S$.",
+  "formal": {
+   "decl": "stereo_left_inv",
+   "difference": "The declaration states one half of the statement: the inverse map composed with the projection is the identity on the sphere minus $v$. It does not state the transition map."
+  },
+  "proofs": [
+   {
+    "id": "direct-computation",
+    "name": "Direct computation",
+    "slogan": "Check by computation that $\\tau_v$ and $\\sigma_v$ are inverse maps, then compute the transition map.",
+    "scope": "The whole theorem, for any dimension of $E$. The smooth atlas claim for finite dimension $n+1$ shows that $S$ is a smooth $n$-manifold.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:coordinates",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:inner",
+      "why": "The inner product gives the formulas, the Pythagorean identity and continuity.",
+      "steps": [
+       "s:image",
+       "s:left",
+       "s:right",
+       "s:homeo"
+      ]
+     },
+     {
+      "h": "h:unit",
+      "why": "The unit vector $v$ makes $H$ a complement of $v$ and gives $|\\tau_v(w)|^2 = 1$.",
+      "steps": [
+       "s:image",
+       "s:transition"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:image",
+      "slogan": "Show that $\\tau_v$ maps $H$ into $S \\setminus \\{v\\}$.",
+      "detail": "Put $t = (|w|^2-4)/(|w|^2+4)$ and $u = 4/(|w|^2+4)$, so $\\tau_v(w) = tv + uw$ with $w \\perp v$. Then $|\\tau_v(w)|^2 = t^2 + u^2|w|^2 = ((|w|^2-4)^2 + 16|w|^2)/(|w|^2+4)^2 = 1$. The $v$-coefficient is $t < 1$, so $\\tau_v(w) \\neq v$.",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that $\\sigma_v \\circ \\tau_v$ is the identity on $H$.",
+      "detail": "We have $\\langle \\tau_v(w), v\\rangle = t$ and $1 - t = 8/(|w|^2+4)$. The $H$-component of $\\tau_v(w)$ is $uw$. So $\\sigma_v(\\tau_v(w)) = 2uw/(1-t) = w$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Show that $\\tau_v \\circ \\sigma_v$ is the identity on $S \\setminus \\{v\\}$.",
+      "detail": "Let $x \\in S \\setminus \\{v\\}$, $a = \\langle x, v\\rangle < 1$ and $w = \\sigma_v(x)$. Since $|x| = 1$, $|x - av|^2 = 1 - a^2$, so $|w|^2 = 4(1+a)/(1-a)$. Then $t = a$ and $u = (1-a)/2$, so $\\tau_v(w) = av + (x - av) = x$.",
+      "uses": []
+     },
+     {
+      "id": "s:homeo",
+      "slogan": "Conclude that $\\sigma_v$ is a homeomorphism onto $H$.",
+      "detail": "Both maps are given by formulas that use inner products, norms, sums and quotients. Their denominators $1 - \\langle x,v\\rangle > 0$ and $|w|^2+4 > 0$ never vanish. So both maps are continuous and inverse, and $\\sigma_v$ is a [homeomorphism](c:homeomorphism).",
+      "uses": []
+     },
+     {
+      "id": "s:transition",
+      "slogan": "Compute the transition map to the chart at $-v$.",
+      "detail": "The overlap is $S \\setminus \\{v,-v\\}$, which $\\sigma_v$ maps onto $H \\setminus \\{0\\}$ because $\\tau_v(0) = -v$. For $x = \\tau_v(w)$ with $w \\neq 0$, we have $a = t$ and $1 + t = 2|w|^2/(|w|^2+4)$. The $H$-component of $x$ is $4w/(|w|^2+4)$. So $\\sigma_{-v}(x) = 2 \\cdot (4w/(|w|^2+4)) / (1+t) = 4w/|w|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:atlas",
+      "slogan": "Show that the two charts form a smooth [atlas](c:atlas).",
+      "detail": "The map $w \\mapsto 4w/|w|^2$ is smooth on $H \\setminus \\{0\\}$ and is its own inverse. So both transition maps are smooth, and the charts $\\sigma_v$ and $\\sigma_{-v}$, which cover $S$, form a smooth atlas.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:image",
+      "s:left"
+     ],
+     [
+      "s:left",
+      "s:homeo"
+     ],
+     [
+      "s:right",
+      "s:homeo"
+     ],
+     [
+      "s:homeo",
+      "s:transition"
+     ],
+     [
+      "s:transition",
+      "s:atlas"
+     ]
+    ],
+    "conclusion": "s:atlas",
+    "concepts": {
+     "c:inner-product-space": "The inner product defines $\\sigma_v$, $H$ and the norms in the computation.",
+     "c:sphere": "The sphere is the space that the two charts cover.",
+     "c:homeomorphism": "The two inverse continuous maps make $\\sigma_v$ a homeomorphism.",
+     "c:atlas": "Two charts with smooth transition maps form a smooth atlas."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-exponential-law-compact-open-topology",
+  "statement": "Let $X$, $Y$, $Z$ be topological spaces and give $C(Y,Z)$ the [compact-open topology](c:compact-open-topology). (a) If $F\\colon X \\times Y \\to Z$ is continuous, then $x \\mapsto F(x,\\cdot)$ is continuous. (b) If $Y$ is [locally compact](c:locally-compact-space) and $f\\colon X \\to C(Y,Z)$ is continuous, then $(x,y) \\mapsto f(x)(y)$ is continuous.",
+  "hypotheses": [
+   {
+    "id": "h:spaces",
+    "text": "The sets $X$, $Y$, $Z$ are topological spaces, and $C(Y,Z)$ has the [compact-open topology](c:compact-open-topology).",
+    "concept": "c:compact-open-topology"
+   },
+   {
+    "id": "h:locally-compact",
+    "text": "For part (b), the space $Y$ is [locally compact](c:locally-compact-space): every point has a compact neighborhood inside each of its neighborhoods.",
+    "concept": "c:locally-compact-space"
+   }
+  ],
+  "conclusion": "For locally compact $Y$, continuous maps $X \\times Y \\to Z$ correspond to continuous maps $X \\to C(Y,Z)$ by [currying](c:currying).",
+  "formal": {
+   "decl": "continuous_of_continuous_uncurry",
+   "difference": "The declaration states part (a) only: a jointly continuous map curries to a continuous map into the function space. It does not state part (b)."
+  },
+  "proofs": [
+   {
+    "id": "tube-and-evaluation",
+    "name": "Tube lemma and evaluation map",
+    "slogan": "Prove part (a) with the tube lemma, and part (b) by the continuity of the evaluation map.",
+    "scope": "Both parts. Part (a) needs no assumption on the spaces. The proof gives a bijection of sets of continuous maps, not a homeomorphism of function spaces.",
+    "mechanisms": [
+     "m:local-to-global",
+     "m:finite-subcover",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:spaces",
+      "why": "The sets $V(K,U)$ generate the topology of $C(Y,Z)$, and part (a) holds for all spaces.",
+      "steps": [
+       "s:subbasic",
+       "s:tube"
+      ]
+     },
+     {
+      "h": "h:locally-compact",
+      "why": "A compact neighborhood $K$ of $y_0$ inside $g_0^{-1}(U)$ makes the evaluation map continuous.",
+      "steps": [
+       "s:neighborhood"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subbasic",
+      "slogan": "Reduce continuity of $f$ to preimages of subbasic sets $V(K,U)$.",
+      "detail": "The topology of $C(Y,Z)$ is generated by the sets $V(K,U)$ of maps that send the compact set $K$ into the open set $U$. So $f$ is continuous if each $f^{-1}(V(K,U))$ is open.",
+      "uses": []
+     },
+     {
+      "id": "s:tube",
+      "slogan": "Prove part (a) with the tube lemma.",
+      "detail": "Let $f(x) = F(x,\\cdot)$. Then $f^{-1}(V(K,U)) = \\{x : F(\\{x\\} \\times K) \\subseteq U\\}$. Let $x_0$ be in it. The open set $W = F^{-1}(U)$ contains $\\{x_0\\} \\times K$. The tube lemma gives an open $A \\ni x_0$ with $A \\times K \\subseteq W$, so $A \\subseteq f^{-1}(V(K,U))$.",
+      "uses": [
+       "nl:17327"
+      ]
+     },
+     {
+      "id": "s:neighborhood",
+      "slogan": "Choose a compact neighborhood for part (b).",
+      "detail": "Let $(g_0, y_0) \\in C(Y,Z) \\times Y$ and let $U$ be open with $g_0(y_0) \\in U$. Then $g_0^{-1}(U)$ is an open neighborhood of $y_0$. Local compactness gives a compact $K$ with $y_0 \\in \\operatorname{int} K$ and $K \\subseteq g_0^{-1}(U)$.",
+      "uses": []
+     },
+     {
+      "id": "s:eval",
+      "slogan": "Show that the evaluation map is continuous.",
+      "detail": "The set $V(K,U) \\times \\operatorname{int} K$ is an open neighborhood of $(g_0, y_0)$. For $(g,y)$ in it, $g(y) \\in g(K) \\subseteq U$. So the [evaluation map](c:evaluation-map) $(g,y) \\mapsto g(y)$ is continuous at $(g_0, y_0)$.",
+      "uses": []
+     },
+     {
+      "id": "s:compose",
+      "slogan": "Write the uncurried map as a composite of continuous maps.",
+      "detail": "We have $F(x,y) = f(x)(y) = \\mathrm{ev}(f(x), y) = (\\mathrm{ev} \\circ (f \\times \\mathrm{id}))(x,y)$. The map $f \\times \\mathrm{id}$ and the evaluation map are continuous, so $F$ is continuous. This proves part (b).",
+      "uses": []
+     },
+     {
+      "id": "s:correspond",
+      "slogan": "Join the two parts into a correspondence of continuous maps.",
+      "detail": "Currying and uncurrying are inverse bijections between all maps $X \\times Y \\to Z$ and all maps $X \\to C(Y,Z)$. Part (a) shows that currying keeps continuity, and part (b) shows that uncurrying keeps it when $Y$ is locally compact.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:subbasic",
+      "s:tube"
+     ],
+     [
+      "s:tube",
+      "s:correspond"
+     ],
+     [
+      "s:neighborhood",
+      "s:eval"
+     ],
+     [
+      "s:eval",
+      "s:compose"
+     ],
+     [
+      "s:compose",
+      "s:correspond"
+     ]
+    ],
+    "conclusion": "s:correspond",
+    "concepts": {
+     "c:compact-open-topology": "Its subbasic sets $V(K,U)$ are the sets whose preimages the proof studies.",
+     "c:locally-compact-space": "Local compactness supplies the compact neighborhood $K$.",
+     "c:currying": "Currying is the correspondence that the theorem proves.",
+     "c:evaluation-map": "Its continuity turns a continuous $f$ into a continuous $F$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-karamata-majorization-inequality",
+  "statement": "Let $f$ be a [convex function](c:convex-function) on an interval $I$. Let $x_1 \\ge \\dots \\ge x_n$ and $y_1 \\ge \\dots \\ge y_n$ lie in $I$, with $\\sum_{i \\le k} x_i \\le \\sum_{i \\le k} y_i$ for $k < n$ and equal total sums. Then $\\sum f(x_i) \\le \\sum f(y_i)$. If $f$ is strictly convex, equality holds only if $x_i = y_i$ for all $i$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The function $f$ is a [convex function](c:convex-function) on the interval $I$; the endpoints may belong to $I$.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:sorted",
+    "text": "Both lists are sorted in decreasing order and lie in $I$.",
+    "concept": null
+   },
+   {
+    "id": "h:partial",
+    "text": "The partial sums satisfy $\\sum_{i \\le k} x_i \\le \\sum_{i \\le k} y_i$ for $k = 1, \\dots, n-1$.",
+    "concept": null
+   },
+   {
+    "id": "h:total",
+    "text": "The total sums are equal.",
+    "concept": null
+   },
+   {
+    "id": "h:strict",
+    "text": "For the equality case, $f$ is strictly convex.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The inequality $\\sum f(x_i) \\le \\sum f(y_i)$ holds, and for strictly convex $f$ equality implies $x = y$.",
+  "formal": {
+   "decl": "ConvexOn.slope_mono_adjacent",
+   "difference": "The declaration states a related and smaller fact: the slopes of a convex function increase over three ordered points. It is the only convexity fact that the proof uses."
+  },
+  "proofs": [
+   {
+    "id": "abel-summation",
+    "name": "Chord slopes and Abel summation",
+    "slogan": "Write the difference of the two sums with chord slopes, then sum by parts against the partial sums.",
+    "scope": "The whole theorem. The entropy corollary follows with $f(t) = t \\ln t$: a probability vector majorized by another has the larger Shannon entropy.",
+    "mechanisms": [
+     "m:convexity",
+     "m:telescoping",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes the chord slopes $c_i$ monotone.",
+      "steps": [
+       "s:decreasing"
+      ]
+     },
+     {
+      "h": "h:sorted",
+      "why": "The order of the lists gives the moves $x_{i+1} \\le x_i$ and $y_{i+1} \\le y_i$ in the slope comparison.",
+      "steps": [
+       "s:decreasing"
+      ]
+     },
+     {
+      "h": "h:partial",
+      "why": "It gives $D_k \\ge 0$, so each summand is nonnegative.",
+      "steps": [
+       "s:sign"
+      ]
+     },
+     {
+      "h": "h:total",
+      "why": "It gives $D_n = 0$, which removes the last term of the Abel sum.",
+      "steps": [
+       "s:abel"
+      ]
+     },
+     {
+      "h": "h:strict",
+      "why": "Strict convexity makes the slope inequalities strict.",
+      "steps": [
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Delete the indices with $x_i = y_i$.",
+      "detail": "Each deleted pair adds $0$ to every partial difference, and it removes the same value $f(x_i) = f(y_i)$ from both sides. The remaining lists are still sorted. So assume $x_i \\neq y_i$ for all $i$.",
+      "uses": []
+     },
+     {
+      "id": "s:slopes",
+      "slogan": "Show that the chord slope is monotone in each argument.",
+      "detail": "Let $s(a,b) = (f(b) - f(a))/(b - a)$. For $a < b < c$ in $I$, convexity gives $s(a,b) \\le s(a,c) \\le s(b,c)$. Fix $v$. In each of the three orders of $u < u'$ and $v$, these inequalities give $s(u,v) \\le s(u',v)$.",
+      "uses": [
+       "nm:a15-three-chord-lemma"
+      ]
+     },
+     {
+      "id": "s:decreasing",
+      "slogan": "Show that the slopes $c_i = s(x_i, y_i)$ decrease with $i$.",
+      "detail": "If $x_{i+1} \\neq y_i$, then $c_i \\ge s(x_{i+1}, y_i) \\ge s(x_{i+1}, y_{i+1})$: move the first argument down, then the second. If $x_{i+1} = y_i$, then $x_i \\neq y_{i+1}$, and the other route $c_i \\ge s(x_i, y_{i+1}) \\ge s(x_{i+1}, y_{i+1})$ works.",
+      "uses": []
+     },
+     {
+      "id": "s:abel",
+      "slogan": "Sum by parts with the partial differences $D_k$.",
+      "detail": "Put $d_i = y_i - x_i$ and $D_k = d_1 + \\dots + d_k$. Then $f(y_i) - f(x_i) = c_i d_i$, so [Abel summation](c:abel-summation) gives $\\sum (f(y_i) - f(x_i)) = \\sum_{k=1}^{n-1} (c_k - c_{k+1}) D_k + c_n D_n$. The term with $D_n = 0$ vanishes.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Show that every summand is nonnegative.",
+      "detail": "Each $c_k - c_{k+1} \\ge 0$ and each $D_k \\ge 0$. So the sum is nonnegative, and $\\sum f(x_i) \\le \\sum f(y_i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Show that strict convexity forces $x = y$ in the equality case.",
+      "detail": "Suppose some index remains after the deletion. Then $D_1 = y_1 - x_1 > 0$, and $n \\ge 2$. For strictly convex $f$, $c_k = c_{k+1}$ forces $x_k = x_{k+1}$ and $y_k = y_{k+1}$, so $d_{k+1} = d_k$. If every $k$ with $D_k > 0$ had $c_k = c_{k+1}$, then $d_k = d_1$ for all $k$ and $D_n = n d_1 > 0$, which is false. So the sum is positive, and equality needs $x_i = y_i$ for all $i$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:decreasing"
+     ],
+     [
+      "s:reduce",
+      "s:abel"
+     ],
+     [
+      "s:slopes",
+      "s:decreasing"
+     ],
+     [
+      "s:decreasing",
+      "s:sign"
+     ],
+     [
+      "s:abel",
+      "s:sign"
+     ],
+     [
+      "s:sign",
+      "s:equality"
+     ],
+     [
+      "s:decreasing",
+      "s:equality"
+     ],
+     [
+      "s:abel",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:convex-function": "Convexity gives the monotone chord slopes.",
+     "c:abel-summation": "Summation by parts turns the slope sum into a sum against $D_k$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-hadamard-determinant-inequality",
+  "statement": "Let $A$ be an $n \\times n$ Hermitian [positive semidefinite matrix](c:positive-semidefinite-matrix). Then $\\det A \\le a_{11} \\cdots a_{nn}$, and for positive definite $A$ equality holds only if $A$ is diagonal. For a complex square matrix $M$ with columns $m_j$, $|\\det M| \\le \\prod \\|m_j\\|$. So $|\\det M| \\le n^{n/2}$ if all entries are $\\pm 1$.",
+  "hypotheses": [
+   {
+    "id": "h:psd",
+    "text": "The matrix $A$ is Hermitian and [positive semidefinite](c:positive-semidefinite-matrix): $x^*Ax \\ge 0$ for all $x$.",
+    "concept": "c:positive-semidefinite-matrix"
+   },
+   {
+    "id": "h:norm",
+    "text": "The norm $\\|\\cdot\\|$ is the Euclidean norm.",
+    "concept": null
+   },
+   {
+    "id": "h:pd",
+    "text": "For the equality case, $A$ is positive definite.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The bound $\\det A \\le \\prod a_{ii}$ holds with the stated equality case. Also $|\\det M| \\le \\prod \\|m_j\\|$, with equality for $\\det M \\neq 0$ only when the columns are orthogonal, and $|\\det M| \\le n^{n/2}$ for $\\pm 1$ entries.",
+  "formal": {
+   "decl": "Matrix.PosSemidef.det_nonneg",
+   "difference": "The declaration states a related and smaller fact: the determinant of a positive semidefinite matrix is nonnegative. The proof uses it for $\\det B \\ge 0$. It does not state the Hadamard inequality."
+  },
+  "proofs": [
+   {
+    "id": "normalize-and-amgm",
+    "name": "Normalize the diagonal and use the mean inequality",
+    "slogan": "Scale the matrix to a unit diagonal, then bound its determinant by the mean of its eigenvalues.",
+    "scope": "The whole theorem. The equality statement for singular $A$ is only partial: equality can also hold when a diagonal entry is zero. The row version follows by transposing.",
+    "mechanisms": [
+     "m:determinant",
+     "m:spectral-decomposition",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:psd",
+      "why": "It gives $a_{ii} \\ge 0$, the scaled matrix $B$ and its nonnegative real eigenvalues.",
+      "steps": [
+       "s:zero",
+       "s:normalize",
+       "s:mean"
+      ]
+     },
+     {
+      "h": "h:norm",
+      "why": "It makes $a_{jj} = \\|m_j\\|^2$ for $A = M^*M$ and gives the norm $\\sqrt{n}$ of a $\\pm 1$ column.",
+      "steps": [
+       "s:columns",
+       "s:pm-one"
+      ]
+     },
+     {
+      "h": "h:pd",
+      "why": "It makes all eigenvalues of $B$ positive, so the equality case of the mean inequality applies.",
+      "steps": [
+       "s:equality-a"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:zero",
+      "slogan": "Treat the case of a zero diagonal entry.",
+      "detail": "Suppose $a_{ii} = 0$. For real $t$, $x = te_i + e_j$ gives $x^*Ax = 2t\\,\\mathrm{Re}\\,a_{ij} + a_{jj} \\ge 0$ for both signs of $t$, so $\\mathrm{Re}\\,a_{ij} = 0$; the same holds for $\\mathrm{Im}\\,a_{ij}$. So row $i$ is zero, $\\det A = 0$, and the bound is an equality. Assume now $a_{ii} > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Scale $A$ to a matrix $B$ with unit diagonal.",
+      "detail": "Let $D = \\mathrm{diag}(a_{11}^{-1/2}, \\dots, a_{nn}^{-1/2})$ and $B = DAD$. Then $B$ is positive semidefinite with $b_{ii} = 1$, and $\\det B = \\det A/(a_{11} \\cdots a_{nn})$.",
+      "uses": []
+     },
+     {
+      "id": "s:mean",
+      "slogan": "Bound $\\det B$ by the mean of the eigenvalues of $B$.",
+      "detail": "The Hermitian matrix $B$ has real [eigenvalues](c:eigenvalue) $\\mu_i \\ge 0$ with [determinant](c:determinant) $\\det B = \\prod \\mu_i$ and [trace](c:trace-of-a-matrix) $\\sum \\mu_i = n$. The AM-GM inequality gives $\\det B \\le (\\sum \\mu_i / n)^n = 1$. So $\\det A \\le \\prod a_{ii}$.",
+      "uses": [
+       "nm:diagonalization-theorem",
+       "nm:arithmetic-mean-geometric-mean"
+      ]
+     },
+     {
+      "id": "s:equality-a",
+      "slogan": "Find the equality case for positive definite $A$.",
+      "detail": "If $\\det A = \\prod a_{ii}$, then $\\prod \\mu_i = (\\sum \\mu_i / n)^n$ with all $\\mu_i > 0$. The equality case of AM-GM gives $\\mu_i = 1$ for all $i$, so the Hermitian $B$ is the identity and $A = D^{-1}D^{-1}$ is diagonal. A diagonal $A$ gives equality.",
+      "uses": [
+       "nm:am-gm-inequality-equality-condition"
+      ]
+     },
+     {
+      "id": "s:columns",
+      "slogan": "Apply the bound to $A = M^*M$ for a general matrix $M$.",
+      "detail": "The matrix $A$ is positive semidefinite with $\\det A = |\\det M|^2$ and $a_{jj} = \\|m_j\\|^2$. So $|\\det M| \\le \\prod \\|m_j\\|$. If $\\det M \\neq 0$, then $A$ is positive definite, and equality holds exactly when $M^*M$ is diagonal, that is, when the columns are orthogonal.",
+      "uses": []
+     },
+     {
+      "id": "s:pm-one",
+      "slogan": "Bound the determinant of a matrix with entries $\\pm 1$.",
+      "detail": "Every column of such an $n \\times n$ matrix has norm $\\sqrt{n}$. So $|\\det M| \\le (\\sqrt{n})^n = n^{n/2}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zero",
+      "s:normalize"
+     ],
+     [
+      "s:normalize",
+      "s:mean"
+     ],
+     [
+      "s:mean",
+      "s:equality-a"
+     ],
+     [
+      "s:mean",
+      "s:columns"
+     ],
+     [
+      "s:equality-a",
+      "s:columns"
+     ],
+     [
+      "s:columns",
+      "s:pm-one"
+     ]
+    ],
+    "conclusion": "s:pm-one",
+    "concepts": {
+     "c:positive-semidefinite-matrix": "Positive semidefiniteness gives the real nonnegative eigenvalues of $B$.",
+     "c:determinant": "The determinant is the product of the eigenvalues that the proof bounds.",
+     "c:eigenvalue": "The eigenvalues of $B$ have product $\\det B$ and sum $n$.",
+     "c:trace-of-a-matrix": "The trace of $B$ equals $n$ because the diagonal is all ones."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]
