@@ -26,8 +26,6 @@ def schema_errors(value, schema, where):
     if expected and not isinstance(value, TYPES[expected]):
         return [f"{where}: expected {expected}"]
     errors = []
-    if "enum" in schema and value not in schema["enum"]:
-        errors.append(f"{where}: must be one of {schema['enum']}")
     if isinstance(value, str):
         if len(value) < schema.get("minLength", 0):
             errors.append(f"{where}: is empty")
@@ -107,7 +105,7 @@ def load(root=ROOT):
     return by_slug, errors
 
 
-CATALOGUE_FIELDS = ("title", "summary", "source_url", "fetched", "webmcp_tools", "tags", "category", "links")
+CATALOGUE_FIELDS = ("title", "summary", "source_url", "fetched", "webmcp_tools", "tags", "category")
 
 
 def entry(slug, data):
