@@ -2937,6 +2937,376 @@
      "alignment": "The source proves the geometric form of the Farkas lemma. It separates a point outside a proper cone from the cone by a functional. The Farkas alternative used above is the finite-dimensional form with a finitely generated cone."
     }
    ]
+  },
+  {
+   "id": "nm:technique-cauchy-binet-formula",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/ExteriorPower/Basic.lean#L297-L300",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.ExteriorPower.Basic",
+     "declaration": "exteriorPower.map_comp",
+     "lines": [
+      297,
+      300
+     ],
+     "module_sha256": "644d86167e9c02ae3c37268cb058f5af8482119c786f172d321238def7a44207",
+     "excerpt": "@[simp]\ntheorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] N') :\n    map n (g ∘ₗ f) = map n g ∘ₗ map n f := by\n  aesop",
+     "excerpt_sha256": "d230b69241d39898d6430c43b6397297fcc4d28e8f9acaeb86c79864fb664865",
+     "attribution": "/-\nCopyright (c) 2024 Sophie Morel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sophie Morel, Joël Riou\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the k-th exterior power of a linear map respects composition. In the wedge basis this is the compound matrix identity C_k(AB) = C_k(A)C_k(B), which is the general form of the theorem."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Determinant/Basic.lean#L140-L170",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Determinant.Basic",
+     "declaration": "Matrix.det_mul",
+     "lines": [
+      140,
+      170
+     ],
+     "module_sha256": "1a742d8a45243cafb4cbc714e467b70a33e8a9811de116d14206914a421416b9",
+     "excerpt": "@[simp]\ntheorem det_mul (M N : Matrix n n R) : det (M * N) = det M * det N :=\n  calc\n    det (M * N) = ∑ p : n → n, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (p i) * N (p i) i := by\n      simp only [det_apply', mul_apply, prod_univ_sum, mul_sum, Fintype.piFinset_univ]\n      rw [Finset.sum_comm]\n    _ = ∑ p : n → n with Bijective p, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (p i) * N (p i) i := by\n      refine (sum_subset (filter_subset _ _) fun f _ hbij ↦ det_mul_aux ?_).symm\n      simpa only [mem_filter_univ] using hbij\n    _ = ∑ τ : Perm n, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (τ i) * N (τ i) i :=\n      sum_bij (fun p h ↦ Equiv.ofBijective p (mem_filter.1 h).2) (fun _ _ ↦ mem_univ _)\n        (fun _ _ _ _ h ↦ by injection h)\n        (fun b _ ↦ ⟨b, mem_filter.2 ⟨mem_univ _, b.bijective⟩, coe_fn_injective rfl⟩) fun _ _ ↦ rfl\n    _ = ∑ σ : Perm n, ∑ τ : Perm n, (∏ i, N (σ i) i) * ε τ * ∏ j, M (τ j) (σ j) := by\n      simp only [mul_comm, mul_left_comm, prod_mul_distrib, mul_assoc]\n    _ = ∑ σ : Perm n, ∑ τ : Perm n, (∏ i, N (σ i) i) * (ε σ * ε τ) * ∏ i, M (τ i) i :=\n      (sum_congr rfl fun σ _ =>\n        Fintype.sum_equiv (Equiv.mulRight σ⁻¹) _ _ fun τ => by\n          have : (∏ j, M (τ j) (σ j)) = ∏ j, M ((τ * σ⁻¹) j) j := by\n            rw [← (σ⁻¹ : _ ≃ _).prod_comp]\n            simp\n          have h : ε σ * ε (τ * σ⁻¹) = ε τ :=\n            calc\n              ε σ * ε (τ * σ⁻¹) = ε (τ * σ⁻¹ * σ) := by\n                rw [mul_comm, sign_mul (τ * σ⁻¹)]\n                simp only [Int.cast_mul, Units.val_mul]\n              _ = ε τ := by simp only [inv_mul_cancel_right]\n          simp_rw [Equiv.coe_mulRight, h]\n          simp only [this])\n    _ = det M * det N := by\n      simp only [det_apply', Finset.mul_sum, mul_comm, mul_left_comm, mul_assoc]",
+     "excerpt_sha256": "5b863d2e64e8ae622bfc0a1c9edc583df922e09b5a6457d68595ac13e272d74f",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Chris Hughes, Anne Baanen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the case n = m, where the only subset S is the full index set. Its proof uses the same expansion over all maps f."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-smith-normal-form-determinantal-divisors",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/FreeModule/PID.lean#L477-L502",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.FreeModule.PID",
+     "declaration": "Submodule.exists_smith_normal_form_of_le",
+     "lines": [
+      477,
+      502
+     ],
+     "module_sha256": "35a2a5879642467e343b3a2dffac157d3b189b16ee84d8653e426911127eda3b",
+     "excerpt": "/-- If `M` is finite free over a PID `R`, then any submodule `N` is free\nand we can find a basis for `M` and `N` such that the inclusion map is a diagonal matrix\nin Smith normal form.\n\nSee `Submodule.smithNormalFormOfLE` for a version of this theorem that returns\na `Basis.SmithNormalForm`.\n\nThis is a strengthening of `Submodule.basisOfPidOfLE`.\n-/\ntheorem Submodule.exists_smith_normal_form_of_le [Finite ι] (b : Basis ι R M) (N O : Submodule R M)\n    (N_le_O : N ≤ O) :\n    ∃ (n o : ℕ) (hno : n ≤ o) (bO : Basis (Fin o) R O) (bN : Basis (Fin n) R N) (a : Fin n → R),\n      ∀ i, (bN i : M) = a i • bO (Fin.castLE hno i) := by\n  cases nonempty_fintype ι\n  induction O using inductionOnRank b generalizing N with | ih M0 ih =>\n  obtain ⟨m, b'M⟩ := M0.basisOfPid b\n  by_cases N_bot : N = ⊥\n  · subst N_bot\n    exact ⟨0, m, Nat.zero_le _, b'M, Basis.empty _, finZeroElim, finZeroElim⟩\n  obtain ⟨y, hy, a, _, M', M'_le_M, N', _, N'_le_M', y_ortho, _, h⟩ :=\n    Submodule.basis_of_pid_aux M0 N b'M N_bot N_le_O\n  obtain ⟨n', m', hn'm', bM', bN', as', has'⟩ := ih M' M'_le_M y hy y_ortho N' N'_le_M'\n  obtain ⟨bN, h'⟩ := h n' bN'\n  obtain ⟨hmn, bM, h''⟩ := h' m' hn'm' bM'\n  obtain ⟨as, has⟩ := h'' as' has'\n  exact ⟨_, _, hmn, bM, bN, as, has⟩",
+     "excerpt_sha256": "cbd3d5a6c608b6f8b17e29d9497effec35c86b0f08b16910903c850c907ab55c",
+     "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the module form over a PID. For a submodule N of a finite free module there are bases of N and of the ambient module such that the inclusion is diagonal. This matches the existence part, with the matrix reading of the diagonal form. It does not state the divisibility chain or the minors formula."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Module/PID.lean#L228-L248",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Module.PID",
+     "declaration": "Module.equiv_directSum_of_isTorsion",
+     "lines": [
+      228,
+      248
+     ],
+     "module_sha256": "b8e6460b933a605822e88e97ba3e763af59918984a1acc2878f952ca2c327160",
+     "excerpt": "/-- A finitely generated torsion module over a PID is isomorphic to a direct sum of some\n  `R ⧸ R ∙ (p i ^ e i)` where the `p i ^ e i` are prime powers. -/\ntheorem equiv_directSum_of_isTorsion [h' : Module.Finite R M] (hM : Module.IsTorsion R M) :\n    ∃ (ι : Type u) (_ : Fintype ι) (p : ι → R) (_ : ∀ i, Irreducible <| p i) (e : ι → ℕ),\n      Nonempty <| M ≃ₗ[R] ⨁ i : ι, R ⧸ R ∙ p i ^ e i := by\n  obtain ⟨I, fI, _, p, hp, e, h⟩ := Submodule.exists_isInternal_prime_power_torsion_of_pid hM\n  have :\n    ∀ i,\n      ∃ (d : ℕ) (k : Fin d → ℕ),\n        Nonempty <| torsionBy R M (p i ^ e i) ≃ₗ[R] ⨁ j, R ⧸ R ∙ p i ^ k j := by\n    exact fun i =>\n      torsion_by_prime_power_decomposition.{u, v} (hp i)\n        ((isTorsion'_powers_iff <| p i).mpr fun x => ⟨e i, smul_torsionBy _ _⟩)\n  refine\n    ⟨Σ i, Fin (this i).choose, inferInstance, fun ⟨i, _⟩ => p i, fun ⟨i, _⟩ => hp i, fun ⟨i, j⟩ =>\n      (this i).choose_spec.choose j,\n      ⟨(LinearEquiv.ofBijective (DirectSum.coeLinearMap _) h).symm.trans <|\n          (DFinsupp.mapRange.linearEquiv fun i => (this i).choose_spec.choose_spec.some).trans <|\n            (DirectSum.sigmaLcurryEquiv R).symm.trans\n              (DFinsupp.mapRange.linearEquiv fun i => quotEquivOfEq _ _ ?_)⟩⟩\n  simp only",
+     "excerpt_sha256": "44225f44363548d1ebd79cb2567cebd1cf4d1c219466096cd53b98691b0fc049",
+     "attribution": "/-\nCopyright (c) 2022 Pierre-Alexandre Bazin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Pierre-Alexandre Bazin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the structure theorem for torsion modules over a PID in prime power form. It matches the quotient decomposition of the last steps."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-similarity-invariant-factors-rational-canonical-form",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Charpoly/Basic.lean#L92-L101",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Charpoly.Basic",
+     "declaration": "Matrix.matPolyEquiv_charmatrix",
+     "lines": [
+      92,
+      101
+     ],
+     "module_sha256": "52dfc6c7a64177809ea62ec94915bc4136246fccfb951c114fd2d8312dc80110",
+     "excerpt": "theorem matPolyEquiv_charmatrix : matPolyEquiv (charmatrix M) = X - C M := by\n  ext k i j\n  simp only [matPolyEquiv_coeff_apply, coeff_sub]\n  by_cases h : i = j\n  · subst h\n    rw [charmatrix_apply_eq, coeff_sub]\n    simp only [coeff_X, coeff_C]\n    split_ifs <;> simp\n  · rw [charmatrix_apply_ne _ _ _ h, coeff_X, coeff_neg, coeff_C, coeff_C]\n    split_ifs <;> simp [h]",
+     "excerpt_sha256": "8e349f40c1cc0dac9800d217b00ced2e4ecab52695fe552368639916a45ff143",
+     "attribution": "/-\nCopyright (c) 2020 Kim Morrison. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kim Morrison\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the polynomial matrix xI−M corresponds to X − C M under the identification of matrices over R[X] with polynomials over matrices. This is the link between xI−A and the action of x on V_A."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Polynomial/Module/AEval.lean#L68-L68",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Polynomial.Module.AEval",
+     "declaration": "Module.AEval.of_aeval_smul",
+     "lines": [
+      68,
+      68
+     ],
+     "module_sha256": "1013e49c4e70ffc79d887f70f5b287e0b4f0017ad5668026ae74f784b5903f52",
+     "excerpt": "lemma of_aeval_smul (f : R[X]) (m : M) : of R M a (aeval a f • m) = f • of R M a m := rfl",
+     "excerpt_sha256": "69eaa4a3bc30c566015c878ee2df9d2ccb3a6514ff5f3ea0436acb372eba92dc",
+     "attribution": "/-\nCopyright (c) 2022 Richard M. Hill. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Richard M. Hill\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the module structure in which a polynomial f acts on M as aeval a f. This is the module V_A. The source states the compatibility of the two actions. It does not state the presentation or the Smith criterion."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-kronecker-sum-sylvester-equation",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Kronecker.lean#L211-L225",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Kronecker",
+     "declaration": "Matrix.kroneckerMapBilinear_mul_mul",
+     "lines": [
+      211,
+      225
+     ],
+     "module_sha256": "a5b02cb42dfcf8631ec080e7d6ed05468098b40b22f612e7f1f04f3a0010cb19",
+     "excerpt": "/-- `Matrix.kroneckerMapBilinear` commutes with `*` if `f` does.\n\nThis is primarily used with `R = ℕ` to prove `Matrix.mul_kronecker_mul`. -/\ntheorem kroneckerMapBilinear_mul_mul [Semiring S] [Semiring R] [Fintype m] [Fintype m']\n    [NonUnitalNonAssocSemiring α] [NonUnitalNonAssocSemiring β] [NonUnitalNonAssocSemiring γ]\n    [Module R α] [Module R γ] [Module S β] [Module S γ] [SMulCommClass S R γ]\n    (f : α →ₗ[R] β →ₗ[S] γ)\n    (h_comm : ∀ a b a' b', f (a * b) (a' * b') = f a a' * f b b') (A : Matrix l m α)\n    (B : Matrix m n α) (A' : Matrix l' m' β) (B' : Matrix m' n' β) :\n    kroneckerMapBilinear f (A * B) (A' * B') =\n      kroneckerMapBilinear f A A' * kroneckerMapBilinear f B B' := by\n  ext ⟨i, i'⟩ ⟨j, j'⟩\n  simp only [kroneckerMapBilinear_apply_apply, mul_apply, ← Finset.univ_product_univ,\n    Finset.sum_product, kroneckerMap_apply]\n  simp_rw [map_sum f, LinearMap.sum_apply, map_sum, h_comm]",
+     "excerpt_sha256": "673dac08fec14394a7ecc56423bd464d996027492fedfc632ee2d1821df257e3",
+     "attribution": "/-\nCopyright (c) 2021 Filippo A. E. Nuccio. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Filippo A. E. Nuccio, Eric Wieser\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the mixed product rule for Kronecker products of matrices. This is Step 3 of the proof."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Kronecker.lean#L239-L260",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Kronecker",
+     "declaration": "Matrix.det_kroneckerMapBilinear",
+     "lines": [
+      239,
+      260
+     ],
+     "module_sha256": "a5b02cb42dfcf8631ec080e7d6ed05468098b40b22f612e7f1f04f3a0010cb19",
+     "excerpt": "/-- `determinant` of `Matrix.kroneckerMapBilinear`.\n\nThis is primarily used with `R = ℕ` to prove `Matrix.det_kronecker`. -/\ntheorem det_kroneckerMapBilinear [Semiring S] [Semiring R] [Fintype m] [Fintype n] [DecidableEq m]\n    [DecidableEq n] [NonAssocSemiring α] [NonAssocSemiring β] [CommRing γ] [Module R α] [Module S β]\n    [Module R γ] [Module S γ] [SMulCommClass S R γ]\n    (f : α →ₗ[R] β →ₗ[S] γ) (h_comm : ∀ a b a' b', f (a * b) (a' * b') = f a a' * f b b')\n    (A : Matrix m m α) (B : Matrix n n β) :\n    det (kroneckerMapBilinear f A B) =\n      det (A.map fun a => f a 1) ^ Fintype.card n * det (B.map fun b => f 1 b) ^ Fintype.card m :=\n  calc\n    det (kroneckerMapBilinear f A B) =\n        det (kroneckerMapBilinear f A 1 * kroneckerMapBilinear f 1 B) := by\n      rw [← kroneckerMapBilinear_mul_mul f h_comm, Matrix.mul_one, Matrix.one_mul]\n    _ = det (blockDiagonal fun (_ : n) => A.map fun a => f a 1) *\n        det (blockDiagonal fun (_ : m) => B.map fun b => f 1 b) := by\n      rw [det_mul, ← diagonal_one, ← diagonal_one, kroneckerMapBilinear_apply_apply,\n        kroneckerMap_diagonal_right _ fun _ => _, kroneckerMapBilinear_apply_apply,\n        kroneckerMap_diagonal_left _ fun _ => _, det_reindex_self]\n      · intro; exact LinearMap.map_zero₂ _ _\n      · intro; exact map_zero _\n    _ = _ := by simp_rw [det_blockDiagonal, Finset.prod_const, Finset.card_univ]",
+     "excerpt_sha256": "32a580198353a6a8fe39e60fed85e888ea89dcdbf8b3d39fbe84bfb6a7054c2a",
+     "attribution": "/-\nCopyright (c) 2021 Filippo A. E. Nuccio. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Filippo A. E. Nuccio, Eric Wieser\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the determinant of a Kronecker product. It supports the determinant computations. The source does not treat the Kronecker sum or the Sylvester equation."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-galois-group-prime-degree-two-nonreal-roots",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L181-L187",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+     "declaration": "Polynomial.Gal.galAction_isPretransitive",
+     "lines": [
+      181,
+      187
+     ],
+     "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+     "excerpt": "lemma galAction_isPretransitive [Fact ((p.map (algebraMap F E)).Splits)] (hp : Irreducible p) :\n    MulAction.IsPretransitive p.Gal (p.rootSet E) := by\n  refine ⟨fun x y ↦ ?_⟩\n  have hx := minpoly.eq_of_irreducible hp (mem_rootSet.mp ((rootsEquivRootsAux p E).symm x).2).2\n  have hy := minpoly.eq_of_irreducible hp (mem_rootSet.mp ((rootsEquivRootsAux p E).symm y).2).2\n  obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)\n  exact ⟨g, (rootsEquivRootsAux p E).eq_symm_apply.mp (Subtype.ext hg)⟩",
+     "excerpt_sha256": "d14d2b5867484468ac8f973a6ca3183401386a958a75cc9fd1082c85a606b374",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Galois group of an irreducible polynomial acts transitively on its roots. This is Step 2."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L367-L386",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+     "declaration": "Polynomial.Gal.prime_degree_dvd_card",
+     "lines": [
+      367,
+      386
+     ],
+     "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+     "excerpt": "theorem prime_degree_dvd_card [CharZero F] (p_irr : Irreducible p) (p_deg : p.natDegree.Prime) :\n    p.natDegree ∣ Nat.card p.Gal := by\n  rw [Gal.card_of_separable p_irr.separable]\n  have hp : p.degree ≠ 0 := fun h =>\n    Nat.Prime.ne_zero p_deg (natDegree_eq_zero_iff_degree_le_zero.mpr (le_of_eq h))\n  let α : p.SplittingField :=\n    rootOfSplits (SplittingField.splits p) (by rwa [degree_map])\n  have hα : IsIntegral F α := .of_finite F α\n  use Module.finrank F⟮α⟯ p.SplittingField\n  suffices (minpoly F α).natDegree = p.natDegree by\n    let _ : AddCommGroup F⟮α⟯ := Ring.toAddCommGroup\n    rw [← Module.finrank_mul_finrank F F⟮α⟯ p.SplittingField,\n      IntermediateField.adjoin.finrank hα, this]\n  suffices minpoly F α ∣ p by\n    have key := (minpoly.irreducible hα).dvd_symm p_irr this\n    apply le_antisymm\n    · exact natDegree_le_of_dvd this p_irr.ne_zero\n    · exact natDegree_le_of_dvd key (minpoly.ne_zero hα)\n  apply minpoly.dvd F α\n  rw [← eval_map_algebraMap, eval_rootOfSplits]",
+     "excerpt_sha256": "8c90cd81467317c18043adf79a7ed081b48468f57869bacde3c681a6e9b6bef7",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that for an irreducible polynomial of prime degree over a field of characteristic 0, the degree divides the order of the Galois group. It is a consequence of transitivity. The source does not prove that the group is S_p, and it does not use complex conjugation."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L211-L223",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+     "declaration": "Polynomial.Gal.galActionHom_injective",
+     "lines": [
+      211,
+      223
+     ],
+     "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+     "excerpt": "/-- `gal p` embeds as a subgroup of permutations of the roots of `p` in `E`. -/\ntheorem galActionHom_injective [Fact ((p.map (algebraMap F E)).Splits)] :\n    Function.Injective (galActionHom p E) := by\n  rw [injective_iff_map_eq_one]\n  intro ϕ hϕ\n  ext (x hx)\n  have key := Equiv.Perm.ext_iff.mp hϕ (rootsEquivRootsAux p E ⟨x, hx⟩)\n  change\n    rootsEquivRootsAux p E (ϕ • (rootsEquivRootsAux p E).symm (rootsEquivRootsAux p E ⟨x, hx⟩)) =\n      rootsEquivRootsAux p E ⟨x, hx⟩\n    at key\n  rw [Equiv.symm_apply_apply] at key\n  exact Subtype.ext_iff.mp (Equiv.injective (rootsEquivRootsAux p E) key)",
+     "excerpt_sha256": "2723d3a4bef08104f43b728f928ee1a1e77451a95984f04d60c55e51d049ccdd",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the action on the roots is faithful. This is Step 1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-irreducible-polynomials-over-finite-fields-count",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/Finite/GaloisField.lean#L330-L337",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.Finite.GaloisField",
+     "declaration": "FiniteField.nonempty_algHom_iff_finrank_dvd",
+     "lines": [
+      330,
+      337
+     ],
+     "module_sha256": "94497cf4bd42922937f0a776742d0c256e1174140c18cc483bc6c85688849f8e",
+     "excerpt": "theorem nonempty_algHom_iff_finrank_dvd :\n    Nonempty (K →ₐ[F] L) ↔ Module.finrank F K ∣ Module.finrank F L := by\n  refine ⟨fun ⟨f⟩ ↦ ?_, nonempty_algHom_of_finrank_dvd⟩\n  algebraize [f.toRingHom]\n  rw [← Module.finrank_mul_finrank F K L]\n  exact dvd_mul_right _ _\n\nend",
+     "excerpt_sha256": "397c5b4028c3342ef134cbebfebcdf3b80e19801899c68c09c200af585f7be62",
+     "attribution": "/-\nCopyright (c) 2021 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Alex J. Best, Johan Commelin, Eric Rodriguez, Ruben Van de Velde\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a finite field K embeds in L over F if and only if [K:F] divides [L:F]. This is the field form of the criterion in Step 4: F_{q^d} sits inside F_{q^n} if and only if d divides n. The source does not count irreducible polynomials."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-ideal-norm-of-principal-ideal-index",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Norm/AbsNorm.lean#L380-L391",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Norm.AbsNorm",
+     "declaration": "Ideal.absNorm_span_singleton",
+     "lines": [
+      380,
+      391
+     ],
+     "module_sha256": "1312375877c644ef99a45129980e6b4426fce0d5d80712043fee4ff9f2fe45ba",
+     "excerpt": "@[simp]\ntheorem absNorm_span_singleton (r : S) :\n    absNorm (span ({r} : Set S)) = (Algebra.norm ℤ r).natAbs := by\n  rw [Algebra.norm_apply]\n  by_cases hr : r = 0\n  · simp only [hr, Ideal.span_zero, Ideal.absNorm_bot,\n      LinearMap.det_zero'', Set.singleton_zero, map_zero, Int.natAbs_zero]\n  let b := Module.Free.chooseBasis ℤ S\n  rw [← natAbs_det_equiv _ (b.equiv (basisSpanSingleton b hr) (Equiv.refl _))]\n  congr\n  refine b.ext fun i => ?_\n  simp",
+     "excerpt_sha256": "8e556d147ac10a097b0ae2ceb38a943fd871288fbb7b7c2b71705cca8fc606cb",
+     "attribution": "/-\nCopyright (c) 2022 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Alex J. Best\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the absolute norm of the principal ideal (r) equals the natural absolute value of the algebra norm of r over ℤ. This is the order formula of the theorem."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Norm/AbsNorm.lean#L299-L301",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Norm.AbsNorm",
+     "declaration": "Ideal.absNorm_eq_one_iff",
+     "lines": [
+      299,
+      301
+     ],
+     "module_sha256": "1312375877c644ef99a45129980e6b4426fce0d5d80712043fee4ff9f2fe45ba",
+     "excerpt": "@[simp]\ntheorem absNorm_eq_one_iff {I : Ideal S} : absNorm I = 1 ↔ I = ⊤ := by\n  rw [absNorm_apply, cardQuot_eq_one_iff]",
+     "excerpt_sha256": "9845bd6a0adfc4fa280fb9c6d08e2f7ec014b7a62513d671702d3951967f890d",
+     "attribution": "/-\nCopyright (c) 2022 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Alex J. Best\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that an ideal has absolute norm 1 if and only if it is the whole ring. This is Step 4."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-minkowski-bound-class-group-generation",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/NumberField/ClassNumber.lean#L77-L98",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.NumberField.ClassNumber",
+     "declaration": "NumberField.exists_ideal_in_class_of_norm_le",
+     "lines": [
+      77,
+      98
+     ],
+     "module_sha256": "580c6b79a6b87818493d031fb3d68a29fa680bbb771e69dd2c776534f5f1933c",
+     "excerpt": "theorem exists_ideal_in_class_of_norm_le (C : ClassGroup (𝓞 K)) :\n    ∃ I : (Ideal (𝓞 K))⁰, ClassGroup.mk0 I = C ∧\n      absNorm (I : Ideal (𝓞 K)) ≤ M K := by\n  obtain ⟨J, hJ⟩ := ClassGroup.mk0_surjective C⁻¹\n  obtain ⟨_, ⟨a, ha, rfl⟩, h_nz, h_nm⟩ :=\n    exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr K (FractionalIdeal.mk0 K J)\n  obtain ⟨I₀, hI⟩ := dvd_iff_le.mpr ((span_singleton_le_iff_mem J).mpr (by exact ha))\n  have : I₀ ≠ 0 := by\n    contrapose h_nz\n    rw [h_nz, mul_zero, zero_eq_bot, span_singleton_eq_bot] at hI\n    rw [Algebra.linearMap_apply, hI, map_zero]\n  let I := (⟨I₀, mem_nonZeroDivisors_iff_ne_zero.mpr this⟩ : (Ideal (𝓞 K))⁰)\n  refine ⟨I, ?_, ?_⟩\n  · suffices ClassGroup.mk0 I = (ClassGroup.mk0 J)⁻¹ by rw [this, hJ, inv_inv]\n    exact ClassGroup.mk0_eq_mk0_inv_iff.mpr ⟨a, Subtype.coe_ne_coe.1 h_nz, by rw [mul_comm, hI]⟩\n  · rw [← FractionalIdeal.absNorm_span_singleton (𝓞 K), Algebra.linearMap_apply,\n      ← FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.coeIdeal_absNorm, hI, map_mul,\n      cast_mul, Rat.cast_mul, absNorm_apply, Rat.cast_natCast, Rat.cast_natCast,\n      FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast, mul_div_assoc,\n      mul_assoc, mul_assoc] at h_nm\n    refine le_of_mul_le_mul_of_pos_left h_nm ?_\n    exact cast_pos.mpr <| pos_of_ne_zero <| absNorm_ne_zero_of_nonZeroDivisors J",
+     "excerpt_sha256": "de523e89ff818a130515f304d7efd57958103dd757532d090a522f3ea2e281a9",
+     "attribution": "/-\nCopyright (c) 2021 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Riccardo Brasca, Xavier Roblot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that every ideal class of 𝓞 K contains an ideal whose absolute norm is at most the Minkowski bound M K. This is Step 6 and the first claim of the theorem."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/NumberField/Discriminant/Basic.lean#L145-L192",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.NumberField.Discriminant.Basic",
+     "declaration": "NumberField.exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr",
+     "lines": [
+      145,
+      192
+     ],
+     "module_sha256": "48a520964054193261d1d4137a09ed7e20f0fbb38b835db5d44508bf81e9ec19",
+     "excerpt": "theorem exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :\n    ∃ a ∈ (I : FractionalIdeal (𝓞 K)⁰ K), a ≠ 0 ∧\n      |Algebra.norm ℚ (a : K)| ≤ FractionalIdeal.absNorm I.1 * (4 / π) ^ nrComplexPlaces K *\n        (finrank ℚ K).factorial / (finrank ℚ K) ^ (finrank ℚ K) * Real.sqrt |discr K| := by\n  classical\n  -- The smallest possible value for `exists_ne_zero_mem_ideal_of_norm_le`\n  let B := (minkowskiBound K I * (convexBodySumFactor K)⁻¹).toReal ^ (1 / (finrank ℚ K : ℝ))\n  have h_le : (minkowskiBound K I) ≤ volume (convexBodySum K B) := by\n    refine le_of_eq ?_\n    rw [convexBodySum_volume, ← ENNReal.ofReal_pow (by positivity), ← Real.rpow_natCast,\n      ← Real.rpow_mul toReal_nonneg, div_mul_cancel₀, Real.rpow_one, ofReal_toReal, mul_comm,\n      mul_assoc, ← coe_mul, inv_mul_cancel₀ (convexBodySumFactor_ne_zero K), ENNReal.coe_one,\n      mul_one]\n    · exact mul_ne_top (ne_of_lt (minkowskiBound_lt_top K I)) coe_ne_top\n    · exact (Nat.cast_ne_zero.mpr (ne_of_gt finrank_pos))\n  convert! exists_ne_zero_mem_ideal_of_norm_le K I h_le\n  rw [div_pow B, ← Real.rpow_natCast B, ← Real.rpow_mul (by positivity), div_mul_cancel₀ _\n    (Nat.cast_ne_zero.mpr <| ne_of_gt finrank_pos), Real.rpow_one, mul_comm_div, mul_div_assoc']\n  congr 1\n  rw [eq_comm]\n  calc\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ)⁻¹ ^ nrComplexPlaces K * sqrt ‖discr K‖₊ *\n          (2 : ℝ) ^ finrank ℚ K * ((2 : ℝ) ^ nrRealPlaces K * (π / 2) ^ nrComplexPlaces K /\n            (Nat.factorial (finrank ℚ K)))⁻¹ := by\n      simp_rw [minkowskiBound, convexBodySumFactor,\n        volume_fundamentalDomain_fractionalIdealLatticeBasis,\n        volume_fundamentalDomain_latticeBasis, toReal_mul, toReal_pow, toReal_inv, coe_toReal,\n        toReal_ofNat, mixedEmbedding.finrank, mul_assoc]\n      rw [ENNReal.toReal_ofReal (Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg I.1))]\n      simp_rw [NNReal.coe_inv, NNReal.coe_div, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,\n        coe_real_pi, NNReal.coe_ofNat, NNReal.coe_natCast]\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ) ^ (finrank ℚ K - nrComplexPlaces K - nrRealPlaces K +\n          nrComplexPlaces K : ℤ) * Real.sqrt ‖discr K‖ * Nat.factorial (finrank ℚ K) *\n            π⁻¹ ^ (nrComplexPlaces K) := by\n      simp_rw [inv_div, div_eq_mul_inv, mul_inv, ← zpow_neg_one, ← zpow_natCast, mul_zpow,\n        ← zpow_mul, neg_one_mul, mul_neg_one, neg_neg, Real.coe_sqrt, coe_nnnorm, sub_eq_add_neg,\n        zpow_add₀ (two_ne_zero : (2 : ℝ) ≠ 0)]\n      ring\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ) ^ (2 * nrComplexPlaces K : ℤ) * Real.sqrt ‖discr K‖ *\n          Nat.factorial (finrank ℚ K) * π⁻¹ ^ (nrComplexPlaces K) := by\n      congr\n      rw [← card_add_two_mul_card_eq_rank, Nat.cast_add, Nat.cast_mul, Nat.cast_ofNat]\n      ring\n    _ = FractionalIdeal.absNorm I.1 * (4 / π) ^ nrComplexPlaces K * (finrank ℚ K).factorial *\n          Real.sqrt |discr K| := by\n      rw [Int.norm_eq_abs, zpow_mul, show (2 : ℝ) ^ (2 : ℤ) = 4 by norm_cast, div_pow,\n        inv_eq_one_div, div_pow, one_pow, zpow_natCast]\n      ring",
+     "excerpt_sha256": "16b32cbc1afbe53875b9e77a00a9d3fad20df26544249e6678bb346599222f43",
+     "attribution": "/-\nCopyright (c) 2023 Xavier Roblot. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Xavier Roblot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the existence of a nonzero element a of a fractional ideal with |N(a)| at most N(I)·(4/π)^{r_2}·n!/n^n·√|d_K|. This is Steps 4 and 5."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-cyclotomic-field-galois-group-units-mod-n",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Cyclotomic/Gal.lean#L136-L142",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Cyclotomic.Gal",
+     "declaration": "galCyclotomicEquivUnitsZMod",
+     "lines": [
+      136,
+      142
+     ],
+     "module_sha256": "612ddcafdad397bd9205a6c95145efd948bcac5c1bae4fe28fc35c9d0f76899b",
+     "excerpt": "/-- `IsCyclotomicExtension.autEquivPow` repackaged in terms of `Gal`.\nAsserts that the Galois group of `cyclotomic n K` is equivalent to `(ZMod n)ˣ`\nif `cyclotomic n K` is irreducible in the base field. -/\nnoncomputable def galCyclotomicEquivUnitsZMod : (cyclotomic n K).Gal ≃* (ZMod n)ˣ :=\n  (AlgEquiv.autCongr\n          (IsSplittingField.algEquiv L _ : L ≃ₐ[K] (cyclotomic n K).SplittingField)).symm.trans\n    (IsCyclotomicExtension.autEquivPow L h)",
+     "excerpt_sha256": "9bd7a87829af1444840efaceda9139dce6d557bc6028e2bc4fa6cbc851b240f0",
+     "attribution": "/-\nCopyright (c) 2022 Eric Rodriguez. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Eric Rodriguez\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the isomorphism of the Galois group of a cyclotomic polynomial with the units of ZMod n. It needs the irreducibility of the polynomial as a hypothesis in the general form. Steps 2 to 6 of this entry prove that irreducibility over ℚ."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Cyclotomic/Gal.lean#L74-L110",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Cyclotomic.Gal",
+     "declaration": "IsCyclotomicExtension.autEquivPow",
+     "lines": [
+      74,
+      110
+     ],
+     "module_sha256": "612ddcafdad397bd9205a6c95145efd948bcac5c1bae4fe28fc35c9d0f76899b",
+     "excerpt": "/-- The `MulEquiv` that takes an automorphism `f` to the element `k : (ZMod n)ˣ` such that\n  `f μ = μ ^ k` for any root of unity `μ`. A strengthening of `IsPrimitiveRoot.autToPow`. -/\n@[simps]\nnoncomputable def autEquivPow (h : Irreducible (cyclotomic n K)) : Gal(L/K) ≃* (ZMod n)ˣ :=\n  let hζ := zeta_spec n K L\n  let hμ t := hζ.pow_of_coprime _ (ZMod.val_coe_unit_coprime t)\n  { (zeta_spec n K L).autToPow K with\n    invFun := fun t =>\n      (hζ.powerBasis K).equivOfMinpoly ((hμ t).powerBasis K)\n        (by\n          have := IsCyclotomicExtension.neZero' n K L\n          simp only [IsPrimitiveRoot.powerBasis_gen]\n          have hr :=\n            IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible\n              ((zeta_spec n K L).pow_of_coprime _ (ZMod.val_coe_unit_coprime t)) h\n          exact ((zeta_spec n K L).minpoly_eq_cyclotomic_of_irreducible h).symm.trans hr)\n    left_inv := fun f => by\n      simp only [MonoidHom.toFun_eq_coe]\n      apply AlgEquiv.coe_toAlgHom_injective\n      apply (hζ.powerBasis K).algHom_ext\n      simp only [AlgEquiv.coe_toAlgHom]\n      rw [PowerBasis.equivOfMinpoly_gen]\n      simp only [IsPrimitiveRoot.powerBasis_gen, IsPrimitiveRoot.autToPow_spec]\n    right_inv := fun x => by\n      simp only [MonoidHom.toFun_eq_coe]\n      generalize_proofs _ h\n      have key := hζ.autToPow_spec K ((hζ.powerBasis K).equivOfMinpoly ((hμ x).powerBasis K) h)\n      have := (hζ.powerBasis K).equivOfMinpoly_gen ((hμ x).powerBasis K) h\n      rw [hζ.powerBasis_gen K] at this\n      rw [this, IsPrimitiveRoot.powerBasis_gen] at key\n      nth_rw 1 5 [← hζ.val_toRootsOfUnity_coe] at key\n      simp only [← rootsOfUnity.coe_pow] at key\n      replace key := rootsOfUnity.coe_injective key\n      rw [pow_eq_pow_iff_modEq, ← Subgroup.orderOf_coe, ← orderOf_units, hζ.val_toRootsOfUnity_coe,\n        ← (zeta_spec n K L).eq_orderOf, ← ZMod.natCast_eq_natCast_iff] at key\n      simp only [ZMod.natCast_val, ZMod.cast_id', id] at key\n      exact Units.ext key }",
+     "excerpt_sha256": "c5835714d3164424360dc6178c39f4254e29a6db4825729e16e795dd60aa70cb",
+     "attribution": "/-\nCopyright (c) 2022 Eric Rodriguez. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Eric Rodriguez\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source builds the group isomorphism from automorphisms to the units of ZMod n when the cyclotomic polynomial is irreducible. This matches Step 7."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-discriminant-norm-of-derivative-and-index",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Discriminant.lean#L196-L236",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Discriminant",
+     "declaration": "Algebra.discr_powerBasis_eq_norm",
+     "lines": [
+      196,
+      236
+     ],
+     "module_sha256": "4ec7252668e72db0698691d33074e3df3ecf67713757f6a874feebd61b80dc6e",
+     "excerpt": "/-- Formula for the discriminant of a power basis using the norm of the field extension. -/\ntheorem discr_powerBasis_eq_norm [Algebra.IsSeparable K L] :\n    discr K pb.basis =\n      (-1) ^ (n * (n - 1) / 2) *\n      norm K (aeval pb.gen (minpoly K pb.gen).derivative) := by\n  let E := AlgebraicClosure L\n  let := fun a b : E => Classical.propDecidable (Eq a b)\n  have e : Fin pb.dim ≃ (L →ₐ[K] E) := by\n    refine equivOfCardEq ?_\n    rw [Fintype.card_fin, AlgHom.card]\n    exact (PowerBasis.finrank pb).symm\n  have hnodup : ((minpoly K pb.gen).aroots E).Nodup :=\n    nodup_roots (Separable.map (Algebra.IsSeparable.isSeparable K pb.gen))\n  have hroots : ∀ σ : L →ₐ[K] E, σ pb.gen ∈ (minpoly K pb.gen).aroots E := by\n    intro σ\n    rw [mem_roots, IsRoot.def, eval_map_algebraMap, aeval_algHom_apply]\n    repeat' simp [minpoly.ne_zero pb.isIntegral_gen]\n  apply (algebraMap K E).injective\n  rw [map_mul, map_pow, map_neg, map_one, discr_powerBasis_eq_prod'' _ _ _ e]\n  congr\n  rw [norm_eq_prod_embeddings, prod_prod_Ioi_mul_eq_prod_prod_off_diag]\n  conv_rhs =>\n    congr\n    rfl\n    ext σ\n    rw [← aeval_algHom_apply, ← eval_map_algebraMap, ← derivative_map,\n      (IsAlgClosed.splits _).eval_root_derivative ((minpoly.monic pb.isIntegral_gen).map _)\n      (hroots σ), ← Finset.prod_mk _ (hnodup.erase _)]\n  rw [Finset.prod_sigma', Finset.prod_sigma']\n  refine prod_bij' (fun i _ ↦ ⟨e i.2, e i.1 pb.gen⟩)\n    (fun σ hσ ↦ ⟨e.symm (PowerBasis.lift pb σ.2 ?_), e.symm σ.1⟩) ?_ ?_ ?_ ?_ (fun i _ ↦ by simp)\n    <;> simp only [mem_sigma, mem_univ, Finset.mem_mk, hnodup.mem_erase_iff, IsRoot.def,\n      mem_roots', mem_singleton, true_and, mem_compl, Sigma.forall, Equiv.apply_symm_apply,\n      PowerBasis.lift_gen, implies_true, Equiv.symm_apply_apply,\n      Sigma.ext_iff, Equiv.symm_apply_eq, heq_eq_eq, and_true] at *\n  · simpa only [aeval_def, eval₂_eq_eval_map] using hσ.2.2\n  · exact fun a b hba ↦ ⟨fun h ↦ hba <| e.injective <| pb.algHom_ext h.symm, hroots _⟩\n  · rintro a b hba ha\n    rw [ha, PowerBasis.lift_gen] at hba\n    exact hba.1 rfl\n  · exact fun a b _ ↦ pb.algHom_ext <| pb.lift_gen _ _",
+     "excerpt_sha256": "29ecc7b2910ead2f04b0ed2c2f0f076871c1607baeaa915d29ba5fbf19b4d526",
+     "attribution": "/-\nCopyright (c) 2021 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the discriminant of a power basis equals (−1)^{n(n−1)/2} times the norm of the derivative of the minimal polynomial at the generator. This is the second equality of the theorem, Steps 3 and 4."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Discriminant.lean#L139-L147",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Discriminant",
+     "declaration": "Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two",
+     "lines": [
+      139,
+      147
+     ],
+     "module_sha256": "4ec7252668e72db0698691d33074e3df3ecf67713757f6a874feebd61b80dc6e",
+     "excerpt": "/-- If `L/K` is a field extension and `b : ι → L`, then `discr K b` is the square of the\ndeterminant of the matrix whose `(i, j)` coefficient is `σⱼ (b i)`, where `σⱼ : L →ₐ[K] E` is the\nembedding in an algebraically closed field `E` corresponding to `j : ι` via a bijection\n`e : ι ≃ (L →ₐ[K] E)`. -/\ntheorem discr_eq_det_embeddingsMatrixReindex_pow_two\n    [Algebra.IsSeparable K L] (e : ι ≃ (L →ₐ[K] E)) :\n    algebraMap K E (discr K b) = (embeddingsMatrixReindex K E b e).det ^ 2 := by\n  rw [discr_def, RingHom.map_det, RingHom.mapMatrix_apply,\n    traceMatrix_eq_embeddingsMatrixReindex_mul_trans, det_mul, det_transpose, pow_two]",
+     "excerpt_sha256": "35fc2b7c782e3096973cc8f7304d56ff01c93d574c9dd1fcadf774c3986a2bcc",
+     "attribution": "/-\nCopyright (c) 2021 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the discriminant equals the square of the determinant of the matrix of embeddings. This is Step 1."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [

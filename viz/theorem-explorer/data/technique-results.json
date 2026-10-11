@@ -14375,6 +14375,1925 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-cauchy-binet-formula",
+   "name": "Cauchy-Binet formula for minors of a product",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.CO"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.CO"
+   ],
+   "statement": "Let R be a commutative ring. Let A be an m×n matrix and B an n×m matrix over R. For a subset S of {1,…,n} with m elements, let A_S be the m×m matrix of the columns of A in S, and let B_S be the m×m matrix of the rows of B in S. Then det(AB) = ∑_S det(A_S)·det(B_S), where the sum runs over all m-element subsets S. If n < m, the sum is empty and det(AB) = 0. More generally, for row sets I and column sets J of size k, det((AB)_{I,J}) = ∑_{|S|=k} det(A_{I,S})·det(B_{S,J}).",
+   "hypotheses": [
+    "R is a commutative ring with 1. No division is used.",
+    "A is m×n and B is n×m. The product AB is square of size m.",
+    "For the general form, I is a set of k rows of A and J is a set of k columns of B."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only multilinearity of the determinant and the Leibniz formula. No catalog theorem is cited.",
+   "concepts": [
+    "minor",
+    "compound matrix",
+    "exterior power"
+   ],
+   "concept_prerequisites": [
+    "c:determinant",
+    "c:matrix"
+   ],
+   "definitions": [
+    {
+     "name": "minor",
+     "text": "A k×k minor of a matrix is the determinant of the square submatrix on k chosen rows and k chosen columns."
+    },
+    {
+     "name": "compound matrix",
+     "text": "The k-th compound matrix C_k(A) has one row and one column for each k-subset. Its entry at (I,S) is the minor det(A_{I,S}). The general form of the theorem says C_k(AB) = C_k(A)·C_k(B)."
+    },
+    {
+     "name": "exterior power",
+     "text": "The k-th exterior power Λ^k(f) of a linear map f has the compound matrix of f as its matrix in the wedge basis. The theorem is the statement that Λ^k respects composition."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/ExteriorPower/Basic.lean#L297-L300",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.ExteriorPower.Basic",
+    "declaration": "exteriorPower.map_comp",
+    "lines": [
+     297,
+     300
+    ],
+    "module_sha256": "644d86167e9c02ae3c37268cb058f5af8482119c786f172d321238def7a44207",
+    "excerpt": "@[simp]\ntheorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] N') :\n    map n (g ∘ₗ f) = map n g ∘ₗ map n f := by\n  aesop",
+    "excerpt_sha256": "d230b69241d39898d6430c43b6397297fcc4d28e8f9acaeb86c79864fb664865",
+    "attribution": "/-\nCopyright (c) 2024 Sophie Morel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sophie Morel, Joël Riou\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the k-th exterior power of a linear map respects composition. In the wedge basis this is the compound matrix identity C_k(AB) = C_k(A)C_k(B), which is the general form of the theorem."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Determinant/Basic.lean#L140-L170",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Determinant.Basic",
+     "declaration": "Matrix.det_mul",
+     "lines": [
+      140,
+      170
+     ],
+     "module_sha256": "1a742d8a45243cafb4cbc714e467b70a33e8a9811de116d14206914a421416b9",
+     "excerpt": "@[simp]\ntheorem det_mul (M N : Matrix n n R) : det (M * N) = det M * det N :=\n  calc\n    det (M * N) = ∑ p : n → n, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (p i) * N (p i) i := by\n      simp only [det_apply', mul_apply, prod_univ_sum, mul_sum, Fintype.piFinset_univ]\n      rw [Finset.sum_comm]\n    _ = ∑ p : n → n with Bijective p, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (p i) * N (p i) i := by\n      refine (sum_subset (filter_subset _ _) fun f _ hbij ↦ det_mul_aux ?_).symm\n      simpa only [mem_filter_univ] using hbij\n    _ = ∑ τ : Perm n, ∑ σ : Perm n, ε σ * ∏ i, M (σ i) (τ i) * N (τ i) i :=\n      sum_bij (fun p h ↦ Equiv.ofBijective p (mem_filter.1 h).2) (fun _ _ ↦ mem_univ _)\n        (fun _ _ _ _ h ↦ by injection h)\n        (fun b _ ↦ ⟨b, mem_filter.2 ⟨mem_univ _, b.bijective⟩, coe_fn_injective rfl⟩) fun _ _ ↦ rfl\n    _ = ∑ σ : Perm n, ∑ τ : Perm n, (∏ i, N (σ i) i) * ε τ * ∏ j, M (τ j) (σ j) := by\n      simp only [mul_comm, mul_left_comm, prod_mul_distrib, mul_assoc]\n    _ = ∑ σ : Perm n, ∑ τ : Perm n, (∏ i, N (σ i) i) * (ε σ * ε τ) * ∏ i, M (τ i) i :=\n      (sum_congr rfl fun σ _ =>\n        Fintype.sum_equiv (Equiv.mulRight σ⁻¹) _ _ fun τ => by\n          have : (∏ j, M (τ j) (σ j)) = ∏ j, M ((τ * σ⁻¹) j) j := by\n            rw [← (σ⁻¹ : _ ≃ _).prod_comp]\n            simp\n          have h : ε σ * ε (τ * σ⁻¹) = ε τ :=\n            calc\n              ε σ * ε (τ * σ⁻¹) = ε (τ * σ⁻¹ * σ) := by\n                rw [mul_comm, sign_mul (τ * σ⁻¹)]\n                simp only [Int.cast_mul, Units.val_mul]\n              _ = ε τ := by simp only [inv_mul_cancel_right]\n          simp_rw [Equiv.coe_mulRight, h]\n          simp only [this])\n    _ = det M * det N := by\n      simp only [det_apply', Finset.mul_sum, mul_comm, mul_left_comm, mul_assoc]",
+     "excerpt_sha256": "5b863d2e64e8ae622bfc0a1c9edc583df922e09b5a6457d68595ac13e272d74f",
+     "attribution": "/-\nCopyright (c) 2018 Kenny Lau. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kenny Lau, Chris Hughes, Anne Baanen\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the case n = m, where the only subset S is the full index set. Its proof uses the same expansion over all maps f."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Let a_1,…,a_n be the columns of A. Column j of AB is ∑_s B_{sj}·a_s, because (AB)_{ij} = ∑_s A_{is}B_{sj}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The determinant is multilinear in the columns. Expand each of the m columns of AB. We get det(AB) = ∑_f (∏_{j=1}^m B_{f(j),j})·det(a_{f(1)},…,a_{f(m)}). The sum runs over all maps f from {1,…,m} to {1,…,n}.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "If f is not injective, two of the columns a_{f(1)},…,a_{f(m)} are equal. A determinant with two equal columns is zero. So only injective f remain. If n < m, no injective f exists, and det(AB) = 0.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Let f be injective. Let S be its image. List the elements of S in increasing order as s_1 < … < s_m. There is a unique permutation τ of {1,…,m} with f(j) = s_{τ(j)}.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The matrix (a_{f(1)},…,a_{f(m)}) is the matrix A_S with its columns permuted by τ. Permuting columns multiplies the determinant by sgn(τ). So det(a_{f(1)},…,a_{f(m)}) = sgn(τ)·det(A_S).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Group the injective maps by their image S. We get det(AB) = ∑_S det(A_S)·∑_τ sgn(τ)·∏_j B_{s_{τ(j)},j}.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "The inner sum is the Leibniz formula for det(B_S). Indeed the rows of B_S are rows s_1,…,s_m of B, and the term for τ is sgn(τ)∏_j (B_S)_{τ(j),j}. So the inner sum is det(B_S), and the first claim follows.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "General minors. The submatrix (AB)_{I,J} equals A_{I,[n]}·B_{[n],J}, a product of a k×n matrix and an n×k matrix. Apply the first claim to this product. The column subsets S of A_{I,[n]} are the k-subsets of [n], and A_{I,[n]} restricted to S is A_{I,S}.",
+      "uses": []
+     },
+     {
+      "id": "s9",
+      "text": "Thus every k×k minor of AB is a sum of products of a k×k minor of A and a k×k minor of B. This is the matrix identity C_k(AB) = C_k(A)·C_k(B), which is functoriality of the exterior power.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Lagrange identity and a count of the spanning trees of K4",
+    "goal": "Use the formula to compute a Gram determinant and to count spanning trees by determinants.",
+    "hypotheses": [
+     "Part 1: A is the 2×3 integer matrix with rows (1,2,0) and (0,1,3), and B = Aᵀ.",
+     "Part 2: M is the reduced vertex-edge incidence matrix of the complete graph K4."
+    ],
+    "why_theorem_applies": "Both parts apply the theorem to a product M·Mᵀ with n larger than m. The sum over m-subsets becomes a sum over a small set of column choices.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Part 1. The product AAᵀ has entries 1+4 = 5, 2, 2 and 1+9 = 10. So det(AAᵀ) = 50 − 4 = 46.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The 2×2 minors of A for the column pairs {1,2}, {1,3}, {2,3} are 1, 3 and 6. Since B_S = (A_S)ᵀ has the same determinant as A_S, the theorem gives det(AAᵀ) = 1² + 3² + 6² = 46. This agrees with the direct value. It is the Lagrange identity: the squared area of a parallelogram is the sum of the squared areas of its projections to the coordinate planes.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Part 2. Number the vertices of K4 as 1,2,3,4 and the edges as 12,13,14,23,24,34. The column of edge ij with i < j has +1 in row i and −1 in row j. Delete the row of vertex 4. This gives a 3×6 integer matrix M.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The product MMᵀ is the reduced Laplacian. It has 3 on the diagonal and −1 off the diagonal. Its determinant is 3·(9−1) − (−1)·(−3−1) + (−1)·(1+3) = 24 − 4 − 4 = 16.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Minor lemma. For a set T of 3 edges, the 3×3 minor M_T is ±1 if T is a spanning tree and 0 otherwise. If T has a cycle, the signed sum of the columns around the cycle is zero, so the columns are dependent. If T is a tree, it has at least 2 leaves, so it has a leaf other than vertex 4. The row of that leaf has a single nonzero entry ±1 in M_T. Expand along that row and repeat on the smaller tree.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "By the theorem, det(MMᵀ) = ∑_T det(M_T)² = number of spanning trees. A computer check of all 20 edge triples finds 16 triples with minor ±1 and 4 triples with minor 0. The 4 zero triples are the 4 triangles. So K4 has 16 spanning trees, which agrees with Cayley formula 4² = 16.",
+      "uses": []
+     }
+    ],
+    "result": "det(AAᵀ) = 46 = 1+9+36 for the 2×3 matrix. The complete graph K4 has 16 spanning trees, and the 16 equals the determinant of the reduced Laplacian.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem is for commutative rings. For a noncommutative ring the determinant is not defined in this form.",
+    "The sum has C(n,m) terms. It is useful for theory and for small cases. It is a slow way to compute det(AB) for large n.",
+    "The formula needs both factors to have the shapes m×n and n×m. If A and B are square and of the same size, it reduces to det(AB) = det(A)det(B)."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-smith-normal-form-determinantal-divisors",
+   "name": "Smith normal form over a Euclidean domain and determinantal divisors",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.AC",
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.AC",
+    "math.NT"
+   ],
+   "statement": "Let R be a Euclidean domain, for example ℤ or k[x] with k a field. Let A be an m×n matrix over R of rank r. Then there are invertible matrices U (m×m) and V (n×n) over R such that UAV is the m×n matrix D with D_{ii} = d_i ≠ 0 for i ≤ r, all other entries 0, and d_1 | d_2 | … | d_r. The d_i are unique up to units. For 1 ≤ k ≤ r the product d_1⋯d_k equals, up to a unit, the gcd Δ_k(A) of all k×k minors of A. Consequently R^m/A·R^n ≅ R/(d_1) ⊕ … ⊕ R/(d_r) ⊕ R^{m−r}. If R = ℤ and m = n = r, then this quotient has exactly |det A| elements.",
+   "hypotheses": [
+    "R is a Euclidean domain with Euclidean function δ. Division with remainder works.",
+    "Invertible means that the matrix has an inverse with entries in R. Equivalently, its determinant is a unit of R.",
+    "Uniqueness is up to multiplication of each d_i by a unit."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-cauchy-binet-formula",
+     "reason": "The invariance of the determinantal divisors uses the Cauchy-Binet formula for minors of a product."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "equivalent matrices",
+    "determinantal divisor Δ_k",
+    "invariant factors"
+   ],
+   "concept_prerequisites": [
+    "c:euclidean-domain",
+    "c:smith-normal-form",
+    "c:determinant",
+    "c:cokernel"
+   ],
+   "definitions": [
+    {
+     "name": "equivalent matrices",
+     "text": "A and A′ are equivalent if A′ = UAV for invertible U and V. The operations that swap two rows, add a multiple of one row to another, or multiply a row by a unit are left multiplications by invertible matrices. The same holds for columns on the right."
+    },
+    {
+     "name": "determinantal divisor Δ_k",
+     "text": "Δ_k(A) is the gcd of all k×k minors of A. It is defined up to a unit."
+    },
+    {
+     "name": "invariant factors",
+     "text": "The elements d_1 | d_2 | … | d_r of the Smith normal form."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/FreeModule/PID.lean#L477-L502",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.FreeModule.PID",
+    "declaration": "Submodule.exists_smith_normal_form_of_le",
+    "lines": [
+     477,
+     502
+    ],
+    "module_sha256": "35a2a5879642467e343b3a2dffac157d3b189b16ee84d8653e426911127eda3b",
+    "excerpt": "/-- If `M` is finite free over a PID `R`, then any submodule `N` is free\nand we can find a basis for `M` and `N` such that the inclusion map is a diagonal matrix\nin Smith normal form.\n\nSee `Submodule.smithNormalFormOfLE` for a version of this theorem that returns\na `Basis.SmithNormalForm`.\n\nThis is a strengthening of `Submodule.basisOfPidOfLE`.\n-/\ntheorem Submodule.exists_smith_normal_form_of_le [Finite ι] (b : Basis ι R M) (N O : Submodule R M)\n    (N_le_O : N ≤ O) :\n    ∃ (n o : ℕ) (hno : n ≤ o) (bO : Basis (Fin o) R O) (bN : Basis (Fin n) R N) (a : Fin n → R),\n      ∀ i, (bN i : M) = a i • bO (Fin.castLE hno i) := by\n  cases nonempty_fintype ι\n  induction O using inductionOnRank b generalizing N with | ih M0 ih =>\n  obtain ⟨m, b'M⟩ := M0.basisOfPid b\n  by_cases N_bot : N = ⊥\n  · subst N_bot\n    exact ⟨0, m, Nat.zero_le _, b'M, Basis.empty _, finZeroElim, finZeroElim⟩\n  obtain ⟨y, hy, a, _, M', M'_le_M, N', _, N'_le_M', y_ortho, _, h⟩ :=\n    Submodule.basis_of_pid_aux M0 N b'M N_bot N_le_O\n  obtain ⟨n', m', hn'm', bM', bN', as', has'⟩ := ih M' M'_le_M y hy y_ortho N' N'_le_M'\n  obtain ⟨bN, h'⟩ := h n' bN'\n  obtain ⟨hmn, bM, h''⟩ := h' m' hn'm' bM'\n  obtain ⟨as, has⟩ := h'' as' has'\n  exact ⟨_, _, hmn, bM, bN, as, has⟩",
+    "excerpt_sha256": "cbd3d5a6c608b6f8b17e29d9497effec35c86b0f08b16910903c850c907ab55c",
+    "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the module form over a PID. For a submodule N of a finite free module there are bases of N and of the ambient module such that the inclusion is diagonal. This matches the existence part, with the matrix reading of the diagonal form. It does not state the divisibility chain or the minors formula."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Module/PID.lean#L228-L248",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Module.PID",
+     "declaration": "Module.equiv_directSum_of_isTorsion",
+     "lines": [
+      228,
+      248
+     ],
+     "module_sha256": "b8e6460b933a605822e88e97ba3e763af59918984a1acc2878f952ca2c327160",
+     "excerpt": "/-- A finitely generated torsion module over a PID is isomorphic to a direct sum of some\n  `R ⧸ R ∙ (p i ^ e i)` where the `p i ^ e i` are prime powers. -/\ntheorem equiv_directSum_of_isTorsion [h' : Module.Finite R M] (hM : Module.IsTorsion R M) :\n    ∃ (ι : Type u) (_ : Fintype ι) (p : ι → R) (_ : ∀ i, Irreducible <| p i) (e : ι → ℕ),\n      Nonempty <| M ≃ₗ[R] ⨁ i : ι, R ⧸ R ∙ p i ^ e i := by\n  obtain ⟨I, fI, _, p, hp, e, h⟩ := Submodule.exists_isInternal_prime_power_torsion_of_pid hM\n  have :\n    ∀ i,\n      ∃ (d : ℕ) (k : Fin d → ℕ),\n        Nonempty <| torsionBy R M (p i ^ e i) ≃ₗ[R] ⨁ j, R ⧸ R ∙ p i ^ k j := by\n    exact fun i =>\n      torsion_by_prime_power_decomposition.{u, v} (hp i)\n        ((isTorsion'_powers_iff <| p i).mpr fun x => ⟨e i, smul_torsionBy _ _⟩)\n  refine\n    ⟨Σ i, Fin (this i).choose, inferInstance, fun ⟨i, _⟩ => p i, fun ⟨i, _⟩ => hp i, fun ⟨i, j⟩ =>\n      (this i).choose_spec.choose j,\n      ⟨(LinearEquiv.ofBijective (DirectSum.coeLinearMap _) h).symm.trans <|\n          (DFinsupp.mapRange.linearEquiv fun i => (this i).choose_spec.choose_spec.some).trans <|\n            (DirectSum.sigmaLcurryEquiv R).symm.trans\n              (DFinsupp.mapRange.linearEquiv fun i => quotEquivOfEq _ _ ?_)⟩⟩\n  simp only",
+     "excerpt_sha256": "44225f44363548d1ebd79cb2567cebd1cf4d1c219466096cd53b98691b0fc049",
+     "attribution": "/-\nCopyright (c) 2022 Pierre-Alexandre Bazin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Pierre-Alexandre Bazin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the structure theorem for torsion modules over a PID in prime power form. It matches the quotient decomposition of the last steps."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Existence. Assume A ≠ 0. Among all matrices equivalent to A, choose a matrix B that has a nonzero entry b with the smallest possible value δ(b). Such a choice exists by well ordering of the values of δ. Swap rows and columns so that b is at position (1,1).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Claim: b divides every entry of the first row and of the first column. Take B_{1j} = qb + ρ with ρ = 0 or δ(ρ) < δ(b). Subtract q times column 1 from column j. The new matrix is equivalent to A and has ρ at position (1,j). If ρ ≠ 0, this contradicts the minimality of δ(b). So ρ = 0. The column case is the same.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Subtract suitable multiples of row 1 and column 1 to clear the rest of row 1 and column 1. The result is the block matrix diag(b, A′).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Claim: b divides every entry of A′. Suppose b does not divide the entry a at position (i,j) of A′. Add row i to row 1. Now row 1 contains b at (1,1) and a at (1,j). Write a = qb + ρ with ρ ≠ 0 and δ(ρ) < δ(b). Subtract q times column 1 from column j. We get a matrix equivalent to A with the nonzero entry ρ, and δ(ρ) < δ(b). This contradicts minimality.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Induction on the size. Apply the same argument to A′, which has smaller size. Row and column operations on A′ replace each entry by an R-linear combination of the old entries. So all entries stay multiples of b. This gives diag(b, d_2, …, d_r, 0, …, 0) with b | d_2, and the chain d_i | d_{i+1} holds by the same claim at each stage. Existence is proved.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Invariance of Δ_k. By Cauchy-Binet in its general form, every k×k minor of UAV is an R-linear combination of k×k minors of A. So Δ_k(A) divides Δ_k(UAV). Apply the same argument to A = U⁻¹(UAV)V⁻¹. We get Δ_k(UAV) divides Δ_k(A). So Δ_k(UAV) and Δ_k(A) agree up to a unit.",
+      "uses": [
+       "nm:technique-cauchy-binet-formula"
+      ]
+     },
+     {
+      "id": "s7",
+      "text": "Determinantal divisors of D. A k×k minor of D with rows i_1<…<i_k and columns j_1<…<j_k is zero unless the row set equals the column set. Then it equals d_{i_1}⋯d_{i_k}. Because i_t ≥ t and the d_i form a divisibility chain, d_t divides d_{i_t}. So d_1⋯d_k divides every nonzero k×k minor, and it is itself the minor on the first k rows and columns. So Δ_k(D) = d_1⋯d_k up to a unit.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Uniqueness. By the last two steps, d_1⋯d_k ~ Δ_k(A) for all k ≤ r. Hence d_k ~ Δ_k(A)/Δ_{k−1}(A) with Δ_0 = 1. The d_k depend only on A. The rank r is the largest k with Δ_k(A) ≠ 0.",
+      "uses": []
+     },
+     {
+      "id": "s9",
+      "text": "The quotient. The map x ↦ Ux sends the column space A·R^n onto UA·R^n = UAV·R^n = D·R^n, because V is invertible. So R^m/A·R^n ≅ R^m/D·R^n. The column space of D is d_1R ⊕ … ⊕ d_rR ⊕ 0. So R^m/D·R^n ≅ ⊕ R/(d_i) ⊕ R^{m−r}.",
+      "uses": []
+     },
+     {
+      "id": "s10",
+      "text": "Order of the quotient over ℤ. For m = n = r, the group is ⊕ ℤ/(d_i). It has ∏|d_i| elements. Since det U and det V are ±1, |det A| = |det D| = ∏|d_i|.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Smith form of a 3×3 integer matrix by determinantal divisors",
+    "goal": "Let A be the integer matrix with rows (2,4,4), (−6,6,12), (10,−4,−16). Find the invariant factors and the structure of ℤ³/Aℤ³.",
+    "hypotheses": [
+     "R = ℤ and A is 3×3.",
+     "The gcd of integers is taken as non-negative."
+    ],
+    "why_theorem_applies": "The ring ℤ is Euclidean. By the theorem, the invariant factors follow from the three gcds Δ_1, Δ_2, Δ_3. No row reduction is needed.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Δ_1 is the gcd of the nine entries 2, 4, 4, −6, 6, 12, 10, −4, −16. It is 2.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The nine 2×2 minors are 36, 48, 24, −48, −72, −48, −36, −24, −48. Their gcd is Δ_2 = 12.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The determinant of A is −144, so Δ_3 = 144.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The invariant factors are d_1 = 2, d_2 = 12/2 = 6 and d_3 = 144/12 = 12. The chain 2 | 6 | 12 holds. A computer algebra system returns the same Smith form diag(2, 6, 12).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "By the theorem, ℤ³/Aℤ³ ≅ ℤ/2 ⊕ ℤ/6 ⊕ ℤ/12. It has 2·6·12 = 144 = |det A| elements.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Split into primary parts: ℤ/2 ⊕ (ℤ/2 ⊕ ℤ/3) ⊕ (ℤ/4 ⊕ ℤ/3). The elementary divisors are 2, 2, 4, 3, 3. The group has exponent 12. It has 2³ = 8 elements of order dividing 2.",
+      "uses": []
+     }
+    ],
+    "result": "A has invariant factors 2, 6, 12. The quotient ℤ³/Aℤ³ is ℤ/2 ⊕ ℤ/6 ⊕ ℤ/12 of order 144.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof is for Euclidean domains. For a general PID the theorem is true, but the pivot argument needs a different measure of size, such as the number of prime factors.",
+    "The normal form of a matrix over a field is only the rank. The interesting case is a ring that is not a field.",
+    "The matrices U and V are not unique. Only the diagonal is.",
+    "Computing Δ_k from all minors costs many determinants. For large matrices, use row and column reduction."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q7888360",
+      "relation": "refines",
+      "reason": "The catalog record is the structure theorem for finitely generated modules over a PID. This entry adds the matrix form, the divisibility chain and the minors formula for the invariant factors."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-similarity-invariant-factors-rational-canonical-form",
+   "name": "Matrix similarity by invariant factors and the rational canonical form",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.AC"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.AC"
+   ],
+   "statement": "Let k be a field. Let A and B be n×n matrices over k. Then A and B are similar over k if and only if the matrices xI−A and xI−B over k[x] are equivalent. This holds if and only if xI−A and xI−B have the same invariant factors d_1 | d_2 | … | d_n, taken monic. The product d_1⋯d_n is the characteristic polynomial of A. The last factor d_n is the minimal polynomial of A. Also A is similar to the block diagonal matrix of the companion matrices of the nonconstant d_i. This block matrix is the rational canonical form of A. It depends only on the similarity class of A.",
+   "hypotheses": [
+    "k is a field. Then k[x] is a Euclidean domain.",
+    "A and B are square matrices of the same size n.",
+    "Similar means B = PAP⁻¹ for an invertible matrix P over k."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-smith-normal-form-determinantal-divisors",
+     "reason": "Steps 7 to 9 use the Smith normal form over k[x], the uniqueness of the invariant factors through the determinantal divisors, and the quotient decomposition."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "k[x]-module V_A",
+    "invariant factors of a matrix",
+    "companion matrix"
+   ],
+   "concept_prerequisites": [
+    "c:matrix",
+    "c:characteristic-polynomial",
+    "c:minimal-polynomial",
+    "c:similarity-transformation",
+    "c:smith-normal-form",
+    "c:euclidean-domain"
+   ],
+   "definitions": [
+    {
+     "name": "k[x]-module V_A",
+     "text": "V_A is the vector space k^n in which the polynomial x acts as the matrix A. A polynomial g acts as g(A). A k-linear map P from V_A to V_B is k[x]-linear exactly when PA = BP."
+    },
+    {
+     "name": "invariant factors of a matrix",
+     "text": "The monic Smith diagonal entries d_1 | … | d_n of xI−A. The matrix xI−A has rank n, because its determinant is the monic characteristic polynomial. So all d_i are nonzero."
+    },
+    {
+     "name": "companion matrix",
+     "text": "For a monic polynomial d = x^m + c_{m−1}x^{m−1} + … + c_0, the companion matrix C(d) is the m×m matrix with 1 on the subdiagonal and last column (−c_0, …, −c_{m−1}). It is the matrix of multiplication by x on k[x]/(d) in the basis 1, x, …, x^{m−1}."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Charpoly/Basic.lean#L92-L101",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.Matrix.Charpoly.Basic",
+    "declaration": "Matrix.matPolyEquiv_charmatrix",
+    "lines": [
+     92,
+     101
+    ],
+    "module_sha256": "52dfc6c7a64177809ea62ec94915bc4136246fccfb951c114fd2d8312dc80110",
+    "excerpt": "theorem matPolyEquiv_charmatrix : matPolyEquiv (charmatrix M) = X - C M := by\n  ext k i j\n  simp only [matPolyEquiv_coeff_apply, coeff_sub]\n  by_cases h : i = j\n  · subst h\n    rw [charmatrix_apply_eq, coeff_sub]\n    simp only [coeff_X, coeff_C]\n    split_ifs <;> simp\n  · rw [charmatrix_apply_ne _ _ _ h, coeff_X, coeff_neg, coeff_C, coeff_C]\n    split_ifs <;> simp [h]",
+    "excerpt_sha256": "8e349f40c1cc0dac9800d217b00ced2e4ecab52695fe552368639916a45ff143",
+    "attribution": "/-\nCopyright (c) 2020 Kim Morrison. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kim Morrison\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the polynomial matrix xI−M corresponds to X − C M under the identification of matrices over R[X] with polynomials over matrices. This is the link between xI−A and the action of x on V_A."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Polynomial/Module/AEval.lean#L68-L68",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Algebra.Polynomial.Module.AEval",
+     "declaration": "Module.AEval.of_aeval_smul",
+     "lines": [
+      68,
+      68
+     ],
+     "module_sha256": "1013e49c4e70ffc79d887f70f5b287e0b4f0017ad5668026ae74f784b5903f52",
+     "excerpt": "lemma of_aeval_smul (f : R[X]) (m : M) : of R M a (aeval a f • m) = f • of R M a m := rfl",
+     "excerpt_sha256": "69eaa4a3bc30c566015c878ee2df9d2ccb3a6514ff5f3ea0436acb372eba92dc",
+     "attribution": "/-\nCopyright (c) 2022 Richard M. Hill. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Richard M. Hill\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source defines the module structure in which a polynomial f acts on M as aeval a f. This is the module V_A. The source states the compatibility of the two actions. It does not state the presentation or the Smith criterion."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Similarity means isomorphism of modules. If P is invertible and PA = BP, then P is a k[x]-linear bijection from V_A to V_B. The converse is the same statement read backward. So A and B are similar if and only if V_A ≅ V_B.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. A presentation of V_A. Let e_1,…,e_n be the standard basis of k[x]^n. Define φ: k[x]^n → V_A by φ(∑ x^m v_m) = ∑ A^m v_m, with v_m in k^n. Then φ is k[x]-linear, because φ(x·v) = A·φ(v). It is onto, because φ(e_i) = e_i.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. The kernel of φ is the image of xI−A. First, (xI−A)e_j = x e_j − ∑_i A_{ij} e_i. Its image under φ is A e_j − A e_j = 0. So the image of xI−A lies in ker φ. For the other inclusion, take w in k^n. The identity (xI−A)·∑_{i+j=m−1} x^i A^j w = x^m w − A^m w shows that x^m w is congruent to the constant vector A^m w modulo the image of xI−A. Apply this to each term of v = ∑ x^m v_m. We get v ≡ φ(v) modulo the image. If φ(v) = 0, then v is in the image.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Also xI−A is injective, because its determinant is a nonzero polynomial. So V_A ≅ k[x]^n / (xI−A)k[x]^n as k[x]-modules. This is the cokernel of xI−A.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. If A and B are similar, then B = PAP⁻¹. So P(xI−A)P⁻¹ = xI−B. The constant matrix P is invertible over k[x]. Hence xI−A and xI−B are equivalent.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. Suppose U(xI−A)V = xI−B with U and V invertible over k[x]. The map u ↦ Uu on k[x]^n sends the image of xI−A onto U(xI−A)k[x]^n = U(xI−A)V k[x]^n, which is the image of xI−B. So it induces a k[x]-linear bijection between the two cokernels. By Step 4, V_A ≅ V_B. By Step 1, A and B are similar.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. The Smith criterion. Two matrices over k[x] are equivalent exactly when they have the same Smith normal form. If the two forms are equal, both matrices are equivalent to one diagonal matrix. If the matrices are equivalent, the determinantal divisors agree, and the invariant factors are quotients of them. So A and B are similar if and only if they have the same monic invariant factors.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s8",
+      "text": "Step 8. The product. The determinantal divisor Δ_n of xI−A is its determinant, which is monic, up to a unit. Also Δ_n = d_1⋯d_n. So d_1⋯d_n = det(xI−A) = χ_A, the characteristic polynomial.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s9",
+      "text": "Step 9. The minimal polynomial. The quotient description of the Smith theorem gives V_A ≅ ⊕ k[x]/(d_i). Because d_i divides d_n, the polynomial d_n kills every summand. The summand k[x]/(d_n) is killed only by multiples of d_n. So the annihilator of V_A in k[x] is the ideal (d_n). By definition this annihilator is the ideal of all g with g(A) = 0. So d_n is the minimal polynomial of A. In particular the minimal polynomial divides χ_A, and χ_A divides d_n^n.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s10",
+      "text": "Step 10. The rational canonical form. For monic d of degree m, the classes of 1, x, …, x^{m−1} form a k-basis of k[x]/(d). In this basis x acts as C(d). Join these bases for the nonconstant d_i. The result is a k-basis of V_A in which A is the block diagonal matrix diag(C(d_i)). So A is similar to this matrix. By Step 7, matrices with the same similarity class have the same d_i, so the block matrix depends only on the class.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Two 4×4 matrices with equal characteristic polynomial and equal rank data that are not similar",
+    "goal": "Decide whether A1 = J_2(1) ⊕ J_2(1) and A2 = J_3(1) ⊕ J_1(1) are similar over ℚ, and find the rational canonical form of A2.",
+    "hypotheses": [
+     "J_m(1) is the m×m matrix with 1 on the diagonal and 1 on the superdiagonal.",
+     "The field is ℚ and the polynomial ring is ℚ[x]."
+    ],
+    "why_theorem_applies": "Both matrices are 4×4 over a field. The theorem reduces similarity to a comparison of the gcds of minors of xI−A.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Both matrices have characteristic polynomial (x−1)^4, trace 4, determinant 1 and rank(A−I) = 2. So these simple invariants do not separate them.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "In xI−A1 the diagonal entries are x−1 and the superdiagonal entries are −1 inside each block. Entries include the constant −1, so Δ_1 = 1. A 2×2 minor on the rows 1, 3 and columns 2, 4 equals (−1)(−1) = 1, so Δ_2 = 1. A computer algebra system computes all 3×3 and 4×4 minors. It returns Δ_3 = (x−1)^2 and Δ_4 = (x−1)^4 for A1.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For A2 the same computation returns Δ_1 = 1, Δ_2 = 1, Δ_3 = x−1 and Δ_4 = (x−1)^4. The invariant factors are the quotients Δ_k/Δ_{k−1}. For A1 they are 1, 1, (x−1)^2, (x−1)^2. For A2 they are 1, 1, x−1, (x−1)^3.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "The invariant factors differ. By the theorem, A1 and A2 are not similar. The minimal polynomials confirm this: d_4 = (x−1)^2 for A1 and d_4 = (x−1)^3 for A2. Directly, (A1−I)^2 = 0, while (A2−I)^2 ≠ 0.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Rational canonical form of A2. The nonconstant invariant factors are x−1 and (x−1)^3 = x^3 − 3x^2 + 3x − 1. Their companion matrices are the 1×1 matrix (1) and the 3×3 matrix C with rows (0,0,1), (1,0,−3), (0,1,3). So A2 is similar to diag((1), C).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Check: the computer algebra system computes the invariant factors of diag((1), C). It returns 1, 1, x−1, (x−1)^3, the same list as for A2. So diag((1), C) is similar to A2 by the theorem.",
+      "uses": []
+     }
+    ],
+    "result": "A1 and A2 have the same characteristic polynomial (x−1)^4 but invariant factors (1,1,(x−1)^2,(x−1)^2) and (1,1,x−1,(x−1)^3). They are not similar. A2 has the rational canonical form diag((1), C).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem needs k[x] to be a Euclidean domain. This holds for every field k.",
+    "The rational canonical form needs no eigenvalue and no extension of k. The Jordan form needs the roots of χ_A in k.",
+    "The invariant factors are found by gcds of many minors. For large matrices, use polynomial row and column reduction instead.",
+    "Two matrices over k that are similar over a larger field are also similar over k. This is a corollary of the criterion, because the invariant factors do not change by the extension. The proof here does not show it."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-kronecker-sum-sylvester-equation",
+   "name": "Kronecker sum eigenvalues and solvability of the Sylvester equation",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.NA"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.NA"
+   ],
+   "statement": "Let A be an m×m complex matrix with eigenvalues λ_1,…,λ_m. Let B be an n×n complex matrix with eigenvalues μ_1,…,μ_n, counted with algebraic multiplicity. Let vec stack the columns of a matrix. Then vec(AX+XB) = K·vec(X), with K = I_n⊗A + Bᵀ⊗I_m. The mn eigenvalues of K, with multiplicity, are the sums λ_i+μ_j. Hence det K = ∏_{i,j}(λ_i+μ_j). The Sylvester equation AX+XB = C has exactly one solution X for every C if and only if A and −B have no common eigenvalue. If they have a common eigenvalue, the homogeneous equation AX+XB = 0 has a nonzero solution.",
+   "hypotheses": [
+    "A is m×m and B is n×n over ℂ.",
+    "C and X are m×n.",
+    "The Kronecker product (P⊗Q) has block (i,j) equal to P_{ij}·Q."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only the definition of the Kronecker product and triangularization of complex matrices, which Step 4 proves. No catalog theorem is cited.",
+   "concepts": [
+    "vec",
+    "Kronecker sum",
+    "Sylvester equation"
+   ],
+   "concept_prerequisites": [
+    "c:matrix",
+    "c:eigenvalue",
+    "c:kronecker-product",
+    "c:characteristic-polynomial"
+   ],
+   "definitions": [
+    {
+     "name": "vec",
+     "text": "vec(X) is the column vector of length mn obtained by writing the columns of X one below the other."
+    },
+    {
+     "name": "Kronecker sum",
+     "text": "The Kronecker sum of A and B is I_n⊗A + Bᵀ⊗I_m. It is the matrix of the linear map X ↦ AX+XB on m×n matrices."
+    },
+    {
+     "name": "Sylvester equation",
+     "text": "The linear matrix equation AX+XB = C in the unknown X. The case B = Aᴴ is the Lyapunov equation."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Kronecker.lean#L211-L225",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.Matrix.Kronecker",
+    "declaration": "Matrix.kroneckerMapBilinear_mul_mul",
+    "lines": [
+     211,
+     225
+    ],
+    "module_sha256": "a5b02cb42dfcf8631ec080e7d6ed05468098b40b22f612e7f1f04f3a0010cb19",
+    "excerpt": "/-- `Matrix.kroneckerMapBilinear` commutes with `*` if `f` does.\n\nThis is primarily used with `R = ℕ` to prove `Matrix.mul_kronecker_mul`. -/\ntheorem kroneckerMapBilinear_mul_mul [Semiring S] [Semiring R] [Fintype m] [Fintype m']\n    [NonUnitalNonAssocSemiring α] [NonUnitalNonAssocSemiring β] [NonUnitalNonAssocSemiring γ]\n    [Module R α] [Module R γ] [Module S β] [Module S γ] [SMulCommClass S R γ]\n    (f : α →ₗ[R] β →ₗ[S] γ)\n    (h_comm : ∀ a b a' b', f (a * b) (a' * b') = f a a' * f b b') (A : Matrix l m α)\n    (B : Matrix m n α) (A' : Matrix l' m' β) (B' : Matrix m' n' β) :\n    kroneckerMapBilinear f (A * B) (A' * B') =\n      kroneckerMapBilinear f A A' * kroneckerMapBilinear f B B' := by\n  ext ⟨i, i'⟩ ⟨j, j'⟩\n  simp only [kroneckerMapBilinear_apply_apply, mul_apply, ← Finset.univ_product_univ,\n    Finset.sum_product, kroneckerMap_apply]\n  simp_rw [map_sum f, LinearMap.sum_apply, map_sum, h_comm]",
+    "excerpt_sha256": "673dac08fec14394a7ecc56423bd464d996027492fedfc632ee2d1821df257e3",
+    "attribution": "/-\nCopyright (c) 2021 Filippo A. E. Nuccio. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Filippo A. E. Nuccio, Eric Wieser\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the mixed product rule for Kronecker products of matrices. This is Step 3 of the proof."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/Kronecker.lean#L239-L260",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.Kronecker",
+     "declaration": "Matrix.det_kroneckerMapBilinear",
+     "lines": [
+      239,
+      260
+     ],
+     "module_sha256": "a5b02cb42dfcf8631ec080e7d6ed05468098b40b22f612e7f1f04f3a0010cb19",
+     "excerpt": "/-- `determinant` of `Matrix.kroneckerMapBilinear`.\n\nThis is primarily used with `R = ℕ` to prove `Matrix.det_kronecker`. -/\ntheorem det_kroneckerMapBilinear [Semiring S] [Semiring R] [Fintype m] [Fintype n] [DecidableEq m]\n    [DecidableEq n] [NonAssocSemiring α] [NonAssocSemiring β] [CommRing γ] [Module R α] [Module S β]\n    [Module R γ] [Module S γ] [SMulCommClass S R γ]\n    (f : α →ₗ[R] β →ₗ[S] γ) (h_comm : ∀ a b a' b', f (a * b) (a' * b') = f a a' * f b b')\n    (A : Matrix m m α) (B : Matrix n n β) :\n    det (kroneckerMapBilinear f A B) =\n      det (A.map fun a => f a 1) ^ Fintype.card n * det (B.map fun b => f 1 b) ^ Fintype.card m :=\n  calc\n    det (kroneckerMapBilinear f A B) =\n        det (kroneckerMapBilinear f A 1 * kroneckerMapBilinear f 1 B) := by\n      rw [← kroneckerMapBilinear_mul_mul f h_comm, Matrix.mul_one, Matrix.one_mul]\n    _ = det (blockDiagonal fun (_ : n) => A.map fun a => f a 1) *\n        det (blockDiagonal fun (_ : m) => B.map fun b => f 1 b) := by\n      rw [det_mul, ← diagonal_one, ← diagonal_one, kroneckerMapBilinear_apply_apply,\n        kroneckerMap_diagonal_right _ fun _ => _, kroneckerMapBilinear_apply_apply,\n        kroneckerMap_diagonal_left _ fun _ => _, det_reindex_self]\n      · intro; exact LinearMap.map_zero₂ _ _\n      · intro; exact map_zero _\n    _ = _ := by simp_rw [det_blockDiagonal, Finset.prod_const, Finset.card_univ]",
+     "excerpt_sha256": "32a580198353a6a8fe39e60fed85e888ea89dcdbf8b3d39fbe84bfb6a7054c2a",
+     "attribution": "/-\nCopyright (c) 2021 Filippo A. E. Nuccio. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Filippo A. E. Nuccio, Eric Wieser\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the determinant of a Kronecker product. It supports the determinant computations. The source does not treat the Kronecker sum or the Sylvester equation."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Vec identity. Column j of AXB equals A·X·(B e_j) = ∑_l B_{lj}·A x_l, where x_l is column l of X. So the block (j,l) of the matrix of X ↦ AXB, in the basis of vec, is B_{lj}A. This block is the block (j,l) of Bᵀ⊗A. Hence vec(AXB) = (Bᵀ⊗A) vec(X).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. Apply Step 1 twice. Use AX = A·X·I and XB = I·X·B. We get vec(AX) = (I_n⊗A)vec(X) and vec(XB) = (Bᵀ⊗I_m)vec(X). Add them to get vec(AX+XB) = K·vec(X).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. Mixed products. For matrices of fitting sizes, (P⊗Q)(R⊗S) = PR⊗QS. Indeed, the entry at row (i,a) and column (j,b) of the left side is ∑_{k,c} P_{ik}Q_{ac}R_{kj}S_{cb}. This equals (PR)_{ij}·(QS)_{ab}.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Triangularization. Over ℂ every square matrix is similar to an upper triangular matrix. Proof by induction on the size. Take an eigenvector v of the matrix. Extend v to a basis. In this basis the matrix has a first column (λ,0,…,0)ᵀ. Apply the induction to the lower right block. The diagonal entries are the eigenvalues with algebraic multiplicity, because similar matrices have the same characteristic polynomial.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. Choose invertible P and Q with P⁻¹AP = S and Q⁻¹BQ = R, with S and R upper triangular. Their diagonals are (λ_i) and (μ_j). Then Bᵀ = Q⁻ᵀRᵀQᵀ. Put G = Q⁻ᵀ⊗P. By Step 3, G⁻¹ = Qᵀ⊗P⁻¹, and G⁻¹(I_n⊗A)G = (QᵀQ⁻ᵀ)⊗(P⁻¹AP) = I_n⊗S. Likewise G⁻¹(Bᵀ⊗I_m)G = (QᵀBᵀQ⁻ᵀ)⊗(P⁻¹P) = Rᵀ⊗I_m. So G⁻¹KG = I_n⊗S + Rᵀ⊗I_m =: T.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. T is triangular. Index the rows and columns of T by pairs (j,i), with j in {1..n} and i in {1..m}. The entry at row (j,i) and column (l,k) is δ_{jl}S_{ik} + (Rᵀ)_{jl}δ_{ik}. The first term is nonzero only if l = j and k ≥ i. The second is nonzero only if k = i and l ≤ j, because Rᵀ is lower triangular. Define the rank of (j,i) as i−j. In both cases the rank of the column index is at least the rank of the row index, with equality only when (l,k) = (j,i). Order the pairs by rank, and break ties in any way. Then T is upper triangular. Its diagonal entry at (j,i) is S_{ii}+R_{jj} = λ_i+μ_j.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. Since K is similar to T, the eigenvalues of K with multiplicity are the sums λ_i+μ_j. The determinant is the product of the diagonal entries of T, so det K = ∏(λ_i+μ_j).",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Step 8. Solvability. By Step 2 the map X ↦ AX+XB is K in coordinates. It is bijective if and only if K is invertible. This holds if and only if no sum λ_i+μ_j is zero. That condition says that no eigenvalue λ_i of A equals −μ_j, an eigenvalue of −B. If the condition fails, K has a nonzero kernel vector, and it gives a nonzero X with AX+XB = 0. Then the range is a proper subspace, so some C give no solution.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A 2×2 Sylvester equation, a solution and a singular case",
+    "goal": "Solve AX+XB = I for A = [[1,2],[0,3]] and B = [[1,0],[1,2]]. Then change B so that the equation becomes singular.",
+    "hypotheses": [
+     "m = n = 2 over ℚ, which lies in ℂ.",
+     "C = I."
+    ],
+    "why_theorem_applies": "The eigenvalues of A are 1 and 3. The eigenvalues of B are 1 and 2. The eigenvalues of −B are −1 and −2. The sets share no number, so the theorem predicts a unique solution.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The Kronecker sum is K = I⊗A + Bᵀ⊗I. Writing it out gives the 4×4 matrix with rows (2,2,1,0), (0,4,0,1), (0,0,3,2), (0,0,0,5).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "K is upper triangular with diagonal 2, 4, 3, 5. These numbers are the sums 1+1, 3+1, 1+2, 3+2 in the order of the pairs. They are the four values λ_i+μ_j, and the theorem predicts them. So det K = 2·4·3·5 = 120.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Solve K·vec(X) = vec(I) = (1,0,0,1)ᵀ by back substitution. The result is vec(X) = (37/60, −1/20, −2/15, 1/5)ᵀ. So X = [[37/60, −2/15], [−1/20, 1/5]].",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Check by hand. AX = [[31/60, 4/15], [−3/20, 3/5]] and XB = [[29/60, −4/15], [3/20, 2/5]]. The sum is [[1,0],[0,1]]. So the solution is correct and unique.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Singular case. Replace B by B′ = [[−1,0],[1,2]]. Its eigenvalues are −1 and 2. So −B′ has eigenvalues 1 and −2, and 1 is also an eigenvalue of A. The theorem predicts a nonzero solution of AX+XB′ = 0, and det K′ = 0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Take X = [[1,0],[0,0]]. Then AX = [[1,0],[0,0]] and XB′ = [[−1,0],[0,0]]. Their sum is zero. A computer algebra system confirms that det K′ = 0 and that the kernel of K′ is spanned by vec of this X.",
+      "uses": []
+     }
+    ],
+    "result": "The equation AX+XB = I has the unique solution X = [[37/60, −2/15], [−1/20, 1/5]] and det K = 120. For B′ the equation AX+XB′ = 0 has the nonzero solution E_11.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof uses triangularization over ℂ. Over ℝ the eigenvalues may be complex, but the statement about solvability is the same, because ℝ-solvability and ℂ-solvability agree for a real linear system.",
+    "The vec form has size mn×mn. Solving it directly costs O((mn)^3) operations. Numerical codes reduce A and B to Schur form instead, and cost O(m^3+n^3).",
+    "If A and −B have eigenvalues that are close, K is nearly singular. The solution is then sensitive to errors.",
+    "The theorem is about the eigenvalues of the Kronecker sum. The eigenvalues of A⊗B are the products λ_iμ_j. That statement has a similar proof but it is not proved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-galois-group-prime-degree-two-nonreal-roots",
+   "name": "Galois group S_p for an irreducible polynomial of prime degree with two nonreal roots",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.GR",
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.GR",
+    "math.NT"
+   ],
+   "statement": "Let p be a prime. Let f be an irreducible polynomial of degree p in ℚ[x] that has exactly p−2 real roots. Then f has exactly two nonreal roots. The Galois group of f over ℚ is the full symmetric group S_p acting on the p roots. Its order is p!.",
+   "hypotheses": [
+    "f is irreducible over ℚ, so f is separable and has p distinct roots in ℂ.",
+    "p is prime.",
+    "Exactly p−2 of the roots are real."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:eisenstein-s-criterion",
+     "reason": "The application needs the irreducibility of x^5 − 4x + 2, proved by the Eisenstein criterion."
+    },
+    {
+     "id": "nm:decomposition-into-transpositions",
+     "reason": "Step 7 uses that the symmetric group is generated by transpositions."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Galois group of a polynomial",
+    "transposition",
+    "transitive action"
+   ],
+   "concept_prerequisites": [
+    "c:galois-group",
+    "c:symmetric-group",
+    "c:irreducible-polynomial"
+   ],
+   "definitions": [
+    {
+     "name": "Galois group of a polynomial",
+     "text": "The group of automorphisms of the splitting field of f over ℚ. It acts faithfully on the set of roots, so it is a subgroup of the symmetric group on the roots."
+    },
+    {
+     "name": "transposition",
+     "text": "A permutation that swaps two points and fixes all other points."
+    },
+    {
+     "name": "transitive action",
+     "text": "A group G acts transitively on a set R if for all a and b in R some g in G has g(a) = b."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L181-L187",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+    "declaration": "Polynomial.Gal.galAction_isPretransitive",
+    "lines": [
+     181,
+     187
+    ],
+    "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+    "excerpt": "lemma galAction_isPretransitive [Fact ((p.map (algebraMap F E)).Splits)] (hp : Irreducible p) :\n    MulAction.IsPretransitive p.Gal (p.rootSet E) := by\n  refine ⟨fun x y ↦ ?_⟩\n  have hx := minpoly.eq_of_irreducible hp (mem_rootSet.mp ((rootsEquivRootsAux p E).symm x).2).2\n  have hy := minpoly.eq_of_irreducible hp (mem_rootSet.mp ((rootsEquivRootsAux p E).symm y).2).2\n  obtain ⟨g, hg⟩ := (Normal.minpoly_eq_iff_mem_orbit p.SplittingField).mp (hy.symm.trans hx)\n  exact ⟨g, (rootsEquivRootsAux p E).eq_symm_apply.mp (Subtype.ext hg)⟩",
+    "excerpt_sha256": "d14d2b5867484468ac8f973a6ca3183401386a958a75cc9fd1082c85a606b374",
+    "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the Galois group of an irreducible polynomial acts transitively on its roots. This is Step 2."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L367-L386",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+     "declaration": "Polynomial.Gal.prime_degree_dvd_card",
+     "lines": [
+      367,
+      386
+     ],
+     "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+     "excerpt": "theorem prime_degree_dvd_card [CharZero F] (p_irr : Irreducible p) (p_deg : p.natDegree.Prime) :\n    p.natDegree ∣ Nat.card p.Gal := by\n  rw [Gal.card_of_separable p_irr.separable]\n  have hp : p.degree ≠ 0 := fun h =>\n    Nat.Prime.ne_zero p_deg (natDegree_eq_zero_iff_degree_le_zero.mpr (le_of_eq h))\n  let α : p.SplittingField :=\n    rootOfSplits (SplittingField.splits p) (by rwa [degree_map])\n  have hα : IsIntegral F α := .of_finite F α\n  use Module.finrank F⟮α⟯ p.SplittingField\n  suffices (minpoly F α).natDegree = p.natDegree by\n    let _ : AddCommGroup F⟮α⟯ := Ring.toAddCommGroup\n    rw [← Module.finrank_mul_finrank F F⟮α⟯ p.SplittingField,\n      IntermediateField.adjoin.finrank hα, this]\n  suffices minpoly F α ∣ p by\n    have key := (minpoly.irreducible hα).dvd_symm p_irr this\n    apply le_antisymm\n    · exact natDegree_le_of_dvd this p_irr.ne_zero\n    · exact natDegree_le_of_dvd key (minpoly.ne_zero hα)\n  apply minpoly.dvd F α\n  rw [← eval_map_algebraMap, eval_rootOfSplits]",
+     "excerpt_sha256": "8c90cd81467317c18043adf79a7ed081b48468f57869bacde3c681a6e9b6bef7",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that for an irreducible polynomial of prime degree over a field of characteristic 0, the degree divides the order of the Galois group. It is a consequence of transitivity. The source does not prove that the group is S_p, and it does not use complex conjugation."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/PolynomialGaloisGroup.lean#L211-L223",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.FieldTheory.PolynomialGaloisGroup",
+     "declaration": "Polynomial.Gal.galActionHom_injective",
+     "lines": [
+      211,
+      223
+     ],
+     "module_sha256": "f23ac7e91d2374d28f4875a90e5c8f124b0331806f72dad054c6dc15006875a2",
+     "excerpt": "/-- `gal p` embeds as a subgroup of permutations of the roots of `p` in `E`. -/\ntheorem galActionHom_injective [Fact ((p.map (algebraMap F E)).Splits)] :\n    Function.Injective (galActionHom p E) := by\n  rw [injective_iff_map_eq_one]\n  intro ϕ hϕ\n  ext (x hx)\n  have key := Equiv.Perm.ext_iff.mp hϕ (rootsEquivRootsAux p E ⟨x, hx⟩)\n  change\n    rootsEquivRootsAux p E (ϕ • (rootsEquivRootsAux p E).symm (rootsEquivRootsAux p E ⟨x, hx⟩)) =\n      rootsEquivRootsAux p E ⟨x, hx⟩\n    at key\n  rw [Equiv.symm_apply_apply] at key\n  exact Subtype.ext_iff.mp (Equiv.injective (rootsEquivRootsAux p E) key)",
+     "excerpt_sha256": "2723d3a4bef08104f43b728f928ee1a1e77451a95984f04d60c55e51d049ccdd",
+     "attribution": "/-\nCopyright (c) 2020 Thomas Browning, Patrick Lutz. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Thomas Browning, Patrick Lutz\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the action on the roots is faithful. This is Step 1."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Let Σ be the splitting field of f in ℂ and let G = Gal(Σ/ℚ). Let R be the set of roots of f. Because f is irreducible over a field of characteristic 0, f and f′ are coprime, so |R| = p. An automorphism of Σ permutes R. It is determined by its action on R, because Σ is generated by R over ℚ. So G embeds in Sym(R) ≅ S_p.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. G is transitive on R. Let α and β be roots. Both have minimal polynomial f over ℚ, up to a scalar. So there is a field isomorphism ℚ(α) → ℚ(β) sending α to β. It extends to an automorphism of the normal extension Σ. This automorphism sends α to β.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. G contains a transposition. The coefficients of f are real, so complex conjugation c maps roots to roots. Hence c maps Σ to itself, and c restricted to Σ is in G. It fixes the p−2 real roots. The two nonreal roots are swapped by c, because a nonreal root α of a real polynomial has its conjugate ᾱ as another nonreal root, and there are only two. So c acts on R as a transposition τ = (a b).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Lemma. Let G be a transitive subgroup of Sym(R) with |R| = p prime. Suppose G contains a transposition (a b). Then G = Sym(R). Proof. For x and y in R, write x ∼ y if x = y or the transposition (x y) lies in G. This is an equivalence relation. For three distinct points, (x z) = (x y)(y z)(x y), which lies in G when (x y) and (y z) lie in G.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. For g in G, g(x y)g⁻¹ = (gx gy). So x ∼ y implies gx ∼ gy, and g maps each class onto a class. Because G is transitive, for any two classes some g maps a point of the first class into the second. Then g maps the first class onto the second. So all classes have the same size s. The number of classes times s equals p, and p is prime. So s = 1 or s = p.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. Since (a b) lies in G, a ∼ b with a ≠ b. So s ≥ 2. Hence s = p. All points are equivalent. So every transposition of R lies in G.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. Every permutation is a product of transpositions. So G, which contains all transpositions, is equal to Sym(R). By Steps 1 to 3 and the lemma, G ≅ S_p, and |G| = p!.",
+      "uses": [
+       "nm:decomposition-into-transpositions"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "The quintic x^5−4x+2 has Galois group S_5",
+    "goal": "Show that the Galois group of f = x^5 − 4x + 2 over ℚ is the full symmetric group S_5.",
+    "hypotheses": [
+     "p = 5.",
+     "f has integer coefficients."
+    ],
+    "why_theorem_applies": "We check the two hypotheses of the theorem: f is irreducible of prime degree 5, and f has exactly three real roots.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Irreducibility. Use Eisenstein criterion at the prime 2. The prime 2 divides the coefficients −4 and 2. It does not divide the leading coefficient 1. And 4 does not divide the constant term 2. So f is irreducible over ℚ.",
+      "uses": [
+       "nm:eisenstein-s-criterion"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "At least three real roots. f(−2) = −22, f(−1) = 5, f(0) = 2, f(1) = −1 and f(2) = 26. The sign changes give a real root in each of (−2,−1), (0,1) and (1,2).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "At most three real roots. The derivative f′(x) = 5x^4 − 4 has exactly two real zeros, ±(4/5)^{1/4}. By Rolle theorem, between two real roots of f there is a zero of f′. Four real roots would need three zeros of f′. So f has at most three real roots.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "So f has exactly three real roots and two nonreal roots. Numerical values are −1.5185, 0.5085, 1.2436 and −0.1168 ± 1.4384i.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "By the theorem, Gal(f/ℚ) ≅ S_5, of order 120. Check of consistency: a computer algebra system returns disc(f) = −212144. This is negative, so it is not a square in ℚ. Hence the group is not inside A_5, as the theorem requires.",
+      "uses": []
+     }
+    ],
+    "result": "The Galois group of x^5 − 4x + 2 over ℚ is S_5 with 120 elements.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem needs exactly two nonreal roots. A prime degree with four nonreal roots may have a smaller group.",
+    "The result gives the group only. It does not give the roots by formula. For p ≥ 5 the group S_p is not solvable, and this is a separate known fact. It shows that such roots cannot be written with radicals.",
+    "The proof uses the embedding of the splitting field in ℂ. For other base fields the argument needs another source of a transposition.",
+    "For p = 2 and p = 3 the statement is true and easy to check by hand."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-irreducible-polynomials-over-finite-fields-count",
+   "name": "Counting monic irreducible polynomials over a finite field",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "statement": "Let q be a prime power and let N_q(n) be the number of monic irreducible polynomials of degree n in F_q[x]. Then x^{q^n} − x is the product of all monic irreducible polynomials over F_q whose degree divides n. Hence ∑_{d|n} d·N_q(d) = q^n, and N_q(n) = (1/n)·∑_{d|n} μ(n/d)·q^d. Also N_q(n) ≥ 1 for every n ≥ 1. In particular F_q has an extension of every degree n.",
+   "hypotheses": [
+    "q is a prime power and F_q is the field with q elements.",
+    "n is a positive integer.",
+    "μ is the Möbius function."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-moebius-inversion",
+     "reason": "Step 6 inverts the divisor-sum identity with the Möbius inversion formula."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Frobenius map",
+    "Möbius function"
+   ],
+   "concept_prerequisites": [
+    "c:finite-field",
+    "c:irreducible-polynomial",
+    "c:polynomial-ring"
+   ],
+   "definitions": [
+    {
+     "name": "Frobenius map",
+     "text": "On a field K of characteristic p, the map y ↦ y^p is a ring homomorphism. If K contains F_q, the map y ↦ y^q is a ring homomorphism that fixes F_q."
+    },
+    {
+     "name": "Möbius function",
+     "text": "μ(1) = 1, μ(m) = (−1)^k if m is a product of k distinct primes, and μ(m) = 0 if a square greater than 1 divides m."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/FieldTheory/Finite/GaloisField.lean#L330-L337",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.FieldTheory.Finite.GaloisField",
+    "declaration": "FiniteField.nonempty_algHom_iff_finrank_dvd",
+    "lines": [
+     330,
+     337
+    ],
+    "module_sha256": "94497cf4bd42922937f0a776742d0c256e1174140c18cc483bc6c85688849f8e",
+    "excerpt": "theorem nonempty_algHom_iff_finrank_dvd :\n    Nonempty (K →ₐ[F] L) ↔ Module.finrank F K ∣ Module.finrank F L := by\n  refine ⟨fun ⟨f⟩ ↦ ?_, nonempty_algHom_of_finrank_dvd⟩\n  algebraize [f.toRingHom]\n  rw [← Module.finrank_mul_finrank F K L]\n  exact dvd_mul_right _ _\n\nend",
+    "excerpt_sha256": "397c5b4028c3342ef134cbebfebcdf3b80e19801899c68c09c200af585f7be62",
+    "attribution": "/-\nCopyright (c) 2021 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson, Alex J. Best, Johan Commelin, Eric Rodriguez, Ruben Van de Velde\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that a finite field K embeds in L over F if and only if [K:F] divides [L:F]. This is the field form of the criterion in Step 4: F_{q^d} sits inside F_{q^n} if and only if d divides n. The source does not count irreducible polynomials."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. The polynomial P = x^{q^n} − x is squarefree. Its derivative is q^n·x^{q^n−1} − 1 = −1, because q^n is zero in F_q. So gcd(P, P′) = 1. A repeated irreducible factor g of P would divide both P and P′. So no irreducible factor of P occurs twice. Hence P is the product of the distinct monic irreducible polynomials that divide it.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. Setup for a divisor test. Let f be monic irreducible of degree d. Let K = F_q[x]/(f). This is a field with q^d elements. Let α be the class of x. Then K = F_q[α]. Let φ(y) = y^q on K. It is a ring homomorphism. It fixes F_q, because a^q = a for a in F_q.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. The order of φ is d. Every y in K satisfies y^{q^d} = y, because K^× has order q^d − 1. So φ^d = id. Let r be the least positive integer with φ^r = id. Then r ≤ d. If φ^r = id, every element of K is a root of x^{q^r} − x, which has at most q^r roots. So q^d ≤ q^r and d ≤ r. Hence r = d. The set of integers m with φ^m = id is the set of multiples of d, because it is a subgroup of ℤ that contains d and no smaller positive number.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. f divides P if and only if d divides n. Indeed f | P if and only if P(α) = 0. This holds if and only if φ^n(α) = α. The map φ^n is a ring homomorphism that fixes F_q. The element α generates K as an F_q-algebra. So φ^n(α) = α if and only if φ^n = id. By Step 3, this holds if and only if d | n.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. By Steps 1 and 4, x^{q^n} − x = ∏_{d|n} ∏_{f monic irreducible, deg f = d} f. Compare degrees. We get q^n = ∑_{d|n} d·N_q(d).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. Möbius inversion. Put g(n) = q^n and h(d) = d·N_q(d). Step 5 says g(n) = ∑_{d|n} h(d) for all n. The inversion formula gives n·N_q(n) = ∑_{d|n} μ(n/d)·q^d.",
+      "uses": [
+       "nm:technique-moebius-inversion"
+      ]
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. Positivity. For n = 1, N_q(1) = q ≥ 1. Let n ≥ 2 and m = ⌊n/2⌋. Step 5 for each d gives d·N_q(d) ≤ q^d. So n·N_q(n) = q^n − ∑_{d|n, d<n} d·N_q(d) ≥ q^n − ∑_{d=1}^{m} q^d. The geometric sum is (q^{m+1} − q)/(q − 1) ≤ q^{m+1} − q. Because m + 1 ≤ n for n ≥ 2, we get n·N_q(n) ≥ q^n − q^{m+1} + q ≥ q > 0.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Counts over F_2, F_3 and F_5 checked by exhaustive enumeration",
+    "goal": "Compute N_q(n) from the formula for several q and n. Then check the values by listing all monic polynomials and testing irreducibility.",
+    "hypotheses": [
+     "q = 2 with n up to 7, q = 3 with n up to 5, and q = 5 with n = 3."
+    ],
+    "why_theorem_applies": "The formula in the theorem gives each count. The enumeration is an independent check.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For q = 2: N(1) = 2. N(2) = (4−2)/2 = 1. N(3) = (8−2)/3 = 2. N(4) = (16−4)/4 = 3. N(5) = (32−2)/5 = 6. N(6) = (64−8−4+2)/6 = 9. N(7) = (128−2)/7 = 18.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The three irreducible polynomials of degree 4 over F_2 are x^4+x+1, x^4+x^3+1 and x^4+x^3+x^2+x+1. A computer test of all 16 monic quartics finds exactly these.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For q = 3: N(1) = 3, N(2) = (9−3)/2 = 3, N(3) = (27−3)/3 = 8, N(4) = (81−9)/4 = 18, N(5) = (243−3)/5 = 48.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "For q = 5 and n = 3: N(3) = (125−5)/3 = 40.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "A computer enumeration of all monic polynomials of each degree and a test of irreducibility returns the same numbers for q = 2 with n ≤ 7, for q = 3 with n ≤ 5, and for q = 5 with n = 3.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Check of the degree identity for q = 2 and n = 6. The divisors of 6 are 1, 2, 3 and 6. Then 1·2 + 2·1 + 3·2 + 6·9 = 2 + 2 + 6 + 54 = 64 = 2^6. This is Step 5 of the proof. The Möbius formula for n = 6 is the inversion of this identity.",
+      "uses": [
+       "nm:technique-moebius-inversion"
+      ]
+     }
+    ],
+    "result": "N_2(1..7) = 2, 1, 2, 3, 6, 9, 18. N_3(1..5) = 3, 3, 8, 18, 48. N_5(3) = 40. All values agree with the exhaustive count.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The count is exact only for the number of polynomials. It does not give a method to find them.",
+    "The proof of the divisor test uses the field with q^d elements. This needs that F_q[x]/(f) is a field. That holds because f is irreducible.",
+    "The bound in Step 7 is weak. A sharper bound is N_q(n) = q^n/n + O(q^{n/2}/n).",
+    "The formula counts monic polynomials. The count of all irreducible polynomials of degree n is (q−1)·N_q(n)."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-ideal-norm-of-principal-ideal-index",
+   "name": "Index of a principal ideal of the ring of integers equals the absolute norm",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.AC"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.AC"
+   ],
+   "statement": "Let K be a number field of degree n and let O_K be its ring of integers. For every nonzero α in O_K, the quotient O_K/αO_K is finite and its order is |N_{K/ℚ}(α)|. If M_α is the integer matrix of multiplication by α in a ℤ-basis of O_K, then O_K/αO_K ≅ ℤ/d_1 ⊕ … ⊕ ℤ/d_n, where d_1 | … | d_n are the invariant factors of M_α. Consequently α is a unit if and only if |N(α)| = 1, and α is irreducible whenever |N(α)| is a prime number.",
+   "hypotheses": [
+    "K is a number field and O_K is a free ℤ-module of rank n = [K:ℚ].",
+    "α is a nonzero element of O_K.",
+    "N_{K/ℚ}(α) is the determinant of the ℚ-linear map x ↦ αx on K."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-smith-normal-form-determinantal-divisors",
+     "reason": "Step 3 and the application use the Smith normal form over ℤ and the order formula for the quotient."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "norm N_{K/ℚ}",
+    "absolute norm of an ideal",
+    "irreducible element"
+   ],
+   "concept_prerequisites": [
+    "c:number-field",
+    "c:ring-of-integers",
+    "c:norm",
+    "c:ideal"
+   ],
+   "definitions": [
+    {
+     "name": "norm N_{K/ℚ}",
+     "text": "N(α) is the determinant of multiplication by α on K as a ℚ-vector space. It is multiplicative. It equals the product of the conjugates of α."
+    },
+    {
+     "name": "absolute norm of an ideal",
+     "text": "For a nonzero ideal I of O_K, N(I) = |O_K/I|. For I = αO_K the theorem says N(I) = |N(α)|."
+    },
+    {
+     "name": "irreducible element",
+     "text": "A nonzero non-unit that has no factorization into two non-units."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Norm/AbsNorm.lean#L380-L391",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.Ideal.Norm.AbsNorm",
+    "declaration": "Ideal.absNorm_span_singleton",
+    "lines": [
+     380,
+     391
+    ],
+    "module_sha256": "1312375877c644ef99a45129980e6b4426fce0d5d80712043fee4ff9f2fe45ba",
+    "excerpt": "@[simp]\ntheorem absNorm_span_singleton (r : S) :\n    absNorm (span ({r} : Set S)) = (Algebra.norm ℤ r).natAbs := by\n  rw [Algebra.norm_apply]\n  by_cases hr : r = 0\n  · simp only [hr, Ideal.span_zero, Ideal.absNorm_bot,\n      LinearMap.det_zero'', Set.singleton_zero, map_zero, Int.natAbs_zero]\n  let b := Module.Free.chooseBasis ℤ S\n  rw [← natAbs_det_equiv _ (b.equiv (basisSpanSingleton b hr) (Equiv.refl _))]\n  congr\n  refine b.ext fun i => ?_\n  simp",
+    "excerpt_sha256": "8e556d147ac10a097b0ae2ceb38a943fd871288fbb7b7c2b71705cca8fc606cb",
+    "attribution": "/-\nCopyright (c) 2022 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Alex J. Best\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the absolute norm of the principal ideal (r) equals the natural absolute value of the algebra norm of r over ℤ. This is the order formula of the theorem."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Ideal/Norm/AbsNorm.lean#L299-L301",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Ideal.Norm.AbsNorm",
+     "declaration": "Ideal.absNorm_eq_one_iff",
+     "lines": [
+      299,
+      301
+     ],
+     "module_sha256": "1312375877c644ef99a45129980e6b4426fce0d5d80712043fee4ff9f2fe45ba",
+     "excerpt": "@[simp]\ntheorem absNorm_eq_one_iff {I : Ideal S} : absNorm I = 1 ↔ I = ⊤ := by\n  rw [absNorm_apply, cardQuot_eq_one_iff]",
+     "excerpt_sha256": "9845bd6a0adfc4fa280fb9c6d08e2f7ec014b7a62513d671702d3951967f890d",
+     "attribution": "/-\nCopyright (c) 2022 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Alex J. Best\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that an ideal has absolute norm 1 if and only if it is the whole ring. This is Step 4."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Let w_1,…,w_n be a ℤ-basis of O_K. It is also a ℚ-basis of K. Multiplication by α maps O_K to O_K, because α is an algebraic integer in O_K. So αw_j = ∑_i (M_α)_{ij} w_i with an integer matrix M_α. By definition of the norm, det M_α = N_{K/ℚ}(α). The determinant does not depend on the basis.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. Because α ≠ 0 and K is a field, α is invertible in K, so det M_α ≠ 0. Hence M_α is injective as a map ℤ^n → ℤ^n. Under the identification O_K ≅ ℤ^n by the basis, the image of multiplication by α is the ideal αO_K. So αO_K corresponds to the column lattice M_α·ℤ^n.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. By the Smith theorem for ℤ, there are invertible integer matrices U and V with U·M_α·V = diag(d_1,…,d_n), with d_1 | … | d_n, all nonzero. The quotient ℤ^n/M_α ℤ^n is isomorphic to ⊕ ℤ/d_i. Its order is ∏|d_i| = |det M_α| = |N(α)|. So |O_K/αO_K| = |N(α)|, and O_K/αO_K ≅ ⊕ ℤ/d_i.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Units. An element α is a unit of O_K if and only if αO_K = O_K. This holds if and only if the quotient has one element. By Step 3, this holds if and only if |N(α)| = 1.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. Irreducibility. Let |N(α)| = p be prime. Then α is not a unit, by Step 4. Suppose α = βγ with β and γ in O_K. The norm is multiplicative, and N maps O_K to ℤ, so |N(β)|·|N(γ)| = p. One of the two factors equals 1. By Step 4, one of β and γ is a unit. So α is irreducible.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Quotients of ℤ[√−5] by principal ideals, and 6 has two factorizations",
+    "goal": "Compute the quotient ring ℤ[√−5]/(α) for α = 1+√−5, 2+√−5 and 3. Then show that ℤ[√−5] is not a unique factorization domain.",
+    "hypotheses": [
+     "K = ℚ(√−5). The ring of integers is ℤ[√−5] with ℤ-basis 1, √−5.",
+     "For α = a + b√−5, the matrix M_α in this basis is [[a, −5b], [b, a]], and N(α) = a^2 + 5b^2."
+    ],
+    "why_theorem_applies": "Each quotient is the cokernel of a 2×2 integer matrix. The theorem gives its order by the determinant and its structure by the Smith form.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "α = 1+√−5. The matrix is [[1,−5],[1,1]] with determinant 6. The entries have gcd 1, so the Smith form is diag(1,6). Hence ℤ[√−5]/(1+√−5) ≅ ℤ/6, of order 6 = N(α).",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "α = 2+√−5. The matrix is [[2,−5],[1,2]] with determinant 9 and entry gcd 1. The Smith form is diag(1,9). So the quotient is ℤ/9, of order 9.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "α = 3. The matrix is 3I with determinant 9 and entry gcd 3. The Smith form is diag(3,3). So the quotient is ℤ/3 ⊕ ℤ/3, of order 9. Two elements of the same norm 9 give two different quotient groups.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "There is no element of norm 2: a^2 + 5b^2 = 2 has no integer solution, because b = 0 gives a^2 = 2 and b ≠ 0 gives at least 5. Also a^2 + 5b^2 = 3 has no solution.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The element 2 has norm 4. A factorization into two non-units would need two factors of norm 2 by Step 4 and multiplicativity. There is none, so 2 is irreducible. In the same way 3 (norm 9) is irreducible, since a factorization needs two factors of norm 3. And 1±√−5 (norm 6) is irreducible, since a factorization needs factors of norms 2 and 3.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Now 6 = 2·3 = (1+√−5)(1−√−5). The norms of the four irreducible factors are 4, 9, 6 and 6. The only units of ℤ[√−5] are ±1, because a^2 + 5b^2 = 1 forces b = 0. So associated elements have the same norm. Hence 2 is not associated to 1±√−5. Hence ℤ[√−5] is not a unique factorization domain.",
+      "uses": []
+     }
+    ],
+    "result": "The quotients have orders 6, 9 and 9. They are ℤ/6, ℤ/9 and ℤ/3 ⊕ ℤ/3. The two factorizations of 6 use irreducibles of different norms, so unique factorization fails in ℤ[√−5].",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem is for the ring of integers. For a nonmaximal order, the quotient order is still |N(α)| when α lies in the order, but the proof here uses that O_K is a free ℤ-module of full rank.",
+    "The Smith form of M_α gives the group structure only. It does not give the ring structure of the quotient.",
+    "The statement that |N(α)| prime implies irreducible is not an equivalence. The element 1+√−5 has norm 6 and is irreducible.",
+    "Multiplicativity of the absolute norm for general ideals needs unique factorization of ideals. The theorem avoids it, because it treats principal ideals only."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-minkowski-bound-class-group-generation",
+   "name": "Minkowski bound: every ideal class has an integral ideal of small norm",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.NT"
+   ],
+   "statement": "Let K be a number field of degree n with r_2 pairs of complex embeddings and discriminant d_K. Let M_K = (n!/n^n)·(4/π)^{r_2}·√|d_K|. Then every ideal class of K contains an integral ideal I of O_K with N(I) ≤ M_K. Hence the class group is finite. It is generated by the classes of the prime ideals P with N(P) ≤ M_K, and each such P lies over a rational prime p ≤ M_K. If M_K < 2, then the class number is 1.",
+   "hypotheses": [
+    "K is a number field with n = r_1 + 2r_2.",
+    "O_K is a Dedekind domain. An ideal J contains (α) if and only if J divides (α).",
+    "The absolute norm N(I) = |O_K/I| is multiplicative on ideals."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:minkowski-convex-body-theorem-for-compact-domain",
+     "reason": "Step 4 applies the convex body theorem to the ideal lattice and the body B_t."
+    },
+    {
+     "id": "nm:technique-ideal-norm-of-principal-ideal-index",
+     "reason": "Step 6 and the application use that the norm of a principal ideal is the absolute value of the element norm."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Minkowski embedding",
+    "Minkowski bound",
+    "ideal class group"
+   ],
+   "concept_prerequisites": [
+    "c:number-field",
+    "c:ideal-class-group",
+    "c:discriminant",
+    "c:dedekind-domain"
+   ],
+   "definitions": [
+    {
+     "name": "Minkowski embedding",
+     "text": "The map σ: K → ℝ^{r_1} × ℂ^{r_2} that sends x to its real embeddings and to one of each pair of complex embeddings. The space is ℝ^n with the Lebesgue measure."
+    },
+    {
+     "name": "Minkowski bound",
+     "text": "M_K = (n!/n^n)·(4/π)^{r_2}·√|d_K|."
+    },
+    {
+     "name": "ideal class group",
+     "text": "The group of fractional ideals modulo principal fractional ideals."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/NumberField/ClassNumber.lean#L77-L98",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.NumberField.ClassNumber",
+    "declaration": "NumberField.exists_ideal_in_class_of_norm_le",
+    "lines": [
+     77,
+     98
+    ],
+    "module_sha256": "580c6b79a6b87818493d031fb3d68a29fa680bbb771e69dd2c776534f5f1933c",
+    "excerpt": "theorem exists_ideal_in_class_of_norm_le (C : ClassGroup (𝓞 K)) :\n    ∃ I : (Ideal (𝓞 K))⁰, ClassGroup.mk0 I = C ∧\n      absNorm (I : Ideal (𝓞 K)) ≤ M K := by\n  obtain ⟨J, hJ⟩ := ClassGroup.mk0_surjective C⁻¹\n  obtain ⟨_, ⟨a, ha, rfl⟩, h_nz, h_nm⟩ :=\n    exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr K (FractionalIdeal.mk0 K J)\n  obtain ⟨I₀, hI⟩ := dvd_iff_le.mpr ((span_singleton_le_iff_mem J).mpr (by exact ha))\n  have : I₀ ≠ 0 := by\n    contrapose h_nz\n    rw [h_nz, mul_zero, zero_eq_bot, span_singleton_eq_bot] at hI\n    rw [Algebra.linearMap_apply, hI, map_zero]\n  let I := (⟨I₀, mem_nonZeroDivisors_iff_ne_zero.mpr this⟩ : (Ideal (𝓞 K))⁰)\n  refine ⟨I, ?_, ?_⟩\n  · suffices ClassGroup.mk0 I = (ClassGroup.mk0 J)⁻¹ by rw [this, hJ, inv_inv]\n    exact ClassGroup.mk0_eq_mk0_inv_iff.mpr ⟨a, Subtype.coe_ne_coe.1 h_nz, by rw [mul_comm, hI]⟩\n  · rw [← FractionalIdeal.absNorm_span_singleton (𝓞 K), Algebra.linearMap_apply,\n      ← FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.coeIdeal_absNorm, hI, map_mul,\n      cast_mul, Rat.cast_mul, absNorm_apply, Rat.cast_natCast, Rat.cast_natCast,\n      FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast, mul_div_assoc,\n      mul_assoc, mul_assoc] at h_nm\n    refine le_of_mul_le_mul_of_pos_left h_nm ?_\n    exact cast_pos.mpr <| pos_of_ne_zero <| absNorm_ne_zero_of_nonZeroDivisors J",
+    "excerpt_sha256": "de523e89ff818a130515f304d7efd57958103dd757532d090a522f3ea2e281a9",
+    "attribution": "/-\nCopyright (c) 2021 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Riccardo Brasca, Xavier Roblot\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that every ideal class of 𝓞 K contains an ideal whose absolute norm is at most the Minkowski bound M K. This is Step 6 and the first claim of the theorem."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/NumberField/Discriminant/Basic.lean#L145-L192",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.NumberField.Discriminant.Basic",
+     "declaration": "NumberField.exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr",
+     "lines": [
+      145,
+      192
+     ],
+     "module_sha256": "48a520964054193261d1d4137a09ed7e20f0fbb38b835db5d44508bf81e9ec19",
+     "excerpt": "theorem exists_ne_zero_mem_ideal_of_norm_le_mul_sqrt_discr (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :\n    ∃ a ∈ (I : FractionalIdeal (𝓞 K)⁰ K), a ≠ 0 ∧\n      |Algebra.norm ℚ (a : K)| ≤ FractionalIdeal.absNorm I.1 * (4 / π) ^ nrComplexPlaces K *\n        (finrank ℚ K).factorial / (finrank ℚ K) ^ (finrank ℚ K) * Real.sqrt |discr K| := by\n  classical\n  -- The smallest possible value for `exists_ne_zero_mem_ideal_of_norm_le`\n  let B := (minkowskiBound K I * (convexBodySumFactor K)⁻¹).toReal ^ (1 / (finrank ℚ K : ℝ))\n  have h_le : (minkowskiBound K I) ≤ volume (convexBodySum K B) := by\n    refine le_of_eq ?_\n    rw [convexBodySum_volume, ← ENNReal.ofReal_pow (by positivity), ← Real.rpow_natCast,\n      ← Real.rpow_mul toReal_nonneg, div_mul_cancel₀, Real.rpow_one, ofReal_toReal, mul_comm,\n      mul_assoc, ← coe_mul, inv_mul_cancel₀ (convexBodySumFactor_ne_zero K), ENNReal.coe_one,\n      mul_one]\n    · exact mul_ne_top (ne_of_lt (minkowskiBound_lt_top K I)) coe_ne_top\n    · exact (Nat.cast_ne_zero.mpr (ne_of_gt finrank_pos))\n  convert! exists_ne_zero_mem_ideal_of_norm_le K I h_le\n  rw [div_pow B, ← Real.rpow_natCast B, ← Real.rpow_mul (by positivity), div_mul_cancel₀ _\n    (Nat.cast_ne_zero.mpr <| ne_of_gt finrank_pos), Real.rpow_one, mul_comm_div, mul_div_assoc']\n  congr 1\n  rw [eq_comm]\n  calc\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ)⁻¹ ^ nrComplexPlaces K * sqrt ‖discr K‖₊ *\n          (2 : ℝ) ^ finrank ℚ K * ((2 : ℝ) ^ nrRealPlaces K * (π / 2) ^ nrComplexPlaces K /\n            (Nat.factorial (finrank ℚ K)))⁻¹ := by\n      simp_rw [minkowskiBound, convexBodySumFactor,\n        volume_fundamentalDomain_fractionalIdealLatticeBasis,\n        volume_fundamentalDomain_latticeBasis, toReal_mul, toReal_pow, toReal_inv, coe_toReal,\n        toReal_ofNat, mixedEmbedding.finrank, mul_assoc]\n      rw [ENNReal.toReal_ofReal (Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg I.1))]\n      simp_rw [NNReal.coe_inv, NNReal.coe_div, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,\n        coe_real_pi, NNReal.coe_ofNat, NNReal.coe_natCast]\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ) ^ (finrank ℚ K - nrComplexPlaces K - nrRealPlaces K +\n          nrComplexPlaces K : ℤ) * Real.sqrt ‖discr K‖ * Nat.factorial (finrank ℚ K) *\n            π⁻¹ ^ (nrComplexPlaces K) := by\n      simp_rw [inv_div, div_eq_mul_inv, mul_inv, ← zpow_neg_one, ← zpow_natCast, mul_zpow,\n        ← zpow_mul, neg_one_mul, mul_neg_one, neg_neg, Real.coe_sqrt, coe_nnnorm, sub_eq_add_neg,\n        zpow_add₀ (two_ne_zero : (2 : ℝ) ≠ 0)]\n      ring\n    _ = FractionalIdeal.absNorm I.1 * (2 : ℝ) ^ (2 * nrComplexPlaces K : ℤ) * Real.sqrt ‖discr K‖ *\n          Nat.factorial (finrank ℚ K) * π⁻¹ ^ (nrComplexPlaces K) := by\n      congr\n      rw [← card_add_two_mul_card_eq_rank, Nat.cast_add, Nat.cast_mul, Nat.cast_ofNat]\n      ring\n    _ = FractionalIdeal.absNorm I.1 * (4 / π) ^ nrComplexPlaces K * (finrank ℚ K).factorial *\n          Real.sqrt |discr K| := by\n      rw [Int.norm_eq_abs, zpow_mul, show (2 : ℝ) ^ (2 : ℤ) = 4 by norm_cast, div_pow,\n        inv_eq_one_div, div_pow, one_pow, zpow_natCast]\n      ring",
+     "excerpt_sha256": "16b32cbc1afbe53875b9e77a00a9d3fad20df26544249e6678bb346599222f43",
+     "attribution": "/-\nCopyright (c) 2023 Xavier Roblot. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Xavier Roblot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the existence of a nonzero element a of a fractional ideal with |N(a)| at most N(I)·(4/π)^{r_2}·n!/n^n·√|d_K|. This is Steps 4 and 5."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Covolume of an ideal lattice. Let ω_1,…,ω_n be a ℤ-basis of O_K and let M = (σ_i(ω_j)) be the n×n matrix of all n embeddings. Then d_K = det(M)^2. Replace the rows of each complex pair, z and z̄, by Re z and Im z. These new rows are (z + z̄)/2 and (z − z̄)/(2i). Each pair changes the determinant by the factor of modulus 1/2. So the real matrix has |det| = 2^{−r_2}·√|d_K|. This is the covolume of σ(O_K). For a nonzero ideal I, σ(I) has index N(I) in σ(O_K). So its covolume is 2^{−r_2}·√|d_K|·N(I).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. A convex body. For t > 0, let B_t = {(x,z) : ∑|x_i| + 2∑|z_j| ≤ t}. It is compact, convex and symmetric about 0. Its volume is V(t) = t^n·V(1) by scaling. Claim: V(1) = 2^{r_1}·(π/2)^{r_2}/n!.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. Proof of the volume formula, by induction on r_1 + r_2. If r_1 = 1 and r_2 = 0, the set is [−1,1], with length 2. If r_1 = 0 and r_2 = 1, the set is the disc |z| ≤ 1/2, with area π/4. For the step, fix one real coordinate x. The slice is a body of the same kind with t replaced by 1 − |x|, so it has volume (1 − |x|)^m·V′, where m is the dimension of the rest and V′ its unit volume. Then V = V′·∫_{−1}^{1} (1 − |x|)^m dx = 2V′/(m+1). Likewise fix a complex coordinate z. Then V = V′·∫_{|z|≤1/2} (1 − 2|z|)^m dA = V′·2π·∫_0^{1/2} (1 − 2s)^m·s ds = V′·(π/2)·∫_0^1 (1 − u)^m·u du = V′·(π/2)/((m+1)(m+2)). These two recurrences give the formula.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Choose t. By Step 1, the lattice σ(I) has covolume 2^{−r_2}√|d_K|·N(I). By Minkowski convex body theorem, a compact convex symmetric set of volume at least 2^n times the covolume contains a nonzero lattice point. Choose t with V(t) = 2^n·2^{−r_2}√|d_K|·N(I). By Step 3, t^n = n!·2^{n−r_1−r_2}·(2/π)^{r_2}·√|d_K|·N(I). Since n − r_1 = 2r_2, this gives t^n = n!·(4/π)^{r_2}·√|d_K|·N(I). So there is a nonzero α in I with σ(α) in B_t.",
+      "uses": [
+       "nm:minkowski-convex-body-theorem-for-compact-domain"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. Bound the norm. The absolute value |N(α)| is the product of the n numbers |x_i| (r_1 of them) and |z_j|, |z_j| (each repeated twice). The sum of these n numbers is ∑|x_i| + 2∑|z_j| ≤ t. By the arithmetic-geometric mean inequality, |N(α)| ≤ (t/n)^n = (n!/n^n)·(4/π)^{r_2}·√|d_K|·N(I) = M_K·N(I).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. Class representatives. Let C be an ideal class. Choose an integral ideal J in the class C^{−1}. Apply Steps 4 and 5 to I = J. We get a nonzero α in J with |N(α)| ≤ M_K·N(J). Because (α) ⊂ J, there is an integral ideal I′ with (α) = J·I′. The norm of a principal ideal is |N(α)|. By multiplicativity, N(J)·N(I′) = |N(α)|. So N(I′) ≤ M_K. In the class group, [J][I′] = [(α)] = 1, so [I′] = [J]^{−1} = C.",
+      "uses": [
+       "nm:technique-ideal-norm-of-principal-ideal-index"
+      ]
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. Generation. Factor I′ into prime ideals. Each prime factor P divides I′, so N(P) divides N(I′) and N(P) ≤ M_K. A prime P over p has N(P) = p^f ≥ p, so p ≤ M_K. Hence every class is a product of classes of such primes. An ideal of norm N contains N, so it divides the ideal (N), which has finitely many divisors. So there are finitely many ideals of norm at most M_K, and the class group is finite.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Step 8. If M_K < 2, an integral ideal with N(I) ≤ M_K < 2 has N(I) = 1, so I = O_K. Then every class is trivial.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Class groups of ℚ(i) and ℚ(√−5)",
+    "goal": "Use the bound to find the class number of ℚ(i) and of ℚ(√−5).",
+    "hypotheses": [
+     "ℚ(i): n = 2, r_2 = 1, d_K = −4.",
+     "ℚ(√−5): n = 2, r_2 = 1, d_K = −20."
+    ],
+    "why_theorem_applies": "Both fields are imaginary quadratic. The bound is M_K = (2/4)·(4/π)·√|d_K| = (2/π)√|d_K|.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For ℚ(i): M_K = (2/π)·2 = 4/π ≈ 1.273. This is less than 2. By the theorem, the class number is 1, so ℤ[i] is a principal ideal domain.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For ℚ(√−5): −5 ≡ 3 mod 4, so O_K = ℤ[√−5] and d_K = −20. M_K = (2/π)√20 ≈ 2.847. The only prime p ≤ 2.847 is p = 2. So every class contains an integral ideal of norm 1 or 2.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The polynomial x^2 + 5 ≡ (x+1)^2 mod 2. Let P = (2, 1+√−5). The lattice of P in the basis 1, √−5 is spanned by (2,0), (1,1), (0,2) and (−5,1). A computer algebra system returns the Smith form diag(1,2). So N(P) = 2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "P^2 is generated by 4, 2+2√−5 and (1+√−5)^2 = −4+2√−5. The difference of the last two is 6. Since gcd(4,6) = 2, the ideal P^2 contains 2. Also every generator is even, so P^2 ⊂ (2). Hence P^2 = (2). An ideal of norm 2 contains 2, so it divides P^2. The divisors of P^2 are O_K, P and P^2, with norms 1, 2 and 4. So P is the only ideal of norm 2.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "If P = (α) for α = a + b√−5, then N(α) = a^2 + 5b^2 = N(P) = 2. This has no integer solution. So P is not principal, and [P] ≠ 1. But [P]^2 = [(2)] = 1.",
+      "uses": [
+       "nm:technique-ideal-norm-of-principal-ideal-index"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "By the theorem, every class is 1 or [P]. So the class group is {1, [P]} of order 2.",
+      "uses": []
+     }
+    ],
+    "result": "The Minkowski bound is 1.273 for ℚ(i), so h = 1. For ℚ(√−5) it is 2.847, and the class group is ℤ/2, generated by the class of P = (2, 1+√−5).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The bound is not sharp. The real class number can be much smaller than the number of candidate ideals.",
+    "The finiteness part needs the lattice structure of O_K. The proof here uses facts about Dedekind domains and the covolume of the Minkowski lattice as stated in the hypotheses and Step 1.",
+    "To prove that a class group is trivial, one must show that every prime of norm at most M_K is principal. This is a finite check but it can be long.",
+    "For a field with large |d_K| the bound grows like √|d_K|, so the method is slow. Better bounds exist under extra assumptions, but they are not proved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:hermite-minkowski-theorem",
+      "relation": "related",
+      "reason": "The catalog record is a different consequence of the same geometric method, which bounds the number of fields with a given discriminant. This entry proves the bound for ideal classes."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-cyclotomic-field-galois-group-units-mod-n",
+   "name": "The Galois group of the cyclotomic field ℚ(ζ_n) is (ℤ/n)^× and Φ_n is irreducible",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "statement": "Let n ≥ 1 and let ζ be a primitive n-th root of unity in ℂ. Then the cyclotomic polynomial Φ_n is irreducible over ℚ. So [ℚ(ζ):ℚ] = φ(n). The field ℚ(ζ)/ℚ is Galois, and the map (ℤ/n)^× → Gal(ℚ(ζ)/ℚ), a ↦ σ_a with σ_a(ζ) = ζ^a, is a group isomorphism. In particular the extension is abelian.",
+   "hypotheses": [
+    "n is a positive integer.",
+    "ζ is a primitive n-th root of unity.",
+    "φ is Euler totient function."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-cyclotomic-factorization-of-x-n-minus-1",
+     "reason": "Step 1 uses the integrality, the degree and the divisibility of Φ_n."
+    },
+    {
+     "id": "nm:technique-gauss-lemma-primitive-polynomials",
+     "reason": "Step 2 uses that irreducibility in ℤ[x] gives irreducibility in ℚ[x]."
+    },
+    {
+     "id": "nm:galois-correspondence",
+     "reason": "The application uses the correspondence between subgroups and intermediate fields."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "primitive root of unity",
+    "cyclotomic polynomial",
+    "Frobenius on polynomials"
+   ],
+   "concept_prerequisites": [
+    "c:cyclotomic-polynomial",
+    "c:cyclotomic-field",
+    "c:galois-group",
+    "c:irreducible-polynomial"
+   ],
+   "definitions": [
+    {
+     "name": "primitive root of unity",
+     "text": "A complex number ζ with ζ^n = 1 and ζ^k ≠ 1 for 0 < k < n. The powers ζ^a with gcd(a,n) = 1 are exactly the primitive n-th roots."
+    },
+    {
+     "name": "cyclotomic polynomial",
+     "text": "Φ_n(x) = ∏(x − ζ^a), over a in (ℤ/n)^×. It has degree φ(n)."
+    },
+    {
+     "name": "Frobenius on polynomials",
+     "text": "Over F_p, g(x^p) = g(x)^p for every polynomial g, because the coefficients are fixed by a ↦ a^p."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Cyclotomic/Gal.lean#L136-L142",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.Cyclotomic.Gal",
+    "declaration": "galCyclotomicEquivUnitsZMod",
+    "lines": [
+     136,
+     142
+    ],
+    "module_sha256": "612ddcafdad397bd9205a6c95145efd948bcac5c1bae4fe28fc35c9d0f76899b",
+    "excerpt": "/-- `IsCyclotomicExtension.autEquivPow` repackaged in terms of `Gal`.\nAsserts that the Galois group of `cyclotomic n K` is equivalent to `(ZMod n)ˣ`\nif `cyclotomic n K` is irreducible in the base field. -/\nnoncomputable def galCyclotomicEquivUnitsZMod : (cyclotomic n K).Gal ≃* (ZMod n)ˣ :=\n  (AlgEquiv.autCongr\n          (IsSplittingField.algEquiv L _ : L ≃ₐ[K] (cyclotomic n K).SplittingField)).symm.trans\n    (IsCyclotomicExtension.autEquivPow L h)",
+    "excerpt_sha256": "9bd7a87829af1444840efaceda9139dce6d557bc6028e2bc4fa6cbc851b240f0",
+    "attribution": "/-\nCopyright (c) 2022 Eric Rodriguez. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Eric Rodriguez\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source gives the isomorphism of the Galois group of a cyclotomic polynomial with the units of ZMod n. It needs the irreducibility of the polynomial as a hypothesis in the general form. Steps 2 to 6 of this entry prove that irreducibility over ℚ."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Cyclotomic/Gal.lean#L74-L110",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Cyclotomic.Gal",
+     "declaration": "IsCyclotomicExtension.autEquivPow",
+     "lines": [
+      74,
+      110
+     ],
+     "module_sha256": "612ddcafdad397bd9205a6c95145efd948bcac5c1bae4fe28fc35c9d0f76899b",
+     "excerpt": "/-- The `MulEquiv` that takes an automorphism `f` to the element `k : (ZMod n)ˣ` such that\n  `f μ = μ ^ k` for any root of unity `μ`. A strengthening of `IsPrimitiveRoot.autToPow`. -/\n@[simps]\nnoncomputable def autEquivPow (h : Irreducible (cyclotomic n K)) : Gal(L/K) ≃* (ZMod n)ˣ :=\n  let hζ := zeta_spec n K L\n  let hμ t := hζ.pow_of_coprime _ (ZMod.val_coe_unit_coprime t)\n  { (zeta_spec n K L).autToPow K with\n    invFun := fun t =>\n      (hζ.powerBasis K).equivOfMinpoly ((hμ t).powerBasis K)\n        (by\n          have := IsCyclotomicExtension.neZero' n K L\n          simp only [IsPrimitiveRoot.powerBasis_gen]\n          have hr :=\n            IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible\n              ((zeta_spec n K L).pow_of_coprime _ (ZMod.val_coe_unit_coprime t)) h\n          exact ((zeta_spec n K L).minpoly_eq_cyclotomic_of_irreducible h).symm.trans hr)\n    left_inv := fun f => by\n      simp only [MonoidHom.toFun_eq_coe]\n      apply AlgEquiv.coe_toAlgHom_injective\n      apply (hζ.powerBasis K).algHom_ext\n      simp only [AlgEquiv.coe_toAlgHom]\n      rw [PowerBasis.equivOfMinpoly_gen]\n      simp only [IsPrimitiveRoot.powerBasis_gen, IsPrimitiveRoot.autToPow_spec]\n    right_inv := fun x => by\n      simp only [MonoidHom.toFun_eq_coe]\n      generalize_proofs _ h\n      have key := hζ.autToPow_spec K ((hζ.powerBasis K).equivOfMinpoly ((hμ x).powerBasis K) h)\n      have := (hζ.powerBasis K).equivOfMinpoly_gen ((hμ x).powerBasis K) h\n      rw [hζ.powerBasis_gen K] at this\n      rw [this, IsPrimitiveRoot.powerBasis_gen] at key\n      nth_rw 1 5 [← hζ.val_toRootsOfUnity_coe] at key\n      simp only [← rootsOfUnity.coe_pow] at key\n      replace key := rootsOfUnity.coe_injective key\n      rw [pow_eq_pow_iff_modEq, ← Subgroup.orderOf_coe, ← orderOf_units, hζ.val_toRootsOfUnity_coe,\n        ← (zeta_spec n K L).eq_orderOf, ← ZMod.natCast_eq_natCast_iff] at key\n      simp only [ZMod.natCast_val, ZMod.cast_id', id] at key\n      exact Units.ext key }",
+     "excerpt_sha256": "c5835714d3164424360dc6178c39f4254e29a6db4825729e16e795dd60aa70cb",
+     "attribution": "/-\nCopyright (c) 2022 Eric Rodriguez. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Eric Rodriguez\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source builds the group isomorphism from automorphisms to the units of ZMod n when the cyclotomic polynomial is irreducible. This matches Step 7."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Φ_n is monic with integer coefficients, has degree φ(n), and divides x^n − 1. Its roots are the primitive n-th roots of unity, each with multiplicity 1.",
+      "uses": [
+       "nm:technique-cyclotomic-factorization-of-x-n-minus-1"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. Let f be the minimal polynomial of ζ over ℚ. Then f | Φ_n in ℚ[x]. Claim: f is in ℤ[x]. Factor Φ_n in ℤ[x] into monic irreducible polynomials g_1⋯g_s. By Gauss lemma, each g_i is irreducible in ℚ[x]. The polynomial f is monic and irreducible in ℚ[x] and divides the product. So f equals some g_i, and f is in ℤ[x]. The same argument shows that the minimal polynomial of any root of Φ_n lies in ℤ[x] and is monic.",
+      "uses": [
+       "nm:technique-gauss-lemma-primitive-polynomials"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. Key claim. Let η be any root of f and let p be a prime with p ∤ n. Then f(η^p) = 0. Proof. The number η^p is again a primitive n-th root, so a root of Φ_n. Let g be its minimal polynomial. By Step 2, g is monic and in ℤ[x]. Suppose g ≠ f. Two distinct monic irreducible polynomials in ℚ[x] are coprime, and both divide x^n − 1. So fg divides x^n − 1 in ℚ[x]. Because f and g are monic, the quotient lies in ℤ[x]: x^n − 1 = f·g·h with h in ℤ[x].",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Since g(η^p) = 0, the number η is a root of g(x^p). So f divides g(x^p) in ℚ[x], and in ℤ[x] since f is monic: g(x^p) = f·k with k in ℤ[x]. Reduce modulo p. By the Frobenius identity, ḡ(x)^p = ḡ(x^p) = f̄·k̄ in F_p[x]. Let π be an irreducible factor of f̄. It exists because f̄ is monic of positive degree. Then π divides ḡ^p, so π divides ḡ. Therefore π^2 divides f̄·ḡ, which divides x^n − 1 in F_p[x].",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. But x^n − 1 is squarefree in F_p[x]. Its derivative is n·x^{n−1}, and n ≠ 0 in F_p. The only root of the derivative is 0, and 0 is not a root of x^n − 1. So gcd(x^n − 1, derivative) = 1. This contradicts π^2 | x^n − 1. Hence g = f, and f(η^p) = 0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. Every primitive n-th root is ζ^k with gcd(k,n) = 1 and k ≥ 1. Write k = p_1⋯p_r as a product of primes. None divides n. Apply Step 3 to η = ζ, then to η = ζ^{p_1}, which is a root of f, and so on. We get that ζ^k is a root of f. Therefore all φ(n) primitive roots are roots of f. They are distinct, so Φ_n divides f. With f | Φ_n, we get f = Φ_n. So Φ_n is irreducible and [ℚ(ζ):ℚ] = φ(n).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Step 7. The field ℚ(ζ) contains all powers ζ^a, so it is the splitting field of x^n − 1 over ℚ. So the extension is Galois, and the group has order φ(n). An automorphism σ sends ζ to a root of f = Φ_n, which is a primitive root ζ^a with a in (ℤ/n)^×. It is determined by a. For the composition, σ_a(σ_b(ζ)) = σ_a(ζ^b) = ζ^{ab}. So a ↦ σ_a is an injective group homomorphism from (ℤ/n)^× to the Galois group. Both groups have order φ(n), so it is an isomorphism.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "The Galois group of ℚ(ζ_12) and its subfields",
+    "goal": "Describe Gal(ℚ(ζ_12)/ℚ) and all intermediate fields.",
+    "hypotheses": [
+     "n = 12 and ζ = e^{2πi/12}.",
+     "(ℤ/12)^× = {1, 5, 7, 11}."
+    ],
+    "why_theorem_applies": "The theorem identifies the Galois group with (ℤ/12)^×. The subgroup lattice then gives the subfields.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Φ_12 = x^4 − x^2 + 1, of degree φ(12) = 4. A computer algebra system confirms that it is irreducible over ℚ. So [ℚ(ζ):ℚ] = 4.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The group (ℤ/12)^× has 4 elements. Each element squares to 1: 5^2 = 25, 7^2 = 49 and 11^2 = 121 are all ≡ 1 mod 12. So the group is the Klein four-group, with three subgroups of order 2.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The subgroup {1,5}. The element ζ + ζ^5 = (√3/2 + i/2) + (−√3/2 + i/2) = i is fixed by σ_5, since σ_5(ζ + ζ^5) = ζ^5 + ζ^25 = ζ^5 + ζ. So the fixed field is ℚ(i), which has degree 2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The subgroup {1,7}. The element ζ^2 = (1 + i√3)/2 is fixed by σ_7, since ζ^14 = ζ^2. So the fixed field is ℚ(√−3). The subgroup {1,11} is complex conjugation. The element ζ + ζ^{−1} = √3 is fixed. So the fixed field is ℚ(√3).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "By the Galois correspondence, the intermediate fields of ℚ(ζ_12)/ℚ are ℚ, ℚ(i), ℚ(√−3), ℚ(√3) and ℚ(ζ_12) = ℚ(i,√3). There are no others.",
+      "uses": [
+       "nm:galois-correspondence"
+      ]
+     }
+    ],
+    "result": "Gal(ℚ(ζ_12)/ℚ) ≅ (ℤ/12)^× ≅ (ℤ/2)^2. The proper subfields are ℚ(i), ℚ(√−3) and ℚ(√3).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof is over ℚ. Over another base field the polynomial Φ_n can factor. For example, Φ_5 over F_11 splits into linear factors.",
+    "The map a ↦ σ_a is canonical. It does not depend on the choice of ζ.",
+    "The proof needs p ∤ n in Step 3. The primes dividing n do not give a root of f in the same way.",
+    "The abelian result is one half of the Kronecker-Weber theorem. The other half says every abelian extension of ℚ lies in a cyclotomic field. It is not proved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-discriminant-norm-of-derivative-and-index",
+   "name": "Discriminant of a power basis as the norm of f′(α), and the index formula",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.RA"
+   ],
+   "statement": "Let α be an algebraic number of degree n with monic minimal polynomial f over ℚ. Let α_1,…,α_n be the roots of f in ℂ. Put L = ℚ(α). The discriminant of the basis 1, α, …, α^{n−1} is disc(f) = det(Tr(α^{i+j})) = ∏_{i<j}(α_i − α_j)^2 = (−1)^{n(n−1)/2}·N_{L/ℚ}(f′(α)). If α is an algebraic integer and ℤ[α] has finite index m in the ring of integers O_L, then disc(f) = m^2·d_L, where d_L is the discriminant of L.",
+   "hypotheses": [
+    "f is monic and irreducible over ℚ, so its roots are distinct.",
+    "For the second claim, α lies in O_L, so f has integer coefficients, and O_L is a free ℤ-module of rank n."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-vandermonde-determinant",
+     "reason": "Step 2 evaluates the determinant of the embedding matrix as a Vandermonde determinant."
+    },
+    {
+     "id": "nm:technique-smith-normal-form-determinantal-divisors",
+     "reason": "Step 6 uses the Smith theorem for the index of an integer lattice."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "discriminant of a basis",
+    "discriminant d_L",
+    "index m"
+   ],
+   "concept_prerequisites": [
+    "c:discriminant",
+    "c:number-field",
+    "c:norm",
+    "c:ring-of-integers"
+   ],
+   "definitions": [
+    {
+     "name": "discriminant of a basis",
+     "text": "For a basis b_1,…,b_n of L over ℚ, disc(b) = det(Tr(b_i b_j))."
+    },
+    {
+     "name": "discriminant d_L",
+     "text": "The discriminant of any ℤ-basis of O_L. It does not depend on the basis, because a change of basis has determinant ±1."
+    },
+    {
+     "name": "index m",
+     "text": "m = [O_L : ℤ[α]], the order of the finite quotient group."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Discriminant.lean#L196-L236",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.Discriminant",
+    "declaration": "Algebra.discr_powerBasis_eq_norm",
+    "lines": [
+     196,
+     236
+    ],
+    "module_sha256": "4ec7252668e72db0698691d33074e3df3ecf67713757f6a874feebd61b80dc6e",
+    "excerpt": "/-- Formula for the discriminant of a power basis using the norm of the field extension. -/\ntheorem discr_powerBasis_eq_norm [Algebra.IsSeparable K L] :\n    discr K pb.basis =\n      (-1) ^ (n * (n - 1) / 2) *\n      norm K (aeval pb.gen (minpoly K pb.gen).derivative) := by\n  let E := AlgebraicClosure L\n  let := fun a b : E => Classical.propDecidable (Eq a b)\n  have e : Fin pb.dim ≃ (L →ₐ[K] E) := by\n    refine equivOfCardEq ?_\n    rw [Fintype.card_fin, AlgHom.card]\n    exact (PowerBasis.finrank pb).symm\n  have hnodup : ((minpoly K pb.gen).aroots E).Nodup :=\n    nodup_roots (Separable.map (Algebra.IsSeparable.isSeparable K pb.gen))\n  have hroots : ∀ σ : L →ₐ[K] E, σ pb.gen ∈ (minpoly K pb.gen).aroots E := by\n    intro σ\n    rw [mem_roots, IsRoot.def, eval_map_algebraMap, aeval_algHom_apply]\n    repeat' simp [minpoly.ne_zero pb.isIntegral_gen]\n  apply (algebraMap K E).injective\n  rw [map_mul, map_pow, map_neg, map_one, discr_powerBasis_eq_prod'' _ _ _ e]\n  congr\n  rw [norm_eq_prod_embeddings, prod_prod_Ioi_mul_eq_prod_prod_off_diag]\n  conv_rhs =>\n    congr\n    rfl\n    ext σ\n    rw [← aeval_algHom_apply, ← eval_map_algebraMap, ← derivative_map,\n      (IsAlgClosed.splits _).eval_root_derivative ((minpoly.monic pb.isIntegral_gen).map _)\n      (hroots σ), ← Finset.prod_mk _ (hnodup.erase _)]\n  rw [Finset.prod_sigma', Finset.prod_sigma']\n  refine prod_bij' (fun i _ ↦ ⟨e i.2, e i.1 pb.gen⟩)\n    (fun σ hσ ↦ ⟨e.symm (PowerBasis.lift pb σ.2 ?_), e.symm σ.1⟩) ?_ ?_ ?_ ?_ (fun i _ ↦ by simp)\n    <;> simp only [mem_sigma, mem_univ, Finset.mem_mk, hnodup.mem_erase_iff, IsRoot.def,\n      mem_roots', mem_singleton, true_and, mem_compl, Sigma.forall, Equiv.apply_symm_apply,\n      PowerBasis.lift_gen, implies_true, Equiv.symm_apply_apply,\n      Sigma.ext_iff, Equiv.symm_apply_eq, heq_eq_eq, and_true] at *\n  · simpa only [aeval_def, eval₂_eq_eval_map] using hσ.2.2\n  · exact fun a b hba ↦ ⟨fun h ↦ hba <| e.injective <| pb.algHom_ext h.symm, hroots _⟩\n  · rintro a b hba ha\n    rw [ha, PowerBasis.lift_gen] at hba\n    exact hba.1 rfl\n  · exact fun a b _ ↦ pb.algHom_ext <| pb.lift_gen _ _",
+    "excerpt_sha256": "29ecc7b2910ead2f04b0ed2c2f0f076871c1607baeaa915d29ba5fbf19b4d526",
+    "attribution": "/-\nCopyright (c) 2021 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the discriminant of a power basis equals (−1)^{n(n−1)/2} times the norm of the derivative of the minimal polynomial at the generator. This is the second equality of the theorem, Steps 3 and 4."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Discriminant.lean#L139-L147",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Discriminant",
+     "declaration": "Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two",
+     "lines": [
+      139,
+      147
+     ],
+     "module_sha256": "4ec7252668e72db0698691d33074e3df3ecf67713757f6a874feebd61b80dc6e",
+     "excerpt": "/-- If `L/K` is a field extension and `b : ι → L`, then `discr K b` is the square of the\ndeterminant of the matrix whose `(i, j)` coefficient is `σⱼ (b i)`, where `σⱼ : L →ₐ[K] E` is the\nembedding in an algebraically closed field `E` corresponding to `j : ι` via a bijection\n`e : ι ≃ (L →ₐ[K] E)`. -/\ntheorem discr_eq_det_embeddingsMatrixReindex_pow_two\n    [Algebra.IsSeparable K L] (e : ι ≃ (L →ₐ[K] E)) :\n    algebraMap K E (discr K b) = (embeddingsMatrixReindex K E b e).det ^ 2 := by\n  rw [discr_def, RingHom.map_det, RingHom.mapMatrix_apply,\n    traceMatrix_eq_embeddingsMatrixReindex_mul_trans, det_mul, det_transpose, pow_two]",
+     "excerpt_sha256": "35fc2b7c782e3096973cc8f7304d56ff01c93d574c9dd1fcadf774c3986a2bcc",
+     "attribution": "/-\nCopyright (c) 2021 Riccardo Brasca. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Riccardo Brasca\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the discriminant equals the square of the determinant of the matrix of embeddings. This is Step 1."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Step 1. Trace form as a square. The n embeddings of L into ℂ send α to α_1,…,α_n. For a basis b, Tr(b_i b_j) = ∑_k σ_k(b_i)σ_k(b_j). So the matrix (Tr(b_i b_j)) equals MᵀM, with M = (σ_k(b_i)). Hence disc(b) = det(M)^2.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Step 2. Vandermonde. For the basis b_i = α^{i−1}, the matrix M has entries M_{ki} = α_k^{i−1}. This is the Vandermonde matrix of the distinct nodes α_1,…,α_n. So det M = ∏_{k<l}(α_l − α_k). Therefore disc(f) = ∏_{k<l}(α_l − α_k)^2 = ∏_{k<l}(α_k − α_l)^2.",
+      "uses": [
+       "nm:technique-vandermonde-determinant"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Step 3. The derivative at a root. Since f = ∏(x − α_j), we get f′(α_i) = ∏_{j≠i}(α_i − α_j). The norm N_{L/ℚ}(f′(α)) is the product of the conjugates of f′(α). The conjugates are f′(α_i), because f′ has rational coefficients. So N(f′(α)) = ∏_i ∏_{j≠i}(α_i − α_j) = ∏_{i≠j}(α_i − α_j).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Step 4. Sign. Each unordered pair {i,j} with i < j appears twice in ∏_{i≠j}, as (α_i − α_j)(α_j − α_i) = −(α_i − α_j)^2. There are n(n−1)/2 pairs. So ∏_{i≠j}(α_i − α_j) = (−1)^{n(n−1)/2}·∏_{i<j}(α_i − α_j)^2. With Step 2, disc(f) = (−1)^{n(n−1)/2}·N(f′(α)).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Step 5. Index formula. Let w_1,…,w_n be a ℤ-basis of O_L. Because ℤ[α] has finite index in O_L, the powers α^{i−1} have an expansion α^{i−1} = ∑_j T_{ij}·w_j with an integer matrix T of nonzero determinant. The trace matrices satisfy G(α) = T·G(w)·Tᵀ, because the trace form is bilinear. So disc(f) = det(T)^2·d_L.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Step 6. The order of the quotient. The lattice ℤ[α] is the row lattice of T inside ℤ^n = O_L. By the Smith theorem over ℤ, the index of the row lattice of an integer matrix of nonzero determinant is |det T|. So m = |det T|, and disc(f) = m^2·d_L.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "The cubic x^3 − x − 1 and the quadratic x^2 − 12",
+    "goal": "Compute disc(f), the norm of f′(α) and the index in two examples.",
+    "hypotheses": [
+     "Example 1: f = x^3 − x − 1, irreducible over ℚ.",
+     "Example 2: f = x^2 − 12 with α = √12 = 2√3."
+    ],
+    "why_theorem_applies": "Both are monic with integer coefficients. The theorem links disc(f), N(f′(α)) and the field discriminant.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Example 1. For x^3 + ax + b the discriminant is −4a^3 − 27b^2. With a = −1 and b = −1, disc(f) = 4 − 27 = −23. A computer algebra system confirms this.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Here n = 3, so (−1)^{n(n−1)/2} = (−1)^3 = −1. By the theorem, N(f′(α)) = N(3α^2 − 1) = 23. The resultant Res(f, f′) computed by a computer algebra system is also 23.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The number 23 is squarefree. So m^2 divides 23 forces m = 1. Hence ℤ[α] = O_L and d_L = −23.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Example 2. disc(x^2 − 12) = 48. The check by the theorem: n = 2, so the sign is (−1)^1. And N(f′(α)) = N(2α) = N(4√3) = −48. So disc = (−1)·(−48) = 48.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The field is ℚ(√3). Its ring of integers is ℤ[√3], since 3 ≡ 3 mod 4, and d_L = 12. The ring ℤ[2√3] has index 2 in ℤ[√3]. So 48 = 2^2·12, as the index formula says.",
+      "uses": []
+     }
+    ],
+    "result": "disc(x^3 − x − 1) = −23, N(f′(α)) = 23 and the field discriminant is −23 with index 1. disc(x^2 − 12) = 48 = 2^2·12 with index 2.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem is for the power basis of one generator. A general ℤ-basis of O_L gives d_L, and there may be no generator with index 1.",
+    "The index formula gives only that m^2 divides disc(f). A squarefree disc(f) gives m = 1. A non-squarefree one does not decide m.",
+    "The proof assumes that O_L is free over ℤ with rank n. This is a standard fact about rings of integers.",
+    "The sign of the discriminant is (−1)^{r_2}, where r_2 is the number of pairs of complex embeddings. This is not proved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
