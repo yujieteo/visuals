@@ -1,0 +1,694 @@
+[
+ {
+  "id": "nm:technique-poincare-inequality-torus-fourier",
+  "statement": "Let $u$ be a $C^1$ complex function on the [torus](c:torus) $(\\mathbb{R}/\\mathbb{Z})^d$ with the probability Haar measure, and let $\\bar u$ be its mean. Then $\\int |u-\\bar u|^2 \\le \\frac{1}{4\\pi^2}\\int |\\nabla u|^2$. Equality holds if and only if $u-\\bar u$ is a combination of the functions $e^{2\\pi i x_j}$ and $e^{-2\\pi i x_j}$.",
+  "hypotheses": [
+   {
+    "id": "h:torus",
+    "text": "The domain is the [torus](c:torus) $T=(\\mathbb{R}/\\mathbb{Z})^d$ with $d \\ge 1$, with the probability Haar measure.",
+    "concept": "c:torus"
+   },
+   {
+    "id": "h:smooth",
+    "text": "The function $u\\colon T \\to \\mathbb{C}$ is $C^1$, so it is periodic in each variable.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The inequality $\\int |u-\\bar u|^2 \\le \\frac{1}{4\\pi^2}\\int |\\nabla u|^2$ holds, with equality exactly for combinations of $e^{\\pm 2\\pi i x_j}$.",
+  "formal": {
+   "decl": "hasSum_sq_mFourierCoeff",
+   "difference": "The declaration states Parseval's identity for $L^2$ functions on the torus. This is a smaller fact that the proof uses twice; mathlib does not state the Poincare inequality here."
+  },
+  "proofs": [
+   {
+    "id": "fourier",
+    "name": "Fourier series and Parseval",
+    "slogan": "Write both energies as sums of squared Fourier coefficients and compare the weights $4\\pi^2|k|^2$ and $4\\pi^2$.",
+    "scope": "The whole theorem, including the equality case, for every $d \\ge 1$. The constant is for side 1; side $L$ gives $L^2/(4\\pi^2)$.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:torus",
+      "why": "The exponentials $e^{2\\pi i\\langle k,x\\rangle}$ form an [orthonormal basis](c:orthonormal-basis) of $L^2(T)$.",
+      "steps": [
+       "s:parseval-u",
+       "s:parseval-grad"
+      ]
+     },
+     {
+      "h": "h:smooth",
+      "why": "Periodicity cancels boundary terms, and $C^1$ puts each [partial derivative](c:partial-derivative) in $L^2$.",
+      "steps": [
+       "s:deriv",
+       "s:parseval-grad"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:deriv",
+      "slogan": "Express the [Fourier coefficients](c:fourier-coefficients) of each partial derivative through those of $u$.",
+      "detail": "Fix $j$ and integrate by parts in the periodic variable $x_j$. The boundary terms cancel, so $\\widehat{\\partial_j u}(k)=2\\pi i k_j \\hat u(k)$. Fubini reduces the integral on $T$ to a one variable integral.",
+      "uses": []
+     },
+     {
+      "id": "s:parseval-u",
+      "slogan": "Write the mean-subtracted energy as a sum over the nonzero frequencies.",
+      "detail": "The exponentials form an orthonormal basis, so Parseval gives $\\int|v|^2=\\sum_k|\\hat v(k)|^2$. For $v=u-\\bar u$ the coefficients are $\\hat u(k)$ for $k\\neq 0$ and $0$ at $k=0$. Hence $\\int|u-\\bar u|^2=\\sum_{k\\neq0}|\\hat u(k)|^2$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     },
+     {
+      "id": "s:parseval-grad",
+      "slogan": "Write the [gradient](c:gradient) energy as a weighted sum of the squared coefficients.",
+      "detail": "Apply Parseval to each $\\partial_j u$ (continuous, so in $L^2$) and sum over $j$. Step 1 gives $\\int|\\nabla u|^2=\\sum_j\\sum_k 4\\pi^2k_j^2|\\hat u(k)|^2=4\\pi^2\\sum_k|k|^2|\\hat u(k)|^2$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two sums term by term, using $|k|^2 \\ge 1$ for every $k \\ne 0$.",
+      "detail": "For $k\\in\\mathbb{Z}^d$ with $k\\neq0$, some coordinate is a nonzero integer, so $|k|^2\\ge1$. Hence $\\sum_k|k|^2|\\hat u(k)|^2\\ge\\sum_{k\\neq0}|\\hat u(k)|^2$. Multiply by $4\\pi^2$ and use steps 2 and 3.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Find the equality case from the frequencies with $|k|=1$.",
+      "detail": "Equality holds if and only if $|k|^2=1$ whenever $k\\neq0$ and $\\hat u(k)\\neq0$. The vectors $k\\in\\mathbb{Z}^d$ with $|k|=1$ are $\\pm e_j$. So $u-\\bar u$ is a combination of $e^{\\pm2\\pi i x_j}$. Conversely, such a combination gives equality by step 3.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:deriv",
+      "s:parseval-grad"
+     ],
+     [
+      "s:parseval-u",
+      "s:compare"
+     ],
+     [
+      "s:parseval-grad",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:torus": "The torus is the compact domain on which the Fourier basis is orthonormal.",
+     "c:fourier-coefficients": "Both energies become sums of squared Fourier coefficients.",
+     "c:partial-derivative": "Each partial derivative multiplies the coefficient by $2\\pi i k_j$.",
+     "c:gradient": "The gradient energy is the sum of the partial derivative energies.",
+     "c:orthonormal-basis": "Orthonormality of the exponentials gives Parseval's identity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-fourier-counting-three-term-progressions",
+  "statement": "Let $N$ be odd, let $A,B,C\\subseteq\\mathbb{Z}/N$, and let $T$ count the triples $(x,y,z)\\in A\\times B\\times C$ with $x+y=2z$. Put the [discrete Fourier transform](c:discrete-fourier-transform) coefficients $\\hat H(r)=\\sum_{x\\in H}e(-rx/N)$. Then (i) $T=\\frac1N\\sum_r\\hat A(-r)\\hat B(-r)\\hat C(2r)$; (ii) $|T-|A||B||C|/N|\\le M\\sqrt{|A||B|}$, where $M=\\max_{r\\neq0}|\\hat C(r)|$; (iii) if $M<|C|\\sqrt{|A||B|}/N$, then $T>0$.",
+  "hypotheses": [
+   {
+    "id": "h:odd",
+    "text": "The modulus $N$ is odd, so $r\\mapsto 2r$ is a bijection of $\\mathbb{Z}/N$.",
+    "concept": null
+   },
+   {
+    "id": "h:sets",
+    "text": "The sets $A$, $B$ and $C$ are arbitrary subsets of the [cyclic group](c:cyclic-group) $\\mathbb{Z}/N$.",
+    "concept": "c:cyclic-group"
+   }
+  ],
+  "conclusion": "Formulas (i), (ii) and (iii) hold for the number $T$ of solutions.",
+  "formal": {
+   "decl": "dft_apply",
+   "difference": "The declaration unfolds the [discrete Fourier transform](c:discrete-fourier-transform) on $\\mathbb{Z}/N$ as a sum. It is a smaller fact that gives the coefficients $\\hat H(r)$; it does not count solutions."
+  },
+  "proofs": [
+   {
+    "id": "fourier-count",
+    "name": "Orthogonality of characters",
+    "slogan": "Count solutions with the sum of characters, split off the term $r=0$, and bound the rest by Cauchy-Schwarz and Plancherel.",
+    "scope": "The whole theorem. Trivial solutions with $x=y=z$ are counted in $T$ when the sets share elements.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:sets",
+      "why": "The sum over the [cyclic group](c:cyclic-group) $\\mathbb{Z}/N$ of characters detects the equation $x+y=2z$.",
+      "steps": [
+       "s:formula",
+       "s:main"
+      ]
+     },
+     {
+      "h": "h:odd",
+      "why": "Oddness makes $r\\mapsto 2r$ permute the nonzero residues, so the bound by $M$ is valid.",
+      "steps": [
+       "s:error"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:formula",
+      "slogan": "Write the number of solutions as a sum over $r$ of products of three Fourier coefficients.",
+      "detail": "For $m\\in\\mathbb{Z}/N$, the [geometric series](c:geometric-series) gives $\\frac1N\\sum_r e(rm/N)=1$ if $m=0$ and $0$ otherwise. Insert this for $m=x+y-2z$ and sum over $x\\in A$, $y\\in B$, $z\\in C$. The three inner sums are $\\hat A(-r)$, $\\hat B(-r)$ and $\\hat C(2r)$. This is (i).",
+      "uses": []
+     },
+     {
+      "id": "s:main",
+      "slogan": "Isolate the main term at $r=0$.",
+      "detail": "At $r=0$ the three factors are $|A|$, $|B|$ and $|C|$. So the term is $|A||B||C|/N$, and $T$ minus this term is the sum over $r\\neq0$.",
+      "uses": []
+     },
+     {
+      "id": "s:error",
+      "slogan": "Bound the terms with $r \\ne 0$ by $M$ times a sum over $A$ and $B$, then apply Cauchy-Schwarz.",
+      "detail": "Since $N$ is odd, $r\\mapsto2r$ permutes the nonzero residues, so $|\\hat C(2r)|\\le M$ for $r\\neq0$. Then the sum is at most $M\\sum_r|\\hat A(r)||\\hat B(r)|$. Cauchy-Schwarz bounds this by $M(\\sum|\\hat A|^2)^{1/2}(\\sum|\\hat B|^2)^{1/2}$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:plancherel",
+      "slogan": "Evaluate the two square sums by Plancherel and divide by $N$ to get (ii).",
+      "detail": "Plancherel gives $\\sum_r|\\hat A(r)|^2=N|A|$, and the same for $B$. The bound becomes $M\\sqrt{N|A|\\cdot N|B|}=MN\\sqrt{|A||B|}$. Divide by $N$ to get (ii).",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Compare the error bound with the main term to get $T>0$.",
+      "detail": "If $M<|C|\\sqrt{|A||B|}/N$, then $M\\sqrt{|A||B|}<|A||B||C|/N$. By (ii), $T$ is then greater than $0$. This is (iii).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:formula",
+      "s:main"
+     ],
+     [
+      "s:formula",
+      "s:error"
+     ],
+     [
+      "s:error",
+      "s:plancherel"
+     ],
+     [
+      "s:main",
+      "s:exist"
+     ],
+     [
+      "s:plancherel",
+      "s:exist"
+     ]
+    ],
+    "conclusion": "s:exist",
+    "concepts": {
+     "c:cyclic-group": "The group $\\mathbb{Z}/N$ carries the characters that detect the equation.",
+     "c:geometric-series": "A geometric sum shows that the characters are orthogonal.",
+     "c:discrete-fourier-transform": "The coefficients $\\hat H(r)$ are values of this transform."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-kuratowski-frechet-embedding",
+  "statement": "Let $(X,d)$ be a nonempty [separable metric space](c:separable-metric-space), and let $(x_n)_{n\\ge0}$ be a sequence with [dense](c:dense-set) range. Put $F(a)=(d(a,x_n)-d(x_0,x_n))_{n\\ge0}$. Then $F(a)$ is bounded and $\\|F(a)-F(b)\\|_\\infty=d(a,b)$ for all $a,b$. So $F$ is an [isometric embedding](c:isometric-embedding) of $X$ into $\\ell^\\infty(\\mathbb{N})$.",
+  "hypotheses": [
+   {
+    "id": "h:separable",
+    "text": "The space $(X,d)$ is a nonempty [separable metric space](c:separable-metric-space).",
+    "concept": "c:separable-metric-space"
+   },
+   {
+    "id": "h:dense",
+    "text": "The sequence $(x_n)$ has [dense](c:dense-set) range in $X$. It may repeat points.",
+    "concept": "c:dense-set"
+   }
+  ],
+  "conclusion": "The map $F$ sends $X$ into bounded sequences and keeps all distances, so every separable metric space embeds isometrically in $\\ell^\\infty(\\mathbb{N})$.",
+  "formal": {
+   "decl": "embeddingOfSubset_isometry",
+   "difference": "The declaration proves the isometry of the map into $\\ell^\\infty$ for a reference sequence with dense range. It does not state that every separable metric space has such a sequence."
+  },
+  "proofs": [
+   {
+    "id": "dense-sequence",
+    "name": "Dense reference sequence",
+    "slogan": "Bound the sup distance above by the triangle inequality, and below by a coordinate at a point of the sequence near $a$.",
+    "scope": "The whole theorem. The empty space is excluded, because $x_0$ must exist.",
+    "mechanisms": [
+     "m:triangle-inequality",
+     "m:epsilon-delta",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:separable",
+      "why": "A countable dense set exists, and it gives the sequence and the base point $x_0$.",
+      "steps": [
+       "s:sequence"
+      ]
+     },
+     {
+      "h": "h:dense",
+      "why": "Density puts some $x_n$ within $\\varepsilon/2$ of the point $a$.",
+      "steps": [
+       "s:lower"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sequence",
+      "slogan": "Choose a sequence with dense range in the separable space.",
+      "detail": "A separable space has a countable dense set $S$, which is nonempty here. List $S$ as a sequence that may repeat points. Its range is $S$, which is dense.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Bound every coordinate of $F(a)$ by $d(a,x_0)$.",
+      "detail": "By the triangle inequality, $|d(a,x_n)-d(x_0,x_n)|\\le d(a,x_0)$ for every $n$. So $F(a)$ lies in $\\ell^\\infty(\\mathbb{N})$ and $\\|F(a)\\|_\\infty\\le d(a,x_0)$.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound the sup distance $\\|F(a)-F(b)\\|_\\infty$ above by $d(a,b)$.",
+      "detail": "The $x_0$ terms cancel, so $F(a)_n-F(b)_n=d(a,x_n)-d(b,x_n)$. The triangle inequality gives $|d(a,x_n)-d(b,x_n)|\\le d(a,b)$ for every $n$. Take the supremum over $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Pick $x_n$ near $a$ and bound $d(a,b)$ by the $n$-th coordinate of $F(b)-F(a)$ plus $\\varepsilon$.",
+      "detail": "Fix $\\varepsilon>0$. Density of the range gives an index $n$ with $d(a,x_n)<\\varepsilon/2$. Then the triangle inequality gives $d(a,b)\\le d(a,x_n)+d(x_n,b)=2d(a,x_n)+(d(b,x_n)-d(a,x_n))<\\varepsilon+(F(b)_n-F(a)_n)\\le\\varepsilon+\\|F(b)-F(a)\\|_\\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Let $\\varepsilon$ tend to zero and combine both bounds into an equality.",
+      "detail": "Step 4 holds for every $\\varepsilon>0$, so $d(a,b)\\le\\|F(a)-F(b)\\|_\\infty$. With step 3 this gives equality. With step 2, $F$ is an isometric embedding of $X$ into $\\ell^\\infty(\\mathbb{N})$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sequence",
+      "s:lower"
+     ],
+     [
+      "s:bounded",
+      "s:equal"
+     ],
+     [
+      "s:upper",
+      "s:equal"
+     ],
+     [
+      "s:lower",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:separable-metric-space": "Separability gives a countable family of coordinates.",
+     "c:dense-set": "Density puts a coordinate point near every point of the space.",
+     "c:isometric-embedding": "The conclusion is that the map $F$ keeps all distances."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-proper-maps-ultrafilter-universally-closed",
+  "statement": "Let $f\\colon X\\to Y$ be a [continuous](c:continuous-function) map of [topological spaces](c:topological-space). These statements are equivalent. (a) $f$ is a [closed map](c:closed-map) and each fibre $f^{-1}(y)$ is [compact](c:compact-space). (b) For every space $Z$, the map $f\\times\\mathrm{id}_Z$ is closed. (c) If an [ultrafilter](c:ultrafilter) $\\mathcal U$ on $X$ has $f(\\mathcal U)\\to y$, then $f(x)=y$ and $\\mathcal U\\to x$ for some $x$. Such a map is [proper](c:proper-map).",
+  "hypotheses": [
+   {
+    "id": "h:spaces",
+    "text": "The sets $X$ and $Y$ are [topological spaces](c:topological-space). No separation axiom holds.",
+    "concept": "c:topological-space"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The map $f\\colon X\\to Y$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "Statements (a), (b) and (c) are equivalent.",
+  "formal": {
+   "decl": "isProperMap_iff_universally_closed",
+   "difference": "The declaration states that a map is proper if and only if it is continuous and universally closed, for test spaces $Z$ in the universe of $X$. It is a related fact: it links (b) with the other forms of properness."
+  },
+  "proofs": [
+   {
+    "id": "cycle-of-implications",
+    "name": "Cycle of implications",
+    "slogan": "Prove (a) implies (c), (c) implies (b), (b) implies (c), and (c) implies (a), with ultrafilters throughout.",
+    "scope": "The whole theorem. The four implications give (a) equivalent to (c) and (b) equivalent to (c). Here $\\mathcal U\\to x$ means that every neighbourhood of $x$ is in $\\mathcal U$.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:contradiction",
+     "m:zorn"
+    ],
+    "roles": [
+     {
+      "h": "h:spaces",
+      "why": "The proof uses only open sets, ultrafilters and the [product topology](c:product-topology) on $X\\times Z$.",
+      "steps": [
+       "s:fact",
+       "s:c-to-b",
+       "s:b-to-c-lift"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "unused": true,
+      "why": "The four implications never use continuity of $f$. Continuity belongs to the usual definition of a proper map."
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fact",
+      "slogan": "Record that a closed set in an [ultrafilter](c:ultrafilter) contains each limit of that ultrafilter.",
+      "detail": "Let $C$ be closed with $C\\in\\mathcal U$, and let $\\mathcal U\\to x$. If $x\\notin C$, then $X\\setminus C$ is a neighbourhood of $x$, so $X\\setminus C\\in\\mathcal U$. This is impossible, so $x\\in C$.",
+      "uses": []
+     },
+     {
+      "id": "s:a-to-c",
+      "slogan": "Lift the convergence of $f(\\mathcal U)$ to a point of the fibre, using compact fibres and a closed map.",
+      "detail": "Let $f(\\mathcal U)\\to y$ and $F=f^{-1}(y)$. Suppose no $x\\in F$ has $\\mathcal U\\to x$. Each $x\\in F$ has an open $U_x\\ni x$ with $U_x\\notin\\mathcal U$. Compactness of $F$ gives a finite union $U\\supseteq F$ with $U\\notin\\mathcal U$. Since $f$ is closed, $V=Y\\setminus f(X\\setminus U)$ is an open neighbourhood of $y$ with $f^{-1}(V)\\subseteq U$. As $f^{-1}(V)\\in\\mathcal U$, we get $U\\in\\mathcal U$, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:c-to-b",
+      "slogan": "Turn a point in the closure of an image into an ultrafilter, then lift it with (c).",
+      "detail": "Let $C\\subseteq X\\times Z$ be closed and $(y,z)$ lie in the closure of $(f\\times\\mathrm{id})(C)$. The sets $C\\cap(f\\times\\mathrm{id})^{-1}(N)$, for neighbourhoods $N$ of $(y,z)$, generate a filter. Extend it to an ultrafilter $\\mathcal W$. By (c) the first projection converges to some $x$ over $y$, so $\\mathcal W\\to(x,z)$, and $(x,z)\\in C$ by the fact of step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:b-to-c-lift",
+      "slogan": "Test (b) on the space of ultrafilters to find a point $x$ over $y$.",
+      "detail": "Let $Z$ be the set of ultrafilters on $X$, with basic open sets $\\hat A=\\{\\mathcal G: A\\in\\mathcal G\\}$. Let $D=\\{(x,\\mathrm{pure}\\,x)\\}$ and let $C$ be its closure. By (b), $(f\\times\\mathrm{id})(C)$ is closed. Take $\\mathcal U$ with $f(\\mathcal U)\\to y$. Every neighbourhood $U\\times\\hat A$ of $(y,\\mathcal U)$ meets $(f\\times\\mathrm{id})(D)$, so $(y,\\mathcal U)$ lies in the image of $C$. So $f(x)=y$ and $(x,\\mathcal U)\\in C$ for some $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:b-to-c-limit",
+      "slogan": "Show by contradiction that the ultrafilter $\\mathcal U$ converges to $x$.",
+      "detail": "Let $U$ be open with $x\\in U$ and suppose $U\\notin\\mathcal U$. Then $X\\setminus U\\in\\mathcal U$, so $U\\times\\widehat{(X\\setminus U)}$ is a neighbourhood of $(x,\\mathcal U)$. It meets $D$ in a point $(z,\\mathrm{pure}\\,z)$ with $z\\in U$ and $z\\notin U$. This is a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:c-to-a",
+      "slogan": "Deduce closedness and compact fibres from (c), and close the cycle.",
+      "detail": "Closed: for closed $C$ and $y$ in the closure of $f(C)$, build an ultrafilter $\\mathcal U\\ni C$ with $f(\\mathcal U)\\to y$. By (c) and step 1, $y=f(x)$ with $x\\in C$. Compact fibres: an ultrafilter $\\mathcal V$ on $F=f^{-1}(y)$ gives $\\mathcal U\\ni F$ with $f(\\mathcal U)\\to y$. By (c), $\\mathcal V\\to x\\in F$. So $F$ is compact.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fact",
+      "s:a-to-c"
+     ],
+     [
+      "s:fact",
+      "s:c-to-b"
+     ],
+     [
+      "s:fact",
+      "s:c-to-a"
+     ],
+     [
+      "s:a-to-c",
+      "s:c-to-b"
+     ],
+     [
+      "s:c-to-b",
+      "s:b-to-c-lift"
+     ],
+     [
+      "s:b-to-c-lift",
+      "s:b-to-c-limit"
+     ],
+     [
+      "s:b-to-c-limit",
+      "s:c-to-a"
+     ]
+    ],
+    "conclusion": "s:c-to-a",
+    "concepts": {
+     "c:ultrafilter": "Ultrafilters turn every closedness and compactness claim into a statement about limits.",
+     "c:product-topology": "The neighbourhoods $U\\times V$ of the product decide convergence of $\\mathcal W$.",
+     "c:topological-space": "No separation axiom is assumed, so only open sets and filters are used.",
+     "c:continuous-function": "The map is continuous in the usual definition, but this proof never uses it.",
+     "c:closed-map": "Closedness of the map is statement (a) and is proved from statement (c).",
+     "c:compact-space": "Compact fibres give finite subcovers in (a) and are proved in the last step.",
+     "c:proper-map": "A proper map is a map with the three equivalent properties."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-chain-homotopic-maps-same-homology",
+  "statement": "Let $f,g\\colon C\\to D$ be [chain maps](c:chain-map) of [chain complexes](c:chain-complex) of $R$-[modules](c:module), and let $h_n\\colon C_n\\to D_{n+1}$ be $R$-linear with $f_n-g_n=dh_n+h_{n-1}d$ for all $n$. Then $H_n(f)=H_n(g)$ for all $n$. So a chain homotopy equivalence induces isomorphisms on [homology](c:homology), and a complex with identity homotopic to zero has zero homology.",
+  "hypotheses": [
+   {
+    "id": "h:complexes",
+    "text": "The objects $C$ and $D$ are [chain complexes](c:chain-complex) of $R$-modules, and $f$ and $g$ are [chain maps](c:chain-map).",
+    "concept": "c:chain-complex"
+   },
+   {
+    "id": "h:homotopy",
+    "text": "The maps $h_n$ are $R$-linear and satisfy $f_n-g_n=dh_n+h_{n-1}d$ with $h_{-1}=0$. They need not commute with $d$.",
+    "concept": "c:chain-homotopy"
+   }
+  ],
+  "conclusion": "The induced maps $H_n(f)$ and $H_n(g)$ are equal for all $n$, with the two consequences for equivalences and contractible complexes.",
+  "formal": {
+   "decl": "Homotopy.homologyMap_eq",
+   "difference": "The declaration states that homotopic chain maps induce equal maps on homology, in any category with homology. It does not state the two consequences."
+  },
+  "proofs": [
+   {
+    "id": "cycle-computation",
+    "name": "Cycle computation",
+    "slogan": "Apply the homotopy identity to a cycle, so that the difference of the images is a boundary.",
+    "scope": "The whole theorem, in every degree. Degree $-1$ is covered by $h_{-1}=0$.",
+    "mechanisms": [
+     "m:homotopy-invariance",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:complexes",
+      "why": "Chain maps send cycles to cycles and boundaries to boundaries, so they act on homology.",
+      "steps": [
+       "s:action"
+      ]
+     },
+     {
+      "h": "h:homotopy",
+      "why": "The identity $f-g=dh+hd$ makes $f(z)-g(z)$ a boundary for each cycle $z$.",
+      "steps": [
+       "s:cycle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:action",
+      "slogan": "Define the induced map on [homology](c:homology) by the image of a cycle.",
+      "detail": "A chain map commutes with $d$. So it sends cycles to cycles and boundaries to boundaries. Hence $H_n(f)[z]=[f(z)]$ is well defined for every cycle $z$.",
+      "uses": []
+     },
+     {
+      "id": "s:cycle",
+      "slogan": "Apply the homotopy identity to a cycle and drop the term with $dz$.",
+      "detail": "Let $z\\in C_n$ be a cycle, so that $dz=0$. The homotopy identity gives $f(z)-g(z)=dh(z)+h(dz)$. The second term is zero because $dz=0$, so $f(z)-g(z)=dh(z)$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Read the result as an equality of the induced maps on homology.",
+      "detail": "The element $f(z)-g(z)=dh(z)$ is a boundary in $D$, so $[f(z)]=[g(z)]$. This holds for every cycle $z$, so $H_n(f)=H_n(g)$.",
+      "uses": []
+     },
+     {
+      "id": "s:consequences",
+      "slogan": "Derive the equivalence and contractible cases from the equality and the functoriality of $H_n$.",
+      "detail": "If $vu$ is homotopic to $\\mathrm{id}_C$ and $uv$ to $\\mathrm{id}_D$, then $H_n(v)H_n(u)=\\mathrm{id}$ and $H_n(u)H_n(v)=\\mathrm{id}$, so $H_n(u)$ is an isomorphism. If $\\mathrm{id}_C$ is homotopic to $0$, then $\\mathrm{id}=H_n(\\mathrm{id})=H_n(0)=0$, so $H_n(C)=0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:action",
+      "s:cycle"
+     ],
+     [
+      "s:cycle",
+      "s:equal"
+     ],
+     [
+      "s:equal",
+      "s:consequences"
+     ]
+    ],
+    "conclusion": "s:consequences",
+    "concepts": {
+     "c:chain-map": "Chain maps commute with $d$, so they act on cycles and boundaries.",
+     "c:chain-complex": "Cycles and boundaries of the complexes define the homology groups.",
+     "c:module": "The maps are $R$-linear, so kernels and images are modules.",
+     "c:homology": "Homology is the invariant that cannot see the difference between homotopic maps.",
+     "c:chain-homotopy": "The homotopy $h$ writes $f-g$ as a boundary on every cycle."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-hausdorff-metric-completeness",
+  "statement": "Let $(X,d)$ be a [complete metric space](c:complete-metric-space). On the nonempty bounded closed sets, $H(S,T)=\\max(\\sup_{s\\in S}d(s,T),\\sup_{t\\in T}d(t,S))$ is a metric, and the resulting space is complete. If $H(S_n,S_{n+1})<2^{-n}$, then $(S_n)$ converges to $T=\\bigcap_n\\overline{\\bigcup_{m\\ge n}S_m}$, and $H(S_n,T)\\le3\\cdot2^{-n}$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The space $(X,d)$ is a [complete metric space](c:complete-metric-space).",
+    "concept": "c:complete-metric-space"
+   },
+   {
+    "id": "h:sets",
+    "text": "The sets are nonempty, [bounded](c:bounded-set) and [closed](c:closed-set), so $H$ is finite.",
+    "concept": "c:closed-set"
+   }
+  ],
+  "conclusion": "The function $H$ is a metric and the space of these sets is complete, with the stated limit and bound.",
+  "formal": {
+   "decl": "instCompleteSpace",
+   "difference": "The declaration states completeness of the space of all closed sets of a complete space, for the extended Hausdorff distance, which may be $\\infty$. It does not restrict to bounded sets."
+  },
+  "proofs": [
+   {
+    "id": "controlled-sequence",
+    "name": "Controlled Cauchy sequence",
+    "slogan": "Reduce to sequences with $H(S_n,S_{n+1})<2^{-n}$, build the limit set, and bound the distance in both directions.",
+    "scope": "The whole theorem. Completeness of the space follows from the controlled case, because every Cauchy sequence has such a subsequence.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "A [Cauchy sequence](c:cauchy-sequence) of points of $X$ has a limit, which builds the points of $T$.",
+      "steps": [
+       "s:chain"
+      ]
+     },
+     {
+      "h": "h:sets",
+      "why": "Bounded sets make $H$ finite, and closed sets make $H(S,T)=0$ force $S=T$.",
+      "steps": [
+       "s:metric",
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:metric",
+      "slogan": "Check that $H$ is a [metric](c:metric-space) on the nonempty bounded closed sets.",
+      "detail": "It is finite and symmetric by definition. If $H(S,T)=0$, every point of $S$ lies in the closure of $T$, which is $T$, and the reverse holds, so $S=T$. The triangle inequality follows from $d(s,U)\\le d(s,t)+d(t,U)$ after taking suprema.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce completeness to controlled sequences and name the candidate limit $T$.",
+      "detail": "Let $(S_k)$ be Cauchy for $H$. Choose a subsequence with $H(S_{k_n},S_{k_{n+1}})<2^{-n}$. A Cauchy sequence with a convergent subsequence converges, so it is enough to treat $H(S_n,S_{n+1})<2^{-n}$. Put $T=\\bigcap_n\\overline{\\bigcup_{m\\ge n}S_m}$, a closed set.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Build from a point of $S_n$ a Cauchy chain of points in the later sets.",
+      "detail": "Let $x\\in S_n$ and put $x_n=x$. Given $x_k\\in S_k$, pick $x_{k+1}\\in S_{k+1}$ with $d(x_k,x_{k+1})<2^{-k}$. The chain is Cauchy, so it has a limit $y$ in $X$. Then $y\\in T$, and $d(x,y)\\le2^{1-n}$. In particular $T$ is nonempty.",
+      "uses": []
+     },
+     {
+      "id": "s:back",
+      "slogan": "Approximate each point of $T$ by a point of $S_n$ through a chain back from a later set.",
+      "detail": "Let $x\\in T$. Choose $z\\in S_m$ with $m\\ge n$ and $d(x,z)<2^{-n}$. Since $H(S_{k+1},S_k)<2^{-k}$, we find $z_k\\in S_k$ with $d(z_{k+1},z_k)<2^{-k}$, starting at $z_m=z$. Then $d(z,z_n)<2^{1-n}$, so $d(x,S_n)<3\\cdot2^{-n}$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Combine both bounds into $H(S_n,T)\\le3\\cdot2^{-n}$ and conclude that $S_n\\to T$.",
+      "detail": "Steps 3 and 4 give $\\sup_{x\\in S_n}d(x,T)\\le2^{1-n}$ and $\\sup_{x\\in T}d(x,S_n)\\le3\\cdot2^{-n}$. So $H(S_n,T)\\le3\\cdot2^{-n}$. Each $S_n$ is bounded, so $T$ is bounded and lies in the space. Hence $S_n\\to T$ and the space is complete.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:metric",
+      "s:reduce"
+     ],
+     [
+      "s:reduce",
+      "s:chain"
+     ],
+     [
+      "s:reduce",
+      "s:back"
+     ],
+     [
+      "s:chain",
+      "s:limit"
+     ],
+     [
+      "s:back",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:complete-metric-space": "Completeness of $X$ gives the limit point of every chain.",
+     "c:bounded-set": "Boundedness keeps $H$ finite on the sets.",
+     "c:closed-set": "Closedness of the sets and of $T$ identifies sets by their closures.",
+     "c:cauchy-sequence": "The chains of points are Cauchy and converge by completeness.",
+     "c:metric-space": "The check shows that $H$ is a metric, so Cauchy sequences make sense."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]
