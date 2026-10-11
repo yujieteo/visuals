@@ -20,7 +20,7 @@ const EMBED: &str = ":root[data-embed] .top { display: none; } :root[data-embed]
 
 /// The light palette exports use, as `--token` names and #rrggbb values: saved figures print in it.
 pub fn print_palette() -> Vec<(&'static str, String)> {
-    let p = theme::palette("site-light", "");
+    let p = theme::palette("rose-pine-dawn");
     theme::TOKENS.iter().zip(p).map(|(t, c)| (*t, format!("#{c:06x}"))).collect()
 }
 
@@ -46,8 +46,10 @@ fn fonts() -> String {
 /// The theme dialog's buttons, one per family, as the site draws them.
 fn families() -> String {
     theme::THEMES.iter().map(|(f, _, _, l, d)| {
+        let (l, d) = (if l.is_empty() { d } else { l }, if d.is_empty() { l } else { d }); // one scheme: both swatches show it
         let c = |p: &str, i: usize| p.split(' ').nth(i).unwrap_or("000000").to_string();
         let name: Vec<String> = f.split('-').map(|w| w[..1].to_uppercase() + &w[1..]).collect();
+        let name = match *f { "github" => vec!["GitHub".into()], "vscode-plus" => vec!["VS Code Plus".into()], "xcode" => vec!["Xcode".into()], _ => name };
         let swatch = format!("--a:#{};--b:#{};--c:#{};--d:#{}", c(l, 0), c(l, 6), c(d, 0), c(d, 6));
         format!(r#"<button type="button" value="{f}" style="{swatch}"><i></i>{}</button>"#, name.join(" "))
     }).collect()
@@ -107,7 +109,7 @@ document.querySelectorAll("dialog").forEach((d) => d.addEventListener("click", (
 // remembered for every page of the site.
 (() => {{
   const h = document.documentElement, d = document.querySelector(".look"), fam = (b) => b.parentNode.className === "fams";
-  const chosen = (b) => b.value === (fam(b) ? h.dataset.theme || "site" : h.dataset.mode || "auto");
+  const chosen = (b) => b.value === (fam(b) ? h.dataset.theme || "rose-pine" : h.dataset.mode || "auto");
   const show = () => d.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", chosen(b)));
   const set = (k, v) => {{
     v ? (h.dataset[k] = v) : delete h.dataset[k];
@@ -117,7 +119,7 @@ document.querySelectorAll("dialog").forEach((d) => d.addEventListener("click", (
   document.querySelector(".mode").addEventListener("click", () => (show(), d.showModal()));
   d.addEventListener("click", (e) => {{
     const b = e.target !== d && e.target.closest("button");
-    if (b) fam(b) ? set("theme", b.value === "site" ? "" : b.value) : set("mode", b.value === "auto" ? "" : b.value);
+    if (b) fam(b) ? set("theme", b.value === "rose-pine" ? "" : b.value) : set("mode", b.value === "auto" ? "" : b.value);
   }});
 }})();
 </script>
@@ -192,9 +194,9 @@ mod tests {
         let html = page(&Page { title: "T & U", description: "d", root: "../../", style: ".x{}", body: "<p>b</p>", script: "" });
         assert!(html.contains(r#"<a href="../../play/index.html">Play</a>"#));
         assert!(html.contains("<title>T &amp; U</title>"));
-        assert!(html.contains(":root[data-mode=dark]{--bg:#000000;"));
+        assert!(html.contains(":root[data-mode=dark]{--bg:#191724;"));
         assert!(html.contains("if (window.frameElement) h.dataset.embed") && html.contains(":root[data-embed] .top { display: none; }"));
         assert!(html.contains("font-family:\"Fira Math\""));
-        assert!(print_palette().contains(&("bg", "#f4f3f1".to_string())));
+        assert!(print_palette().contains(&("bg", "#faf4ed".to_string())));
     }
 }

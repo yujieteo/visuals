@@ -12,7 +12,7 @@ For each viz/<slug>/, in order:
   requests the page requests only the files the site publishes beside it, never notes.md, and its scripts
            name no computed URL to fetch, import or a worker and set no absolute URL as a source
   contrast the page's colour tokens meet WCAG contrast in both themes
-  theme    the page carries the site's theme script unchanged, and each [data-theme] block sets its color-scheme
+  theme    the page carries the site's theme script unchanged, and each palette block sets its color-scheme
   pydead   unused imports and locals, and definitions made twice, in the folder's Python
   sourcetests  tests whose every assertion checks the page's source text instead of running its code
   deadcode unused locals and imports, unreachable code and duplicate declarations in the page's inline
