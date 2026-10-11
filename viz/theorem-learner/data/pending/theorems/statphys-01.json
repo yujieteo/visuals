@@ -2899,6 +2899,301 @@
   ]
  },
  {
+  "id": "nm:statphys-normal-comparison-lemma",
+  "statement": "For centred [Gaussian](c:normal-distribution) vectors $\\xi$ and $\\eta$ with unit variances and [covariance matrices](c:covariance-matrix) $\\Lambda^1, \\Lambda^0$, the difference $P(\\xi \\le u) - P(\\eta \\le u)$ of orthant probabilities is at most $\\frac{1}{2\\pi}\\sum_{i<j}(\\Lambda^1_{ij}-\\Lambda^0_{ij})^+(1-\\rho_{ij}^2)^{-1/2}e^{-(u_i^2+u_j^2)/(2(1+\\rho_{ij}))}$ with $\\rho_{ij} = \\max(|\\Lambda^1_{ij}|, |\\Lambda^0_{ij}|)$.",
+  "hypotheses": [
+   {
+    "id": "h:gaussian",
+    "text": "$\\xi \\sim N(0,\\Lambda^1)$ and $\\eta \\sim N(0,\\Lambda^0)$ are centred Gaussian vectors in $\\mathbb{R}^n$ with $\\Lambda^1_{ii} = \\Lambda^0_{ii} = 1$.",
+    "concept": "c:covariance-matrix"
+   },
+   {
+    "id": "h:nondegenerate",
+    "text": "$\\rho_{ij} = \\max(|\\Lambda^1_{ij}|, |\\Lambda^0_{ij}|) < 1$ for every pair with $\\Lambda^1_{ij} > \\Lambda^0_{ij}$, so that the pair has a nondegenerate [correlation](c:correlation).",
+    "concept": "c:correlation"
+   }
+  ],
+  "conclusion": "$P(\\xi_j \\le u_j\\ \\forall j) - P(\\eta_j \\le u_j\\ \\forall j) \\le \\frac{1}{2\\pi}\\sum_{i<j}(\\Lambda^1_{ij}-\\Lambda^0_{ij})^+(1-\\rho_{ij}^2)^{-1/2}\\exp\\big(-\\frac{u_i^2+u_j^2}{2(1+\\rho_{ij})}\\big)$, and the same sum with $|\\Lambda^1_{ij}-\\Lambda^0_{ij}|$ bounds the absolute difference.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gaussian-interpolation",
+    "name": "Gaussian interpolation",
+    "slogan": "Interpolate between the two covariances, differentiate a smoothed orthant indicator, and bound each pair term by a bivariate normal density.",
+    "scope": "Both inequalities, for all real levels and possibly singular covariance matrices.",
+    "mechanisms": [
+     "m:interpolation",
+     "m:fundamental-theorem-calculus",
+     "m:approximation",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:gaussian",
+      "why": "Gaussian vectors allow the interpolation $\\sqrt{h}\\,\\xi + \\sqrt{1-h}\\,\\eta$ and Gaussian integration by parts, and unit variances remove the diagonal terms.",
+      "steps": [
+       "s:smooth",
+       "s:interpolate"
+      ]
+     },
+     {
+      "h": "h:nondegenerate",
+      "why": "The condition $\\rho_{ij} < 1$ makes the bivariate density bounded and gives the factor $(1-\\rho_{ij}^2)^{-1/2}$.",
+      "steps": [
+       "s:pair-density"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:smooth",
+      "slogan": "Smooth the orthant indicator by a product of normal distribution functions.",
+      "detail": "Put $F_\\sigma(x) = \\prod_k \\Phi(\\frac{u_k - x_k}{\\sigma})$. It is smooth with bounded derivatives and tends to $\\mathbf{1}\\{x \\le u\\}$ off the boundary, which has probability zero because each coordinate has a [normal](c:normal-distribution) law.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:interpolate",
+      "slogan": "Differentiate along the interpolation $X^h = \\sqrt{h}\\,\\xi + \\sqrt{1-h}\\,\\eta$ with Gaussian integration by parts.",
+      "detail": "The vector $X^h$ has covariance $h\\Lambda^1 + (1-h)\\Lambda^0$, and integration by parts gives $\\frac{d}{dh}\\mathbb{E}F_\\sigma(X^h) = \\sum_{k<l}(\\Lambda^1_{kl}-\\Lambda^0_{kl})\\,\\mathbb{E}[\\partial_k\\partial_l F_\\sigma(X^h)]$, the diagonal terms cancelling.",
+      "uses": [
+       "nm:statphys-gaussian-integration-by-parts",
+       "nm:differentiability-of-integrals-with-respect-to-parameters",
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Bound each mixed second derivative by a product of two smoothed densities.",
+      "detail": "For $k \\ne l$, $\\partial_k\\partial_l F_\\sigma = \\varphi_\\sigma(u_k-x_k)\\varphi_\\sigma(u_l-x_l)\\prod_{m \\ne k,l}\\Phi_\\sigma(u_m - x_m)$, which lies between $0$ and $\\varphi_\\sigma(u_k-x_k)\\varphi_\\sigma(u_l-x_l)$, so only the positive parts $(\\Lambda^1_{kl}-\\Lambda^0_{kl})^+$ remain.",
+      "uses": []
+     },
+     {
+      "id": "s:pair-density",
+      "slogan": "Bound the bivariate [normal density](c:probability-density-function) at $(u_k, u_l)$ uniformly along the interpolation.",
+      "detail": "The expectation of the two smoothed densities is the density of a centred normal pair with correlation $r = \\Lambda^h_{kl}$, $|r| \\le \\rho_{kl}$, plus small noise. As $\\sigma \\to 0$ it tends to $\\varphi_r(u_k,u_l)$, and $u_k^2 - 2ru_ku_l + u_l^2 \\ge (1-|r|)(u_k^2+u_l^2)$ gives the factor $e^{-(u_k^2+u_l^2)/(2(1+\\rho_{kl}))}$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Integrate over the interpolation parameter and remove the smoothing.",
+      "detail": "Integrate the derivative over $h \\in [0,1]$ and let $\\sigma \\to 0$ with dominated convergence. Exchanging the roles of $\\xi$ and $\\eta$ gives the bound for the absolute difference.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:smooth",
+      "s:interpolate"
+     ],
+     [
+      "s:smooth",
+      "s:sign"
+     ],
+     [
+      "s:interpolate",
+      "s:conclude"
+     ],
+     [
+      "s:sign",
+      "s:conclude"
+     ],
+     [
+      "s:pair-density",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:normal-distribution": "All coordinates and their linear combinations have normal laws.",
+     "c:covariance-matrix": "The bound is a sum over the differences of the two covariance matrices.",
+     "c:correlation": "The pair correlations $\\rho_{ij}$ control the size of each term of the bound.",
+     "c:probability-density-function": "Each term is bounded by a bivariate normal density at the levels."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Bovier, Gaussian Processes on Trees (Cambridge University Press 2017, author's version of May 2016), Lemma 3.3, Lemma 3.4 and Lemma 3.8 with their proofs, pp. 36-41.",
+     "url": "https://www.dropbox.com/s/nmktt0b6mnurrc3/cup-all.pdf?dl=1",
+     "note": "The source defines ρ_ij = max(Λ⁰_ij, Λ¹_ij) without absolute values, and its algebra (3.39) needs Λ^h_ij ≥ 0. These steps use absolute values, as Leadbetter and Rootzén do, and a bound that holds for both signs of the correlation."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-berman-stationary-gaussian",
+  "statement": "If a [stationary sequence](c:stationary-sequence) of standard [normal](c:normal-distribution) variables has [covariances](c:covariance-function) $r_n$ with $r_n \\log n \\to 0$, then its normalized maximum $a_n(M_n - b_n)$ converges to the [Gumbel distribution](c:gumbel-distribution), exactly as for [iid](c:iid-random-variables) normal variables.",
+  "hypotheses": [
+   {
+    "id": "h:gaussian",
+    "text": "The sequence $(\\xi_n)$ is a [stationary sequence](c:stationary-sequence) of standard [normal](c:normal-distribution) variables with joint Gaussian laws and covariances $r_n = E(\\xi_1\\xi_{n+1})$.",
+    "concept": "c:normal-distribution"
+   },
+   {
+    "id": "h:berman",
+    "text": "Berman's condition holds: the [covariances](c:covariance-function) satisfy $r_n \\log n \\to 0$ as $n \\to \\infty$.",
+    "concept": "c:covariance-function"
+   }
+  ],
+  "conclusion": "With $a_n = (2\\log n)^{1/2}$ and $b_n = a_n - (\\log\\log n + \\log 4\\pi)/(2a_n)$, we have $P(a_n(M_n - b_n) \\le x) \\to \\exp(-e^{-x})$ for every real $x$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "normal-comparison",
+    "name": "Normal comparison with an independent sequence",
+    "slogan": "Compare the correlated maximum with the iid maximum by the normal comparison lemma, and show that the error sum tends to zero.",
+    "scope": "The full statement under Berman's condition. Weaker covariance conditions are not covered.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:case-analysis",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:gaussian",
+      "why": "Joint normality is what the normal comparison lemma needs, and stationarity makes the error depend only on the lag.",
+      "steps": [
+       "s:compare",
+       "s:delta"
+      ]
+     },
+     {
+      "h": "h:berman",
+      "why": "The condition gives $r_n \\to 0$ for the bound $\\delta < 1$ and controls the long lags.",
+      "steps": [
+       "s:delta",
+       "s:long"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:levels",
+      "slogan": "Fix the level $u_n = x/a_n + b_n$ and record its size.",
+      "detail": "The iid [Gumbel](c:gumbel-distribution) limit gives $n(1 - \\Phi(u_n)) \\to e^{-x}$, and Mills' ratio gives $e^{-u_n^2/2} \\le K u_n/n$ with $u_n^2 \\sim 2\\log n$.",
+      "uses": [
+       "nm:statphys-gaussian-maxima-gumbel",
+       "nm:statphys-poisson-exceedance-criterion"
+      ]
+     },
+     {
+      "id": "s:delta",
+      "slogan": "Show that no correlation equals one in absolute value.",
+      "detail": "A correlation $\\pm 1$ at lag $m$ makes the sequence periodic with period $m$ or $2m$, which contradicts $r_n \\to 0$. So $\\delta = \\sup_{n \\ge 1}|r_n| < 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Bound the gap to the iid maximum by the normal comparison lemma.",
+      "detail": "The lemma gives $|P(M_n \\le u_n) - \\Phi(u_n)^n| \\le K_1 n\\sum_{j=1}^n |r_j| e^{-u_n^2/(1+|r_j|)}$ with $K_1$ depending on $\\delta$.",
+      "uses": [
+       "nm:statphys-normal-comparison-lemma"
+      ]
+     },
+     {
+      "id": "s:short",
+      "slogan": "Bound the error sum over short lags $j \\le n^\\beta$ by a negative power of $n$.",
+      "detail": "With $\\beta < (1-\\delta)/(1+\\delta)$ this part is at most a constant times $n^{1+\\beta-2/(1+\\delta)} u_n^{2/(1+\\delta)}$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:long",
+      "slogan": "Bound the error sum over long lags with Berman's condition.",
+      "detail": "For $j > n^\\beta$, $|r_j| \\le \\gamma_n/(\\beta\\log n)$ with $\\gamma_n \\to 0$, so this part is at most a constant times $\\gamma_n u_n^2/\\log n$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the vanishing error with the iid Gumbel limit.",
+      "detail": "The error tends to $0$ and $\\Phi(u_n)^n \\to \\exp(-e^{-x})$, so $P(a_n(M_n - b_n) \\le x)$ has the same Gumbel limit as in the iid case.",
+      "uses": [
+       "nm:statphys-gaussian-maxima-gumbel"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:delta",
+      "s:compare"
+     ],
+     [
+      "s:levels",
+      "s:short"
+     ],
+     [
+      "s:levels",
+      "s:long"
+     ],
+     [
+      "s:delta",
+      "s:short"
+     ],
+     [
+      "s:compare",
+      "s:short"
+     ],
+     [
+      "s:compare",
+      "s:long"
+     ],
+     [
+      "s:short",
+      "s:conclude"
+     ],
+     [
+      "s:long",
+      "s:conclude"
+     ],
+     [
+      "s:levels",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:stationary-sequence": "Stationarity makes the covariance depend only on the lag, so the error sum runs over lags.",
+     "c:normal-distribution": "Joint normality allows the normal comparison lemma and fixes the Gumbel constants.",
+     "c:covariance-function": "The decay of the covariance function decides whether the iid limit survives.",
+     "c:gumbel-distribution": "The Gumbel law is the limit of normalized Gaussian maxima.",
+     "c:iid-random-variables": "The iid standard normal sequence is the reference for the comparison."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. R. Leadbetter and H. Rootzén, Extremal theory for stochastic processes, University of Copenhagen Preprint 1987 No. 5 (Ann. Probab. 16 (1988) 431-478), Theorems 2.5.1 and 2.5.2 and relation (2.5.3), pp. 21-22.",
+     "url": "https://www.math.ku.dk/bibliotek/arkivet/preprints-fra-ims/1987/preprint_1987_-_no_5_leadbetter__m.r.__rootz_n__holger_-_extremal_theory_for_stochastic_processes.pdf",
+     "note": "The source derives the comparison bound (2.5.3) from the normal comparison lemma and states that its right side tends to 0 under Berman's condition. The steps write out that calculation with a split of the lags at n^β."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:gumbel-distribution",
+    "name": "Gumbel distribution",
+    "reminder": "The Gumbel distribution has distribution function $\\exp(-e^{-x})$ on $\\mathbb{R}$ and is the limit law of many normalized maxima.",
+    "definition": "The standard Gumbel distribution is the probability law on $\\mathbb{R}$ with [distribution function](c:distribution-function) $\\Lambda(x)=\\exp(-e^{-x})$. Its density is $e^{-x}\\exp(-e^{-x})$, its mean is the Euler–Mascheroni constant $\\gamma\\approx0.5772$, and its variance is $\\pi^2/6$. It is the [extreme value distribution](c:extreme-value-distribution) with shape $\\xi=0$.",
+    "requires": [
+     "c:distribution-function",
+     "c:exponential-function"
+    ]
+   },
+   {
+    "id": "c:stationary-sequence",
+    "name": "stationary sequence",
+    "reminder": "A stationary sequence has joint laws that do not change when you shift time.",
+    "definition": "A sequence $(X_n)_{n\\ge0}$ of [random variables](c:random-variable) is (strictly) stationary when the shifted sequence $(X_{n+k})_{n\\ge0}$ has the same law as $(X_n)_{n\\ge0}$ for every $k\\ge0$. Equivalently, every [finite-dimensional distribution](c:finite-dimensional-distribution) is invariant under time shift: $(X_{n_1+k},\\dots,X_{n_m+k})$ has the law of $(X_{n_1},\\dots,X_{n_m})$ for all indices $n_1,\\dots,n_m$ and all $k\\ge0$.",
+    "requires": [
+     "c:random-variable",
+     "c:finite-dimensional-distribution"
+    ]
+   }
+  ]
+ },
+ {
   "id": "nm:statphys-leadbetter-extremal-types",
   "statement": "Let $(\\xi_n)$ be a [stationary sequence](c:stationary-sequence) with maxima $M_n$. If $a_n(M_n - b_n)$ has a non-degenerate limit law $G$ in [distribution](c:convergence-in-distribution) and Leadbetter's condition $D(u_n)$ holds at the levels $u_n = x/a_n + b_n$, then $G$ is an [extreme value distribution](c:extreme-value-distribution).",
   "hypotheses": [
@@ -3350,7 +3645,7 @@
      {
       "id": "s:keyrenewal",
       "slogan": "Smooth the renewal equation and apply the key renewal theorem to the smoothed error term.",
-      "detail": "The smoothed function $\\hat\\psi$ is [directly Riemann integrable](c:directly-riemann-integrable-function), the remainder of the iteration vanishes, and $\\hat f = \\hat\\psi * U$ with the [renewal function](c:renewal-function) $U$ tends to $\\mu^{-1}\\int\\psi$.",
+      "detail": "The smoothed function $\\hat\\psi$ is [directly Riemann integrable](c:directly-riemann-integrable-function), the remainder of the iteration vanishes, and $\\hat f = \\hat\\psi * U$ with the [renewal function](c:renewal-function) $U$ tends to $\\mu^{-1}\\int\\psi$ by the key renewal theorem on the whole line (Feller 1971, Vol. II, Section XI.9). The whole-line form is necessary because $\\log A$ can be negative.",
       "uses": [
        "wd:Q1067156",
        "nm:statphys-key-renewal"
@@ -3616,404 +3911,5 @@
    }
   ],
   "new_concepts": []
- },
- {
-  "id": "nm:statphys-lundberg-inequality",
-  "statement": "In the Sparre Andersen risk model, which extends the [Cramér–Lundberg model](c:cramer-lundberg-model), if $R > 0$ satisfies $\\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le 1$, then the [ruin probability](c:ruin-probability) satisfies $\\psi(u) \\le e^{-Ru}$ for every initial capital $u \\ge 0$.",
-  "hypotheses": [
-   {
-    "id": "h:model",
-    "text": "The claim sizes $X_n$ are [iid](c:iid-random-variables), the interarrival times $W_n > 0$ are iid, and the two sequences are [independent](c:independent-random-variables).",
-    "concept": "c:iid-random-variables"
-   },
-   {
-    "id": "h:premium",
-    "text": "The premium rate $c$ is positive and the initial capital $u$ is nonnegative.",
-    "concept": null
-   },
-   {
-    "id": "h:coefficient",
-    "text": "The constant $R > 0$ satisfies $\\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le 1$, so $R$ is at most the [adjustment coefficient](c:adjustment-coefficient).",
-    "concept": "c:adjustment-coefficient"
-   }
-  ],
-  "conclusion": "$\\psi(u) = P(\\inf_{t \\ge 0} R_t < 0) \\le e^{-Ru}$ for every $u \\ge 0$.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "exponential-supermartingale",
-    "name": "Exponential supermartingale at claim times",
-    "slogan": "The exponential of minus R times the reserve at claim times is a nonnegative supermartingale, and stopping it at ruin bounds the ruin probability.",
-    "scope": "The whole theorem for the Sparre Andersen model, together with the explicit form of the condition in the Cramér–Lundberg model.",
-    "mechanisms": [
-     "m:martingale",
-     "m:concentration",
-     "m:monotone-limit"
-    ],
-    "roles": [
-     {
-      "h": "h:model",
-      "why": "Independence makes each increment $G_{n+1} = cW_{n+1} - X_{n+1}$ independent of the past, and positive interarrival times make the claim times tend to infinity.",
-      "steps": [
-       "s:claim-times",
-       "s:supermartingale"
-      ]
-     },
-     {
-      "h": "h:premium",
-      "why": "A positive premium rate makes the reserve increase between claims, so ruin can only happen at a claim time.",
-      "steps": [
-       "s:claim-times"
-      ]
-     },
-     {
-      "h": "h:coefficient",
-      "why": "The moment condition makes each factor $\\mathbb{E}\\, e^{-RG_{n+1}}$ at most 1, which is the supermartingale property.",
-      "steps": [
-       "s:supermartingale"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:claim-times",
-      "slogan": "Reduce ruin of the continuous reserve to ruin of the reserve at claim times.",
-      "detail": "Between two claims the reserve $u + ct - S_t$ increases, so its infimum on $[T_n, T_{n+1})$ is $U_n = u + \\sum_{k \\le n}(cW_k - X_k)$. The strong law shows $T_n \\to \\infty$, so $\\psi(u) = P(\\tau < \\infty)$ with $\\tau = \\inf\\{n : U_n < 0\\}$.",
-      "uses": [
-       "nm:laws-of-large-numbers"
-      ]
-     },
-     {
-      "id": "s:supermartingale",
-      "slogan": "Show that $Z_n = e^{-RU_n}$ is a nonnegative [supermartingale](c:supermartingale).",
-      "detail": "Since $G_{n+1}$ is independent of the first $n$ increments, $\\mathbb{E}[Z_{n+1} \\mid \\mathcal{F}_n] = Z_n\\, \\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le Z_n$, and $Z_0 = e^{-Ru}$.",
-      "uses": []
-     },
-     {
-      "id": "s:stop",
-      "slogan": "Stop the supermartingale at the ruin [stopping time](c:stopping-time) truncated at $n$.",
-      "detail": "Optional stopping at the bounded time $\\tau \\wedge n$ gives $\\mathbb{E} Z_{\\tau \\wedge n} \\le e^{-Ru}$. On $\\{\\tau \\le n\\}$ the reserve $U_\\tau$ is negative, so $Z_{\\tau \\wedge n} > 1$ there, and therefore $P(\\tau \\le n) \\le e^{-Ru}$.",
-      "uses": [
-       "wd:Q2027347"
-      ]
-     },
-     {
-      "id": "s:limit",
-      "slogan": "Let the truncation level tend to infinity to bound the ruin probability.",
-      "detail": "The events $\\{\\tau \\le n\\}$ increase to $\\{\\tau < \\infty\\}$, so continuity from below gives $\\psi(u) = P(\\tau < \\infty) \\le e^{-Ru}$ for every $u \\ge 0$.",
-      "uses": []
-     }
-    ],
-    "edges": [
-     [
-      "s:claim-times",
-      "s:stop"
-     ],
-     [
-      "s:supermartingale",
-      "s:stop"
-     ],
-     [
-      "s:stop",
-      "s:limit"
-     ],
-     [
-      "s:claim-times",
-      "s:limit"
-     ]
-    ],
-    "conclusion": "s:limit",
-    "concepts": {
-     "c:cramer-lundberg-model": "The classical risk model is the main special case, with exponential interarrival times.",
-     "c:ruin-probability": "The ruin probability is the quantity that the inequality bounds.",
-     "c:iid-random-variables": "The claims and the interarrival times are iid, which makes the increments iid.",
-     "c:independent-random-variables": "Independence of claims and arrivals makes each increment independent of the past.",
-     "c:adjustment-coefficient": "The adjustment coefficient is the largest exponent that the inequality allows.",
-     "c:supermartingale": "The exponential of the reserve is a nonnegative supermartingale, which drives the proof.",
-     "c:stopping-time": "The first claim index with negative reserve is the stopping time where the supermartingale stops."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "K. D. Schmidt, Lectures on Risk Theory (Teubner 1996, author's manuscript of December 28, 1995), Lemma 7.1.2, Corollaries 7.2.4 and 7.3.2 and Theorem 7.3.4 (Lundberg’s Inequality), pp. 159-165.",
-     "url": "https://tu-dresden.de/mn/math/stochastik/ressourcen/dateien/schmidt/publications/risk.pdf",
-     "note": "The source uses Kolmogorov's inequality for positive supermartingales (Corollary 7.2.4). These steps obtain the same maximal bound by optional stopping at the ruin index."
-    }
-   }
-  ],
-  "new_concepts": [
-   {
-    "id": "c:adjustment-coefficient",
-    "name": "adjustment coefficient",
-    "reminder": "The adjustment coefficient $R$ is the exponential rate in the Lundberg bound $\\psi(u)\\le e^{-Ru}$ for ruin probabilities.",
-    "definition": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with claim rate $\\lambda$, claim size $X$ and premium rate $c>\\lambda E[X]$, the adjustment coefficient (Lundberg exponent) is the unique solution $R>0$ of $\\lambda(E[e^{RX}]-1)=cR$, when a solution exists. A solution needs a finite [moment generating function](c:moment-generating-function) of $X$ on an interval $[0,r_0)$ with $r_0>0$, so heavy-tailed claims have none. Lundberg's inequality states $\\psi(u)\\le e^{-Ru}$ for every initial capital $u\\ge0$, where $\\psi$ is the [ruin probability](c:ruin-probability).",
-    "requires": [
-     "c:cramer-lundberg-model",
-     "c:moment-generating-function",
-     "c:ruin-probability"
-    ]
-   },
-   {
-    "id": "c:compound-poisson-process",
-    "name": "compound Poisson process",
-    "reminder": "A compound Poisson process adds up iid random jumps at the arrival times of a Poisson process.",
-    "definition": "Let $(N_t)_{t\\ge0}$ be a [Poisson process](c:poisson-process) with rate $\\lambda>0$, and let $Y_1,Y_2,\\dots$ be [iid random variables](c:iid-random-variables) that are independent of $(N_t)$. The compound Poisson process is $S_t=\\sum_{i=1}^{N_t}Y_i$, with $S_t=0$ when $N_t=0$. It has independent and stationary increments, and $E[e^{i\\theta S_t}]=\\exp(\\lambda t(\\varphi_Y(\\theta)-1))$, where $\\varphi_Y$ is the [characteristic function](c:characteristic-function) of $Y_1$.",
-    "requires": [
-     "c:poisson-process",
-     "c:iid-random-variables"
-    ]
-   },
-   {
-    "id": "c:cramer-lundberg-model",
-    "name": "Cramer-Lundberg model",
-    "reminder": "The Cramér–Lundberg model describes the capital of an insurer as initial capital plus premiums minus compound Poisson claims.",
-    "definition": "In the Cramér–Lundberg model, claims arrive at the times of a [Poisson process](c:poisson-process) $(N_t)$ with rate $\\lambda>0$, the claim sizes $X_1,X_2,\\dots$ are positive [iid random variables](c:iid-random-variables) with mean $\\mu$ and independent of $(N_t)$, and premiums come in at a constant rate $c>0$. The risk process with initial capital $u\\ge0$ is $R_t=u+ct-S_t$, where $S_t=\\sum_{i=1}^{N_t}X_i$ is a [compound Poisson process](c:compound-poisson-process). The net profit condition $c>\\lambda\\mu$ means that $R_t\\to\\infty$ almost surely.",
-    "requires": [
-     "c:compound-poisson-process",
-     "c:poisson-process",
-     "c:iid-random-variables"
-    ]
-   },
-   {
-    "id": "c:ruin-probability",
-    "name": "ruin probability",
-    "reminder": "The ruin probability $\\psi(u)$ is the probability that the capital of an insurer, started at $u$, ever falls below zero.",
-    "definition": "For a risk process $R_t=u+ct-S_t$, as in the [Cramér–Lundberg model](c:cramer-lundberg-model), the ruin time is the [stopping time](c:stopping-time) $\\tau(u)=\\inf\\{t\\ge0:R_t<0\\}$, and the (infinite-horizon) ruin probability is $\\psi(u)=P(\\tau(u)<\\infty)$ for initial capital $u\\ge0$. The finite-horizon ruin probability is $\\psi(u,T)=P(\\tau(u)\\le T)$. Equivalently, $\\psi(u)=P(\\sup_{t\\ge0}(S_t-ct)>u)$.",
-    "requires": [
-     "c:cramer-lundberg-model",
-     "c:stopping-time"
-    ]
-   },
-   {
-    "id": "c:supermartingale",
-    "name": "supermartingale",
-    "reminder": "A supermartingale is an adapted integrable process whose conditional mean of the next value is at most the present value.",
-    "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a [submartingale](c:submartingale).",
-    "requires": [
-     "c:filtration",
-     "c:integrable-function",
-     "c:conditional-expectation",
-     "c:martingale"
-    ]
-   }
-  ]
- },
- {
-  "id": "nm:statphys-cramer-lundberg-approximation",
-  "statement": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with net profit condition and [adjustment coefficient](c:adjustment-coefficient) $r$ with $M'(r) < \\infty$, the [ruin probability](c:ruin-probability) satisfies $\\psi(u) \\sim C e^{-ru}$ as $u \\to \\infty$, with $C = (c - \\lambda\\mu)/(\\lambda M'(r) - c)$.",
-  "hypotheses": [
-   {
-    "id": "h:model",
-    "text": "Claims arrive at the times of a [Poisson process](c:poisson-process) with rate $\\lambda$, and the claim sizes are positive and iid with distribution function $F$, mean $\\mu$ and [moment generating function](c:moment-generating-function) $M$.",
-    "concept": "c:poisson-process"
-   },
-   {
-    "id": "h:profit",
-    "text": "The premium rate satisfies $c > \\lambda\\mu$.",
-    "concept": null
-   },
-   {
-    "id": "h:lundberg",
-    "text": "The Lundberg equation $\\lambda(M(r) - 1) = cr$ has a root $r > 0$, and $M'(r) < \\infty$.",
-    "concept": "c:adjustment-coefficient"
-   }
-  ],
-  "conclusion": "$e^{ru}\\psi(u) \\to C = \\dfrac{c - \\lambda\\mu}{\\lambda M'(r) - c}$ as $u \\to \\infty$, so $\\psi(u)$ has the [asymptotic](c:asymptotic) form $C e^{-ru}$.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "tilted-renewal",
-    "name": "Exponential tilting and the key renewal theorem",
-    "slogan": "Tilt the renewal equation for the ruin probability by $e^{ru}$ so that it becomes a proper renewal equation, and apply the key renewal theorem.",
-    "scope": "The whole theorem under the listed hypotheses, with both forms of the constant.",
-    "mechanisms": [
-     "m:change-of-variables",
-     "m:fubini-swap",
-     "m:cited-deep-result"
-    ],
-    "roles": [
-     {
-      "h": "h:model",
-      "why": "Poisson arrivals give the Pollaczek–Khinchine series, which yields the renewal equation for $\\psi$.",
-      "steps": [
-       "s:renewal-equation"
-      ]
-     },
-     {
-      "h": "h:profit",
-      "why": "The net profit condition makes $\\rho < 1$, so the series converges and the constant $C$ is positive.",
-      "steps": [
-       "s:renewal-equation",
-       "s:constant"
-      ]
-     },
-     {
-      "h": "h:lundberg",
-      "why": "The Lundberg equation makes the tilted kernel a probability law, and $M'(r) < \\infty$ makes its mean finite.",
-      "steps": [
-       "s:tilt",
-       "s:dri"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:renewal-equation",
-      "slogan": "Turn the Pollaczek–Khinchine series into a defective renewal equation for $\\psi$.",
-      "detail": "Convolving the series with $\\rho F_I$ term by term gives $\\psi(u) = \\frac{\\lambda}{c}\\int_u^\\infty (1-F) + \\frac{\\lambda}{c}\\int_0^u \\psi(u-y)(1 - F(y))\\,dy$, a renewal equation whose kernel has mass $\\rho < 1$.",
-      "uses": [
-       "nm:statphys-pollaczek-khinchine-ruin",
-       "wd:Q1153584"
-      ]
-     },
-     {
-      "id": "s:tilt",
-      "slogan": "Multiply by $e^{ru}$ so that the kernel becomes a probability law.",
-      "detail": "The tilted kernel $dG(y) = \\frac{\\lambda}{c} e^{ry}(1 - F(y))\\,dy$ has total mass $\\frac{\\lambda}{c}\\cdot\\frac{M(r)-1}{r} = 1$ by the Lundberg equation, and its mean is $m_G = (\\lambda M'(r) - c)/(cr)$.",
-      "uses": [
-       "wd:Q1149022"
-      ]
-     },
-     {
-      "id": "s:dri",
-      "slogan": "Show that the forcing term is a [directly Riemann integrable function](c:directly-riemann-integrable-function).",
-      "detail": "The forcing term $z(u) = \\frac{\\lambda}{c}e^{ru}\\int_u^\\infty (1-F)$ is continuous and bounded by the nonincreasing function $g(u) = \\frac{\\lambda}{c}\\int_u^\\infty e^{ry}(1 - F(y))\\,dy$, whose integral is $m_G < \\infty$.",
-      "uses": [
-       "wd:Q1149022"
-      ]
-     },
-     {
-      "id": "s:key-renewal",
-      "slogan": "Apply the key renewal theorem to the tilted [renewal equation](c:renewal-function).",
-      "detail": "The solution is $e^{ru}\\psi = U * z$ with $U = \\sum_k G^{*k}$, because $G^{*n}([0,u]) \\to 0$ by the strong law. The key renewal theorem for the nonlattice law $G$ gives $e^{ru}\\psi(u) \\to m_G^{-1}\\int_0^\\infty z$.",
-      "uses": [
-       "nm:laws-of-large-numbers",
-       "nm:statphys-key-renewal"
-      ]
-     },
-     {
-      "id": "s:constant",
-      "slogan": "Compute the integral of the forcing term and divide by the tilted mean.",
-      "detail": "Fubini's theorem gives $\\int_0^\\infty z = (\\lambda/(cr))(c/\\lambda - \\mu) = (c - \\lambda\\mu)/(cr)$, and division by $m_G$ gives $C = (c - \\lambda\\mu)/(\\lambda M'(r) - c)$.",
-      "uses": [
-       "wd:Q1149022"
-      ]
-     }
-    ],
-    "edges": [
-     [
-      "s:renewal-equation",
-      "s:tilt"
-     ],
-     [
-      "s:tilt",
-      "s:dri"
-     ],
-     [
-      "s:tilt",
-      "s:key-renewal"
-     ],
-     [
-      "s:dri",
-      "s:key-renewal"
-     ],
-     [
-      "s:key-renewal",
-      "s:constant"
-     ]
-    ],
-    "conclusion": "s:constant",
-    "concepts": {
-     "c:cramer-lundberg-model": "The Cramér–Lundberg model is the risk model in which the asymptotics hold.",
-     "c:adjustment-coefficient": "The adjustment coefficient r is the exact exponential decay rate of ruin.",
-     "c:ruin-probability": "The ruin probability is the quantity whose asymptotics the theorem gives.",
-     "c:poisson-process": "Poisson arrivals give the Pollaczek–Khinchine series and the renewal equation.",
-     "c:moment-generating-function": "The moment generating function defines the Lundberg equation and the constant C.",
-     "c:asymptotic": "The conclusion is an asymptotic equivalence as the initial capital tends to infinity.",
-     "c:directly-riemann-integrable-function": "Direct Riemann integrability of the forcing term is the hypothesis of the key renewal theorem.",
-     "c:renewal-function": "The renewal measure of the tilted law turns the equation into an explicit convolution."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "N. H. Bingham, lecture notes ull7b (Imperial College, 8.11.2017), Section 6 (renewal equation (∗) and (∗∗)) and Section 7, Theorem (Cramér’s estimate of ruin) with proof, pp. 1-4.",
-     "url": "https://www.ma.ic.ac.uk/~bin06/ULL/2017/ull7b.pdf",
-     "note": "The steps follow the notes: renewal equation, exponential tilting and the key renewal theorem. The notes print c in place of λ in the denominator of C because of a slip in the computation of the integral of z. These steps give the corrected constant."
-    }
-   }
-  ],
-  "new_concepts": [
-   {
-    "id": "c:adjustment-coefficient",
-    "name": "adjustment coefficient",
-    "reminder": "The adjustment coefficient $R$ is the exponential rate in the Lundberg bound $\\psi(u)\\le e^{-Ru}$ for ruin probabilities.",
-    "definition": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with claim rate $\\lambda$, claim size $X$ and premium rate $c>\\lambda E[X]$, the adjustment coefficient (Lundberg exponent) is the unique solution $R>0$ of $\\lambda(E[e^{RX}]-1)=cR$, when a solution exists. A solution needs a finite [moment generating function](c:moment-generating-function) of $X$ on an interval $[0,r_0)$ with $r_0>0$, so heavy-tailed claims have none. Lundberg's inequality states $\\psi(u)\\le e^{-Ru}$ for every initial capital $u\\ge0$, where $\\psi$ is the [ruin probability](c:ruin-probability).",
-    "requires": [
-     "c:cramer-lundberg-model",
-     "c:moment-generating-function",
-     "c:ruin-probability"
-    ]
-   },
-   {
-    "id": "c:compound-poisson-process",
-    "name": "compound Poisson process",
-    "reminder": "A compound Poisson process adds up iid random jumps at the arrival times of a Poisson process.",
-    "definition": "Let $(N_t)_{t\\ge0}$ be a [Poisson process](c:poisson-process) with rate $\\lambda>0$, and let $Y_1,Y_2,\\dots$ be [iid random variables](c:iid-random-variables) that are independent of $(N_t)$. The compound Poisson process is $S_t=\\sum_{i=1}^{N_t}Y_i$, with $S_t=0$ when $N_t=0$. It has independent and stationary increments, and $E[e^{i\\theta S_t}]=\\exp(\\lambda t(\\varphi_Y(\\theta)-1))$, where $\\varphi_Y$ is the [characteristic function](c:characteristic-function) of $Y_1$.",
-    "requires": [
-     "c:poisson-process",
-     "c:iid-random-variables"
-    ]
-   },
-   {
-    "id": "c:cramer-lundberg-model",
-    "name": "Cramer-Lundberg model",
-    "reminder": "The Cramér–Lundberg model describes the capital of an insurer as initial capital plus premiums minus compound Poisson claims.",
-    "definition": "In the Cramér–Lundberg model, claims arrive at the times of a [Poisson process](c:poisson-process) $(N_t)$ with rate $\\lambda>0$, the claim sizes $X_1,X_2,\\dots$ are positive [iid random variables](c:iid-random-variables) with mean $\\mu$ and independent of $(N_t)$, and premiums come in at a constant rate $c>0$. The risk process with initial capital $u\\ge0$ is $R_t=u+ct-S_t$, where $S_t=\\sum_{i=1}^{N_t}X_i$ is a [compound Poisson process](c:compound-poisson-process). The net profit condition $c>\\lambda\\mu$ means that $R_t\\to\\infty$ almost surely.",
-    "requires": [
-     "c:compound-poisson-process",
-     "c:poisson-process",
-     "c:iid-random-variables"
-    ]
-   },
-   {
-    "id": "c:directly-riemann-integrable-function",
-    "name": "directly Riemann integrable function",
-    "reminder": "A directly Riemann integrable function has Riemann sums over the whole half line that converge as the mesh shrinks.",
-    "definition": "For $f:[0,\\infty)\\to\\mathbb{R}$ and $h>0$, let $\\overline m_n(h)$ and $\\underline m_n(h)$ be the [supremum](c:least-upper-bound) and the infimum of $f$ on $[nh,(n+1)h)$, and let $\\overline\\sigma(h)=h\\sum_{n\\ge0}\\overline m_n(h)$ and $\\underline\\sigma(h)=h\\sum_{n\\ge0}\\underline m_n(h)$. The function $f$ is directly Riemann integrable when both series converge absolutely for every $h>0$ and $\\overline\\sigma(h)-\\underline\\sigma(h)\\to0$ as $h\\to0$. The common limit is then the [Riemann integral](c:riemann-integral) $\\int_0^\\infty f(x)\\,dx$.",
-    "requires": [
-     "c:riemann-integral",
-     "c:least-upper-bound"
-    ]
-   },
-   {
-    "id": "c:renewal-function",
-    "name": "renewal function",
-    "reminder": "The renewal function gives the expected number of renewals up to time $t$.",
-    "definition": "For a [renewal process](c:renewal-process) with interarrival distribution $F$ and renewal times $S_n$, the renewal function is $U(t)=\\sum_{n\\ge0}F^{*n}(t)=E[\\#\\{n\\ge0:S_n\\le t\\}]$ for $t\\ge0$, where $F^{*n}$ is the $n$-fold [convolution](c:convolution) power and $F^{*0}$ is the point mass at $0$. It counts the renewal at time $0$, so $U(t)=1+E[N(t)]$, and some authors call $m(t)=E[N(t)]=U(t)-1$ the renewal function.",
-    "requires": [
-     "c:renewal-process",
-     "c:convolution",
-     "c:expected-value"
-    ]
-   },
-   {
-    "id": "c:renewal-process",
-    "name": "renewal process",
-    "reminder": "A renewal process counts the events of a sequence whose gaps are independent and identically distributed positive times.",
-    "definition": "Let $X_1,X_2,\\dots$ be positive [iid random variables](c:iid-random-variables), and let $S_0=0$ and $S_n=X_1+\\dots+X_n$. The renewal process is the [stochastic process](c:stochastic-process) $N(t)=\\#\\{n\\ge1:S_n\\le t\\}$, $t\\ge0$, which counts the renewal times $S_n$ in $[0,t]$. The $X_i$ are the interarrival times, and their common law $F$ is the interarrival distribution.",
-    "requires": [
-     "c:iid-random-variables",
-     "c:stochastic-process"
-    ]
-   },
-   {
-    "id": "c:ruin-probability",
-    "name": "ruin probability",
-    "reminder": "The ruin probability $\\psi(u)$ is the probability that the capital of an insurer, started at $u$, ever falls below zero.",
-    "definition": "For a risk process $R_t=u+ct-S_t$, as in the [Cramér–Lundberg model](c:cramer-lundberg-model), the ruin time is the [stopping time](c:stopping-time) $\\tau(u)=\\inf\\{t\\ge0:R_t<0\\}$, and the (infinite-horizon) ruin probability is $\\psi(u)=P(\\tau(u)<\\infty)$ for initial capital $u\\ge0$. The finite-horizon ruin probability is $\\psi(u,T)=P(\\tau(u)\\le T)$. Equivalently, $\\psi(u)=P(\\sup_{t\\ge0}(S_t-ct)>u)$.",
-    "requires": [
-     "c:cramer-lundberg-model",
-     "c:stopping-time"
-    ]
-   }
-  ]
  }
 ]

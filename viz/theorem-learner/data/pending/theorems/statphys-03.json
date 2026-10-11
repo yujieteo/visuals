@@ -1,5 +1,347 @@
 [
  {
+  "id": "nm:statphys-smooth-fit-verification",
+  "statement": "Let $X$ solve the [stochastic differential equation](c:stochastic-differential-equation) $dX_t = b(X_t)\\,dt + \\sigma(X_t)\\,dW_t$ in an open interval $I$. Let $V$ be a [continuously differentiable](c:continuously-differentiable-map) function on $I$ that is $C^2$ off a finite set $F$ where $\\sigma \\ne 0$, and that solves $\\min\\{\\mathcal L V - \\lambda V + w,\\ z - V\\} = 0$ off $F$. Then the exit time $\\tau^*$ of $X$ from $D = \\{V < z\\}$ minimizes $J[\\tau] = E[\\int_0^\\tau e^{-\\lambda s} w(X_s)\\,ds + e^{-\\lambda\\tau} z(X_\\tau)]$ over the finite [stopping times](c:stopping-time) $\\tau$ for which the [Itô integral](c:ito-integral) $\\int_0^\\tau e^{-\\lambda s} V'(X_s)\\sigma(X_s)\\,dW_s$ has mean zero, if $\\tau^*$ is one of them and $E|V(X_0)| < \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:sde",
+    "text": "$X$ is a continuous solution of $dX_t = b(X_t)\\,dt + \\sigma(X_t)\\,dW_t$ that stays in the open interval $I$, with $b$ and $\\sigma$ continuous.",
+    "concept": "c:stochastic-differential-equation"
+   },
+   {
+    "id": "h:smooth-fit",
+    "text": "$V$ is $C^1$ on $I$ and $C^2$ on $I \\setminus F$ for a finite set $F$, $V''$ is bounded near $F$, and $\\sigma \\ne 0$ on $F$.",
+    "concept": "c:continuously-differentiable-map"
+   },
+   {
+    "id": "h:vi",
+    "text": "$\\min\\{\\mathcal L V - \\lambda V + w,\\ z - V\\} = 0$ on $I \\setminus F$, with $w$ and $z$ continuous and $\\lambda \\ge 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:class",
+    "text": "$E|V(X_0)| < \\infty$, and $\\tau^*$ is a.s. finite with $E\\int_0^{\\tau^*} e^{-\\lambda s} V'(X_s)\\sigma(X_s)\\,dW_s = 0$.",
+    "concept": "c:stopping-time"
+   }
+  ],
+  "conclusion": "$J[\\tau^*] = E\\,V(X_0) \\le J[\\tau]$ for every admissible $\\tau$, so $E\\,V(X_0)$ is the optimal cost and $V$ is the [value function](c:value-function) of the problem.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "relaxed-ito-verification",
+    "name": "Relaxed Itô rule and comparison",
+    "slogan": "Extend Itô's rule to the $C^1$ function $V$, then compare its expansion with the cost of any rule for the [optimal stopping problem](c:optimal-stopping-problem).",
+    "scope": "The full statement. The Itô rule is proved for finitely many points where $V$ is only $C^1$, not for a general measurable second derivative.",
+    "mechanisms": [
+     "m:approximation",
+     "m:dominated-convergence",
+     "m:martingale"
+    ],
+    "roles": [
+     {
+      "h": "h:sde",
+      "why": "The equation and the continuity of the coefficients give Itô's formula and the bounds after localization.",
+      "steps": [
+       "s:zero-time",
+       "s:relaxed-ito"
+      ]
+     },
+     {
+      "h": "h:smooth-fit",
+      "why": "A $C^1$ function with a bounded second derivative off $F$ is a limit of $C^2$ functions, and $\\sigma \\ne 0$ on $F$ makes the time at $F$ negligible.",
+      "steps": [
+       "s:zero-time",
+       "s:approx",
+       "s:relaxed-ito"
+      ]
+     },
+     {
+      "h": "h:vi",
+      "why": "The two inequalities give the lower bound, and the equation inside $D$ gives the equality for $\\tau^*$.",
+      "steps": [
+       "s:lower-bound",
+       "s:equality"
+      ]
+     },
+     {
+      "h": "h:class",
+      "why": "A mean-zero stochastic integral and an integrable $V(X_0)$ make the expansion of $V$ have mean $E\\,V(X_0)$.",
+      "steps": [
+       "s:lower-bound",
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:zero-time",
+      "slogan": "Show that the diffusion spends zero time at each point where $\\sigma \\ne 0$.",
+      "detail": "Itô's formula for $F_\\varepsilon$ with $F_\\varepsilon'' = g_\\varepsilon \\ge 1_{\\{a\\}}$ and $|F_\\varepsilon'| \\le 4\\varepsilon$ bounds $\\tfrac12\\sigma(a)^2$ times the [Lebesgue measure](c:lebesgue-measure) of $\\{s \\le t : X_s = a\\}$ by terms that tend to zero.",
+      "uses": [
+       "nm:statphys-ito-formula",
+       "nm:statphys-ito-isometry"
+      ]
+     },
+     {
+      "id": "s:approx",
+      "slogan": "Approximate $V$ by $C^2$ functions whose second derivatives equal $V''$ away from $F$.",
+      "detail": "Replace $V''$ by a linear interpolation on $[a - 1/n, a + 1/n]$ for each $a \\in F$ and integrate twice. The approximations converge to $V$ with their first derivatives, uniformly on compact sets.",
+      "uses": [
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:relaxed-ito",
+      "slogan": "Pass to the limit in Itô's formula for the approximations to get Itô's rule for $V$.",
+      "detail": "The second-derivative terms converge at almost every time because the time spent at $F$ is null, and the stochastic integrals converge in $L^2$ by the Itô isometry.",
+      "uses": [
+       "nm:statphys-ito-formula",
+       "nm:statphys-ito-isometry",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:lower-bound",
+      "slogan": "Bound the cost of every admissible rule below by the mean of $V(X_0)$.",
+      "detail": "The expansion $Y_\\tau = V(X_0) + M_\\tau$ has mean $E\\,V(X_0)$, and $V \\le z$ and $\\lambda V - \\mathcal L V \\le w$ give $Y_\\tau \\le Z_\\tau$, the realized cost of $\\tau$.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Show that the exit rule from the continuation region turns both bounds into equalities.",
+      "detail": "Before $\\tau^*$ the process is in $D$, where $\\mathcal L V - \\lambda V + w = 0$, and at $\\tau^*$ it is in the closed set $\\{V = z\\}$, so $Y_{\\tau^*} = Z_{\\tau^*}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zero-time",
+      "s:relaxed-ito"
+     ],
+     [
+      "s:approx",
+      "s:relaxed-ito"
+     ],
+     [
+      "s:relaxed-ito",
+      "s:lower-bound"
+     ],
+     [
+      "s:zero-time",
+      "s:lower-bound"
+     ],
+     [
+      "s:lower-bound",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:stochastic-differential-equation": "The state of the stopping problem is the solution of a one-dimensional stochastic differential equation.",
+     "c:continuously-differentiable-map": "Smooth fit means that V is continuously differentiable across the boundary of the continuation region.",
+     "c:stopping-time": "The controller chooses a stopping time, and the theorem compares all admissible stopping times.",
+     "c:ito-integral": "The mean-zero condition on the Itô integral defines the admissible class of stopping times.",
+     "c:value-function": "The theorem identifies the solution of the variational inequality with the value function.",
+     "c:optimal-stopping-problem": "The cost J is the objective of an optimal stopping problem for a diffusion.",
+     "c:lebesgue-measure": "The time spent at the points of F has Lebesgue measure zero, so V'' is not needed there."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. van Handel, Stochastic Calculus, Filtering, and Stochastic Control (ACM 217 lecture notes, 2007), Proposition 8.1.3 and its proof, p. 210, with Proposition 8.1.5 on pp. 210-211.",
+     "url": "https://web.math.princeton.edu/~rvan/acm217/ACM217.pdf",
+     "note": "Steps s:lower-bound and s:equality follow the proof of Proposition 8.1.3. The source cites Rogers and Williams for the Itô rule of Proposition 8.1.5, and steps s:zero-time to s:relaxed-ito prove it directly for finitely many points where V is only C¹."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:optimal-stopping-problem",
+    "name": "optimal stopping problem",
+    "reminder": "An optimal stopping problem asks for a stopping time that maximizes the expected reward of stopping a random process.",
+    "definition": "Let $(Z_n)_{0\\le n\\le N}$, with $N\\le\\infty$, be integrable rewards adapted to a [filtration](c:filtration) $(\\mathcal{F}_n)$. The optimal stopping problem asks for the [expected value](c:expected-value) $V=\\sup_\\tau\\mathbb{E}[Z_\\tau]$ over all [stopping times](c:stopping-time) $\\tau\\le N$, with $\\tau<\\infty$ almost surely when $N=\\infty$, and for an optimal $\\tau^*$ with $\\mathbb{E}[Z_{\\tau^*}]=V$. Because $\\tau$ is a stopping time, each decision to stop uses only the information available at that time.",
+    "requires": [
+     "c:stopping-time",
+     "c:filtration",
+     "c:expected-value",
+     "c:stochastic-process"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-mckean-perpetual-american-put",
+  "statement": "In the Black-Scholes model with $r > 0$, the perpetual American put has price $V(x) = K - x$ for $x \\le L^*$ and $V(x) = (K - L^*)(x/L^*)^{-2r/\\sigma^2}$ for $x \\ge L^*$, where $L^* = 2rK/(2r + \\sigma^2)$. The first [stopping time](c:stopping-time) at which the price reaches $L^*$ is optimal for this [optimal stopping problem](c:optimal-stopping-problem).",
+  "hypotheses": [
+   {
+    "id": "h:rates",
+    "text": "The interest rate $r$, the volatility $\\sigma$ and the strike $K$ are strictly positive.",
+    "concept": null
+   },
+   {
+    "id": "h:model",
+    "text": "Under $P^*$, $S_t = x\\exp(\\sigma B_t + (r - \\sigma^2/2)t)$ with a standard [Brownian motion](c:brownian-motion) $B$.",
+    "concept": "c:brownian-motion"
+   },
+   {
+    "id": "h:payoff",
+    "text": "Exercise at a [stopping time](c:stopping-time) $\\tau$ pays $(K - S_\\tau)^+$ at time $\\tau$, and no exercise pays $0$.",
+    "concept": "c:stopping-time"
+   }
+  ],
+  "conclusion": "$\\sup_\\tau \\mathbb{E}^*[e^{-r\\tau}(K - S_\\tau)^+] = V(x)$ for every $x > 0$, and $\\tau^* = \\inf\\{t : S_t \\le L^*\\}$ attains it.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "verification",
+    "name": "Verification of the smooth-fit candidate",
+    "slogan": "Show that the discounted candidate is a [supermartingale](c:supermartingale) above the payoff, and that it is a [martingale](c:martingale) until the price first reaches $L^*$.",
+    "scope": "The value for every initial price and the optimality of $\\tau^*$, for $r > 0$. The case $r = 0$ is excluded.",
+    "mechanisms": [
+     "m:martingale",
+     "m:convexity",
+     "m:approximation",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:rates",
+      "why": "Positive rates make $\\gamma > 0$ and $L^* < K$, and the discount factor kills the payoff at $\\tau = \\infty$.",
+      "steps": [
+       "s:candidate",
+       "s:upper",
+       "s:attain"
+      ]
+     },
+     {
+      "h": "h:model",
+      "why": "The model gives the generator for Itô's formula and the exponential martingale $e^{-rt}S_t^{-\\gamma}$.",
+      "steps": [
+       "s:supermart",
+       "s:attain"
+      ]
+     },
+     {
+      "h": "h:payoff",
+      "why": "The payoff convention fixes the gain that the supermartingale bound must dominate.",
+      "steps": [
+       "s:upper",
+       "s:attain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:candidate",
+      "slogan": "Check that the candidate $V$ is $C^1$, [convex](c:convex-function) and above the payoff.",
+      "detail": "Both branches have slope $-1$ at $L^*$, which is smooth fit. Convexity puts $V$ above its tangent $K - x$. The generator gives $-rK$ below $L^*$ and $0$ above $L^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:supermart",
+      "slogan": "Prove that $e^{-rt}V(S_t)$ is a [supermartingale](c:supermartingale) with Itô's formula after mollification.",
+      "detail": "In log coordinates the candidate has a Lipschitz derivative. A [mollifier](c:mollifier) gives smooth functions with nonpositive generator. Itô's formula and the martingale property of the stochastic integral give supermartingales, and the uniform limit keeps the property.",
+      "uses": [
+       "nm:statphys-ito-formula",
+       "nm:statphys-ito-isometry"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound the discounted payoff of every exercise rule by $V(x)$ with optional stopping.",
+      "detail": "Optional stopping at $\\tau \\wedge t$ and dominated convergence as $t \\to \\infty$ give $\\mathbb{E}^*[e^{-r\\tau}V(S_\\tau)] \\le V(x)$. The payoff is at most $V$.",
+      "uses": [
+       "wd:Q2027347",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:attain",
+      "slogan": "Compute the payoff of $\\tau^*$ with the exponential [martingale](c:martingale) $e^{-rt}S_t^{-\\gamma}$.",
+      "detail": "Stopped at $\\tau^*$ this martingale is bounded by $(L^*)^{-\\gamma}$. Optional stopping and dominated convergence give $\\mathbb{E}^*[e^{-r\\tau^*}] = (x/L^*)^{-\\gamma}$, so $\\tau^*$ pays $V(x)$.",
+      "uses": [
+       "wd:Q2027347",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two bounds to identify the value of the [optimal stopping problem](c:optimal-stopping-problem).",
+      "detail": "The upper bound holds for every stopping time and $\\tau^*$ attains it. So the price is $V(x)$ and $\\tau^*$ is an optimal exercise rule.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:candidate",
+      "s:supermart"
+     ],
+     [
+      "s:candidate",
+      "s:upper"
+     ],
+     [
+      "s:supermart",
+      "s:upper"
+     ],
+     [
+      "s:candidate",
+      "s:attain"
+     ],
+     [
+      "s:upper",
+      "s:conclude"
+     ],
+     [
+      "s:attain",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:stopping-time": "Exercise rules are stopping times, and the optimal one is a hitting time.",
+     "c:optimal-stopping-problem": "The option price is the value of an optimal stopping problem with discounting.",
+     "c:brownian-motion": "The asset price is the exponential of a Brownian motion with drift.",
+     "c:supermartingale": "The discounted candidate value is a supermartingale, which bounds every exercise rule.",
+     "c:martingale": "The exponential martingale of the price computes the discounted payoff of the hitting time.",
+     "c:convex-function": "Convexity of the candidate puts it above the payoff line K minus x.",
+     "c:mollifier": "Mollification smooths the candidate so that Itô's formula applies at the exercise boundary."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. Privault, Notes on Stochastic Finance, Chapter 15, Proposition 15.4 and its proof, pp. 545-546, with Lemma 15.1 and Proposition 15.2, pp. 538-539.",
+     "url": "https://personal.ntu.edu.sg/nprivault/MA5182/american-options.pdf",
+     "note": "The source applies Itô's formula to the candidate directly. Step s:supermart adds a mollification because the candidate is only C¹ at the exercise boundary."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:optimal-stopping-problem",
+    "name": "optimal stopping problem",
+    "reminder": "An optimal stopping problem asks for a stopping time that maximizes the expected reward of stopping a random process.",
+    "definition": "Let $(Z_n)_{0\\le n\\le N}$, with $N\\le\\infty$, be integrable rewards adapted to a [filtration](c:filtration) $(\\mathcal{F}_n)$. The optimal stopping problem asks for the [expected value](c:expected-value) $V=\\sup_\\tau\\mathbb{E}[Z_\\tau]$ over all [stopping times](c:stopping-time) $\\tau\\le N$, with $\\tau<\\infty$ almost surely when $N=\\infty$, and for an optimal $\\tau^*$ with $\\mathbb{E}[Z_{\\tau^*}]=V$. Because $\\tau$ is a stopping time, each decision to stop uses only the information available at that time.",
+    "requires": [
+     "c:stopping-time",
+     "c:filtration",
+     "c:expected-value",
+     "c:stochastic-process"
+    ]
+   },
+   {
+    "id": "c:supermartingale",
+    "name": "supermartingale",
+    "reminder": "A supermartingale is an adapted integrable process whose conditional mean of the next value is at most the present value.",
+    "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a [submartingale](c:submartingale).",
+    "requires": [
+     "c:filtration",
+     "c:integrable-function",
+     "c:conditional-expectation",
+     "c:martingale"
+    ]
+   }
+  ]
+ },
+ {
   "id": "nm:statphys-wald-wolfowitz-sprt",
   "statement": "Let $P \\ne Q$ and let $X_1, X_2, \\dots$ be [iid random variables](c:iid-random-variables) with law $P$ or $Q$. The sequential probability ratio test $\\psi$ stops at the first $n$ with $r_n \\le A$ or $r_n \\ge B$, where $r_n$ is the product of the [likelihood ratios](c:radon-nikodym-derivative) $f(X_j)$ and $0 < A < 1 < B < \\infty$. Every sequential test $\\varphi$ whose error probabilities are at most those of $\\psi$, and whose sample size $N_\\varphi$ (a [stopping time](c:stopping-time)) has finite mean under $P$ and $Q$, satisfies $E_P N_\\psi \\le E_P N_\\varphi$ and $E_Q N_\\psi \\le E_Q N_\\varphi$.",
   "hypotheses": [
@@ -814,27 +1156,27 @@
  },
  {
   "id": "nm:statphys-kolmogorov-continuity",
-  "statement": "If a [stochastic process](c:stochastic-process) $X$ on $[0,1]$ with values in $\\mathbb{R}^d$ satisfies $\\mathbb{E}|X_t - X_s|^\\beta \\le K|t - s|^{1+\\alpha}$, then $X$ has a continuous [modification](c:modification) $Y$ that is almost surely [Hölder continuous](c:holder-continuity) with every exponent $\\gamma < \\alpha/\\beta$.",
+  "statement": "If a [stochastic process](c:stochastic-process) $X$ indexed by the cube $[0,1]^m$ with values in $\\mathbb{R}^d$ satisfies $\\mathbb{E}|X_u - X_v|^\\beta \\le K|u - v|^{m+\\alpha}$, then $X$ has a continuous [modification](c:modification) $Y$ that is almost surely [Hölder continuous](c:holder-continuity) with every exponent $\\gamma < \\alpha/\\beta$.",
   "hypotheses": [
    {
     "id": "h:process",
-    "text": "$X = (X_t)_{t \\in [0,1]}$ is a [stochastic process](c:stochastic-process) with values in $\\mathbb{R}^d$.",
+    "text": "$X = (X_u)_{u \\in [0,1]^m}$ is a [stochastic process](c:stochastic-process) (a random field) indexed by $[0,1]^m$ with values in $\\mathbb{R}^d$.",
     "concept": "c:stochastic-process"
    },
    {
     "id": "h:moment",
-    "text": "There are constants $\\alpha, \\beta > 0$ and $K < \\infty$ with $\\mathbb{E}|X_t - X_s|^\\beta \\le K|t - s|^{1+\\alpha}$ for all $s, t \\in [0,1]$.",
+    "text": "There are constants $\\alpha, \\beta > 0$ and $K < \\infty$ with $\\mathbb{E}|X_u - X_v|^\\beta \\le K|u - v|^{m+\\alpha}$ for all $u, v \\in [0,1]^m$.",
     "concept": null
    }
   ],
-  "conclusion": "There is a process $Y$ with $P(Y_t = X_t) = 1$ for every $t$, continuous paths, and $|Y_t - Y_s| \\le C(\\omega)|t - s|^\\gamma$ almost surely for every $\\gamma < \\alpha/\\beta$.",
+  "conclusion": "There is a field $Y$ with $P(Y_u = X_u) = 1$ for every $u$, continuous paths, and $|Y_u - Y_v| \\le C(\\omega)|u - v|^\\gamma$ almost surely for every $\\gamma < \\alpha/\\beta$.",
   "formal": null,
   "proofs": [
    {
     "id": "dyadic-chaining",
     "name": "Dyadic chaining",
     "slogan": "Control all increments at each dyadic level, chain any two [dyadic rationals](c:dyadic-rational-number) through coarser levels, then extend by continuity.",
-    "scope": "The whole theorem for processes indexed by $[0,1]$. Index sets of higher dimension need the exponent $n + \\alpha$ and are not treated.",
+    "scope": "The whole theorem for fields indexed by $[0,1]^m$ with values in $\\mathbb{R}^d$.",
     "mechanisms": [
      "m:union-bound",
      "m:borel-cantelli",
@@ -861,8 +1203,8 @@
     "steps": [
      {
       "id": "s:levels",
-      "slogan": "Bound the chance that some increment at dyadic level $n$ exceeds $2^{-\\gamma n}$.",
-      "detail": "Markov's inequality and a union bound over $2^n$ increments give $P(G_n^c) \\le K2^{-n(\\alpha - \\gamma\\beta)}$. These are summable, so by Borel-Cantelli almost surely every level $n \\ge N(\\omega)$ is good.",
+      "slogan": "Bound the chance that some increment between neighbouring points of the dyadic grid of level $n$ exceeds $2^{-\\gamma n}$.",
+      "detail": "Neighbours differ in one coordinate by $2^{-n}$. Markov's inequality and a union bound over at most $m2^{m(n+1)}$ neighbour pairs give $P(G_n^c) \\le m2^mK2^{-n(\\alpha - \\gamma\\beta)}$. These are summable, so by Borel-Cantelli almost surely every level $n \\ge N(\\omega)$ is good.",
       "uses": [
        "nm:markov-s-inequality",
        "nm:borel-cantelli-lemma"
@@ -870,26 +1212,26 @@
      },
      {
       "id": "s:chain",
-      "slogan": "Chain two close [dyadic rationals](c:dyadic-rational-number) through their truncations at levels $m, m+1, \\dots$.",
-      "detail": "For $2^{-(m+1)} \\le r - q < 2^{-m}$ with $m \\ge N$, the truncations move by at most one grid step per level. Geometric sums give $|X_r - X_q| \\le C_\\gamma (r - q)^\\gamma$.",
+      "slogan": "Chain two close [dyadic points](c:dyadic-rational-number) through their truncations at levels $\\ell, \\ell+1, \\dots$.",
+      "detail": "For $2^{-(\\ell+1)} \\le |r - q| < 2^{-\\ell}$ with $\\ell \\ge N$, the truncations move by at most one grid step in each coordinate per level, so by at most $m$ neighbour steps. Geometric sums give $|X_r - X_q| \\le C_\\gamma |r - q|^\\gamma$ with $C_\\gamma = m(2^\\gamma + 2/(1 - 2^{-\\gamma}))$.",
       "uses": []
      },
      {
       "id": "s:far",
-      "slogan": "Join far-apart dyadic points by at most $2^{N+1}$ short pieces.",
-      "detail": "Cut $[q, r]$ at the points of level $N+1$ and add the short-range bounds. This gives $|X_r - X_q| \\le 2^{N+1} C_\\gamma |r - q|^\\gamma$ on all dyadic points.",
+      "slogan": "Join far-apart dyadic points by at most $m2^{N+1}$ short pieces.",
+      "detail": "Change one coordinate at a time and cut each segment at the points of level $N+1$. Adding the short-range bounds gives $|X_r - X_q| \\le m2^{N+1} C_\\gamma |r - q|^\\gamma$ on all dyadic points.",
       "uses": []
      },
      {
       "id": "s:extend",
-      "slogan": "Extend the Hölder map from the dense dyadic set to $[0,1]$ by [uniform continuity](c:uniform-continuity).",
-      "detail": "On the intersection of the good events for a sequence $\\gamma_j \\uparrow \\alpha/\\beta$, the limit $Y_t = \\lim_{q \\to t} X_q$ exists and keeps every Hölder bound. Off this event set $Y = 0$.",
+      "slogan": "Extend the Hölder map from the dense dyadic set to $[0,1]^m$ by [uniform continuity](c:uniform-continuity).",
+      "detail": "On the intersection of the good events for a sequence $\\gamma_j \\uparrow \\alpha/\\beta$, the limit $Y_u = \\lim_{q \\to u} X_q$ exists and keeps every Hölder bound. Off this event set $Y = 0$.",
       "uses": []
      },
      {
       "id": "s:identify",
-      "slogan": "Identify $Y_t$ with $X_t$ through [convergence in probability](c:convergence-in-probability).",
-      "detail": "Markov's inequality gives $X_{q_k} \\to X_t$ in probability, and $X_{q_k} \\to Y_t$ almost surely. Limits in probability agree almost surely, so $Y$ is a [modification](c:modification) of $X$.",
+      "slogan": "Identify $Y_u$ with $X_u$ through [convergence in probability](c:convergence-in-probability).",
+      "detail": "Markov's inequality gives $X_{q_k} \\to X_u$ in probability, and $X_{q_k} \\to Y_u$ almost surely. Limits in probability agree almost surely, so $Y$ is a [modification](c:modification) of $X$.",
       "uses": [
        "nm:markov-s-inequality"
       ]
@@ -918,7 +1260,7 @@
      "c:stochastic-process": "The theorem upgrades a stochastic process with a moment bound to one with continuous paths.",
      "c:modification": "The continuous process agrees with the given one at each fixed time almost surely.",
      "c:holder-continuity": "The paths of the modification are Hölder continuous with every exponent below alpha over beta.",
-     "c:dyadic-rational-number": "The proof controls the process on the countable dense set of dyadic rationals first.",
+     "c:dyadic-rational-number": "The proof controls the field on the countable dense set of points with dyadic rational coordinates first.",
      "c:uniform-continuity": "Uniform continuity on the dyadic points gives a unique continuous extension.",
      "c:convergence-in-probability": "The moment bound gives convergence in probability, which identifies the extension with the process."
     },
@@ -926,7 +1268,7 @@
      "kind": "cited",
      "ref": "R. Durrett, Probability: Theory and Examples, 5th edition, Theorem 7.1.3 and Lemma 7.1.4 with their proofs, pp. 357-358.",
      "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
-     "note": "Durrett proves the Hölder bound on the dyadic rationals. Steps s:extend and s:identify add the extension and the modification property."
+     "note": "Durrett proves the Hölder bound on the dyadic rationals for $m = 1$. The steps extend his chaining to the cube $[0,1]^m$ with neighbour pairs of the grid, and steps s:extend and s:identify add the extension and the modification property."
     }
    }
   ],
@@ -2733,7 +3075,7 @@
      {
       "id": "s:modification",
       "slogan": "Build a jointly continuous version of $I$ and define $L$ from Tanaka's formula.",
-      "detail": "The exponent $3 = 2 + 1$ fits the Kolmogorov–Chentsov criterion on $\\mathbb{R}^2$, which gives a continuous [modification](c:modification) $\\tilde I$. Then $L(t,x) = 2[(B_t-x)^+ - (-x)^+ - B_t + \\tilde I(t,x)]$ is continuous and satisfies Tanaka's formula at each level.",
+      "detail": "After an affine change of each rectangle $[0,T] \\times [-T,T]$ to $[0,1]^2$, the exponent $3 = m + 1$ with $m = 2$ fits the Kolmogorov–Chentsov theorem for fields on $[0,1]^2$, which gives a continuous [modification](c:modification) $\\tilde I$. Then $L(t,x) = 2[(B_t-x)^+ - (-x)^+ - B_t + \\tilde I(t,x)]$ is continuous and satisfies Tanaka's formula at each level.",
       "uses": [
        "nm:statphys-kolmogorov-continuity"
       ]
@@ -3548,7 +3890,7 @@
      {
       "id": "s:perturb",
       "slogan": "Solve the parabolic equation for nearly constant $a$ by a Neumann series around the heat equation.",
-      "detail": "With the heat Green operator $G$ built from the [fundamental solution](c:fundamental-solution) and Jones's bound $\\|u_t\\|_p + \\sum\\|u_{ij}\\|_p \\le C_p\\|f\\|_p$, the series $u = G(I + \\frac12[a-I](G\\cdot)_{ij})^{-1}f$ converges when $\\sup|a_{ij}-\\delta_{ij}|$ is small. It gives $u$ in the [Sobolev space](c:sobolev-space) $W^{1,2}_p$ with $\\sup|u| \\le c(T)\\|f\\|_p$.",
+      "detail": "With the heat Green operator $G$ built from the [fundamental solution](c:fundamental-solution) and Jones's bound $\\|u_t\\|_p + \\sum\\|u_{ij}\\|_p \\le C_p\\|f\\|_p$, with $(Gg)_s + \\frac12\\Delta(Gg) = -g$, the series $u = -G(I - \\frac12[a-I](G\\cdot)_{ij})^{-1}f$ converges when $\\sup|a_{ij}-\\delta_{ij}|$ is small. It gives $u$ in the [Sobolev space](c:sobolev-space) $W^{1,2}_p$ with $\\sup|u| \\le c(T)\\|f\\|_p$.",
       "uses": []
      },
      {
@@ -3637,322 +3979,5 @@
    }
   ],
   "new_concepts": []
- },
- {
-  "id": "nm:statphys-dynkin-formula",
-  "statement": "For a solution $X$ of a [stochastic differential equation](c:stochastic-differential-equation) with generator $L$, a [stopping time](c:stopping-time) $\\tau$ with $\\mathbb{E}\\tau < \\infty$ and a $C^2$ function $\\varphi$ with [compact support](c:compact-support), the [expected value](c:expected-value) of $\\varphi(X_\\tau)$ is $\\varphi(x) + \\mathbb{E}\\int_0^\\tau L\\varphi(X_s)\\,ds$.",
-  "hypotheses": [
-   {
-    "id": "h:diffusion",
-    "text": "$X$ is a continuous adapted solution of $dX_t = f(X_t)\\,dt + g(X_t)\\,dW_t$ with $X_0 = x$, driven by a [Brownian motion](c:brownian-motion) $W$, and $f$ and $g$ are Borel and bounded on compact sets.",
-    "concept": "c:stochastic-differential-equation"
-   },
-   {
-    "id": "h:stopping",
-    "text": "$\\tau$ is a [stopping time](c:stopping-time) with $\\mathbb{E}\\tau < \\infty$.",
-    "concept": "c:stopping-time"
-   },
-   {
-    "id": "h:test-function",
-    "text": "$\\varphi$ is twice continuously differentiable with [compact support](c:compact-support).",
-    "concept": "c:compact-support"
-   }
-  ],
-  "conclusion": "$\\mathbb{E}\\varphi(X_\\tau) = \\varphi(x) + \\mathbb{E}\\int_0^\\tau (L\\varphi)(X_s)\\,ds$ with $L\\varphi = \\sum_i f_i\\partial_i\\varphi + \\frac12\\sum_{i,j}(gg^T)_{ij}\\partial_i\\partial_j\\varphi$.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "ito-stop-limit",
-    "name": "Itô's formula, optional stopping and a limit",
-    "slogan": "Expand $\\varphi(X_t)$ by Itô's formula, kill the martingale part at the bounded time $\\tau\\wedge N$, and let $N\\to\\infty$.",
-    "scope": "The whole formula in all dimensions.",
-    "mechanisms": [
-     "m:martingale",
-     "m:dominated-convergence"
-    ],
-    "roles": [
-     {
-      "h": "h:diffusion",
-      "why": "The equation gives the semimartingale decomposition of $X$ that Itô's formula needs, and local bounds make $L\\varphi$ bounded.",
-      "steps": [
-       "s:ito",
-       "s:bounds"
-      ]
-     },
-     {
-      "h": "h:stopping",
-      "why": "Finite mean makes $\\tau$ finite and $C\\tau$ an integrable bound for the limit.",
-      "steps": [
-       "s:stop",
-       "s:limit"
-      ]
-     },
-     {
-      "h": "h:test-function",
-      "why": "Compact support makes $\\varphi$, $L\\varphi$ and the integrand of the [Itô integral](c:ito-integral) bounded.",
-      "steps": [
-       "s:bounds"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:ito",
-      "slogan": "Expand $\\varphi(X_t)$ with Itô's formula into a drift integral and a stochastic integral.",
-      "detail": "Since $d\\langle X^i, X^j\\rangle_t = (gg^T)_{ij}(X_t)\\,dt$, Itô's formula gives $\\varphi(X_t) = \\varphi(x) + \\int_0^t L\\varphi(X_s)\\,ds + M_t$ with $M_t = \\int_0^t \\nabla\\varphi(X_s)^T g(X_s)\\,dW_s$.",
-      "uses": [
-       "nm:statphys-ito-formula"
-      ]
-     },
-     {
-      "id": "s:bounds",
-      "slogan": "Bound $\\varphi$, $L\\varphi$ and the stochastic integrand by one constant using the compact support.",
-      "detail": "All derivatives of $\\varphi$ vanish outside its compact support, and $f$, $g$ and the derivatives are bounded on that set. So one constant $C$ bounds $|\\varphi|$, $|L\\varphi|$ and $|\\nabla\\varphi^T g|$ on the whole space.",
-      "uses": []
-     },
-     {
-      "id": "s:stop",
-      "slogan": "Stop the expansion at the bounded time $\\tau \\wedge N$ where the martingale part has mean zero.",
-      "detail": "With a bounded integrand, $M$ is a square-integrable [martingale](c:martingale) by the Itô isometry, and optional stopping at $\\tau\\wedge N$ gives $\\mathbb{E}M_{\\tau\\wedge N} = 0$. Hence $\\mathbb{E}\\varphi(X_{\\tau\\wedge N}) = \\varphi(x) + \\mathbb{E}\\int_0^{\\tau\\wedge N} L\\varphi(X_s)\\,ds$.",
-      "uses": [
-       "nm:statphys-ito-isometry",
-       "wd:Q2027347"
-      ]
-     },
-     {
-      "id": "s:limit",
-      "slogan": "Let $N$ tend to infinity on both sides with dominated convergence.",
-      "detail": "Since $\\tau < \\infty$ almost surely, $\\tau\\wedge N = \\tau$ for large $N$. The left side is bounded by $C$ and the integral by $C\\tau$, which has finite [expected value](c:expected-value). Dominated convergence gives the formula at $\\tau$.",
-      "uses": [
-       "wd:Q1067156"
-      ]
-     }
-    ],
-    "edges": [
-     [
-      "s:ito",
-      "s:stop"
-     ],
-     [
-      "s:bounds",
-      "s:stop"
-     ],
-     [
-      "s:bounds",
-      "s:limit"
-     ],
-     [
-      "s:stop",
-      "s:limit"
-     ]
-    ],
-    "conclusion": "s:limit",
-    "concepts": {
-     "c:stochastic-differential-equation": "The process X is a solution of this stochastic differential equation.",
-     "c:stopping-time": "The formula holds at a random stopping time, not only at fixed times.",
-     "c:compact-support": "Compact support of the test function makes every term bounded.",
-     "c:expected-value": "The formula is an identity between expected values.",
-     "c:brownian-motion": "The Brownian motion W drives the noise of the equation.",
-     "c:ito-integral": "The martingale part of φ(X_t) is an Itô integral against W.",
-     "c:martingale": "The Itô integral with a bounded integrand is a martingale with mean zero."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "N. Berglund, Long-time dynamics of stochastic differential equations (lecture notes, arXiv:2106.12998 v2), Proposition 1.3.12 (Dynkin's formula), pp. 22-23.",
-     "url": "https://arxiv.org/pdf/2106.12998",
-     "note": "The notes write the proof for n = m = 1 and show that the stochastic integral up to τ has mean zero through τ ∧ N. These steps stop the whole formula at τ ∧ N and pass to the limit."
-    }
-   }
-  ],
-  "new_concepts": []
- },
- {
-  "id": "nm:statphys-ray-knight-theorem",
-  "statement": "For a [Brownian motion](c:brownian-motion) from 0 stopped at its first visit to $-1$, the [local time](c:local-time) $L(\\tau, x)$ as a function of the level $x$ is a [Markov process](c:markov-chain). It is a [squared Bessel process](c:squared-bessel-process) of dimension 2 on $[-1, 0]$ and of dimension 0 on $[0, \\infty)$.",
-  "hypotheses": [
-   {
-    "id": "h:brownian",
-    "text": "$B$ is a standard linear [Brownian motion](c:brownian-motion) with $B_0 = 0$.",
-    "concept": "c:brownian-motion"
-   },
-   {
-    "id": "h:occupation",
-    "text": "$L(t, x)$ is the jointly continuous [local time](c:local-time) of $B$, the density of the occupation measure.",
-    "concept": "c:local-time"
-   },
-   {
-    "id": "h:stop",
-    "text": "$\\tau = \\inf\\{t \\ge 0 : B_t = -1\\}$ is the first visit of $B$ to $-1$.",
-    "concept": null
-   }
-  ],
-  "conclusion": "$Z_x = L(\\tau, x)$ has $Z_{-1} = 0$ and $E[e^{-\\lambda Z_b} \\mid Z_y, y \\le a] = (1+2\\lambda(b-a))^{-1} \\exp(-\\lambda Z_a/(1+2\\lambda(b-a)))$ for $-1 \\le a < b \\le 0$. For $0 \\le a < b$ the factor $(1+2\\lambda(b-a))^{-1}$ is absent.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "excursion-counts-between-levels",
-    "name": "Excursion counts between two levels",
-    "slogan": "Count the excursions from one level that reach the next level, and add their independent exponential local times.",
-    "scope": "Outline: the steps follow the proof of THEOREM 4 in Rogers (1989), p. 315, and write out the case x > 0 and the identification that the source leaves to the reader.",
-    "mechanisms": [
-     "m:cited-deep-result",
-     "m:characteristic-function",
-     "m:induction"
-    ],
-    "roles": [
-     {
-      "h": "h:brownian",
-      "why": "The strong Markov property and Itô's theorem make the excursions from each level a Poisson point process.",
-      "steps": [
-       "s:excursions"
-      ]
-     },
-     {
-      "h": "h:occupation",
-      "why": "The occupation density adds over excursions, and its continuity in x lets the finite-dimensional laws fix the law.",
-      "steps": [
-       "s:split",
-       "s:identify"
-      ]
-     },
-     {
-      "h": "h:stop",
-      "why": "Stopping at −1 means stopping at the first deep excursion below a level, and it gives the start value 0.",
-      "steps": [
-       "s:split",
-       "s:identify"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:excursions",
-      "slogan": "Split the path at a level into a first piece and Poisson excursions.",
-      "detail": "After the hitting time of $a$ the path is a Brownian motion from $a$. Its [excursions](c:excursion) above $a$ and below $a$, labelled by $L(\\cdot, a)$, form two independent Poisson point processes.",
-      "uses": [
-       "nm:statphys-ito-excursion-theory"
-      ]
-     },
-     {
-      "id": "s:split",
-      "slogan": "Write the local times above and below the level through disjoint sets of excursions.",
-      "detail": "The label $\\ell = L(\\tau, a)$ is the label of the first excursion below $a$ that reaches $-1$. Above $a$, $L(\\tau, x)$ comes only from the first piece and the excursions above $a$ with label below $\\ell$.",
-      "uses": [
-       "nm:statphys-occupation-times-formula"
-      ]
-     },
-     {
-      "id": "s:markov",
-      "slogan": "Get the Markov property in the level from conditional independence given the local time at a.",
-      "detail": "Given $L(\\tau, a) = \\ell$, the local times above $a$ depend only on an independent Poisson process cut at $\\ell$. So the levels above and below $a$ are conditionally independent, and $Z$ is a [Markov process](c:markov-chain).",
-      "uses": []
-     },
-     {
-      "id": "s:transition",
-      "slogan": "Compute the transition law as a Poisson number of exponential local times.",
-      "detail": "Given $\\ell$, a [Poisson](c:poisson-distribution) number with mean $\\ell/(2\\delta)$ of excursions reach $b = a + \\delta$. Each adds an [exponential](c:exponential-distribution) local time with mean $2\\delta$, and the [Laplace transform](c:laplace-transform) of the sum gives the kernels, with one extra factor below 0.",
-      "uses": [
-       "nm:statphys-ito-excursion-theory"
-      ]
-     },
-     {
-      "id": "s:identify",
-      "slogan": "Identify the law from the start value 0, the kernels and continuity in the level.",
-      "detail": "$Z_{-1} = 0$ because $\\tau$ is the first visit to $-1$. Induction over levels gives the finite-dimensional laws of a [squared Bessel process](c:squared-bessel-process), and continuity of $x \\mapsto L(\\tau, x)$ gives the law on path space.",
-      "uses": [
-       "nm:dynkin-s-theorem",
-       "nm:statphys-occupation-times-formula"
-      ]
-     }
-    ],
-    "edges": [
-     [
-      "s:excursions",
-      "s:split"
-     ],
-     [
-      "s:split",
-      "s:markov"
-     ],
-     [
-      "s:split",
-      "s:transition"
-     ],
-     [
-      "s:excursions",
-      "s:transition"
-     ],
-     [
-      "s:markov",
-      "s:identify"
-     ],
-     [
-      "s:transition",
-      "s:identify"
-     ]
-    ],
-    "conclusion": "s:identify",
-    "concepts": {
-     "c:brownian-motion": "The theorem describes the local times of a linear Brownian motion.",
-     "c:local-time": "The local time at each level, as a function of the level, is the process studied.",
-     "c:markov-chain": "The local time is a Markov process when the level plays the role of time.",
-     "c:squared-bessel-process": "The local time process has the law of a squared Bessel process of dimension 2, then 0.",
-     "c:excursion": "The excursions from a level carry all local time at higher and lower levels.",
-     "c:poisson-distribution": "The number of excursions that reach the next level has a Poisson law.",
-     "c:exponential-distribution": "Each excursion that reaches the next level adds an exponential amount of local time there.",
-     "c:laplace-transform": "The Laplace transform of a Poisson sum of exponentials identifies the transition kernel."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "L. C. G. Rogers, A guided tour through excursions, Bull. London Math. Soc. 21 (1989), THEOREM 4 (Ray, Knight) and its proof, p. 315.",
-     "url": "https://www.skokholm.co.uk/wp-content/uploads/2016/05/GTTE.pdf",
-     "note": "Rogers proves the case −1 < x < 0 and calls the case x > 0 similar. He cites Proposition 1 for the excursion count, but the value used, n(sup f > δ) = 1/(2δ), is his Proposition 2 on p. 314."
-    }
-   }
-  ],
-  "new_concepts": [
-   {
-    "id": "c:excursion",
-    "name": "excursion",
-    "reminder": "An excursion of a process away from $0$ is the piece of path between two consecutive visits to $0$.",
-    "definition": "Let $X$ be a real [stochastic process](c:stochastic-process) with continuous paths and $X_0=0$, such as [Brownian motion](c:brownian-motion), with zero set $Z=\\{t:X_t=0\\}$. For each connected component $(g,d)$ of the open set $(0,\\infty)\\setminus Z$ with $d<\\infty$, the excursion on $(g,d)$ is the path piece $e(s)=X_{g+s}$, $0\\le s\\le d-g$, which leaves $0$ at time $g$ and returns at time $d$. For a [random walk](c:random-walk) on $\\mathbb{Z}$, an excursion is the path between two consecutive visits to $0$.",
-    "requires": [
-     "c:stochastic-process",
-     "c:brownian-motion",
-     "c:random-walk"
-    ]
-   },
-   {
-    "id": "c:exponential-distribution",
-    "name": "exponential distribution",
-    "reminder": "The exponential distribution with rate $\\lambda$ has density $\\lambda e^{-\\lambda x}$ on $[0,\\infty)$ and no memory.",
-    "definition": "For $\\lambda>0$, the exponential distribution with rate $\\lambda$ is the law on $[0,\\infty)$ with [probability density function](c:probability-density-function) $\\lambda e^{-\\lambda x}$, so $P(X>x)=e^{-\\lambda x}$ and $E[X]=1/\\lambda$. Among laws of positive random variables, it is the only one with the memoryless property $P(X>s+t\\mid X>s)=P(X>t)$ for all $s,t\\ge0$.",
-    "requires": [
-     "c:probability-density-function"
-    ]
-   },
-   {
-    "id": "c:local-time",
-    "name": "local time",
-    "reminder": "The local time $L_t^x$ measures how much time a process spends near the level $x$ up to time $t$.",
-    "definition": "For a one-dimensional [Brownian motion](c:brownian-motion) $B$, the local time is the jointly continuous process $(L_t^x)_{t\\ge0,x\\in\\mathbb{R}}$ such that $\\int_0^tf(B_s)\\,ds=\\int_{\\mathbb{R}}f(x)L_t^x\\,dx$ for all bounded Borel functions $f$ and all $t$, almost surely. So $x\\mapsto L_t^x$ is the [Radon–Nikodym derivative](c:radon-nikodym-derivative) of the occupation measure $A\\mapsto\\int_0^t1_A(B_s)\\,ds$ with respect to [Lebesgue measure](c:lebesgue-measure). For a continuous [semimartingale](c:semimartingale) $X$, the same formula with $d\\langle X\\rangle_s$ in place of $ds$ defines $L_t^x$, which is then right-continuous in $x$.",
-    "requires": [
-     "c:brownian-motion",
-     "c:radon-nikodym-derivative",
-     "c:lebesgue-measure"
-    ]
-   },
-   {
-    "id": "c:squared-bessel-process",
-    "name": "squared Bessel process",
-    "reminder": "The squared distance from the origin of a Brownian motion, extended to every real dimension δ ≥ 0.",
-    "definition": "For $\\delta \\ge 0$, the squared Bessel process of dimension $\\delta$, written BESQ($\\delta$), is the nonnegative solution of $dZ_t = \\delta\\,dt + 2\\sqrt{Z_t}\\,dW_t$ for a [Brownian motion](c:brownian-motion) $W$. Its transition law has the Laplace transform $E_z e^{-\\lambda Z_t} = (1+2\\lambda t)^{-\\delta/2} \\exp(-\\lambda z/(1+2\\lambda t))$.",
-    "requires": [
-     "c:brownian-motion",
-     "c:stochastic-differential-equation",
-     "c:markov-chain"
-    ]
-   }
-  ]
  }
 ]

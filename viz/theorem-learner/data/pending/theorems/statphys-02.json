@@ -1,5 +1,404 @@
 [
  {
+  "id": "nm:statphys-lundberg-inequality",
+  "statement": "In the Sparre Andersen risk model, which extends the [Cramér–Lundberg model](c:cramer-lundberg-model), if $R > 0$ satisfies $\\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le 1$, then the [ruin probability](c:ruin-probability) satisfies $\\psi(u) \\le e^{-Ru}$ for every initial capital $u \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:model",
+    "text": "The claim sizes $X_n$ are [iid](c:iid-random-variables), the interarrival times $W_n > 0$ are iid, and the two sequences are [independent](c:independent-random-variables).",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:premium",
+    "text": "The premium rate $c$ is positive and the initial capital $u$ is nonnegative.",
+    "concept": null
+   },
+   {
+    "id": "h:coefficient",
+    "text": "The constant $R > 0$ satisfies $\\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le 1$, so $R$ is at most the [adjustment coefficient](c:adjustment-coefficient).",
+    "concept": "c:adjustment-coefficient"
+   }
+  ],
+  "conclusion": "$\\psi(u) = P(\\inf_{t \\ge 0} R_t < 0) \\le e^{-Ru}$ for every $u \\ge 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "exponential-supermartingale",
+    "name": "Exponential supermartingale at claim times",
+    "slogan": "The exponential of minus R times the reserve at claim times is a nonnegative supermartingale, and stopping it at ruin bounds the ruin probability.",
+    "scope": "The whole theorem for the Sparre Andersen model, together with the explicit form of the condition in the Cramér–Lundberg model.",
+    "mechanisms": [
+     "m:martingale",
+     "m:concentration",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:model",
+      "why": "Independence makes each increment $G_{n+1} = cW_{n+1} - X_{n+1}$ independent of the past, and positive interarrival times make the claim times tend to infinity.",
+      "steps": [
+       "s:claim-times",
+       "s:supermartingale"
+      ]
+     },
+     {
+      "h": "h:premium",
+      "why": "A positive premium rate makes the reserve increase between claims, so ruin can only happen at a claim time.",
+      "steps": [
+       "s:claim-times"
+      ]
+     },
+     {
+      "h": "h:coefficient",
+      "why": "The moment condition makes each factor $\\mathbb{E}\\, e^{-RG_{n+1}}$ at most 1, which is the supermartingale property.",
+      "steps": [
+       "s:supermartingale"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:claim-times",
+      "slogan": "Reduce ruin of the continuous reserve to ruin of the reserve at claim times.",
+      "detail": "Between two claims the reserve $u + ct - S_t$ increases, so its infimum on $[T_n, T_{n+1})$ is $U_n = u + \\sum_{k \\le n}(cW_k - X_k)$. The strong law shows $T_n \\to \\infty$, so $\\psi(u) = P(\\tau < \\infty)$ with $\\tau = \\inf\\{n : U_n < 0\\}$.",
+      "uses": [
+       "nm:laws-of-large-numbers"
+      ]
+     },
+     {
+      "id": "s:supermartingale",
+      "slogan": "Show that $Z_n = e^{-RU_n}$ is a nonnegative [supermartingale](c:supermartingale).",
+      "detail": "Since $G_{n+1}$ is independent of the first $n$ increments, $\\mathbb{E}[Z_{n+1} \\mid \\mathcal{F}_n] = Z_n\\, \\mathbb{E}\\, e^{R(X_1 - cW_1)} \\le Z_n$, and $Z_0 = e^{-Ru}$.",
+      "uses": []
+     },
+     {
+      "id": "s:stop",
+      "slogan": "Stop the supermartingale at the ruin [stopping time](c:stopping-time) truncated at $n$.",
+      "detail": "Optional stopping at the bounded time $\\tau \\wedge n$ gives $\\mathbb{E} Z_{\\tau \\wedge n} \\le e^{-Ru}$. On $\\{\\tau \\le n\\}$ the reserve $U_\\tau$ is negative, so $Z_{\\tau \\wedge n} > 1$ there, and therefore $P(\\tau \\le n) \\le e^{-Ru}$.",
+      "uses": [
+       "wd:Q2027347"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let the truncation level tend to infinity to bound the ruin probability.",
+      "detail": "The events $\\{\\tau \\le n\\}$ increase to $\\{\\tau < \\infty\\}$, so continuity from below gives $\\psi(u) = P(\\tau < \\infty) \\le e^{-Ru}$ for every $u \\ge 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:claim-times",
+      "s:stop"
+     ],
+     [
+      "s:supermartingale",
+      "s:stop"
+     ],
+     [
+      "s:stop",
+      "s:limit"
+     ],
+     [
+      "s:claim-times",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:cramer-lundberg-model": "The classical risk model is the main special case, with exponential interarrival times.",
+     "c:ruin-probability": "The ruin probability is the quantity that the inequality bounds.",
+     "c:iid-random-variables": "The claims and the interarrival times are iid, which makes the increments iid.",
+     "c:independent-random-variables": "Independence of claims and arrivals makes each increment independent of the past.",
+     "c:adjustment-coefficient": "The adjustment coefficient is the largest exponent that the inequality allows.",
+     "c:supermartingale": "The exponential of the reserve is a nonnegative supermartingale, which drives the proof.",
+     "c:stopping-time": "The first claim index with negative reserve is the stopping time where the supermartingale stops."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "K. D. Schmidt, Lectures on Risk Theory (Teubner 1996, author's manuscript of December 28, 1995), Lemma 7.1.2, Corollaries 7.2.4 and 7.3.2 and Theorem 7.3.4 (Lundberg’s Inequality), pp. 159-165.",
+     "url": "https://tu-dresden.de/mn/math/stochastik/ressourcen/dateien/schmidt/publications/risk.pdf",
+     "note": "The source uses Kolmogorov's inequality for positive supermartingales (Corollary 7.2.4). These steps obtain the same maximal bound by optional stopping at the ruin index."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:adjustment-coefficient",
+    "name": "adjustment coefficient",
+    "reminder": "The adjustment coefficient $R$ is the exponential rate in the Lundberg bound $\\psi(u)\\le e^{-Ru}$ for ruin probabilities.",
+    "definition": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with claim rate $\\lambda$, claim size $X$ and premium rate $c>\\lambda E[X]$, the adjustment coefficient (Lundberg exponent) is the unique solution $R>0$ of $\\lambda(E[e^{RX}]-1)=cR$, when a solution exists. A solution needs a finite [moment generating function](c:moment-generating-function) of $X$ on an interval $[0,r_0)$ with $r_0>0$, so heavy-tailed claims have none. Lundberg's inequality states $\\psi(u)\\le e^{-Ru}$ for every initial capital $u\\ge0$, where $\\psi$ is the [ruin probability](c:ruin-probability).",
+    "requires": [
+     "c:cramer-lundberg-model",
+     "c:moment-generating-function",
+     "c:ruin-probability"
+    ]
+   },
+   {
+    "id": "c:compound-poisson-process",
+    "name": "compound Poisson process",
+    "reminder": "A compound Poisson process adds up iid random jumps at the arrival times of a Poisson process.",
+    "definition": "Let $(N_t)_{t\\ge0}$ be a [Poisson process](c:poisson-process) with rate $\\lambda>0$, and let $Y_1,Y_2,\\dots$ be [iid random variables](c:iid-random-variables) that are independent of $(N_t)$. The compound Poisson process is $S_t=\\sum_{i=1}^{N_t}Y_i$, with $S_t=0$ when $N_t=0$. It has independent and stationary increments, and $E[e^{i\\theta S_t}]=\\exp(\\lambda t(\\varphi_Y(\\theta)-1))$, where $\\varphi_Y$ is the [characteristic function](c:characteristic-function) of $Y_1$.",
+    "requires": [
+     "c:poisson-process",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:cramer-lundberg-model",
+    "name": "Cramer-Lundberg model",
+    "reminder": "The Cramér–Lundberg model describes the capital of an insurer as initial capital plus premiums minus compound Poisson claims.",
+    "definition": "In the Cramér–Lundberg model, claims arrive at the times of a [Poisson process](c:poisson-process) $(N_t)$ with rate $\\lambda>0$, the claim sizes $X_1,X_2,\\dots$ are positive [iid random variables](c:iid-random-variables) with mean $\\mu$ and independent of $(N_t)$, and premiums come in at a constant rate $c>0$. The risk process with initial capital $u\\ge0$ is $R_t=u+ct-S_t$, where $S_t=\\sum_{i=1}^{N_t}X_i$ is a [compound Poisson process](c:compound-poisson-process). The net profit condition $c>\\lambda\\mu$ means that $R_t\\to\\infty$ almost surely.",
+    "requires": [
+     "c:compound-poisson-process",
+     "c:poisson-process",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:ruin-probability",
+    "name": "ruin probability",
+    "reminder": "The ruin probability $\\psi(u)$ is the probability that the capital of an insurer, started at $u$, ever falls below zero.",
+    "definition": "For a risk process $R_t=u+ct-S_t$, as in the [Cramér–Lundberg model](c:cramer-lundberg-model), the ruin time is the [stopping time](c:stopping-time) $\\tau(u)=\\inf\\{t\\ge0:R_t<0\\}$, and the (infinite-horizon) ruin probability is $\\psi(u)=P(\\tau(u)<\\infty)$ for initial capital $u\\ge0$. The finite-horizon ruin probability is $\\psi(u,T)=P(\\tau(u)\\le T)$. Equivalently, $\\psi(u)=P(\\sup_{t\\ge0}(S_t-ct)>u)$.",
+    "requires": [
+     "c:cramer-lundberg-model",
+     "c:stopping-time"
+    ]
+   },
+   {
+    "id": "c:supermartingale",
+    "name": "supermartingale",
+    "reminder": "A supermartingale is an adapted integrable process whose conditional mean of the next value is at most the present value.",
+    "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a [submartingale](c:submartingale).",
+    "requires": [
+     "c:filtration",
+     "c:integrable-function",
+     "c:conditional-expectation",
+     "c:martingale"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-cramer-lundberg-approximation",
+  "statement": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with net profit condition and [adjustment coefficient](c:adjustment-coefficient) $r$ with $M'(r) < \\infty$, the [ruin probability](c:ruin-probability) satisfies $\\psi(u) \\sim C e^{-ru}$ as $u \\to \\infty$, with $C = (c - \\lambda\\mu)/(\\lambda M'(r) - c)$.",
+  "hypotheses": [
+   {
+    "id": "h:model",
+    "text": "Claims arrive at the times of a [Poisson process](c:poisson-process) with rate $\\lambda$, and the claim sizes are positive and iid with distribution function $F$, mean $\\mu$ and [moment generating function](c:moment-generating-function) $M$.",
+    "concept": "c:poisson-process"
+   },
+   {
+    "id": "h:profit",
+    "text": "The premium rate satisfies $c > \\lambda\\mu$.",
+    "concept": null
+   },
+   {
+    "id": "h:lundberg",
+    "text": "The Lundberg equation $\\lambda(M(r) - 1) = cr$ has a root $r > 0$, and $M'(r) < \\infty$.",
+    "concept": "c:adjustment-coefficient"
+   }
+  ],
+  "conclusion": "$e^{ru}\\psi(u) \\to C = \\dfrac{c - \\lambda\\mu}{\\lambda M'(r) - c}$ as $u \\to \\infty$, so $\\psi(u)$ has the [asymptotic](c:asymptotic) form $C e^{-ru}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "tilted-renewal",
+    "name": "Exponential tilting and the key renewal theorem",
+    "slogan": "Tilt the renewal equation for the ruin probability by $e^{ru}$ so that it becomes a proper renewal equation, and apply the key renewal theorem.",
+    "scope": "The whole theorem under the listed hypotheses, with both forms of the constant.",
+    "mechanisms": [
+     "m:change-of-variables",
+     "m:fubini-swap",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:model",
+      "why": "Poisson arrivals give the Pollaczek–Khinchine series, which yields the renewal equation for $\\psi$.",
+      "steps": [
+       "s:renewal-equation"
+      ]
+     },
+     {
+      "h": "h:profit",
+      "why": "The net profit condition makes $\\rho < 1$, so the series converges and the constant $C$ is positive.",
+      "steps": [
+       "s:renewal-equation",
+       "s:constant"
+      ]
+     },
+     {
+      "h": "h:lundberg",
+      "why": "The Lundberg equation makes the tilted kernel a probability law, and $M'(r) < \\infty$ makes its mean finite.",
+      "steps": [
+       "s:tilt",
+       "s:dri"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:renewal-equation",
+      "slogan": "Turn the Pollaczek–Khinchine series into a defective renewal equation for $\\psi$.",
+      "detail": "Convolving the series with $\\rho F_I$ term by term gives $\\psi(u) = \\frac{\\lambda}{c}\\int_u^\\infty (1-F) + \\frac{\\lambda}{c}\\int_0^u \\psi(u-y)(1 - F(y))\\,dy$, a renewal equation whose kernel has mass $\\rho < 1$.",
+      "uses": [
+       "nm:statphys-pollaczek-khinchine-ruin",
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:tilt",
+      "slogan": "Multiply by $e^{ru}$ so that the kernel becomes a probability law.",
+      "detail": "The tilted kernel $dG(y) = \\frac{\\lambda}{c} e^{ry}(1 - F(y))\\,dy$ has total mass $\\frac{\\lambda}{c}\\cdot\\frac{M(r)-1}{r} = 1$ by the Lundberg equation, and its mean is $m_G = (\\lambda M'(r) - c)/(cr)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:dri",
+      "slogan": "Show that the forcing term is a [directly Riemann integrable function](c:directly-riemann-integrable-function).",
+      "detail": "The forcing term $z(u) = \\frac{\\lambda}{c}e^{ru}\\int_u^\\infty (1-F)$ is continuous and bounded by the nonincreasing function $g(u) = \\frac{\\lambda}{c}\\int_u^\\infty e^{ry}(1 - F(y))\\,dy$, whose integral is $m_G < \\infty$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:key-renewal",
+      "slogan": "Apply the key renewal theorem to the tilted [renewal equation](c:renewal-function).",
+      "detail": "The solution is $e^{ru}\\psi = U * z$ with $U = \\sum_k G^{*k}$, because $G^{*n}([0,u]) \\to 0$ by the strong law. The key renewal theorem for the nonlattice law $G$ gives $e^{ru}\\psi(u) \\to m_G^{-1}\\int_0^\\infty z$.",
+      "uses": [
+       "nm:laws-of-large-numbers",
+       "nm:statphys-key-renewal"
+      ]
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Compute the integral of the forcing term and divide by the tilted mean.",
+      "detail": "Fubini's theorem gives $\\int_0^\\infty z = (\\lambda/(cr))(c/\\lambda - \\mu) = (c - \\lambda\\mu)/(cr)$, and division by $m_G$ gives $C = (c - \\lambda\\mu)/(\\lambda M'(r) - c)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:renewal-equation",
+      "s:tilt"
+     ],
+     [
+      "s:tilt",
+      "s:dri"
+     ],
+     [
+      "s:tilt",
+      "s:key-renewal"
+     ],
+     [
+      "s:dri",
+      "s:key-renewal"
+     ],
+     [
+      "s:key-renewal",
+      "s:constant"
+     ]
+    ],
+    "conclusion": "s:constant",
+    "concepts": {
+     "c:cramer-lundberg-model": "The Cramér–Lundberg model is the risk model in which the asymptotics hold.",
+     "c:adjustment-coefficient": "The adjustment coefficient r is the exact exponential decay rate of ruin.",
+     "c:ruin-probability": "The ruin probability is the quantity whose asymptotics the theorem gives.",
+     "c:poisson-process": "Poisson arrivals give the Pollaczek–Khinchine series and the renewal equation.",
+     "c:moment-generating-function": "The moment generating function defines the Lundberg equation and the constant C.",
+     "c:asymptotic": "The conclusion is an asymptotic equivalence as the initial capital tends to infinity.",
+     "c:directly-riemann-integrable-function": "Direct Riemann integrability of the forcing term is the hypothesis of the key renewal theorem.",
+     "c:renewal-function": "The renewal measure of the tilted law turns the equation into an explicit convolution."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. H. Bingham, lecture notes ull7b (Imperial College, 8.11.2017), Section 6 (renewal equation (∗) and (∗∗)) and Section 7, Theorem (Cramér’s estimate of ruin) with proof, pp. 1-4.",
+     "url": "https://www.ma.ic.ac.uk/~bin06/ULL/2017/ull7b.pdf",
+     "note": "The steps follow the notes: renewal equation, exponential tilting and the key renewal theorem. The notes print c in place of λ in the denominator of C because of a slip in the computation of the integral of z. These steps give the corrected constant."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:adjustment-coefficient",
+    "name": "adjustment coefficient",
+    "reminder": "The adjustment coefficient $R$ is the exponential rate in the Lundberg bound $\\psi(u)\\le e^{-Ru}$ for ruin probabilities.",
+    "definition": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with claim rate $\\lambda$, claim size $X$ and premium rate $c>\\lambda E[X]$, the adjustment coefficient (Lundberg exponent) is the unique solution $R>0$ of $\\lambda(E[e^{RX}]-1)=cR$, when a solution exists. A solution needs a finite [moment generating function](c:moment-generating-function) of $X$ on an interval $[0,r_0)$ with $r_0>0$, so heavy-tailed claims have none. Lundberg's inequality states $\\psi(u)\\le e^{-Ru}$ for every initial capital $u\\ge0$, where $\\psi$ is the [ruin probability](c:ruin-probability).",
+    "requires": [
+     "c:cramer-lundberg-model",
+     "c:moment-generating-function",
+     "c:ruin-probability"
+    ]
+   },
+   {
+    "id": "c:compound-poisson-process",
+    "name": "compound Poisson process",
+    "reminder": "A compound Poisson process adds up iid random jumps at the arrival times of a Poisson process.",
+    "definition": "Let $(N_t)_{t\\ge0}$ be a [Poisson process](c:poisson-process) with rate $\\lambda>0$, and let $Y_1,Y_2,\\dots$ be [iid random variables](c:iid-random-variables) that are independent of $(N_t)$. The compound Poisson process is $S_t=\\sum_{i=1}^{N_t}Y_i$, with $S_t=0$ when $N_t=0$. It has independent and stationary increments, and $E[e^{i\\theta S_t}]=\\exp(\\lambda t(\\varphi_Y(\\theta)-1))$, where $\\varphi_Y$ is the [characteristic function](c:characteristic-function) of $Y_1$.",
+    "requires": [
+     "c:poisson-process",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:cramer-lundberg-model",
+    "name": "Cramer-Lundberg model",
+    "reminder": "The Cramér–Lundberg model describes the capital of an insurer as initial capital plus premiums minus compound Poisson claims.",
+    "definition": "In the Cramér–Lundberg model, claims arrive at the times of a [Poisson process](c:poisson-process) $(N_t)$ with rate $\\lambda>0$, the claim sizes $X_1,X_2,\\dots$ are positive [iid random variables](c:iid-random-variables) with mean $\\mu$ and independent of $(N_t)$, and premiums come in at a constant rate $c>0$. The risk process with initial capital $u\\ge0$ is $R_t=u+ct-S_t$, where $S_t=\\sum_{i=1}^{N_t}X_i$ is a [compound Poisson process](c:compound-poisson-process). The net profit condition $c>\\lambda\\mu$ means that $R_t\\to\\infty$ almost surely.",
+    "requires": [
+     "c:compound-poisson-process",
+     "c:poisson-process",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:directly-riemann-integrable-function",
+    "name": "directly Riemann integrable function",
+    "reminder": "A directly Riemann integrable function has Riemann sums over the whole half line that converge as the mesh shrinks.",
+    "definition": "For $f:[0,\\infty)\\to\\mathbb{R}$ and $h>0$, let $\\overline m_n(h)$ and $\\underline m_n(h)$ be the [supremum](c:least-upper-bound) and the infimum of $f$ on $[nh,(n+1)h)$, and let $\\overline\\sigma(h)=h\\sum_{n\\ge0}\\overline m_n(h)$ and $\\underline\\sigma(h)=h\\sum_{n\\ge0}\\underline m_n(h)$. The function $f$ is directly Riemann integrable when both series converge absolutely for every $h>0$ and $\\overline\\sigma(h)-\\underline\\sigma(h)\\to0$ as $h\\to0$. The common limit is then the [Riemann integral](c:riemann-integral) $\\int_0^\\infty f(x)\\,dx$.",
+    "requires": [
+     "c:riemann-integral",
+     "c:least-upper-bound"
+    ]
+   },
+   {
+    "id": "c:renewal-function",
+    "name": "renewal function",
+    "reminder": "The renewal function gives the expected number of renewals up to time $t$.",
+    "definition": "For a [renewal process](c:renewal-process) with interarrival distribution $F$ and renewal times $S_n$, the renewal function is $U(t)=\\sum_{n\\ge0}F^{*n}(t)=E[\\#\\{n\\ge0:S_n\\le t\\}]$ for $t\\ge0$, where $F^{*n}$ is the $n$-fold [convolution](c:convolution) power and $F^{*0}$ is the point mass at $0$. It counts the renewal at time $0$, so $U(t)=1+E[N(t)]$, and some authors call $m(t)=E[N(t)]=U(t)-1$ the renewal function.",
+    "requires": [
+     "c:renewal-process",
+     "c:convolution",
+     "c:expected-value"
+    ]
+   },
+   {
+    "id": "c:renewal-process",
+    "name": "renewal process",
+    "reminder": "A renewal process counts the events of a sequence whose gaps are independent and identically distributed positive times.",
+    "definition": "Let $X_1,X_2,\\dots$ be positive [iid random variables](c:iid-random-variables), and let $S_0=0$ and $S_n=X_1+\\dots+X_n$. The renewal process is the [stochastic process](c:stochastic-process) $N(t)=\\#\\{n\\ge1:S_n\\le t\\}$, $t\\ge0$, which counts the renewal times $S_n$ in $[0,t]$. The $X_i$ are the interarrival times, and their common law $F$ is the interarrival distribution.",
+    "requires": [
+     "c:iid-random-variables",
+     "c:stochastic-process"
+    ]
+   },
+   {
+    "id": "c:ruin-probability",
+    "name": "ruin probability",
+    "reminder": "The ruin probability $\\psi(u)$ is the probability that the capital of an insurer, started at $u$, ever falls below zero.",
+    "definition": "For a risk process $R_t=u+ct-S_t$, as in the [Cramér–Lundberg model](c:cramer-lundberg-model), the ruin time is the [stopping time](c:stopping-time) $\\tau(u)=\\inf\\{t\\ge0:R_t<0\\}$, and the (infinite-horizon) ruin probability is $\\psi(u)=P(\\tau(u)<\\infty)$ for initial capital $u\\ge0$. The finite-horizon ruin probability is $\\psi(u,T)=P(\\tau(u)\\le T)$. Equivalently, $\\psi(u)=P(\\sup_{t\\ge0}(S_t-ct)>u)$.",
+    "requires": [
+     "c:cramer-lundberg-model",
+     "c:stopping-time"
+    ]
+   }
+  ]
+ },
+ {
   "id": "nm:statphys-pollaczek-khinchine-ruin",
   "statement": "In the [Cramér–Lundberg model](c:cramer-lundberg-model) with $\\rho = \\lambda\\mu/c < 1$, the [ruin probability](c:ruin-probability) $\\psi$ satisfies $1 - \\psi(x) = (1-\\rho)\\sum_{k \\ge 0} \\rho^k F_I^{*k}(x)$, a geometric mixture of [convolution](c:convolution) powers of the integrated tail [distribution function](c:distribution-function) $F_I$.",
   "hypotheses": [
@@ -2661,7 +3060,7 @@
      {
       "id": "s:upper",
       "slogan": "Bound the value of every admissible strategy by $V$ with Itô's formula.",
-      "detail": "Expand $e^{-qt}V(U_t)$ with the [semimartingale](c:semimartingale) Itô formula. The drift term is $\\le 0$, each dividend costs at least its size because $V' \\ge 1$, and the [Itô integral](c:ito-integral) is a [martingale](c:martingale) with mean $0$. Monotone convergence gives $v_L \\le V$.",
+      "detail": "First take a strategy with finitely many lumps in each bounded interval. Expand $e^{-qt}V(U_t)$ between the lump times with Itô's formula for the continuous [semimartingale](c:semimartingale) $X - L^c$, and add each lump as a jump. The drift term is $\\le 0$, each dividend costs at least its size because $V' \\ge 1$, and the [Itô integral](c:ito-integral) is a [martingale](c:martingale) with mean $0$, so $v_L \\le V$. For a general strategy, remove the lumps of size at most $\\varepsilon$ and let $\\varepsilon \\to 0$ by monotone convergence.",
       "uses": [
        "nm:statphys-ito-formula",
        "nm:statphys-ito-isometry",
@@ -2846,9 +3245,9 @@
      {
       "id": "s:minimal",
       "slogan": "Show that the stopped envelope is a [martingale](c:martingale) and that $\\tau_n$ is the smallest optimal time.",
-      "detail": "On $\\{\\tau_n > k\\}$ the envelope satisfies $S_k = \\mathbb{E}(S_{k+1} \\mid \\mathcal{F}_k)$, which gives the martingale property of $S_{k \\wedge \\tau_n}$. If $\\tau^*$ is optimal and $P(S_{\\tau^*} > G_{\\tau^*}) > 0$, optional sampling gives $\\mathbb{E} G_{\\tau^*} < \\mathbb{E} S_{\\tau^*} \\le V_n$, a contradiction, so $\\tau_n \\le \\tau^*$.",
+      "detail": "On $\\{\\tau_n > k\\}$ the envelope satisfies $S_k = \\mathbb{E}(S_{k+1} \\mid \\mathcal{F}_k)$, which gives the martingale property of $S_{k \\wedge \\tau_n}$. If $\\tau^*$ is optimal and $P(S_{\\tau^*} > G_{\\tau^*}) > 0$, the sum $\\mathbb{E} S_{\\tau^*} - \\mathbb{E} S_n = \\sum_k \\mathbb{E}[1\\{\\tau^* > k\\}(S_{k+1} - S_k)] \\le 0$ gives $\\mathbb{E} G_{\\tau^*} < \\mathbb{E} S_{\\tau^*} \\le V_n$, a contradiction, so $\\tau_n \\le \\tau^*$.",
       "uses": [
-       "nm:optional-sampling-theorem"
+       "nm:tower-property-of-the-conditional-expectation"
       ]
      }
     ],
@@ -3018,9 +3417,9 @@
      {
       "id": "s:smallest",
       "slogan": "Use Fatou's lemma to show that every supermartingale above the gain lies above the envelope.",
-      "detail": "For a [supermartingale](c:supermartingale) $\\tilde S \\ge G$, optional sampling at $\\tau \\wedge m$ and the conditional Fatou lemma with the lower bound $-G^*$ give $\\mathbb{E}(G_\\tau \\mid \\mathcal{F}_k) \\le \\mathbb{E}(\\tilde S_\\tau \\mid \\mathcal{F}_k) \\le \\tilde S_k$, so $S_k \\le \\tilde S_k$.",
+      "detail": "For a [supermartingale](c:supermartingale) $\\tilde S \\ge G$, the tower property for the stopped process at $\\tau \\wedge m$ and the conditional Fatou lemma with the lower bound $-G^*$ give $\\mathbb{E}(G_\\tau \\mid \\mathcal{F}_k) \\le \\mathbb{E}(\\tilde S_\\tau \\mid \\mathcal{F}_k) \\le \\tilde S_k$, so $S_k \\le \\tilde S_k$.",
       "uses": [
-       "nm:optional-sampling-theorem",
+       "nm:tower-property-of-the-conditional-expectation",
        "wd:Q5437947"
       ]
      },
@@ -3608,348 +4007,6 @@
      "c:markov-chain"
     ]
    },
-   {
-    "id": "c:optimal-stopping-problem",
-    "name": "optimal stopping problem",
-    "reminder": "An optimal stopping problem asks for a stopping time that maximizes the expected reward of stopping a random process.",
-    "definition": "Let $(Z_n)_{0\\le n\\le N}$, with $N\\le\\infty$, be integrable rewards adapted to a [filtration](c:filtration) $(\\mathcal{F}_n)$. The optimal stopping problem asks for the [expected value](c:expected-value) $V=\\sup_\\tau\\mathbb{E}[Z_\\tau]$ over all [stopping times](c:stopping-time) $\\tau\\le N$, with $\\tau<\\infty$ almost surely when $N=\\infty$, and for an optimal $\\tau^*$ with $\\mathbb{E}[Z_{\\tau^*}]=V$. Because $\\tau$ is a stopping time, each decision to stop uses only the information available at that time.",
-    "requires": [
-     "c:stopping-time",
-     "c:filtration",
-     "c:expected-value",
-     "c:stochastic-process"
-    ]
-   },
-   {
-    "id": "c:supermartingale",
-    "name": "supermartingale",
-    "reminder": "A supermartingale is an adapted integrable process whose conditional mean of the next value is at most the present value.",
-    "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a [submartingale](c:submartingale).",
-    "requires": [
-     "c:filtration",
-     "c:integrable-function",
-     "c:conditional-expectation",
-     "c:martingale"
-    ]
-   }
-  ]
- },
- {
-  "id": "nm:statphys-smooth-fit-verification",
-  "statement": "Let $X$ solve the [stochastic differential equation](c:stochastic-differential-equation) $dX_t = b(X_t)\\,dt + \\sigma(X_t)\\,dW_t$ in an open interval $I$. Let $V$ be a [continuously differentiable](c:continuously-differentiable-map) function on $I$ that is $C^2$ off a finite set $F$ where $\\sigma \\ne 0$, and that solves $\\min\\{\\mathcal L V - \\lambda V + w,\\ z - V\\} = 0$ off $F$. Then the exit time $\\tau^*$ of $X$ from $D = \\{V < z\\}$ minimizes $J[\\tau] = E[\\int_0^\\tau e^{-\\lambda s} w(X_s)\\,ds + e^{-\\lambda\\tau} z(X_\\tau)]$ over the finite [stopping times](c:stopping-time) $\\tau$ for which the [Itô integral](c:ito-integral) $\\int_0^\\tau e^{-\\lambda s} V'(X_s)\\sigma(X_s)\\,dW_s$ has mean zero, if $\\tau^*$ is one of them and $E|V(X_0)| < \\infty$.",
-  "hypotheses": [
-   {
-    "id": "h:sde",
-    "text": "$X$ is a continuous solution of $dX_t = b(X_t)\\,dt + \\sigma(X_t)\\,dW_t$ that stays in the open interval $I$, with $b$ and $\\sigma$ continuous.",
-    "concept": "c:stochastic-differential-equation"
-   },
-   {
-    "id": "h:smooth-fit",
-    "text": "$V$ is $C^1$ on $I$ and $C^2$ on $I \\setminus F$ for a finite set $F$, $V''$ is bounded near $F$, and $\\sigma \\ne 0$ on $F$.",
-    "concept": "c:continuously-differentiable-map"
-   },
-   {
-    "id": "h:vi",
-    "text": "$\\min\\{\\mathcal L V - \\lambda V + w,\\ z - V\\} = 0$ on $I \\setminus F$, with $w$ and $z$ continuous and $\\lambda \\ge 0$.",
-    "concept": null
-   },
-   {
-    "id": "h:class",
-    "text": "$E|V(X_0)| < \\infty$, and $\\tau^*$ is a.s. finite with $E\\int_0^{\\tau^*} e^{-\\lambda s} V'(X_s)\\sigma(X_s)\\,dW_s = 0$.",
-    "concept": "c:stopping-time"
-   }
-  ],
-  "conclusion": "$J[\\tau^*] = E\\,V(X_0) \\le J[\\tau]$ for every admissible $\\tau$, so $E\\,V(X_0)$ is the optimal cost and $V$ is the [value function](c:value-function) of the problem.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "relaxed-ito-verification",
-    "name": "Relaxed Itô rule and comparison",
-    "slogan": "Extend Itô's rule to the $C^1$ function $V$, then compare its expansion with the cost of any rule for the [optimal stopping problem](c:optimal-stopping-problem).",
-    "scope": "The full statement. The Itô rule is proved for finitely many points where $V$ is only $C^1$, not for a general measurable second derivative.",
-    "mechanisms": [
-     "m:approximation",
-     "m:dominated-convergence",
-     "m:martingale"
-    ],
-    "roles": [
-     {
-      "h": "h:sde",
-      "why": "The equation and the continuity of the coefficients give Itô's formula and the bounds after localization.",
-      "steps": [
-       "s:zero-time",
-       "s:relaxed-ito"
-      ]
-     },
-     {
-      "h": "h:smooth-fit",
-      "why": "A $C^1$ function with a bounded second derivative off $F$ is a limit of $C^2$ functions, and $\\sigma \\ne 0$ on $F$ makes the time at $F$ negligible.",
-      "steps": [
-       "s:zero-time",
-       "s:approx",
-       "s:relaxed-ito"
-      ]
-     },
-     {
-      "h": "h:vi",
-      "why": "The two inequalities give the lower bound, and the equation inside $D$ gives the equality for $\\tau^*$.",
-      "steps": [
-       "s:lower-bound",
-       "s:equality"
-      ]
-     },
-     {
-      "h": "h:class",
-      "why": "A mean-zero stochastic integral and an integrable $V(X_0)$ make the expansion of $V$ have mean $E\\,V(X_0)$.",
-      "steps": [
-       "s:lower-bound",
-       "s:equality"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:zero-time",
-      "slogan": "Show that the diffusion spends zero time at each point where $\\sigma \\ne 0$.",
-      "detail": "Itô's formula for $F_\\varepsilon$ with $F_\\varepsilon'' = g_\\varepsilon \\ge 1_{\\{a\\}}$ and $|F_\\varepsilon'| \\le 4\\varepsilon$ bounds $\\tfrac12\\sigma(a)^2$ times the [Lebesgue measure](c:lebesgue-measure) of $\\{s \\le t : X_s = a\\}$ by terms that tend to zero.",
-      "uses": [
-       "nm:statphys-ito-formula",
-       "nm:statphys-ito-isometry"
-      ]
-     },
-     {
-      "id": "s:approx",
-      "slogan": "Approximate $V$ by $C^2$ functions whose second derivatives equal $V''$ away from $F$.",
-      "detail": "Replace $V''$ by a linear interpolation on $[a - 1/n, a + 1/n]$ for each $a \\in F$ and integrate twice. The approximations converge to $V$ with their first derivatives, uniformly on compact sets.",
-      "uses": [
-       "wd:Q1217677"
-      ]
-     },
-     {
-      "id": "s:relaxed-ito",
-      "slogan": "Pass to the limit in Itô's formula for the approximations to get Itô's rule for $V$.",
-      "detail": "The second-derivative terms converge at almost every time because the time spent at $F$ is null, and the stochastic integrals converge in $L^2$ by the Itô isometry.",
-      "uses": [
-       "nm:statphys-ito-formula",
-       "nm:statphys-ito-isometry",
-       "wd:Q1067156"
-      ]
-     },
-     {
-      "id": "s:lower-bound",
-      "slogan": "Bound the cost of every admissible rule below by the mean of $V(X_0)$.",
-      "detail": "The expansion $Y_\\tau = V(X_0) + M_\\tau$ has mean $E\\,V(X_0)$, and $V \\le z$ and $\\lambda V - \\mathcal L V \\le w$ give $Y_\\tau \\le Z_\\tau$, the realized cost of $\\tau$.",
-      "uses": []
-     },
-     {
-      "id": "s:equality",
-      "slogan": "Show that the exit rule from the continuation region turns both bounds into equalities.",
-      "detail": "Before $\\tau^*$ the process is in $D$, where $\\mathcal L V - \\lambda V + w = 0$, and at $\\tau^*$ it is in the closed set $\\{V = z\\}$, so $Y_{\\tau^*} = Z_{\\tau^*}$.",
-      "uses": []
-     }
-    ],
-    "edges": [
-     [
-      "s:zero-time",
-      "s:relaxed-ito"
-     ],
-     [
-      "s:approx",
-      "s:relaxed-ito"
-     ],
-     [
-      "s:relaxed-ito",
-      "s:lower-bound"
-     ],
-     [
-      "s:zero-time",
-      "s:lower-bound"
-     ],
-     [
-      "s:lower-bound",
-      "s:equality"
-     ]
-    ],
-    "conclusion": "s:equality",
-    "concepts": {
-     "c:stochastic-differential-equation": "The state of the stopping problem is the solution of a one-dimensional stochastic differential equation.",
-     "c:continuously-differentiable-map": "Smooth fit means that V is continuously differentiable across the boundary of the continuation region.",
-     "c:stopping-time": "The controller chooses a stopping time, and the theorem compares all admissible stopping times.",
-     "c:ito-integral": "The mean-zero condition on the Itô integral defines the admissible class of stopping times.",
-     "c:value-function": "The theorem identifies the solution of the variational inequality with the value function.",
-     "c:optimal-stopping-problem": "The cost J is the objective of an optimal stopping problem for a diffusion.",
-     "c:lebesgue-measure": "The time spent at the points of F has Lebesgue measure zero, so V'' is not needed there."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "R. van Handel, Stochastic Calculus, Filtering, and Stochastic Control (ACM 217 lecture notes, 2007), Proposition 8.1.3 and its proof, p. 210, with Proposition 8.1.5 on pp. 210-211.",
-     "url": "https://web.math.princeton.edu/~rvan/acm217/ACM217.pdf",
-     "note": "Steps s:lower-bound and s:equality follow the proof of Proposition 8.1.3. The source cites Rogers and Williams for the Itô rule of Proposition 8.1.5, and steps s:zero-time to s:relaxed-ito prove it directly for finitely many points where V is only C¹."
-    }
-   }
-  ],
-  "new_concepts": [
-   {
-    "id": "c:optimal-stopping-problem",
-    "name": "optimal stopping problem",
-    "reminder": "An optimal stopping problem asks for a stopping time that maximizes the expected reward of stopping a random process.",
-    "definition": "Let $(Z_n)_{0\\le n\\le N}$, with $N\\le\\infty$, be integrable rewards adapted to a [filtration](c:filtration) $(\\mathcal{F}_n)$. The optimal stopping problem asks for the [expected value](c:expected-value) $V=\\sup_\\tau\\mathbb{E}[Z_\\tau]$ over all [stopping times](c:stopping-time) $\\tau\\le N$, with $\\tau<\\infty$ almost surely when $N=\\infty$, and for an optimal $\\tau^*$ with $\\mathbb{E}[Z_{\\tau^*}]=V$. Because $\\tau$ is a stopping time, each decision to stop uses only the information available at that time.",
-    "requires": [
-     "c:stopping-time",
-     "c:filtration",
-     "c:expected-value",
-     "c:stochastic-process"
-    ]
-   }
-  ]
- },
- {
-  "id": "nm:statphys-mckean-perpetual-american-put",
-  "statement": "In the Black-Scholes model with $r > 0$, the perpetual American put has price $V(x) = K - x$ for $x \\le L^*$ and $V(x) = (K - L^*)(x/L^*)^{-2r/\\sigma^2}$ for $x \\ge L^*$, where $L^* = 2rK/(2r + \\sigma^2)$. The first [stopping time](c:stopping-time) at which the price reaches $L^*$ is optimal for this [optimal stopping problem](c:optimal-stopping-problem).",
-  "hypotheses": [
-   {
-    "id": "h:rates",
-    "text": "The interest rate $r$, the volatility $\\sigma$ and the strike $K$ are strictly positive.",
-    "concept": null
-   },
-   {
-    "id": "h:model",
-    "text": "Under $P^*$, $S_t = x\\exp(\\sigma B_t + (r - \\sigma^2/2)t)$ with a standard [Brownian motion](c:brownian-motion) $B$.",
-    "concept": "c:brownian-motion"
-   },
-   {
-    "id": "h:payoff",
-    "text": "Exercise at a [stopping time](c:stopping-time) $\\tau$ pays $(K - S_\\tau)^+$ at time $\\tau$, and no exercise pays $0$.",
-    "concept": "c:stopping-time"
-   }
-  ],
-  "conclusion": "$\\sup_\\tau \\mathbb{E}^*[e^{-r\\tau}(K - S_\\tau)^+] = V(x)$ for every $x > 0$, and $\\tau^* = \\inf\\{t : S_t \\le L^*\\}$ attains it.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "verification",
-    "name": "Verification of the smooth-fit candidate",
-    "slogan": "Show that the discounted candidate is a [supermartingale](c:supermartingale) above the payoff, and that it is a [martingale](c:martingale) until the price first reaches $L^*$.",
-    "scope": "The value for every initial price and the optimality of $\\tau^*$, for $r > 0$. The case $r = 0$ is excluded.",
-    "mechanisms": [
-     "m:martingale",
-     "m:convexity",
-     "m:approximation",
-     "m:dominated-convergence"
-    ],
-    "roles": [
-     {
-      "h": "h:rates",
-      "why": "Positive rates make $\\gamma > 0$ and $L^* < K$, and the discount factor kills the payoff at $\\tau = \\infty$.",
-      "steps": [
-       "s:candidate",
-       "s:upper",
-       "s:attain"
-      ]
-     },
-     {
-      "h": "h:model",
-      "why": "The model gives the generator for Itô's formula and the exponential martingale $e^{-rt}S_t^{-\\gamma}$.",
-      "steps": [
-       "s:supermart",
-       "s:attain"
-      ]
-     },
-     {
-      "h": "h:payoff",
-      "why": "The payoff convention fixes the gain that the supermartingale bound must dominate.",
-      "steps": [
-       "s:upper",
-       "s:attain"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:candidate",
-      "slogan": "Check that the candidate $V$ is $C^1$, [convex](c:convex-function) and above the payoff.",
-      "detail": "Both branches have slope $-1$ at $L^*$, which is smooth fit. Convexity puts $V$ above its tangent $K - x$. The generator gives $-rK$ below $L^*$ and $0$ above $L^*$.",
-      "uses": []
-     },
-     {
-      "id": "s:supermart",
-      "slogan": "Prove that $e^{-rt}V(S_t)$ is a [supermartingale](c:supermartingale) with Itô's formula after mollification.",
-      "detail": "In log coordinates the candidate has a Lipschitz derivative. A [mollifier](c:mollifier) gives smooth functions with nonpositive generator. Itô's formula and the martingale property of the stochastic integral give supermartingales, and the uniform limit keeps the property.",
-      "uses": [
-       "nm:statphys-ito-formula",
-       "nm:statphys-ito-isometry"
-      ]
-     },
-     {
-      "id": "s:upper",
-      "slogan": "Bound the discounted payoff of every exercise rule by $V(x)$ with optional stopping.",
-      "detail": "Optional stopping at $\\tau \\wedge t$ and dominated convergence as $t \\to \\infty$ give $\\mathbb{E}^*[e^{-r\\tau}V(S_\\tau)] \\le V(x)$. The payoff is at most $V$.",
-      "uses": [
-       "wd:Q2027347",
-       "wd:Q1067156"
-      ]
-     },
-     {
-      "id": "s:attain",
-      "slogan": "Compute the payoff of $\\tau^*$ with the exponential [martingale](c:martingale) $e^{-rt}S_t^{-\\gamma}$.",
-      "detail": "Stopped at $\\tau^*$ this martingale is bounded by $(L^*)^{-\\gamma}$. Optional stopping and dominated convergence give $\\mathbb{E}^*[e^{-r\\tau^*}] = (x/L^*)^{-\\gamma}$, so $\\tau^*$ pays $V(x)$.",
-      "uses": [
-       "wd:Q2027347",
-       "wd:Q1067156"
-      ]
-     },
-     {
-      "id": "s:conclude",
-      "slogan": "Join the two bounds to identify the value of the [optimal stopping problem](c:optimal-stopping-problem).",
-      "detail": "The upper bound holds for every stopping time and $\\tau^*$ attains it. So the price is $V(x)$ and $\\tau^*$ is an optimal exercise rule.",
-      "uses": []
-     }
-    ],
-    "edges": [
-     [
-      "s:candidate",
-      "s:supermart"
-     ],
-     [
-      "s:candidate",
-      "s:upper"
-     ],
-     [
-      "s:supermart",
-      "s:upper"
-     ],
-     [
-      "s:candidate",
-      "s:attain"
-     ],
-     [
-      "s:upper",
-      "s:conclude"
-     ],
-     [
-      "s:attain",
-      "s:conclude"
-     ]
-    ],
-    "conclusion": "s:conclude",
-    "concepts": {
-     "c:stopping-time": "Exercise rules are stopping times, and the optimal one is a hitting time.",
-     "c:optimal-stopping-problem": "The option price is the value of an optimal stopping problem with discounting.",
-     "c:brownian-motion": "The asset price is the exponential of a Brownian motion with drift.",
-     "c:supermartingale": "The discounted candidate value is a supermartingale, which bounds every exercise rule.",
-     "c:martingale": "The exponential martingale of the price computes the discounted payoff of the hitting time.",
-     "c:convex-function": "Convexity of the candidate puts it above the payoff line K minus x.",
-     "c:mollifier": "Mollification smooths the candidate so that Itô's formula applies at the exercise boundary."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "N. Privault, Notes on Stochastic Finance, Chapter 15, Proposition 15.4 and its proof, pp. 545-546, with Lemma 15.1 and Proposition 15.2, pp. 538-539.",
-     "url": "https://personal.ntu.edu.sg/nprivault/MA5182/american-options.pdf",
-     "note": "The source applies Itô's formula to the candidate directly. Step s:supermart adds a mollification because the candidate is only C¹ at the exercise boundary."
-    }
-   }
-  ],
-  "new_concepts": [
    {
     "id": "c:optimal-stopping-problem",
     "name": "optimal stopping problem",

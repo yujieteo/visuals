@@ -58,13 +58,28 @@
   ]
  },
  {
+  "id": "c:markov-loop-soup",
+  "reminder": "A Poisson ensemble of unrooted loops of a Markov chain, with intensity a multiple of the loop measure.",
+  "definition": "For a transient [Markov chain](c:markov-chain) with loop measure $\\mu = \\sum_x \\int_0^\\infty t^{-1}\\lambda_x \\mathbb{P}^{x,x}_t\\,dt$ and $\\alpha > 0$, the loop soup $\\mathcal{L}_\\alpha$ is a [Poisson random measure](c:poisson-random-measure) on loops with intensity $\\alpha\\mu$.",
+  "examples": [
+   "For simple random walk on a finite box, killed when it leaves the box, the occupation field of the loop soup at $\\alpha = 1/2$ has the law of half the squared free field.",
+   "On a single site $x$ with killing $\\kappa_x > 0$ and no conductances, every loop stays at $x$, and the occupation time of $\\mathcal{L}_\\alpha$ has a gamma law with shape $\\alpha$ and scale $1/\\kappa_x$.",
+   "Non-example: a single random walk path from $x$ to $y$ is not a loop soup. It has fixed end points and is not a Poisson ensemble."
+  ],
+  "requires": [
+   "c:markov-chain",
+   "c:poisson-random-measure"
+  ],
+  "links": []
+ },
+ {
   "id": "c:markov-semigroup",
   "reminder": "A Markov semigroup $(P_t)$ gives the expected value $P_tf(x)=\\mathbb E_x f(X_t)$ of a Markov process at time $t$.",
   "definition": "A Markov semigroup is a family $(P_t)_{t\\ge0}$ of linear operators on bounded measurable functions with $P_0=I$, $P_{t+s}=P_tP_s$, $P_tf\\ge0$ whenever $f\\ge0$, and $P_t1=1$. Typically $P_tf(x)=\\mathbb E[f(X_t)\\mid X_0=x]$ for a time-homogeneous Markov process $(X_t)$, and each $P_t$ is given by a [Markov kernel](c:markov-kernel). Its generator is $Lf=\\lim_{t\\downarrow0}(P_tf-f)/t$, and a measure $\\mu$ is invariant when $\\int P_tf\\,d\\mu=\\int f\\,d\\mu$ for all $t$.",
   "examples": [
    "The heat semigroup $P_tf(x)=\\mathbb E f(x+B_t)$ of [Brownian motion](c:brownian-motion) has generator $\\tfrac12\\Delta$.",
    "For a continuous-time Markov chain on a finite set with rate matrix $Q$, $P_t=e^{tQ}$.",
-   "The Ornstein–Uhlenbeck semigroup $P_tf(x)=\\mathbb E f(e^{-t}x+\\sqrt{1-e^{-2t}}\\,Z)$, with $Z\\sim N(0,1)$, has invariant measure $N(0,1)$.",
+   "The [Ornstein–Uhlenbeck](c:ornstein-uhlenbeck-process) semigroup $P_tf(x)=\\mathbb E f(e^{-t}x+\\sqrt{1-e^{-2t}}\\,Z)$, with $Z\\sim N(0,1)$, has invariant measure $N(0,1)$.",
    "Non-example: $P_tf=e^{-t}f$ is a positive semigroup, but $P_t1=e^{-t}\\ne1$. It describes a process that is killed at rate $1$, so it is only sub-Markov."
   ],
   "requires": [
@@ -210,6 +225,36 @@
   "links": []
  },
  {
+  "id": "c:ornstein-uhlenbeck-process",
+  "reminder": "The Ornstein–Uhlenbeck process is Brownian motion with a linear pull to the origin, with stationary law $N(0,1)$.",
+  "definition": "The standard Ornstein–Uhlenbeck process is the solution of the [stochastic differential equation](c:stochastic-differential-equation) $dX_t=-X_t\\,dt+\\sqrt2\\,dB_t$, where $B$ is a [Brownian motion](c:brownian-motion). The solution is $X_t=e^{-t}X_0+\\sqrt2\\int_0^te^{-(t-s)}\\,dB_s$, so given $X_0=x$, $X_t$ has the [normal distribution](c:normal-distribution) $N(e^{-t}x,1-e^{-2t})$. It is a Markov process with generator $Lf=f''-xf'$ and reversible stationary law $N(0,1)$.",
+  "examples": [
+   "Started from $X_0\\sim N(0,1)$ independent of $B$, it is the stationary centered [Gaussian process](c:gaussian-process) with covariance $\\mathbb E[X_sX_t]=e^{-|t-s|}$.",
+   "Doob's representation: if $W$ is a Brownian motion, then $X_t=e^{-t}W_{e^{2t}}$ is a stationary Ornstein–Uhlenbeck process.",
+   "Its semigroup is given by the Mehler formula $P_tf(x)=\\mathbb E f(e^{-t}x+\\sqrt{1-e^{-2t}}\\,Z)$ with $Z\\sim N(0,1)$.",
+   "Non-example: Brownian motion is not an Ornstein–Uhlenbeck process. It has no drift toward the origin, its variance $t$ grows without bound, and it has no stationary distribution."
+  ],
+  "requires": [
+   "c:stochastic-differential-equation",
+   "c:brownian-motion",
+   "c:normal-distribution",
+   "c:gaussian-process"
+  ],
+  "links": [
+   {
+    "to": "c:gaussian-process",
+    "type": "specializes",
+    "steps": [
+     "Start $X_0$ from $N(0,1)$, independent of the Brownian motion $B$.",
+     "The solution is a linear function of the Gaussian family $(X_0,B)$, so its finite-dimensional laws are Gaussian.",
+     "Its mean is $0$ and its covariance is $\\mathbb E[X_sX_t]=e^{-|t-s|}$.",
+     "So the stationary process is the centered Gaussian process with this covariance."
+    ],
+    "why": "It shows that Gaussian process tools, such as covariance computations, describe the stationary Ornstein–Uhlenbeck process completely."
+   }
+  ]
+ },
+ {
   "id": "c:pathwise-uniqueness",
   "reminder": "Pathwise uniqueness means that two solutions driven by the same Brownian motion from the same start agree almost surely.",
   "definition": "A [stochastic differential equation](c:stochastic-differential-equation) $dX_t=b(t,X_t)\\,dt+\\sigma(t,X_t)\\,dB_t$ has pathwise uniqueness when, for any two solutions $X$ and $X'$ on a common filtered probability space with the same [Brownian motion](c:brownian-motion) $B$ and $X_0=X'_0$ almost surely, $P(X_t=X'_t\\text{ for all }t\\ge0)=1$. By the Yamada–Watanabe theorem, weak existence and pathwise uniqueness together give a unique [strong solution](c:strong-solution) and uniqueness in law.",
@@ -291,6 +336,44 @@
      "Its temperature $T_c=1/(k_B\\beta_c)$ is the critical temperature."
     ],
     "why": "It shows that the critical temperature is the location of a phase transition when temperature is the only parameter that varies."
+   }
+  ]
+ },
+ {
+  "id": "c:phi4-model",
+  "reminder": "The $\\varphi^4$ model is a lattice field with Gaussian gradient coupling and a quartic potential $\\lambda\\varphi^4+\\mu\\varphi^2$ at each site.",
+  "definition": "The lattice $\\varphi^4$ model on a finite set $\\Lambda\\subset\\mathbb Z^d$ is the probability measure on $\\mathbb R^\\Lambda$ with density proportional to $\\exp\\big(-\\frac12\\sum_{x\\sim y}(\\varphi_x-\\varphi_y)^2-\\sum_{x\\in\\Lambda}(\\lambda\\varphi_x^4+\\mu\\varphi_x^2)\\big)$ with respect to [Lebesgue measure](c:lebesgue-measure), where $\\lambda>0$, $\\mu\\in\\mathbb R$ and $\\varphi=0$ outside $\\Lambda$. The continuum $\\varphi^4_d$ field theory is a limit of such measures with renormalized parameters as the lattice spacing tends to $0$. It exists as a non-Gaussian theory for $d=2,3$, and such limits are Gaussian for $d\\ge4$.",
+  "examples": [
+   "For $\\lambda=0$ and $\\mu>0$ the measure is Gaussian, a massive [Gaussian free field](c:gaussian-free-field) with covariance $(-\\Delta_\\Lambda+2\\mu)^{-1}$.",
+   "For one site and $\\mu<0$, the density $e^{-\\lambda\\varphi^4-\\mu\\varphi^2}$ has two maxima at $\\varphi=\\pm\\sqrt{-\\mu/(2\\lambda)}$, a double well.",
+   "Non-example: for $\\lambda<0$ the formula defines no probability measure, because $e^{-\\lambda\\varphi^4}$ is not integrable on $\\mathbb R$."
+  ],
+  "requires": [
+   "c:gaussian-free-field",
+   "c:gibbs-distribution",
+   "c:lebesgue-measure"
+  ],
+  "links": [
+   {
+    "to": "c:ising-model",
+    "type": "generalizes",
+    "steps": [
+     "Choose $\\mu=-2\\lambda$, so the single-site weight is $e^{-\\lambda(\\varphi^2-1)^2}$ up to a constant.",
+     "As $\\lambda\\to\\infty$, the normalized single-site law converges weakly to $\\frac12(\\delta_{-1}+\\delta_1)$.",
+     "For spins $\\varphi_x,\\varphi_y=\\pm1$, the identity $-\\frac12(\\varphi_x-\\varphi_y)^2=\\varphi_x\\varphi_y-1$ holds.",
+     "So the limit is the Ising model on $\\Lambda$ at inverse temperature $1$."
+    ],
+    "why": "It shows that the Ising model is the $\\varphi^4$ model with an infinitely deep double well."
+   },
+   {
+    "to": "c:gaussian-free-field",
+    "type": "generalizes",
+    "steps": [
+     "Allow $\\lambda=0$ and set $\\mu=0$ in the density.",
+     "What remains is $\\exp(-\\frac12\\sum_{x\\sim y}(\\varphi_x-\\varphi_y)^2)$ with $\\varphi=0$ outside $\\Lambda$.",
+     "This is the law of the Gaussian free field multiplied by $1/\\sqrt{2d}$."
+    ],
+    "why": "It shows that the $\\varphi^4$ model is a Gaussian free field perturbed by a local quartic potential."
    }
   ]
  },
@@ -812,6 +895,35 @@
   ]
  },
  {
+  "id": "c:sherrington-kirkpatrick-model",
+  "reminder": "The Sherrington–Kirkpatrick model is the mean-field spin glass with independent Gaussian couplings $g_{ij}/\\sqrt N$ between all pairs of spins.",
+  "definition": "The Sherrington–Kirkpatrick model with $N$ spins has the random Hamiltonian $H_N(\\sigma)=-\\frac1{\\sqrt N}\\sum_{1\\le i<j\\le N}g_{ij}\\sigma_i\\sigma_j$ on $\\{-1,1\\}^N$, where the $g_{ij}$ are [iid](c:iid-random-variables) standard [normal](c:normal-distribution) random variables. Its free energy is $F_N(\\beta)=\\frac1N\\mathbb E\\log\\sum_\\sigma e^{-\\beta H_N(\\sigma)}$, and its limit is given by the Parisi formula (Guerra 2003, Talagrand 2006).",
+  "examples": [
+   "The covariance is $\\mathbb E[H_N(\\sigma)H_N(\\tau)]=\\frac N2R_{\\sigma\\tau}^2-\\frac12$, where $R_{\\sigma\\tau}=\\frac1N\\sum_i\\sigma_i\\tau_i$ is the overlap.",
+   "For $\\beta<1$, $F_N(\\beta)\\to\\log2+\\beta^2/4$, which equals the annealed value $\\lim\\frac1N\\log\\mathbb E Z_N$.",
+   "The ground state energy satisfies $\\frac1N\\mathbb E\\min_\\sigma H_N(\\sigma)\\to-0.7633\\ldots$, the value from the Parisi formula.",
+   "Non-example: the [Curie–Weiss model](c:curie-weiss-model) is mean-field but not a spin glass. All its couplings equal $1/N$, so they are neither random nor of both signs."
+  ],
+  "requires": [
+   "c:spin-glass",
+   "c:normal-distribution",
+   "c:iid-random-variables"
+  ],
+  "links": [
+   {
+    "to": "c:spin-glass",
+    "type": "specializes",
+    "steps": [
+     "Take the complete graph on $N$ vertices.",
+     "Give each pair an independent coupling $g_{ij}/\\sqrt N$ with $g_{ij}\\sim N(0,1)$.",
+     "These couplings are random and of both signs, so the model is a spin glass.",
+     "The factor $1/\\sqrt N$ keeps the free energy per spin of order one."
+    ],
+    "why": "It shows that the Sherrington–Kirkpatrick model is the simplest spin glass, in which all pairs interact."
+   }
+  ]
+ },
+ {
   "id": "c:slowly-varying-function",
   "reminder": "A slowly varying function $L$ satisfies $L(\\lambda x)/L(x)\\to1$ as $x\\to\\infty$ for every $\\lambda>0$.",
   "definition": "A positive [measurable function](c:measurable-function) $L$ on $(0,\\infty)$ is slowly varying at infinity when $\\lim_{x\\to\\infty}L(\\lambda x)/L(x)=1$ for every $\\lambda>0$. Equivalently, $L$ is a [regularly varying function](c:regularly-varying-function) of index $0$. Such an $L$ changes more slowly than every power: $x^{-\\varepsilon}L(x)\\to0$ and $x^{\\varepsilon}L(x)\\to\\infty$ for every $\\varepsilon>0$.",
@@ -874,7 +986,7 @@
   "definition": "A spin glass is a spin system with a random Hamiltonian such as $H_J(\\sigma)=-\\sum_{x\\sim y}J_{xy}\\sigma_x\\sigma_y$, where the couplings $J_{xy}$ are [iid](c:iid-random-variables) random variables with a symmetric law, for example $N(0,1)$ or $\\pm1$ with equal probability. For a fixed realization of $J$, one studies the random [Gibbs distribution](c:gibbs-distribution) $e^{-\\beta H_J(\\sigma)}/Z_J$. The main quantity is the quenched [free energy](c:free-energy), built from $\\mathbb E\\log Z_J$.",
   "examples": [
    "The Edwards–Anderson model is the spin glass on $\\mathbb Z^d$ with nearest-neighbor Gaussian couplings.",
-   "The Sherrington–Kirkpatrick model is the spin glass on the complete graph with couplings $g_{ij}/\\sqrt N$.",
+   "The [Sherrington–Kirkpatrick model](c:sherrington-kirkpatrick-model) is the spin glass on the complete graph with couplings $g_{ij}/\\sqrt N$.",
    "On a triangle with couplings $1$, $1$ and $-1$, no spin configuration satisfies all three bonds. This frustration is typical of spin glasses.",
    "Non-example: the Mattis model $J_{xy}=\\xi_x\\xi_y$ with random signs $\\xi_x$ has couplings of both signs, but the change $\\sigma_x\\mapsto\\xi_x\\sigma_x$ turns it into the ferromagnet. So it has no frustration and is not a true spin glass."
   ],
@@ -884,7 +996,18 @@
    "c:iid-random-variables",
    "c:free-energy"
   ],
-  "links": []
+  "links": [
+   {
+    "to": "c:sherrington-kirkpatrick-model",
+    "type": "generalizes",
+    "steps": [
+     "Take the complete graph on $N$ vertices as the interaction graph.",
+     "Choose independent couplings $J_{ij}=g_{ij}/\\sqrt N$ with $g_{ij}\\sim N(0,1)$.",
+     "The resulting spin glass is the Sherrington–Kirkpatrick model."
+    ],
+    "why": "It shows that the Sherrington–Kirkpatrick model is the mean-field case of a spin glass."
+   }
+  ]
  },
  {
   "id": "c:spontaneous-magnetization",
@@ -1095,7 +1218,7 @@
   "examples": [
    "If $b$ and $\\sigma$ are Lipschitz in $x$ uniformly in $t$ and have linear growth, a unique strong solution exists, by Picard iteration.",
    "The equation $dX_t=\\mu X_t\\,dt+\\sigma X_t\\,dB_t$ has the strong solution $X_t=X_0\\exp(\\sigma B_t+(\\mu-\\sigma^2/2)t)$.",
-   "The Ornstein–Uhlenbeck equation $dX_t=-\\theta X_t\\,dt+\\sigma\\,dB_t$ has the strong solution $X_t=e^{-\\theta t}X_0+\\sigma\\int_0^te^{-\\theta(t-s)}\\,dB_s$.",
+   "The [Ornstein–Uhlenbeck](c:ornstein-uhlenbeck-process) equation $dX_t=-\\theta X_t\\,dt+\\sigma\\,dB_t$ has the strong solution $X_t=e^{-\\theta t}X_0+\\sigma\\int_0^te^{-\\theta(t-s)}\\,dB_s$.",
    "Non-example: Tanaka's equation $dX_t=\\operatorname{sgn}(X_t)\\,dB_t$ with $X_0=0$ has weak solutions but no strong solution."
   ],
   "requires": [
@@ -1216,120 +1339,5 @@
    "c:permutation"
   ],
   "links": []
- },
- {
-  "id": "c:tracy-widom-distribution",
-  "reminder": "The limit law of the centred and rescaled largest eigenvalue of a large Gaussian unitary random matrix.",
-  "definition": "The Tracy-Widom distribution ($\\beta = 2$) is the law on $\\mathbb{R}$ with distribution function $F_2(s) = \\det(I - A)_{L^2[s,\\infty)} = \\exp\\big(-\\int_s^\\infty (x - s)\\, u(x)^2\\, dx\\big)$. Here $A$ is the Airy kernel $A(x,y) = (\\operatorname{Ai}(x)\\operatorname{Ai}'(y) - \\operatorname{Ai}'(x)\\operatorname{Ai}(y))/(x - y)$, and $u$ is the Hastings-McLeod solution of the [Painlevé](c:painleve-transcendent) II equation $u'' = 2u^3 + xu$ with $u(x)^2 \\sim \\operatorname{Ai}(x)^2$ as $x \\to +\\infty$.",
-  "examples": [
-   "For a GUE [random matrix](c:random-matrix) normalized so that its eigenvalue distribution tends to the semicircle law on $[-2, 2]$, $N^{2/3}(\\lambda_{\\max} - 2)$ converges in law to $F_2$.",
-   "The longest increasing subsequence $l_N$ of a uniform random permutation satisfies $(l_N - 2\\sqrt{N})/N^{1/6} \\to F_2$ in law.",
-   "Non-example: the maximum of $N$ independent standard normal variables, after centring and scaling, tends to the Gumbel law, not to $F_2$."
-  ],
-  "requires": [
-   "c:random-matrix",
-   "c:eigenvalue",
-   "c:painleve-transcendent",
-   "c:airy-function",
-   "c:fredholm-determinant",
-   "c:distribution-function"
-  ],
-  "links": []
- },
- {
-  "id": "c:triangular-array",
-  "reminder": "A triangular array has rows of random variables that are independent within each row, with row lengths that grow.",
-  "definition": "A triangular array is a family of real [random variables](c:random-variable) $X_{n,k}$, $n\\ge1$, $1\\le k\\le k_n$, with $k_n\\to\\infty$, such that for each $n$ the variables $X_{n,1},\\dots,X_{n,k_n}$ of row $n$ are [independent](c:independent-random-variables). Variables in different rows can be dependent, and they can live on different probability spaces. Limit theorems for arrays describe the row sums $S_n=X_{n,1}+\\dots+X_{n,k_n}$.",
-  "examples": [
-   "For iid $X_k$ with mean $\\mu$ and variance $\\sigma^2\\in(0,\\infty)$, the array $X_{n,k}=(X_k-\\mu)/(\\sigma\\sqrt n)$, $k\\le n$, has row sums that converge in distribution to the standard normal law.",
-   "For Bernoulli variables $X_{n,k}$ with $P(X_{n,k}=1)=\\lambda/n$, $k\\le n$, the row sums are binomial and converge in distribution to the Poisson law with mean $\\lambda$.",
-   "The Lindeberg–Feller theorem gives normal limits for the row sums of triangular arrays under the Lindeberg condition.",
-   "Non-example: $X_{n,k}=Y/n$ for $k\\le n$, with one random variable $Y$, is not a triangular array in this sense, because the terms of a row are not independent unless $Y$ is constant."
-  ],
-  "requires": [
-   "c:random-variable",
-   "c:independent-random-variables"
-  ],
-  "links": [
-   {
-    "to": "c:iid-random-variables",
-    "type": "generalizes",
-    "steps": [
-     "Start with one sequence of [iid random variables](c:iid-random-variables) $X_1,X_2,\\dots$ with mean $\\mu$ and variance $\\sigma^2\\in(0,\\infty)$.",
-     "Set $X_{n,k}=(X_k-\\mu)/(\\sigma\\sqrt n)$ for $1\\le k\\le n$.",
-     "Each row is independent, so this is a triangular array with $k_n=n$.",
-     "The Lindeberg–Feller theorem for this array gives the classical central limit theorem."
-    ],
-    "why": "It shows that arrays let the law of the summands change with $n$, which gives Poisson limits as well as normal limits."
-   }
-  ]
- },
- {
-  "id": "c:uniform-spanning-tree",
-  "reminder": "The uniform spanning tree of a finite connected graph is a spanning tree chosen uniformly at random.",
-  "definition": "The uniform spanning tree of a finite [connected graph](c:connected-graph) $G$ is the random [spanning tree](c:spanning-tree) $T$ with $\\mathbb P(T=t)=1/\\tau(G)$ for each spanning tree $t$, where $\\tau(G)$ is the number of spanning trees. By Kirchhoff's theorem, $\\mathbb P(e\\in T)$ equals the [effective resistance](c:effective-resistance) between the endpoints of $e$ when all conductances are $1$. Wilson's algorithm samples it with loop-erased random walks.",
-  "examples": [
-   "On the cycle $C_n$, each of the $n$ spanning trees removes one edge, so $\\mathbb P(e\\in T)=(n-1)/n$.",
-   "On the complete graph $K_n$, there are $n^{n-2}$ spanning trees by Cayley's formula, and $\\mathbb P(e\\in T)=2/n$.",
-   "Non-example: keeping each edge independently with probability $(|V|-1)/|E|$ does not give a spanning tree. The result can contain a cycle or be disconnected."
-  ],
-  "requires": [
-   "c:spanning-tree",
-   "c:uniform-distribution",
-   "c:connected-graph"
-  ],
-  "links": [
-   {
-    "to": "c:uniform-distribution",
-    "type": "specializes",
-    "steps": [
-     "The set of spanning trees of a finite connected graph is finite and nonempty.",
-     "Take the uniform distribution on this set.",
-     "Each tree then has probability $1/\\tau(G)$, and this random tree is the uniform spanning tree."
-    ],
-    "why": "It shows that the uniform spanning tree is a uniform distribution on a finite set, whose size the matrix-tree theorem gives."
-   }
-  ]
- },
- {
-  "id": "c:von-neumann-entropy",
-  "reminder": "The von Neumann entropy $-\\operatorname{tr}\\rho\\log\\rho$ measures the uncertainty in a quantum state $\\rho$.",
-  "definition": "For a [density matrix](c:density-matrix) $\\rho$ on $\\mathbb{C}^d$, which is positive semidefinite with trace $1$, the von Neumann entropy is $S(\\rho)=-\\operatorname{tr}(\\rho\\log\\rho)$, with the [matrix logarithm](c:matrix-logarithm) and the convention $0\\log0=0$. If $\\rho$ has the [eigenvalues](c:eigenvalue) $\\lambda_1,\\dots,\\lambda_d$, then $S(\\rho)=-\\sum_i\\lambda_i\\log\\lambda_i$, the Shannon [entropy](c:entropy) of the spectrum. It satisfies $0\\le S(\\rho)\\le\\log d$, and $S(\\rho)=0$ exactly for pure states.",
-  "examples": [
-   "A [pure state](c:pure-state) $\\rho=|\\psi\\rangle\\langle\\psi|$ has the eigenvalues $1,0,\\dots,0$ and entropy $0$.",
-   "The maximally mixed state $\\rho=I/d$ has entropy $\\log d$, the largest value on $\\mathbb{C}^d$.",
-   "For a Bell state of two qubits, each reduced density matrix is $I/2$, so its entropy is $\\log2$, one bit of entanglement.",
-   "Non-example: the diagonal entries of $\\rho$ in a fixed basis do not give $S(\\rho)$ in general: for $\\rho=|+\\rangle\\langle+|$ the diagonal is $(1/2,1/2)$ with Shannon entropy $\\log2$, but $S(\\rho)=0$."
-  ],
-  "requires": [
-   "c:density-matrix",
-   "c:entropy",
-   "c:eigenvalue",
-   "c:matrix-logarithm",
-   "c:trace-of-a-matrix"
-  ],
-  "links": [
-   {
-    "to": "c:entropy",
-    "type": "generalizes",
-    "steps": [
-     "Let $p=(p_1,\\dots,p_d)$ be a probability vector and $\\rho=\\operatorname{diag}(p_1,\\dots,p_d)$.",
-     "This $\\rho$ is a density matrix, and $\\rho\\log\\rho=\\operatorname{diag}(p_1\\log p_1,\\dots,p_d\\log p_d)$.",
-     "So $S(\\rho)=-\\sum_ip_i\\log p_i$, the Shannon [entropy](c:entropy) of $p$."
-    ],
-    "why": "It shows that von Neumann entropy reduces to Shannon entropy on diagonal, classical states."
-   },
-   {
-    "to": "c:entanglement-entropy",
-    "type": "generalizes",
-    "steps": [
-     "Let $|\\psi\\rangle$ be a pure state of a bipartite system $A\\otimes B$.",
-     "Its reduced state $\\rho_A=\\operatorname{tr}_B|\\psi\\rangle\\langle\\psi|$ is a density matrix on $A$.",
-     "The [entanglement entropy](c:entanglement-entropy) of $|\\psi\\rangle$ is $S(\\rho_A)$, the von Neumann entropy of this reduced state.",
-     "It is $0$ exactly when $|\\psi\\rangle$ is a product state."
-    ],
-    "why": "It shows that entanglement entropy is the von Neumann entropy of a subsystem of a pure state."
-   }
-  ]
  }
 ]

@@ -1,5 +1,322 @@
 [
  {
+  "id": "nm:statphys-dynkin-formula",
+  "statement": "For a solution $X$ of a [stochastic differential equation](c:stochastic-differential-equation) with generator $L$, a [stopping time](c:stopping-time) $\\tau$ with $\\mathbb{E}\\tau < \\infty$ and a $C^2$ function $\\varphi$ with [compact support](c:compact-support), the [expected value](c:expected-value) of $\\varphi(X_\\tau)$ is $\\varphi(x) + \\mathbb{E}\\int_0^\\tau L\\varphi(X_s)\\,ds$.",
+  "hypotheses": [
+   {
+    "id": "h:diffusion",
+    "text": "$X$ is a continuous adapted solution of $dX_t = f(X_t)\\,dt + g(X_t)\\,dW_t$ with $X_0 = x$, driven by a [Brownian motion](c:brownian-motion) $W$, and $f$ and $g$ are Borel and bounded on compact sets.",
+    "concept": "c:stochastic-differential-equation"
+   },
+   {
+    "id": "h:stopping",
+    "text": "$\\tau$ is a [stopping time](c:stopping-time) with $\\mathbb{E}\\tau < \\infty$.",
+    "concept": "c:stopping-time"
+   },
+   {
+    "id": "h:test-function",
+    "text": "$\\varphi$ is twice continuously differentiable with [compact support](c:compact-support).",
+    "concept": "c:compact-support"
+   }
+  ],
+  "conclusion": "$\\mathbb{E}\\varphi(X_\\tau) = \\varphi(x) + \\mathbb{E}\\int_0^\\tau (L\\varphi)(X_s)\\,ds$ with $L\\varphi = \\sum_i f_i\\partial_i\\varphi + \\frac12\\sum_{i,j}(gg^T)_{ij}\\partial_i\\partial_j\\varphi$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ito-stop-limit",
+    "name": "Itô's formula, optional stopping and a limit",
+    "slogan": "Expand $\\varphi(X_t)$ by Itô's formula, kill the martingale part at the bounded time $\\tau\\wedge N$, and let $N\\to\\infty$.",
+    "scope": "The whole formula in all dimensions.",
+    "mechanisms": [
+     "m:martingale",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:diffusion",
+      "why": "The equation gives the semimartingale decomposition of $X$ that Itô's formula needs, and local bounds make $L\\varphi$ bounded.",
+      "steps": [
+       "s:ito",
+       "s:bounds"
+      ]
+     },
+     {
+      "h": "h:stopping",
+      "why": "Finite mean makes $\\tau$ finite and $C\\tau$ an integrable bound for the limit.",
+      "steps": [
+       "s:stop",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:test-function",
+      "why": "Compact support makes $\\varphi$, $L\\varphi$ and the integrand of the [Itô integral](c:ito-integral) bounded.",
+      "steps": [
+       "s:bounds"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ito",
+      "slogan": "Expand $\\varphi(X_t)$ with Itô's formula into a drift integral and a stochastic integral.",
+      "detail": "Since $d\\langle X^i, X^j\\rangle_t = (gg^T)_{ij}(X_t)\\,dt$, Itô's formula gives $\\varphi(X_t) = \\varphi(x) + \\int_0^t L\\varphi(X_s)\\,ds + M_t$ with $M_t = \\int_0^t \\nabla\\varphi(X_s)^T g(X_s)\\,dW_s$.",
+      "uses": [
+       "nm:statphys-ito-formula"
+      ]
+     },
+     {
+      "id": "s:bounds",
+      "slogan": "Bound $\\varphi$, $L\\varphi$ and the stochastic integrand by one constant using the compact support.",
+      "detail": "All derivatives of $\\varphi$ vanish outside its compact support, and $f$, $g$ and the derivatives are bounded on that set. So one constant $C$ bounds $|\\varphi|$, $|L\\varphi|$ and $|\\nabla\\varphi^T g|$ on the whole space.",
+      "uses": []
+     },
+     {
+      "id": "s:stop",
+      "slogan": "Stop the expansion at the bounded time $\\tau \\wedge N$ where the martingale part has mean zero.",
+      "detail": "With a bounded integrand, $M$ is a square-integrable [martingale](c:martingale) by the Itô isometry, and optional stopping at $\\tau\\wedge N$ gives $\\mathbb{E}M_{\\tau\\wedge N} = 0$. Hence $\\mathbb{E}\\varphi(X_{\\tau\\wedge N}) = \\varphi(x) + \\mathbb{E}\\int_0^{\\tau\\wedge N} L\\varphi(X_s)\\,ds$.",
+      "uses": [
+       "nm:statphys-ito-isometry",
+       "wd:Q2027347"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $N$ tend to infinity on both sides with dominated convergence.",
+      "detail": "Since $\\tau < \\infty$ almost surely, $\\tau\\wedge N = \\tau$ for large $N$. The left side is bounded by $C$ and the integral by $C\\tau$, which has finite [expected value](c:expected-value). Dominated convergence gives the formula at $\\tau$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:ito",
+      "s:stop"
+     ],
+     [
+      "s:bounds",
+      "s:stop"
+     ],
+     [
+      "s:bounds",
+      "s:limit"
+     ],
+     [
+      "s:stop",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:stochastic-differential-equation": "The process X is a solution of this stochastic differential equation.",
+     "c:stopping-time": "The formula holds at a random stopping time, not only at fixed times.",
+     "c:compact-support": "Compact support of the test function makes every term bounded.",
+     "c:expected-value": "The formula is an identity between expected values.",
+     "c:brownian-motion": "The Brownian motion W drives the noise of the equation.",
+     "c:ito-integral": "The martingale part of φ(X_t) is an Itô integral against W.",
+     "c:martingale": "The Itô integral with a bounded integrand is a martingale with mean zero."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. Berglund, Long-time dynamics of stochastic differential equations (lecture notes, arXiv:2106.12998 v2), Proposition 1.3.12 (Dynkin's formula), pp. 22-23.",
+     "url": "https://arxiv.org/pdf/2106.12998",
+     "note": "The notes write the proof for n = m = 1 and show that the stochastic integral up to τ has mean zero through τ ∧ N. These steps stop the whole formula at τ ∧ N and pass to the limit."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-ray-knight-theorem",
+  "statement": "For a [Brownian motion](c:brownian-motion) from 0 stopped at its first visit to $-1$, the [local time](c:local-time) $L(\\tau, x)$ as a function of the level $x$ is a [Markov process](c:markov-chain). It is a [squared Bessel process](c:squared-bessel-process) of dimension 2 on $[-1, 0]$ and of dimension 0 on $[0, \\infty)$.",
+  "hypotheses": [
+   {
+    "id": "h:brownian",
+    "text": "$B$ is a standard linear [Brownian motion](c:brownian-motion) with $B_0 = 0$.",
+    "concept": "c:brownian-motion"
+   },
+   {
+    "id": "h:occupation",
+    "text": "$L(t, x)$ is the jointly continuous [local time](c:local-time) of $B$, the density of the occupation measure.",
+    "concept": "c:local-time"
+   },
+   {
+    "id": "h:stop",
+    "text": "$\\tau = \\inf\\{t \\ge 0 : B_t = -1\\}$ is the first visit of $B$ to $-1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$Z_x = L(\\tau, x)$ has $Z_{-1} = 0$ and $E[e^{-\\lambda Z_b} \\mid Z_y, y \\le a] = (1+2\\lambda(b-a))^{-1} \\exp(-\\lambda Z_a/(1+2\\lambda(b-a)))$ for $-1 \\le a < b \\le 0$. For $0 \\le a < b$ the factor $(1+2\\lambda(b-a))^{-1}$ is absent.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "excursion-counts-between-levels",
+    "name": "Excursion counts between two levels",
+    "slogan": "Count the excursions from one level that reach the next level, and add their independent exponential local times.",
+    "scope": "Outline: the steps follow the proof of THEOREM 4 in Rogers (1989), p. 315, and write out the case x > 0 and the identification that the source leaves to the reader.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:characteristic-function",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:brownian",
+      "why": "The strong Markov property and Itô's theorem make the excursions from each level a Poisson point process.",
+      "steps": [
+       "s:excursions"
+      ]
+     },
+     {
+      "h": "h:occupation",
+      "why": "The occupation density adds over excursions, and its continuity in x lets the finite-dimensional laws fix the law.",
+      "steps": [
+       "s:split",
+       "s:identify"
+      ]
+     },
+     {
+      "h": "h:stop",
+      "why": "Stopping at −1 means stopping at the first deep excursion below a level, and it gives the start value 0.",
+      "steps": [
+       "s:split",
+       "s:identify"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:excursions",
+      "slogan": "Split the path at a level into a first piece and Poisson excursions.",
+      "detail": "After the hitting time of $a$ the path is a Brownian motion from $a$. Its [excursions](c:excursion) above $a$ and below $a$, labelled by $L(\\cdot, a)$, form two independent Poisson point processes.",
+      "uses": [
+       "nm:statphys-ito-excursion-theory"
+      ]
+     },
+     {
+      "id": "s:split",
+      "slogan": "Write the local times above and below the level through disjoint sets of excursions.",
+      "detail": "The label $\\ell = L(\\tau, a)$ is the label of the first excursion below $a$ that reaches $-1$. Above $a$, $L(\\tau, x)$ comes only from the first piece and the excursions above $a$ with label below $\\ell$.",
+      "uses": [
+       "nm:statphys-occupation-times-formula"
+      ]
+     },
+     {
+      "id": "s:markov",
+      "slogan": "Get the Markov property in the level from conditional independence given the local time at a.",
+      "detail": "Given $L(\\tau, a) = \\ell$, the local times above $a$ depend only on an independent Poisson process cut at $\\ell$. So the levels above and below $a$ are conditionally independent, and $Z$ is a [Markov process](c:markov-chain).",
+      "uses": []
+     },
+     {
+      "id": "s:transition",
+      "slogan": "Compute the transition law as a Poisson number of exponential local times.",
+      "detail": "Given $\\ell$, a [Poisson](c:poisson-distribution) number with mean $\\ell/(2\\delta)$ of excursions reach $b = a + \\delta$. Each adds an [exponential](c:exponential-distribution) local time with mean $2\\delta$, and the [Laplace transform](c:laplace-transform) of the sum gives the kernels, with one extra factor below 0.",
+      "uses": [
+       "nm:statphys-ito-excursion-theory"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify the law from the start value 0, the kernels and continuity in the level.",
+      "detail": "$Z_{-1} = 0$ because $\\tau$ is the first visit to $-1$. Induction over levels gives the finite-dimensional laws of a [squared Bessel process](c:squared-bessel-process), and continuity of $x \\mapsto L(\\tau, x)$ gives the law on path space.",
+      "uses": [
+       "nm:dynkin-s-theorem",
+       "nm:statphys-occupation-times-formula"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:excursions",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:markov"
+     ],
+     [
+      "s:split",
+      "s:transition"
+     ],
+     [
+      "s:excursions",
+      "s:transition"
+     ],
+     [
+      "s:markov",
+      "s:identify"
+     ],
+     [
+      "s:transition",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:brownian-motion": "The theorem describes the local times of a linear Brownian motion.",
+     "c:local-time": "The local time at each level, as a function of the level, is the process studied.",
+     "c:markov-chain": "The local time is a Markov process when the level plays the role of time.",
+     "c:squared-bessel-process": "The local time process has the law of a squared Bessel process of dimension 2, then 0.",
+     "c:excursion": "The excursions from a level carry all local time at higher and lower levels.",
+     "c:poisson-distribution": "The number of excursions that reach the next level has a Poisson law.",
+     "c:exponential-distribution": "Each excursion that reaches the next level adds an exponential amount of local time there.",
+     "c:laplace-transform": "The Laplace transform of a Poisson sum of exponentials identifies the transition kernel."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "L. C. G. Rogers, A guided tour through excursions, Bull. London Math. Soc. 21 (1989), THEOREM 4 (Ray, Knight) and its proof, p. 315.",
+     "url": "https://www.skokholm.co.uk/wp-content/uploads/2016/05/GTTE.pdf",
+     "note": "Rogers proves the case −1 < x < 0 and calls the case x > 0 similar. He cites Proposition 1 for the excursion count, but the value used, n(sup f > δ) = 1/(2δ), is his Proposition 2 on p. 314."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:excursion",
+    "name": "excursion",
+    "reminder": "An excursion of a process away from $0$ is the piece of path between two consecutive visits to $0$.",
+    "definition": "Let $X$ be a real [stochastic process](c:stochastic-process) with continuous paths and $X_0=0$, such as [Brownian motion](c:brownian-motion), with zero set $Z=\\{t:X_t=0\\}$. For each connected component $(g,d)$ of the open set $(0,\\infty)\\setminus Z$ with $d<\\infty$, the excursion on $(g,d)$ is the path piece $e(s)=X_{g+s}$, $0\\le s\\le d-g$, which leaves $0$ at time $g$ and returns at time $d$. For a [random walk](c:random-walk) on $\\mathbb{Z}$, an excursion is the path between two consecutive visits to $0$.",
+    "requires": [
+     "c:stochastic-process",
+     "c:brownian-motion",
+     "c:random-walk"
+    ]
+   },
+   {
+    "id": "c:exponential-distribution",
+    "name": "exponential distribution",
+    "reminder": "The exponential distribution with rate $\\lambda$ has density $\\lambda e^{-\\lambda x}$ on $[0,\\infty)$ and no memory.",
+    "definition": "For $\\lambda>0$, the exponential distribution with rate $\\lambda$ is the law on $[0,\\infty)$ with [probability density function](c:probability-density-function) $\\lambda e^{-\\lambda x}$, so $P(X>x)=e^{-\\lambda x}$ and $E[X]=1/\\lambda$. Among laws of positive random variables, it is the only one with the memoryless property $P(X>s+t\\mid X>s)=P(X>t)$ for all $s,t\\ge0$.",
+    "requires": [
+     "c:probability-density-function"
+    ]
+   },
+   {
+    "id": "c:local-time",
+    "name": "local time",
+    "reminder": "The local time $L_t^x$ measures how much time a process spends near the level $x$ up to time $t$.",
+    "definition": "For a one-dimensional [Brownian motion](c:brownian-motion) $B$, the local time is the jointly continuous process $(L_t^x)_{t\\ge0,x\\in\\mathbb{R}}$ such that $\\int_0^tf(B_s)\\,ds=\\int_{\\mathbb{R}}f(x)L_t^x\\,dx$ for all bounded Borel functions $f$ and all $t$, almost surely. So $x\\mapsto L_t^x$ is the [Radon–Nikodym derivative](c:radon-nikodym-derivative) of the occupation measure $A\\mapsto\\int_0^t1_A(B_s)\\,ds$ with respect to [Lebesgue measure](c:lebesgue-measure). For a continuous [semimartingale](c:semimartingale) $X$, the same formula with $d\\langle X\\rangle_s$ in place of $ds$ defines $L_t^x$, which is then right-continuous in $x$.",
+    "requires": [
+     "c:brownian-motion",
+     "c:radon-nikodym-derivative",
+     "c:lebesgue-measure"
+    ]
+   },
+   {
+    "id": "c:squared-bessel-process",
+    "name": "squared Bessel process",
+    "reminder": "The squared distance from the origin of a Brownian motion, extended to every real dimension δ ≥ 0.",
+    "definition": "For $\\delta \\ge 0$, the squared Bessel process of dimension $\\delta$, written BESQ($\\delta$), is the nonnegative solution of $dZ_t = \\delta\\,dt + 2\\sqrt{Z_t}\\,dW_t$ for a [Brownian motion](c:brownian-motion) $W$. Its transition law has the Laplace transform $E_z e^{-\\lambda Z_t} = (1+2\\lambda t)^{-\\delta/2} \\exp(-\\lambda z/(1+2\\lambda t))$.",
+    "requires": [
+     "c:brownian-motion",
+     "c:stochastic-differential-equation",
+     "c:markov-chain"
+    ]
+   }
+  ]
+ },
+ {
   "id": "nm:statphys-ito-excursion-theory",
   "statement": "The [excursions](c:excursion) of a [Brownian motion](c:brownian-motion) away from 0, labelled by the [local time](c:local-time) at 0, form a [Poisson random measure](c:poisson-random-measure) with intensity Lebesgue measure times a σ-finite measure $n$, the excursion measure.",
   "hypotheses": [
@@ -2078,7 +2395,7 @@
      {
       "id": "s:index-bound",
       "slogan": "A second-moment argument excludes an index above two.",
-      "detail": "Since $1 - \\mathrm{Re}\\,\\varphi(t) \\sim c|t|^\\alpha$ and $2(1 - \\mathrm{Re}\\,\\varphi(t))/t^2 \\to E[X^2]$, an index $\\alpha > 2$ gives $E[X^2] = 0$. Then $X$ has mean 0 and [variance](c:variance) 0, so the law is a point mass, which is a contradiction.",
+      "detail": "The symmetrized variable $X - X'$, with $X'$ an independent copy, has the characteristic function $|\\varphi(t)|^2 = e^{-2c|t|^\\alpha}$. Since $2(1 - |\\varphi(t)|^2)/t^2 \\to E[(X - X')^2]$, an index $\\alpha > 2$ gives $E[(X - X')^2] = 0$. Then $X$ is independent of itself, so the law is a point mass, which is a contradiction.",
       "uses": []
      },
      {
@@ -3478,249 +3795,5 @@
    }
   ],
   "new_concepts": []
- },
- {
-  "id": "nm:statphys-jensen-gap-bound",
-  "statement": "For a [twice differentiable](c:differentiable-function) function $\\varphi$ on $(a,b)$ and a square-integrable [random variable](c:random-variable) $X$ in $(a,b)$ with mean $\\mu$, the Jensen gap $E\\varphi(X) - \\varphi(\\mu)$ lies between $m\\,\\mathrm{Var}(X)$ and $M\\,\\mathrm{Var}(X)$, where $m, M$ are the infimum and supremum of the slope function $h$. Both lie between the bounds of $\\varphi''/2$.",
-  "hypotheses": [
-   {
-    "id": "h:smooth",
-    "text": "$\\varphi$ is [twice differentiable](c:differentiable-function) on the open interval $(a, b)$.",
-    "concept": "c:differentiable-function"
-   },
-   {
-    "id": "h:support",
-    "text": "The [random variable](c:random-variable) $X$ satisfies $P(X \\in (a,b)) = 1$ and $E[X^2] < \\infty$.",
-    "concept": "c:random-variable"
-   }
-  ],
-  "conclusion": "With $h(x) = \\frac{\\varphi(x) - \\varphi(\\mu) - \\varphi'(\\mu)(x-\\mu)}{(x-\\mu)^2}$, $m = \\inf_{x \\ne \\mu} h$ and $M = \\sup_{x \\ne \\mu} h$: $m\\,\\mathrm{Var}(X) \\le E\\varphi(X) - \\varphi(\\mu) \\le M\\,\\mathrm{Var}(X)$ whenever the constant is finite, and $\\inf \\varphi''/2 \\le m \\le M \\le \\sup \\varphi''/2$.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "exact-expansion",
-    "name": "Integrate the exact second-order expansion",
-    "slogan": "The slope function $h$ makes the second-order expansion of $\\varphi$ about the mean exact, and integration kills the linear term.",
-    "scope": "The whole theorem, including the existence of $E\\varphi(X)$ in each one-sided case and the equality case for quadratic $\\varphi$.",
-    "mechanisms": [
-     "m:algebraic-identity",
-     "m:linearity-of-expectation",
-     "m:taylor-expansion"
-    ],
-    "roles": [
-     {
-      "h": "h:smooth",
-      "why": "Differentiability at $\\mu$ defines $h$, and the second derivative gives the Lagrange remainder that compares $h$ with $\\varphi''/2$.",
-      "steps": [
-       "s:expand",
-       "s:curvature"
-      ]
-     },
-     {
-      "h": "h:support",
-      "why": "The support condition puts $\\mu$ inside $(a,b)$, and the finite second moment makes $(X-\\mu)^2$ integrable.",
-      "steps": [
-       "s:mean",
-       "s:integrate"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:mean",
-      "slogan": "Show that the mean lies strictly inside the interval of definition.",
-      "detail": "Since $X - a > 0$ almost surely and a nonnegative variable with mean zero vanishes, $E[X] > a$. In the same way $E[X] < b$, so $\\varphi(\\mu)$ and $\\varphi'(\\mu)$ exist.",
-      "uses": []
-     },
-     {
-      "id": "s:expand",
-      "slogan": "Write the remainder of the tangent line at the mean as $h(x)(x-\\mu)^2$.",
-      "detail": "Put $H(x) = \\varphi(x) - \\varphi(\\mu) - \\varphi'(\\mu)(x - \\mu)$. Then $H(x) = h(x)(x-\\mu)^2$ for $x \\ne \\mu$ and $H(\\mu) = 0$, so $m(x-\\mu)^2 \\le H(x) \\le M(x-\\mu)^2$ for all $x$.",
-      "uses": []
-     },
-     {
-      "id": "s:integrate",
-      "slogan": "Take expectations, so that the linear term vanishes and the variance appears.",
-      "detail": "The [expected value](c:expected-value) of $\\varphi'(\\mu)(X-\\mu)$ is zero. A finite $m$ bounds the negative part of $H(X)$ by an integrable variable, so $E\\varphi(X) - \\varphi(\\mu) = E H(X) \\ge m\\,\\mathrm{Var}(X)$. The upper bound is the same with $M$. The [variance](c:variance) is $E(X-\\mu)^2$.",
-      "uses": []
-     },
-     {
-      "id": "s:curvature",
-      "slogan": "Compare the slope function with half the second derivative by the Lagrange remainder.",
-      "detail": "Taylor's theorem with the Lagrange remainder gives $h(x) = \\varphi''(\\xi)/2$ for some $\\xi$ between $\\mu$ and $x$. So the [second derivative](c:second-derivative) bounds give $\\inf\\varphi''/2 \\le m$ and $M \\le \\sup\\varphi''/2$. For a [convex function](c:convex-function), $m \\ge 0$ recovers Jensen's inequality.",
-      "uses": [
-       "wd:Q1137206"
-      ]
-     }
-    ],
-    "edges": [
-     [
-      "s:mean",
-      "s:expand"
-     ],
-     [
-      "s:expand",
-      "s:integrate"
-     ],
-     [
-      "s:expand",
-      "s:curvature"
-     ],
-     [
-      "s:integrate",
-      "s:curvature"
-     ]
-    ],
-    "conclusion": "s:curvature",
-    "concepts": {
-     "c:differentiable-function": "Twice differentiability defines the slope function and the Lagrange remainder.",
-     "c:random-variable": "The random variable carries the law against which the expansion is integrated.",
-     "c:expected-value": "Expectation removes the linear term of the expansion because the mean of $X - \\mu$ is zero.",
-     "c:variance": "The variance is the integral of $(X-\\mu)^2$ and sets the scale of both bounds.",
-     "c:second-derivative": "Bounds on the second derivative give simpler constants for both bounds.",
-     "c:convex-function": "A convex function has nonnegative slope function, so the lower bound contains Jensen's inequality."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "J. G. Liao and A. Berg, Sharpening Jensen's Inequality, The American Statistician 73 (2019), arXiv:1707.08644v2, Theorem 1 and its proof, p. 3.",
-     "url": "https://arxiv.org/pdf/1707.08644",
-     "note": "The steps follow the source proof. The authored proof adds the location of the mean, the existence of the expectation in each one-sided case, and the exclusion of the point x = μ from the infimum and the supremum."
-    }
-   }
-  ],
-  "new_concepts": []
- },
- {
-  "id": "nm:statphys-bregman-conditional-mean",
-  "statement": "For a [Bregman divergence](c:bregman-divergence) $d_\\varphi$ of a [strictly convex](c:strictly-convex-function) differentiable $\\varphi$, the [conditional expectation](c:conditional-expectation) $Z = E[X \\mid \\mathcal G]$ minimizes $E\\,d_\\varphi(X, Y)$ over all $\\mathcal G$-measurable $Y$, and $E\\,d_\\varphi(X,Y) = E\\,d_\\varphi(X,Z) + E\\,d_\\varphi(Z,Y)$.",
-  "hypotheses": [
-   {
-    "id": "h:phi",
-    "text": "$\\varphi$ is [strictly convex](c:strictly-convex-function) and differentiable on a nonempty open convex set $U \\subseteq \\mathbb R^d$.",
-    "concept": "c:strictly-convex-function"
-   },
-   {
-    "id": "h:integrable",
-    "text": "$X$ is an integrable [random variable](c:random-variable) with values in $U$.",
-    "concept": "c:random-variable"
-   },
-   {
-    "id": "h:inside",
-    "text": "$\\mathcal G$ is a sub-[σ-algebra](c:sigma-algebra) and $Z = E[X \\mid \\mathcal G]$ lies in $U$ almost surely.",
-    "concept": "c:sigma-algebra"
-   }
-  ],
-  "conclusion": "For every $\\mathcal G$-measurable $U$-valued $Y$, $E\\,d_\\varphi(X,Y) = E\\,d_\\varphi(X,Z) + E\\,d_\\varphi(Z,Y)$ in $[0,\\infty]$. So $Z$ is a minimizer, and it is the unique one up to null sets when $E\\,d_\\varphi(X,Z) < \\infty$.",
-  "formal": null,
-  "proofs": [
-   {
-    "id": "three-point-truncation",
-    "name": "Three-point identity with truncation",
-    "slogan": "The three-point identity splits the loss into two divergences and a cross term, and the cross term has conditional mean zero.",
-    "scope": "The whole theorem, for every integrable $X$ and every sub-σ-algebra, including the case of infinite expected loss.",
-    "mechanisms": [
-     "m:algebraic-identity",
-     "m:dominated-convergence",
-     "m:monotone-limit"
-    ],
-    "roles": [
-     {
-      "h": "h:phi",
-      "why": "Strict convexity makes $d_\\varphi \\ge 0$ with equality only on the diagonal, which gives the minimizing property and uniqueness.",
-      "steps": [
-       "s:positive",
-       "s:limit"
-      ]
-     },
-     {
-      "h": "h:integrable",
-      "why": "Integrability of $X$ defines $Z$ and makes the truncated cross term integrable.",
-      "steps": [
-       "s:cross"
-      ]
-     },
-     {
-      "h": "h:inside",
-      "why": "The divergence $d_\\varphi(Z, Y)$ and the gradient $\\nabla\\varphi(Z)$ need $Z$ in the domain $U$.",
-      "steps": [
-       "s:identity",
-       "s:cross"
-      ]
-     }
-    ],
-    "steps": [
-     {
-      "id": "s:positive",
-      "slogan": "Show that the Bregman divergence is nonnegative and vanishes only on the diagonal.",
-      "detail": "Along the segment from $y$ to $x$, convexity bounds the slope at $y$ by a chord slope, and [strict convexity](c:strictly-convex-function) makes the bound strict, so $d_\\varphi(x,y) > 0$ for $x \\ne y$.",
-      "uses": []
-     },
-     {
-      "id": "s:identity",
-      "slogan": "Expand the three-point identity for the loss of a forecast $Y$ through $Z$.",
-      "detail": "Direct expansion gives $d_\\varphi(X,Y) = d_\\varphi(X,Z) + d_\\varphi(Z,Y) + \\langle W, X - Z\\rangle$ with $W = \\nabla\\varphi(Z) - \\nabla\\varphi(Y)$. The [gradient](c:gradient) $W$ is $\\mathcal G$-measurable.",
-      "uses": []
-     },
-     {
-      "id": "s:cross",
-      "slogan": "Kill the cross term on the sets where the gradient difference is bounded.",
-      "detail": "On $A_k = \\{|W| \\le k\\} \\in \\mathcal G$ the weight $1_{A_k}W$ is bounded and $\\mathcal G$-measurable. The defining property of the [conditional expectation](c:conditional-expectation), extended from indicators by dominated convergence, gives $E[1_{A_k}\\langle W, X - Z\\rangle] = 0$.",
-      "uses": [
-       "wd:Q1067156"
-      ]
-     },
-     {
-      "id": "s:limit",
-      "slogan": "Let the truncation level grow and read off minimality and uniqueness.",
-      "detail": "On $A_k$ the identity holds in expectation for the two nonnegative [Bregman divergence](c:bregman-divergence) terms. Monotone convergence as $k \\to \\infty$ gives the full identity. The term $E\\,d_\\varphi(Z,Y) \\ge 0$ vanishes only if $Y = Z$ almost surely.",
-      "uses": [
-       "wd:Q1153584"
-      ]
-     }
-    ],
-    "edges": [
-     [
-      "s:positive",
-      "s:limit"
-     ],
-     [
-      "s:identity",
-      "s:cross"
-     ],
-     [
-      "s:cross",
-      "s:limit"
-     ]
-    ],
-    "conclusion": "s:limit",
-    "concepts": {
-     "c:bregman-divergence": "The Bregman divergence is the loss that the theorem minimizes.",
-     "c:strictly-convex-function": "Strict convexity of the generator makes the divergence positive off the diagonal.",
-     "c:conditional-expectation": "The conditional expectation is the minimizer and makes the cross term vanish.",
-     "c:random-variable": "The observed quantity is an integrable random vector in the domain of the generator.",
-     "c:sigma-algebra": "The sub-σ-algebra describes the information available to the forecast.",
-     "c:gradient": "The gradient of the generator appears in the cross term of the three-point identity."
-    },
-    "source": {
-     "kind": "cited",
-     "ref": "A. Banerjee, S. Merugu, I. S. Dhillon and J. Ghosh, Clustering with Bregman Divergences, JMLR 6 (2005), Proposition 1 and its proof, pp. 1710-1711.",
-     "url": "https://www.jmlr.org/papers/volume6/banerjee05b/banerjee05b.pdf",
-     "note": "The source expands J(s) − J(μ) = d_φ(μ, s) for a law with finitely many atoms. The authored proof uses the same expansion as a pointwise three-point identity and adds a truncation step for conditional expectations of general integrable vectors."
-    }
-   }
-  ],
-  "new_concepts": [
-   {
-    "id": "c:bregman-divergence",
-    "name": "Bregman divergence",
-    "reminder": "The Bregman divergence of a convex function measures the gap between the function and its tangent plane.",
-    "definition": "Let $\\varphi$ be a [strictly convex function](c:strictly-convex-function) that is [differentiable](c:differentiable-function) on a convex open set $\\Omega\\subseteq\\mathbb{R}^d$. The Bregman divergence of $\\varphi$ is $D_\\varphi(x,y)=\\varphi(x)-\\varphi(y)-\\langle\\nabla\\varphi(y),x-y\\rangle$ for $x,y\\in\\Omega$, the gap at $x$ between $\\varphi$ and its tangent plane at $y$, where $\\nabla\\varphi$ is the [gradient](c:gradient). It satisfies $D_\\varphi(x,y)\\ge0$, with equality exactly when $x=y$, but in general it is not symmetric and does not satisfy the triangle inequality.",
-    "requires": [
-     "c:strictly-convex-function",
-     "c:gradient",
-     "c:differentiable-function"
-    ]
-   }
-  ]
  }
 ]
