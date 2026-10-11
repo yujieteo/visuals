@@ -183,7 +183,10 @@ def from_toon(text):
         out = {}
         while pos < len(lines):
             line = lines[pos]
-            ind = (len(line) - len(line.lstrip(" "))) // 2
+            spaces = len(line) - len(line.lstrip(" "))
+            if spaces % 2:
+                raise ValueError("TOON indentation must use pairs of spaces")
+            ind = spaces // 2
             if ind < depth:
                 break
             if ind > depth:
@@ -192,13 +195,20 @@ def from_toon(text):
             if not m:
                 raise ValueError(f"line {pos + 1}: not a TOON field: {line[:80]}")
             key, n, fields, rest = m["key"], m["n"], m["fields"], m["rest"]
+            if key in out:
+                raise ValueError(f"duplicate TOON key: {key}")
             pos += 1
             if n is not None and fields is not None:
                 names = [f.strip() for f in fields.split(",")]
+                if len(names) != len(set(names)) or any(not name for name in names):
+                    raise ValueError("duplicate or empty TOON table fields")
                 rows = []
                 for _ in range(int(n)):
                     if pos >= len(lines):
                         raise ValueError(f"{key}: expected {n} rows, found {len(rows)}")
+                    spaces = len(lines[pos]) - len(lines[pos].lstrip(" "))
+                    if spaces != 2 * (depth + 1):
+                        raise ValueError("TOON table row indentation differs from its table")
                     cells = _split_cells(lines[pos].strip())
                     if len(cells) != len(names):
                         raise ValueError(f"line {pos + 1}: {key} row has {len(cells)} cells, expected {len(names)}")
