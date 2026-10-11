@@ -224,6 +224,80 @@
      "alignment": "The source proves the derivative identity for the probabilists’ Hermite polynomials. The authored proof derives orthogonality by repeated integration by parts and proves the boundary conditions."
     }
    ]
+  },
+  {
+   "id": "nm:technique-lagrange-multipliers",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Calculus/LagrangeMultipliers.lean#L57-L81",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Calculus.LagrangeMultipliers",
+     "declaration": "IsLocalExtrOn.exists_linear_map_of_hasStrictFDerivAt",
+     "lines": [
+      57,
+      81
+     ],
+     "module_sha256": "ca502b8abb559dadb26e0f8a89060db3cc60b006cc8d1ab00074bed3312d9ee9",
+     "excerpt": "/-- Lagrange multipliers theorem: if `φ : E → ℝ` has a local extremum on the set `{x | f x = f x₀}`\nat `x₀`, both `f : E → F` and `φ` are strictly differentiable at `x₀`, and the codomain of `f` is\na complete space, then there exist `Λ : dual ℝ F` and `Λ₀ : ℝ` such that `(Λ, Λ₀) ≠ 0` and\n`Λ (f' x) + Λ₀ • φ' x = 0` for all `x`. -/\ntheorem IsLocalExtrOn.exists_linear_map_of_hasStrictFDerivAt\n    (hextr : IsLocalExtrOn φ {x | f x = f x₀} x₀) (hf' : HasStrictFDerivAt f f' x₀)\n    (hφ' : HasStrictFDerivAt φ φ' x₀) :\n    ∃ (Λ : Module.Dual ℝ F) (Λ₀ : ℝ), (Λ, Λ₀) ≠ 0 ∧ ∀ x, Λ (f' x) + Λ₀ • φ' x = 0 := by\n  rcases Submodule.exists_le_ker_of_lt_top _\n      (lt_top_iff_ne_top.2 <| hextr.range_ne_top_of_hasStrictFDerivAt hf' hφ') with\n    ⟨Λ', h0, hΛ'⟩\n  set e : ((F →ₗ[ℝ] ℝ) × ℝ) ≃ₗ[ℝ] F × ℝ →ₗ[ℝ] ℝ :=\n    ((LinearEquiv.refl ℝ (F →ₗ[ℝ] ℝ)).prodCongr (LinearMap.ringLmapEquivSelf ℝ ℝ ℝ).symm).trans\n      (LinearMap.coprodEquiv ℝ)\n  rcases e.surjective Λ' with ⟨⟨Λ, Λ₀⟩, rfl⟩\n  refine ⟨Λ, Λ₀, e.map_ne_zero_iff.1 h0, fun x => ?_⟩\n  convert! congr($(LinearMap.range_le_ker_iff.1 hΛ') x) using 1\n    -- squeezed `simp [mul_comm]` to speed up elaboration\n\n  -- squeezed `simp [mul_comm]` to speed up elaboration\n  simp only [e, smul_eq_mul, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,\n    LinearEquiv.refl_apply, LinearMap.ringLmapEquivSelf_symm_apply, LinearMap.coprodEquiv_apply,\n    ContinuousLinearMap.coe_prod, LinearMap.coprod_comp_prod, LinearMap.add_apply,\n    LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply, LinearMap.coe_smulRight,\n    Module.End.one_apply, mul_comm]",
+     "excerpt_sha256": "82b8b7e741e645eff29c6e10c40cc211fbfdbbd5e4296e747d37a5e9271f70ac",
+     "attribution": "/-\nCopyright (c) 2021 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the rule on Banach spaces with strict differentiability. The authored statement specializes to ℝⁿ with C¹ maps and gives the normal form with λ₀=1."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Calculus/LagrangeMultipliers.lean#L101-L122",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Calculus.LagrangeMultipliers",
+     "declaration": "IsLocalExtrOn.exists_multipliers_of_hasStrictFDerivAt",
+     "lines": [
+      101,
+      122
+     ],
+     "module_sha256": "ca502b8abb559dadb26e0f8a89060db3cc60b006cc8d1ab00074bed3312d9ee9",
+     "excerpt": "/-- Lagrange multipliers theorem, 1d version. Let `f : ι → E → ℝ` be a finite family of functions.\nSuppose that `φ : E → ℝ` has a local extremum on the set `{x | ∀ i, f i x = f i x₀}` at `x₀`.\nSuppose that all functions `f i` as well as `φ` are strictly differentiable at `x₀`.\nThen the derivatives `f' i : E → L[ℝ] ℝ` and `φ' : StrongDual ℝ E` are linearly dependent:\nthere exist `Λ : ι → ℝ` and `Λ₀ : ℝ`, `(Λ, Λ₀) ≠ 0`, such that `∑ i, Λ i • f' i + Λ₀ • φ' = 0`.\n\nSee also `IsLocalExtrOn.linear_dependent_of_hasStrictFDerivAt` for a version that\nstates `¬LinearIndependent ℝ _` instead of existence of `Λ` and `Λ₀`. -/\ntheorem IsLocalExtrOn.exists_multipliers_of_hasStrictFDerivAt {ι : Type*} [Fintype ι]\n    {f : ι → E → ℝ} {f' : ι → StrongDual ℝ E} (hextr : IsLocalExtrOn φ {x | ∀ i, f i x = f i x₀} x₀)\n    (hf' : ∀ i, HasStrictFDerivAt (f i) (f' i) x₀) (hφ' : HasStrictFDerivAt φ φ' x₀) :\n    ∃ (Λ : ι → ℝ) (Λ₀ : ℝ), (Λ, Λ₀) ≠ 0 ∧ (∑ i, Λ i • f' i) + Λ₀ • φ' = 0 := by\n  let := Classical.decEq ι\n  replace hextr : IsLocalExtrOn φ {x | (fun i => f i x) = fun i => f i x₀} x₀ := by\n    simpa only [funext_iff] using hextr\n  rcases hextr.exists_linear_map_of_hasStrictFDerivAt (hasStrictFDerivAt_pi.2 fun i => hf' i)\n      hφ' with\n    ⟨Λ, Λ₀, h0, hsum⟩\n  rcases (LinearEquiv.piRing ℝ ℝ ι ℝ).symm.surjective Λ with ⟨Λ, rfl⟩\n  refine ⟨Λ, Λ₀, ?_, ?_⟩\n  · simpa only [Ne, Prod.ext_iff, LinearEquiv.map_eq_zero_iff, Prod.fst_zero] using! h0\n  · ext x; simpa [mul_comm] using hsum x",
+     "excerpt_sha256": "359dd2fcfbd23eb56b09554c354aa9ebf1d4e8deaca66b8659f4842592019349",
+     "attribution": "/-\nCopyright (c) 2021 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives multipliers for a finite family of real constraints. This matches the authored vector f=(f₁,…,fₘ)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gauss-lemma-primitive-polynomials",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Content.lean#L371-L375",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.Content",
+     "declaration": "IsPrimitive.mul",
+     "lines": [
+      371,
+      375
+     ],
+     "module_sha256": "fc6ec636967cffdaea169b4b928849ec2776e41d19e8b05f503a6f60029e9adb",
+     "excerpt": "theorem IsPrimitive.mul {p q : R[X]} (hp : p.IsPrimitive) (hq : q.IsPrimitive) :\n    (p * q).IsPrimitive := by\n  rw [isPrimitive_iff_content_eq_one, ← normalize_content, normalize_eq_one]\n  refine (associated_content_mul p q).symm.isUnit ?_\n  simp_rw [hp.content_eq_one, hq.content_eq_one, mul_one, isUnit_one]",
+     "excerpt_sha256": "5f9bae5f438a7e64a581d42707c4aa18d6b2781de0c855fd678070c355498fe7",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the product of primitive polynomials over a normalized GCD domain is primitive. The authored proof specializes to ℤ and uses reduction modulo a prime."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/GaussLemma.lean#L316-L320",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.Polynomial.GaussLemma",
+     "declaration": "IsPrimitive.Int.irreducible_iff_irreducible_map_cast",
+     "lines": [
+      316,
+      320
+     ],
+     "module_sha256": "08ce3f7d8206785fb3d9e9e56d9737ed3a9fb5b8e68a08a39666de4555c8d700",
+     "excerpt": "/-- **Gauss's Lemma** for `ℤ` states that a primitive integer polynomial is irreducible iff it is\n  irreducible over `ℚ`. -/\ntheorem IsPrimitive.Int.irreducible_iff_irreducible_map_cast {p : ℤ[X]} (hp : p.IsPrimitive) :\n    Irreducible p ↔ Irreducible (p.map (Int.castRingHom ℚ)) :=\n  hp.irreducible_iff_irreducible_map_fraction_map",
+     "excerpt_sha256": "19a04f185944d66a0ee3012afc88e72e6d2a5e4d7161f9d939fc86bce34b8d29",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states the equivalence for primitive integer polynomials. It matches statement (2)."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [
