@@ -164,10 +164,19 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
       - run: npm ci
+      # apt sometimes stalls on the runner's Ubuntu mirror while it fetches the browser's system libraries, and
+      # the job then hangs until its timeout. An install takes under a minute, so an attempt stops after 5 minutes
+      # and the next one resumes the download, at most 3 times.
       - name: Install the browser
         env:
           MATRIX_PROJECT: ${{ matrix.project }}
-        run: npx playwright install --with-deps "${MATRIX_PROJECT%%-*}"
+        run: |
+          for attempt in 1 2 3; do
+            timeout --kill-after=30 300 npx playwright install --with-deps "${MATRIX_PROJECT%%-*}" && exit 0
+            echo "::warning::attempt $attempt to install the browser failed or stalled"
+            sudo dpkg --configure -a || true
+          done
+          exit 1
       - name: Baseline checks
         run: npm run test:baseline
       - name: Standalone contract, offline from file:// in an empty folder
