@@ -5,16 +5,15 @@ A path in viz/<slug>/ selects that visual. A shared file that visuals list in "u
 selects those visuals only. Documentation selects none. Any other path is shared tooling (scripts, schema,
 tests of the tooling, package.json, CI) and selects every visual.
 
-The browser checks are chosen apart: a selected visual runs its own, unless its page moved to yujieteo/site, and a path in e2e/site/<slug>/ runs
-the browser checks of that visual the site keeps itself. The browser harness (the rest of e2e/) and CI run
-every visual's browser checks, every visual the site keeps included; the harness selects no visual's other
+The browser checks are chosen apart: a selected visual runs its own, unless its page moved to yujieteo/site.
+The browser harness (e2e/) and CI run every visual's browser checks; the harness selects no visual's other
 checks, while CI, like the rest of the shared tooling, selects them all. The rest of the shared tooling,
 which the harness does not use, runs no browser checks.
 
 Usage: scripts/changed.py [--base REF] [--github-output]
 
-Without --base every visual is selected, and the browser checks also cover every visual the site keeps. With
-it, the change is everything since the merge base of REF and HEAD, plus uncommitted and untracked files.
+Without --base every visual is selected. With it, the change is everything since the merge base of REF and
+HEAD, plus uncommitted and untracked files.
 --github-output also writes `slugs=<JSON list>` and `browser=<JSON list of browser jobs>` to $GITHUB_OUTPUT
 for the CI matrices.
 """
@@ -29,7 +28,7 @@ from visuals import ROOT, VIZ, folders, visuals
 # Paths that change no visual's behaviour: the repository-wide job still checks them.
 DOCS_FILES = {"LICENSE", "e2e/LICENSE", ".gitignore", ".gitattributes", ".github/pull_request_template.md"}
 DOCS_DIRS = ("docs/", ".agents/")
-E2E, E2E_SITE = "e2e/", "e2e/site/"
+E2E = "e2e/"
 # Shared paths the browser checks depend on: the harness and CI.
 BROWSER_TOOLING = (E2E, ".github/")
 # Up to this many browser targets each get their own job per browser; more are split into SHARDS jobs.
@@ -51,12 +50,10 @@ def uses_index(by_slug):
 
 
 def scan(paths, root):
-    """Sort a change's paths into (every slug, the visuals it touches, the site visuals whose browser checks it
-    touches, the shared paths it touches)."""
+    """Sort a change's paths into (every slug, the visuals it touches, the shared paths it touches)."""
     existing = {folder.name for folder in folders(root)}
-    catalogue = visuals(root)
-    used = uses_index(catalogue)
-    selected, site, shared = set(), set(), []
+    used = uses_index(visuals(root))
+    selected, shared = set(), []
     for path in paths:
         parts = path.split("/")
         if parts[0] == VIZ and len(parts) > 2:
@@ -66,15 +63,9 @@ def scan(paths, root):
         users = {slug for prefix, slugs in used.items() if path == prefix or path.startswith(prefix + "/") for slug in slugs}
         if users:
             selected |= users
-        elif is_docs(path):
-            continue
-        elif path.startswith(E2E_SITE) and len(parts) > 3:
-            # A public visual supersedes its former site-owned browser target.
-            if parts[2] not in catalogue or catalogue[parts[2]].get("published", True) is False:
-                site.add(parts[2])
-        else:
+        elif not is_docs(path):
             shared.append(path)
-    return existing, selected, site, shared
+    return existing, selected, shared
 
 
 def shared_reason(shared):
@@ -83,28 +74,22 @@ def shared_reason(shared):
 
 def select(paths, root=ROOT):
     """Return (sorted slugs, reason) for a change to ``paths``: the visuals whose own checks run."""
-    existing, selected, _, shared = scan(paths, root)
+    existing, selected, shared = scan(paths, root)
     shared = [path for path in shared if not path.startswith(E2E)]
     if shared:
         return sorted(existing), shared_reason(shared)
     return sorted(selected), ("changed visuals" if selected else "no visual changed")
 
 
-def browser_jobs(slugs, site=(), every_site_visual=False):
-    """The browser jobs for these visuals, those the site keeps, and every one it keeps when asked.
+def browser_jobs(slugs):
+    """The browser jobs for these visuals: one each, or SHARDS jobs when there are more than MAX_BROWSER_JOBS.
 
-    Each job is {"name", "only": E2E_ONLY's comma-separated slugs, empty for every site visual, "site": whether
-    it needs a clone of yujieteo/site}.
+    Each job is {"name", "only": E2E_ONLY's comma-separated slugs}.
     """
-    jobs = [{"name": slug, "only": slug, "site": True} for slug in sorted(site)]
     slugs = sorted(slugs)
-    if len(jobs) + len(slugs) <= MAX_BROWSER_JOBS:
-        jobs += [{"name": slug, "only": slug, "site": False} for slug in slugs]
-    else:
-        jobs += [{"name": f"shard {i + 1} of {SHARDS}", "only": ",".join(slugs[i::SHARDS]), "site": False} for i in range(SHARDS)]
-    if every_site_visual:
-        jobs.append({"name": "every site visual", "only": "", "site": True})
-    return jobs
+    if len(slugs) <= MAX_BROWSER_JOBS:
+        return [{"name": slug, "only": slug} for slug in slugs]
+    return [{"name": f"shard {i + 1} of {SHARDS}", "only": ",".join(slugs[i::SHARDS])} for i in range(SHARDS)]
 
 
 def with_pages(slugs, root=ROOT):
@@ -116,12 +101,12 @@ def with_pages(slugs, root=ROOT):
 
 def browser(paths, root=ROOT):
     """Return (browser jobs, reason) for a change to ``paths``."""
-    existing, selected, site, shared = scan(paths, root)
+    existing, selected, shared = scan(paths, root)
     tooling = [path for path in shared if path.startswith(BROWSER_TOOLING)]
     if tooling:
-        return browser_jobs(with_pages(existing, root), every_site_visual=True), shared_reason(tooling)
+        return browser_jobs(with_pages(existing, root)), shared_reason(tooling)
     selected = with_pages(selected, root)
-    return browser_jobs(selected, site), ("changed visuals" if selected or site else "no visual changed")
+    return browser_jobs(selected), ("changed visuals" if selected else "no visual changed")
 
 
 def git(*args):
@@ -153,15 +138,6 @@ def selection(base):
     return select(paths) if paths is not None else ([folder.name for folder in folders()], reason)
 
 
-def browser_selection(base):
-    """Return (browser jobs, reason) for the change against ``base``; every visual, the site's too, when it
-    cannot be listed."""
-    paths, reason = change(base)
-    if paths is not None:
-        return browser(paths)
-    return browser_jobs(with_pages([folder.name for folder in folders()]), every_site_visual=True), reason
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--base", help="git ref to compare against; omit to select every visual")
@@ -170,7 +146,7 @@ def main(argv=None):
     paths, reason = change(args.base)
     if paths is None:
         slugs = [folder.name for folder in folders()]
-        jobs = browser_jobs(with_pages(slugs), every_site_visual=True)
+        jobs = browser_jobs(with_pages(slugs))
         browser_reason = reason
     else:
         slugs, reason = select(paths, root=ROOT)

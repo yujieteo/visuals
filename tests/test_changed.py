@@ -23,7 +23,7 @@ class SelectTest(unittest.TestCase):
         return select(list(paths), root=self.layout.root)[0]
 
     def browser(self, *paths):
-        return [(job["only"], job["site"]) for job in browser(list(paths), root=self.layout.root)[0]]
+        return [job["only"] for job in browser(list(paths), root=self.layout.root)[0]]
 
     def test_a_path_in_a_folder_selects_that_visual_only(self):
         self.assertEqual(self.select("viz/alpha/index.html"), ["alpha"])
@@ -41,43 +41,27 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(self.select("README.md", "SKILLS.md", "docs/monorepo.md", ".gitignore"), [])
 
     def test_documentation_under_e2e_selects_none(self):
-        self.assertEqual(self.select("e2e/README.md", "e2e/site/beamdswitch/NOTES.md", "e2e/LICENSE"), [])
-        self.assertEqual(self.browser("e2e/README.md", "e2e/site/beamdswitch/NOTES.md", "e2e/LICENSE"), [])
+        self.assertEqual(self.select("e2e/README.md", "e2e/lib/NOTES.md", "e2e/LICENSE"), [])
+        self.assertEqual(self.browser("e2e/README.md", "e2e/lib/NOTES.md", "e2e/LICENSE"), [])
 
     def test_a_visual_runs_its_own_browser_checks_only(self):
-        self.assertEqual(self.browser("viz/alpha/index.html"), [("alpha", False)])
-        self.assertEqual(self.browser("scripts/family.py"), [("beta", False), ("gamma", False)])
+        self.assertEqual(self.browser("viz/alpha/index.html"), ["alpha"])
+        self.assertEqual(self.browser("scripts/family.py"), ["beta", "gamma"])
 
     def test_a_visual_whose_page_moved_to_the_site_has_no_browser_checks(self):
         self.layout.visual("delta", metadata(site_page="play/delta/", webmcp_tools=None), ("raw.json",))
         self.assertEqual(self.select("viz/delta/raw.json"), ["delta"])
         self.assertEqual(self.browser("viz/delta/raw.json"), [])
-        self.assertNotIn(("delta", False), self.browser("e2e/lib/full.js"))
-
-    def test_a_public_visual_supersedes_the_former_site_browser_target(self):
-        self.assertEqual(self.browser("viz/alpha/index.html", "e2e/site/alpha/full.test.js"),
-                         [("alpha", False)])
-        self.layout.visual("prototype", metadata(published=False))
-        self.assertEqual(self.browser("e2e/site/prototype/full.test.js"), [("prototype", True)])
-
-    def test_a_site_visuals_checks_run_only_its_browser_checks_with_the_site(self):
-        paths = ("e2e/site/beamdswitch/full.test.js", "e2e/site/beamdswitch/manifest.json")
-        self.assertEqual(self.select(*paths), [])
-        self.assertEqual(self.browser(*paths), [("beamdswitch", True)])
-        self.assertEqual(self.browser("viz/alpha/index.html", "e2e/site/connes-qft/manifest.json"), [("connes-qft", True), ("alpha", False)])
+        self.assertNotIn("delta", self.browser("e2e/lib/full.js"))
 
     def test_the_browser_harness_runs_every_visuals_browser_checks_and_no_other_checks(self):
         for path in ("e2e/lib/targets.js", "e2e/tests/baseline.test.js", "e2e/package.json", "e2e/package-lock.json", "e2e/scripts/findings.js"):
             self.assertEqual(self.select(path), [], path)
-            self.assertEqual(self.browser(path), [("alpha", False), ("beta", False), ("gamma", False), ("", True)], path)
-
-    def test_the_browser_harness_tests_every_site_visual_in_one_job_only(self):
-        jobs = self.browser("e2e/lib/full.js", "e2e/site/beamdswitch/full.test.js")
-        self.assertEqual(jobs, [("alpha", False), ("beta", False), ("gamma", False), ("", True)])
+            self.assertEqual(self.browser(path), ["alpha", "beta", "gamma"], path)
 
     def test_ci_runs_every_check(self):
         self.assertEqual(self.select(".github/workflows/ci.yml"), ["alpha", "beta", "gamma"])
-        self.assertEqual(self.browser(".github/workflows/ci.yml"), [("alpha", False), ("beta", False), ("gamma", False), ("", True)])
+        self.assertEqual(self.browser(".github/workflows/ci.yml"), ["alpha", "beta", "gamma"])
 
     def test_shared_tooling_the_harness_does_not_use_runs_no_browser_checks(self):
         for path in ("scripts/check.py", "package.json", "package-lock.json", "schema/visual.schema.json", "tests/test_changed.py"):
@@ -85,16 +69,9 @@ class SelectTest(unittest.TestCase):
 
     def test_too_many_browser_targets_split_into_shards_that_cover_each_once(self):
         slugs = [f"v{i:02}" for i in range(changed.MAX_BROWSER_JOBS + 1)]
-        jobs = browser_jobs(slugs, site=["beamdswitch"])
-        self.assertEqual(jobs[0], {"name": "beamdswitch", "only": "beamdswitch", "site": True})
-        shards = [job["only"].split(",") for job in jobs[1:]]
+        shards = [job["only"].split(",") for job in browser_jobs(slugs)]
         self.assertEqual(len(shards), changed.SHARDS)
         self.assertEqual(sorted(slug for shard in shards for slug in shard), slugs)
-        self.assertFalse(any(job["site"] for job in jobs[1:]))
-
-    def test_every_site_visual_adds_one_job_naming_none(self):
-        jobs = browser_jobs(["alpha"], every_site_visual=True)
-        self.assertEqual([(job["only"], job["site"]) for job in jobs], [("alpha", False), ("", True)])
 
     def test_command_uses_the_same_changed_paths_for_visual_and_browser_jobs(self):
         output = self.layout.root / "github-output"
@@ -107,7 +84,7 @@ class SelectTest(unittest.TestCase):
             changed.main(["--base", "HEAD", "--github-output"])
         rows = dict(line.split("=", 1) for line in output.read_text().splitlines())
         self.assertEqual(json.loads(rows["slugs"]), ["alpha"])
-        self.assertEqual(json.loads(rows["browser"]), [{"name": "alpha", "only": "alpha", "site": False}])
+        self.assertEqual(json.loads(rows["browser"]), [{"name": "alpha", "only": "alpha"}])
 
     def test_a_removed_visual_selects_nothing(self):
         self.assertEqual(self.select("viz/deleted/index.html"), [])

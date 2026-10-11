@@ -1,4 +1,4 @@
-// Types for beamdswitch.js, yujieteo/site's report template, which stays byte-identical to the site's and is never
+// Types for beamdswitch.js, the beamdswitch report template, which visuals copy byte for byte and which is never
 // type-checked itself: a require() of it, as in scripts/kit/checks.mjs, reads these types in its place.
 export interface BeamdswitchFrame {
   title: string;

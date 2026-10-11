@@ -2,22 +2,18 @@
 //
 //   E2E_VISUALS   the yujieteo/visuals checkout whose viz/*/ visuals are
 //                 staged and tested (default: this repository)
-//   E2E_SITE      a clone of yujieteo/site, to also test the visuals the site
-//                 keeps itself (visuals/<slug>/; default .cache/site, skipped
-//                 when absent)
 //   E2E_BASE_URL  test already-served artifacts at <base>/<slug>/ instead,
 //                 e.g. http://localhost:8000/visuals for a built site/
 //   E2E_ARTIFACT  test one artifact: a folder holding index.html (such as a
 //                 visual's own repository), an HTML file, or a URL; name it
 //                 with E2E_SLUG when its folder name is not the slug
 //   E2E_ONLY      comma-separated slugs to keep
-//   E2E_SOURCE    keep only the visuals built in this place: site or visuals
 //   E2E_SHARD     i/n: keep every n-th visual starting at the i-th (1-based)
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { discoverVisuals, discoverVisualsRepo } from "./catalogue.js";
+import { discoverVisualsRepo } from "./catalogue.js";
 import { serveArtifacts } from "./server.js";
 import { stageVisual } from "./stage.js";
 
@@ -45,17 +41,8 @@ import { stageVisual } from "./stage.js";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * @param {string} name
- * @param {string} fallback
- */
-function dirFromEnv(name, fallback) {
-  const value = process.env[name];
-  return value ? resolve(value) : join(ROOT, fallback);
-}
-
-/**
- * Keep the visuals named by E2E_ONLY, built where E2E_SOURCE says, and the shard named by E2E_SHARD.
- * @template {{ slug: string, source?: string }} T
+ * Keep the visuals named by E2E_ONLY, and the shard named by E2E_SHARD.
+ * @template {{ slug: string }} T
  * @param {T[]} items
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {T[]}
@@ -63,7 +50,6 @@ function dirFromEnv(name, fallback) {
 export function selectShard(items, env = process.env) {
   const only = (env.E2E_ONLY ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   let kept = only.length ? items.filter((item) => only.includes(item.slug)) : items;
-  if (env.E2E_SOURCE) kept = kept.filter((item) => item.source === env.E2E_SOURCE);
   const shard = env.E2E_SHARD;
   if (shard) {
     const match = /^(\d+)\/(\d+)$/.exec(shard);
@@ -84,8 +70,7 @@ function adHocVisual(slug, folder) {
   const docs = folder ? ["README.md", "AGENTS.md"].map((n) => join(folder, n)).filter((p) => existsSync(p))
     .map((p) => readFileSync(p, "utf8")).join("\n") : "";
   return {
-    slug, title: slug, summary: "", source: "site", htmlPath: "", dataPath: null, assets: [], pin: null,
-    catalogued: false,
+    slug, title: slug, summary: "", htmlPath: "", dataPath: null, assets: [],
     offlineClaim: /\boffline\b|\bfile:\/\/|no network access/i.test(docs),
     owner: process.env.E2E_OWNER ?? "https://github.com/yujieteo/visuals",
   };
@@ -93,19 +78,13 @@ function adHocVisual(slug, folder) {
 
 /**
  * Resolve the artifacts under test and serve the local ones.
- * @param {{ only?: string[] }} [options] keep just these slugs, whatever E2E_ONLY, E2E_SOURCE and E2E_SHARD say
+ * @param {{ only?: string[] }} [options] keep just these slugs, whatever E2E_ONLY and E2E_SHARD say
  * @returns {Promise<Targets>}
  */
 export async function loadTargets(options = {}) {
-  const siteRoot = dirFromEnv("E2E_SITE", ".cache/site");
   const visualsRepo = process.env.E2E_VISUALS ? resolve(process.env.E2E_VISUALS) : resolve(ROOT, "..");
-  // The visuals repository's own visuals, then any the site keeps itself (a site stub for a visual that
-  // now lives in viz/ is the older copy, so the folder wins).
-  const own = existsSync(join(visualsRepo, "viz")) ? discoverVisualsRepo(visualsRepo) : [];
-  const ownSlugs = new Set(own.map((v) => v.slug));
-  const site = existsSync(join(siteRoot, "data", "visuals"))
-    ? discoverVisuals(siteRoot).filter((v) => v.source === "site" && !ownSlugs.has(v.slug)) : [];
-  const catalogue = own.length || site.length ? [...own, ...site].sort((a, b) => a.slug.localeCompare(b.slug)) : null;
+  const visuals = existsSync(join(visualsRepo, "viz")) ? discoverVisualsRepo(visualsRepo) : [];
+  const catalogue = visuals.length ? visuals : null;
   const bySlug = new Map((catalogue ?? []).map((v) => [v.slug, v]));
   /** @type {Artifact[]} */
   let artifacts;
@@ -124,7 +103,7 @@ export async function loadTargets(options = {}) {
       artifacts = [{ slug, visual: bySlug.get(slug) ?? adHocVisual(slug, folder), folder, entry: isDir ? "index.html" : basename(path), remoteUrl: null, stageError: null }];
     }
   } else {
-    if (!catalogue) throw new Error(`No artifacts to test: no viz/ in ${visualsRepo} and no yujieteo/site clone in ${siteRoot}; set E2E_VISUALS or E2E_SITE, or E2E_ARTIFACT to one artifact.`);
+    if (!catalogue) throw new Error(`No artifacts to test: no viz/ in ${visualsRepo}; set E2E_VISUALS, or E2E_ARTIFACT to one artifact.`);
     const base = process.env.E2E_BASE_URL?.replace(/\/$/, "");
     const tmpRoot = process.env.E2E_TMP ?? join(tmpdir(), "visuals-e2e");
     mkdirSync(tmpRoot, { recursive: true });
@@ -135,7 +114,7 @@ export async function loadTargets(options = {}) {
       /** @type {Artifact} */
       const artifact = { slug: visual.slug, visual, folder: null, entry: "index.html", remoteUrl: base ? `${base}/${visual.slug}/` : null, stageError: null };
       try {
-        artifact.folder = stageVisual(visual, { siteRoot, visualsRepo, stagingRoot: root });
+        artifact.folder = stageVisual(visual, { visualsRepo, stagingRoot: root });
       } catch (error) {
         artifact.stageError = error instanceof Error ? error.message : String(error);
       }

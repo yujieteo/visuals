@@ -21,7 +21,7 @@ Run `python3 scripts/new_visual.py <slug> --title "..." --summary "..."` (add
 `--mathjax` when the visual needs it), then replace the starter
 model, views, report and data with the domain and run `python3 build.py` in
 the folder. `SKILLS.md` says what the generator writes and what stays manual.
-Nothing else needs an edit: CI, the catalogue and the site find the folder.
+Nothing else needs an edit: CI and the catalogue find the folder.
 
 ## Rules
 
