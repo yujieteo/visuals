@@ -583,5 +583,1067 @@
     ]
    }
   ]
+ },
+ {
+  "id": "nm:statphys-rayleigh-monotonicity",
+  "statement": "In a finite [electrical network](c:electrical-network), raising the resistance of edges cannot decrease the [effective resistance](c:effective-resistance) between two vertices, and adding an edge cannot increase it.",
+  "hypotheses": [
+   {
+    "id": "h:network",
+    "text": "$G = (V,E)$ is a finite [connected graph](c:connected-graph), and $a \\ne z$ are vertices.",
+    "concept": "c:connected-graph"
+   },
+   {
+    "id": "h:order",
+    "text": "The resistances satisfy $0 < r(e) \\le r'(e) < \\infty$ on every edge $e$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$R(a \\leftrightarrow z; r) \\le R(a \\leftrightarrow z; r')$, and adding an edge to $G$ does not increase $R(a \\leftrightarrow z)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "thomson-test-flow",
+    "name": "Test flow from the other network",
+    "slogan": "Use the current flow of the larger resistances as a test flow in Thomson's principle for the smaller ones.",
+    "scope": "Both parts: monotonicity in the resistances and the effect of adding an edge.",
+    "mechanisms": [
+     "m:energy-functional",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:network",
+      "why": "Thomson's principle needs a finite connected network, and adding an edge keeps the graph connected.",
+      "steps": [
+       "s:test-flow",
+       "s:add-edge"
+      ]
+     },
+     {
+      "h": "h:order",
+      "why": "The pointwise order of the resistances compares the two energies of the same flow term by term.",
+      "steps": [
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:test-flow",
+      "slogan": "Take the unit current flow of $r'$ as a test [flow](c:flow-network) for $r$.",
+      "detail": "Unit flows from $a$ to $z$ depend only on the graph. So the unit current flow $i'$ of the network with resistances $r'$ is admissible for $r$, and Thomson's principle gives $R(a \\leftrightarrow z; r) \\le \\sum_e r(e) i'(e)^2$.",
+      "uses": [
+       "nm:statphys-thomson-principle"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two energies of the same flow term by term.",
+      "detail": "Since $r(e) \\le r'(e)$ on every edge, $\\sum_e r(e) i'(e)^2 \\le \\sum_e r'(e) i'(e)^2$, and the right side equals $R(a \\leftrightarrow z; r')$ because the current flow attains the minimum in Thomson's principle.",
+      "uses": [
+       "nm:statphys-thomson-principle"
+      ]
+     },
+     {
+      "id": "s:add-edge",
+      "slogan": "Extend the current flow of $G$ by zero on a new edge.",
+      "detail": "The extension keeps the node law and the energy, so it is a unit flow in the larger graph with energy equal to the [effective resistance](c:effective-resistance) of $G$. Thomson's principle in the larger graph gives the second claim.",
+      "uses": [
+       "nm:statphys-thomson-principle"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine both comparisons into the monotonicity principle.",
+      "detail": "The comparison of energies gives part (i), and the zero extension gives part (ii). In terms of conductances, the effective conductance is nondecreasing in each edge conductance.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:test-flow",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:conclude"
+     ],
+     [
+      "s:add-edge",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:electrical-network": "The networks compared are electrical networks on the same graph.",
+     "c:effective-resistance": "The effective resistance is the quantity whose monotonicity the principle states.",
+     "c:connected-graph": "Connectivity makes the effective resistance finite and lets Thomson's principle apply.",
+     "c:flow-network": "Unit flows from $a$ to $z$ are the test objects shared by both networks."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. A. Levin and Y. Peres, Markov Chains and Mixing Times, 2nd ed. (AMS 2017), Theorem 9.12 and Corollary 9.13, p. 123.",
+     "url": "https://pages.uoregon.edu/dlevin/MARKOV/mcmt2e.pdf",
+     "note": "The steps follow the source proof through Thomson's principle and make the test flow explicit."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:effective-resistance",
+    "name": "effective resistance",
+    "reminder": "The effective resistance between two vertices is the voltage drop per unit current that flows between them.",
+    "definition": "In a finite [electrical network](c:electrical-network), let $v$ be the voltage that is [harmonic](c:harmonic-function) off $\\{a,z\\}$ with $v(a)=1$ and $v(z)=0$, and let $\\|i\\|$ be the strength of the resulting current from $a$ to $z$. The effective resistance is $R_{\\mathrm{eff}}(a\\leftrightarrow z)=1/\\|i\\|=1/(c(a)\\,\\mathbb P_a(\\tau_z<\\tau_a^+))$. By Thomson's principle, it is also the minimum of the energy $\\sum_er(e)\\theta(e)^2$ over unit flows $\\theta$ from $a$ to $z$.",
+    "requires": [
+     "c:electrical-network",
+     "c:harmonic-function"
+    ]
+   },
+   {
+    "id": "c:electrical-network",
+    "name": "electrical network",
+    "reminder": "An electrical network is a graph with positive edge conductances, and it defines a reversible random walk.",
+    "definition": "An electrical network is a connected, locally finite [graph](c:graph) $G=(V,E)$ with a conductance $c(e)>0$ on each edge and resistance $r(e)=1/c(e)$. Its [random walk](c:random-walk) moves from $x$ to a neighbor $y$ with probability $c(x,y)/c(x)$, where $c(x)=\\sum_yc(x,y)$, and it is reversible with respect to $\\pi(x)=c(x)$. Voltages are functions that are [harmonic](c:harmonic-function) for this walk away from the sources, and the current is $i(x,y)=c(x,y)(v(x)-v(y))$ by Ohm's law.",
+    "requires": [
+     "c:graph",
+     "c:random-walk",
+     "c:harmonic-function",
+     "c:markov-chain"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-thomson-principle",
+  "statement": "On a finite [electrical network](c:electrical-network), the [effective resistance](c:effective-resistance) between two vertices $a \\ne z$ equals the minimum energy $\\sum_e r(e)\\theta(e)^2$ of a unit [flow](c:flow-network) from $a$ to $z$, and the unit current flow is the unique minimizer.",
+  "hypotheses": [
+   {
+    "id": "h:network",
+    "text": "$G = (V, E)$ is a finite [connected graph](c:connected-graph), and each edge carries a conductance $c(x,y) = c(y,x) > 0$ with resistance $r = 1/c$.",
+    "concept": "c:electrical-network"
+   },
+   {
+    "id": "h:terminals",
+    "text": "The vertices $a$ and $z$ are distinct.",
+    "concept": null
+   }
+  ],
+  "conclusion": "With $i$ the unit current flow, every unit flow $\\theta$ from $a$ to $z$ satisfies $\\mathcal{E}(\\theta) = R(a \\leftrightarrow z) + \\mathcal{E}(\\theta - i)$, so $R(a \\leftrightarrow z) = \\min_\\theta \\mathcal{E}(\\theta)$ and $i$ is the unique minimizer.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "orthogonal-decomposition",
+    "name": "Orthogonal decomposition of flows",
+    "slogan": "Split any unit flow into the current flow plus a sourceless flow, which is orthogonal to the current in the resistance inner product.",
+    "scope": "The whole theorem, including the existence and uniqueness of the voltage and the positivity of the current strength.",
+    "mechanisms": [
+     "m:maximum-principle",
+     "m:dimension-count",
+     "m:algebraic-identity",
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:network",
+      "why": "Finiteness makes the voltage equations a square linear system, connectivity drives the maximum principle, and positive resistances make the energy of a nonzero flow positive.",
+      "steps": [
+       "s:voltage",
+       "s:current",
+       "s:minimum"
+      ]
+     },
+     {
+      "h": "h:terminals",
+      "why": "Distinct terminals give distinct boundary values $W(a) = 1$ and $W(z) = 0$, so the current has positive strength.",
+      "steps": [
+       "s:voltage",
+       "s:current"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:voltage",
+      "slogan": "Solve the boundary value problem for the voltage with the discrete maximum principle.",
+      "detail": "The conditions $W(a)=1$, $W(z)=0$ and [harmonic](c:harmonic-function) at the other vertices form a square linear system. A solution with zero boundary data attains its maximum on $\\{a,z\\}$, because the maximum spreads to all neighbours of an interior maximum point. So the homogeneous system has only the zero solution, and rank-nullity gives a unique voltage with $0 \\le W \\le 1$.",
+      "uses": [
+       "wd:Q303402"
+      ]
+     },
+     {
+      "id": "s:current",
+      "slogan": "Normalize the current of the voltage into a unit flow with positive strength.",
+      "detail": "The current $I(x,y) = c(x,y)(W(x)-W(y))$ satisfies the node law off $\\{a,z\\}$. If its strength were $0$, the value $W = 1$ would spread from the neighbours of $a$ along a path to $z$, which is false. So $i = I/\\|I\\|$ is a unit flow, and $r\\,i = U(x) - U(y)$ with $U(a) - U(z) = R(a \\leftrightarrow z)$.",
+      "uses": []
+     },
+     {
+      "id": "s:parts",
+      "slogan": "Sum by parts to pair the potential gradient with an arbitrary antisymmetric edge function.",
+      "detail": "For every antisymmetric $\\theta$, splitting $\\tfrac12\\sum_{x,y}(U(x)-U(y))\\theta(x,y)$ into two sums and renaming the variables in the second gives $\\sum_e r(e) i(e) \\theta(e) = \\sum_x U(x)\\,\\operatorname{div}\\theta(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:pythagoras",
+      "slogan": "Expand the energy of $\\theta = i + \\varphi$ and cancel the cross term.",
+      "detail": "A unit flow has divergence $1$ at $a$ and $-1$ at $z$, so summation by parts gives $\\mathcal{E}(i) = U(a) - U(z) = R(a \\leftrightarrow z)$. The difference $\\varphi = \\theta - i$ has zero divergence everywhere, so the cross term $\\sum_e r\\,i\\,\\varphi$ vanishes and $\\mathcal{E}(\\theta) = R(a \\leftrightarrow z) + \\mathcal{E}(\\varphi)$.",
+      "uses": []
+     },
+     {
+      "id": "s:minimum",
+      "slogan": "Read off the minimum and its unique minimizer from the energy identity.",
+      "detail": "Positive resistances give $\\mathcal{E}(\\varphi) \\ge 0$ with equality only for $\\varphi = 0$. Hence every unit flow has energy at least $R(a \\leftrightarrow z)$, and the [effective resistance](c:effective-resistance) is attained only by the unit current flow.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:voltage",
+      "s:current"
+     ],
+     [
+      "s:current",
+      "s:parts"
+     ],
+     [
+      "s:current",
+      "s:pythagoras"
+     ],
+     [
+      "s:parts",
+      "s:pythagoras"
+     ],
+     [
+      "s:pythagoras",
+      "s:minimum"
+     ]
+    ],
+    "conclusion": "s:minimum",
+    "concepts": {
+     "c:electrical-network": "The network of conductances on which flows, currents and energies are defined.",
+     "c:effective-resistance": "The effective resistance is the minimum value of the energy.",
+     "c:flow-network": "Unit flows from $a$ to $z$ are the competitors in the minimization.",
+     "c:connected-graph": "Connectivity lets the maximum principle reach the terminals and makes the strength positive.",
+     "c:harmonic-function": "The voltage is harmonic off the terminals, which is the node law for its current."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. A. Levin and Y. Peres, Markov Chains and Mixing Times, 2nd ed. (AMS 2017), Theorem 9.10, p. 122. The decomposition follows R. Lyons and Y. Peres, Probability on Trees and Networks (CUP 2016), Section 2.4, equation (2.10), p. 34.",
+     "url": "https://pages.uoregon.edu/dlevin/MARKOV/mcmt2e.pdf",
+     "note": "Levin and Peres prove the theorem by compactness and the cycle law. These steps follow the orthogonal decomposition of Lyons and Peres and add the existence of the voltage."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:effective-resistance",
+    "name": "effective resistance",
+    "reminder": "The effective resistance between two vertices is the voltage drop per unit current that flows between them.",
+    "definition": "In a finite [electrical network](c:electrical-network), let $v$ be the voltage that is [harmonic](c:harmonic-function) off $\\{a,z\\}$ with $v(a)=1$ and $v(z)=0$, and let $\\|i\\|$ be the strength of the resulting current from $a$ to $z$. The effective resistance is $R_{\\mathrm{eff}}(a\\leftrightarrow z)=1/\\|i\\|=1/(c(a)\\,\\mathbb P_a(\\tau_z<\\tau_a^+))$. By Thomson's principle, it is also the minimum of the energy $\\sum_er(e)\\theta(e)^2$ over unit flows $\\theta$ from $a$ to $z$.",
+    "requires": [
+     "c:electrical-network",
+     "c:harmonic-function"
+    ]
+   },
+   {
+    "id": "c:electrical-network",
+    "name": "electrical network",
+    "reminder": "An electrical network is a graph with positive edge conductances, and it defines a reversible random walk.",
+    "definition": "An electrical network is a connected, locally finite [graph](c:graph) $G=(V,E)$ with a conductance $c(e)>0$ on each edge and resistance $r(e)=1/c(e)$. Its [random walk](c:random-walk) moves from $x$ to a neighbor $y$ with probability $c(x,y)/c(x)$, where $c(x)=\\sum_yc(x,y)$, and it is reversible with respect to $\\pi(x)=c(x)$. Voltages are functions that are [harmonic](c:harmonic-function) for this walk away from the sources, and the current is $i(x,y)=c(x,y)(v(x)-v(y))$ by Ohm's law.",
+    "requires": [
+     "c:graph",
+     "c:random-walk",
+     "c:harmonic-function",
+     "c:markov-chain"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-commute-time-identity",
+  "statement": "For the [random walk](c:random-walk) on a finite connected [electrical network](c:electrical-network), the commute time between two vertices $a$ and $b$ equals the total conductance $c_G$ times the [effective resistance](c:effective-resistance) $R(a \\leftrightarrow b)$.",
+  "hypotheses": [
+   {
+    "id": "h:network",
+    "text": "$G = (V,E)$ is a finite connected graph with conductances $c(x,y) = c(y,x) > 0$, and the walk has $P(x,y) = c(x,y)/c(x)$.",
+    "concept": "c:electrical-network"
+   },
+   {
+    "id": "h:distinct",
+    "text": "The vertices $a$ and $b$ are distinct.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\mathbb{E}_a \\tau_b + \\mathbb{E}_b \\tau_a = c_G\\, R(a \\leftrightarrow b)$ with $c_G = \\sum_x c(x) = 2\\sum_{e} c(e)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cycle-trick",
+    "name": "Cycle trick and Green function",
+    "slogan": "Count the visits to $a$ during one commute cycle in two ways: by stationarity and by the escape probability.",
+    "scope": "The whole identity, with the finiteness of hitting times and the uniqueness of the stationary distribution proved along the way.",
+    "mechanisms": [
+     "m:maximum-principle",
+     "m:dimension-count",
+     "m:fubini-swap",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:network",
+      "why": "Finiteness and connectivity give finite hitting times and a unique stationary distribution, and the conductances give the stationary weights $c(x)/c_G$.",
+      "steps": [
+       "s:hitting",
+       "s:escape",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:distinct",
+      "why": "Distinct vertices make the commute cycle start and end at $a$ only after a visit to $b$, and they define the voltage between $a$ and $b$.",
+      "steps": [
+       "s:escape",
+       "s:cycle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hitting",
+      "slogan": "Bound the hitting times geometrically, so that all expectations are finite.",
+      "detail": "From every vertex a path of length at most $|V|$ leads to $b$ with probability at least $\\delta > 0$, so $\\mathbb{P}_x(\\tau_b > k|V|) \\le (1-\\delta)^k$. The strong Markov property at hitting times follows from the Markov property by splitting on the value of the [stopping time](c:stopping-time).",
+      "uses": []
+     },
+     {
+      "id": "s:escape",
+      "slogan": "Identify the escape probability from $a$ through the voltage.",
+      "detail": "The hitting probability $h(x) = \\mathbb{P}_x(\\tau_b < \\tau_a)$ is [harmonic](c:harmonic-function) off $\\{a,b\\}$, so $1 - h$ is the voltage $W$. One step from $a$ gives $\\mathbb{P}_a(\\tau_b < \\tau_a^+) = \\sum_y \\tfrac{c(a,y)}{c(a)}(1 - W(y)) = 1/(c(a) R(a \\leftrightarrow b))$.",
+      "uses": [
+       "nm:statphys-thomson-principle"
+      ]
+     },
+     {
+      "id": "s:green",
+      "slogan": "Count the visits to $a$ before $\\tau_b$ as a geometric variable.",
+      "detail": "After each visit to $a$ the walk escapes to $b$ before returning with probability $p$, so the number $N$ of visits is geometric and the [Green function](c:green-function) value is $\\mathbb{E}_a N = 1/p = c(a) R(a \\leftrightarrow b)$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     },
+     {
+      "id": "s:cycle",
+      "slogan": "Build an invariant measure from the visits during one commute cycle.",
+      "detail": "Let $\\tau$ be the first return to $a$ after $\\tau_b$ and $\\rho(x)$ the mean number of visits to $x$ before $\\tau$. Since the cycle starts and ends at $a$, shifting time by one step gives $\\rho P = \\rho$, and the total mass is $\\mathbb{E}_a\\tau = \\mathbb{E}_a\\tau_b + \\mathbb{E}_b\\tau_a$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that every invariant row vector is a multiple of the conductance weights.",
+      "detail": "Functions with $Pf = f$ are constant by the maximum principle on the connected graph, so rank-nullity makes the left kernel of $P - I$ one-dimensional. It contains the [stationary distribution](c:stationary-distribution) $\\pi(x) = c(x)/c_G$, so $\\rho = (\\mathbb{E}_a\\tau)\\,\\pi$.",
+      "uses": [
+       "wd:Q303402"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Compare the two values of the mean visit count at $a$.",
+      "detail": "The visits to $a$ before $\\tau$ all happen before $\\tau_b$, so $\\rho(a) = c(a) R(a \\leftrightarrow b)$. Also $\\rho(a) = \\mathbb{E}_a\\tau\\, c(a)/c_G$. Dividing by $c(a)$ gives the commute time $c_G R(a \\leftrightarrow b)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hitting",
+      "s:cycle"
+     ],
+     [
+      "s:escape",
+      "s:green"
+     ],
+     [
+      "s:green",
+      "s:conclude"
+     ],
+     [
+      "s:cycle",
+      "s:conclude"
+     ],
+     [
+      "s:unique",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:random-walk": "The walk on the network is the process whose hitting times the identity computes.",
+     "c:electrical-network": "The conductances define both the walk and the effective resistance.",
+     "c:effective-resistance": "The effective resistance is the network quantity that equals the commute time divided by $c_G$.",
+     "c:stopping-time": "Hitting times are stopping times, so the strong Markov property applies at them.",
+     "c:harmonic-function": "The hitting probability is harmonic off the two terminals and so equals one minus the voltage.",
+     "c:green-function": "The mean number of visits to $a$ before $\\tau_b$ is the Green function of the killed walk.",
+     "c:stationary-distribution": "The stationary weights $c(x)/c_G$ fix the visit count at $a$ during a cycle."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. A. Levin and Y. Peres, Markov Chains and Mixing Times, 2nd ed. (AMS 2017), Proposition 10.7, p. 132, with Lemma 10.5, Lemma 9.6 and Proposition 9.5.",
+     "url": "https://pages.uoregon.edu/dlevin/MARKOV/mcmt2e.pdf",
+     "note": "The steps follow the source proof and add the finiteness of hitting times and the uniqueness of the stationary distribution."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:effective-resistance",
+    "name": "effective resistance",
+    "reminder": "The effective resistance between two vertices is the voltage drop per unit current that flows between them.",
+    "definition": "In a finite [electrical network](c:electrical-network), let $v$ be the voltage that is [harmonic](c:harmonic-function) off $\\{a,z\\}$ with $v(a)=1$ and $v(z)=0$, and let $\\|i\\|$ be the strength of the resulting current from $a$ to $z$. The effective resistance is $R_{\\mathrm{eff}}(a\\leftrightarrow z)=1/\\|i\\|=1/(c(a)\\,\\mathbb P_a(\\tau_z<\\tau_a^+))$. By Thomson's principle, it is also the minimum of the energy $\\sum_er(e)\\theta(e)^2$ over unit flows $\\theta$ from $a$ to $z$.",
+    "requires": [
+     "c:electrical-network",
+     "c:harmonic-function"
+    ]
+   },
+   {
+    "id": "c:electrical-network",
+    "name": "electrical network",
+    "reminder": "An electrical network is a graph with positive edge conductances, and it defines a reversible random walk.",
+    "definition": "An electrical network is a connected, locally finite [graph](c:graph) $G=(V,E)$ with a conductance $c(e)>0$ on each edge and resistance $r(e)=1/c(e)$. Its [random walk](c:random-walk) moves from $x$ to a neighbor $y$ with probability $c(x,y)/c(x)$, where $c(x)=\\sum_yc(x,y)$, and it is reversible with respect to $\\pi(x)=c(x)$. Voltages are functions that are [harmonic](c:harmonic-function) for this walk away from the sources, and the current is $i(x,y)=c(x,y)(v(x)-v(y))$ by Ohm's law.",
+    "requires": [
+     "c:graph",
+     "c:random-walk",
+     "c:harmonic-function",
+     "c:markov-chain"
+    ]
+   },
+   {
+    "id": "c:green-function",
+    "name": "Green function",
+    "reminder": "The Green function $G(x,y)$ counts the expected visits to $y$ of a random walk from $x$ before it is killed.",
+    "definition": "For simple [random walk](c:random-walk) $(X_n)$ on $\\mathbb Z^d$ and a finite set $\\Lambda$, with exit time $\\tau=\\min\\{n\\ge0:X_n\\notin\\Lambda\\}$, the Green function is $G_\\Lambda(x,y)=\\mathbb E_x\\big[\\sum_{n=0}^{\\tau-1}\\mathbf 1\\{X_n=y\\}\\big]$. As a matrix, $G_\\Lambda=(I-P_\\Lambda)^{-1}$, where $P_\\Lambda$ is the transition matrix restricted to $\\Lambda$, so $G_\\Lambda$ inverts the killed [discrete Laplacian](c:discrete-laplace-operator) $-\\frac1{2d}\\Delta$. For a transient walk one can take $\\Lambda=\\mathbb Z^d$, and then $G(x,y)=\\sum_{n\\ge0}P^n(x,y)$.",
+    "requires": [
+     "c:random-walk",
+     "c:discrete-laplace-operator",
+     "c:stopping-time",
+     "c:markov-chain"
+    ]
+   },
+   {
+    "id": "c:stationary-distribution",
+    "name": "stationary distribution",
+    "reminder": "A stationary distribution $\\pi$ of a Markov chain satisfies $\\pi P=\\pi$, so a chain started from $\\pi$ keeps law $\\pi$.",
+    "definition": "A stationary distribution of a [Markov kernel](c:markov-kernel) $P$ on a state space $S$ is a [probability measure](c:probability-measure) $\\pi$ on $S$ with $\\pi P=\\pi$, that is, $\\int\\pi(dx)P(x,A)=\\pi(A)$ for every measurable set $A$. On a countable space this reads $\\sum_x\\pi(x)P(x,y)=\\pi(y)$ for every $y$. If $X_0$ has law $\\pi$, then every $X_n$ of the [Markov chain](c:markov-chain) has law $\\pi$.",
+    "requires": [
+     "c:markov-chain",
+     "c:markov-kernel",
+     "c:probability-measure"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-wilson-algorithm",
+  "statement": "For an irreducible finite [Markov chain](c:markov-chain) with transition matrix $p$ and a root $r$, Wilson's method adds loop-erased runs of the chain one by one. It stops and returns a [spanning tree](c:spanning-tree) rooted at $r$ with $P(T = t) \\propto \\Psi(t) = \\prod_{(x,y) \\in t} p(x,y)$. For a connected [electrical network](c:electrical-network), the unoriented tree is the weighted [uniform spanning tree](c:uniform-spanning-tree) with $P(T = t) \\propto \\prod_{e \\in t} c(e)$.",
+  "hypotheses": [
+   {
+    "id": "h:chain",
+    "text": "$p$ is the transition matrix of an irreducible [Markov chain](c:markov-chain) on a finite state space $V$, and $r \\in V$.",
+    "concept": "c:markov-chain"
+   },
+   {
+    "id": "h:runs",
+    "text": "The starting states come in any fixed order of $V \\setminus \\{r\\}$, and each run of the chain is independent of the earlier runs.",
+    "concept": null
+   },
+   {
+    "id": "h:network",
+    "text": "For the network part, $G$ is a finite connected simple graph with conductances $c(e) > 0$ and $p(x,y) = c(x,y)/\\pi(x)$, a reversible [electrical network](c:electrical-network) walk.",
+    "concept": "c:electrical-network"
+   }
+  ],
+  "conclusion": "The method stops with probability 1, and its final [spanning tree](c:spanning-tree) $T$ rooted at $r$ has $P(T = t) = \\Psi(t)/\\sum_{t'} \\Psi(t')$ for every order. For a network, the unoriented tree has $P(T = t) = \\Xi(t)/\\sum_{t'} \\Xi(t')$ with $\\Xi(t) = \\prod_{e \\in t} c(e)$, which is uniform when $c \\equiv 1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cycle-popping",
+    "name": "Cycle popping with stacks",
+    "slogan": "Drive the chain by stacks of independent moves, show that the popped cycles do not depend on the order, and read the tree law from a product formula.",
+    "scope": "The whole theorem, for every finite irreducible chain, every root and every order, and the network part for simple graphs.",
+    "mechanisms": [
+     "m:coupling",
+     "m:case-analysis",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:chain",
+      "why": "The stacks use the law $p(x,\\cdot)$ at each state, and irreducibility on a finite set makes every run hit the growing tree.",
+      "steps": [
+       "s:stacks",
+       "s:stop"
+      ]
+     },
+     {
+      "h": "h:runs",
+      "why": "Independent runs have the same law as the stack-driven method, so the order does not change the law of the output.",
+      "steps": [
+       "s:wilson",
+       "s:stop"
+      ]
+     },
+     {
+      "h": "h:network",
+      "why": "For the network walk the weight $\\Psi(t)$ is $\\Xi(t)$ times a factor that does not depend on $t$.",
+      "steps": [
+       "s:network"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:stacks",
+      "slogan": "Put an independent stack of moves under each state except the root.",
+      "detail": "The entries $S_i^x$ are independent with law $p(x,\\cdot)$, and the root has an empty stack. The tops of the stacks give the visible graph, and a visible graph with no [cycle](c:cycle) is a spanning tree rooted at $r$.",
+      "uses": [
+       "wd:Q25378690"
+      ]
+     },
+     {
+      "id": "s:order",
+      "slogan": "Prove that every order of cycle popping pops the same set of colored cycles.",
+      "detail": "If a colored [cycle](c:cycle) $C$ is poppable and a different visible cycle $C'$ is popped first, the first cycle of the order for $C$ that meets $C'$ is equal to $C'$. So $C$ stays poppable, and every procedure that stops pops the same set and leaves the same tree.",
+      "uses": []
+     },
+     {
+      "id": "s:wilson",
+      "slogan": "Show that Wilson's method run on the stacks pops visible cycles by loop erasure.",
+      "detail": "The walk follows the tops of the stacks and keeps the loop-erased path. A return to a state on the path closes a visible cycle, which the method pops. The $k$-th departure from a state reads its $k$-th entry, so the walk moves like the [Markov chain](c:markov-chain).",
+      "uses": []
+     },
+     {
+      "id": "s:stop",
+      "slogan": "Show that each run hits the growing tree, so the method stops almost surely.",
+      "detail": "Each history fixes finitely many entries, and the next entry is fresh, so the stack version has the law of independent runs. Irreducibility gives a uniform chance $\\varepsilon > 0$ to hit the tree within $|V|$ steps, so each run ends with probability 1.",
+      "uses": []
+     },
+     {
+      "id": "s:cylinder",
+      "slogan": "Write the event of popped cycles and final tree as fixed stack entries.",
+      "detail": "The event that the popped set is $O$ and the tree is $t$ is the event that the stacks show the edges of $O$ and $t$ at their colors. These places are distinct, so the probability is $\\Psi(O)\\Psi(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Factor the law of popped cycles and tree to get tree weights proportional to transition products.",
+      "detail": "Any set $O$ that can occur can occur with every spanning tree rooted at $r$. So the pairs form a product set, and summing over $O$ gives $P(T = t) = \\Psi(t)/\\sum_{t'} \\Psi(t')$.",
+      "uses": []
+     },
+     {
+      "id": "s:network",
+      "slogan": "Convert transition products to conductance products for the network random walk.",
+      "detail": "For $p = c/\\pi$, $\\Psi(t) = \\Xi(t)\\,\\pi(r)/\\prod_x \\pi(x)$. Orientation toward $r$ is a bijection from [spanning trees](c:spanning-tree) of $G$ to rooted trees, so the unoriented tree is the weighted [uniform spanning tree](c:uniform-spanning-tree).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:stacks",
+      "s:wilson"
+     ],
+     [
+      "s:wilson",
+      "s:stop"
+     ],
+     [
+      "s:order",
+      "s:stop"
+     ],
+     [
+      "s:order",
+      "s:cylinder"
+     ],
+     [
+      "s:stop",
+      "s:cylinder"
+     ],
+     [
+      "s:cylinder",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:network"
+     ]
+    ],
+    "conclusion": "s:network",
+    "concepts": {
+     "c:markov-chain": "The method runs the chain from each new start until it hits the tree.",
+     "c:spanning-tree": "The output is a spanning tree, and its law is the subject of the theorem.",
+     "c:electrical-network": "Conductances define the reversible walk and the weights of the trees.",
+     "c:uniform-spanning-tree": "For a network the output is the weighted uniform spanning tree.",
+     "c:cycle": "The proof pops directed cycles of the visible graph of stack tops."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Lyons and Y. Peres, Probability on Trees and Networks (CUP 2016, authors' version of 19 August 2026), Theorem 4.1 and Lemma 4.2, pp. 99-101.",
+     "url": "https://rdlyons.pages.iu.edu/prbtree/book.pdf",
+     "note": "The steps follow the cycle-popping proof of the source. Steps s:wilson and s:stop write out the facts that the source states briefly: loop erasure pops cycles, the stack version has the law of independent runs, and each run stops."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:electrical-network",
+    "name": "electrical network",
+    "reminder": "An electrical network is a graph with positive edge conductances, and it defines a reversible random walk.",
+    "definition": "An electrical network is a connected, locally finite [graph](c:graph) $G=(V,E)$ with a conductance $c(e)>0$ on each edge and resistance $r(e)=1/c(e)$. Its [random walk](c:random-walk) moves from $x$ to a neighbor $y$ with probability $c(x,y)/c(x)$, where $c(x)=\\sum_yc(x,y)$, and it is reversible with respect to $\\pi(x)=c(x)$. Voltages are functions that are [harmonic](c:harmonic-function) for this walk away from the sources, and the current is $i(x,y)=c(x,y)(v(x)-v(y))$ by Ohm's law.",
+    "requires": [
+     "c:graph",
+     "c:random-walk",
+     "c:harmonic-function",
+     "c:markov-chain"
+    ]
+   },
+   {
+    "id": "c:uniform-spanning-tree",
+    "name": "uniform spanning tree",
+    "reminder": "The uniform spanning tree of a finite connected graph is a spanning tree chosen uniformly at random.",
+    "definition": "The uniform spanning tree of a finite [connected graph](c:connected-graph) $G$ is the random [spanning tree](c:spanning-tree) $T$ with $\\mathbb P(T=t)=1/\\tau(G)$ for each spanning tree $t$, where $\\tau(G)$ is the number of spanning trees. By Kirchhoff's theorem, $\\mathbb P(e\\in T)$ equals the [effective resistance](c:effective-resistance) between the endpoints of $e$ when all conductances are $1$. Wilson's algorithm samples it with loop-erased random walks.",
+    "requires": [
+     "c:spanning-tree",
+     "c:uniform-distribution",
+     "c:connected-graph"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-varopoulos-carne",
+  "statement": "For a reversible [random walk](c:random-walk) on a countable connected [electrical network](c:electrical-network), the $n$-step [heat kernel](c:heat-kernel) satisfies $p_n(x,y) \\le 2\\sqrt{\\pi(y)/\\pi(x)}\\,\\|P\\|_\\pi^n\\, e^{-d(x,y)^2/(2n)}$, where $d$ is the [graph distance](c:distance-graph-theory).",
+  "hypotheses": [
+   {
+    "id": "h:graph",
+    "text": "$G = (V,E)$ is a countable connected graph with [graph distance](c:distance-graph-theory) $d$.",
+    "concept": "c:distance-graph-theory"
+   },
+   {
+    "id": "h:conductances",
+    "text": "The conductances satisfy $c(x,y) = c(y,x) > 0$ on edges with $\\pi(x) = \\sum_y c(x,y) < \\infty$, and $P(x,y) = c(x,y)/\\pi(x)$.",
+    "concept": "c:electrical-network"
+   }
+  ],
+  "conclusion": "$p_n(x,y) \\le 2\\sqrt{\\pi(y)/\\pi(x)}\\,\\|P\\|_\\pi^n \\exp(-d(x,y)^2/(2n))$ for all $x, y \\in V$ and $n \\ge 1$, with $\\|P\\|_\\pi$ the [operator norm](c:operator-norm) on $\\ell^2(V,\\pi)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "chebyshev-polynomials",
+    "name": "Chebyshev polynomial expansion",
+    "slogan": "Write $P^n$ as an average of Chebyshev polynomials of $P$ weighted by simple random walk on the integers, and drop the low-degree terms.",
+    "scope": "The whole bound. A truncation to finite vertex sets replaces the infinite-dimensional spectral theorem.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:algebraic-identity",
+     "m:concentration",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:graph",
+      "why": "A path from $x$ to $y$ has at least $d(x,y)$ steps, and countability allows the exhaustion by finite sets.",
+      "steps": [
+       "s:truncate",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:conductances",
+      "why": "Symmetric conductances make $P$ a [self-adjoint operator](c:self-adjoint-operator) on $\\ell^2(V,\\pi)$, and finite $\\pi$ makes the unit vectors $f_x$ well defined.",
+      "steps": [
+       "s:operator",
+       "s:spectral"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:operator",
+      "slogan": "Show that the transition operator is a self-adjoint contraction of $\\ell^2(V,\\pi)$.",
+      "detail": "The form $(f, Pg)_\\pi = \\sum_{x,y} c(x,y) f(x) g(y)$ is symmetric, and the Cauchy-Schwarz inequality for the weights $P(x,\\cdot)$ gives $\\|Pf\\|_\\pi \\le \\|f\\|_\\pi$. So $P$ is a [self-adjoint operator](c:self-adjoint-operator) with $0 < \\|P\\|_\\pi \\le 1$.",
+      "uses": [
+       "nl:16121",
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:truncate",
+      "slogan": "Compress $P$ to a finite vertex set and express path sums as matrix entries.",
+      "detail": "For finite $B \\ni x, y$, the operator $P_B = 1_B P 1_B$ is self-adjoint on functions supported in $B$ with norm at most $\\|P\\|_\\pi$. Its $n$-th power gives the path sum $p_n^B(x,y) = \\sqrt{\\pi(y)/\\pi(x)}\\,(f_x, P_B^n f_y)_\\pi$, and $(f_x, P_B^i f_y)_\\pi = 0$ for $i < d(x,y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:chebyshev",
+      "slogan": "Expand the power $s^n$ in Chebyshev polynomials with simple random walk weights.",
+      "detail": "With $s = \\cos\\theta$ and $w = e^{i\\theta}$, the binomial theorem gives $s^n = ((w + w^{-1})/2)^n = \\sum_k q_n(k) w^k$, and the real part gives $s^n = \\sum_k q_n(k) T_k(s)$ as polynomials. Substituting $S = P_B/\\|P\\|_\\pi$ gives $P_B^n = \\|P\\|_\\pi^n \\sum_k q_n(k) T_k(S)$.",
+      "uses": [
+       "wd:Q26708",
+       "wd:Q190556"
+      ]
+     },
+     {
+      "id": "s:spectral",
+      "slogan": "Bound each Chebyshev polynomial of the truncated operator by one in norm.",
+      "detail": "The self-adjoint operator $S$ has an orthonormal eigenbasis with eigenvalues in $[-1,1]$, where $|T_k| \\le 1$. So $\\|T_k(S)\\| \\le 1$ in the [operator norm](c:operator-norm).",
+      "uses": [
+       "nm:diagonalization-of-self-adjoint-endomorphisms"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Drop the Chebyshev terms of degree below $d(x,y)$ and bound the rest.",
+      "detail": "Terms with $|k| < d$ vanish because $T_k(S)$ is a combination of powers below $d$. Each other term is at most $q_n(k)$ in absolute value, so $p_n^B(x,y) \\le \\sqrt{\\pi(y)/\\pi(x)}\\,\\|P\\|_\\pi^n\\, P(|S_n| \\ge d)$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:tail",
+      "slogan": "Bound the tail of simple random walk on the integers by a Chernoff estimate.",
+      "detail": "Markov's inequality for $e^{\\lambda S_n}$ and $\\cosh \\lambda \\le e^{\\lambda^2/2}$ give $P(S_n \\ge d) \\le e^{-\\lambda d + n\\lambda^2/2}$. The choice $\\lambda = d/n$ and symmetry give $P(|S_n| \\ge d) \\le 2e^{-d^2/(2n)}$.",
+      "uses": [
+       "nm:markov-s-inequality"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let the finite vertex sets exhaust the graph and pass to the limit.",
+      "detail": "The bound on $p_n^B(x,y)$ does not depend on $B$, and the path sums increase to the [random walk](c:random-walk) transition probability $p_n(x,y)$ as $B$ increases to $V$. Monotone convergence gives the theorem.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:operator",
+      "s:truncate"
+     ],
+     [
+      "s:truncate",
+      "s:spectral"
+     ],
+     [
+      "s:truncate",
+      "s:combine"
+     ],
+     [
+      "s:chebyshev",
+      "s:combine"
+     ],
+     [
+      "s:spectral",
+      "s:combine"
+     ],
+     [
+      "s:combine",
+      "s:limit"
+     ],
+     [
+      "s:tail",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:random-walk": "The bound controls the transition probabilities of the network random walk.",
+     "c:electrical-network": "The conductances define the reversible walk and its stationary weights $\\pi$.",
+     "c:heat-kernel": "The $n$-step transition probabilities form the discrete heat kernel that the bound estimates.",
+     "c:distance-graph-theory": "The graph distance $d(x,y)$ sets the Gaussian decay and the vanishing of low-degree terms.",
+     "c:operator-norm": "The norm $\\|P\\|_\\pi$ gives the exponential factor and normalizes the truncated operator.",
+     "c:self-adjoint-operator": "Self-adjointness gives a real spectrum in $[-1,1]$, where Chebyshev polynomials are bounded."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Lyons and Y. Peres, Probability on Trees and Networks (CUP 2016, authors' version of 19 August 2026), Theorem 13.4 and Lemma 13.5, pp. 432-434.",
+     "url": "https://rdlyons.pages.iu.edu/prbtree/book.pdf",
+     "note": "The steps follow the source proof. A truncation to finite vertex sets replaces the infinite-dimensional case of the operator inequality (13.12), which the source gets from Exercise 13.30 or from the spectral theorem in Section 13.9."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:electrical-network",
+    "name": "electrical network",
+    "reminder": "An electrical network is a graph with positive edge conductances, and it defines a reversible random walk.",
+    "definition": "An electrical network is a connected, locally finite [graph](c:graph) $G=(V,E)$ with a conductance $c(e)>0$ on each edge and resistance $r(e)=1/c(e)$. Its [random walk](c:random-walk) moves from $x$ to a neighbor $y$ with probability $c(x,y)/c(x)$, where $c(x)=\\sum_yc(x,y)$, and it is reversible with respect to $\\pi(x)=c(x)$. Voltages are functions that are [harmonic](c:harmonic-function) for this walk away from the sources, and the current is $i(x,y)=c(x,y)(v(x)-v(y))$ by Ohm's law.",
+    "requires": [
+     "c:graph",
+     "c:random-walk",
+     "c:harmonic-function",
+     "c:markov-chain"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-gaussian-correlation-inequality",
+  "statement": "For a centered [Gaussian measure](c:gaussian-measure) $\\mu$ on $\\mathbb{R}^d$ and closed symmetric [convex sets](c:convex-set) $K$ and $L$, $\\mu(K \\cap L) \\ge \\mu(K)\\,\\mu(L)$.",
+  "hypotheses": [
+   {
+    "id": "h:gaussian",
+    "text": "$\\mu$ is a centered [Gaussian measure](c:gaussian-measure) on $\\mathbb{R}^d$ with a possibly singular [covariance matrix](c:covariance-matrix).",
+    "concept": "c:gaussian-measure"
+   },
+   {
+    "id": "h:sets",
+    "text": "$K$ and $L$ are closed [convex sets](c:convex-set) with $K = -K$ and $L = -L$.",
+    "concept": "c:convex-set"
+   }
+  ],
+  "conclusion": "$\\mu(K \\cap L) \\ge \\mu(K)\\,\\mu(L)$. Equivalently, for a centered Gaussian vector $X$ in $\\mathbb{R}^{n_1 + n_2}$ and $t_i > 0$, the probability that $|X_i| \\le t_i$ for all $i$ is at least the product of the same probabilities for the two blocks.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "royen-interpolation",
+    "name": "Royen's interpolation of the covariance",
+    "slogan": "Interpolate the cross-covariance from zero to its true value and show that the box probability of the squared coordinates increases.",
+    "scope": "Outline of the whole theorem, after Latała and Matlak. Lemmas 4 to 8 of the source, on Laplace transforms, determinants and gamma-type densities, are cited and not proved here.",
+    "mechanisms": [
+     "m:separation",
+     "m:determinant",
+     "m:fundamental-theorem-calculus",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:gaussian",
+      "why": "Gaussian squares have the Laplace transform $|I + \\Lambda C|^{-1/2}$, and the interpolated matrices stay covariance matrices.",
+      "steps": [
+       "s:interpolate",
+       "s:laplace"
+      ]
+     },
+     {
+      "h": "h:sets",
+      "why": "Closed symmetric convex sets are countable intersections of symmetric strips, which reduces the theorem to coordinate boxes.",
+      "steps": [
+       "s:reduce"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:interpolate",
+      "slogan": "Scale the cross-covariance block by $\\tau$ and study the box probability of the squares.",
+      "detail": "Set $C(\\tau)$ with off-diagonal blocks $\\tau C_{12}$ and $\\tau C_{21}$, and $Z_i(\\tau) = X_i(\\tau)^2/2$. The theorem for strips is $F(1) \\ge F(0)$ for $F(\\tau) = P(Z(\\tau) \\in \\prod_i [0, s_i])$, and Lemma 6 lets the derivative pass under the integral.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:laplace",
+      "slogan": "Compute the Laplace transform of the density of the squares as a determinant power.",
+      "detail": "Lemma 4 gives the [Laplace transform](c:laplace-transform) $|I + \\Lambda C(\\tau)|^{-1/2}$ of the density $f(\\cdot, \\tau)$. The [determinant](c:determinant) expands as $1 + \\sum_J |C(\\tau)_J| \\prod_{j \\in J} \\lambda_j$ over nonempty index sets $J$.",
+      "uses": [
+       "wd:Q7245073",
+       "wd:Q7660749",
+       "nl:26835"
+      ]
+     },
+     {
+      "id": "s:minors",
+      "slogan": "Show that every principal minor of the interpolated covariance decreases in $\\tau$.",
+      "detail": "The Schur complement gives $|C(\\tau)_J| = |C_{J_1}||C_{J_2}| \\prod_i (1 - \\tau^2 \\nu_i)$ with $\\nu_i \\in [0,1]$. So $a_J = -\\partial_\\tau |C(\\tau)_J| \\ge 0$, and the derivative of the transform is a nonnegative combination of $|I + \\Lambda C(\\tau)|^{-3/2} \\prod_{j\\in J} \\lambda_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:gamma",
+      "slogan": "Represent each term as the transform of a mixed derivative of a gamma-type density.",
+      "detail": "Lemmas 7 and 8 give a density $h_\\tau$ on $(0,\\infty)^n$, a mixture of products of [gamma distribution](c:gamma-distribution) densities with shapes $3/2 + k$, with transform $|I + \\Lambda C(\\tau)|^{-3/2}$. The mixed derivative in $x_J$ multiplies the transform by $\\prod_{j \\in J}\\lambda_j$, so $\\partial_\\tau f = \\sum_J \\tfrac12 a_J \\partial^{J} h_\\tau$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate each mixed derivative over the box to get a nonnegative boundary integral.",
+      "detail": "The derivatives of $h_\\tau$ vanish as a free variable tends to 0. So the integral of $\\partial^J h_\\tau$ over the box equals an integral of $h_\\tau \\ge 0$ on a face, and $F'(\\tau) \\ge 0$ gives $F(1) \\ge F(0)$.",
+      "uses": [
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Pass from coordinate strips to general closed symmetric convex sets.",
+      "detail": "Hahn-Banach separation writes each closed symmetric [convex set](c:convex-set) as a countable intersection of symmetric strips. Continuity of the [Gaussian measure](c:gaussian-measure) along decreasing intersections and a limit $C + \\varepsilon I$ give the theorem for every centered Gaussian measure.",
+      "uses": [
+       "nl:10213",
+       "wd:Q1067156"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:interpolate",
+      "s:laplace"
+     ],
+     [
+      "s:laplace",
+      "s:minors"
+     ],
+     [
+      "s:minors",
+      "s:gamma"
+     ],
+     [
+      "s:gamma",
+      "s:integrate"
+     ],
+     [
+      "s:interpolate",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:reduce"
+     ]
+    ],
+    "conclusion": "s:reduce",
+    "concepts": {
+     "c:gaussian-measure": "The inequality compares Gaussian measures of an intersection and of its two parts.",
+     "c:convex-set": "Convexity and symmetry let the proof reduce the sets to intersections of strips.",
+     "c:covariance-matrix": "The proof interpolates the cross-covariance block between zero and its true value.",
+     "c:laplace-transform": "Laplace transforms turn densities of Gaussian squares into determinant powers.",
+     "c:determinant": "Principal minors of the interpolated covariance carry the monotonicity in the interpolation parameter.",
+     "c:gamma-distribution": "Mixtures of gamma densities represent the derivative of the density of the squares."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Latała and D. Matlak, Royen's proof of the Gaussian correlation inequality, arXiv:1512.08776v1 (GAFA Seminar 2014-2016, LNM 2169, 2017), Theorem 2, Section 2, pp. 2-4, and Lemmas 4-8, pp. 4-9.",
+     "url": "https://arxiv.org/pdf/1512.08776",
+     "note": "The steps follow Section 2 of the source, which presents T. Royen, Far East J. Theor. Stat. 48 (2014), 139-145. The reduction step follows the paragraph before Theorem 2 on p. 2."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-kac-return-time-lemma",
+  "statement": "For a [stationary sequence](c:stationary-sequence) $(X_n)$ and a set $A$ with $P(X_0 \\in A) > 0$, the [expected value](c:expected-value) of the first return time $T_A$ on $\\{X_0 \\in A\\}$ equals the probability that $A$ is ever visited. So the mean return time to $A$ is $1/P(X_0 \\in A)$ when $A$ is visited almost surely.",
+  "hypotheses": [
+   {
+    "id": "h:stationary",
+    "text": "The sequence $(X_n)_{n \\ge 0}$ is a [stationary sequence](c:stationary-sequence): each shift $(X_{k+n})_{n \\ge 0}$ has the same law.",
+    "concept": "c:stationary-sequence"
+   },
+   {
+    "id": "h:positive",
+    "text": "The measurable set $A$ satisfies $P(X_0 \\in A) > 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\mathbb{E}[T_A \\mathbf{1}\\{X_0 \\in A\\}] = P(X_n \\in A \\text{ for some } n \\ge 0)$, so $T_A < \\infty$ a.s. on $\\{X_0 \\in A\\}$, and the [conditional expectation](c:conditional-expectation) $\\mathbb{E}[T_A \\mid X_0 \\in A]$ equals $1/P(X_0 \\in A)$ if $A$ is visited almost surely.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "last-visit-window",
+    "name": "Last visit in a finite window",
+    "slogan": "Shift each tail event of the return time to the end of a time window and read it as a last visit to $A$.",
+    "scope": "The whole statement. No extension of the sequence to negative times is needed.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:symmetry",
+     "m:case-analysis",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:stationary",
+      "why": "Stationarity moves the event $\\{X_0 \\in A, X_1 \\notin A, \\dots, X_{k-1} \\notin A\\}$ to the end of the window without changing its probability.",
+      "steps": [
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:positive",
+      "why": "A positive probability of $\\{X_0 \\in A\\}$ allows the division that gives the conditional mean.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tail",
+      "slogan": "Write the mean return time on $\\{X_0 \\in A\\}$ as a series of tail probabilities.",
+      "detail": "Since $T_A = \\sum_{k \\ge 1} \\mathbf{1}\\{T_A \\ge k\\}$, monotone convergence gives $\\mathbb{E}[T_A \\mathbf{1}\\{X_0 \\in A\\}] = \\sum_{k \\ge 1} P(E_k)$ with $E_k = \\{X_0 \\in A, X_1 \\notin A, \\dots, X_{k-1} \\notin A\\}$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Shift each tail event to the end of the window $\\{0, \\dots, K-1\\}$ by stationarity.",
+      "detail": "For $1 \\le k \\le K$, the vector $(X_{K-k}, \\dots, X_{K-1})$ has the law of $(X_0, \\dots, X_{k-1})$, so $P(E_k) = P(X_{K-k} \\in A, X_j \\notin A \\text{ for } K-k < j < K)$.",
+      "uses": []
+     },
+     {
+      "id": "s:last-visit",
+      "slogan": "Decompose the window by the time of the last visit to $A$.",
+      "detail": "The shifted event says that $K-k$ is the last time in the window at which the sequence is in $A$. These events are disjoint and their union is the event that $A$ is visited in the window, so $\\sum_{k=1}^K P(E_k) = P(X_j \\in A \\text{ for some } j < K)$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let the window grow and divide by $P(X_0 \\in A)$.",
+      "detail": "Both sides increase with $K$, and monotone convergence gives $\\mathbb{E}[T_A \\mathbf{1}\\{X_0 \\in A\\}] = P(X_n \\in A \\text{ for some } n \\ge 0) \\le 1$. A finite [expected value](c:expected-value) forces $T_A < \\infty$ a.s., and if $A$ is visited almost surely the division gives $1/P(X_0 \\in A)$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:tail",
+      "s:shift"
+     ],
+     [
+      "s:tail",
+      "s:limit"
+     ],
+     [
+      "s:shift",
+      "s:last-visit"
+     ],
+     [
+      "s:last-visit",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:stationary-sequence": "Stationarity is the only structural assumption, and it allows the time shift of each tail event.",
+     "c:expected-value": "The lemma computes the expected value of the return time on the event $\\{X_0 \\in A\\}$.",
+     "c:conditional-expectation": "The mean return time is the conditional expectation of $T_A$ given a start in $A$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (CUP 2019, author's version of January 11, 2019), Theorem 6.3.3, pp. 341-342.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "Durrett decomposes by the last visit before time 0 in a two-sided extension. These steps use the last visit inside a finite window instead and add the identity without the visiting hypothesis."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:stationary-sequence",
+    "name": "stationary sequence",
+    "reminder": "A stationary sequence has joint laws that do not change when you shift time.",
+    "definition": "A sequence $(X_n)_{n\\ge0}$ of [random variables](c:random-variable) is (strictly) stationary when the shifted sequence $(X_{n+k})_{n\\ge0}$ has the same law as $(X_n)_{n\\ge0}$ for every $k\\ge0$. Equivalently, every [finite-dimensional distribution](c:finite-dimensional-distribution) is invariant under time shift: $(X_{n_1+k},\\dots,X_{n_m+k})$ has the law of $(X_{n_1},\\dots,X_{n_m})$ for all indices $n_1,\\dots,n_m$ and all $k\\ge0$.",
+    "requires": [
+     "c:random-variable",
+     "c:finite-dimensional-distribution"
+    ]
+   }
+  ]
  }
 ]
