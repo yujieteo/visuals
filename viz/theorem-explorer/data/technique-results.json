@@ -4294,6 +4294,191 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-finite-subgroup-of-field-units-cyclic",
+   "name": "Finite subgroups of the multiplicative group of a field are cyclic",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.AC",
+    "math.GR"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.AC",
+    "math.GR"
+   ],
+   "statement": "Let K be a field and G a finite subgroup of the multiplicative group K^×. Then G is cyclic. In particular, K^× is cyclic if K is finite, and (ℤ/p)^× is cyclic of order p−1 for each prime p. A generator of (ℤ/p)^× is called a primitive root mod p. There are φ(p−1) primitive roots, where φ is Euler's totient function.",
+   "hypotheses": [
+    "K is a field, or more generally an integral domain.",
+    "G is a finite subgroup of K^×. Infinite subgroups need not be cyclic: ℚ^× is not cyclic.",
+    "p is a prime for the claim about (ℤ/p)^×."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only the root bound for polynomials over a field and a counting identity. No catalog theorem is cited.",
+   "concepts": [
+    "cyclic group",
+    "Euler totient function",
+    "primitive root mod p"
+   ],
+   "concept_prerequisites": [
+    "c:cyclic-group",
+    "c:finite-field",
+    "c:order-of-an-element"
+   ],
+   "definitions": [
+    {
+     "name": "cyclic group",
+     "text": "A group is cyclic if one element g, the generator, has every element as a power gᵏ."
+    },
+    {
+     "name": "Euler totient function",
+     "text": "φ(d) is the number of integers k in 1..d with gcd(k,d)=1. It is also the number of generators of a cyclic group of order d."
+    },
+    {
+     "name": "primitive root mod p",
+     "text": "A primitive root mod p is an integer g whose class generates (ℤ/p)^×. Equivalently g has multiplicative order p−1 mod p."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralDomain.lean#L129-L135",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.IntegralDomain",
+    "declaration": "isCyclic_of_injective_ringHom",
+    "lines": [
+     129,
+     135
+    ],
+    "module_sha256": "47ab108d8ddff66e7da678f12180dc124836bb45d938739f1383fe1c0a6e65a3",
+    "excerpt": "/-- A finite subgroup of the unit group of an integral domain is cyclic. -/\ntheorem isCyclic_of_injective_ringHom [Finite G] (f : G →* R) (hf : Injective f) : IsCyclic G := by\n  classical\n    cases nonempty_fintype G\n    apply isCyclic_of_card_pow_eq_one_le\n    intro n hn\n    exact le_trans (card_nthRoots_subgroup_units f hf hn 1) (card_nthRoots n (f 1))",
+    "excerpt_sha256": "a7ef491cb3cb3d089019be39bb63f3e624baf5a0df6bcc1c4818ab6f86cf9ba3",
+    "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin, Chris Hughes\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that a finite group with an injective hom into an integral domain is cyclic. It matches the statement."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/IntegralDomain.lean#L120-L127",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.RingTheory.IntegralDomain",
+     "declaration": "card_nthRoots_subgroup_units",
+     "lines": [
+      120,
+      127
+     ],
+     "module_sha256": "47ab108d8ddff66e7da678f12180dc124836bb45d938739f1383fe1c0a6e65a3",
+     "excerpt": "theorem card_nthRoots_subgroup_units [Fintype G] [DecidableEq G] (f : G →* R) (hf : Injective f)\n    {n : ℕ} (hn : 0 < n) (g₀ : G) :\n    #{g | g ^ n = g₀} ≤ Multiset.card (nthRoots n (f g₀)) := by\n  have : DecidableEq R := Classical.decEq _\n  calc\n    _ ≤ #(nthRoots n (f g₀)).toFinset :=\n      card_le_card_of_injOn f (by aesop (add safe unfold Set.MapsTo)) hf.injOn\n    _ ≤ _ := (nthRoots n (f g₀)).toFinset_card_le",
+     "excerpt_sha256": "67bc7cb75c3442532d24ddd4aac0683f818c37c37535a187bfbca8792a17d06b",
+     "attribution": "/-\nCopyright (c) 2020 Johan Commelin. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Johan Commelin, Chris Hughes\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the root bound used in step 2 of the authored proof."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Let m=|G|. For each divisor d of m let ψ(d) be the number of elements of G of order d. Every element has an order that divides m, so ∑_{d|m} ψ(d)=m.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Root bound. For each d≥1 the polynomial X^d−1 has at most d roots in the field K. So at most d elements x of G satisfy x^d=1.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Claim: ψ(d)≤φ(d) for each d|m. If ψ(d)=0 this is clear. Otherwise pick x∈G of order d. The d powers 1,x,…,x^{d−1} are distinct and satisfy y^d=1. By the root bound they are all of the roots of X^d−1 in K.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Any element y of order d satisfies y^d=1, so y is a power x^k. The order of x^k is d/gcd(k,d). So y has order d if and only if gcd(k,d)=1. There are exactly φ(d) such k in 1..d. Thus ψ(d)=φ(d) in this case.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Identity: ∑_{d|m} φ(d)=m. Sort the m fractions k/m for k=1..m by their reduced denominator d. The fractions with reduced denominator d are a/d with gcd(a,d)=1 and 1≤a≤d. There are φ(d) of them. Every divisor d of m occurs.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Compare: ∑ψ(d)=m=∑φ(d), and ψ(d)≤φ(d) for each d by step 3. So ψ(d)=φ(d) for all d|m. In particular ψ(m)=φ(m)≥1. An element of order m=|G| generates G, so G is cyclic.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "For (ℤ/p)^×, apply the result with K=𝔽ₚ and G=K^×, which has order p−1. The number of generators of a cyclic group of order p−1 is φ(p−1), by step 4.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Primitive roots mod 17 and solving x⁴≡13",
+    "goal": "Find all primitive roots mod 17. Then solve x⁴≡13 (mod 17) with a discrete logarithm table.",
+    "hypotheses": [
+     "p=17, so (ℤ/17)^× has order 16.",
+     "13 is a unit mod 17."
+    ],
+    "why_theorem_applies": "The theorem says (ℤ/17)^× is cyclic of order 16. So one primitive root g exists, and every unit is gᵏ for a unique k mod 16.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Test g=3. Powers: 3²=9, 3⁴=81≡13, 3⁸=169≡16≡−1. So 3⁸≠1 and 3 has order 16, not 8. Because the order divides 16 and does not divide 8, it is 16. So 3 is a primitive root.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Every primitive root is 3ᵏ with gcd(k,16)=1, i.e. k odd, by the order formula in step 4. This gives φ(16)=8 primitive roots.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Compute 3ᵏ mod 17 for k=1,3,5,…,15: 3, 10, 5, 11, 14, 7, 12, 6. So the primitive roots are {3,5,6,7,10,11,12,14}.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The other units have orders dividing 16 but less than 16. For example 2⁸=256≡1, so 2 has order 8 (since 2⁴=16≢1).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Discrete logarithm: write 13=3⁴. Let x=3ᵏ. Then x⁴≡13 means 4k≡4 (mod 16). This gives k≡1 (mod 4), so k∈{1,5,9,13}.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Compute x=3ᵏ: 3¹=3, 3⁵=5, 3⁹=14, 3¹³=12. Check 5⁴=625=17·36+13. So x⁴≡13 has exactly the solutions 3, 5, 12 and 14.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "General rule: in a cyclic group of order n, the equation x^e=a has either 0 or gcd(e,n) solutions. Here gcd(4,16)=4 solutions exist.",
+      "uses": []
+     }
+    ],
+    "result": "There are 8 primitive roots mod 17: 3, 5, 6, 7, 10, 11, 12, 14. The equation x⁴≡13 (mod 17) has the 4 solutions 3, 5, 12, 14.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof is non constructive. It gives no formula for a primitive root. Finding one is a search.",
+    "Commutativity is needed for the root bound. A finite subgroup of a division ring can be non cyclic. Example: the quaternion group Q₈ in the Hamilton quaternions.",
+    "The group (ℤ/n)^× is cyclic only for n=1,2,4,p^k,2p^k. For other n it has more than one cyclic factor."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
