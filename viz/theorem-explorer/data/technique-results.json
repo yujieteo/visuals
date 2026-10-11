@@ -511,6 +511,967 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-localization-exactness",
+   "name": "Exactness of module localization",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.AC",
+    "math.AG"
+   ],
+   "application_cats": [
+    "math.AC",
+    "math.AG"
+   ],
+   "statement": "Let R be a commutative ring with identity. Let S be a multiplicative subset containing 1. For R-linear maps f:M→N and g:N→P with im(f)=ker(g), the induced maps S⁻¹f and S⁻¹g satisfy im(S⁻¹f)=ker(S⁻¹g). Localization also preserves injective and surjective maps. Thus it preserves every short exact sequence.",
+   "hypotheses": [
+    "M, N and P are unital R-modules. The maps are R-linear.",
+    "S contains 1 and is closed under multiplication. S may contain 0, in which case every localized module is 0.",
+    "The sequence is exact at N. Injectivity and surjectivity assertions assume these properties for the original map."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof derives each identity from the listed definitions and algebraic axioms. It uses no separate named theorem.",
+   "concepts": [
+    "localized module",
+    "exactness",
+    "localized map"
+   ],
+   "concept_prerequisites": [
+    "c:localization-of-a-ring",
+    "c:is-localized-module",
+    "c:exact-sequence",
+    "c:linear-map"
+   ],
+   "definitions": [
+    {
+     "name": "localized module",
+     "text": "S⁻¹M consists of fractions m/s. The fractions m/s and n/t are equal if u(tm−sn)=0 for some u∈S."
+    },
+    {
+     "name": "exactness",
+     "text": "A sequence M→N→P is exact at N when the image of the first map equals the kernel of the second."
+    },
+    {
+     "name": "localized map",
+     "text": "An R-linear map f induces S⁻¹f by m/s↦f(m)/s."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Algebra/Module/LocalizedModule/Exact.lean#L37-L53",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Algebra.Module.LocalizedModule.Exact",
+    "declaration": "LocalizedModule.map_exact",
+    "lines": [
+     37,
+     53
+    ],
+    "module_sha256": "7278091095644653de53f538998842e384ae41df16be82909e2a80a7a4800a46",
+    "excerpt": "lemma LocalizedModule.map_exact (g : M₀ →ₗ[R] M₁) (h : M₁ →ₗ[R] M₂) (ex : Exact g h) :\n    Exact (map S (mkLinearMap S M₀) (mkLinearMap S M₁) g)\n    (map S (mkLinearMap S M₁) (mkLinearMap S M₂) h) :=\n  fun y ↦ Iff.intro\n    (induction_on\n      (fun m s hy ↦ by\n        rw [map_LocalizedModules, ← zero_mk 1, mk_eq, one_smul, smul_zero] at hy\n        obtain ⟨a, aS, ha⟩ := Subtype.exists.1 hy\n        rw [smul_zero, mk_smul, ← map_smul, ex (a • m)] at ha\n        rcases ha with ⟨x, hx⟩\n        use mk x (⟨a, aS⟩ * s)\n        rw [map_LocalizedModules, hx, ← mk_cancel_common_left ⟨a, aS⟩ s m, mk_smul])\n      y)\n    fun ⟨x, hx⟩ ↦ by\n      revert hx\n      refine induction_on (fun m s hx ↦ ?_) x\n      rw [← hx, map_LocalizedModules, map_LocalizedModules, (ex (g m)).2 ⟨m, rfl⟩, zero_mk]",
+    "excerpt_sha256": "425a3dabef97e6c982a699531f9e779371bcd354ed1f61145fc1223e6ce5bc7a",
+    "attribution": "/-\nCopyright (c) 2022 Jujian Zhang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Andrew Yang, Jujian Zhang\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves exactness for localized modules over a commutative semiring. The authored proof specializes to modules over a ring and also derives endpoint preservation."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The induced map is well-defined. If u(tm−sn)=0, linearity gives u(tf(m)−sf(n))=0. The same u proves equality of the image fractions. Composition commutes with localization by evaluation on every fraction.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Since gf=0, the image of S⁻¹f lies in the kernel of S⁻¹g. Conversely let n/s satisfy g(n)/s=0. The definition of equality of fractions gives u∈S with ug(n)=0. Thus g(un)=0.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Exactness gives m∈M with f(m)=un. Therefore (S⁻¹f)(m/(us))=un/(us)=n/s. The last equality follows by multiplication of numerator and denominator by u. This proves the reverse inclusion.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "If f is injective and f(m)/s=0, choose u∈S with f(um)=0. Injectivity gives um=0, so m/s=0. Thus localization preserves injectivity. If g is surjective, choose a preimage n of p. Then n/s maps to p/s, so localization preserves surjectivity.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Apply these conclusions to the three maps of a short exact sequence. The kernel-image equality and both endpoint properties persist. If 0∈S, every m/s equals 0 by the fraction relation, so the same conclusions hold.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Separate torsion by a local calculation",
+    "goal": "Localize 0→ℤ→ℤ→ℤ/6ℤ→0, whose first nonzero map is multiplication by 6, at powers of 2.",
+    "hypotheses": [
+     "R=ℤ and S={2ⁿ:n≥0}. Multiplication by 6 is injective, and its image is the kernel of reduction modulo 6."
+    ],
+    "why_theorem_applies": "Exactness converts a quotient of localized modules into a localized quotient. Inverting 2 removes the 2-primary torsion and preserves the 3-primary torsion.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The localized ring is ℤ[1/2]. Exactness gives S⁻¹(ℤ/6ℤ)≅ℤ[1/2]/6ℤ[1/2]. Since 2 is a unit, the ideals generated by 6 and 3 are equal.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Define ℤ[1/2]→ℤ/3ℤ by a/2ⁿ↦a(2⁻¹)ⁿ modulo 3. The inverse of 2 modulo 3 is 2. Equivalent fractions have the same image, because every denominator is a unit modulo 3.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The map is surjective because integer fractions supply every residue. Its kernel consists of fractions with numerator divisible by 3, which is precisely 3ℤ[1/2]. Thus S⁻¹(ℤ/6ℤ)≅ℤ/3ℤ.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The class of 3 in ℤ/6ℤ disappears because 2·3=0. The class of 2 remains nonzero and has order 3. If all nonzero integers are inverted instead, multiplication by 6 is invertible and the quotient becomes 0.",
+      "uses": []
+     }
+    ],
+    "result": "Localization at powers of 2 gives ℤ/3ℤ. Localization at all nonzero integers gives 0.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Localization can remove nonzero torsion. Exactness does not imply that the localization map is injective.",
+    "A multiplicative set that contains 0 gives the zero localization."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-vandermonde-determinant",
+   "name": "Vandermonde determinant and interpolation solvability",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.RA",
+    "math.NA"
+   ],
+   "application_cats": [
+    "math.RA",
+    "math.NA"
+   ],
+   "statement": "For a field K, n≥0 and nodes a₀,…,aₙ₋₁∈K, let Vᵢⱼ=aᵢʲ for 0≤i,j<n. Then det(V)=∏_{0≤i<j<n}(aⱼ−aᵢ). Therefore V is invertible exactly when the nodes are pairwise distinct. For distinct nodes, every data vector gives one polynomial of degree less than n with those values.",
+   "hypotheses": [
+    "K is a commutative field. n is a nonnegative integer.",
+    "The existence and uniqueness of interpolation require pairwise distinct nodes. The determinant formula also holds for repeated nodes."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof derives the polynomial root factors and adjugate identity explicitly. It uses the determinant definition and field axioms.",
+   "concepts": [
+    "Vandermonde matrix",
+    "interpolation"
+   ],
+   "concept_prerequisites": [
+    "c:vandermonde-determinant",
+    "c:matrix",
+    "c:polynomial",
+    "c:determinant"
+   ],
+   "definitions": [
+    {
+     "name": "Vandermonde matrix",
+     "text": "The row for node aᵢ is (1,aᵢ,…,aᵢⁿ⁻¹)."
+    },
+    {
+     "name": "interpolation",
+     "text": "Interpolation asks for a polynomial whose values at specified nodes equal specified data."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Vandermonde.lean#L219-L221",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.LinearAlgebra.Vandermonde",
+    "declaration": "Matrix.det_vandermonde",
+    "lines": [
+     219,
+     221
+    ],
+    "module_sha256": "d2f739a89707e171d68f605e526b502be5f355c2289b3e2d9925996fc7c2ccb6",
+    "excerpt": "theorem det_vandermonde (v : Fin n → R) :\n    det (vandermonde v) = ∏ i : Fin n, ∏ j ∈ Ioi i, (v j - v i) := by\n  simp [vandermonde_eq_projVandermonde, det_projVandermonde]",
+    "excerpt_sha256": "8b74a0679c56e0a98b33caeca93bf838cdc9a7886fbdcd8c030af4e0befa80fa",
+    "attribution": "/-\nCopyright (c) 2020 Anne Baanen. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anne Baanen, Peter Nelson\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source gives this determinant formula over a commutative ring. The authored proof uses a field and derives interpolation solvability."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The determinant for n=0 is 1, which agrees with the empty product. For n=1 it is also 1. Assume the formula for n−1 and first take distinct nodes a₀,…,aₙ₋₂.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Replace the last node by an indeterminate X. Expand the determinant along its last row. This gives a polynomial D(X) of degree at most n−1. Its leading coefficient is the determinant of the first n−1 nodes, because the last cofactor has positive sign.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For X=aᵢ with i<n−1, two rows are equal and D(aᵢ)=0. This equality follows from the determinant definition: interchange those rows in each permutation term and pair terms with opposite signs.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "For any polynomial P, the identity Xᵏ−aᵏ=(X−a)∑_{j=0}^{k−1}Xᵏ⁻¹⁻ʲaʲ shows P(X)−P(a) is divisible by X−a. Therefore each distinct root aᵢ gives a factor X−aᵢ. After division by earlier factors, evaluation at a later root still gives 0, since the earlier factors are nonzero there.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Thus D(X) is its leading coefficient times ∏_{i<n−1}(X−aᵢ). The induction hypothesis supplies that coefficient. Substitute X=aₙ₋₁ to obtain the full product. If the first n−1 nodes are not distinct, V has repeated rows, and both sides are 0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "If det(V)≠0, its adjugate gives the inverse V⁻¹=adj(V)/det(V). The adjugate identity follows by cofactor expansion: diagonal entries give det(V), and off-diagonal entries give determinants with a repeated row. If det(V)=0, the nodes repeat and V has two equal rows, so V cannot map onto every data vector. The interpolation equations are Vc=y. Thus distinct nodes give exactly one coefficient vector c.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Reconstruct a cubic from irregular samples",
+    "goal": "Find a polynomial of degree at most 3 with values 1,0,1,33 at nodes 0,1,2,4.",
+    "hypotheses": [
+     "The nodes lie in ℝ and are distinct. There are 4 values, so the coefficient vector has dimension 4."
+    ],
+    "why_theorem_applies": "The determinant proves unique solvability before any coefficient calculation. The interpolation basis gives the polynomial explicitly.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The determinant is (1−0)(2−0)(4−0)(2−1)(4−1)(4−2)=48≠0. Thus the interpolation system has exactly one solution.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For each node aᵢ, define Lᵢ(x)=∏_{j≠i}(x−aⱼ)/(aᵢ−aⱼ). Every denominator is nonzero. Direct substitution gives Lᵢ(aⱼ)=1 if i=j, and 0 otherwise.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The required polynomial is L₀+L₂+33L₄. Explicitly it is −(x−1)(x−2)(x−4)/8−x(x−1)(x−4)/4+33x(x−1)(x−2)/24.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Expansion gives P(x)=x³−2x²+1. The values are P(0)=1, P(1)=0, P(2)=1, and P(4)=33. The nonzero determinant proves that this polynomial is unique.",
+      "uses": []
+     }
+    ],
+    "result": "The unique interpolating polynomial is x³−2x²+1.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Distinct nodes ensure exact solvability. They do not ensure good numerical conditioning.",
+    "Repeated nodes require derivative data and a confluent Vandermonde construction."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-singular-value-decomposition",
+   "name": "Singular value decomposition from the adjoint square",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.NA",
+    "quant-ph"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.NA",
+    "quant-ph"
+   ],
+   "statement": "Let A be a complex m×n matrix, with m,n≥1 and rank r. There are unitary matrices U and V and a rectangular diagonal matrix Σ such that A=UΣV*. Its nonzero diagonal entries σ₁≥…≥σᵣ>0 are the square roots of the positive eigenvalues of A*A. Its Euclidean operator norm is σ₁ when r>0, and 0 when r=0.",
+   "hypotheses": [
+    "A acts between finite-dimensional complex Euclidean spaces. The adjoint A* is the conjugate transpose.",
+    "U and V are square unitary matrices on the codomain and domain respectively. Σ has r positive diagonal entries."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1425077",
+     "reason": "The finite-dimensional Hermitian spectral theorem supplies an orthonormal eigenbasis of A*A."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "unitary matrix",
+    "singular value",
+    "rectangular diagonal matrix"
+   ],
+   "concept_prerequisites": [
+    "c:matrix",
+    "c:adjoint-operator",
+    "c:eigenvalue",
+    "c:orthonormal-basis"
+   ],
+   "definitions": [
+    {
+     "name": "unitary matrix",
+     "text": "A square matrix U is unitary if U*U=UU*=I."
+    },
+    {
+     "name": "singular value",
+     "text": "A singular value is the nonnegative square root of an eigenvalue of A*A."
+    },
+    {
+     "name": "rectangular diagonal matrix",
+     "text": "Σ has entries only at positions (i,i). All other entries are 0."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/InnerProductSpace/SingularValues.lean#L115-L118",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.InnerProductSpace.SingularValues",
+    "declaration": "LinearMap.singularValues_fin",
+    "lines": [
+     115,
+     118
+    ],
+    "module_sha256": "c8a679572f8370c96c94a6042a4f42de4bceafc86cc10550c4495c6a1c066d5f",
+    "excerpt": "theorem singularValues_fin {n : ℕ} (hn : finrank 𝕜 E = n) (i : Fin n) :\n    T.singularValues i = √(T.isSymmetric_adjoint_comp_self.eigenvalues hn i) := by\n  subst hn\n  exact Finsupp.embDomain_apply_self _ _ i",
+    "excerpt_sha256": "5687a9dc6052bc4db574658bcac6d14dbb5fbbd04635b012a9c057073f7b5b1b",
+    "attribution": "/-\nCopyright (c) 2026 Niels Voss, Arnav Mehta. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Niels Voss, Arnav Mehta\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source identifies singular values with square roots of the eigenvalues of the adjoint square. The full decomposition proof is authored from the linked spectral theorem. The source excerpt alone does not prove the complete authored statement."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The matrix A*A is Hermitian because (A*A)*=A*A. It is positive semidefinite because v*A*Av=‖Av‖²≥0. The linked spectral theorem gives an orthonormal basis vᵢ of eigenvectors with real eigenvalues λᵢ≥0.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Order the positive eigenvalues first, and set σᵢ=√λᵢ. For λᵢ>0 define uᵢ=Avᵢ/σᵢ. Then ⟨uᵢ,uⱼ⟩=⟨vᵢ,A*Avⱼ⟩/(σᵢσⱼ)=λⱼδᵢⱼ/(σᵢσⱼ)=δᵢⱼ. Thus these uᵢ are orthonormal.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "If λᵢ=0, then ‖Avᵢ‖²=λᵢ‖vᵢ‖²=0, so Avᵢ=0. Expansion in the vᵢ basis shows that the range of A is exactly the span of the positive-eigenvalue uᵢ. Its dimension is the number of those eigenvalues, namely r.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Extend the r orthonormal vectors uᵢ to an orthonormal basis of ℂᵐ. If their span is proper, choose a vector outside it. Subtract its orthogonal projections onto the existing vectors. The remainder is nonzero and orthogonal to them. Normalize it, and repeat until m vectors exist.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Let U and V have these basis vectors as columns. They are unitary. The equations Avᵢ=σᵢuᵢ for i≤r and Avᵢ=0 otherwise show U*AV=Σ. Multiply by U and V* to obtain A=UΣV*.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "For x=∑cᵢvᵢ, orthonormality gives ‖Ax‖²=∑_{i≤r}σᵢ²|cᵢ|²≤σ₁²‖x‖². Equality holds for x=v₁ if r>0. If r=0, A=0. This proves the operator norm formula.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Exact singular values of a rectangular shear",
+    "goal": "Compute the singular values and Euclidean condition number of A=[[1,1],[0,1],[0,0]].",
+    "hypotheses": [
+     "A is a complex 3×2 matrix with real entries. Its 2 columns are linearly independent, so r=2."
+    ],
+    "why_theorem_applies": "The adjoint square converts the rectangular problem into a Hermitian eigenvalue calculation. The resulting singular values measure amplification in orthogonal directions.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Compute A*A=[[1,1],[1,2]]. Its characteristic polynomial is λ²−3λ+1. The eigenvalues are λ±=(3±√5)/2, both positive.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Put φ=(1+√5)/2. Since φ²=(3+√5)/2 and φ⁻²=(3−√5)/2, the singular values are φ and φ⁻¹.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For either eigenvalue λ, an eigenvector is (1,λ−1). Its normalized form is vλ=(1,λ−1)/√(1+(λ−1)²). The matching left singular vector is uλ=(λ,λ−1,0)/(√λ√(1+(λ−1)²)).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The two left singular vectors span the first 2 coordinate directions. Add (0,0,1) to obtain U. These vectors and the vλ give A=UΣV*. The largest amplification is φ, and the smallest amplification on the domain is φ⁻¹.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The Euclidean condition number for this full-column-rank map is their ratio φ²=(3+√5)/2. The determinant of its top 2×2 block is 1, but this does not force equal amplification in different directions.",
+      "uses": []
+     }
+    ],
+    "result": "The singular values are φ and φ⁻¹. The Euclidean condition number is φ²≈2.618.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The order of singular vectors is not unique when singular values repeat.",
+    "Finite-dimensionality is essential for this finite matrix statement. Infinite-dimensional operators need different compactness hypotheses."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-gaussian-quadratic-integral",
+   "name": "Gaussian quadratic integral with a linear source",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.PR",
+    "math-ph"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.PR",
+    "math-ph"
+   ],
+   "statement": "Let d≥1, let A be a real symmetric positive definite d×d matrix, and let b∈ℝᵈ. With Lebesgue measure, ∫_{ℝᵈ} exp(−xᵀAx/2+bᵀx)dx=(2π)^(d/2)exp(bᵀA⁻¹b/2)/√det(A). The integral is finite and positive.",
+   "hypotheses": [
+    "A is real, symmetric and positive definite. Thus xᵀAx>0 for x≠0.",
+    "b is any real vector. The integral uses d-dimensional Lebesgue measure."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q7820874",
+     "reason": "Tonelli permits the nonnegative product integral and its factorization before integrability is established."
+    },
+    {
+     "id": "nm:change-of-variables-to-polar-co-ordinates",
+     "reason": "The scalar Gaussian calculation uses polar coordinates with Jacobian r."
+    },
+    {
+     "id": "wd:Q1217677",
+     "reason": "The fundamental theorem of calculus evaluates the radial integral and the scalar antiderivatives."
+    },
+    {
+     "id": "wd:Q1425077",
+     "reason": "The spectral theorem diagonalizes the real symmetric positive definite matrix."
+    },
+    {
+     "id": "nm:change-of-variables-formula",
+     "reason": "The affine substitution x=μ+Qy has a nonzero Jacobian and a bijective smooth inverse."
+    },
+    {
+     "id": "nm:integration-by-parts",
+     "reason": "The covariance computation reduces each scalar second moment to its Gaussian normalization by integration by parts."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "positive definite matrix",
+    "linear source",
+    "quadratic Gaussian integral"
+   ],
+   "concept_prerequisites": [
+    "c:gaussian-integral",
+    "c:matrix",
+    "c:eigenvalue",
+    "c:lebesgue-integral"
+   ],
+   "definitions": [
+    {
+     "name": "positive definite matrix",
+     "text": "A real symmetric matrix A is positive definite if xᵀAx>0 for every nonzero x."
+    },
+    {
+     "name": "linear source",
+     "text": "The vector b contributes the term bᵀx to the exponent."
+    },
+    {
+     "name": "quadratic Gaussian integral",
+     "text": "The integrand is the exponential of a negative definite quadratic form plus a linear term."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gaussian/GaussianIntegral.lean#L211-L222",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral",
+    "declaration": "integral_gaussian",
+    "lines": [
+     211,
+     222
+    ],
+    "module_sha256": "268275f751867a7c06a0e935a83946807966afcc34bff6ba32e82f39b689c845",
+    "excerpt": "theorem integral_gaussian (b : ℝ) : ∫ x : ℝ, exp (-b * x ^ 2) = √(π / b) := by\n  -- First we deal with the crazy case where `b ≤ 0`: then both sides vanish.\n  rcases le_or_gt b 0 with (hb | hb)\n  · rw [integral_undef, sqrt_eq_zero_of_nonpos]\n    · exact div_nonpos_of_nonneg_of_nonpos pi_pos.le hb\n    · simpa only [not_lt, integrable_exp_neg_mul_sq_iff] using hb\n  -- Assume now `b > 0`. Then both sides are non-negative and their squares agree.\n  refine (sq_eq_sq₀ (by positivity) (by positivity)).1 ?_\n  rw [← ofReal_inj, ofReal_pow, ← coe_algebraMap, RCLike.algebraMap_eq_ofReal, ← integral_ofReal,\n    sq_sqrt (div_pos pi_pos hb).le, ← RCLike.algebraMap_eq_ofReal, coe_algebraMap, ofReal_div]\n  convert! integral_gaussian_sq_complex (by rwa [ofReal_re] : 0 < (b : ℂ).re) with _ x\n  rw [ofReal_exp, ofReal_mul, ofReal_pow, ofReal_neg]",
+    "excerpt_sha256": "7fb5b03a108bc3600fd5df4916f7a7060db6a2850b72c5a262fd516373f316de",
+    "attribution": "/-\nCopyright (c) 2022 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the scalar Gaussian integral. The authored proof proves that scalar case and then derives the full positive-definite matrix formula. For nonpositive scalar parameters, mathlib uses an undefined-integral convention that is outside the authored statement."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "First prove ∫ℝexp(−t²)dt=√π. This integral is finite: outside |t|≤1, exp(−t²)≤exp(−|t|), whose integral is finite. Let J denote the integral. Its nonnegative integrand permits the linked Tonelli theorem, so J²=∫_{ℝ²}exp(−u²−v²)dudv.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "The linked polar coordinate formula gives J²=2π∫₀∞r exp(−r²)dr=π. An antiderivative is −exp(−r²)/2. Its endpoint values are −1/2 and 0. Since J>0, J=√π. Scaling t=√(λ/2)y gives ∫ℝexp(−λy²/2)dy=√(2π/λ) for λ>0.",
+      "uses": [
+       "nm:change-of-variables-to-polar-co-ordinates",
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "The linked spectral theorem gives A=QΛQᵀ, with Q orthogonal and Λ diagonal with entries λᵢ>0. Positivity follows by evaluation on each unit eigenvector. Therefore A is invertible and det(A)=∏λᵢ>0.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Set μ=A⁻¹b. Expand (x−μ)ᵀA(x−μ)=xᵀAx−2bᵀx+bᵀA⁻¹b. Thus the exponent is −(x−μ)ᵀA(x−μ)/2+bᵀA⁻¹b/2.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Use x=μ+Qy. This affine map is a bijection with absolute Jacobian determinant 1, because QᵀQ=I. The linked change-of-variables formula transforms the integral into exp(bᵀA⁻¹b/2)∫exp(−∑λᵢyᵢ²/2)dy.",
+      "uses": [
+       "nm:change-of-variables-formula"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Tonelli factors this last nonnegative integral into d scalar integrals. Step 2 gives ∏√(2π/λᵢ)=(2π)^(d/2)/√det(A). Every scalar integral is finite, so the original integral is finite. All factors are positive.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Normalize a correlated Gaussian exactly",
+    "goal": "Evaluate ∫_{ℝ²}exp(−x₁²−x₁x₂−x₂²+x₁)dx₁dx₂.",
+    "hypotheses": [
+     "A=[[2,1],[1,2]] and b=(1,0)ᵀ. The exponent is −xᵀAx/2+bᵀx.",
+     "The eigenvalues of A are 1 and 3, so A is positive definite."
+    ],
+    "why_theorem_applies": "Completion of the square handles the linear source. The determinant gives the normalization without two nested square completions.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Compute det(A)=3 and A⁻¹=(1/3)[[2,−1],[−1,2]]. Thus μ=A⁻¹b=(2/3,−1/3)ᵀ.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Compute bᵀA⁻¹b=2/3. The source factor is exp(1/3). Since d=2, the theorem gives Z=2πexp(1/3)/√3.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Divide the original integrand by Z to obtain a probability density. In the shifted coordinates y=x−μ, its exponent is −yᵀAy/2. The change of variables proves that the density integrates to 1.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The covariance is A⁻¹. To check this directly, diagonalize A with eigenvectors (1,−1)/√2 and (1,1)/√2. The two scalar Gaussian factors have variances 1 and 1/3. Transform their diagonal covariance by the orthogonal basis to obtain (1/3)[[2,−1],[−1,2]]. For a scalar density proportional to exp(−λt²/2), symmetry gives mean 0. Integration by parts gives ∫t²exp(−λt²/2)dt=(1/λ)∫exp(−λt²/2)dt, because t exp(−λt²/2) tends to 0 at both ends.",
+      "uses": [
+       "nm:integration-by-parts"
+      ]
+     }
+    ],
+    "result": "The integral is 2πexp(1/3)/√3. The normalized density has mean (2/3,−1/3) and covariance A⁻¹.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "A positive semidefinite singular A does not give a finite integral over all of ℝᵈ.",
+    "An indefinite A produces exponential growth along some direction. The stated formula does not apply."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-beta-gamma-integral",
+   "name": "Beta–Gamma factorization for improper integrals",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.PR"
+   ],
+   "statement": "For real a,b>0, define Γ(a)=∫₀∞t^(a−1)e^(−t)dt and B(a,b)=∫₀¹s^(a−1)(1−s)^(b−1)ds. Both integrals converge, Γ(a+b)>0, and B(a,b)=Γ(a)Γ(b)/Γ(a+b). Also ∫₀∞x^(a−1)/(1+x)^(a+b)dx=B(a,b).",
+   "hypotheses": [
+    "The parameters a and b are real and strictly positive.",
+    "The integrals are Lebesgue integrals of nonnegative functions on the stated open intervals."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q7820874",
+     "reason": "Tonelli factors nonnegative integrals on the positive quadrant."
+    },
+    {
+     "id": "nm:change-of-variables-formula",
+     "reason": "The positive-quadrant substitution has a smooth inverse and Jacobian r."
+    },
+    {
+     "id": "nm:change-of-variable",
+     "reason": "The final one-dimensional substitution maps (0,∞) bijectively onto (0,1)."
+    },
+    {
+     "id": "nm:integration-by-parts",
+     "reason": "The worked computation derives the Gamma recurrence from the defining integral."
+    },
+    {
+     "id": "wd:Q1217677",
+     "reason": "The scalar antiderivative gives Γ(1)=1."
+    },
+    {
+     "id": "nm:technique-gaussian-quadratic-integral",
+     "reason": "Its scalar case evaluates Γ(1/2) after the substitution u=v²."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Gamma function",
+    "Beta integral"
+   ],
+   "concept_prerequisites": [
+    "c:gamma-function",
+    "c:euler-beta-function",
+    "c:lebesgue-integral"
+   ],
+   "definitions": [
+    {
+     "name": "Gamma function",
+     "text": "For a>0, Γ(a) is the convergent integral ∫₀∞t^(a−1)e^(−t)dt."
+    },
+    {
+     "name": "Beta integral",
+     "text": "For a,b>0, B(a,b)=∫₀¹s^(a−1)(1−s)^(b−1)ds."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L123-L138",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+    "declaration": "Complex.Gamma_mul_Gamma_eq_betaIntegral",
+    "lines": [
+     123,
+     138
+    ],
+    "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+    "excerpt": "theorem Gamma_mul_Gamma_eq_betaIntegral {s t : ℂ} (hs : 0 < re s) (ht : 0 < re t) :\n    Gamma s * Gamma t = Gamma (s + t) * betaIntegral s t := by\n  -- Note that we haven't proved (yet) that the Gamma function has no zeroes, so we can't formulate\n  -- this as a formula for the Beta function.\n  have conv_int := integral_posConvolution\n    (GammaIntegral_convergent hs) (GammaIntegral_convergent ht) (ContinuousLinearMap.mul ℝ ℂ)\n  simp_rw [ContinuousLinearMap.mul_apply'] at conv_int\n  have hst : 0 < re (s + t) := by rw [add_re]; exact add_pos hs ht\n  rw [Gamma_eq_integral hs, Gamma_eq_integral ht, Gamma_eq_integral hst, GammaIntegral,\n    GammaIntegral, GammaIntegral, ← conv_int, ← MeasureTheory.integral_mul_const (betaIntegral _ _)]\n  refine setIntegral_congr_fun measurableSet_Ioi fun x hx => ?_\n  rw [mul_assoc, ← betaIntegral_scaled s t hx, ← intervalIntegral.integral_const_mul]\n  congr 1 with y : 1\n  push_cast\n  suffices Complex.exp (-x) = Complex.exp (-y) * Complex.exp (-(x - y)) by rw [this]; ring\n  rw [← Complex.exp_add]; congr 1; abel",
+    "excerpt_sha256": "e99128593f625a846d51fc2b2964103c5102af68cbd64ed902605cd8d6d3cc79",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the Beta–Gamma product for complex parameters with positive real parts. The authored result restricts to positive real parameters and proves the nonzero denominator and the rational-integral substitution."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For a>0, t^(a−1) is integrable on (0,1), with integral 1/a. For t≥1, t^(a−1)e^(−t)≤Ce^(−t/2) for some finite C. If a≤1, take C=1. If a>1, differentiation shows t^(a−1)e^(−t/2) has a finite maximum. Hence Γ(a) is finite. The same proof applies to Γ(b) and Γ(a+b).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The Beta integrand is integrable near 0 because a>0 and (1−s)^(b−1) is bounded on (0,1/2). It is integrable near 1 because b>0 and s^(a−1) is bounded on (1/2,1). Thus B(a,b) is finite. Γ(a+b)>0 because its integrand is positive on (1,2).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Tonelli gives Γ(a)Γ(b)=∫_{(0,∞)²}u^(a−1)v^(b−1)e^(−u−v)dudv. The integrand is nonnegative, so the factorization is valid.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Use u=rs and v=r(1−s), with r>0 and 0<s<1. The inverse map is r=u+v and s=u/(u+v), so this is a smooth bijection. Its absolute Jacobian is r. The change-of-variables formula gives the integrand r^(a+b−1)e^(−r)s^(a−1)(1−s)^(b−1).",
+      "uses": [
+       "nm:change-of-variables-formula"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Tonelli factors the transformed integral into Γ(a+b)B(a,b). Divide by the positive Γ(a+b) to obtain the ratio formula.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "For the second identity, set s=x/(1+x). Then x=s/(1−s) and dx=ds/(1−s)². Direct substitution gives x^(a−1)(1+x)^(−a−b)dx=s^(a−1)(1−s)^(b−1)ds. The change-of-variables formula and the convergence already proved give the result.",
+      "uses": [
+       "nm:change-of-variable"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Evaluate a fractional rational integral",
+    "goal": "Compute I=∫₀∞√x/(1+x)⁴dx.",
+    "hypotheses": [
+     "Take a=3/2 and b=5/2. Both parameters are positive, and a+b=4."
+    ],
+    "why_theorem_applies": "The Beta substitution converts the fractional rational integrand into Gamma factors with half-integer arguments.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The theorem gives I=Γ(3/2)Γ(5/2)/Γ(4). All convergence conditions hold because a,b>0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Integration by parts gives Γ(t+1)=tΓ(t) for t>0. Its boundary term uᵗe^(−u) tends to 0 as u→0 and u→∞. Also Γ(1)=∫₀∞e^(−u)du=1.",
+      "uses": [
+       "nm:integration-by-parts",
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Set u=v² in Γ(1/2). Its integral becomes 2∫₀∞e^(−v²)dv=√π by the Gaussian integral and symmetry. Thus Γ(3/2)=√π/2 and Γ(5/2)=3√π/4.",
+      "uses": [
+       "nm:change-of-variable",
+       "nm:technique-gaussian-quadratic-integral"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "The recurrence gives Γ(4)=3·2·1=6. Hence I=((√π/2)(3√π/4))/6=π/16.",
+      "uses": []
+     }
+    ],
+    "result": "The convergent improper integral equals π/16.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The integral proof requires a,b>0. Analytic continuation needs another argument.",
+    "The endpoints 0 and 1 can be singular. The proof treats their integrability explicitly."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-hermite-gaussian-orthogonality",
+   "name": "Hermite orthogonality and Gaussian polynomial projections",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.PR",
+    "math.NA"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.PR",
+    "math.NA"
+   ],
+   "statement": "Define H₀(x)=1 and Hₙ₊₁(x)=xHₙ(x)−Hₙ′(x) for n≥0. For all integers m,n≥0, ∫ℝHₘ(x)Hₙ(x)e^(−x²/2)dx=√(2π)n! if m=n, and 0 otherwise. Each integral is absolutely convergent.",
+   "hypotheses": [
+    "Hₙ is the probabilists’ Hermite polynomial. The weight is e^(−x²/2), not e^(−x²).",
+    "m and n are nonnegative integers. Integration uses real Lebesgue measure."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:integration-by-parts",
+     "reason": "Repeated integration by parts transfers derivatives from the Gaussian to the polynomial."
+    },
+    {
+     "id": "nm:technique-gaussian-quadratic-integral",
+     "reason": "The scalar case supplies normalization and integrable tail bounds."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Hermite polynomial",
+    "Gaussian polynomial inner product"
+   ],
+   "concept_prerequisites": [
+    "c:hermite-polynomial",
+    "c:gaussian-integral",
+    "c:polynomial",
+    "c:lebesgue-integral"
+   ],
+   "definitions": [
+    {
+     "name": "Hermite polynomial",
+     "text": "H₀=1 and Hₙ₊₁=xHₙ−Hₙ′ define the probabilists’ Hermite polynomials."
+    },
+    {
+     "name": "Gaussian polynomial inner product",
+     "text": "⟨P,Q⟩=(1/√(2π))∫ℝP(x)Q(x)e^(−x²/2)dx."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/RingTheory/Polynomial/Hermite/Gaussian.lean#L40-L57",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.RingTheory.Polynomial.Hermite.Gaussian",
+    "declaration": "Polynomial.deriv_gaussian_eq_hermite_mul_gaussian",
+    "lines": [
+     40,
+     57
+    ],
+    "module_sha256": "8be7d8a5b384e213c974632baf04d1867bab4b67c473e4419c7eb51e4093ff41",
+    "excerpt": "theorem deriv_gaussian_eq_hermite_mul_gaussian (n : ℕ) (x : ℝ) :\n    deriv^[n] (fun y => Real.exp (-(y ^ 2 / 2))) x =\n    (-1 : ℝ) ^ n * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)) := by\n  rw [mul_assoc]\n  induction n generalizing x with\n  | zero => rw [Function.iterate_zero_apply, pow_zero, one_mul, hermite_zero, C_1, map_one, one_mul]\n  | succ n ih =>\n    replace ih : deriv^[n] _ = _ := _root_.funext ih\n    have deriv_gaussian :\n      deriv (fun y => Real.exp (-(y ^ 2 / 2))) x = -x * Real.exp (-(x ^ 2 / 2)) := by\n      -- Porting note (https://github.com/leanprover-community/mathlib4/issues/10745): was `simp [mul_comm, ← neg_mul]`\n      rw [deriv_exp (by simp)]\n      simp [mul_comm]\n    rw [Function.iterate_succ_apply', ih, deriv_const_mul_field, deriv_fun_mul, pow_succ (-1 : ℝ),\n      deriv_gaussian, hermite_succ, map_sub, map_mul, aeval_X, Polynomial.deriv_aeval]\n    · ring\n    · apply Polynomial.differentiable_aeval\n    · apply DifferentiableAt.exp; simp -- Porting note: was just `simp`",
+    "excerpt_sha256": "c05be1c2bfb55edebbaa9c014df614a883dfbfbef16a5df46945aaa72f84f754",
+    "attribution": "/-\nCopyright (c) 2023 Luke Mantle. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Luke Mantle, Jake Levinson\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the derivative identity for the probabilists’ Hermite polynomials. The authored proof derives orthogonality by repeated integration by parts and proves the boundary conditions."
+   },
+   "source_references": [],
+   "proof_status": "source proof inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Induction on n shows Hₙ is monic of degree n. The term xHₙ has degree n+1 and leading coefficient 1. The derivative Hₙ′ has smaller degree, so subtraction cannot change that leading term.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Put φ(x)=e^(−x²/2). Since φ′=−xφ, induction and the product rule give φ^(n)=(-1)ⁿHₙφ. The induction step is D((-1)ⁿHₙφ)=(-1)ⁿ(Hₙ′−xHₙ)φ=(-1)ⁿ⁺¹Hₙ₊₁φ.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Every polynomial times φ is integrable, and tends to 0 at ±∞. For each integer k≥0, |x|ᵏe^(−x²/2) has a finite integral. For large |x|, k log|x|≤x²/4, so the expression is at most e^(−x²/4). The linked Gaussian integral proves that bound is integrable. This also proves the boundary limit.",
+      "uses": [
+       "nm:technique-gaussian-quadratic-integral"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "On each finite interval, integrate Hₘφ^(n) by parts n times. Then send both endpoints to infinity. Every boundary term is a polynomial times φ, so step 3 makes it vanish. Absolute integrability permits the improper limits. The two factors (-1)ⁿ cancel, giving ∫HₘHₙφ=∫Hₘ^(n)φ.",
+      "uses": [
+       "nm:integration-by-parts"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "If n>m, the nth derivative of Hₘ is 0, so the integral is 0. If n=m, monicity gives Hₙ^(n)=n!, and the linked Gaussian integral gives n!√(2π).",
+      "uses": [
+       "nm:technique-gaussian-quadratic-integral"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "If n<m, interchange m and n in the integral and use the n>m case. Multiplication of the real polynomial values is commutative. This covers every pair of indices, including m=n=0.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A Gaussian control variate from orthogonal polynomials",
+    "goal": "Find the best approximation of X⁴ by a+b(X²−1) in mean square, for a standard normal variable X.",
+    "hypotheses": [
+     "The density of X is e^(−x²/2)/√(2π). Its normalization follows from the Gaussian integral.",
+     "Mean-square error is the Gaussian polynomial inner product of the residual with itself."
+    ],
+    "why_theorem_applies": "Hermite orthogonality makes the least-squares coefficients independent. It also computes the residual variance exactly.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The recurrence gives H₂=x²−1 and H₄=x⁴−6x²+3. Therefore x⁴=H₄+6H₂+3H₀.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The residual is H₄+(6−b)H₂+(3−a)H₀. Orthogonality gives its squared norm 4!+2!(6−b)²+(3−a)²=24+2(6−b)²+(3−a)².",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "This expression has its unique minimum at a=3 and b=6. The best approximation is 3+6(X²−1), and its mean-square error is 24.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Orthogonality with H₀ gives E[X⁴]=3. The squared norm of X⁴ is 24+36·2+9=105. Thus Var(X⁴)=105−9=96.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The adjusted estimator X⁴−6(X²−1) still has mean 3 because E[H₂]=0. Its centered residual is H₄, so its variance is 24. The orthogonal calculation reduces the variance from 96 to 24.",
+      "uses": []
+     }
+    ],
+    "result": "The best coefficients are a=3 and b=6. The residual variance is 24.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Different Hermite conventions use different Gaussian weights and normalization constants.",
+    "The polynomial projection is in Gaussian L². It does not minimize the uniform error on ℝ."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
