@@ -12313,6 +12313,2068 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-characteristic-function-independence",
+   "name": "Characteristic functions decide independence",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let X and Y be random vectors in ℝᵈ on a probability space (Ω,F,P). Write φ_Z(t)=E e^{i⟨t,Z⟩}. (a) If two finite Borel measures μ and ν on ℝⁿ satisfy φ_μ=φ_ν, then μ=ν. (b) X and Y are independent if and only if E exp(i⟨s,X⟩+i⟨t,Y⟩)=φ_X(s)φ_Y(t) for all s,t in ℝᵈ.",
+   "hypotheses": [
+    "The measures in (a) are finite and Borel. The space is ℝⁿ with the usual inner product.",
+    "In (b) the vectors X and Y are measurable. They take values in the same space ℝᵈ, but the argument also works for different dimensions.",
+    "The factorization in (b) must hold for every pair (s,t). One pair is not enough."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1149022",
+     "reason": "Fubini theorem for the Gaussian inversion, the smoothed density and the product measure."
+    },
+    {
+     "id": "wd:Q1067156",
+     "reason": "Dominated convergence to remove the smoothing and to approximate closed sets."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "characteristic function",
+    "independence of random vectors",
+    "Gaussian smoothing"
+   ],
+   "concept_prerequisites": [
+    "c:characteristic-function",
+    "c:independent-random-variables",
+    "c:product-measure"
+   ],
+   "definitions": [
+    {
+     "name": "characteristic function",
+     "text": "For a finite measure μ on ℝⁿ, φ_μ(t)=∫e^{i⟨t,x⟩}dμ(x). For a random vector Z, φ_Z is the characteristic function of its law."
+    },
+    {
+     "name": "independence of random vectors",
+     "text": "X and Y are independent when the law of the pair (X,Y) is the product of the laws of X and Y."
+    },
+    {
+     "name": "Gaussian smoothing",
+     "text": "The convolution of a measure μ with the centered normal law N(0,σ²I). It has a bounded continuous density."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Independence/CharacteristicFunction.lean#L62-L69",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Independence.CharacteristicFunction",
+    "declaration": "indepFun_iff_charFun_prod",
+    "lines": [
+     62,
+     69
+    ],
+    "module_sha256": "2f9db785ce5b22da73c1e5468c21755ff88530eab52e7e6687ca0b833dcb7e67",
+    "excerpt": "/-- Two random variables are independent if and only if their joint characteristic function is equal\nto the product of the characteristic functions. This is the version for Hilbert spaces, see\n`indepFun_iff_charFunDual_prod` for the Banach space version. -/\nlemma indepFun_iff_charFun_prod [CompleteSpace E] (hX : AEMeasurable X P) (hY : AEMeasurable Y P) :\n    X ⟂ᵢ[P] Y ↔ ∀ t, charFun (P.map (fun ω ↦ toLp 2 (X ω, Y ω))) t =\n      charFun (P.map X) t.ofLp.1 * charFun (P.map Y) t.ofLp.2 := by\n  rw [indepFun_iff_map_prod_eq_prod_map_map hX hY, ← charFun_eq_prod_iff,\n    AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop), Function.comp_def]",
+    "excerpt_sha256": "f85e886d5e97a7d4abdf65e4407d225ef4828b89ccd6e9067634a64bd07744ba",
+    "attribution": "/-\nCopyright (c) 2025 Etienne Marion. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Etienne Marion\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves part (b) for Hilbert-space valued variables. It rewrites independence as a product law and compares characteristic functions."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Measure/CharacteristicFunction/Basic.lean#L255-L264",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic",
+     "declaration": "Measure.ext_of_charFun",
+     "lines": [
+      255,
+      264
+     ],
+     "module_sha256": "3f90bba2eb49b295a4dd7bb80f5434f66c31ebdd2801a0bc82e5c9476c9b54e4",
+     "excerpt": "/-- If the characteristic functions `charFun` of two finite measures `μ` and `ν` on\na complete second-countable inner product space coincide, then `μ = ν`. -/\ntheorem Measure.ext_of_charFun [CompleteSpace E]\n    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (h : charFun μ = charFun ν) :\n    μ = ν := by\n  simp_rw [funext_iff, charFun_eq_integral_innerProbChar] at h\n  refine ext_of_integral_char_eq continuous_probChar probChar_ne_one (L := innerₗ E)\n    ?_ ?_ h\n  · exact fun v hv ↦ DFunLike.ne_iff.mpr ⟨v, inner_self_ne_zero.mpr hv⟩\n  · exact continuous_inner",
+     "excerpt_sha256": "949686a8bc417f922fb7d9911ce61c6750932ecdef5f51b7fbf81201aefc2eb8",
+     "attribution": "/-\nCopyright (c) 2024 Jakob Stiefel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jakob Stiefel, Rémy Degenne, Thomas Zhu\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (a) for finite measures on a complete inner product space."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Normal characteristic function. Let g(x)=e^{−x²/2}/√(2π) and φ(t)=∫e^{itx}g(x)dx. The factor |x|e^{−x²/2} is integrable, so differentiation under the integral is allowed. Then φ′(t)=∫ix e^{itx}g(x)dx. Integration by parts gives φ′(t)=−tφ(t). Also φ(0)=1. So φ(t)=e^{−t²/2}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Gaussian inversion formula. The scaling x↦x/σ gives ∫e^{itu}e^{−σ²t²/2}dt=(√(2π)/σ)e^{−u²/(2σ²)} for σ>0. Take the product over d coordinates. With g_σ(u)=(2πσ²)^{−d/2}e^{−|u|²/(2σ²)} we get g_σ(u)=(2π)^{−d}∫e^{i⟨t,u⟩}e^{−σ²|t|²/2}dt. The d-dimensional integrals split into products by the Fubini theorem.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Smoothed density from the characteristic function. Let μ be a finite measure and h_σ(x)=∫g_σ(x−z)dμ(z). Insert the formula of step 2. The integrand is bounded by e^{−σ²|t|²/2}, which is integrable for dt⊗dμ. So Fubini gives h_σ(x)=(2π)^{−d}∫e^{i⟨t,x⟩}e^{−σ²|t|²/2}φ_μ(−t)dt. Thus h_σ depends on μ only through φ_μ.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Equal smoothings. If φ_μ=φ_ν, then h_σ is the same function for μ and ν, for each σ>0. So the measures h_σ(x)dx coincide. Let f be bounded and continuous. Then ∫f(x)h_σ(x)dx=∫E f(z+σN)dμ(z), where N is a standard normal vector. The same holds for ν.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Remove the smoothing. As σ→0, f(z+σN)→f(z) for each z. The integrand is bounded by sup|f|, and μ is finite. So the dominated convergence theorem gives ∫E f(z+σN)dμ(z)→∫f dμ. The same holds for ν. Hence ∫f dμ=∫f dν for every bounded continuous f.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Equal measures. Let F be a closed set and f_k(x)=max(0,1−k·dist(x,F)). Each f_k is bounded and continuous, and f_k↓1_F. By dominated convergence μ(F)=ν(F). Closed sets form a π-system that generates the Borel σ-algebra, and μ(ℝⁿ)=ν(ℝⁿ). So μ=ν by the π-λ uniqueness theorem. This proves (a).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Proof of (b), forward direction. If X and Y are independent, the law of (X,Y) is μ_X⊗μ_Y. The Fubini theorem gives E exp(i⟨s,X⟩+i⟨t,Y⟩)=∫e^{i⟨s,x⟩}dμ_X ∫e^{i⟨t,y⟩}dμ_Y=φ_X(s)φ_Y(t).",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s8",
+      "text": "Proof of (b), reverse direction. The product measure μ_X⊗μ_Y has characteristic function φ_X(s)φ_Y(t) by the same Fubini computation. This equals the characteristic function of the law of (X,Y) by hypothesis. By part (a) with n=2d, the law of (X,Y) equals μ_X⊗μ_Y. This is independence.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Uncorrelated variables that are not independent",
+    "goal": "Use the joint characteristic function to show that a pair is dependent, and to show that a pair of normal combinations is independent.",
+    "hypotheses": [
+     "Case 1: (X,Y) is uniform on the three points (0,0), (1,1) and (−1,1).",
+     "Case 2: X and Z are independent N(0,1) variables. The pair is (U,V)=(X+Z,X−Z)."
+    ],
+    "why_theorem_applies": "Part (b) says independence is equivalent to the factorization for every (s,t). So one failing pair (s,t) proves dependence, and a general identity proves independence.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Case 1 marginals. X takes the values 0, 1, −1 with probability 1/3 each. So φ_X(s)=(1+2cos s)/3. Y takes the value 0 with probability 1/3 and 1 with probability 2/3. So φ_Y(t)=(1+2e^{it})/3.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Case 1 joint function. φ_{(X,Y)}(s,t)=(1+e^{i(s+t)}+e^{i(−s+t)})/3. At (s,t)=(π,π) both exponentials equal 1, so the value is 1. The product is φ_X(π)φ_Y(π)=(−1/3)(−1/3)=1/9. Since 1≠1/9, the factorization fails and X,Y are dependent.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Case 1 is uncorrelated. E X=0 and E[XY]=(0+1−1)/3=0. So Cov(X,Y)=0. Covariance zero does not give independence. A second test point (s,t)=(1,0.5) gives the joint value 0.6494+0.1727i and the product 0.6369+0.2217i. They differ again.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Case 2 joint function. E exp(is(X+Z)+it(X−Z))=E exp(i(s+t)X)E exp(i(s−t)Z)=exp(−((s+t)²+(s−t)²)/2)=exp(−(s²+t²)).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Case 2 marginals. U=X+Z and V=X−Z are N(0,2). So φ_U(s)=e^{−s²} and φ_V(t)=e^{−t²}. The product is e^{−(s²+t²)}. It equals the joint function for all (s,t). At (s,t)=(0.7,−1.3) both sides equal e^{−2.18}=0.113042. By part (b), U and V are independent.",
+      "uses": []
+     }
+    ],
+    "result": "Case 1: the pair is dependent although Cov(X,Y)=0, because φ_{(X,Y)}(π,π)=1 and φ_X(π)φ_Y(π)=1/9. Case 2: X+Z and X−Z are independent.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Part (a) needs finite measures. For infinite measures the characteristic function may not exist.",
+    "The factorization must hold for all arguments. Testing a finite set of (s,t) cannot prove independence.",
+    "The proof of (a) shown here is for ℝⁿ. Infinite-dimensional spaces need a different argument. The source declaration covers Hilbert spaces.",
+    "This entry says nothing about convergence of laws. That is the Lévy continuity theorem."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-gaussian-uncorrelated-independence",
+   "name": "Jointly Gaussian and uncorrelated implies independent",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let (X,Y) be a jointly Gaussian pair of real random variables. This means every real combination aX+bY has a normal law, possibly with variance 0. If Cov(X,Y)=0, then X and Y are independent. Hence for i.i.d. normal X₁,…,Xₙ the sample mean X̄ is independent of every residual Xᵢ−X̄ and of the sample variance.",
+   "hypotheses": [
+    "The pair must be jointly Gaussian. Two normal marginals are not enough.",
+    "All second moments are finite, because a normal law has all moments.",
+    "Degenerate normal laws are allowed. A constant is a normal law with variance 0."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-characteristic-function-independence",
+     "reason": "The independence criterion that turns the factorization into independence."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "jointly Gaussian",
+    "covariance",
+    "sample variance"
+   ],
+   "concept_prerequisites": [
+    "c:gaussian-measure",
+    "c:covariance-matrix",
+    "c:independent-random-variables"
+   ],
+   "definitions": [
+    {
+     "name": "jointly Gaussian",
+     "text": "A random vector is jointly Gaussian when every real linear functional of it has a normal law."
+    },
+    {
+     "name": "covariance",
+     "text": "Cov(X,Y)=E[(X−EX)(Y−EY)]."
+    },
+    {
+     "name": "sample variance",
+     "text": "S²=(1/(n−1))Σ(Xᵢ−X̄)². It is a function of the residuals Xᵢ−X̄."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Distributions/Gaussian/HasGaussianLaw/Independence.lean#L367-L373",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence",
+    "declaration": "HasGaussianLaw.indepFun_of_covariance_eq_zero",
+    "lines": [
+     367,
+     373
+    ],
+    "module_sha256": "d35d359344ae3f19f23ddf7d664c5cbfa08244dfaed13a13224e72d3df19d916",
+    "excerpt": "/-- If $(X, Y)$ is Gaussian, then $X$ and $Y$ are independent if $\\mathrm{Cov}(X, Y) = 0$. -/\nlemma HasGaussianLaw.indepFun_of_covariance_eq_zero {X Y : Ω → ℝ}\n    (hXY : HasGaussianLaw (fun ω ↦ (X ω, Y ω)) P) (h : cov[X, Y; P] = 0) :\n    IndepFun X Y P :=\n  hXY.indepFun_of_covariance_strongDual fun L₁ L₂ ↦ by\n    simp [Function.comp_def, ← toDual_symm_apply, covariance_mul_const_right,\n      covariance_mul_const_left, h]",
+    "excerpt_sha256": "ea858ff615c0371f85d7c4d2a4a59404385cf8989cfa7ae7a6f371ee7ca335a3",
+    "attribution": "/-\nCopyright (c) 2025 Etienne Marion. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Etienne Marion\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the theorem for a pair of real variables with a Gaussian joint law. It proves it through linear functionals of the pair."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Reduce to a characteristic function. For real s,t let W=sX+tY. By assumption W is normal with mean m_W=sEX+tEY and variance v_W. Hence E e^{iW}=exp(i m_W−v_W/2). The normal characteristic function is derived in the entry on characteristic functions.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Compute the variance. v_W=s²Var X+2s t Cov(X,Y)+t²Var Y. With Cov(X,Y)=0 this is s²Var X+t²Var Y.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Factor the joint function. E e^{i(sX+tY)}=exp(i sEX−s²Var X/2)·exp(i tEY−t²Var Y/2).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Identify the factors. Take (s,t)=(s,0) and (0,t) in step 1. Then X is normal with mean EX and variance Var X, and Y is normal with mean EY and variance Var Y. So the two factors are φ_X(s) and φ_Y(t).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Conclude. The joint characteristic function equals φ_X(s)φ_Y(t) for all (s,t). By the characteristic-function criterion for independence, X and Y are independent.",
+      "uses": [
+       "nm:technique-characteristic-function-independence"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Sample mean and residuals. Let X₁,…,Xₙ be i.i.d. N(μ,σ²). The vector (X̄, X₁−X̄,…,Xₙ−X̄) is a linear image of the Gaussian vector (X₁,…,Xₙ), so it is jointly Gaussian. Cov(X̄,Xᵢ)=σ²/n and Var X̄=σ²/n. So Cov(X̄,Xᵢ−X̄)=0. Every pair (X̄,Xᵢ−X̄) is jointly Gaussian and uncorrelated, so it is independent. Now let R=(X₁−X̄,…,Xₙ−X̄). For real s and a vector t, the combination sX̄+⟨t,R⟩ is normal with variance s²Var X̄+Var⟨t,R⟩, because Cov(X̄,⟨t,R⟩)=0. So the joint characteristic function factorizes, as in steps 1 to 4. By the criterion, X̄ is independent of R. Then X̄ is independent of S², which is a function of R.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Sample mean against residuals, and a counterexample",
+    "goal": "Check that Cov(X̄,Xᵢ−X̄)=0 for n=5 and σ²=2. Then build a pair with normal marginals and zero covariance that is not independent.",
+    "hypotheses": [
+     "n=5, Xᵢ i.i.d. N(μ,2).",
+     "Counterexample: X is N(0,1), S is an independent fair sign ±1, and Y=S·X."
+    ],
+    "why_theorem_applies": "In the first case the vector is a linear image of a Gaussian vector, so the theorem applies. In the second case the pair is not jointly Gaussian, so the theorem does not apply.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Variance of the mean. Var X̄=σ²/n=2/5. Also Cov(X̄,Xᵢ)=σ²/n=2/5 for each i.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Residual covariance. Cov(X̄,Xᵢ−X̄)=2/5−2/5=0 for i=1,…,5. The pair (X̄,Xᵢ−X̄) is jointly Gaussian, so X̄ is independent of Xᵢ−X̄.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Counterexample marginals. Y=S·X is N(0,1) because S is independent of X and symmetric. Cov(X,Y)=E[S]E[X²]=0, since E S=0.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Counterexample dependence. |Y|=|X| always. So P(|X|>1,|Y|≤1)=0. But P(|X|>1)=0.317311 and P(|Y|≤1)=0.682689, whose product is 0.216625. The two numbers differ, so X and Y are dependent.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Why the theorem does not apply. If (X,Y) were jointly Gaussian, then X+Y would be normal. But X+Y=(1+S)X is 0 with probability 1/2 and 2X with probability 1/2. This is not a normal law.",
+      "uses": []
+     }
+    ],
+    "result": "Cov(X̄,Xᵢ−X̄)=0 gives independence in the Gaussian case. The pair (X,SX) has normal marginals and zero covariance but is dependent, with P(|X|>1,|Y|≤1)=0 against a product of 0.216625.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The result needs joint Gaussianity. The counterexample in the application shows that normal marginals and zero covariance are not enough.",
+    "Independence of the vector (X̄,residuals) from S² needs the block form. It follows from the same characteristic-function factorization for a block covariance that is zero.",
+    "The theorem is special to Gaussian laws. For other laws, zero covariance is weaker than independence."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-convex-boundary-null",
+   "name": "The boundary of a convex set has Lebesgue measure zero",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.MG",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.MG",
+    "math.CA"
+   ],
+   "statement": "Let C⊂ℝᵈ be convex. Then the Lebesgue measure of the boundary ∂C is 0. Hence C is Lebesgue measurable. If C is also bounded, the outer approximations by grid cubes meeting C and the inner approximations by grid cubes inside C have areas that differ by a quantity that tends to 0 with the mesh.",
+   "hypotheses": [
+    "C need not be open, closed or bounded.",
+    "The measure is Lebesgue measure on ℝᵈ. Any Haar measure on a finite-dimensional real space gives the same result.",
+    "The grid statement is for bounded C. It uses cubes of side h in the lattice hℤᵈ."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only scaling of Lebesgue measure and elementary convexity. No catalog theorem is cited.",
+   "concepts": [
+    "boundary",
+    "affine hull",
+    "Jordan measurable set"
+   ],
+   "concept_prerequisites": [
+    "c:convex-set",
+    "c:lebesgue-measure",
+    "c:measure-zero"
+   ],
+   "definitions": [
+    {
+     "name": "boundary",
+     "text": "∂C=C̄∖int C, where C̄ is the closure and int C the interior."
+    },
+    {
+     "name": "affine hull",
+     "text": "The smallest affine subspace that contains C."
+    },
+    {
+     "name": "Jordan measurable set",
+     "text": "A bounded set whose boundary has measure zero. Its measure is the limit of grid-cube counts."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Measure.lean#L33-L81",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Convex.Measure",
+    "declaration": "Convex.addHaar_frontier",
+    "lines": [
+     33,
+     81
+    ],
+    "module_sha256": "2c0e34ddb227fbff25bafad203a428de7d0045874f5ce2cc5659c4e36e8c8545",
+    "excerpt": "/-- Haar measure of the frontier of a convex set is zero. -/\ntheorem addHaar_frontier (hs : Convex ℝ s) : μ (frontier s) = 0 := by\n  /- If `s` is included in a hyperplane, then `frontier s ⊆ closure s` is included in the same\n    hyperplane, hence it has measure zero. -/\n  rcases ne_or_eq (affineSpan ℝ s) ⊤ with hspan | hspan\n  · refine measure_mono_null ?_ (addHaar_affineSubspace _ _ hspan)\n    exact frontier_subset_closure.trans\n      (closure_minimal (subset_affineSpan _ _) (affineSpan ℝ s).closed_of_finiteDimensional)\n  rw [← hs.interior_nonempty_iff_affineSpan_eq_top] at hspan\n  rcases hspan with ⟨x, hx⟩\n  /- Without loss of generality, `s` is bounded. Indeed, `∂s ⊆ ⋃ n, ∂(s ∩ ball x (n + 1))`, hence it\n    suffices to prove that `∀ n, μ (s ∩ ball x (n + 1)) = 0`; the latter set is bounded.\n    -/\n  suffices H : ∀ t : Set E, Convex ℝ t → x ∈ interior t → IsBounded t → μ (frontier t) = 0 by\n    let B : ℕ → Set E := fun n => ball x (n + 1)\n    have : μ (⋃ n : ℕ, frontier (s ∩ B n)) = 0 := by\n      refine measure_iUnion_null fun n =>\n        H _ (hs.inter (convex_ball _ _)) ?_ (isBounded_ball.subset inter_subset_right)\n      rw [interior_inter, isOpen_ball.interior_eq]\n      exact ⟨hx, mem_ball_self (add_pos_of_nonneg_of_pos n.cast_nonneg zero_lt_one)⟩\n    refine measure_mono_null (fun y hy => ?_) this; clear this\n    set N : ℕ := ⌊dist y x⌋₊\n    refine mem_iUnion.2 ⟨N, ?_⟩\n    have hN : y ∈ B N := by simp [B, N, Nat.lt_floor_add_one]\n    suffices y ∈ frontier (s ∩ B N) ∩ B N from this.1\n    rw [frontier_inter_open_inter isOpen_ball]\n    exact ⟨hy, hN⟩\n  intro s hs hx hb\n  /- Since `s` is bounded, we have `μ (interior s) ≠ ∞`, hence it suffices to prove\n    `μ (closure s) ≤ μ (interior s)`. -/\n  replace hb : μ (interior s) ≠ ∞ := (hb.subset interior_subset).measure_lt_top.ne\n  suffices μ (closure s) ≤ μ (interior s) by\n    rwa [frontier, measure_sdiff interior_subset_closure isOpen_interior.nullMeasurableSet hb,\n      tsub_eq_zero_iff_le]\n  /- Due to `Convex.closure_subset_image_homothety_interior_of_one_lt`, for any `r > 1` we have\n    `closure s ⊆ homothety x r '' interior s`, hence `μ (closure s) ≤ r ^ d * μ (interior s)`,\n    where `d = finrank ℝ E`. -/\n  set d : ℕ := Module.finrank ℝ E\n  have : ∀ r : ℝ≥0, 1 < r → μ (closure s) ≤ ↑(r ^ d) * μ (interior s) := fun r hr ↦ by\n    refine (measure_mono <|\n      hs.closure_subset_image_homothety_interior_of_one_lt hx r hr).trans_eq ?_\n    rw [addHaar_image_homothety, ← NNReal.coe_pow, NNReal.abs_eq, ENNReal.ofReal_coe_nnreal]\n  have : ∀ᶠ (r : ℝ≥0) in 𝓝[>] 1, μ (closure s) ≤ ↑(r ^ d) * μ (interior s) :=\n    mem_of_superset self_mem_nhdsWithin this\n  -- Taking the limit as `r → 1`, we get `μ (closure s) ≤ μ (interior s)`.\n  refine ge_of_tendsto ?_ this\n  refine (((ENNReal.continuous_mul_const hb).comp\n    (ENNReal.continuous_coe.comp (continuous_pow d))).tendsto' _ _ ?_).mono_left nhdsWithin_le_nhds\n  simp",
+    "excerpt_sha256": "876b03b383360a08b86ea69849228aa3b1666882dcdce0a155cdf1c5353ec6c5",
+    "attribution": "/-\nCopyright (c) 2022 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the same statement for any additive Haar measure on a finite-dimensional real normed space."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Low-dimensional case. If the affine hull of C is a proper subspace, it lies in a hyperplane. So C̄ lies in the same hyperplane, which has measure 0. Then ∂C⊂C̄ has measure 0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Reduction to bounded sets. Assume C has an interior point. Translate so that it is 0 and pick r>0 with the ball B_r⊂C. Let C_n=C∩B(0,n) for n>r. The frontier is local, so ∂C⊂⋃_n ∂C_n. Each C_n is convex and bounded and contains B_r. A countable union of null sets is null. So it is enough to treat bounded C with B_r⊂C.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Shrinking lemma. Let K=C̄ and 0<t<1. Fix k∈K. Pick c∈C with |k−c|<δ, where δ=r(1−t)/(2t). For b with |b|<r/2 put b′=b+t(k−c)/(1−t). Then |b′|<r/2+r/2=r, so b′∈B_r⊂C. Now t k+(1−t)b=t c+(1−t)b′ is a convex combination of c and b′, which are in C. So t k+(1−t)B_{r/2}⊂C, and t k∈int C.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Boundary inclusion. By step 3, tK⊂int C. Hence ∂C=K∖int C⊂K∖tK for every t<1.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Measure of the shell. K is bounded, so Leb(K)<∞. The map x↦t x scales Lebesgue measure by tᵈ. So Leb(K∖tK)=Leb(K)−tᵈLeb(K)=(1−tᵈ)Leb(K). Let t→1. Then Leb(∂C)=0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Measurability. C=int C ∪ (C∩∂C). The set int C is open, and C∩∂C is a subset of a null set. So C is Lebesgue measurable.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Grid statement. Let C be bounded and F=∂C. F is closed and bounded. A closed cube Q that meets both C and its complement contains a segment from a point of C to a point outside C. That segment contains a point of F. So the cubes that are not inside C but meet C all meet F. Let Q_k be the union of the closed dyadic cubes of side 2⁻ᵏ that meet F. These sets are nested, bounded and decreasing. Their intersection is F, because F is closed. So Leb(Q_k)→Leb(F)=0. The difference between the outer and inner sums is at most Leb(Q_k).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Area of the unit disk by grid cubes",
+    "goal": "Bound the area of the quarter unit disk by cubes of side 1/m, and watch the boundary layer shrink.",
+    "hypotheses": [
+     "Quarter disk D={x,y≥0, x²+y²≤1}, convex and compact.",
+     "Cubes [i/m,(i+1)/m]×[j/m,(j+1)/m] with 0≤i,j<m."
+    ],
+    "why_theorem_applies": "D is convex. So its boundary has measure zero. The cubes that touch the boundary but are not inside D have total area that tends to 0.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Count the inner cubes. A cube is inside D when (i+1)²+(j+1)²≤m². For m=10, 50, 200, 1000 the counts are 69, 1911, 31207 and 784387.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Count the boundary cubes. A cube is a boundary cube when it is not inside D and i²+j²<m². The counts are 17, 95, 395 and 1993.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Area bounds. Inner area = count/m² and outer area = (inner+boundary)/m². The bounds are 0.69 to 0.86 for m=10, 0.7644 to 0.8024 for m=50, 0.780175 to 0.79005 for m=200, and 0.784387 to 0.78638 for m=1000.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Multiply by 4. The bounds on π are 2.76 to 3.44, 3.0576 to 3.2096, 3.1207 to 3.1602 and 3.137548 to 3.14552. All intervals contain π=3.14159.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Boundary layer. The area gap equals 0.17, 0.038, 0.009875 and 0.001993. The gap times m is 1.7, 1.9, 1.975 and 1.993. So the gap shrinks like 2/m in this example.",
+      "uses": []
+     }
+    ],
+    "result": "The inner and outer grid areas squeeze π/4 with a gap that goes to 0, as the theorem predicts for a convex set.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The result is about convex sets. A bounded open set can have a boundary of positive measure, as in the complement of a fat Cantor set.",
+    "The rate 2/m in the application is an observation for the disk. The theorem gives only convergence to 0. For general convex bodies the gap is O(h) in a fixed dimension, but that rate is not proved here.",
+    "Infinite-dimensional spaces have no Lebesgue measure."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-convex-explicit-lipschitz-bound",
+   "name": "Explicit Lipschitz constant for a bounded convex function",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.CA"
+   ],
+   "statement": "Let E be a real normed space, x₀∈E, r>0 and f convex on the open ball B(x₀,r). Assume |f|≤M on B(x₀,r). Then for every ε>0, f is Lipschitz on B(x₀,r−ε) with constant 2M/ε.",
+   "hypotheses": [
+    "f is convex on the whole ball B(x₀,r) and bounded in absolute value by M there.",
+    "ε>0. If ε≥r the inner ball is empty and the claim is empty.",
+    "E can be infinite-dimensional. The bound does not depend on the dimension."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof is a direct computation with one convex combination.",
+   "concepts": [
+    "Lipschitz on a set",
+    "extrapolation point"
+   ],
+   "concept_prerequisites": [
+    "c:convex-function",
+    "c:lipschitz-continuous-function"
+   ],
+   "definitions": [
+    {
+     "name": "Lipschitz on a set",
+     "text": "|f(x)−f(y)|≤K‖x−y‖ for all x,y in the set."
+    },
+    {
+     "name": "extrapolation point",
+     "text": "For x≠y in the inner ball, z=x+ε(x−y)/‖x−y‖. It lies on the ray from y through x, at distance ε beyond x."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Continuous.lean#L26-L68",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Convex.Continuous",
+    "declaration": "ConvexOn.lipschitzOnWith_of_abs_le",
+    "lines": [
+     26,
+     68
+    ],
+    "module_sha256": "ac11dab7a909818d2bbfb98a6ee5823be5a0c10292db436df4ea63c54373f939",
+    "excerpt": "lemma ConvexOn.lipschitzOnWith_of_abs_le (hf : ConvexOn ℝ (ball x₀ r) f) (hε : 0 < ε)\n    (hM : ∀ a, dist a x₀ < r → |f a| ≤ M) :\n    LipschitzOnWith (2 * M / ε).toNNReal f (ball x₀ (r - ε)) := by\n  set K := 2 * M / ε with hK\n  have oneside {x y : E} (hx : x ∈ ball x₀ (r - ε)) (hy : y ∈ ball x₀ (r - ε)) :\n      f x - f y ≤ K * ‖x - y‖ := by\n    obtain rfl | hxy := eq_or_ne x y\n    · simp\n    have hx₀r : ball x₀ (r - ε) ⊆ ball x₀ r := ball_subset_ball <| by linarith\n    have hx' : x ∈ ball x₀ r := hx₀r hx\n    have hy' : y ∈ ball x₀ r := hx₀r hy\n    let z := x + (ε / ‖x - y‖) • (x - y)\n    replace hxy : 0 < ‖x - y‖ := by rwa [norm_sub_pos_iff]\n    have hz : z ∈ ball x₀ r := mem_ball_iff_norm.2 <| by\n      calc\n        _ = ‖(x - x₀) + (ε / ‖x - y‖) • (x - y)‖ := by simp only [z, add_sub_right_comm]\n        _ ≤ ‖x - x₀‖ + ‖(ε / ‖x - y‖) • (x - y)‖ := norm_add_le ..\n        _ < r - ε + ε :=\n          add_lt_add_of_lt_of_le (mem_ball_iff_norm.1 hx) <| by\n            simp [norm_smul, abs_of_nonneg, hε.le, hxy.ne']\n        _ = r := by simp\n    let a := ε / (ε + ‖x - y‖)\n    let b := ‖x - y‖ / (ε + ‖x - y‖)\n    have hab : a + b = 1 := by simp [field, a, b]\n    have hxyz : x = a • y + b • z := by\n      calc\n        x = a • x + b • x := by rw [Convex.combo_self hab]\n        _ = a • y + b • z := by simp [z, a, b, smul_smul, hxy.ne', smul_sub]; abel\n    rw [hK, mul_comm, ← mul_div_assoc, le_div_iff₀' hε]\n    calc\n      ε * (f x - f y) ≤ ‖x - y‖ * (f z - f x) := by\n        have h := hf.2 hy' hz (by positivity) (by positivity) hab\n        simp only [← hxyz, smul_eq_mul, a, b] at h\n        field_simp at h\n        linear_combination h\n      _ ≤ _ := by\n        rw [sub_eq_add_neg (f _), two_mul]\n        gcongr\n        · exact (le_abs_self _).trans <| hM _ hz\n        · exact (neg_le_abs _).trans <| hM _ hx'\n  refine .of_dist_le' fun x hx y hy ↦ ?_\n  simp_rw [dist_eq_norm_sub, Real.norm_eq_abs, abs_sub_le_iff]\n  exact ⟨oneside hx hy, norm_sub_rev x _ ▸ oneside hy hx⟩",
+    "excerpt_sha256": "9809489eef07a3ed421ee35910e9e9f26405456c91dee6b06358e7df9ea63707",
+    "attribution": "/-\nCopyright (c) 2023 Yaël Dillies, Zichen Wang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Zichen Wang\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source states this result for a convex function on a ball in a normed space. It uses the same extrapolation point and the same convex combination."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Setup. Let x,y be distinct points of B(x₀,r−ε) and d=‖x−y‖>0. Define z=x+(ε/d)(x−y).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The point z is in the ball. ‖z−x₀‖≤‖x−x₀‖+ε<(r−ε)+ε=r. So z∈B(x₀,r), and |f(z)|≤M.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Convex combination. Put a=ε/(ε+d) and b=d/(ε+d). Then a+b=1, and a y+b z=x. Check: a y+b z=(ε y+d x+ε(x−y))/(ε+d)=((ε+d)x)/(ε+d)=x.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Apply convexity. f(x)≤a f(y)+b f(z). Since a=1−b, this gives f(x)−f(y)≤b(f(z)−f(y)).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Bound the right side. |f(z)−f(y)|≤2M because both points are in the ball. So f(x)−f(y)≤2M·d/(ε+d)≤2Md/ε.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Symmetry. Exchange x and y. The argument gives f(y)−f(x)≤(2M/ε)‖x−y‖. Together, |f(x)−f(y)|≤(2M/ε)‖x−y‖ on B(x₀,r−ε).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Log-sum-exp on a disk",
+    "goal": "Find a Lipschitz constant for f(x,y)=ln(eˣ+eʸ) on a small disk from a bound on a large disk, and compare with the true constant.",
+    "hypotheses": [
+     "f is convex on ℝ². Take x₀=0 and r=2.",
+     "Use ε=1, 0.5 and 0.25."
+    ],
+    "why_theorem_applies": "f is convex, and |f| is bounded on the open disk of radius 2. So the theorem applies with M equal to that bound.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Bound on the large disk. The maximum of |f| over the circle of radius 2 is 2.15045. The convex function f attains its sup on the boundary circle. The minimum of f on the disk is ln2−√2=−0.72107, which is smaller in absolute value. Use M=2.1505.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Constants from the theorem. K=2M/ε equals 4.3010 on B(0,1) for ε=1. It equals 8.6020 on B(0,1.5) for ε=0.5. It equals 17.2040 on B(0,1.75) for ε=0.25.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "True constant on B(0,1). The gradient of f is (p,1−p) with p=1/(1+e^{y−x}). So |∇f|²=p²+(1−p)². On the unit disk |x−y|≤√2, so p lies in [0.19570, 0.80430]. The maximum of |∇f| is 0.8278.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Check by sampling. Among 200000 random pairs in the unit disk, the largest ratio |f(x)−f(y)|/‖x−y‖ is 0.8174. It stays below 0.8278 and below 4.3010.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Comparison. The theorem bound 4.3010 is about 5.2 times the true constant 0.8278. The bound is safe but not sharp.",
+      "uses": []
+     }
+    ],
+    "result": "f has Lipschitz constant at most 4.3010 on the unit disk. The true constant is 0.8278.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The theorem needs a bound M on the whole larger ball. A convex function on an open set can be unbounded near the boundary.",
+    "The constant 2M/ε is not sharp. The application shows a factor of about 5 above the true constant.",
+    "Concave functions follow by replacing f with −f."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:continuity",
+      "relation": "refines",
+      "reason": "The catalog entry states continuity of convex functions on open sets. This entry gives an explicit Lipschitz constant on a smaller ball."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-exponential-tilting-chernoff",
+   "name": "Exponential tilting and the Chernoff bound",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let X be a real random variable. Put M(t)=E e^{tX} and Λ(t)=ln M(t). Assume M is finite on an open interval I. For t in I define the tilted law P_t by dP_t/dP=e^{tX−Λ(t)}. Then (a) P_t is a probability law equivalent to P, and P(A)=E_t[e^{−tX+Λ(t)}1_A] for every event A. (b) E_t X=Λ′(t) and Var_t X=Λ″(t)≥0, so Λ is convex on I. (c) For t≥0 in I, P(X≥a)≤exp(−(ta−Λ(t))). (d) If X₁,…,Xₙ are i.i.d. copies of X and Sₙ=ΣXᵢ, then P(Sₙ≥na)≤exp(−n(ta−Λ(t))). If a=Λ′(t*) with t*>0 in I, then P(Sₙ≥na)=e^{−nI}E_{t*}[e^{−t*(Sₙ−na)}1_{Sₙ≥na}]≤e^{−nI}, where I=t*a−Λ(t*).",
+   "hypotheses": [
+    "M(t) is finite on an open interval I. This gives all moments under every tilt.",
+    "In (c) and (d) the point t is in I and t≥0.",
+    "For the exact identity in (d), the tilt t* satisfies Λ′(t*)=a. Then t* gives the best exponent."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1067156",
+     "reason": "Domination and differentiation under the integral sign."
+    },
+    {
+     "id": "nm:markov-s-inequality",
+     "reason": "The Chernoff bound is Markov inequality for e^{tX}."
+    },
+    {
+     "id": "nm:mean-of-product-of-independent-random-variables",
+     "reason": "The mgf of an independent sum is the product of the mgfs."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "cumulant generating function",
+    "tilted law",
+    "rate function"
+   ],
+   "concept_prerequisites": [
+    "c:moment-generating-function",
+    "c:cumulant",
+    "c:change-of-measure"
+   ],
+   "definitions": [
+    {
+     "name": "cumulant generating function",
+     "text": "Λ(t)=ln E e^{tX}. Its derivatives at 0 are the cumulants."
+    },
+    {
+     "name": "tilted law",
+     "text": "The law P_t with density e^{tX−Λ(t)} against P."
+    },
+    {
+     "name": "rate function",
+     "text": "I(a)=sup_t(ta−Λ(t)). It is the best Chernoff exponent."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Tilted.lean#L130-L136",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Moments.Tilted",
+    "declaration": "integral_tilted_mul_self",
+    "lines": [
+     130,
+     136
+    ],
+    "module_sha256": "122d9a24f200605a745ca7818012561f0bb182f687972d481e8947ce6ee7d59d",
+    "excerpt": "/-- The integral of `X` against the tilted measure `μ.tilted (t * X ·)` is the first derivative of\nthe cumulant-generating function of `X` at `t`. -/\nlemma integral_tilted_mul_self (ht : t ∈ interior (integrableExpSet X μ)) :\n    (μ.tilted (t * X ·))[X] = deriv (cgf X μ) t := by\n  simp_rw [integral_tilted_mul_eq_mgf, deriv_cgf ht, ← integral_div, smul_eq_mul]\n  congr with ω\n  ring",
+    "excerpt_sha256": "a24fa467166d8327fa7e623e95c0f15ddbaee6970d150a49467dbfba737ed6cd",
+    "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the mean of X under the tilted measure is the derivative of the cgf. This is the first identity of part (b)."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Tilted.lean#L157-L167",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Tilted",
+     "declaration": "variance_tilted_mul",
+     "lines": [
+      157,
+      167
+     ],
+     "module_sha256": "122d9a24f200605a745ca7818012561f0bb182f687972d481e8947ce6ee7d59d",
+     "excerpt": "/-- The variance of `X` under the tilted measure `μ.tilted (t * X ·)` is the second derivative of\nthe cumulant-generating function of `X` at `t`. -/\nlemma variance_tilted_mul (ht : t ∈ interior (integrableExpSet X μ)) :\n    Var[X; μ.tilted (t * X ·)] = iteratedDeriv 2 (cgf X μ) t := by\n  rw [variance_eq_integral]\n  swap; · exact (memLp_tilted_mul ht 1).aestronglyMeasurable.aemeasurable\n  rw [integral_tilted_mul_self ht, iteratedDeriv_two_cgf_eq_integral ht, integral_tilted_mul_eq_mgf,\n    ← integral_div]\n  simp only [smul_eq_mul]\n  congr with ω\n  ring",
+     "excerpt_sha256": "70da06b72e6ad2923b664cfabf5a69eb4af7024a11582b3344cd214be9cf9173",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the variance under the tilted measure is the second derivative of the cgf. This is the second identity of part (b)."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Tilted law. The density e^{tX−Λ(t)} is positive and has mean M(t)e^{−Λ(t)}=1. So P_t is a probability law, and P and P_t have the same null sets. Dividing by the density gives P(A)=E_t[e^{−tX+Λ(t)}1_A]. This proves (a).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Domination. Fix t in I and δ>0 with [t−δ,t+δ]⊂I. For |s−t|≤δ/2 and k≥0, |x|ᵏe^{sx}≤|x|ᵏe^{δ|x|/2}e^{tx}≤C_k(e^{(t+δ)x}+e^{(t−δ)x}), with C_k=sup_x|x|ᵏe^{−δ|x|/2}. The right side is integrable.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Differentiation under the integral. By step 2 and the dominated convergence theorem, M is smooth on I and M^{(k)}(t)=E[Xᵏe^{tX}].",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Cumulants. Λ′=M′/M=E[Xe^{tX}]/M=E_t X. Next Λ″=M″/M−(M′/M)²=E_t[X²]−(E_t X)²=Var_t X. A variance is nonnegative, so Λ″≥0 and Λ is convex. This proves (b).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Chernoff bound. For t≥0 the event {X≥a} is the event {e^{tX}≥e^{ta}}. The Markov inequality gives P(X≥a)≤e^{−ta}M(t)=exp(−(ta−Λ(t))). This proves (c).",
+      "uses": [
+       "nm:markov-s-inequality"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Independent sums. For independent Xᵢ, E e^{tSₙ}=∏E e^{tXᵢ}=M(t)ⁿ. So Λ_{Sₙ}=nΛ. Apply step 5 to Sₙ and the level na. This gives P(Sₙ≥na)≤exp(−n(ta−Λ(t))).",
+      "uses": [
+       "nm:mean-of-product-of-independent-random-variables"
+      ]
+     },
+     {
+      "id": "s7",
+      "text": "Exact identity. The tilt of the product law P^{⊗n} by t has density e^{tSₙ−nΛ(t)}. By step 1 for the product law, P(Sₙ≥na)=E_{t*}[e^{−t*Sₙ+nΛ(t*)}1_{Sₙ≥na}]. Since nΛ(t*)−t*na=−nI, this equals e^{−nI}E_{t*}[e^{−t*(Sₙ−na)}1_{Sₙ≥na}]. On the event the exponent is at most 0 and t*>0. So the expectation is at most 1. Under P_{t*} the mean of X is Λ′(t*)=a, so the tilted walk is centered at the level na.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Fair coin tosses reaching 70 heads in 100",
+    "goal": "Compute the Chernoff bound and the exact tail for 100 fair tosses, and show the tilted law.",
+    "hypotheses": [
+     "Xᵢ are i.i.d. Bernoulli(1/2), n=100, a=0.7, so the target is Sₙ≥70.",
+     "Λ(t)=ln((1+eᵗ)/2)."
+    ],
+    "why_theorem_applies": "The mgf is finite for all t. Part (d) applies with the tilt t* that solves Λ′(t*)=0.7.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Find the tilt. Λ′(t)=eᵗ/(1+eᵗ). Setting it to 0.7 gives eᵗ=7/3, so t*=ln(7/3)=0.847298.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Cumulant values. Λ(t*)=ln((1+7/3)/2)=ln(5/3)=0.510826. A central difference check gives Λ′=0.700000 and Λ″=0.210000. The theorem predicts Λ″=0.7·0.3=0.21, the variance of Bernoulli(0.7). So the tilted law of each toss is Bernoulli(0.7).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Rate. I=t*a−Λ(t*)=0.847298·0.7−0.510826=0.082283. This equals ln2+a ln a+(1−a)ln(1−a)=0.082283. The Chernoff bound is e^{−100I}=2.670×10⁻⁴.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Exact tail. P(S₁₀₀≥70)=Σ_{j≥70}C(100,j)/2¹⁰⁰=3.925×10⁻⁵. It is below the bound 2.670×10⁻⁴, as the theorem says.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Identity check. The tilted sum Σ_{j≥70}C(100,j)0.7ʲ0.3¹⁰⁰⁻ʲe^{−t*j+100Λ(t*)} equals 3.925×10⁻⁵ again. The factor E_{t*}[e^{−t*(S−70)}1_{S≥70}] equals 0.14701. Under the tilt, P_{t*}(S≥70)=0.5491, so the event is typical there.",
+      "uses": []
+     }
+    ],
+    "result": "P(S₁₀₀≥70)=3.925×10⁻⁵ against the Chernoff bound 2.670×10⁻⁴. The bound is loose by the factor 0.14701, which is the tilted expectation.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The bound is an upper bound only. Cramér theorem on large deviations gives the matching lower bound on the exponent, which this entry does not prove.",
+    "The mgf must be finite near t. For heavy tails such as the Cauchy law there is no such t, and the method fails.",
+    "The factor E_{t*}[…] in the exact identity is at most 1 but is not 1. In the application it equals 0.147. It has order 1/√n for lattice laws, which is not proved here."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:chernoff-bound",
+      "relation": "overlaps",
+      "reason": "The catalog record states the Chernoff bound. This entry adds the tilting proof of its sharpness and a worked large deviation computation. Report as new with overlap noted."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-second-moment-method",
+   "name": "Second moment method for positivity of a count",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR",
+    "math.CO"
+   ],
+   "application_cats": [
+    "math.PR",
+    "math.CO"
+   ],
+   "statement": "Let X≥0 be a random variable with E[X²]<∞ and E X=μ>0. Then (a) P(X>0)≥μ²/E[X²]. (b) P(X=0)≤Var X/μ². (c) Part (a) is never weaker than part (b), because μ²/E[X²]=1/(1+Var X/μ²)≥1−Var X/μ². (d) If X=Σᵢ1_{Aᵢ} is a finite sum of indicators, then Var X=Σᵢpᵢ(1−pᵢ)+Σ_{i≠j}(P(Aᵢ∩Aⱼ)−pᵢpⱼ), where pᵢ=P(Aᵢ).",
+   "hypotheses": [
+    "X is nonnegative and in L². In (b) the sign of X is not needed, but μ>0 is.",
+    "In (d) the family of events is finite, so X is bounded.",
+    "The method gives positivity of X, not the size of X."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:chebyshev-s-inequality",
+     "reason": "Route (b) is a direct use of the Chebyshev inequality."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "second moment method",
+    "covariance of indicators"
+   ],
+   "concept_prerequisites": [
+    "c:variance",
+    "c:expected-value"
+   ],
+   "definitions": [
+    {
+     "name": "second moment method",
+     "text": "Lower bound for P(X>0) from E X and E X². It proves that a rare structure exists with positive probability."
+    },
+    {
+     "name": "covariance of indicators",
+     "text": "Cov(1_A,1_B)=P(A∩B)−P(A)P(B). It is 0 for independent events."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Variance.lean#L395-L404",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Moments.Variance",
+    "declaration": "meas_ge_le_variance_div_sq",
+    "lines": [
+     395,
+     404
+    ],
+    "module_sha256": "e31ba431554074be7eaf40ced17f50d309357c6d7ad6e3a7fbdb0d5f8fb1ccbd",
+    "excerpt": "/-- **Chebyshev's inequality**: one can control the deviation probability of a real random variable\nfrom its expectation in terms of the variance. -/\ntheorem meas_ge_le_variance_div_sq [IsFiniteMeasure μ] {X : Ω → ℝ} (hX : MemLp X 2 μ) {c : ℝ}\n    (hc : 0 < c) : μ {ω | c ≤ |X ω - μ[X]|} ≤ ENNReal.ofReal (variance X μ / c ^ 2) := by\n  rw [ENNReal.ofReal_div_of_pos (sq_pos_of_ne_zero hc.ne.symm), hX.ofReal_variance_eq]\n  convert @meas_ge_le_evariance_div_sq _ _ _ _ hX.aestronglyMeasurable c.toNNReal\n    (by simp [hc]) using 1\n  · simp\n  · rw [ENNReal.ofReal_pow hc.le]\n    rfl",
+    "excerpt_sha256": "84ed7e583e2d83de797e35c8dc5965495f1a3238aaec3da4e90b0afff34dc110",
+    "attribution": "/-\nCopyright (c) 2022 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel, Kexing Ying\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source is the Chebyshev inequality. It is used in part (b)."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Variance.lean#L286-L292",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Variance",
+     "declaration": "variance_sum'",
+     "lines": [
+      286,
+      292
+     ],
+     "module_sha256": "e31ba431554074be7eaf40ced17f50d309357c6d7ad6e3a7fbdb0d5f8fb1ccbd",
+     "excerpt": "lemma variance_sum' [IsFiniteMeasure μ] (hX : ∀ i ∈ s, MemLp (X i) 2 μ) :\n    Var[∑ i ∈ s, X i; μ] = ∑ i ∈ s, ∑ j ∈ s, cov[X i, X j; μ] := by\n  rw [← covariance_self, covariance_sum_left' (by simpa)]\n  · refine Finset.sum_congr rfl fun i hi ↦ ?_\n    rw [covariance_sum_right' (by simpa) (hX i hi)]\n  · exact memLp_finsetSum' _ (by simpa)\n  · exact (memLp_finsetSum' _ (by simpa)).aemeasurable",
+     "excerpt_sha256": "671b319a1bbb262e0c56602a1c820370bdfc9be17cf0ad09d4a4e3782da1445b",
+     "attribution": "/-\nCopyright (c) 2022 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel, Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source expands the variance of a finite sum into a double sum of covariances. It is used in part (d)."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Variance of a sum. Var(ΣYᵢ)=ΣᵢΣⱼCov(Yᵢ,Yⱼ), by bilinearity of the covariance.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Indicators. Cov(1_{Aᵢ},1_{Aᵢ})=pᵢ(1−pᵢ), and Cov(1_{Aᵢ},1_{Aⱼ})=P(Aᵢ∩Aⱼ)−pᵢpⱼ. Combined with step 1 this proves (d).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Chebyshev route. If X=0 then |X−μ|=μ. So {X=0}⊂{|X−μ|≥μ}. The Chebyshev inequality gives P(X=0)≤Var X/μ². This proves (b).",
+      "uses": [
+       "nm:chebyshev-s-inequality"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Cauchy-Schwarz route. If P(X>0)=0, then X=0 almost surely and μ=0, which is false. So q=P(X>0)>0. For every real λ, 0≤E[(X−λ1_{X>0})²]=E[X²]−2λE[X1_{X>0}]+λ²q. Because X≥0, X1_{X>0}=X, so the middle term is −2λμ.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Optimize λ. Take λ=μ/q. Then 0≤E[X²]−μ²/q. Rearranging, q≥μ²/E[X²]. This proves (a).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Compare. Put u=Var X/μ². Then E[X²]=μ²(1+u), so μ²/E[X²]=1/(1+u). Also 1/(1+u)≥1−u, because (1+u)(1−u)=1−u²≤1. This proves (c).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Use in a sequence. If a family Xₙ has Var Xₙ/(E Xₙ)²→0, part (b) gives P(Xₙ=0)→0. If the ratio tends to a finite limit u, part (a) gives liminf P(Xₙ>0)≥1/(1+u).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Triangles in a random graph",
+    "goal": "Bound the chance that G(n,p) contains a triangle, for three choices of (n,p).",
+    "hypotheses": [
+     "G(n,p) has n vertices, and each edge is present independently with probability p.",
+     "X is the number of triangles. N=C(n,3) triples, and Aₜ is the event that triple T is a triangle."
+    ],
+    "why_theorem_applies": "X is a sum of indicators with P(Aₜ)=p³. Two distinct triples that share one vertex or none use disjoint edge sets, so their indicators are independent. Two triples that share two vertices share one edge, and P(Aₜ∩A_{T′})=p⁵.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Moments. E X=Np³. The number of ordered pairs of distinct triples with two common vertices is 3N(n−3). So Var X=N(p³−p⁶)+3N(n−3)(p⁵−p⁶).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Exact check, n=6 and p=2/5. Here N=20. The formula gives E X=32/25 and Var X=288/125=2.304. A full enumeration of all 2¹⁵ graphs with exact fractions gives the same E X=32/25 and E[X²]=2464/625. So the formula is correct.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Small case. P(X=0)=0.386586 exactly. Part (b) gives Var X/μ²=1.40625, which is trivial. Part (a) gives P(X>0)≥μ²/E[X²]=0.415584. The true value is 0.613414. So (a) is useful here and (b) is not.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Dense case, n=1000 and p=0.01. E X=166.167 and Var X=215.370. The ratio is 0.0078. So P(no triangle)≤0.0078 by part (b), and a triangle appears with probability at least 0.9922.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Sparse case, n=1000 and p=0.001. E X=0.166167 and the ratio Var X/μ² is 6.036. Part (b) is trivial. Part (a) gives P(X>0)≥1/(1+6.036)=0.1421. The Markov inequality gives P(X>0)≤E X=0.1662. So the true value lies in [0.1421,0.1662].",
+      "uses": []
+     }
+    ],
+    "result": "A triangle exists with probability at least 0.415584 for (6,2/5), at least 0.9922 for (1000,0.01) and at least 0.1421 for (1000,0.001).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The method only shows P(X>0)>0. It does not give a construction.",
+    "If Var X/μ² does not tend to 0, part (b) is empty. Part (a) still gives a constant lower bound.",
+    "The pair counts in the application are for triangles. Other subgraphs need their own overlap counts."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-wald-identity-gamblers-ruin",
+   "name": "Wald identity and gambler ruin from optional stopping",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let ξ₁,ξ₂,… be i.i.d. integrable real variables with mean μ. Put Sₙ=ξ₁+…+ξₙ and Fₙ=σ(ξ₁,…,ξₙ). Let T be a stopping time with E T<∞. Then E S_T=μ E T. For the simple symmetric walk started at a in {0,…,N}, with T the first time at 0 or N, one has P(S_T=N)=a/N and E T=a(N−a).",
+   "hypotheses": [
+    "The ξᵢ are i.i.d. and E|ξ₁|<∞. The stopping time T is for the filtration (Fₙ).",
+    "E T<∞ is required. Without it the identity can fail or be undefined.",
+    "For the gambler ruin, ξᵢ=±1 with probability 1/2 each, and the walk starts at S₀=a."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q2027347",
+     "reason": "Bounded optional stopping is the key step in Wald identity and in the ruin formulas."
+    },
+    {
+     "id": "wd:Q1153584",
+     "reason": "The monotone convergence theorem controls E[T∧n] and Y."
+    },
+    {
+     "id": "wd:Q1067156",
+     "reason": "The dominated convergence theorem passes to the limit n→∞."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "stopping time",
+    "stopped value",
+    "Wald identity"
+   ],
+   "concept_prerequisites": [
+    "c:stopping-time",
+    "c:martingale",
+    "c:random-walk"
+   ],
+   "definitions": [
+    {
+     "name": "stopping time",
+     "text": "A random time T with {T≤n}∈Fₙ for all n. The decision to stop at n uses only the first n steps."
+    },
+    {
+     "name": "stopped value",
+     "text": "S_T(ω)=S_{T(ω)}(ω)."
+    },
+    {
+     "name": "Wald identity",
+     "text": "E S_T=μ E T."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Martingale/OptionalStopping.lean#L84-L92",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Martingale.OptionalStopping",
+    "declaration": "submartingale_iff_expected_stoppedValue_mono",
+    "lines": [
+     84,
+     92
+    ],
+    "module_sha256": "3311bb67b65112aa569200ab4455a74b3bec3ee0161fa9dc235ea30d66a557e7",
+    "excerpt": "/-- **The optional stopping theorem** (fair game theorem): a strongly adapted integrable process `f`\nis a submartingale if and only if for all bounded stopping times `τ` and `π` such that `τ ≤ π`, the\nstopped value of `f` at `τ` has expectation smaller than its stopped value at `π`. -/\ntheorem submartingale_iff_expected_stoppedValue_mono [SigmaFiniteFiltration μ 𝒢]\n    (hadp : StronglyAdapted 𝒢 f) (hint : ∀ i, Integrable (f i) μ) :\n    Submartingale f 𝒢 μ ↔ ∀ τ π : Ω → WithTop ℕ, IsStoppingTime 𝒢 τ → IsStoppingTime 𝒢 π →\n      τ ≤ π → (∃ N : ℕ, ∀ x, π x ≤ N) → μ[stoppedValue f τ] ≤ μ[stoppedValue f π] :=\n  ⟨fun hf _ _ hτ hπ hle ⟨_, hN⟩ => hf.expected_stoppedValue_mono hτ hπ hle hN,\n    submartingale_of_expected_stoppedValue_mono hadp hint⟩",
+    "excerpt_sha256": "99b21cf82f5dd09f115275d6c54417bc3f9c630955208554b0b6de15f639acd9",
+    "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source is the optional stopping theorem for bounded stopping times. It gives step 2 and step 7."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Martingale. M_n=Sₙ−nμ is a martingale for (Fₙ), because E[ξ_{n+1}|Fₙ]=μ. The stopping time T∧n is bounded by n.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Bounded optional stopping. Apply optional stopping to M and to −M, with the times 0 and T∧n. This gives E M_{T∧n}=E M₀=0. So E S_{T∧n}=μ E[T∧n].",
+      "uses": [
+       "wd:Q2027347"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Domination. Put m=E|ξ₁| and Y=Σ_{i≤T}|ξᵢ|. Step 2 for the variables |ξᵢ| gives E Σ_{i≤T∧n}|ξᵢ|=m E[T∧n]. The left side increases with n. By the monotone convergence theorem E Y=m E T<∞.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Limit. T<∞ almost surely, so S_{T∧n}→S_T almost surely. Also |S_{T∧n}|≤Y with Y integrable. The dominated convergence theorem gives E S_{T∧n}→E S_T. The monotone convergence theorem gives E[T∧n]→E T. Step 2 now gives E S_T=μ E T.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "Finite stopping time in the ruin problem. In any N consecutive steps, N up-steps in a row take the walk to N, so T≤N after such a block. Thus P(T>kN)≤(1−2^{−N})ᵏ. The tail sum Σ_j P(T>j) is finite, so E T<∞.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Hitting probability. Apply the identity with μ=0 to the walk Sₙ−a. It gives E S_T=a. Since S_T∈{0,N}, N·P(S_T=N)=a, so P(S_T=N)=a/N.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Expected duration. Sₙ²−n is a martingale, because E[(Sₙ+ξ)²|Fₙ]=Sₙ²+1. Bounded optional stopping gives E S²_{T∧n}=a²+E[T∧n]. Let n→∞. The left side tends to E S_T²=N²·a/N=aN by dominated convergence, since S²≤N². The right side tends to a²+E T. So E T=aN−a²=a(N−a).",
+      "uses": [
+       "wd:Q2027347"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Fair die until the sum reaches 10, and a ruin chain",
+    "goal": "Verify Wald identity exactly for a die, and check the ruin formulas for N=10 and a=3 by solving the linear system.",
+    "hypotheses": [
+     "ξᵢ is a fair die roll, so μ=7/2. T is the first n with Sₙ≥10. T≤10 and E T<∞.",
+     "Ruin chain: N=10, a=3, steps ±1."
+    ],
+    "why_theorem_applies": "T is a stopping time with bounded value, and the walk has i.i.d. integrable steps. So the identity applies.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Exact distribution. Dynamic programming over (sum, steps) with exact fractions gives E T=33495175/10077696=3.323694.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Exact stopped mean. The same computation gives E S_T=234466225/20155392=11.633133. The value S_T lies in {10,…,15} with probabilities 17492167/60466176, 14824999/60466176, 11713303/60466176, 8082991/60466176, 5527243/60466176 and 2825473/60466176.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Check Wald. (7/2)·E T=234466225/20155392 as exact fractions. It equals E S_T. So Wald identity holds exactly.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Ruin chain. The theorem gives P(hit 10)=3/10 and E T=3·7=21. Solving the harmonic equations h(a)=(h(a−1)+h(a+1))/2 and g(a)=1+(g(a−1)+g(a+1))/2 with exact fractions gives h(3)=3/10 and g(3)=21. The full vector of durations is 9, 16, 21, 24, 25, 24, 21, 16, 9 for a=1,…,9.",
+      "uses": []
+     }
+    ],
+    "result": "E S_T=(7/2)E T=11.633133 for the die. In the ruin chain P(hit 10)=3/10 and E T=21.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "E T<∞ cannot be dropped. For the simple walk and T the first time at 1, E S_T=1 but μ E T would be 0·∞.",
+    "The identity does not give the distribution of S_T. It gives only the mean.",
+    "The expected duration formula uses ξ²=1. For other step laws one needs the variance in the martingale Sₙ²−nσ²."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-borel-cantelli-growth-of-maxima",
+   "name": "Borel-Cantelli dichotomy for the growth of i.i.d. maxima",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let X₁,X₂,… be i.i.d. with P(X₁>x)=e^{−x} for x≥0. Put Mₙ=max_{k≤n}X_k. Then, almost surely, limsup Xₙ/ln n=1 and lim Mₙ/ln n=1. More precisely, for c>1 one has Xₙ≤c ln n for all large n, and for c≤1 one has Xₙ>c ln n for infinitely many n.",
+   "hypotheses": [
+    "The variables are independent. Independence is used in the second Borel-Cantelli lemma and in P(Mₙ≤x)=P(X₁≤x)ⁿ.",
+    "The tail is exactly exponential. The same method works for any law with P(X>x)≈e^{−x}.",
+    "Almost sure statements hold outside a null set."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:borel-cantelli-lemma",
+     "reason": "The convergent case."
+    },
+    {
+     "id": "nm:second-borel-cantelli-lemma",
+     "reason": "The divergent case with independence."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "limsup of events",
+    "running maximum",
+    "Borel-Cantelli dichotomy"
+   ],
+   "concept_prerequisites": [
+    "c:iid-random-variables",
+    "c:limit-superior"
+   ],
+   "definitions": [
+    {
+     "name": "limsup of events",
+     "text": "limsup Aₙ is the event that infinitely many Aₙ occur."
+    },
+    {
+     "name": "running maximum",
+     "text": "Mₙ=max(X₁,…,Xₙ)."
+    },
+    {
+     "name": "Borel-Cantelli dichotomy",
+     "text": "For independent events, P(Aₙ i.o.)=0 if ΣP(Aₙ)<∞ and 1 if ΣP(Aₙ)=∞."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/BorelCantelli.lean#L67-L101",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.BorelCantelli",
+    "declaration": "measure_limsup_eq_one",
+    "lines": [
+     67,
+     101
+    ],
+    "module_sha256": "8d598c3cf0d96fd04cedf693d4d88295fc2de94fb9960e4bf4b0d5f2b82b40cb",
+    "excerpt": "/-- **The second Borel-Cantelli lemma**: Given a sequence of independent sets `(sₙ)` such that\n`∑ n, μ sₙ = ∞`, `limsup sₙ` has measure 1. -/\ntheorem measure_limsup_eq_one {s : ℕ → Set Ω} (hsm : ∀ n, MeasurableSet (s n)) (hs : iIndepSet s μ)\n    (hs' : (∑' n, μ (s n)) = ∞) : μ (limsup s atTop) = 1 := by\n  have : IsProbabilityMeasure μ := hs.isProbabilityMeasure\n  rw [measure_congr (eventuallyEqSet_iff.2 (ae_mem_limsup_atTop_iff μ <|\n    measurableSet_filtrationOfSet' hsm) : limsup s atTop =ᵐ[μ]\n      {ω | Tendsto (fun n => ∑ k ∈ Finset.range n,\n        (μ[(s (k + 1)).indicator (1 : Ω → ℝ)|filtrationOfSet hsm k]) ω) atTop atTop})]\n  suffices {ω | Tendsto (fun n => ∑ k ∈ Finset.range n,\n      (μ[(s (k + 1)).indicator (1 : Ω → ℝ)|filtrationOfSet hsm k]) ω) atTop atTop} =ᵐ[μ] Set.univ by\n    rw [measure_congr this, measure_univ]\n  have : ∀ᵐ ω ∂μ, ∀ n, (μ[(s (n + 1)).indicator (1 : Ω → ℝ) | filtrationOfSet hsm n]) ω = _ :=\n    ae_all_iff.2 fun n => hs.condExp_indicator_filtrationOfSet_ae_eq hsm n.lt_succ_self\n  filter_upwards [this] with ω hω\n  refine eq_true (?_ : Tendsto _ _ _)\n  simp_rw [hω]\n  have htends : Tendsto (fun n => ∑ k ∈ Finset.range n, μ (s (k + 1))) atTop (𝓝 ∞) := by\n    rw [← ENNReal.tsum_add_one_eq_top hs' (measure_ne_top _ _)]\n    exact ENNReal.tendsto_nat_tsum _\n  rw [ENNReal.tendsto_nhds_top_iff_nnreal] at htends\n  refine tendsto_atTop_atTop_of_monotone' ?_ ?_\n  · refine monotone_nat_of_le_succ fun n => ?_\n    rw [← sub_nonneg, Finset.sum_range_succ_sub_sum]\n    exact ENNReal.toReal_nonneg\n  · rintro ⟨B, hB⟩\n    refine not_eventually.2 (Frequently.of_forall fun n => ?_) (htends B.toNNReal)\n    rw [mem_upperBounds] at hB\n    specialize hB (∑ k ∈ Finset.range n, μ (s (k + 1))).toReal _\n    · refine ⟨n, ?_⟩\n      rw [ENNReal.toReal_sum (by finiteness)]\n      rfl\n    · rwa [not_lt, ENNReal.ofNNReal_toNNReal, ENNReal.le_ofReal_iff_toReal_le]\n      · simp\n      · exact le_trans (by positivity) hB",
+    "excerpt_sha256": "cc588e76c393a2f164d8cdebea27320d71a67aedc74c1fd5dd9bfd6cd92ab0e5",
+    "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source is the second Borel-Cantelli lemma for independent sets. It gives step 3."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/OuterMeasure/BorelCantelli.lean#L55-L64",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.OuterMeasure.BorelCantelli",
+     "declaration": "measure_limsup_atTop_eq_zero",
+     "lines": [
+      55,
+      64
+     ],
+     "module_sha256": "9ab3822cbd68dadee6ce8d3d0326a993dce2fb13c378c59f4b711c519d2ae463",
+     "excerpt": "/-- One direction of the **Borel-Cantelli lemma**\n(sometimes called the \"*first* Borel-Cantelli lemma\"):\nif `(s i)` is a sequence of sets such that `∑' i, μ (s i)` is finite,\nthen the limit superior of the `s i` along the `atTop` filter is a null set.\n\nNote: for the *second* Borel-Cantelli lemma (applying to independent sets in a probability space),\nsee `ProbabilityTheory.measure_limsup_eq_one`. -/\ntheorem measure_limsup_atTop_eq_zero {s : ℕ → Set α} (hs : ∑' i, μ (s i) ≠ ∞) :\n    μ (limsup s atTop) = 0 := by\n  rw [← Nat.cofinite_eq_atTop, measure_limsup_cofinite_eq_zero hs]",
+     "excerpt_sha256": "5b1e78733842c856d3e5e1435c8d2b863e6a248772374a3b40cfd106685975bb",
+     "attribution": "/-\nCopyright (c) 2020 Markus Himmel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Markus Himmel, Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source is the first Borel-Cantelli lemma. It gives steps 2 and 5."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Tail probabilities. For n≥2 and c>0, P(Xₙ>c ln n)=e^{−c ln n}=n^{−c}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Upper bound for the limsup. Let c>1. Then Σn^{−c}<∞. The first Borel-Cantelli lemma shows that Xₙ>c ln n happens only finitely often almost surely. Use c=1+1/j for j=1,2,… and intersect countably many almost sure events. So limsup Xₙ/ln n≤1 almost surely.",
+      "uses": [
+       "nm:borel-cantelli-lemma"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Lower bound for the limsup. The events {Xₙ>ln n} are independent and ΣP=Σ1/n=∞. The second Borel-Cantelli lemma shows that they occur infinitely often almost surely. So limsup Xₙ/ln n≥1 almost surely. Combined with step 2, limsup Xₙ/ln n=1.",
+      "uses": [
+       "nm:second-borel-cantelli-lemma"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Upper bound for the maximum. Let c>1 and take ω outside the null set of step 2. There is K=K(ω) with X_k≤c ln k for k≥K. For n≥K, Mₙ≤max(M_K,c ln n). So limsup Mₙ/ln n≤c. Let c↓1 along 1+1/j.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Lower bound for the maximum. Let 0<c<1. By independence P(Mₙ≤c ln n)=(1−n^{−c})ⁿ≤exp(−n^{1−c}), using 1−u≤e^{−u}. For large n, n^{1−c}≥2 ln n, so the bound is at most n^{−2}. The series converges, so the first Borel-Cantelli lemma shows Mₙ>c ln n for all large n almost surely. So liminf Mₙ/ln n≥c. Let c↑1 along 1−1/j.",
+      "uses": [
+       "nm:borel-cantelli-lemma"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Conclusion. Steps 4 and 5 give lim Mₙ/ln n=1 almost surely. Step 2 and step 3 give limsup Xₙ/ln n=1. The single terms Xₙ do not satisfy lim Xₙ/ln n=1, since the events {Xₙ<1} are independent with probability 1−e⁻¹ each. The second lemma shows they occur infinitely often, so the liminf of the ratio is 0.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Counting exceedances of ln n by exponential variables",
+    "goal": "Compare the expected number of exceedances Σn^{−c} with one simulated run of 10⁶ variables, and check the lower bound for the maximum.",
+    "hypotheses": [
+     "Xₙ i.i.d. Exp(1) for n=2,…,10⁶, drawn with Python random.seed(20261011) and random.expovariate(1.0).",
+     "Thresholds c=1, 1.5 and 2."
+    ],
+    "why_theorem_applies": "The tail P(Xₙ>c ln n)=n^{−c} has a divergent sum for c=1 and a convergent sum for c=1.5 and 2.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Expected counts. For N=10⁶, Σ_{n=2}^N n^{−1}=13.3927, Σ n^{−1.5}=1.6104 and Σ n^{−2}=0.6449. The first sum grows like ln N−0.4228, so it diverges but very slowly.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Partial sums for c=1. The sums up to 10³, 10⁴, 10⁵ and 10⁶ are 6.4855, 8.7876, 11.0901 and 13.3927. Each step of ×10 adds ln10=2.3026.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "One simulated run. The counts of exceedances are 7 for c=1, 1 for c=1.5 and 0 for c=2. The last exceedance indices are 486096 for c=1 and 729 for c=1.5. This one run is below the expected count 13.39 for c=1, which is allowed because the count has a spread of about √13.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Maximum. In the same run M=13.3873 and ln N=13.8155. The ratio is 0.9690, close to 1.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Lower-bound probability. For n=10⁶ and c=0.75, P(Mₙ≤0.75 ln n)=(1−n^{−0.75})ⁿ=1.8458×10⁻¹⁴. The bound exp(−n^{0.25}) equals 1.8467×10⁻¹⁴. The two agree and show how fast the lower tail dies.",
+      "uses": []
+     }
+    ],
+    "result": "The simulated maximum satisfies M/ln N=0.9690 at N=10⁶. The exceedance counts follow the dichotomy: finitely many for c>1, growing like ln N for c=1.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The speed of convergence is slow. At N=10⁶ the ratio M/ln N is still 0.969, not 1. The result gives no rate.",
+    "The sharp description is Gumbel: Mₙ−ln n converges in law. That is not proved here.",
+    "The second lemma needs independence. For dependent variables ΣP=∞ does not imply infinitely many occurrences.",
+    "The simulation is one sample path. It illustrates the theorem and proves nothing."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-projection-variational-inequality",
+   "name": "Projection onto a convex set: variational inequality and fixed-point test",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.FA",
+    "math.OC"
+   ],
+   "application_cats": [
+    "math.FA",
+    "math.OC"
+   ],
+   "statement": "Let K be a nonempty closed convex subset of a real Hilbert space H, and let u be in H. (a) A point v in K satisfies ‖u−v‖=dist(u,K) if and only if ⟨u−v,w−v⟩≤0 for all w in K. Such a point exists and is unique. Call it P_K u. (b) ‖P_K u−P_K u′‖²≤⟨P_K u−P_K u′,u−u′⟩, hence ‖P_K u−P_K u′‖≤‖u−u′‖. (c) Let f be convex and differentiable on H with gradient ∇f, and let η>0. A point v in K minimizes f over K if and only if v=P_K(v−η∇f(v)).",
+   "hypotheses": [
+    "K is closed, convex and nonempty. The space is a real Hilbert space.",
+    "In (c) the function f is convex and differentiable. Convexity is used for the direction from the condition to the minimum.",
+    "The number η>0 is arbitrary. The fixed-point test does not depend on it."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q3527215",
+     "reason": "Existence of the nearest point."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "metric projection",
+    "variational inequality",
+    "firmly nonexpansive map"
+   ],
+   "concept_prerequisites": [
+    "c:hilbert-space",
+    "c:convex-set",
+    "c:orthogonal-projection"
+   ],
+   "definitions": [
+    {
+     "name": "metric projection",
+     "text": "P_K u is the point of K nearest to u."
+    },
+    {
+     "name": "variational inequality",
+     "text": "The condition ⟨u−v,w−v⟩≤0 for all w in K. It says that u−v makes an obtuse angle with every direction from v into K."
+    },
+    {
+     "name": "firmly nonexpansive map",
+     "text": "A map T with ‖Tu−Tu′‖²≤⟨Tu−Tu′,u−u′⟩."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/InnerProductSpace/Projection/Minimal.lean#L139-L222",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.InnerProductSpace.Projection.Minimal",
+    "declaration": "norm_eq_iInf_iff_real_inner_le_zero",
+    "lines": [
+     139,
+     222
+    ],
+    "module_sha256": "ad28ffd4b85702493d3fefdff313cfed856ccac587cc019f57d6db0bb9b6b28a",
+    "excerpt": "/-- Characterization of minimizers for the projection on a convex set in a real inner product\nspace. -/\ntheorem norm_eq_iInf_iff_real_inner_le_zero {K : Set F} (h : Convex ℝ K) {u : F} {v : F}\n    (hv : v ∈ K) : (‖u - v‖ = ⨅ w : K, ‖u - w‖) ↔ ∀ w ∈ K, ⟪u - v, w - v⟫_ℝ ≤ 0 := by\n  let : Nonempty K := ⟨⟨v, hv⟩⟩\n  constructor\n  · intro eq w hw\n    let δ := ⨅ w : K, ‖u - w‖\n    let p := ⟪u - v, w - v⟫_ℝ\n    let q := ‖w - v‖ ^ 2\n    have δ_le (w : K) : δ ≤ ‖u - w‖ := ciInf_le ⟨0, fun _ ⟨_, h⟩ => h ▸ norm_nonneg _⟩ _\n    have δ_le' (w) (hw : w ∈ K) : δ ≤ ‖u - w‖ := δ_le ⟨w, hw⟩\n    have (θ : ℝ) (hθ₁ : 0 < θ) (hθ₂ : θ ≤ 1) : 2 * p ≤ θ * q := by\n      have : ‖u - v‖ ^ 2 ≤ ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 :=\n        calc ‖u - v‖ ^ 2\n          _ ≤ ‖u - (θ • w + (1 - θ) • v)‖ ^ 2 := by\n            simp only [sq]; apply mul_self_le_mul_self (norm_nonneg _)\n            rw [eq]; apply δ_le'\n            apply h hw hv\n            exacts [le_of_lt hθ₁, sub_nonneg.2 hθ₂, add_sub_cancel _ _]\n          _ = ‖u - v - θ • (w - v)‖ ^ 2 := by\n            have : u - (θ • w + (1 - θ) • v) = u - v - θ • (w - v) := by\n              rw [smul_sub, sub_smul, one_smul]\n              simp only [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, neg_add_rev]\n            rw [this]\n          _ = ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 := by\n            rw [@norm_sub_sq ℝ, inner_smul_right, norm_smul]\n            simp only [sq]\n            change\n              ‖u - v‖ * ‖u - v‖ - 2 * (θ * ⟪u - v, w - v⟫_ℝ) +\n                absR θ * ‖w - v‖ * (absR θ * ‖w - v‖) =\n              ‖u - v‖ * ‖u - v‖ - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * (‖w - v‖ * ‖w - v‖)\n            rw [abs_of_pos hθ₁]; ring\n      have eq₁ :\n        ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 =\n          ‖u - v‖ ^ 2 + (θ * θ * ‖w - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ) := by\n        abel\n      rw [eq₁, le_add_iff_nonneg_right] at this\n      have eq₂ :\n        θ * θ * ‖w - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ =\n          θ * (θ * ‖w - v‖ ^ 2 - 2 * ⟪u - v, w - v⟫_ℝ) := by ring\n      rw [eq₂] at this\n      exact le_of_sub_nonneg (nonneg_of_mul_nonneg_right this hθ₁)\n    by_cases hq : q = 0\n    · rw [hq] at this\n      have : p ≤ 0 := by\n        have := this (1 : ℝ) (by simp) (by simp)\n        linarith\n      exact this\n    · have q_pos : 0 < q := lt_of_le_of_ne (sq_nonneg _) fun h ↦ hq h.symm\n      by_contra hp\n      rw [not_le] at hp\n      let θ := min (1 : ℝ) (p / q)\n      have eq₁ : θ * q ≤ p :=\n        calc\n          θ * q ≤ p / q * q := mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)\n          _ = p := div_mul_cancel₀ _ hq\n      have : 2 * p ≤ p :=\n        calc\n          2 * p ≤ θ * q := by\n            exact this θ (lt_min (by simp) (div_pos hp q_pos)) (by simp [θ])\n          _ ≤ p := eq₁\n      linarith\n  · intro h\n    apply le_antisymm\n    · apply le_ciInf\n      intro w\n      apply nonneg_le_nonneg_of_sq_le_sq (norm_nonneg _)\n      have := h w w.2\n      calc\n        ‖u - v‖ * ‖u - v‖ ≤ ‖u - v‖ * ‖u - v‖ - 2 * ⟪u - v, w - v⟫_ℝ := by linarith\n        _ ≤ ‖u - v‖ ^ 2 - 2 * ⟪u - v, w - v⟫_ℝ + ‖w - v‖ ^ 2 := by\n          rw [sq]\n          refine le_add_of_nonneg_right ?_\n          exact sq_nonneg _\n        _ = ‖u - v - (w - v)‖ ^ 2 := (@norm_sub_sq ℝ _ _ _ _ _ _).symm\n        _ = ‖u - w‖ * ‖u - w‖ := by\n          have : u - v - (w - v) = u - w := by abel\n          rw [this, sq]\n    · change ⨅ w : K, ‖u - w‖ ≤ (fun w : K => ‖u - w‖) ⟨v, hv⟩\n      apply ciInf_le\n      use 0\n      rintro y ⟨z, rfl⟩\n      exact norm_nonneg _",
+    "excerpt_sha256": "a4088fa507ba41ce46f7e9a9aa3994d06a8e4914a66e680e46347202164e8e69",
+    "attribution": "/-\nCopyright (c) 2019 Zhouhang Zhou. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Zhouhang Zhou, Frédéric Dupuis, Heather Macbeth\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves part (a), the characterization of nearest points by the inner product inequality. Parts (b) and (c) are not in this declaration."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Necessity in (a). Let v be a nearest point, w in K and θ in (0,1]. Then v+θ(w−v) is in K by convexity. So ‖u−v‖²≤‖u−v−θ(w−v)‖²=‖u−v‖²−2θ⟨u−v,w−v⟩+θ²‖w−v‖². Divide by θ and let θ→0. This gives ⟨u−v,w−v⟩≤0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Sufficiency and uniqueness in (a). Suppose the inequality holds at v. For w in K, ‖u−w‖²=‖u−v‖²−2⟨u−v,w−v⟩+‖w−v‖²≥‖u−v‖²+‖w−v‖². So v is nearest, and equality forces w=v. Hence the nearest point is unique.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Existence in (a). The Hilbert projection theorem gives a nearest point in a nonempty closed convex set of a Hilbert space.",
+      "uses": [
+       "wd:Q3527215"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Part (b). Let p=P_K u and p′=P_K u′. Step 1 gives ⟨u−p,p′−p⟩≤0 and ⟨u′−p′,p−p′⟩≤0. Add them. The sum equals ⟨(u−u′)−(p−p′),p′−p⟩=−⟨u−u′,p−p′⟩+‖p−p′‖²≤0. So ‖p−p′‖²≤⟨u−u′,p−p′⟩. The Cauchy-Schwarz inequality then gives ‖p−p′‖≤‖u−u′‖.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "First-order condition. For convex differentiable f, v in K minimizes f over K if and only if ⟨∇f(v),w−v⟩≥0 for all w in K. Forward: g(θ)=f(v+θ(w−v)) has its minimum over [0,1] at θ=0, so g′(0)=⟨∇f(v),w−v⟩≥0. Backward: convexity gives f(w)≥f(v)+⟨∇f(v),w−v⟩≥f(v).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Part (c). Put u=v−η∇f(v). Then ⟨u−v,w−v⟩=−η⟨∇f(v),w−v⟩. This is at most 0 for all w in K exactly when the first-order condition holds. By part (a), that is exactly v=P_K u. So v is a minimizer if and only if v=P_K(v−η∇f(v)).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Projection onto the simplex and a least squares fit",
+    "goal": "Project three points onto the probability simplex in ℝ³, test the inequalities, then run projected gradient steps for a least squares problem and check the fixed point.",
+    "hypotheses": [
+     "K={x in ℝ³ : xᵢ≥0, Σxᵢ=1}. The projection has the form (x−θ)₊ with θ chosen so that the sum is 1.",
+     "Least squares: f(x)=½‖Ax−b‖² with A=[[2,0,1],[0,1,1],[1,1,0]] and b=(1,2,0.5)."
+    ],
+    "why_theorem_applies": "K is closed, convex and nonempty. f is convex and differentiable. So parts (a) to (c) apply.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Three projections. x=(0.5,1.2,−0.3) has θ=0.35, so P_K x=(0.15,0.85,0). x=(2,0,0) has θ=1, so P_K x=(1,0,0). x=(0.2,0.3,0.1) has coordinate sum 0.6 and θ=−0.1333, so P_K x=(0.3333,0.4333,0.2333).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Variational inequality. For x=(0.5,1.2,−0.3) and p=(0.15,0.85,0), x−p=(0.35,0.35,−0.3). The products ⟨x−p,eᵢ−p⟩ for the three vertices are 0, 0 and −0.65. All are at most 0. The inequality is linear in w, so it holds for the whole simplex.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Nonexpansiveness. For 20000 random pairs (x,y) in [−2,2]³, the ratio ‖P x−P y‖/‖x−y‖ never exceeds 0.999998, and the firm inequality of part (b) held in each case.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Projected gradient. L=λmax(AᵀA)=6.4115 and η=1/L. From x₀=(1/3,1/3,1/3) the iterates are (0.186,0.394,0.420) with f=0.72816 at step 1, (0,0.38591,0.61409) with f=0.58097 at step 5, and (0,0.250066,0.749934) with f=0.5625 at step 50. At step 200 the iterate is (0,0.25,0.75).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Fixed-point check. Take x*=(0,1/4,3/4). Then Ax*−b=(−0.25,−1,−0.25), f(x*)=9/16 and ∇f(x*)=(−0.75,−1.25,−1.25). For any η>0, x*−η∇f(x*)=(0.75η,0.25+1.25η,0.75+1.25η). Subtract θ=1.25η and clip: this gives (0,0.25,0.75), which sums to 1. So P_K(x*−η∇f(x*))=x*. By part (c), x* is the minimizer. The inner products ⟨∇f(x*),eᵢ−x*⟩ are 0.5, 0 and 0, all at least 0.",
+      "uses": []
+     }
+    ],
+    "result": "The projected gradient iteration converges to x*=(0,1/4,3/4) with f=9/16, and the exact fixed-point test confirms optimality for every step size.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The Hilbert space must be real. In a complex space one uses the real part of the inner product.",
+    "The fixed-point test in (c) needs convexity of f. For a nonconvex f it is only necessary for a local minimum.",
+    "The application shows convergence of the iterates numerically. This entry does not prove a convergence theorem for projected gradient.",
+    "Closedness is needed for existence. In a nonclosed set the nearest point may not exist."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q3527215",
+      "relation": "refines",
+      "reason": "The Hilbert projection theorem gives existence and uniqueness of the nearest point. This entry adds the inequality characterization, nonexpansiveness and the optimality test."
+     },
+     {
+      "id": "wd:Q3527215",
+      "relation": "distinct from",
+      "reason": "The Hilbert projection theorem gives existence and uniqueness. This entry gives the variational characterization and a fixed-point test."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-metropolis-hastings-detailed-balance",
+   "name": "Metropolis-Hastings kernel satisfies detailed balance",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "Let S be a finite set, π a probability vector on S with π(x)>0 for all x, and q a stochastic matrix on S such that q(x,y)>0 if and only if q(y,x)>0, for x≠y. Put a(x,y)=min{1,π(y)q(y,x)/(π(x)q(x,y))} when q(x,y)>0, and P(x,y)=q(x,y)a(x,y) for x≠y, and P(x,x)=1−Σ_{y≠x}P(x,y). Then P is a stochastic matrix, π(x)P(x,y)=π(y)P(y,x) for all x,y, and πP=π.",
+   "hypotheses": [
+    "π is strictly positive on S. The weights may be known only up to a constant, because only ratios appear.",
+    "The proposal q is a stochastic matrix. It need not be symmetric, but it must be able to go back.",
+    "The result gives stationarity. Convergence of μPⁿ to π needs P irreducible and aperiodic, and that is not proved here."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof is a direct computation with the definition of the acceptance probability. No catalog theorem is cited.",
+   "concepts": [
+    "detailed balance",
+    "acceptance probability",
+    "stationary vector"
+   ],
+   "concept_prerequisites": [
+    "c:markov-kernel",
+    "c:detailed-balance",
+    "c:markov-chain"
+   ],
+   "definitions": [
+    {
+     "name": "detailed balance",
+     "text": "π(x)P(x,y)=π(y)P(y,x) for all x,y. The chain is reversible with respect to π."
+    },
+    {
+     "name": "acceptance probability",
+     "text": "a(x,y) is the chance that the proposed move x→y is accepted."
+    },
+    {
+     "name": "stationary vector",
+     "text": "A probability vector π with πP=π."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Kernel/Invariance.lean#L62-L70",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Kernel.Invariance",
+    "declaration": "IsReversible.invariant",
+    "lines": [
+     62,
+     70
+    ],
+    "module_sha256": "7b93a347f9fde6e9f5a835c5051175caaf531f11be1b0985fbe4c36980407221",
+    "excerpt": "/-- A reversible Markov kernel leaves the measure `π` invariant. -/\ntheorem IsReversible.invariant\n    {κ : Kernel α α} [IsMarkovKernel κ] {π : Measure α}\n    (h_rev : IsReversible κ π) : Invariant κ π := by\n  ext s hs\n  calc\n    (κ ∘ₘ π) s = ∫⁻ x, κ x s ∂π := by rw [Measure.bind_apply hs (Kernel.aemeasurable _)]\n             _ = ∫⁻ x in s, κ x Set.univ ∂π := by simpa [restrict_univ] using (h_rev hs .univ).symm\n             _ = π s := by simp",
+    "excerpt_sha256": "504f84e2262ba99337d48f2585d5be190f0fab74066ec8637cc8276e90b6c2d1",
+    "attribution": "/-\nCopyright (c) 2023 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying, Matteo Cipollina\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that a reversible Markov kernel leaves its measure invariant, for general measurable spaces. The finite case above is the matrix form of that statement."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "P is stochastic. For x≠y, P(x,y)≥0 because q and a are nonnegative. Also Σ_{y≠x}P(x,y)≤Σ_{y≠x}q(x,y)≤1, since a≤1. So P(x,x)≥0. Each row sums to 1 by the definition of P(x,x).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Off-diagonal pairs with q(x,y)=0. Then q(y,x)=0 by assumption, so P(x,y)=P(y,x)=0. Both sides of detailed balance are 0.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Pairs with q(x,y)>0. Put r=π(y)q(y,x)/(π(x)q(x,y))>0. Then a(x,y)=min{1,r} and a(y,x)=min{1,1/r}. The two sides of detailed balance are π(x)q(x,y)min{1,r} and π(y)q(y,x)min{1,1/r}.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Case r≥1. The left side is π(x)q(x,y). The right side is π(y)q(y,x)/r=π(x)q(x,y). They agree.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Case r<1. The left side is π(x)q(x,y)r=π(y)q(y,x). The right side is π(y)q(y,x)·1. They agree.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Diagonal pairs. For x=y the identity π(x)P(x,x)=π(x)P(x,x) is trivial. So detailed balance holds for all pairs.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Stationarity. For each y, Σ_xπ(x)P(x,y)=Σ_xπ(y)P(y,x)=π(y)Σ_xP(y,x)=π(y). This is πP=π.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A five-state chain with target (1,2,4,2,1)/10",
+    "goal": "Build the Metropolis chain for a reflecting random walk proposal, check detailed balance with exact fractions, and watch the total variation distance fall.",
+    "hypotheses": [
+     "S={0,1,2,3,4} and π=(0.1,0.2,0.4,0.2,0.1).",
+     "Proposal: from 0 go to 1 with probability 1, from 4 go to 3 with probability 1, from an inner state go left or right with probability 1/2 each."
+    ],
+    "why_theorem_applies": "The proposal is symmetric in support, because q(x,y)>0 exactly for neighbours. π>0. So the theorem applies.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Acceptance ratios. For 0→1: π(1)q(1,0)/(π(0)q(0,1))=0.2·0.5/(0.1·1)=1. For 1→2: 0.4·0.5/(0.2·0.5)=2. For 2→1: 0.2·0.5/(0.4·0.5)=0.5. For 3→4 the ratio is 1, and for 4→3 it is 1.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The kernel. Rows of P are (0,1,0,0,0), (1/2,0,1/2,0,0), (0,1/4,1/2,1/4,0), (0,0,1/2,0,1/2) and (0,0,0,1,0). In row 2 the move to state 1 is accepted with probability 1/2, so P(2,1)=1/4 and P(2,2)=1/2.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Exact check. With fractions, π(x)P(x,y)=π(y)P(y,x) holds for all 25 pairs, and (πP)(y)=π(y) for all five states.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Convergence from state 0. P is irreducible, and P(2,2)>0 makes it aperiodic. The total variation distance ½Σ|(δ₀Pᵏ)(y)−π(y)| is 0.8 at k=1, 0.5 at k=2, 0.2375 at k=5, 0.077734 at k=10, 0.009337 at k=20, 1.347×10⁻⁴ at k=40 and 2.80×10⁻⁸ at k=80. Between k=40 and k=80 the distance falls by a factor 0.809 per step.",
+      "uses": []
+     }
+    ],
+    "result": "P is reversible for π and has π as stationary vector. The chain started at state 0 is within 2.8×10⁻⁸ of π in total variation after 80 steps.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proposal must allow the reverse move. If q(x,y)>0 but q(y,x)=0, the ratio is undefined and the target may be missed.",
+    "Stationarity does not give convergence. A reducible proposal can keep the chain in one part of S.",
+    "The convergence rate in the application is computed for this chain. The theorem does not give a rate.",
+    "On a continuous state space the same acceptance rule works with densities, but this entry proves only the finite case."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-polya-urn-beta-limit",
+   "name": "Polya urn: martingale limit with a Beta law",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.PR"
+   ],
+   "application_cats": [
+    "math.PR"
+   ],
+   "statement": "An urn holds a red and b black balls, with a,b positive integers. At each step draw a ball uniformly and return it with one more ball of the same colour. Let Dₙ be the number of red draws in n steps and Xₙ=(a+Dₙ)/(a+b+n). Write x^{(k)}=x(x+1)⋯(x+k−1). Then (a) the colour sequence is exchangeable, and P(Dₙ=j)=C(n,j)a^{(j)}b^{(n−j)}/(a+b)^{(n)}. (b) Xₙ is a martingale with values in [0,1]. (c) Xₙ→X_∞ almost surely, and X_∞ has the Beta(a,b) law with E[X_∞ᵏ]=a^{(k)}/(a+b)^{(k)}.",
+   "hypotheses": [
+    "a and b are positive integers. The reinforcement is exactly one ball.",
+    "The filtration is generated by the draws.",
+    "The Beta(a,b) law has density xᵃ⁻¹(1−x)ᵇ⁻¹/B(a,b) on [0,1]."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1067156",
+     "reason": "Bounded convergence of the moments."
+    },
+    {
+     "id": "nm:technique-beta-gamma-integral",
+     "reason": "Beta moments from the Gamma function."
+    },
+    {
+     "id": "nm:weierstrass-approximation-theorem",
+     "reason": "Moments determine a law on [0,1]."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "exchangeable sequence",
+    "rising factorial",
+    "falling factorial"
+   ],
+   "concept_prerequisites": [
+    "c:martingale",
+    "c:exchangeability",
+    "c:moment"
+   ],
+   "definitions": [
+    {
+     "name": "exchangeable sequence",
+     "text": "A sequence whose joint law does not change when finitely many indices are permuted."
+    },
+    {
+     "name": "rising factorial",
+     "text": "x^{(k)}=x(x+1)⋯(x+k−1), with x^{(0)}=1."
+    },
+    {
+     "name": "falling factorial",
+     "text": "(x)_k=x(x−1)⋯(x−k+1)."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Martingale/Convergence.lean#L210-L234",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Probability.Martingale.Convergence",
+    "declaration": "Submartingale.ae_tendsto_limitProcess",
+    "lines": [
+     210,
+     234
+    ],
+    "module_sha256": "ef5f15b5a3ef3047b983207bfa99ff9a9b14c26eb42a9896fe7acafbc4c4dc77",
+    "excerpt": "/-- **Almost everywhere martingale convergence theorem**: An L¹-bounded submartingale converges\nalmost everywhere to a `⨆ n, ℱ n`-measurable function. -/\ntheorem Submartingale.ae_tendsto_limitProcess [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)\n    (hbdd : ∀ n, eLpNorm (f n) 1 μ ≤ R) :\n    ∀ᵐ ω ∂μ, Tendsto (fun n => f n ω) atTop (𝓝 (ℱ.limitProcess f μ ω)) := by\n  classical\n  suffices\n      ∃ g, StronglyMeasurable[⨆ n, ℱ n] g ∧ ∀ᵐ ω ∂μ, Tendsto (fun n => f n ω) atTop (𝓝 (g ω)) by\n    rw [limitProcess, dite_eq_left this]\n    exact (Classical.choose_spec this).2\n  set g' : Ω → ℝ := fun ω => if h : ∃ c, Tendsto (fun n => f n ω) atTop (𝓝 c) then h.choose else 0\n  have hle : ⨆ n, ℱ n ≤ m0 := sSup_le fun m ⟨n, hn⟩ => hn ▸ ℱ.le _\n  have hg' : ∀ᵐ ω ∂μ.trim hle, Tendsto (fun n => f n ω) atTop (𝓝 (g' ω)) := by\n    filter_upwards [hf.exists_ae_trim_tendsto_of_bdd hbdd] with ω hω\n    simp_rw [g', dite_eq_left hω]\n    exact hω.choose_spec\n  have hg'm : AEStronglyMeasurable[⨆ n, ℱ n] g' (μ.trim hle) :=\n    (@aemeasurable_of_tendsto_metrizable_ae' _ _ (⨆ n, ℱ n) _ _ _ _ _ _ _\n      (fun n => ((hf.stronglyMeasurable n).measurable.mono (le_sSup ⟨n, rfl⟩ : ℱ n ≤ ⨆ n, ℱ n)\n        le_rfl).aemeasurable) hg').aestronglyMeasurable\n  obtain ⟨g, hgm, hae⟩ := hg'm\n  have hg : ∀ᵐ ω ∂μ.trim hle, Tendsto (fun n => f n ω) atTop (𝓝 (g ω)) := by\n    filter_upwards [hae, hg'] with ω hω hg'ω\n    exact hω ▸ hg'ω\n  exact ⟨g, hgm, measure_eq_zero_of_trim_eq_zero hle hg⟩",
+    "excerpt_sha256": "2ad884e69cb5acd0841516928d4df8806c7da0ab25dc308e7f067f1f98fd6146",
+    "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves almost sure convergence of an L¹-bounded submartingale. It gives the limit in step 3."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Probability of one sequence. Take a colour sequence with j red draws and n−j black draws. At each draw, the chance of red is (red count)/(total count). The red draws contribute the numerators a,a+1,…,a+j−1 in the order they occur, and the black draws contribute b,b+1,…,b+n−j−1. The denominators are a+b,a+b+1,…,a+b+n−1. So the probability is a^{(j)}b^{(n−j)}/(a+b)^{(n)}. It does not depend on the order. This gives exchangeability and the formula for P(Dₙ=j), by counting C(n,j) sequences. This proves (a).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Martingale. Let Tₙ=a+b+n and Rₙ=a+Dₙ. Given the first n draws, the red count after one more draw has mean Rₙ+Rₙ/Tₙ=Rₙ(Tₙ+1)/Tₙ. So E[X_{n+1}|Fₙ]=Rₙ(Tₙ+1)/(Tₙ(Tₙ+1))=Rₙ/Tₙ=Xₙ. Also 0≤Xₙ≤1. This proves (b).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Almost sure limit. A martingale bounded in [0,1] converges almost surely to a limit X_∞ in [0,1]. Since the sequence is bounded, the dominated convergence theorem gives E[Xₙᵏ]→E[X_∞ᵏ] for every k.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Moments of the red count. Fix k draw indices i₁,…,i_k. By step 1, the chance that all k are red equals the chance that the first k draws are red, which is a^{(k)}/(a+b)^{(k)}=:m_k. Count ordered k-tuples of distinct indices: there are n(n−1)⋯(n−k+1). So E[(Dₙ)_k]=(n)_k m_k.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "From falling to ordinary powers. Write Dₙᵏ=(Dₙ)_k+Σ_{l<k}S(k,l)(Dₙ)_l, where S(k,l) are Stirling numbers of the second kind. Since (Dₙ)_l≤nˡ, we get |E[Dₙᵏ]/nᵏ−(n)_k m_k/nᵏ|≤C_k/n. Also (n)_k/nᵏ→1. So E[(Dₙ/n)ᵏ]→m_k.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Pass from Dₙ/n to Xₙ. Xₙ−Dₙ/n=(na−Dₙ(a+b))/(n(a+b+n)). Because 0≤Dₙ≤n, the absolute value is at most (a+b)/n. So |Xₙᵏ−(Dₙ/n)ᵏ|≤k(a+b)/n. Therefore E[Xₙᵏ]→m_k, and by step 3, E[X_∞ᵏ]=m_k.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Beta moments. For B with the Beta(a,b) law, E[Bᵏ]=B(a+k,b)/B(a,b)=Γ(a+k)Γ(a+b)/(Γ(a)Γ(a+b+k))=a^{(k)}/(a+b)^{(k)}, by the Beta-Gamma identity and Γ(x+k)=x^{(k)}Γ(x).",
+      "uses": [
+       "nm:technique-beta-gamma-integral"
+      ]
+     },
+     {
+      "id": "s8",
+      "text": "Moments determine the law. X_∞ and B are in [0,1] and have the same moments. So ∫p dμ=∫p dν for every polynomial p. Polynomials are uniformly dense in C[0,1] by the Weierstrass theorem, so ∫g dμ=∫g dν for all continuous g. Hence the two laws are equal. This proves (c).",
+      "uses": [
+       "nm:weierstrass-approximation-theorem"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Three urns",
+    "goal": "Check the exact formulas for small urns and the Beta limit numerically.",
+    "hypotheses": [
+     "Urn 1: a=b=1, n=6.",
+     "Urn 2: a=2, b=1, test P(Xₙ≤1/2).",
+     "Urn 3: a=2, b=3, moments and n=8."
+    ],
+    "why_theorem_applies": "In every case the parameters are positive integers, so the theorem applies.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Uniform case. For a=b=1 and n=6 the formula gives P(D₆=j)=C(6,j)·j!(6−j)!/7!=1/7 for j=0,…,6. Each of the seven values has the same probability 1/7.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Martingale check. With 3 red out of 7 balls, P(red)=3/7. Then E[X_{n+1}|Fₙ]=(3/7)(4/8)+(4/7)(3/8)=24/56=3/7=Xₙ exactly.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Beta(2,1) limit. P(Xₙ≤1/2) is 0.22727 for n=10, 0.24752 for n=100, 0.24975 for n=1000 and 0.249938 for n=4000. The Beta(2,1) law has cdf x², which equals 0.25 at 1/2.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Moments for a=2 and b=3. The values m₁,m₂,m₃ are 2/5, 1/5 and 4/35=0.114286. Numerical Beta integrals give 0.4, 0.2 and 0.114286.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Exact falling moment. For n=8 and k=3, E[(D₈)₃]=192/5 from the exact law. The formula (8)₃·m₃=336·4/35=192/5. They agree.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Convergence of moments. E[Xₙ³] is 0.09727 for n=10, 0.11184 for n=100 and 0.11403 for n=1000. It tends to m₃=0.114286.",
+      "uses": []
+     }
+    ],
+    "result": "For urn (2,3) the third moment of Xₙ tends to 4/35=0.114286, the third moment of Beta(2,3). The distribution of X_∞ is Beta(a,b).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The exact Beta limit needs reinforcement of one ball. Other reinforcement sizes give Beta laws with other parameters, and this entry does not treat them.",
+    "The proof uses integer a and b so that the urn is a real urn. The formulas extend to real a,b>0, but the urn picture does not.",
+    "Conditional on X_∞ the draws are i.i.d. Bernoulli. This is a de Finetti statement and is not proved here.",
+    "The limit X_∞ is random. The proportion of red balls does not converge to a constant."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-linear-programming-duality-farkas",
+   "name": "Linear programming duality from the Farkas lemma",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.OC",
+    "math.MG"
+   ],
+   "application_cats": [
+    "math.OC",
+    "math.MG"
+   ],
+   "statement": "Let A be a real m×n matrix, b in ℝᵐ and c in ℝⁿ. The primal problem is (P): maximize cᵀx subject to Ax≤b and x≥0. The dual problem is (D): minimize bᵀy subject to Aᵀy≥c and y≥0. (a) Weak duality: if x is feasible for (P) and y is feasible for (D), then cᵀx≤bᵀy. (b) Strong duality: if (P) is feasible and its supremum v* is finite, then (P) and (D) both have optimal solutions and the optimal values are equal. (c) Complementary slackness: feasible x and y are optimal if and only if yᵢ(b−Ax)ᵢ=0 for all i and xⱼ(Aᵀy−c)ⱼ=0 for all j.",
+   "hypotheses": [
+    "All data are real. Inequalities between vectors hold in every coordinate.",
+    "In (b) the problem (P) has at least one feasible point and is bounded above.",
+    "If (P) is unbounded above then (D) is infeasible, by (a). If (D) is infeasible and (P) is feasible then (P) is unbounded. The second case is not proved here."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:farkas-lemma",
+     "reason": "The Farkas alternative produces the certificate x̃."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "primal and dual program",
+    "Farkas alternative",
+    "complementary slackness"
+   ],
+   "concept_prerequisites": [
+    "c:linear-programming",
+    "c:linear-programming-duality",
+    "c:convex-cone"
+   ],
+   "definitions": [
+    {
+     "name": "primal and dual program",
+     "text": "(P) maximizes cᵀx over {Ax≤b, x≥0}. (D) minimizes bᵀy over {Aᵀy≥c, y≥0}."
+    },
+    {
+     "name": "Farkas alternative",
+     "text": "For a matrix M and vector d, exactly one holds. Either Mz=d for some z≥0, or Mᵀw≥0 and dᵀw<0 for some w."
+    },
+    {
+     "name": "complementary slackness",
+     "text": "A positive coordinate of one program forces the matching constraint of the other to be tight."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Cone/Dual.lean#L130-L134",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.Convex.Cone.Dual",
+    "declaration": "hyperplane_separation_point",
+    "lines": [
+     130,
+     134
+    ],
+    "module_sha256": "61e9937ab3584591c277d892cf1e651c420246e0915f795a1ed85678956ad585",
+    "excerpt": "/-- Geometric interpretation of **Farkas' lemma**. Also stronger version of the\n**Hahn-Banach separation theorem** for proper cones. -/\ntheorem hyperplane_separation_point (C : ProperCone ℝ E) (hx₀ : x₀ ∉ C) :\n    ∃ f : StrongDual ℝ E, (∀ x ∈ C, 0 ≤ f x) ∧ f x₀ < 0 := by\n  simpa [*] using C.hyperplane_separation (convex_singleton x₀)",
+    "excerpt_sha256": "93e8015dce8f38c086760e2d49e57ca91c5446b735bf2f81c359e7b2f6a1f8f7",
+    "attribution": "/-\nCopyright (c) 2025 Yaël Dillies, Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Andrew Yang\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the geometric form of the Farkas lemma. It separates a point outside a proper cone from the cone by a functional. The Farkas alternative used above is the finite-dimensional form with a finitely generated cone."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Weak duality. For feasible x and y, cᵀx≤(Aᵀy)ᵀx=yᵀ(Ax)≤yᵀb. The first step uses x≥0 and Aᵀy≥c. The last step uses y≥0 and Ax≤b. This proves (a).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Complementary slackness. If x and y are feasible, then bᵀy−cᵀx=yᵀ(b−Ax)+xᵀ(Aᵀy−c), and both terms are at least 0. The gap is 0 exactly when both terms are 0. Each term is a sum of nonnegative products, so each product is 0. This proves (c), once (b) is known. Also, if a feasible pair has gap 0, both are optimal by (a).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Set up the system for the dual. Let v* be the finite supremum of (P). Consider unknowns z=(y,s,t)≥0 with Aᵀy−s=c and bᵀy+t=v*. A solution gives y≥0 with Aᵀy≥c and bᵀy≤v*. Write the system as Mz=d with M=[[Aᵀ,−I,0],[bᵀ,0,1]] and d=(c,v*).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Apply the Farkas alternative. Suppose the system has no solution. Then there is w=(w₁,λ) with Mᵀw≥0 and dᵀw<0. Written out, Aw₁+λb≥0, −w₁≥0, λ≥0 and cᵀw₁+λv*<0. Put x̃=−w₁. Then x̃≥0, Ax̃≤λb, λ≥0 and cᵀx̃>λv*.",
+      "uses": [
+       "nm:farkas-lemma"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "The case λ>0. The point x̃/λ is feasible for (P) and has value cᵀx̃/λ>v*. This contradicts the definition of v*.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "The case λ=0. Then Ax̃≤0, x̃≥0 and cᵀx̃>0. Let x₀ be feasible for (P). For every τ≥0, x₀+τx̃ is feasible and has value cᵀx₀+τcᵀx̃, which tends to ∞. This contradicts v*<∞.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Dual optimum. Both cases are impossible, so the system has a solution. It gives y≥0, Aᵀy≥c and bᵀy≤v*. By weak duality bᵀy≥cᵀx for every feasible x, so bᵀy≥v*. Hence bᵀy=v*, and y is optimal for (D) because every dual feasible point has value at least v*.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Primal optimum. Rewrite (D) as a maximization problem: maximize −bᵀy subject to −Aᵀy≤−c and y≥0. It is feasible and bounded, with supremum −v*. Apply steps 3 to 7 to this program. Its dual is the minimization of −cᵀx subject to −Ax≥−b and x≥0, which is (P) in minimization form. The conclusion gives a feasible x with −cᵀx=−v*, that is cᵀx=v*. So (P) has an optimal solution. This proves (b).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A two-variable program with a degenerate vertex",
+    "goal": "Solve a small LP, find two different dual optima, and use a Farkas certificate to refute a smaller dual value.",
+    "hypotheses": [
+     "(P): maximize 3x₁+2x₂ subject to x₁+x₂≤4, x₁+3x₂≤6, 2x₁+x₂≤7 and x≥0.",
+     "So A=[[1,1],[1,3],[2,1]], b=(4,6,7) and c=(3,2)."
+    ],
+    "why_theorem_applies": "(P) is feasible at x=0 and bounded, because the feasible region is a bounded polygon. So strong duality applies.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Primal vertices. Intersecting pairs of constraints and keeping feasible points gives the vertices (0,0), (7/2,0), (3,1) and (0,2), with values 0, 21/2, 11 and 4. The optimum is x=(3,1) with value 11. All three row constraints are tight at x: 3+1=4, 3+3=6 and 6+1=7.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Dual feasible points. The vertices of the dual region (with Aᵀy≥c, y≥0) are (0,1/5,7/5) with value 11, (1,0,1) with value 11, (3,0,0) with value 12, (0,3,0) with value 18 and (0,0,2) with value 14. The minimum is 11. So the optimal values agree, and the dual optimum is not unique.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Check both dual optima. For y=(0,1/5,7/5): Aᵀy=(0+1/5+14/5, 0+3/5+7/5)=(3,2) and bᵀy=6/5+49/5=11. For y=(1,0,1): Aᵀy=(1+0+2, 1+0+1)=(3,2) and bᵀy=4+7=11.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Complementary slackness. Both x₁=3 and x₂=1 are positive, so Aᵀy=c must be tight in both coordinates. It is tight for both dual optima. The primal rows are all tight, so no condition falls on y.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Farkas certificate. Try to find y≥0 with Aᵀy≥c and bᵀy≤10. The certificate x̃=(3,1) with λ=1 satisfies x̃≥0, Ax̃=(4,6,7)≤λb=(4,6,7) and cᵀx̃=11>λ·10=10. So no such y exists, and the dual value cannot go below 11.",
+      "uses": []
+     }
+    ],
+    "result": "The optimal value is 11 for both programs, with primal optimum (3,1) and dual optima (0,1/5,7/5) and (1,0,1).",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof of (b) needs the Farkas alternative for the cone generated by the columns of M. Closedness of such cones is part of that lemma.",
+    "The case where (P) is unbounded and (D) is infeasible is only half proved, by weak duality. The converse needs another application of the alternative.",
+    "Duality gives the optimal value but not a fast algorithm. The simplex method or an interior point method still has to find the solution.",
+    "Integer programs do not have strong duality in general."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:farkas-lemma",
+      "relation": "uses",
+      "reason": "Strong duality follows from the Farkas alternative."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }

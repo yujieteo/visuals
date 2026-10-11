@@ -2621,6 +2621,322 @@
      "alignment": "The source proves that the loop that winds n times has winding number n."
     }
    ]
+  },
+  {
+   "id": "nm:technique-characteristic-function-independence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Independence/CharacteristicFunction.lean#L62-L69",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Independence.CharacteristicFunction",
+     "declaration": "indepFun_iff_charFun_prod",
+     "lines": [
+      62,
+      69
+     ],
+     "module_sha256": "2f9db785ce5b22da73c1e5468c21755ff88530eab52e7e6687ca0b833dcb7e67",
+     "excerpt": "/-- Two random variables are independent if and only if their joint characteristic function is equal\nto the product of the characteristic functions. This is the version for Hilbert spaces, see\n`indepFun_iff_charFunDual_prod` for the Banach space version. -/\nlemma indepFun_iff_charFun_prod [CompleteSpace E] (hX : AEMeasurable X P) (hY : AEMeasurable Y P) :\n    X ⟂ᵢ[P] Y ↔ ∀ t, charFun (P.map (fun ω ↦ toLp 2 (X ω, Y ω))) t =\n      charFun (P.map X) t.ofLp.1 * charFun (P.map Y) t.ofLp.2 := by\n  rw [indepFun_iff_map_prod_eq_prod_map_map hX hY, ← charFun_eq_prod_iff,\n    AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop), Function.comp_def]",
+     "excerpt_sha256": "f85e886d5e97a7d4abdf65e4407d225ef4828b89ccd6e9067634a64bd07744ba",
+     "attribution": "/-\nCopyright (c) 2025 Etienne Marion. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Etienne Marion\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (b) for Hilbert-space valued variables. It rewrites independence as a product law and compares characteristic functions."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/Measure/CharacteristicFunction/Basic.lean#L255-L264",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic",
+     "declaration": "Measure.ext_of_charFun",
+     "lines": [
+      255,
+      264
+     ],
+     "module_sha256": "3f90bba2eb49b295a4dd7bb80f5434f66c31ebdd2801a0bc82e5c9476c9b54e4",
+     "excerpt": "/-- If the characteristic functions `charFun` of two finite measures `μ` and `ν` on\na complete second-countable inner product space coincide, then `μ = ν`. -/\ntheorem Measure.ext_of_charFun [CompleteSpace E]\n    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (h : charFun μ = charFun ν) :\n    μ = ν := by\n  simp_rw [funext_iff, charFun_eq_integral_innerProbChar] at h\n  refine ext_of_integral_char_eq continuous_probChar probChar_ne_one (L := innerₗ E)\n    ?_ ?_ h\n  · exact fun v hv ↦ DFunLike.ne_iff.mpr ⟨v, inner_self_ne_zero.mpr hv⟩\n  · exact continuous_inner",
+     "excerpt_sha256": "949686a8bc417f922fb7d9911ce61c6750932ecdef5f51b7fbf81201aefc2eb8",
+     "attribution": "/-\nCopyright (c) 2024 Jakob Stiefel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Jakob Stiefel, Rémy Degenne, Thomas Zhu\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (a) for finite measures on a complete inner product space."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gaussian-uncorrelated-independence",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Distributions/Gaussian/HasGaussianLaw/Independence.lean#L367-L373",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence",
+     "declaration": "HasGaussianLaw.indepFun_of_covariance_eq_zero",
+     "lines": [
+      367,
+      373
+     ],
+     "module_sha256": "d35d359344ae3f19f23ddf7d664c5cbfa08244dfaed13a13224e72d3df19d916",
+     "excerpt": "/-- If $(X, Y)$ is Gaussian, then $X$ and $Y$ are independent if $\\mathrm{Cov}(X, Y) = 0$. -/\nlemma HasGaussianLaw.indepFun_of_covariance_eq_zero {X Y : Ω → ℝ}\n    (hXY : HasGaussianLaw (fun ω ↦ (X ω, Y ω)) P) (h : cov[X, Y; P] = 0) :\n    IndepFun X Y P :=\n  hXY.indepFun_of_covariance_strongDual fun L₁ L₂ ↦ by\n    simp [Function.comp_def, ← toDual_symm_apply, covariance_mul_const_right,\n      covariance_mul_const_left, h]",
+     "excerpt_sha256": "ea858ff615c0371f85d7c4d2a4a59404385cf8989cfa7ae7a6f371ee7ca335a3",
+     "attribution": "/-\nCopyright (c) 2025 Etienne Marion. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Etienne Marion\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the theorem for a pair of real variables with a Gaussian joint law. It proves it through linear functionals of the pair."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-convex-boundary-null",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Measure.lean#L33-L81",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Measure",
+     "declaration": "Convex.addHaar_frontier",
+     "lines": [
+      33,
+      81
+     ],
+     "module_sha256": "2c0e34ddb227fbff25bafad203a428de7d0045874f5ce2cc5659c4e36e8c8545",
+     "excerpt": "/-- Haar measure of the frontier of a convex set is zero. -/\ntheorem addHaar_frontier (hs : Convex ℝ s) : μ (frontier s) = 0 := by\n  /- If `s` is included in a hyperplane, then `frontier s ⊆ closure s` is included in the same\n    hyperplane, hence it has measure zero. -/\n  rcases ne_or_eq (affineSpan ℝ s) ⊤ with hspan | hspan\n  · refine measure_mono_null ?_ (addHaar_affineSubspace _ _ hspan)\n    exact frontier_subset_closure.trans\n      (closure_minimal (subset_affineSpan _ _) (affineSpan ℝ s).closed_of_finiteDimensional)\n  rw [← hs.interior_nonempty_iff_affineSpan_eq_top] at hspan\n  rcases hspan with ⟨x, hx⟩\n  /- Without loss of generality, `s` is bounded. Indeed, `∂s ⊆ ⋃ n, ∂(s ∩ ball x (n + 1))`, hence it\n    suffices to prove that `∀ n, μ (s ∩ ball x (n + 1)) = 0`; the latter set is bounded.\n    -/\n  suffices H : ∀ t : Set E, Convex ℝ t → x ∈ interior t → IsBounded t → μ (frontier t) = 0 by\n    let B : ℕ → Set E := fun n => ball x (n + 1)\n    have : μ (⋃ n : ℕ, frontier (s ∩ B n)) = 0 := by\n      refine measure_iUnion_null fun n =>\n        H _ (hs.inter (convex_ball _ _)) ?_ (isBounded_ball.subset inter_subset_right)\n      rw [interior_inter, isOpen_ball.interior_eq]\n      exact ⟨hx, mem_ball_self (add_pos_of_nonneg_of_pos n.cast_nonneg zero_lt_one)⟩\n    refine measure_mono_null (fun y hy => ?_) this; clear this\n    set N : ℕ := ⌊dist y x⌋₊\n    refine mem_iUnion.2 ⟨N, ?_⟩\n    have hN : y ∈ B N := by simp [B, N, Nat.lt_floor_add_one]\n    suffices y ∈ frontier (s ∩ B N) ∩ B N from this.1\n    rw [frontier_inter_open_inter isOpen_ball]\n    exact ⟨hy, hN⟩\n  intro s hs hx hb\n  /- Since `s` is bounded, we have `μ (interior s) ≠ ∞`, hence it suffices to prove\n    `μ (closure s) ≤ μ (interior s)`. -/\n  replace hb : μ (interior s) ≠ ∞ := (hb.subset interior_subset).measure_lt_top.ne\n  suffices μ (closure s) ≤ μ (interior s) by\n    rwa [frontier, measure_sdiff interior_subset_closure isOpen_interior.nullMeasurableSet hb,\n      tsub_eq_zero_iff_le]\n  /- Due to `Convex.closure_subset_image_homothety_interior_of_one_lt`, for any `r > 1` we have\n    `closure s ⊆ homothety x r '' interior s`, hence `μ (closure s) ≤ r ^ d * μ (interior s)`,\n    where `d = finrank ℝ E`. -/\n  set d : ℕ := Module.finrank ℝ E\n  have : ∀ r : ℝ≥0, 1 < r → μ (closure s) ≤ ↑(r ^ d) * μ (interior s) := fun r hr ↦ by\n    refine (measure_mono <|\n      hs.closure_subset_image_homothety_interior_of_one_lt hx r hr).trans_eq ?_\n    rw [addHaar_image_homothety, ← NNReal.coe_pow, NNReal.abs_eq, ENNReal.ofReal_coe_nnreal]\n  have : ∀ᶠ (r : ℝ≥0) in 𝓝[>] 1, μ (closure s) ≤ ↑(r ^ d) * μ (interior s) :=\n    mem_of_superset self_mem_nhdsWithin this\n  -- Taking the limit as `r → 1`, we get `μ (closure s) ≤ μ (interior s)`.\n  refine ge_of_tendsto ?_ this\n  refine (((ENNReal.continuous_mul_const hb).comp\n    (ENNReal.continuous_coe.comp (continuous_pow d))).tendsto' _ _ ?_).mono_left nhdsWithin_le_nhds\n  simp",
+     "excerpt_sha256": "876b03b383360a08b86ea69849228aa3b1666882dcdce0a155cdf1c5353ec6c5",
+     "attribution": "/-\nCopyright (c) 2022 Yury Kudryashov. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the same statement for any additive Haar measure on a finite-dimensional real normed space."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-convex-explicit-lipschitz-bound",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Continuous.lean#L26-L68",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Continuous",
+     "declaration": "ConvexOn.lipschitzOnWith_of_abs_le",
+     "lines": [
+      26,
+      68
+     ],
+     "module_sha256": "ac11dab7a909818d2bbfb98a6ee5823be5a0c10292db436df4ea63c54373f939",
+     "excerpt": "lemma ConvexOn.lipschitzOnWith_of_abs_le (hf : ConvexOn ℝ (ball x₀ r) f) (hε : 0 < ε)\n    (hM : ∀ a, dist a x₀ < r → |f a| ≤ M) :\n    LipschitzOnWith (2 * M / ε).toNNReal f (ball x₀ (r - ε)) := by\n  set K := 2 * M / ε with hK\n  have oneside {x y : E} (hx : x ∈ ball x₀ (r - ε)) (hy : y ∈ ball x₀ (r - ε)) :\n      f x - f y ≤ K * ‖x - y‖ := by\n    obtain rfl | hxy := eq_or_ne x y\n    · simp\n    have hx₀r : ball x₀ (r - ε) ⊆ ball x₀ r := ball_subset_ball <| by linarith\n    have hx' : x ∈ ball x₀ r := hx₀r hx\n    have hy' : y ∈ ball x₀ r := hx₀r hy\n    let z := x + (ε / ‖x - y‖) • (x - y)\n    replace hxy : 0 < ‖x - y‖ := by rwa [norm_sub_pos_iff]\n    have hz : z ∈ ball x₀ r := mem_ball_iff_norm.2 <| by\n      calc\n        _ = ‖(x - x₀) + (ε / ‖x - y‖) • (x - y)‖ := by simp only [z, add_sub_right_comm]\n        _ ≤ ‖x - x₀‖ + ‖(ε / ‖x - y‖) • (x - y)‖ := norm_add_le ..\n        _ < r - ε + ε :=\n          add_lt_add_of_lt_of_le (mem_ball_iff_norm.1 hx) <| by\n            simp [norm_smul, abs_of_nonneg, hε.le, hxy.ne']\n        _ = r := by simp\n    let a := ε / (ε + ‖x - y‖)\n    let b := ‖x - y‖ / (ε + ‖x - y‖)\n    have hab : a + b = 1 := by simp [field, a, b]\n    have hxyz : x = a • y + b • z := by\n      calc\n        x = a • x + b • x := by rw [Convex.combo_self hab]\n        _ = a • y + b • z := by simp [z, a, b, smul_smul, hxy.ne', smul_sub]; abel\n    rw [hK, mul_comm, ← mul_div_assoc, le_div_iff₀' hε]\n    calc\n      ε * (f x - f y) ≤ ‖x - y‖ * (f z - f x) := by\n        have h := hf.2 hy' hz (by positivity) (by positivity) hab\n        simp only [← hxyz, smul_eq_mul, a, b] at h\n        field_simp at h\n        linear_combination h\n      _ ≤ _ := by\n        rw [sub_eq_add_neg (f _), two_mul]\n        gcongr\n        · exact (le_abs_self _).trans <| hM _ hz\n        · exact (neg_le_abs _).trans <| hM _ hx'\n  refine .of_dist_le' fun x hx y hy ↦ ?_\n  simp_rw [dist_eq_norm_sub, Real.norm_eq_abs, abs_sub_le_iff]\n  exact ⟨oneside hx hy, norm_sub_rev x _ ▸ oneside hy hx⟩",
+     "excerpt_sha256": "9809489eef07a3ed421ee35910e9e9f26405456c91dee6b06358e7df9ea63707",
+     "attribution": "/-\nCopyright (c) 2023 Yaël Dillies, Zichen Wang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Zichen Wang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source states this result for a convex function on a ball in a normed space. It uses the same extrapolation point and the same convex combination."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-exponential-tilting-chernoff",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Tilted.lean#L130-L136",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Tilted",
+     "declaration": "integral_tilted_mul_self",
+     "lines": [
+      130,
+      136
+     ],
+     "module_sha256": "122d9a24f200605a745ca7818012561f0bb182f687972d481e8947ce6ee7d59d",
+     "excerpt": "/-- The integral of `X` against the tilted measure `μ.tilted (t * X ·)` is the first derivative of\nthe cumulant-generating function of `X` at `t`. -/\nlemma integral_tilted_mul_self (ht : t ∈ interior (integrableExpSet X μ)) :\n    (μ.tilted (t * X ·))[X] = deriv (cgf X μ) t := by\n  simp_rw [integral_tilted_mul_eq_mgf, deriv_cgf ht, ← integral_div, smul_eq_mul]\n  congr with ω\n  ring",
+     "excerpt_sha256": "a24fa467166d8327fa7e623e95c0f15ddbaee6970d150a49467dbfba737ed6cd",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the mean of X under the tilted measure is the derivative of the cgf. This is the first identity of part (b)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Tilted.lean#L157-L167",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Tilted",
+     "declaration": "variance_tilted_mul",
+     "lines": [
+      157,
+      167
+     ],
+     "module_sha256": "122d9a24f200605a745ca7818012561f0bb182f687972d481e8947ce6ee7d59d",
+     "excerpt": "/-- The variance of `X` under the tilted measure `μ.tilted (t * X ·)` is the second derivative of\nthe cumulant-generating function of `X` at `t`. -/\nlemma variance_tilted_mul (ht : t ∈ interior (integrableExpSet X μ)) :\n    Var[X; μ.tilted (t * X ·)] = iteratedDeriv 2 (cgf X μ) t := by\n  rw [variance_eq_integral]\n  swap; · exact (memLp_tilted_mul ht 1).aestronglyMeasurable.aemeasurable\n  rw [integral_tilted_mul_self ht, iteratedDeriv_two_cgf_eq_integral ht, integral_tilted_mul_eq_mgf,\n    ← integral_div]\n  simp only [smul_eq_mul]\n  congr with ω\n  ring",
+     "excerpt_sha256": "70da06b72e6ad2923b664cfabf5a69eb4af7024a11582b3344cd214be9cf9173",
+     "attribution": "/-\nCopyright (c) 2025 Rémy Degenne. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Rémy Degenne\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the variance under the tilted measure is the second derivative of the cgf. This is the second identity of part (b)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-second-moment-method",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Variance.lean#L395-L404",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Variance",
+     "declaration": "meas_ge_le_variance_div_sq",
+     "lines": [
+      395,
+      404
+     ],
+     "module_sha256": "e31ba431554074be7eaf40ced17f50d309357c6d7ad6e3a7fbdb0d5f8fb1ccbd",
+     "excerpt": "/-- **Chebyshev's inequality**: one can control the deviation probability of a real random variable\nfrom its expectation in terms of the variance. -/\ntheorem meas_ge_le_variance_div_sq [IsFiniteMeasure μ] {X : Ω → ℝ} (hX : MemLp X 2 μ) {c : ℝ}\n    (hc : 0 < c) : μ {ω | c ≤ |X ω - μ[X]|} ≤ ENNReal.ofReal (variance X μ / c ^ 2) := by\n  rw [ENNReal.ofReal_div_of_pos (sq_pos_of_ne_zero hc.ne.symm), hX.ofReal_variance_eq]\n  convert @meas_ge_le_evariance_div_sq _ _ _ _ hX.aestronglyMeasurable c.toNNReal\n    (by simp [hc]) using 1\n  · simp\n  · rw [ENNReal.ofReal_pow hc.le]\n    rfl",
+     "excerpt_sha256": "84ed7e583e2d83de797e35c8dc5965495f1a3238aaec3da4e90b0afff34dc110",
+     "attribution": "/-\nCopyright (c) 2022 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel, Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source is the Chebyshev inequality. It is used in part (b)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Moments/Variance.lean#L286-L292",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Moments.Variance",
+     "declaration": "variance_sum'",
+     "lines": [
+      286,
+      292
+     ],
+     "module_sha256": "e31ba431554074be7eaf40ced17f50d309357c6d7ad6e3a7fbdb0d5f8fb1ccbd",
+     "excerpt": "lemma variance_sum' [IsFiniteMeasure μ] (hX : ∀ i ∈ s, MemLp (X i) 2 μ) :\n    Var[∑ i ∈ s, X i; μ] = ∑ i ∈ s, ∑ j ∈ s, cov[X i, X j; μ] := by\n  rw [← covariance_self, covariance_sum_left' (by simpa)]\n  · refine Finset.sum_congr rfl fun i hi ↦ ?_\n    rw [covariance_sum_right' (by simpa) (hX i hi)]\n  · exact memLp_finsetSum' _ (by simpa)\n  · exact (memLp_finsetSum' _ (by simpa)).aemeasurable",
+     "excerpt_sha256": "671b319a1bbb262e0c56602a1c820370bdfc9be17cf0ad09d4a4e3782da1445b",
+     "attribution": "/-\nCopyright (c) 2022 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Sébastien Gouëzel, Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source expands the variance of a finite sum into a double sum of covariances. It is used in part (d)."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-wald-identity-gamblers-ruin",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Martingale/OptionalStopping.lean#L84-L92",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Martingale.OptionalStopping",
+     "declaration": "submartingale_iff_expected_stoppedValue_mono",
+     "lines": [
+      84,
+      92
+     ],
+     "module_sha256": "3311bb67b65112aa569200ab4455a74b3bec3ee0161fa9dc235ea30d66a557e7",
+     "excerpt": "/-- **The optional stopping theorem** (fair game theorem): a strongly adapted integrable process `f`\nis a submartingale if and only if for all bounded stopping times `τ` and `π` such that `τ ≤ π`, the\nstopped value of `f` at `τ` has expectation smaller than its stopped value at `π`. -/\ntheorem submartingale_iff_expected_stoppedValue_mono [SigmaFiniteFiltration μ 𝒢]\n    (hadp : StronglyAdapted 𝒢 f) (hint : ∀ i, Integrable (f i) μ) :\n    Submartingale f 𝒢 μ ↔ ∀ τ π : Ω → WithTop ℕ, IsStoppingTime 𝒢 τ → IsStoppingTime 𝒢 π →\n      τ ≤ π → (∃ N : ℕ, ∀ x, π x ≤ N) → μ[stoppedValue f τ] ≤ μ[stoppedValue f π] :=\n  ⟨fun hf _ _ hτ hπ hle ⟨_, hN⟩ => hf.expected_stoppedValue_mono hτ hπ hle hN,\n    submartingale_of_expected_stoppedValue_mono hadp hint⟩",
+     "excerpt_sha256": "99b21cf82f5dd09f115275d6c54417bc3f9c630955208554b0b6de15f639acd9",
+     "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source is the optional stopping theorem for bounded stopping times. It gives step 2 and step 7."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-borel-cantelli-growth-of-maxima",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/BorelCantelli.lean#L67-L101",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.BorelCantelli",
+     "declaration": "measure_limsup_eq_one",
+     "lines": [
+      67,
+      101
+     ],
+     "module_sha256": "8d598c3cf0d96fd04cedf693d4d88295fc2de94fb9960e4bf4b0d5f2b82b40cb",
+     "excerpt": "/-- **The second Borel-Cantelli lemma**: Given a sequence of independent sets `(sₙ)` such that\n`∑ n, μ sₙ = ∞`, `limsup sₙ` has measure 1. -/\ntheorem measure_limsup_eq_one {s : ℕ → Set Ω} (hsm : ∀ n, MeasurableSet (s n)) (hs : iIndepSet s μ)\n    (hs' : (∑' n, μ (s n)) = ∞) : μ (limsup s atTop) = 1 := by\n  have : IsProbabilityMeasure μ := hs.isProbabilityMeasure\n  rw [measure_congr (eventuallyEqSet_iff.2 (ae_mem_limsup_atTop_iff μ <|\n    measurableSet_filtrationOfSet' hsm) : limsup s atTop =ᵐ[μ]\n      {ω | Tendsto (fun n => ∑ k ∈ Finset.range n,\n        (μ[(s (k + 1)).indicator (1 : Ω → ℝ)|filtrationOfSet hsm k]) ω) atTop atTop})]\n  suffices {ω | Tendsto (fun n => ∑ k ∈ Finset.range n,\n      (μ[(s (k + 1)).indicator (1 : Ω → ℝ)|filtrationOfSet hsm k]) ω) atTop atTop} =ᵐ[μ] Set.univ by\n    rw [measure_congr this, measure_univ]\n  have : ∀ᵐ ω ∂μ, ∀ n, (μ[(s (n + 1)).indicator (1 : Ω → ℝ) | filtrationOfSet hsm n]) ω = _ :=\n    ae_all_iff.2 fun n => hs.condExp_indicator_filtrationOfSet_ae_eq hsm n.lt_succ_self\n  filter_upwards [this] with ω hω\n  refine eq_true (?_ : Tendsto _ _ _)\n  simp_rw [hω]\n  have htends : Tendsto (fun n => ∑ k ∈ Finset.range n, μ (s (k + 1))) atTop (𝓝 ∞) := by\n    rw [← ENNReal.tsum_add_one_eq_top hs' (measure_ne_top _ _)]\n    exact ENNReal.tendsto_nat_tsum _\n  rw [ENNReal.tendsto_nhds_top_iff_nnreal] at htends\n  refine tendsto_atTop_atTop_of_monotone' ?_ ?_\n  · refine monotone_nat_of_le_succ fun n => ?_\n    rw [← sub_nonneg, Finset.sum_range_succ_sub_sum]\n    exact ENNReal.toReal_nonneg\n  · rintro ⟨B, hB⟩\n    refine not_eventually.2 (Frequently.of_forall fun n => ?_) (htends B.toNNReal)\n    rw [mem_upperBounds] at hB\n    specialize hB (∑ k ∈ Finset.range n, μ (s (k + 1))).toReal _\n    · refine ⟨n, ?_⟩\n      rw [ENNReal.toReal_sum (by finiteness)]\n      rfl\n    · rwa [not_lt, ENNReal.ofNNReal_toNNReal, ENNReal.le_ofReal_iff_toReal_le]\n      · simp\n      · exact le_trans (by positivity) hB",
+     "excerpt_sha256": "cc588e76c393a2f164d8cdebea27320d71a67aedc74c1fd5dd9bfd6cd92ab0e5",
+     "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source is the second Borel-Cantelli lemma for independent sets. It gives step 3."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/MeasureTheory/OuterMeasure/BorelCantelli.lean#L55-L64",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.MeasureTheory.OuterMeasure.BorelCantelli",
+     "declaration": "measure_limsup_atTop_eq_zero",
+     "lines": [
+      55,
+      64
+     ],
+     "module_sha256": "9ab3822cbd68dadee6ce8d3d0326a993dce2fb13c378c59f4b711c519d2ae463",
+     "excerpt": "/-- One direction of the **Borel-Cantelli lemma**\n(sometimes called the \"*first* Borel-Cantelli lemma\"):\nif `(s i)` is a sequence of sets such that `∑' i, μ (s i)` is finite,\nthen the limit superior of the `s i` along the `atTop` filter is a null set.\n\nNote: for the *second* Borel-Cantelli lemma (applying to independent sets in a probability space),\nsee `ProbabilityTheory.measure_limsup_eq_one`. -/\ntheorem measure_limsup_atTop_eq_zero {s : ℕ → Set α} (hs : ∑' i, μ (s i) ≠ ∞) :\n    μ (limsup s atTop) = 0 := by\n  rw [← Nat.cofinite_eq_atTop, measure_limsup_cofinite_eq_zero hs]",
+     "excerpt_sha256": "5b1e78733842c856d3e5e1435c8d2b863e6a248772374a3b40cfd106685975bb",
+     "attribution": "/-\nCopyright (c) 2020 Markus Himmel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Markus Himmel, Yury Kudryashov\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source is the first Borel-Cantelli lemma. It gives steps 2 and 5."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-projection-variational-inequality",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/InnerProductSpace/Projection/Minimal.lean#L139-L222",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.InnerProductSpace.Projection.Minimal",
+     "declaration": "norm_eq_iInf_iff_real_inner_le_zero",
+     "lines": [
+      139,
+      222
+     ],
+     "module_sha256": "ad28ffd4b85702493d3fefdff313cfed856ccac587cc019f57d6db0bb9b6b28a",
+     "excerpt": "/-- Characterization of minimizers for the projection on a convex set in a real inner product\nspace. -/\ntheorem norm_eq_iInf_iff_real_inner_le_zero {K : Set F} (h : Convex ℝ K) {u : F} {v : F}\n    (hv : v ∈ K) : (‖u - v‖ = ⨅ w : K, ‖u - w‖) ↔ ∀ w ∈ K, ⟪u - v, w - v⟫_ℝ ≤ 0 := by\n  let : Nonempty K := ⟨⟨v, hv⟩⟩\n  constructor\n  · intro eq w hw\n    let δ := ⨅ w : K, ‖u - w‖\n    let p := ⟪u - v, w - v⟫_ℝ\n    let q := ‖w - v‖ ^ 2\n    have δ_le (w : K) : δ ≤ ‖u - w‖ := ciInf_le ⟨0, fun _ ⟨_, h⟩ => h ▸ norm_nonneg _⟩ _\n    have δ_le' (w) (hw : w ∈ K) : δ ≤ ‖u - w‖ := δ_le ⟨w, hw⟩\n    have (θ : ℝ) (hθ₁ : 0 < θ) (hθ₂ : θ ≤ 1) : 2 * p ≤ θ * q := by\n      have : ‖u - v‖ ^ 2 ≤ ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 :=\n        calc ‖u - v‖ ^ 2\n          _ ≤ ‖u - (θ • w + (1 - θ) • v)‖ ^ 2 := by\n            simp only [sq]; apply mul_self_le_mul_self (norm_nonneg _)\n            rw [eq]; apply δ_le'\n            apply h hw hv\n            exacts [le_of_lt hθ₁, sub_nonneg.2 hθ₂, add_sub_cancel _ _]\n          _ = ‖u - v - θ • (w - v)‖ ^ 2 := by\n            have : u - (θ • w + (1 - θ) • v) = u - v - θ • (w - v) := by\n              rw [smul_sub, sub_smul, one_smul]\n              simp only [sub_eq_add_neg, add_comm, add_left_comm, add_assoc, neg_add_rev]\n            rw [this]\n          _ = ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 := by\n            rw [@norm_sub_sq ℝ, inner_smul_right, norm_smul]\n            simp only [sq]\n            change\n              ‖u - v‖ * ‖u - v‖ - 2 * (θ * ⟪u - v, w - v⟫_ℝ) +\n                absR θ * ‖w - v‖ * (absR θ * ‖w - v‖) =\n              ‖u - v‖ * ‖u - v‖ - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * (‖w - v‖ * ‖w - v‖)\n            rw [abs_of_pos hθ₁]; ring\n      have eq₁ :\n        ‖u - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ + θ * θ * ‖w - v‖ ^ 2 =\n          ‖u - v‖ ^ 2 + (θ * θ * ‖w - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ) := by\n        abel\n      rw [eq₁, le_add_iff_nonneg_right] at this\n      have eq₂ :\n        θ * θ * ‖w - v‖ ^ 2 - 2 * θ * ⟪u - v, w - v⟫_ℝ =\n          θ * (θ * ‖w - v‖ ^ 2 - 2 * ⟪u - v, w - v⟫_ℝ) := by ring\n      rw [eq₂] at this\n      exact le_of_sub_nonneg (nonneg_of_mul_nonneg_right this hθ₁)\n    by_cases hq : q = 0\n    · rw [hq] at this\n      have : p ≤ 0 := by\n        have := this (1 : ℝ) (by simp) (by simp)\n        linarith\n      exact this\n    · have q_pos : 0 < q := lt_of_le_of_ne (sq_nonneg _) fun h ↦ hq h.symm\n      by_contra hp\n      rw [not_le] at hp\n      let θ := min (1 : ℝ) (p / q)\n      have eq₁ : θ * q ≤ p :=\n        calc\n          θ * q ≤ p / q * q := mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)\n          _ = p := div_mul_cancel₀ _ hq\n      have : 2 * p ≤ p :=\n        calc\n          2 * p ≤ θ * q := by\n            exact this θ (lt_min (by simp) (div_pos hp q_pos)) (by simp [θ])\n          _ ≤ p := eq₁\n      linarith\n  · intro h\n    apply le_antisymm\n    · apply le_ciInf\n      intro w\n      apply nonneg_le_nonneg_of_sq_le_sq (norm_nonneg _)\n      have := h w w.2\n      calc\n        ‖u - v‖ * ‖u - v‖ ≤ ‖u - v‖ * ‖u - v‖ - 2 * ⟪u - v, w - v⟫_ℝ := by linarith\n        _ ≤ ‖u - v‖ ^ 2 - 2 * ⟪u - v, w - v⟫_ℝ + ‖w - v‖ ^ 2 := by\n          rw [sq]\n          refine le_add_of_nonneg_right ?_\n          exact sq_nonneg _\n        _ = ‖u - v - (w - v)‖ ^ 2 := (@norm_sub_sq ℝ _ _ _ _ _ _).symm\n        _ = ‖u - w‖ * ‖u - w‖ := by\n          have : u - v - (w - v) = u - w := by abel\n          rw [this, sq]\n    · change ⨅ w : K, ‖u - w‖ ≤ (fun w : K => ‖u - w‖) ⟨v, hv⟩\n      apply ciInf_le\n      use 0\n      rintro y ⟨z, rfl⟩\n      exact norm_nonneg _",
+     "excerpt_sha256": "a4088fa507ba41ce46f7e9a9aa3994d06a8e4914a66e680e46347202164e8e69",
+     "attribution": "/-\nCopyright (c) 2019 Zhouhang Zhou. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Zhouhang Zhou, Frédéric Dupuis, Heather Macbeth\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves part (a), the characterization of nearest points by the inner product inequality. Parts (b) and (c) are not in this declaration."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-metropolis-hastings-detailed-balance",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Kernel/Invariance.lean#L62-L70",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Kernel.Invariance",
+     "declaration": "IsReversible.invariant",
+     "lines": [
+      62,
+      70
+     ],
+     "module_sha256": "7b93a347f9fde6e9f5a835c5051175caaf531f11be1b0985fbe4c36980407221",
+     "excerpt": "/-- A reversible Markov kernel leaves the measure `π` invariant. -/\ntheorem IsReversible.invariant\n    {κ : Kernel α α} [IsMarkovKernel κ] {π : Measure α}\n    (h_rev : IsReversible κ π) : Invariant κ π := by\n  ext s hs\n  calc\n    (κ ∘ₘ π) s = ∫⁻ x, κ x s ∂π := by rw [Measure.bind_apply hs (Kernel.aemeasurable _)]\n             _ = ∫⁻ x in s, κ x Set.univ ∂π := by simpa [restrict_univ] using (h_rev hs .univ).symm\n             _ = π s := by simp",
+     "excerpt_sha256": "504f84e2262ba99337d48f2585d5be190f0fab74066ec8637cc8276e90b6c2d1",
+     "attribution": "/-\nCopyright (c) 2023 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying, Matteo Cipollina\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that a reversible Markov kernel leaves its measure invariant, for general measurable spaces. The finite case above is the matrix form of that statement."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-polya-urn-beta-limit",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Probability/Martingale/Convergence.lean#L210-L234",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Probability.Martingale.Convergence",
+     "declaration": "Submartingale.ae_tendsto_limitProcess",
+     "lines": [
+      210,
+      234
+     ],
+     "module_sha256": "ef5f15b5a3ef3047b983207bfa99ff9a9b14c26eb42a9896fe7acafbc4c4dc77",
+     "excerpt": "/-- **Almost everywhere martingale convergence theorem**: An L¹-bounded submartingale converges\nalmost everywhere to a `⨆ n, ℱ n`-measurable function. -/\ntheorem Submartingale.ae_tendsto_limitProcess [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)\n    (hbdd : ∀ n, eLpNorm (f n) 1 μ ≤ R) :\n    ∀ᵐ ω ∂μ, Tendsto (fun n => f n ω) atTop (𝓝 (ℱ.limitProcess f μ ω)) := by\n  classical\n  suffices\n      ∃ g, StronglyMeasurable[⨆ n, ℱ n] g ∧ ∀ᵐ ω ∂μ, Tendsto (fun n => f n ω) atTop (𝓝 (g ω)) by\n    rw [limitProcess, dite_eq_left this]\n    exact (Classical.choose_spec this).2\n  set g' : Ω → ℝ := fun ω => if h : ∃ c, Tendsto (fun n => f n ω) atTop (𝓝 c) then h.choose else 0\n  have hle : ⨆ n, ℱ n ≤ m0 := sSup_le fun m ⟨n, hn⟩ => hn ▸ ℱ.le _\n  have hg' : ∀ᵐ ω ∂μ.trim hle, Tendsto (fun n => f n ω) atTop (𝓝 (g' ω)) := by\n    filter_upwards [hf.exists_ae_trim_tendsto_of_bdd hbdd] with ω hω\n    simp_rw [g', dite_eq_left hω]\n    exact hω.choose_spec\n  have hg'm : AEStronglyMeasurable[⨆ n, ℱ n] g' (μ.trim hle) :=\n    (@aemeasurable_of_tendsto_metrizable_ae' _ _ (⨆ n, ℱ n) _ _ _ _ _ _ _\n      (fun n => ((hf.stronglyMeasurable n).measurable.mono (le_sSup ⟨n, rfl⟩ : ℱ n ≤ ⨆ n, ℱ n)\n        le_rfl).aemeasurable) hg').aestronglyMeasurable\n  obtain ⟨g, hgm, hae⟩ := hg'm\n  have hg : ∀ᵐ ω ∂μ.trim hle, Tendsto (fun n => f n ω) atTop (𝓝 (g ω)) := by\n    filter_upwards [hae, hg'] with ω hω hg'ω\n    exact hω ▸ hg'ω\n  exact ⟨g, hgm, measure_eq_zero_of_trim_eq_zero hle hg⟩",
+     "excerpt_sha256": "2ad884e69cb5acd0841516928d4df8806c7da0ab25dc308e7f067f1f98fd6146",
+     "attribution": "/-\nCopyright (c) 2022 Kexing Ying. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Kexing Ying\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves almost sure convergence of an L¹-bounded submartingale. It gives the limit in step 3."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-linear-programming-duality-farkas",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/Convex/Cone/Dual.lean#L130-L134",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.Convex.Cone.Dual",
+     "declaration": "hyperplane_separation_point",
+     "lines": [
+      130,
+      134
+     ],
+     "module_sha256": "61e9937ab3584591c277d892cf1e651c420246e0915f795a1ed85678956ad585",
+     "excerpt": "/-- Geometric interpretation of **Farkas' lemma**. Also stronger version of the\n**Hahn-Banach separation theorem** for proper cones. -/\ntheorem hyperplane_separation_point (C : ProperCone ℝ E) (hx₀ : x₀ ∉ C) :\n    ∃ f : StrongDual ℝ E, (∀ x ∈ C, 0 ≤ f x) ∧ f x₀ < 0 := by\n  simpa [*] using C.hyperplane_separation (convex_singleton x₀)",
+     "excerpt_sha256": "93e8015dce8f38c086760e2d49e57ca91c5446b735bf2f81c359e7b2f6a1f8f7",
+     "attribution": "/-\nCopyright (c) 2025 Yaël Dillies, Andrew Yang. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Yaël Dillies, Andrew Yang\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the geometric form of the Farkas lemma. It separates a point outside a proper cone from the cone by a functional. The Farkas alternative used above is the finite-dimensional form with a finitely generated cone."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [
