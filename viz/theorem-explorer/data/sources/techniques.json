@@ -1,0 +1,115 @@
+{
+ "version": "te-technique-sources/1",
+ "observed": "2026-10-11",
+ "source_commit": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+ "method": "Targeted public source retrieval. No full-corpus refresh.",
+ "records": [
+  {
+   "id": "nm:technique-schur-block-elimination",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/SchurComplement.lean#L47-L56",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.SchurComplement",
+     "declaration": "Matrix.fromBlocks_eq_of_invertible₁₁",
+     "lines": [
+      47,
+      56
+     ],
+     "module_sha256": "1f55725376cc3aabb225fa82a3b307bdbbe56bf0d56435c8716da6336c1a42eb",
+     "excerpt": "/-- LDU decomposition of a block matrix with an invertible top-left corner, using the\nSchur complement. -/\ntheorem fromBlocks_eq_of_invertible₁₁ (A : Matrix m m α) (B : Matrix m n α) (C : Matrix l m α)\n    (D : Matrix l n α) [Invertible A] :\n    fromBlocks A B C D =\n      fromBlocks 1 0 (C * ⅟A) 1 * fromBlocks A 0 0 (D - C * ⅟A * B) *\n        fromBlocks 1 (⅟A * B) 0 1 := by\n  simp only [fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,\n    Matrix.one_mul, Matrix.mul_one, invOf_mul_self, Matrix.mul_invOf_cancel_left,\n    Matrix.mul_assoc, add_sub_cancel]",
+     "excerpt_sha256": "258417d0ca5961d08631998386fc7c8cf6a3d44eaaa5fb633685ddb91a15d263",
+     "attribution": "/-\nCopyright (c) 2022 Alexander Bentkamp. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alexander Bentkamp, Eric Wieser, Jeremy Avigad, Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the LDU identity over a commutative ring. The authored theorem specializes to a field and derives the inverse and solve procedure from that identity."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/LinearAlgebra/Matrix/SchurComplement.lean#L285-L293",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.LinearAlgebra.Matrix.SchurComplement",
+     "declaration": "Matrix.invOf_fromBlocks₁₁_eq",
+     "lines": [
+      285,
+      293
+     ],
+     "module_sha256": "1f55725376cc3aabb225fa82a3b307bdbbe56bf0d56435c8716da6336c1a42eb",
+     "excerpt": "theorem invOf_fromBlocks₁₁_eq (A : Matrix m m α) (B : Matrix m n α) (C : Matrix n m α)\n    (D : Matrix n n α) [Invertible A] [Invertible (D - C * ⅟A * B)]\n    [Invertible (fromBlocks A B C D)] :\n    ⅟(fromBlocks A B C D) =\n      fromBlocks (⅟A + ⅟A * B * ⅟(D - C * ⅟A * B) * C * ⅟A) (-(⅟A * B * ⅟(D - C * ⅟A * B)))\n        (-(⅟(D - C * ⅟A * B) * C * ⅟A)) (⅟(D - C * ⅟A * B)) := by\n  let := fromBlocks₁₁Invertible A B C D\n  convert (rfl : ⅟(fromBlocks A B C D) = _)\n",
+     "excerpt_sha256": "40a30f76fa26531251558821840db134a8176962a374aadbc1333be85a0c4b79",
+     "attribution": "/-\nCopyright (c) 2022 Alexander Bentkamp. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Alexander Bentkamp, Eric Wieser, Jeremy Avigad, Johan Commelin\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source inverse uses the same ordered factors as the authored formula. The excerpt includes the complete declaration and its source proof."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-operator-neumann-series",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecificLimits/Normed.lean#L420-L430",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecificLimits.Normed",
+     "declaration": "IsUnit.one_sub_of_norm_lt_one; summable_geometric_of_norm_lt_one; geom_series_mul_neg; mul_neg_geom_series",
+     "lines": [
+      420,
+      430
+     ],
+     "module_sha256": "b510ed3eb1c084fc21ee60db344d98be9e079317c4f25dd399a293c3ddcc86fd",
+     "excerpt": "theorem IsUnit.one_sub_of_norm_lt_one {x : R} (hx : ‖x‖ < 1) : IsUnit (1 - x) :=\n  hasSummableGeomSeries_iff_isUnit.mp inferInstance hx\n\nlemma summable_geometric_of_norm_lt_one {x : R} (h : ‖x‖ < 1) : Summable (fun n ↦ x ^ n) :=\n  hasSummableGeomSeries_iff_summable_pow.mp inferInstance h\n\ntheorem geom_series_mul_neg (x : R) (h : ‖x‖ < 1) : (∑' i : ℕ, x ^ i) * (1 - x) = 1 :=\n  (summable_geometric_of_norm_lt_one h).tsum_pow_mul_one_sub\n\ntheorem mul_neg_geom_series (x : R) (h : ‖x‖ < 1) : (1 - x) * ∑' i : ℕ, x ^ i = 1 :=\n  (summable_geometric_of_norm_lt_one h).one_sub_mul_tsum_pow",
+     "excerpt_sha256": "eaf931fd02d05db1443693f505749b39b67a3c2abc740d062809922ff17e1af3",
+     "attribution": "/-\nCopyright (c) 2020 Sébastien Gouëzel. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Anatole Dedecker, Sébastien Gouëzel, Yury Kudryashov, Dylan MacKenzie, Patrick Massot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves invertibility and both inverse equations in a normed ring with summable geometric series. The authored proof treats bounded operators on a Banach space and proves the quantitative tail estimate."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-finite-field-gauss-sum",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/GaussSum.lean#L186-L202",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.GaussSum",
+     "declaration": "gaussSum_mul_gaussSum_eq_card",
+     "lines": [
+      186,
+      202
+     ],
+     "module_sha256": "889928b4b45859f49cad03aa2cc90cbc8acd43914c68bfb019c5f632be0a8716",
+     "excerpt": "/-- We have `gaussSum χ ψ * gaussSum χ⁻¹ ψ⁻¹ = Fintype.card R`\nwhen `χ` is nontrivial and `ψ` is primitive (and `R` is a field). -/\ntheorem gaussSum_mul_gaussSum_eq_card {χ : MulChar R R'} (hχ : χ ≠ 1) {ψ : AddChar R R'}\n    (hψ : IsPrimitive ψ) :\n    gaussSum χ ψ * gaussSum χ⁻¹ ψ⁻¹ = Fintype.card R := by\n  simp only [gaussSum, AddChar.inv_apply, Finset.sum_mul, Finset.mul_sum, MulChar.inv_apply']\n  conv =>\n    enter [1, 2, x, 2, y]\n    rw [mul_mul_mul_comm, ← map_mul, ← map_add_eq_mul, ← sub_eq_add_neg]\n--  conv in _ * _ * (_ * _) => rw [mul_mul_mul_comm, ← map_mul, ← map_add_eq_mul, ← sub_eq_add_neg]\n  simp_rw [gaussSum_mul_aux hχ ψ]\n  rw [Finset.sum_comm]\n  classical -- to get `[DecidableEq R]` for `sum_mulShift`\n  simp_rw [← Finset.mul_sum, sum_mulShift _ hψ, sub_eq_zero, apply_ite, Nat.cast_zero, mul_zero]\n  rw [Finset.sum_ite_eq' Finset.univ (1 : R)]\n  simp only [Finset.mem_univ, map_one, one_mul, ite_true]\n",
+     "excerpt_sha256": "fbe4ff0ec5cff5d2004149f4a7815aba1e0ea2a423f1b4119bb8de5fcedb3a49",
+     "attribution": "/-\nCopyright (c) 2022 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the product identity for a finite field and a primitive additive character. Over ℂ every nontrivial additive character of a finite field is primitive: each nonzero scalar permutes the field. Complex conjugation turns the second factor into conjugate(G)."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/GaussSum.lean#L220-L228",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.GaussSum",
+     "declaration": "gaussSum_sq",
+     "lines": [
+      220,
+      228
+     ],
+     "module_sha256": "889928b4b45859f49cad03aa2cc90cbc8acd43914c68bfb019c5f632be0a8716",
+     "excerpt": "/-- When `χ` is a nontrivial quadratic character, then the square of `gaussSum χ ψ`\nis `χ(-1)` times the cardinality of `R`. -/\ntheorem gaussSum_sq {χ : MulChar R R'} (hχ₁ : χ ≠ 1) (hχ₂ : IsQuadratic χ)\n    {ψ : AddChar R R'} (hψ : IsPrimitive ψ) :\n    gaussSum χ ψ ^ 2 = χ (-1) * Fintype.card R := by\n  rw [pow_two, ← gaussSum_mul_gaussSum_eq_card hχ₁ hψ, hχ₂.inv, mul_rotate']\n  congr\n  rw [mul_comm, ← gaussSum_mulShift _ _ (-1 : Rˣ), inv_mulShift]\n  rfl",
+     "excerpt_sha256": "23461f8abe62f4933ca5e2bab6814e1bdfba1ea056d44c801d85a8f1111ca6f5",
+     "attribution": "/-\nCopyright (c) 2022 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the same quadratic square formula, including the factor χ(−1)."
+    }
+   ]
+  }
+ ],
+ "duplicate_exclusions": [
+  {
+   "name": "Grönwall lemma",
+   "existing_id": "nm:gronwall-lemma",
+   "reason": "The existing statement already gives the norm growth bound. Another entry would duplicate its scope."
+  },
+  {
+   "name": "Fredholm alternative for compact operators",
+   "existing_id": "wd:Q3984069",
+   "reason": "The existing Fredholm theorem record includes this solvability alternative. New proof text improves that record and does not count as a new entry."
+  }
+ ]
+}
