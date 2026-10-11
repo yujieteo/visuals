@@ -37,6 +37,8 @@ fn tick_labels(ticks: &[f64]) -> Vec<String> {
 
 /// Width of an 11px monospace axis label, rounded up.
 fn label_width(s: &str) -> f64 { 7.0 * s.chars().count() as f64 }
+/// Width of a panel title: an axis label with 0.06em letter spacing, rounded up.
+fn title_width(s: &str) -> f64 { 7.3 * s.chars().count() as f64 }
 
 /// A filled arrowhead with its tip at (x, y), pointing down (dir 1) or up (−1).
 fn head(x: f64, tip: f64, dir: f64, size: f64) -> Vec<Seg> {
@@ -277,7 +279,10 @@ impl App {
         self.x_axis(c, lay, p.y(0.0), x_label);
         self.x_ticks(c, lay, bot, narrow);
         c.close();
-        c.text(ml + 8.0, top - 5.0, p.title.clone(), "title", Anchor::Start);
+        // The title starts just right of the value axis. On a figure as narrow as a phone's, the moment's title would
+        // run past the right edge: it then drops "BENDING", and starts further left if it still does not fit.
+        let title = if ml + 8.0 + title_width(&p.title) > w - 4.0 { p.title.replacen("BENDING ", "", 1) } else { p.title.clone() };
+        c.text(f64::min(ml + 8.0, w - 4.0 - title_width(&title)), top - 5.0, title, "title", Anchor::Start);
         let mut path: Vec<Seg> = pts.iter().enumerate().map(|(i, s)| { let (x, y) = (lay.x(s.x), p.y(p.get(self, s))); if i == 0 { Seg::M(x, y) } else { Seg::L(x, y) } }).collect();
         if p.key != "v" && !pts.is_empty() {
             let line = path.clone();

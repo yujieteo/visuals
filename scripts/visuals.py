@@ -10,12 +10,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VIZ = "viz"
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+# What the checks and builders write in a visual's folder, all ignored by Git: when a visual is removed, Git leaves
+# its folder if one of these is in it, and that folder is not a visual.
+GENERATED = {".typecheck", "target", "__pycache__", "node_modules", ".DS_Store"}
 
 
 def folders(root=ROOT):
-    """Every visual's folder, sorted by slug: each directory under viz/."""
+    """Every visual's folder, sorted by slug: each directory under viz/ that holds more than generated files."""
     base = root / VIZ
-    return sorted(path for path in base.iterdir() if path.is_dir()) if base.is_dir() else []
+    return sorted(path for path in base.iterdir() if path.is_dir() and any(child.name not in GENERATED for child in path.iterdir())) if base.is_dir() else []
 
 
 def metadata(folder):

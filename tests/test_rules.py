@@ -35,7 +35,7 @@ class AllowedTest(unittest.TestCase):
 
 
 class TemplateTest(unittest.TestCase):
-    def test_every_copy_must_match_the_recorded_template_and_the_page_must_inline_it(self):
+    def test_every_test_copy_must_be_the_folders_template_and_the_page_must_inline_it(self):
         with Layout() as layout:
             folder = layout.visual("narrated")
             template = "(function () { return 1; })();\n"
@@ -43,13 +43,12 @@ class TemplateTest(unittest.TestCase):
                 (folder / name).parent.mkdir(parents=True, exist_ok=True)
                 (folder / name).write_text(template, encoding="utf-8")
             (folder / "index.html").write_text(f"<script id=\"beamdswitch\">\n{template}</script>", encoding="utf-8")
-            expected = rules.sha256(template)
-            self.assertEqual(rules.template_problems(folder, expected), [])
+            self.assertEqual(rules.template_problems(folder), [])
             (folder / "tests/fixtures/beamdswitch/template.js").write_text(template + "// edited by hand\n", encoding="utf-8")
             (folder / "index.html").write_text("<script id=\"beamdswitch\">(function () { return 2; })();</script>", encoding="utf-8")
-            problems = rules.template_problems(folder, expected)
+            problems = rules.template_problems(folder)
             self.assertEqual(len(problems), 2)
-            self.assertIn("tests/fixtures/beamdswitch/template.js differs", problems[0])
+            self.assertIn("tests/fixtures/beamdswitch/template.js differs from beamdswitch.js", problems[0])
             self.assertIn("does not inline beamdswitch.js", problems[1])
 
     def test_a_page_without_a_builder_must_inline_its_report_unchanged(self):
@@ -59,18 +58,15 @@ class TemplateTest(unittest.TestCase):
             (folder / "beamdswitch.js").write_text(template, encoding="utf-8")
             (folder / "report.js").write_text(report, encoding="utf-8")
             (folder / "index.html").write_text(f"<script>{template}</script><script>{report}</script>", encoding="utf-8")
-            self.assertEqual(rules.template_problems(folder, rules.sha256(template)), [])
+            self.assertEqual(rules.template_problems(folder), [])
             (folder / "index.html").write_text(f"<script>{template}</script><script>self.Report = {{}};</script>", encoding="utf-8")
-            self.assertEqual(rules.template_problems(folder, rules.sha256(template)), ["index.html does not inline report.js unchanged"])
+            self.assertEqual(rules.template_problems(folder), ["index.html does not inline report.js unchanged"])
             (folder / "build.py").write_text("", encoding="utf-8")
-            self.assertEqual(rules.template_problems(folder, rules.sha256(template)), [])
+            self.assertEqual(rules.template_problems(folder), [])
 
     def test_a_folder_without_the_template_is_not_checked(self):
         with Layout() as layout:
-            self.assertEqual(rules.template_problems(layout.visual("plain"), "0" * 64), [])
-
-    def test_the_recorded_hash_is_a_sha256(self):
-        self.assertRegex(rules.TEMPLATE_HASH.read_text(encoding="utf-8"), r"^[0-9a-f]{64}  ")
+            self.assertEqual(rules.template_problems(layout.visual("plain")), [])
 
 
 class RequestsTest(unittest.TestCase):

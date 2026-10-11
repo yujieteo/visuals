@@ -17,7 +17,6 @@ from pathlib import Path
 
 from visuals import ROOT, SLUG, VIZ, folders, metadata
 
-SCHEMA = ROOT / "schema" / "visual.schema.json"
 TYPES = {"object": dict, "array": list, "string": str, "boolean": bool}
 
 

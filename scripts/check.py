@@ -8,7 +8,7 @@ For each viz/<slug>/, in order:
   types    scripts/typecheck.mjs, when the folder has a tsconfig.json
   tools    visual.json's webmcp_tools and SKILLS.md's WebMCP tools table name exactly the tools the page
            registers or defines (at least them, and agree with each other, when some are registered in a loop)
-  template every copy of the site's beamdswitch template matches scripts/templates/beamdswitch.sha256
+  template the page inlines its beamdswitch.js unchanged, and every test copy of it is the same file
   requests the page requests only the files the site publishes beside it, never notes.md, and its scripts
            name no computed URL to fetch, import or a worker and set no absolute URL as a source
   contrast the page's colour tokens meet WCAG contrast in both themes

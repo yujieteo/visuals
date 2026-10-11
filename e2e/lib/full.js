@@ -1,6 +1,6 @@
 // The fuller section-28 checks for one visual: URL state, Back and Forward,
 // keyboard, Cmd/Ctrl+K, Reset, JSON round trip, Markdown and beamdswitch
-// export, dark mode and reduced motion. A visual's e2e/full.test.js
+// export, dark mode and reduced motion. A visual's e2e/full.test.mjs
 // supplies one function per check that drives that visual through its
 // stable, user-visible interface; this module runs them across the browser
 // matrix with the same manifest findings, skips and results as the baseline.
@@ -111,44 +111,10 @@ export async function saved(page, trigger) {
 }
 
 /**
- * Click a control that saves a file or copies text, and return that text. The
- * clipboard is a stand-in, so no browser asks for permission.
- * @param {import("playwright").Page} page
- * @param {import("playwright").Locator} control
- */
-export async function output(page, control) {
-  await page.evaluate(() => {
-    const w = /** @type {Window & { __copied?: string }} */ (window);
-    delete w.__copied;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
-  });
-  const download = page.waitForEvent("download", { timeout: 5_000 });
-  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
-  await control.click();
-  const first = await Promise.any([download, copied]);
-  download.catch(() => {});
-  copied.catch(() => {});
-  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
-}
-
-/**
- * The control that saves, exports, downloads or copies the view as JSON.
- * @param {import("playwright").Page} page
- */
-export const exportJson = (page) => page.getByRole("button", { name: /^(save|export|download|copy)\b.*\bjson\b/i });
-
-/**
  * Move focus off the focused element, so page-level keys reach the page.
  * @param {import("playwright").Page} page
  */
 export const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
-
-/**
- * Wait until the URL's fragment is `hash`.
- * @param {import("playwright").Page} page
- * @param {string} hash
- */
-export const at = (page, hash) => page.waitForFunction((h) => location.hash === h, hash);
 
 /**
  * Read `state` until it deep-equals `expected` or five seconds pass, then assert it does.
@@ -166,13 +132,12 @@ export async function settlesTo(state, expected, message) {
 }
 
 /**
- * Open the page at `suffix`, run `body`, check it stayed clean, and close it.
+ * Open the page, run `body`, check it stayed clean, and close it.
  * @param {(suffix?: string) => Promise<Opened>} open
  * @param {(s: Opened) => Promise<void>} body
- * @param {string} [suffix]
  */
-export async function using(open, body, suffix = "") {
-  const s = await open(suffix);
+export async function using(open, body) {
+  const s = await open();
   try {
     await body(s);
     assertClean(s);
@@ -263,29 +228,6 @@ export async function markdownExport(open, change, marker, deck) {
 }
 
 /**
- * The Markdown the page exports of its own state, saved as a file or copied:
- * the first button or link named for Markdown or .md that is not the
- * beamdswitch deck.
- * @param {import("playwright").Page} page
- * @returns {Promise<string>}
- */
-export async function exportedMarkdown(page) {
-  const name = /^(?!.*(deck|beamdswitch)).*(markdown|\.md\b)/i;
-  const control = page.getByRole("button", { name }).or(page.getByRole("link", { name })).first();
-  assert.ok(await control.count() > 0, "the page offers a Markdown export of its state, separate from the beamdswitch deck");
-  await page.evaluate(() => {
-    if (navigator.clipboard) navigator.clipboard.writeText = async (text) => { /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied = text; };
-  });
-  const download = page.waitForEvent("download", { timeout: 10_000 }).then(async (d) => readFile(await d.path(), "utf8"));
-  const copied = page.waitForFunction(() => /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied, null, { timeout: 10_000 })
-    .then((h) => /** @type {Promise<string>} */ (h.jsonValue()));
-  await control.click();
-  const text = await Promise.any([download, copied]).catch(() => assert.fail("the Markdown export neither saved a file nor copied text"));
-  assert.match(text, /^#{1,3} \S/m, "the export is Markdown with a heading");
-  return text;
-}
-
-/**
  * Assert that text is a beamdswitch deck in the site's report format: YAML
  * front matter naming a narration voice, several `##` slides, and narration.
  * @param {string} text
@@ -304,12 +246,11 @@ export function assertBeamdswitchDeck(text) {
  * than computed styles, which some engines report as transparent for a page
  * whose colours come from custom properties.
  * @param {FullContext} ctx
- * @param {string} [suffix]
  */
-export async function assertDarkMode(ctx, suffix = "") {
+export async function assertDarkMode(ctx) {
   /** @param {"light" | "dark"} colorScheme */
   const luminance = async (colorScheme) => {
-    const s = await ctx.open(suffix, { colorScheme });
+    const s = await ctx.open("", { colorScheme });
     try {
       const png = await s.page.screenshot({ type: "png" });
       const blank = await s.context.newPage();
@@ -341,10 +282,9 @@ export async function assertDarkMode(ctx, suffix = "") {
  * transition or animation is longer than 10 ms and no Web Animation is running.
  * @param {FullContext} ctx
  * @param {(page: import("playwright").Page) => Promise<void>} act something that would otherwise move
- * @param {string} [suffix]
  */
-export async function assertReducedMotion(ctx, act, suffix = "") {
-  const s = await ctx.open(suffix, { reducedMotion: "reduce" });
+export async function assertReducedMotion(ctx, act) {
+  const s = await ctx.open("", { reducedMotion: "reduce" });
   try {
     await act(s.page);
     const moving = await s.page.evaluate(() => {

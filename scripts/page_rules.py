@@ -2,8 +2,9 @@
 """Print the static rules page-axi reports beside its browser checks, as one JSON object on stdout.
 
 For one page's folder: "contrast" is scripts/rules.py's contrast problems with visual.json "allow" applied,
-the same list scripts/check.py's contrast step fails on, and "tools" is check.py's WebMCP tools problems
-(null when the page registers no tool literally). e2e/bin/page-axi.js runs it, so the agent's page check and
+the same list scripts/check.py's contrast step fails on (null for a sealed artifact, which has no contrast step:
+look/ pins the site's look and tests it), and "tools" is check.py's WebMCP tools problems (null when the page
+registers no tool literally). e2e/bin/page-axi.js runs it, so the agent's page check and
 CI share one rule set.
 
 Usage: scripts/page_rules.py FOLDER [ENTRY]
@@ -23,8 +24,10 @@ def page_rules(folder, entry="index.html"):
     """The contrast and tools problems of the page ``folder``/``entry``, as a dict."""
     html = (folder / entry).read_text(encoding="utf-8")
     data = metadata(folder) or {}
-    left, stale = rules.allowed(rules.contrast_problems(html), data.get("allow", {}).get("contrast"))
-    contrast = left + [f'visual.json allow.contrast lists "{item}", which no longer occurs; remove it' for item in stale]
+    contrast = None
+    if data.get("sealed") is not True:
+        left, stale = rules.allowed(rules.contrast_problems(html), data.get("allow", {}).get("contrast"))
+        contrast = left + [f'visual.json allow.contrast lists "{item}", which no longer occurs; remove it' for item in stale]
     tools = tools_problems(folder, data) if data and entry == "index.html" else None
     return {"contrast": contrast, "tools": tools}
 

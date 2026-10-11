@@ -286,7 +286,7 @@ function perLoad(check, loads, problems, passEvidence) {
  * @param {object} input
  * @param {Load[]} input.loads
  * @param {{ driven: number, broken: string[], errors: string[] } | null} input.drive
- * @param {{ contrast: string[], tools: string[] | null } | null} input.rules null when there is no local page
+ * @param {{ contrast: string[] | null, tools: string[] | null } | null} input.rules null when there is no local page
  * @param {string[] | null} input.declared visual.json webmcp_tools, null when there is no visual.json
  * @param {Manifest} [input.manifest]
  * @returns {Row[]}
@@ -310,8 +310,10 @@ export function verdictRows({ loads, drive, rules, declared, manifest = {} }) {
   } else {
     rows.push(numbers);
   }
-  if (!rules) {
-    rows.push({ check: "contrast", status: "skip", where: "tokens", evidence: "a URL has no local source to read the colour tokens from" });
+  if (!rules?.contrast) {
+    rows.push({ check: "contrast", status: "skip", where: "tokens", evidence: rules
+      ? "a sealed artifact has the site's look (look/), which scripts/check.py does not check for contrast"
+      : "a URL has no local source to read the colour tokens from" });
   } else {
     rows.push(rules.contrast.length
       ? { check: "contrast", status: "fail", where: "tokens", evidence: list(rules.contrast) }
@@ -404,7 +406,7 @@ const shown = (path, cwd) => {
  * Run the static rules in scripts/page_rules.py on a local page.
  * @param {string} folder
  * @param {string} entry
- * @returns {{ contrast: string[], tools: string[] | null }}
+ * @returns {{ contrast: string[] | null, tools: string[] | null }}
  */
 export function staticRules(folder, entry) {
   try {
@@ -467,7 +469,7 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
     if (target.kind === "slug" && target.visual) {
       const { stageVisual } = await import("./stage.js");
       staging = mkdtempSync(join(process.env.E2E_TMP ?? tmpdir(), "page-axi-"));
-      folder = stageVisual(target.visual, { siteRoot: join(repo, "e2e", ".cache", "site"), visualsRepo: repo, stagingRoot: staging });
+      folder = stageVisual(target.visual, { visualsRepo: repo, stagingRoot: staging });
     }
     /** @type {string} */
     let url;
