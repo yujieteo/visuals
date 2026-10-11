@@ -70,9 +70,9 @@ function adHocVisual(slug, folder) {
   const docs = folder ? ["README.md", "AGENTS.md"].map((n) => join(folder, n)).filter((p) => existsSync(p))
     .map((p) => readFileSync(p, "utf8")).join("\n") : "";
   return {
-    slug, title: slug, summary: "", htmlPath: "", dataPath: null, assets: [],
+    slug, htmlPath: "", dataPath: null, assets: [],
     offlineClaim: /\boffline\b|\bfile:\/\/|no network access/i.test(docs),
-    owner: process.env.E2E_OWNER ?? "https://github.com/yujieteo/visuals",
+    owner: "https://github.com/yujieteo/visuals",
   };
 }
 

@@ -6,8 +6,6 @@ import { join } from "node:path";
 /**
  * @typedef {object} Visual
  * @property {string} slug
- * @property {string} title
- * @property {string} summary
  * @property {string} htmlPath the page, relative to the repository
  * @property {string | null} dataPath the visual.json "data" file, published as data.json
  * @property {string[]} assets extra files published beside index.html, relative to the repository
@@ -42,8 +40,6 @@ export function discoverVisualsRepo(visualsRoot) {
     const summary = String(doc.summary ?? "");
     return {
       slug,
-      title: String(doc.title ?? slug),
-      summary,
       htmlPath: `${folder}index.html`,
       dataPath: doc.data ? folder + String(doc.data) : null,
       assets: Array.isArray(doc.assets) ? doc.assets.map((/** @type {unknown} */ asset) => folder + String(asset)) : [],

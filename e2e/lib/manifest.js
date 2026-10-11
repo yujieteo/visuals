@@ -23,7 +23,7 @@ export const BASELINE_CHECKS = /** @type {const} */ ([
   "numeric-text",
 ]);
 
-/** The fuller section-28 checks, written per visual in its e2e/full.test.js. */
+/** The fuller section-28 checks, written per visual in its e2e/full.test.mjs. */
 export const FULL_CHECKS = /** @type {const} */ ([
   "url-state", "back-forward", "keyboard", "command-palette", "reset", "json-round-trip",
   "markdown-export", "beamdswitch-export", "dark-mode", "reduced-motion",
