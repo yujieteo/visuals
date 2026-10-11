@@ -5,7 +5,7 @@ description: Use {{title}} to {{purpose}}
 
 # Use {{title}}
 
-Live at <https://teoyujie.org/visuals/{{slug}}/>. {{lede}} To change the page, read [AGENTS.md](AGENTS.md).
+{{lede}} To change the page, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 
@@ -33,4 +33,4 @@ All read-only.
 - **beamdswitch deck:** `{{slug}}-beamdswitch.md`, a narrated Markdown deck (voice `bf_emma`).
 - **Markdown record:** `{{slug}}-record.md`, the same frames without narration.
 - **JSON view:** `{{slug}}-view.json`, which "Load view JSON" restores. The URL holds the same view.
-- **Data:** [data.json](https://teoyujie.org/visuals/{{slug}}/data.json) (`raw.json` here).
+- **Data:** [raw.json](raw.json).

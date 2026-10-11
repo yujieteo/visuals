@@ -57,7 +57,7 @@ test("the MathJax configuration uses the Fira font and loads only embedded files
 test("metadata, theme script, no-JavaScript content and the data file", () => {
   assert.match(html, /<title>Radar network: the range equation in a moving 3D scene<\/title>/);
   assert.match(html, /<meta name="description"/);
-  assert.match(html, /<link rel="canonical" href="https:\/\/teoyujie.org\/visuals\/radar-network\/">/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/teoyujie.org\/stories\/radar\/">/);
   assert.match(html, /<script id="site-theme">/);
   assert.match(html, /<noscript>/);
   assert.equal((html.match(/<tr class="link-row" data-link=/g) || []).length, 36, "the static table has the 36 initial links");

@@ -5,7 +5,7 @@ description: Use the radar network visualiser to read the radar range equation f
 
 # Use the radar network visualiser
 
-Live at <https://teoyujie.org/visuals/radar-network/>. The page puts 3 radars and 4 targets in a right-handed local frame (x east, y north, z up, SI units). A link is (transmitter, receiver, target), so the initial scene has 36 links. Each link uses the bistatic radar equation, the single-pulse matched-filter SNR ρ₁ = P_r τ/(k T_s L_MF), and a thermal-noise square-law detector after ideal coherent integration. All absolute values (power, gains, losses, RCS, clutter) are synthetic. Only the carriers 4, 10 and 17 GHz come from the supplied evidence. To change the page, read [AGENTS.md](AGENTS.md).
+The site page <https://teoyujie.org/stories/radar/> ports this page. The page puts 3 radars and 4 targets in a right-handed local frame (x east, y north, z up, SI units). A link is (transmitter, receiver, target), so the initial scene has 36 links. Each link uses the bistatic radar equation, the single-pulse matched-filter SNR ρ₁ = P_r τ/(k T_s L_MF), and a thermal-noise square-law detector after ideal coherent integration. All absolute values (power, gains, losses, RCS, clutter) are synthetic. Only the carriers 4, 10 and 17 GHz come from the supplied evidence. To change the page, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 
@@ -39,7 +39,7 @@ All read-only.
 
 - **JSON:** `radar-network-scenario.json`, the complete semantic scenario with schema and model versions, units, sources, seed and time. Sampled result snapshots carry their own model digest. Import checks schema, units, domain and finite values, and keeps the current scene when a check fails.
 - **beamdswitch deck:** `radar-network-beamdswitch.md` (voice `bf_emma`): Set-up, Method, Results (all links), Checks and takeaway.
-- **Data:** [data.json](https://teoyujie.org/visuals/radar-network/data.json) (`raw.json` here): the preset, the examples, the reference cases and the evidence curves.
+- **Data:** [raw.json](raw.json): the preset, the examples, the reference cases and the evidence curves.
 
 ## Worked example
 
