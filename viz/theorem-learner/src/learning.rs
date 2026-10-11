@@ -25,7 +25,7 @@
 //!   reminder      one sentence of 4 to 25 words: what a reader needs back in mind
 //!   definition    markup: the precise definition, 1 to 3 sentences
 //!   examples      2 to 4 markup items; at least one starts with "Non-example"
-//!   requires      the concepts the definition uses (catalog ids)
+//!   requires      the concepts the definition uses (catalog ids, or ids that a theorem file adds in new_concepts)
 //!   links         0 to 3 generality links: {to, type: "generalizes" | "specializes", steps: [2 to 4 markup
 //!                 sentences], why}. "generalizes" says this concept is the more general one; "specializes" says
 //!                 it is a special case of `to`. The steps lift one concept to the other, in the format of proof
@@ -685,6 +685,27 @@ fn ids_of(path: &Path) -> Option<HashSet<String>> {
 pub fn check_files(paths: &[PathBuf]) -> (usize, Vec<String>) {
     let work = workdir();
     let idx = load_indexes(&work);
+    // A concept file may also answer a concept that a theorem file adds in new_concepts.
+    let is_concepts = |p: &Path| p.parent().and_then(Path::file_name).is_some_and(|d| d == "concepts");
+    let theorem_files = crate::json_files(&learning().join("theorems"))
+        .into_iter()
+        .chain(paths.iter().filter(|p| !is_concepts(p)).cloned());
+    let mut concepts = idx.concepts.clone();
+    for f in theorem_files {
+        let data = read_json(&f);
+        let list = match &data {
+            Value::Array(a) => a.as_slice(),
+            other => items(other, "theorems"),
+        };
+        for t in list {
+            concepts.extend(items(t, "new_concepts").iter().map(|c| str_of(c.get("id"))));
+        }
+    }
+    let concept_idx = Indexes {
+        concepts,
+        results: idx.results.clone(),
+        mechanisms: idx.mechanisms.clone(),
+    };
     let (mut problems, mut n) = (vec![], 0);
     for path in paths {
         let data = read_json(path);
@@ -693,10 +714,7 @@ pub fn check_files(paths: &[PathBuf]) -> (usize, Vec<String>) {
             other => items(other, "theorems"),
         };
         let name = path.file_name().unwrap();
-        let concepts = path
-            .parent()
-            .and_then(Path::file_name)
-            .is_some_and(|d| d == "concepts");
+        let concepts = is_concepts(path);
         let batch = ids_of(
             &work
                 .join(if concepts {
@@ -713,7 +731,7 @@ pub fn check_files(paths: &[PathBuf]) -> (usize, Vec<String>) {
                 problems.push(format!("{}: appears twice", str_of(x.get("id"))));
             }
             problems.extend(if concepts {
-                check_concept(x, &idx)
+                check_concept(x, &concept_idx)
             } else {
                 check_theorem(x, &idx, batch.as_ref())
             });
