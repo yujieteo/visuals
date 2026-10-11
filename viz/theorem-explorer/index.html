@@ -312,7 +312,7 @@ section[hidden], article[hidden] { display: none; }
 button.link { min-height: 0; max-width: 100%; padding: 0; white-space: normal; overflow-wrap: anywhere; border: 0; background: none; color: var(--focus); text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 button.link:hover { background: none; }
 .chip { min-height: 0; padding: var(--space-1) var(--space-2); border-radius: 999px; font-size: var(--text-sm); }
-#chips { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; list-style: none; }
+#chips, #topic-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; list-style: none; }
 
 /* Tables: wide tables scroll inside their own box, never the page. */
 .table-scroll { max-width: 100%; overflow-x: auto; }
@@ -425,6 +425,17 @@ ul.outline li.known > button.link { color: var(--muted); }
 #concept-table td { white-space: nowrap; }
 #tag-presets { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 #ptags { width: 100%; }
+
+/* Study a topic: topic chips, the pager and the check-off column. */
+.study .row { margin-bottom: var(--space-2); }
+.study label.inline { display: inline-flex; gap: var(--space-2); align-items: center; }
+.pager { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-2) 0; }
+.pager select { width: auto; }
+.pager .where { flex: 1 1 10rem; margin: 0; }
+#catalog td.check, #catalog th.check { width: 3rem; text-align: center; }
+#catalog td.check input { width: 1.5rem; height: 1.5rem; }
+.study .field { display: block; max-width: 100%; }
+.study select { width: 100%; max-width: 100%; min-width: 0; }
 </style>
 </head>
 <body>
@@ -559,6 +570,19 @@ ul.outline li.known > button.link { color: var(--muted); }
 <!-- Catalog -->
 <section id="view-catalog" class="view" aria-labelledby="h-catalog">
 <h2 id="h-catalog">Catalog and scores</h2>
+<section class="card study" aria-labelledby="h-study">
+<h3 id="h-study">Study a topic from the start</h3>
+<p class="note">Choose one or more arXiv topics. The list then holds every result in those topics and every prerequisite they need, even when a prerequisite has another topic. Sort by dependency to see the most basic results first. Check off a result to hide it.</p>
+<div class="row">
+<label class="field">Add a topic <select id="f-topic"></select></label>
+<button type="button" id="order-deps">Sort by dependency, basic first</button>
+<label class="inline"><input type="checkbox" id="show-done"> Show checked-off results</label>
+<button type="button" id="clear-done">Clear all checks</button>
+</div>
+<ul id="topic-chips" class="chips" aria-label="Study topics"></ul>
+<p id="study-summary" class="note" aria-live="polite"></p>
+<p id="done-summary" class="note" aria-live="polite"></p>
+</section>
 <details id="filters" class="card filters" open>
 <summary>Filters</summary>
 <div class="filter-grid">
@@ -630,12 +654,14 @@ ul.outline li.known > button.link { color: var(--muted); }
 <button type="button" id="save-csv">Save table CSV</button>
 <button type="button" id="copy-csv">Copy table CSV</button>
 </div>
+<nav id="pager-top" class="pager no-print" aria-label="Pages of the catalog table"></nav>
 <div id="table-wrap" class="table-wrap" tabindex="0" role="region" aria-label="Catalog table: scroll for more rows">
 <table id="catalog" class="catalog">
 <thead id="catalog-head"></thead>
 <tbody id="catalog-body"></tbody>
 </table>
 </div>
+<nav id="pager-bottom" class="pager no-print" aria-label="Pages of the catalog table, bottom"></nav>
 <p class="note">Scores are 0 to 4 per component. u: unknown, na: not applicable. A weighted u or na makes the aggregate unknown; the interval shows its range with 0 and 4 in place of the missing scores. The table draws only the rows near the scroll position; every row stays available through search, sort and the CSV export.</p>
 <figure class="card">
 <figcaption class="label">Impact against effort (ordinal; no ratio)</figcaption>
@@ -1719,10 +1745,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const VIEWS = ["learn", "catalog", "concepts", "compare", "connections", "tree", "fields", "popularity", "about"];
   const CASES = ["tail-binomial", "existence-ksat", "union-three", "euler-genus-two"];
   const SOURCES = ["any", "mathlib", "wikidata", "wikipedia", "nlab", "theoremsearch", "theoremgraph", "freek100", "overview", "undergrad", "curated"];
-  const SORTS = ["score", "learn", "lo", "hi", "name", ...COMPONENTS, "level", "statement", "proof", "dependents", "uses", "year"];
-  const COLUMNS = ["type", "score", "interval", ...COMPONENTS, "conf", "formal", "level", "effort", "statement", "proof", "dependents", "uses", "year", "fields"];
-  const DEFAULT_COLUMNS = "type,score,interval,eff,res,pra,rea,hyp,pro,app,conf,formal,level";
+  const SORTS = ["score", "learn", "order", "lo", "hi", "name", ...COMPONENTS, "level", "statement", "proof", "dependents", "uses", "year"];
+  const COLUMNS = ["depth", "type", "score", "interval", ...COMPONENTS, "conf", "formal", "level", "effort", "statement", "proof", "dependents", "uses", "year", "fields"];
+  const DEFAULT_COLUMNS = "depth,type,score,interval,eff,res,pra,rea,hyp,pro,app,conf,formal,level";
   const NO_YEAR = 2100;
+  const PAGE_SIZES = ["100", "250", "500", "all"];
 
   /* The concept catalog (tc-rubric/1): the same seven-slot rubric, with concept components. */
   const CONCEPT_COMPONENTS = ["uni", "res", "pra", "rea", "lpb", "exa", "cmp"];
@@ -1798,6 +1825,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     grp: str("arXiv group"),
     arch: str("arXiv archive"),
     cat: str("arXiv category"),
+    topics: str("Study topics (arXiv ids): their results and every prerequisite"),
     acat: str("Application category"),
     level: en("level", "Needed reader level at most", ["any", ...LEVELS], "any"),
     formal: en("formal", "Formalization", ["any", "formal", "informal"], "any"),
@@ -1811,6 +1839,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     y1: int("To year (2100: no limit)", NO_YEAR, 0, NO_YEAR),
     incase: en("incase", "Comparison case", ["any", ...CASES], "any"),
     known: en("known", "Known-result status", ["any", "known", "unknown"], "any"),
+    showdone: en("showdone", "Checked-off results", ["hide", "show"], "hide"),
+    psize: en("psize", "Rows per page", PAGE_SIZES, "100"),
+    page: int("Page", 1, 1, 100000),
     cols: str("Visible columns", DEFAULT_COLUMNS),
     sel: str("Selected result"),
     pins: str("Pinned results"),
@@ -1946,6 +1977,86 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     return s.index;
   }
 
+  /* ---------- dependency order ---------- */
+
+  /**
+   * The depth of every record in the prerequisite graph (ix.pre, the judged prerequisite results). A record with no
+   * prerequisite has depth 0, else its depth is 1 plus the largest depth of its prerequisites, so each result sorts
+   * after all its prerequisites. Records on a cycle share one depth: the strongly connected component counts as one
+   * node, its members are listed in `cyclic`, and the cycle never loops the sort. A prerequisite id that is not in
+   * the snapshot was dropped by index(). The order is stable: the depth does not depend on the filters or weights.
+   * @param {any} ix @returns {{ depth: number[], cyclic: Set<number>, cycles: number }}
+   */
+  function dependency(ix) {
+    if (ix.dependency) return ix.dependency;
+    const n = ix.rows.length;
+    const idx = new Array(n).fill(-1), low = new Array(n).fill(0), onStack = new Array(n).fill(false), comp = new Array(n).fill(-1);
+    /** @type {number[]} */ const stack = [];
+    /** @type {number[][]} */ const comps = [];
+    let counter = 0;
+    for (let root = 0; root < n; root++) {
+      if (idx[root] >= 0) continue;
+      /** @type {number[][]} */ const work = [[root, 0]];
+      idx[root] = low[root] = counter++; stack.push(root); onStack[root] = true;
+      while (work.length) {
+        const frame = work[work.length - 1];
+        const v = frame[0];
+        if (frame[1] < ix.pre[v].length) {
+          const w = ix.pre[v][frame[1]++];
+          if (idx[w] < 0) { idx[w] = low[w] = counter++; stack.push(w); onStack[w] = true; work.push([w, 0]); }
+          else if (onStack[w]) low[v] = Math.min(low[v], idx[w]);
+        } else {
+          work.pop();
+          if (work.length) { const u = work[work.length - 1][0]; low[u] = Math.min(low[u], low[v]); }
+          if (low[v] === idx[v]) {
+            /** @type {number[]} */ const members = [];
+            for (let w = -1; w !== v;) { w = /** @type {number} */ (stack.pop()); onStack[w] = false; comp[w] = comps.length; members.push(w); }
+            comps.push(members);
+          }
+        }
+      }
+    }
+    // Tarjan emits a component after every component it reaches, so the prerequisites' depths are known.
+    const cdepth = comps.map(() => 0);
+    comps.forEach((members, c) => {
+      let d = 0;
+      for (const v of members) for (const w of ix.pre[v]) if (comp[w] !== c) d = Math.max(d, cdepth[comp[w]] + 1);
+      cdepth[c] = d;
+    });
+    const cyclic = new Set(comps.filter((m) => m.length > 1).flat());
+    ix.dependency = { depth: comp.map((c) => cdepth[c]), cyclic, cycles: comps.filter((m) => m.length > 1).length };
+    return ix.dependency;
+  }
+
+  /**
+   * The study scope of a topic list: the records tagged with a topic (a category, archive or group id) and every
+   * prerequisite they need at any depth, even when it has another topic. Returns null when no topic is set.
+   * @param {Record<string, any>} state @param {any} data @param {any} ix @param {string[]} notes
+   * @returns {{ members: Set<number>, scope: Set<number>, topics: string[] } | null}
+   */
+  function studyScope(state, data, ix, notes) {
+    const tags = splitList(state.topics);
+    if (!tags.length) return null;
+    const cats = new Set(), archs = new Set(), grps = new Set();
+    const topics = [];
+    for (const raw of tags) {
+      const id = data.taxonomy.aliases?.[raw] ?? raw;
+      if (ix.catIdx.has(id)) cats.add(ix.catIdx.get(id));
+      else if (ix.archIdx.has(id)) archs.add(ix.archIdx.get(id));
+      else if (ix.grpIdx.has(id)) grps.add(ix.grpIdx.get(id));
+      else { notes.push(`The topic "${raw.slice(0, 40)}" is not in the pinned taxonomy and is ignored.`); continue; }
+      topics.push(id);
+    }
+    const members = new Set();
+    ix.rows.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
+      if (r.cat.some((/** @type {number} */ c) => cats.has(c) || archs.has(ix.catArch[c]) || grps.has(ix.catGrp[c]))) members.add(i);
+    });
+    const scope = new Set(members);
+    const todo = [...members];
+    while (todo.length) for (const j of ix.pre[/** @type {number} */ (todo.pop())]) if (!scope.has(j)) { scope.add(j); todo.push(j); }
+    return { members, scope, topics };
+  }
+
   /* ---------- scores ---------- */
 
   /** The active weights in component order. @param {Record<string, any>} state @returns {number[]} */
@@ -2003,6 +2114,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   /** The known results of the profile: id -> the deepest known depth index. @param {any} data @returns {Record<string, number>} */
   const knownOf = (data) => data.profile?.known ?? {};
 
+  /** The results that the reader checked off: id -> 1. @param {any} data @returns {Record<string, number>} */
+  const doneOf = (data) => data.profile?.done ?? {};
+
   /** @param {string} list @returns {string[]} */
   const splitList = (list) => [...new Set(String(list ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
 
@@ -2048,7 +2162,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   function activeFilters(state) {
     /** @type {{ key: string, label: string, value: string }[]} */
     const out = [];
-    for (const key of ["q", "rtype", "grp", "arch", "cat", "acat", "level", "formal", "source", "ev", "cons", "min_hyp", "min_pro", "min_app", "y0", "y1", "incase", "known"]) {
+    for (const key of ["q", "rtype", "grp", "arch", "cat", "acat", "level", "formal", "source", "ev", "cons", "min_hyp", "min_pro", "min_app", "y0", "y1", "incase", "known", "topics"]) {
       if (state[key] !== FIELDS[key].default) out.push({ key, label: FIELDS[key].label, value: String(state[key]) });
     }
     return out;
@@ -2079,6 +2193,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     if ((state.y0 > 0 || state.y1 < NO_YEAR) && !(r.yr !== null && r.yr >= state.y0 && r.yr <= state.y1)) return false;
     if (state.incase !== "any" && !ix.cases.get(state.incase)?.has(r.id)) return false;
     if (state.known !== "any" && (r.id in ctx.known) !== (state.known === "known")) return false;
+    if (ctx.study && !ctx.study.scope.has(i)) return false;
     if (ctx.words.length && !ctx.words.every((/** @type {string} */ w) => ix.text[i].includes(w))) return false;
     return true;
   }
@@ -2101,6 +2216,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       case "lo": return a.lo;
       case "hi": return a.hi;
       case "learn": return ctx.learn.get(i)?.key ?? null;
+      case "order": return ctx.depth[i];
       case "level": return r.lv;
       case "statement": return r.st;
       case "proof": return r.sp;
@@ -2827,14 +2943,21 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       if (v === undefined) { notes.push(`${what} "${id.slice(0, 40)}" is not in the pinned taxonomy, so the filter matches nothing.`); return -2; }
       return v;
     };
+    const study = studyScope(state, data, ix, notes);
     const ctx = {
-      agg, learn: learn.out, known: knownOf(data),
+      agg, learn: learn.out, known: knownOf(data), study, depth: dependency(ix).depth,
       grp: lookup(state.grp, tax.grpIdx, "The group"), arch: lookup(state.arch, tax.archIdx, "The archive"),
       cat: lookup(state.cat, tax.catIdx, "The category"), acat: lookup(state.acat, tax.catIdx, "The application category"),
       words: String(state.q).toLowerCase().split(/\s+/).filter(Boolean),
     };
     const order = [];
-    for (let i = 0; i < ix.rows.length; i++) if (passes(state, ix, i, ctx)) order.push(i);
+    const done = doneOf(data);
+    let doneHidden = 0;
+    for (let i = 0; i < ix.rows.length; i++) {
+      if (!passes(state, ix, i, ctx)) continue;
+      if (state.showdone === "hide" && ix.rows[i].id in done) doneHidden++;
+      else order.push(i);
+    }
     const sign = state.dir === "asc" ? 1 : -1;
     const keys = new Map(order.map((i) => [i, sortKey(state.sort, ix, i, ctx)]));
     order.sort((a, b) => {
@@ -2854,9 +2977,25 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       shown: order.length,
       shownUnknown: order.filter((i) => agg[i].v === null).length,
       known: Object.keys(knownMap).filter((id) => ix.byId.has(id)).length,
+      done: Object.keys(done).filter((id) => ix.byId.has(id)).length,
+      doneHidden,
       knownConcepts: Object.keys(knownMap).filter((id) => cindex(data)?.byId.has(id)).length,
       formalUnnamed: data.coverage.formal.unnamed_unscored,
     };
+
+    // The study scope and the page of rows: the whole order stays in `order` for the exports.
+    const dep = dependency(ix);
+    const sizeN = state.psize === "all" ? Math.max(1, order.length) : Number(state.psize);
+    const pages = Math.max(1, Math.ceil(order.length / sizeN));
+    const number = Math.min(Math.max(1, state.page), pages);
+    const first = (number - 1) * sizeN;
+    const pageOrder = order.slice(first, first + sizeN);
+    const studyInfo = study && {
+      topics: study.topics, members: study.members.size, prerequisites: study.scope.size - study.members.size, total: study.scope.size,
+      memberResults: [...study.members].filter((i) => ix.isResult[i]).length,
+      prerequisiteResults: [...study.scope].filter((i) => !study.members.has(i) && ix.isResult[i]).length,
+    };
+    if (state.sort === "order" && dep.cycles) notes.push(`${dep.cycles} groups of results need each other in a cycle. Each group has one depth, and its members sort by score, then name.`);
 
     // Learn next: the filtered results in priority order.
     const recIdx = order.filter((i) => learn.out.has(i)).sort((a, b) => learn.out.get(b).key - learn.out.get(a).key || learn.out.get(b).hi - learn.out.get(a).hi || ix.rows[a].n.localeCompare(ix.rows[b].n) || a - b);
@@ -2891,6 +3030,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       filters: activeFilters(state),
       counts,
       order,
+      page: { size: state.psize === "all" ? "all" : sizeN, number, pages, from: order.length ? first + 1 : 0, to: first + pageOrder.length, total: order.length, order: pageOrder },
+      study: studyInfo,
+      depth: { cycles: dep.cycles, cyclic: dep.cyclic.size },
       learn: {
         baseline: !learn.interests.length, interests: learn.interests.map((x) => x.id), depth: state.depth, reader: state.reader, budget: state.budget,
         excludedKnown: learn.excludedKnown, candidates: recIdx.length, incomplete: recIdx.filter((i) => learn.out.get(i).p === null).length, recs,
@@ -3015,7 +3157,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
 
   /** A profile from the state and the known results. @param {Record<string, any>} state @param {any} data */
   function profileOf(state, data) {
-    return { schema: PROFILE_SCHEMA, snapshot: data.snapshot.id, known: { ...knownOf(data) }, interests: state.interests, stance: state.preset, depth: state.depth, reader: state.reader, budget: state.budget, weights: weightsOf(state) };
+    return { schema: PROFILE_SCHEMA, snapshot: data.snapshot.id, known: { ...knownOf(data) }, done: Object.keys(doneOf(data)), interests: state.interests, stance: state.preset, depth: state.depth, reader: state.reader, budget: state.budget, weights: weightsOf(state) };
   }
 
   /**
@@ -3041,6 +3183,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       if (ix.byId.has(now) || cindex(data)?.byId.has(now)) known[now] = Math.max(known[now] ?? 0, /** @type {number} */ (depth));
       else unresolved.push(id);
     }
+    /** @type {string[]} */
+    const done = [];
+    if (Array.isArray(doc.done)) for (const id of doc.done) {
+      const now = typeof id === "string" ? migrate(data, id) : "";
+      if (ix.byId.has(now) && !done.includes(now)) done.push(now);
+      else if (typeof id === "string") unresolved.push(id);
+    }
     /** @type {Record<string, any>} */
     const state = {};
     if (typeof doc.interests === "string") state.interests = doc.interests;
@@ -3049,7 +3198,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     if (Number.isInteger(doc.budget)) state.budget = doc.budget;
     if (typeof doc.stance === "string") state.preset = doc.stance;
     if (doc.stance === "custom" && Array.isArray(doc.weights)) COMPONENTS.forEach((k, j) => { state[`w_${k}`] = doc.weights[j]; });
-    return { known, state, unresolved, from: doc.snapshot ?? null, migrated: doc.snapshot !== data.snapshot.id };
+    return { known, done: Object.fromEntries(done.map((id) => [id, 1])), state, unresolved, from: doc.snapshot ?? null, migrated: doc.snapshot !== data.snapshot.id };
   }
 
   /**
@@ -3092,10 +3241,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
 
   return {
     SLUG, SCHEMA_VERSION, FIELDS, EXAMPLES, COMPONENTS, COMPONENT_NAMES, PRESETS, LEVELS, LEVEL_NAMES, DEPTHS, BANDS, RESULT_TYPES, COLUMNS, DEFAULT_COLUMNS,
-    LEARN_WEIGHTS, LEARN_RULES, SEARCH_HELP, REL_PHRASES, REL_ORDER, CASE_FORMULAS, PROFILE_SCHEMA, EXPORT_SCHEMA, NO_YEAR,
+    LEARN_WEIGHTS, LEARN_RULES, SEARCH_HELP, REL_PHRASES, REL_ORDER, CASE_FORMULAS, PROFILE_SCHEMA, EXPORT_SCHEMA, NO_YEAR, PAGE_SIZES,
     CONCEPT_COMPONENTS, CONCEPT_COMPONENT_NAMES, CONCEPT_PRESETS, CONCEPT_KINDS, PER, LIFT_MIN, TREE_NODES,
     conceptPack, popularityPack, cindex, conceptWeightsOf, conceptsOf, conceptOf, treeOf, popularityOf, popTags, itemOf, tagOf, conceptCsv,
-    derive, prime, pack, core, detail, index, aggregate, weightsOf, consistency, relevance, interestsOf, comparison, history,
+    dependency, studyScope, derive, prime, pack, core, detail, index, aggregate, weightsOf, consistency, relevance, interestsOf, comparison, history,
     prerequisitePath, relationsOf, csv, csvCell, profileOf, readProfile, exportJson, splitList, scoreLabel, bandLabel, scoreText, migrate,
   };
 });
@@ -3506,6 +3655,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   }
   loading.hidden = true;
   const IX = Model.index(D);
+  const DEP = Model.dependency(IX);
   const DET = Model.detail(D);
   const CX = Model.cindex(D);
   const TAX = D.taxonomy;
@@ -3517,6 +3667,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   let storageOk = true;
   /** @type {Record<string, number>} */
   let known = {};
+  /** The results the reader checked off: id -> 1. @type {Record<string, number>} */
+  let done = {};
   /** @type {string[]} */
   let unresolvedIds = [];
   try {
@@ -3524,13 +3676,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     if (saved) {
       const p = Model.readProfile(saved, D);
       known = p.known;
+      done = p.done;
       unresolvedIds = p.unresolved;
     }
   } catch (e) {
     storageOk = !(e instanceof DOMException);
     if (!storageOk) unresolvedIds = [];
   }
-  D.profile = { known };
+  D.profile = { known, done };
   /** The view saved by an earlier visit. It is offered, not loaded, so a shared link opens as sent. */
   let savedView = "";
   try { savedView = localStorage.getItem(VIEW_KEY) ?? ""; } catch { savedView = ""; }
@@ -3550,7 +3703,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   function setKnown(id, depth) {
     if (depth === null) delete known[id];
     else known[id] = Math.max(known[id] ?? -1, depth);
-    D.profile = { known };
+    D.profile = { known, done };
+    storeProfile();
+    app.set({}, "replace");
+  }
+  /** Check a result off (it hides from the list) or put it back. @param {string} id @param {boolean} on */
+  function setDone(id, on) {
+    if (on) done[id] = 1;
+    else delete done[id];
+    D.profile = { known, done };
     storeProfile();
     app.set({}, "replace");
   }
@@ -3660,6 +3821,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
 
   /** Column definitions: label, sort key (or null) and cell text. @type {Record<string, { label: string, sort: string | null, cell: (i: number, a: any) => string }>} */
   const COLS = {
+    depth: { label: "Depth", sort: "order", cell: (i) => `${DEP.depth[i]}${DEP.cyclic.has(i) ? " (cycle)" : ""}` },
     type: { label: "Type", sort: null, cell: (i) => IX.rows[i].t.replace("not-a-result:", "not a result: ") },
     score: { label: "Score", sort: "score", cell: (_i, a) => fmt(a.v) },
     interval: { label: "Interval", sort: "lo", cell: (_i, a) => (a.v === null && a.missing[0] !== "weights" ? `${num(a.lo, 2)} to ${num(a.hi, 2)}` : "") },
@@ -3680,13 +3842,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   /** @type {{ order: number[], cols: string[], weights: number[], ok: boolean, sel: string }} */
   let tableModel = { order: [], cols: [], weights: [], ok: true, sel: "" };
   let tableFrame = 0;
+  /** The row to focus after a check-off redraws the list, so the keyboard reader keeps their place. */
+  let focusRow = -1;
 
   function drawRows() {
     const wrap = $("table-wrap");
     const { order, cols, weights, ok, sel } = tableModel;
     const first = Math.max(0, Math.floor(wrap.scrollTop / ROW) - 10);
     const last = Math.min(order.length, first + Math.ceil((wrap.clientHeight || 600) / ROW) + 20);
-    const span = cols.length + 1;
+    const span = cols.length + 2;
     const rows = [h("tr", { class: "spacer", "aria-hidden": "true" }, h("td", { colspan: span, style: `height:${first * ROW}px` }))];
     for (let k = first; k < last; k++) {
       const i = order[k];
@@ -3694,6 +3858,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       const a = ok ? Model.aggregate(IX.scores[i], weights) : { v: null, lo: 0, hi: 100, missing: ["weights"] };
       const preview = DET[i].concl ?? (DET[i].evs.find((/** @type {any} */ e) => e.kind === "source statement")?.claim ?? DET[i].wd ?? "");
       rows.push(h("tr", { class: r.id === sel ? "sel" : null, "aria-rowindex": k + 2, "aria-selected": r.id === sel ? "true" : null },
+        h("td", { class: "check" }, h("input", { type: "checkbox", "data-k": String(k), checked: r.id in done, "aria-label": `Known: ${r.n}`, onchange: (/** @type {Event} */ e) => { focusRow = k; setDone(r.id, /** @type {HTMLInputElement} */ (e.target).checked); } })),
         h("th", { scope: "row", class: "name" },
           h("button", { type: "button", class: "link", onclick: () => { app.set({ sel: r.id }); $("result").scrollIntoView({ block: "start" }); } }, r.n),
           h("span", { class: "preview", text: preview.replace(/\s+/g, " ").slice(0, 160) })),
@@ -3787,6 +3952,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     const cols = Model.splitList(state.cols).filter((c) => c in COLS);
     for (const box of document.querySelectorAll("#col-boxes input")) if (box instanceof HTMLInputElement) box.checked = cols.includes(box.value);
     put($("catalog-head"), h("tr", null,
+      h("th", { scope: "col", class: "check" }, "Known"),
       h("th", { scope: "col", "aria-sort": state.sort === "name" ? (state.dir === "asc" ? "ascending" : "descending") : null },
         h("button", { type: "button", class: "sort", onclick: () => sortBy("name") }, "Result")),
       cols.map((c) => {
@@ -3796,15 +3962,70 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
           s ? h("button", { type: "button", class: "sort", onclick: () => sortBy(s) }, COLS[c].label, on ? (state.dir === "asc" ? " ▲" : " ▼") : "") : COLS[c].label);
       })));
     $("catalog").setAttribute("aria-rowcount", String(d.order.length + 1));
-    tableModel = { order: d.order, cols, weights: d.weights, ok: d.weightsOk, sel: d.selected.id };
+    const scope = scopeKey(state, d);
+    const view = `${scope}|${d.page.number}`;
+    if (lastView !== view) $("table-wrap").scrollTop = 0;
+    lastView = view;
+    $("catalog").setAttribute("aria-rowcount", String(d.page.order.length + 1));
+    tableModel = { order: d.page.order, cols, weights: d.weights, ok: d.weightsOk, sel: d.selected.id };
     drawRows();
+    if (focusRow >= 0) {
+      // The list shrank by one row (the checked row hid), so the same position holds the next result.
+      const box = /** @type {HTMLElement | null} */ (document.querySelector(`#catalog-body input[data-k="${Math.min(focusRow, d.page.order.length - 1)}"]`));
+      focusRow = -1;
+      if (box) box.focus();
+    }
+    renderStudy(state, d);
+    const moved = lastScope !== null && lastScope !== scope;
+    lastScope = scope;
+    if (moved && state.page !== 1) app.set({ page: 1 }, "replace");
     drawEffort(state, d);
   }
 
   /** @param {string} key */
   function sortBy(key) {
     const s = app.state;
-    app.set(s.sort === key ? { dir: s.dir === "asc" ? "desc" : "asc" } : { sort: key, dir: key === "name" ? "asc" : "desc" });
+    app.set(s.sort === key ? { dir: s.dir === "asc" ? "desc" : "asc" } : { sort: key, dir: key === "name" || key === "order" ? "asc" : "desc" });
+  }
+
+  /* ---------- study: topics, pages and check-off ---------- */
+
+  /** What the page number belongs to: when a filter, the sort or the page size changes, the page goes back to 1. @param {Record<string, any>} state @param {any} d */
+  const scopeKey = (state, d) => JSON.stringify([d.filters, state.sort, state.dir, state.psize, state.showdone, state.preset, d.weights]);
+  /** @type {string | null} */
+  let lastScope = null;
+  /** @type {string | null} */
+  let lastView = null;
+
+  /** @param {Record<string, any>} state @param {any} d */
+  function renderPager(state, d) {
+    const P = d.page;
+    for (const id of ["pager-top", "pager-bottom"]) {
+      const go = (/** @type {number} */ n) => app.set({ page: n });
+      put($(id),
+        h("button", { type: "button", disabled: P.number <= 1, "aria-label": "Previous page", onclick: () => go(P.number - 1) }, "← Previous"),
+        h("button", { type: "button", disabled: P.number >= P.pages, "aria-label": "Next page", onclick: () => go(P.number + 1) }, "Next →"),
+        h("p", { class: "where note", role: "status", text: P.total ? `Rows ${P.from} to ${P.to} of ${P.total.toLocaleString("en")}. Page ${P.number} of ${P.pages}.` : "No row after the filters." }),
+        h("label", { class: "inline" }, "Rows per page ",
+          h("select", { "aria-label": `Rows per page (${id === "pager-top" ? "top" : "bottom"})`, onchange: (/** @type {Event} */ e) => app.set({ psize: /** @type {HTMLSelectElement} */ (e.target).value, page: 1 }) },
+            ...Model.PAGE_SIZES.map((v) => h("option", { value: v, selected: v === state.psize, text: v === "all" ? "All" : v })))));
+    }
+  }
+
+  /** @param {Record<string, any>} state @param {any} d */
+  function renderStudy(state, d) {
+    renderPager(state, d);
+    $("show-done").checked = state.showdone === "show";
+    const topics = Model.splitList(state.topics);
+    put($("topic-chips"), ...topics.map((t) => h("li", null,
+      h("button", { type: "button", class: "chip", "aria-label": `Remove the topic ${t}`, onclick: () => app.set({ topics: topics.filter((x) => x !== t).join(",") }) }, `${t} ×`))));
+    $("f-topic").value = "";
+    const S = d.study;
+    $("study-summary").textContent = S
+      ? `${S.members} records in ${S.topics.join(", ") || "no known topic"} (${S.memberResults} results) and ${S.prerequisites} prerequisites from any topic (${S.prerequisiteResults} results): ${S.total} in all before the other filters.`
+      : "No topic chosen: the list holds every record that passes the filters.";
+    $("done-summary").textContent = `${d.counts.done} checked off in this browser${storageOk ? "" : " (the browser blocks storage, so the checks last until you close the page)"}. ${state.showdone === "hide" ? `${d.counts.doneHidden} hidden from this list.` : "They show in the list."}`;
+    $("clear-done").disabled = d.counts.done === 0;
   }
 
   /** Impact (aggregate score) against effort (judged band): two ordinal axes, no ratio (spec section 8). */
@@ -4529,6 +4750,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       annotations: { readOnlyHint: true },
       execute: async () => out(app.derived.learn) },
+    { name: "get_study_order", description: "Return the rows of a study list in dependency order (each result after all its prerequisites, most basic first): the results of the given arXiv topics and every prerequisite they need, minus the results the reader checked off. Reports the counts and one page of rows.",
+      inputSchema: { type: "object", properties: { topics: { type: "string", description: "comma-separated arXiv category, archive or group ids, for example math.FA" }, offset: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 500 } }, additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {{ topics?: string, offset?: number, limit?: number }} */ input = {}) => {
+        const st = VisualKit.normalize(Model.FIELDS, { ...app.state, view: "catalog", sort: "order", dir: "asc", topics: input.topics ?? app.state.topics, psize: "all", page: 1 }).state;
+        const d = Model.derive(st, D);
+        const from = input.offset ?? 0;
+        return out({ study: d.study, shown: d.order.length, checkedOff: d.counts.done, hiddenAsChecked: d.counts.doneHidden, cycles: d.depth, notes: d.notes,
+          rows: d.order.slice(from, from + (input.limit ?? 50)).map((/** @type {number} */ i, /** @type {number} */ k) => ({ position: from + k + 1, id: IX.rows[i].id, name: IX.rows[i].n, depth: DEP.depth[i], inCycle: DEP.cyclic.has(i), topics: IX.rows[i].cat.map((/** @type {number} */ c) => TAX.categories[c][0]), prerequisites: IX.pre[i].map((/** @type {number} */ j) => IX.rows[j].id) })) });
+      } },
     { name: "get_learning_path", description: "Return the prerequisite path to a result, with cycles and the count of supported and uncertain edges.",
       inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false },
       annotations: { readOnlyHint: true },
@@ -4617,6 +4848,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       put($("f-arch"), ...opts(TAX.archives, "Any archive"));
       put($("f-cat"), ...opts(TAX.categories, "Any category"));
       put($("f-acat"), ...opts(TAX.categories, "Any application category"));
+      const group = (/** @type {string} */ label, /** @type {any[][]} */ list) => h("optgroup", { label }, ...list.map((x) => h("option", { value: x[0], text: `${x[0]}: ${x[1]}` })));
+      put($("f-topic"), h("option", { value: "", text: "Choose a topic" }), group("Categories", TAX.categories), group("Archives", TAX.archives), group("Groups", TAX.groups));
+      $("f-topic").addEventListener("change", () => {
+        const t = $("f-topic").value;
+        if (t) a.set({ topics: [...new Set([...Model.splitList(a.state.topics), t])].join(",") });
+      });
+      $("order-deps").addEventListener("click", () => a.set({ sort: "order", dir: "asc" }));
+      $("show-done").addEventListener("change", () => a.set({ showdone: $("show-done").checked ? "show" : "hide" }));
+      $("clear-done").addEventListener("click", () => { done = {}; D.profile = { known, done }; storeProfile(); a.set({}, "replace"); });
       for (const key of ["grp", "arch", "cat", "acat"]) $(`f-${key}`).addEventListener("change", (/** @type {Event} */ e) => a.set({ [key]: /** @type {HTMLSelectElement} */ (e.target).value }));
       put($("taxonomy-ids"), ...[...TAX.groups, ...TAX.archives, ...TAX.categories].map((x) => h("option", { value: x[0], text: x[1] })));
       put($("result-names"), ...IX.rows.map((/** @type {any} */ r) => h("option", { value: r.n })));
@@ -4637,7 +4877,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
       $("save-csv").addEventListener("click", () => save(`${Model.SLUG}-table.csv`, Model.csv(a.state, a.derived, D), "text/csv"));
       $("copy-csv").addEventListener("click", () => copy(Model.csv(a.state, a.derived, D), "Copied the table CSV."));
       $("save-profile").addEventListener("click", () => save(`${Model.SLUG}-profile.json`, `${JSON.stringify(Model.profileOf(a.state, D), null, 2)}\n`, "application/json"));
-      $("reset-known").addEventListener("click", () => { known = {}; unresolvedIds = []; D.profile = { known }; storeProfile(); a.set({}, "replace"); $("profile-status").textContent = "Cleared the known results."; });
+      $("reset-known").addEventListener("click", () => { known = {}; unresolvedIds = []; D.profile = { known, done }; storeProfile(); a.set({}, "replace"); $("profile-status").textContent = "Cleared the known results."; });
       const file = $("load-profile");
       file.addEventListener("change", async () => {
         const chosen = file.files?.[0];
@@ -4645,8 +4885,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         try {
           const p = Model.readProfile(await chosen.text(), D);
           known = p.known;
+          done = p.done;
           unresolvedIds = p.unresolved;
-          D.profile = { known };
+          D.profile = { known, done };
           a.set(p.state);
           tell(`Loaded ${chosen.name}: ${Object.keys(p.known).length} known results${p.migrated ? ` (from snapshot ${p.from}, through the identity map)` : ""}${p.unresolved.length ? `; ${p.unresolved.length} identities not in this snapshot` : ""}.`);
         } catch (e) {
