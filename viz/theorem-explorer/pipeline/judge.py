@@ -125,6 +125,32 @@ def packet_rows(text):
     return out
 
 
+def provenance(path=None, config=None):
+    """Return the judge configuration, optionally from a file."""
+    if config is not None:
+        return config
+    if path and path.is_file():
+        return read_json(path)
+    return dict(JUDGE)
+
+
+def validate_batch(toon_text, batch_ids, checker):
+    """Parse and validate a batch of answers in TOON format."""
+    try:
+        table = from_toon(toon_text).get("answers", [])
+    except Exception as e:
+        raise ValueError(f"invalid TOON format: {e}")
+
+    if len(table) != len(batch_ids) or {r.get("id") for r in table} != set(batch_ids):
+        raise ValueError(f"batch must contain exactly {len(batch_ids)} rows with matching IDs")
+
+    for row in table:
+        if set(row.keys()) != set(FIELDS):
+            raise ValueError(f"row {row.get('id')}: field mismatch")
+
+    return table
+
+
 def collect(folder="answers"):
     """Validate every answer file in <work>/judge/<folder>/ and return (judgments, problems)."""
     checker = Checker()
