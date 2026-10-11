@@ -58,6 +58,34 @@
   "links": []
  },
  {
+  "id": "c:branching-process",
+  "reminder": "In a Galton–Watson process each individual has an independent random number of children with one fixed offspring law.",
+  "definition": "Let $(\\xi_{n,i})_{n,i\\ge1}$ be [iid](c:iid-random-variables) random variables with values in $\\{0,1,2,\\dots\\}$ and offspring law $p_k=\\mathbb P(\\xi=k)$. The Galton–Watson process is $Z_0=1$ and $Z_{n+1}=\\sum_{i=1}^{Z_n}\\xi_{n+1,i}$, the size of generation $n+1$. If $p_1\\ne1$, the extinction probability is the smallest root in $[0,1]$ of $f(s)=s$, where $f(s)=\\sum_kp_ks^k$ is the [generating function](c:generating-function), and it equals $1$ exactly when the mean $m=\\mathbb E\\xi$ satisfies $m\\le1$.",
+  "examples": [
+   "With Binomial$(2,p)$ offspring, $m=2p$, so the process dies out almost surely exactly when $p\\le1/2$. This is percolation on the binary tree.",
+   "With Poisson$(\\lambda)$ offspring, the extinction probability $q$ solves $q=e^{\\lambda(q-1)}$, and $q<1$ exactly when $\\lambda>1$.",
+   "With $p_k=2^{-(k+1)}$, $m=1$, so the process is critical and dies out almost surely, although $\\mathbb E Z_n=1$ for all $n$.",
+   "Non-example: a population in which the number of children depends on the current population size is not a Galton–Watson process. There the offspring numbers are not iid."
+  ],
+  "requires": [
+   "c:iid-random-variables",
+   "c:generating-function",
+   "c:markov-chain"
+  ],
+  "links": [
+   {
+    "to": "c:markov-chain",
+    "type": "specializes",
+    "steps": [
+     "The next size $Z_{n+1}$ is a sum of $Z_n$ fresh iid offspring counts.",
+     "So the law of $Z_{n+1}$ given the past depends only on $Z_n$.",
+     "Hence $(Z_n)$ is a Markov chain on $\\{0,1,2,\\dots\\}$, with $0$ as an absorbing state."
+    ],
+    "why": "It shows that Markov chain tools apply to branching processes, with extinction as absorption at $0$."
+   }
+  ]
+ },
+ {
   "id": "c:bregman-divergence",
   "reminder": "The Bregman divergence of a convex function measures the gap between the function and its tangent plane.",
   "definition": "Let $\\varphi$ be a [strictly convex function](c:strictly-convex-function) that is [differentiable](c:differentiable-function) on a convex open set $\\Omega\\subseteq\\mathbb{R}^d$. The Bregman divergence of $\\varphi$ is $D_\\varphi(x,y)=\\varphi(x)-\\varphi(y)-\\langle\\nabla\\varphi(y),x-y\\rangle$ for $x,y\\in\\Omega$, the gap at $x$ between $\\varphi$ and its tangent plane at $y$, where $\\nabla\\varphi$ is the [gradient](c:gradient). It satisfies $D_\\varphi(x,y)\\ge0$, with equality exactly when $x=y$, but in general it is not symmetric and does not satisfy the triangle inequality.",
@@ -303,7 +331,7 @@
   "definition": "For [Bernoulli percolation](c:percolation) on an infinite connected graph $G$, let $\\theta(p)$ be the probability that a fixed vertex lies in an infinite open cluster. The critical probability is $p_c(G)=\\sup\\{p\\in[0,1]:\\theta(p)=0\\}$. By the Kolmogorov zero-one law, an infinite open cluster exists with probability $0$ when $p<p_c$ and with probability $1$ when $p>p_c$.",
   "examples": [
    "For bond percolation on $\\mathbb Z^2$, $p_c=1/2$ (Kesten, 1980).",
-   "For the $d$-regular tree with $d\\ge3$, $p_c=1/(d-1)$, because the cluster of a vertex grows like a branching process with mean offspring $(d-1)p$.",
+   "For the $d$-regular tree with $d\\ge3$, $p_c=1/(d-1)$, because the cluster of a vertex grows like a [branching process](c:branching-process) with mean offspring $(d-1)p$.",
    "For the line $\\mathbb Z$, $p_c=1$, because for $p<1$ every open cluster is stopped by closed edges on both sides.",
    "Non-example: on a finite graph every open cluster is finite for every $p$. So $\\theta\\equiv0$, and no critical probability exists in this sense."
   ],
@@ -530,7 +558,7 @@
   "definition": "For random variables $X_1,\\dots,X_n$ with values in a measurable space $S$, the empirical measure is the random [probability measure](c:probability-measure) $\\mu_n=\\frac1n\\sum_{i=1}^n\\delta_{X_i}$, where $\\delta_x$ is the [Dirac measure](c:dirac-measure) at $x$. So $\\mu_n(A)$ is the fraction of the sample points that lie in $A$. If the $X_i$ are [iid](c:iid-random-variables) with law $\\mu$ on a Polish space, then $\\mu_n\\to\\mu$ weakly almost surely.",
   "examples": [
    "For the sample $(0.2,0.7,0.7)$, the empirical measure is $\\mu_3=\\tfrac13\\delta_{0.2}+\\tfrac23\\delta_{0.7}$, and its distribution function is the [empirical distribution function](c:empirical-distribution-function).",
-   "For a symmetric $N\\times N$ matrix with eigenvalues $\\lambda_1,\\dots,\\lambda_N$, the empirical spectral measure is $\\frac1N\\sum_i\\delta_{\\lambda_i}$. For a Wigner matrix scaled by $1/\\sqrt N$, it converges to the semicircle distribution.",
+   "For a symmetric $N\\times N$ matrix with eigenvalues $\\lambda_1,\\dots,\\lambda_N$, the empirical spectral measure is $\\frac1N\\sum_i\\delta_{\\lambda_i}$. For a [Wigner matrix](c:wigner-matrix) scaled by $1/\\sqrt N$, it converges to the [semicircle distribution](c:semicircle-distribution).",
    "Non-example: a kernel density estimate $\\frac1{nh}\\sum_iK((x-X_i)/h)\\,dx$ is not the empirical measure, since it has a density and gives zero mass to each sample point."
   ],
   "requires": [
@@ -841,6 +869,36 @@
   ]
  },
  {
+  "id": "c:gaussian-free-field",
+  "reminder": "The Gaussian free field is the centered Gaussian field whose covariance is the Green function of the Laplacian.",
+  "definition": "The discrete Gaussian free field on a finite set $\\Lambda\\subset\\mathbb Z^d$ with zero boundary values is the centered Gaussian vector $(\\varphi_x)_{x\\in\\Lambda}$ with covariance $\\mathbb E[\\varphi_x\\varphi_y]=G_\\Lambda(x,y)$, the [Green function](c:green-function) of simple random walk killed when it leaves $\\Lambda$. Its density is proportional to $\\exp\\big(-\\frac1{4d}\\sum_{x\\sim y}(\\varphi_x-\\varphi_y)^2\\big)$, with $\\varphi=0$ outside $\\Lambda$. In the continuum, the Gaussian free field is the centered Gaussian random distribution whose covariance is the Green function of the Dirichlet Laplacian.",
+  "examples": [
+   "For $\\Lambda=\\{0\\}$, the walk leaves at once, so $G_\\Lambda(0,0)=1$ and $\\varphi_0\\sim N(0,1)$.",
+   "For $\\Lambda=\\{1,\\dots,N-1\\}\\subset\\mathbb Z$, the field is a random walk with $N(0,2)$ increments pinned to $0$ at $0$ and at $N$, and $\\mathrm{Var}(\\varphi_x)=2x(N-x)/N$.",
+   "For $d\\ge3$, the limit $\\Lambda\\uparrow\\mathbb Z^d$ exists and gives a stationary field, with $\\mathbb E[\\varphi_0\\varphi_x]$ of order $|x|^{2-d}$.",
+   "Non-example: on $\\mathbb Z^2$ there is no infinite-volume Gaussian free field with zero boundary values at infinity. In the box of side $N$, $\\mathrm{Var}(\\varphi_0)$ grows like $\\frac2\\pi\\log N$."
+  ],
+  "requires": [
+   "c:green-function",
+   "c:gaussian-process",
+   "c:covariance-function",
+   "c:discrete-laplace-operator"
+  ],
+  "links": [
+   {
+    "to": "c:gaussian-process",
+    "type": "specializes",
+    "steps": [
+     "A Gaussian process is a family of random variables whose finite linear combinations are Gaussian.",
+     "Index the family by the vertices of $\\Lambda$.",
+     "Choose mean zero and covariance $G_\\Lambda(x,y)$, which is symmetric and positive definite.",
+     "The resulting process is the discrete Gaussian free field."
+    ],
+    "why": "It shows that the Gaussian free field is fixed by one choice of covariance, the Green function."
+   }
+  ]
+ },
+ {
   "id": "c:gibbs-measure",
   "reminder": "A Gibbs measure is an infinite-volume law whose conditional law in each finite box is the finite Gibbs distribution.",
   "definition": "For finite $\\Lambda\\subset\\mathbb Z^d$ and a [boundary condition](c:boundary-condition) $\\eta$, let $\\pi_\\Lambda^\\eta$ be the finite-volume [Gibbs distribution](c:gibbs-distribution) of an interaction in $\\Lambda$, with the spins outside $\\Lambda$ fixed to $\\eta$. A [probability measure](c:probability-measure) $\\mu$ on the configuration space $S^{\\mathbb Z^d}$ is a Gibbs measure if, for every finite $\\Lambda$, the [conditional distribution](c:conditional-distribution) of the spins in $\\Lambda$ given the spins outside $\\Lambda$ is $\\pi_\\Lambda^\\eta$ for $\\mu$-almost every outside configuration $\\eta$. These conditions are the DLR equations.",
@@ -877,7 +935,7 @@
    "For simple random walk on $\\{0,1,\\dots,N\\}$ killed at $0$ and $N$, $G(x,y)=2x(N-y)/N$ for $x\\le y$.",
    "On $\\mathbb Z^3$, $G(0,0)=1/(1-q)\\approx1.516$, where $q\\approx0.3405$ is the return probability, and $G(0,x)\\sim\\frac3{2\\pi|x|}$ as $|x|\\to\\infty$.",
    "In $\\mathbb R^3$, the Green function of $-\\Delta$ on the whole space is $G(x,y)=1/(4\\pi|x-y|)$.",
-   "Non-example: simple random walk on $\\mathbb Z^2$ has no finite Green function on the whole lattice. It is recurrent, so $G(0,0)=\\sum_nP^n(0,0)=\\infty$."
+   "Non-example: simple random walk on $\\mathbb Z^2$ has no finite Green function on the whole lattice. It is [recurrent](c:recurrence), so $G(0,0)=\\sum_nP^n(0,0)=\\infty$."
   ],
   "requires": [
    "c:random-walk",
@@ -906,6 +964,34 @@
      "In $\\mathbb R^3$ this gives $G(x,y)=1/(4\\pi|x-y|)$."
     ],
     "why": "It shows that a Green function is a fundamental solution corrected so that it satisfies the boundary conditions."
+   }
+  ]
+ },
+ {
+  "id": "c:ground-state",
+  "reminder": "A ground state is an eigenvector of a Hamiltonian for the lowest point of its spectrum.",
+  "definition": "Let $H$ be a [self-adjoint operator](c:self-adjoint-operator) on a Hilbert space that is bounded below, the [Hamiltonian](c:hamiltonian) of a quantum system. Its ground state energy is $E_0=\\inf\\sigma(H)=\\inf_{\\|\\psi\\|=1}\\langle\\psi,H\\psi\\rangle$. A ground state is a unit vector $\\psi$ with $H\\psi=E_0\\psi$, and it exists exactly when $E_0$ is an [eigenvalue](c:eigenvalue) of $H$.",
+  "examples": [
+   "For the harmonic oscillator $H=-\\tfrac12\\frac{d^2}{dx^2}+\\tfrac12x^2$ on $L^2(\\mathbb R)$, the ground state is $\\psi_0(x)=\\pi^{-1/4}e^{-x^2/2}$, with $E_0=1/2$.",
+   "For two spins $\\tfrac12$ with $H=\\mathbf S_1\\cdot\\mathbf S_2$, the ground state is the singlet $(|{\\uparrow\\downarrow}\\rangle-|{\\downarrow\\uparrow}\\rangle)/\\sqrt2$, with $E_0=-3/4$.",
+   "Non-example: the free Laplacian $H=-\\Delta$ on $L^2(\\mathbb R^d)$ has $\\inf\\sigma(H)=0$ but no ground state. The plane waves $e^{ik\\cdot x}$ with $k\\to0$ approach the energy $0$, but they are not in $L^2$."
+  ],
+  "requires": [
+   "c:hamiltonian",
+   "c:self-adjoint-operator",
+   "c:eigenvector",
+   "c:spectrum-of-an-operator"
+  ],
+  "links": [
+   {
+    "to": "c:eigenvector",
+    "type": "specializes",
+    "steps": [
+     "Let $H$ be self-adjoint and bounded below, with $E_0=\\inf\\sigma(H)$.",
+     "A ground state is a nonzero vector $\\psi$ with $H\\psi=E_0\\psi$.",
+     "So it is an eigenvector of $H$ for the lowest point of the spectrum."
+    ],
+    "why": "It shows that a ground state is the eigenvector that minimizes the energy $\\langle\\psi,H\\psi\\rangle$ over unit vectors."
    }
   ]
  },
@@ -1004,6 +1090,23 @@
   "requires": [
    "c:continuous-function",
    "c:uniform-continuity"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:hubbard-model",
+  "reminder": "The Hubbard model describes electrons that hop between lattice sites with amplitude $t$ and repel with energy $U$ on one site.",
+  "definition": "On a finite [graph](c:graph) $\\Lambda=(V,E)$, the Hubbard model is the [Hamiltonian](c:hamiltonian) $H=-t\\sum_{\\{x,y\\}\\in E}\\sum_{s=\\uparrow,\\downarrow}(c^\\dagger_{xs}c_{ys}+c^\\dagger_{ys}c_{xs})+U\\sum_{x\\in V}n_{x\\uparrow}n_{x\\downarrow}$ on the fermionic [Fock space](c:fock-space). Here $c^\\dagger_{xs}$ and $c_{xs}$ are the fermionic [creation and annihilation operators](c:creation-and-annihilation-operators) of an electron with spin $s$ at $x$, and $n_{xs}=c^\\dagger_{xs}c_{xs}$. The hopping amplitude is $t>0$, and the on-site repulsion is $U\\ge0$.",
+  "examples": [
+   "For $U=0$, the model describes free electrons. On the torus $(\\mathbb Z/L\\mathbb Z)^d$ a Fourier transform diagonalizes it, with one-electron energies $-2t\\sum_{i=1}^d\\cos k_i$.",
+   "For two sites and two electrons, the ground state energy is $(U-\\sqrt{U^2+16t^2})/2$, which is close to $-4t^2/U$ for $U\\gg t$.",
+   "Non-example: the Bose–Hubbard model is not the Hubbard model. It uses bosons, so a site can hold any number of particles, but the Pauli principle allows at most one electron per spin and site."
+  ],
+  "requires": [
+   "c:creation-and-annihilation-operators",
+   "c:fock-space",
+   "c:hamiltonian",
+   "c:graph"
   ],
   "links": []
  },
@@ -1254,120 +1357,32 @@
   ]
  },
  {
-  "id": "c:loss-function",
-  "reminder": "A loss function $L(\\theta,a)$ gives the cost of action $a$ when the true state is $\\theta$.",
-  "definition": "In statistical decision theory, a loss function is a measurable map $L:\\Theta\\times\\mathcal A\\to[0,\\infty)$, where $L(\\theta,a)$ is the cost of the action or estimate $a$ when the true parameter is $\\theta$. For a decision rule $\\delta$ and data $X$ with law $P_\\theta$, the [risk](c:risk) is the expected loss $R(\\theta,\\delta)=\\mathbb E_\\theta[L(\\theta,\\delta(X))]$. In prediction, a loss $\\ell(\\hat y,y)$ compares a prediction $\\hat y$ with the observed outcome $y$.",
+  "id": "c:log-concave-measure",
+  "reminder": "A log-concave measure typically has a density $e^{-V}$ with $V$ convex, like a Gaussian or a uniform law on a convex body.",
+  "definition": "A [probability measure](c:probability-measure) $\\mu$ on $\\mathbb R^n$ is log-concave if $\\mu(\\lambda A+(1-\\lambda)B)\\ge\\mu(A)^\\lambda\\mu(B)^{1-\\lambda}$ for all compact sets $A,B\\subseteq\\mathbb R^n$ and all $\\lambda\\in[0,1]$. By Borell's theorem, when $\\mu$ is not supported on a hyperplane, this holds exactly when $\\mu$ has a density $e^{-V}$ with respect to [Lebesgue measure](c:lebesgue-measure) for a [convex function](c:convex-function) $V:\\mathbb R^n\\to(-\\infty,+\\infty]$.",
   "examples": [
-   "The squared loss $L(\\theta,a)=(a-\\theta)^2$ has as risk the [mean squared error](c:mean-squared-error) of the estimator.",
-   "The 0-1 loss $\\ell(\\hat y,y)=\\mathbf 1\\{\\hat y\\ne y\\}$ in classification has as risk the probability of a wrong label.",
-   "The absolute loss $|a-y|$ has expected value $\\mathbb E|a-Y|$, which is minimal when $a$ is a median of $Y$.",
-   "Non-example: $L(\\theta,a)=a-\\theta$ is not a loss function, because it takes negative values and its expectation tends to $-\\infty$ as $a\\to-\\infty$, so no action is optimal."
-  ],
-  "requires": [
-   "c:random-variable",
-   "c:expected-value",
-   "c:measurable-function"
-  ],
-  "links": [
-   {
-    "to": "c:nonnegative-measurable-function",
-    "type": "specializes",
-    "steps": [
-     "Give the parameter set $\\Theta$ and the action set $\\mathcal A$ each a sigma-algebra.",
-     "A loss function is a nonnegative measurable function on the product $\\Theta\\times\\mathcal A$.",
-     "The decision meaning comes from the risk, which integrates the loss against the law of the data."
-    ],
-    "why": "It shows that a loss function is an ordinary nonnegative measurable function, so the integration theory for such functions applies to risks."
-   }
-  ]
- },
- {
-  "id": "c:markov-semigroup",
-  "reminder": "A Markov semigroup $(P_t)$ gives the expected value $P_tf(x)=\\mathbb E_x f(X_t)$ of a Markov process at time $t$.",
-  "definition": "A Markov semigroup is a family $(P_t)_{t\\ge0}$ of linear operators on bounded measurable functions with $P_0=I$, $P_{t+s}=P_tP_s$, $P_tf\\ge0$ whenever $f\\ge0$, and $P_t1=1$. Typically $P_tf(x)=\\mathbb E[f(X_t)\\mid X_0=x]$ for a time-homogeneous Markov process $(X_t)$, and each $P_t$ is given by a [Markov kernel](c:markov-kernel). Its generator is $Lf=\\lim_{t\\downarrow0}(P_tf-f)/t$, and a measure $\\mu$ is invariant when $\\int P_tf\\,d\\mu=\\int f\\,d\\mu$ for all $t$.",
-  "examples": [
-   "The heat semigroup $P_tf(x)=\\mathbb E f(x+B_t)$ of [Brownian motion](c:brownian-motion) has generator $\\tfrac12\\Delta$.",
-   "For a continuous-time Markov chain on a finite set with rate matrix $Q$, $P_t=e^{tQ}$.",
-   "The Ornstein–Uhlenbeck semigroup $P_tf(x)=\\mathbb E f(e^{-t}x+\\sqrt{1-e^{-2t}}\\,Z)$, with $Z\\sim N(0,1)$, has invariant measure $N(0,1)$.",
-   "Non-example: $P_tf=e^{-t}f$ is a positive semigroup, but $P_t1=e^{-t}\\ne1$. It describes a process that is killed at rate $1$, so it is only sub-Markov."
-  ],
-  "requires": [
-   "c:markov-kernel",
-   "c:stochastic-process",
-   "c:conditional-expectation"
-  ],
-  "links": [
-   {
-    "to": "c:c0-semigroup",
-    "type": "specializes",
-    "steps": [
-     "Let the semigroup act on $L^2(\\mu)$ for an invariant measure $\\mu$, where each $P_t$ is a contraction.",
-     "Under the usual continuity assumption, $t\\mapsto P_tf$ is continuous in norm, so $(P_t)$ is a $C_0$-semigroup.",
-     "The Markov property adds positivity and conservation of mass, $P_t1=1$."
-    ],
-    "why": "It shows that the analytic theory of $C_0$-semigroups, with generators and resolvents, applies to Markov processes."
-   }
-  ]
- },
- {
-  "id": "c:max-domain-of-attraction",
-  "reminder": "The maximum domain of attraction of $G$ collects the laws whose normalized sample maxima converge in distribution to $G$.",
-  "definition": "Let $G$ be an [extreme value distribution](c:extreme-value-distribution). A [distribution function](c:distribution-function) $F$ lies in the maximum domain of attraction of $G$, written $F\\in\\mathrm{MDA}(G)$, when for [iid random variables](c:iid-random-variables) $X_1,X_2,\\dots$ with distribution function $F$ and $M_n=\\max(X_1,\\dots,X_n)$ there are constants $a_n>0$ and $b_n\\in\\mathbb{R}$ with $(M_n-b_n)/a_n\\to G$ in distribution. Equivalently, $F(a_nx+b_n)^n\\to G(x)$ for every real $x$.",
-  "examples": [
-   "The [exponential distribution](c:exponential-distribution) with rate $1$ lies in the MDA of the [Gumbel distribution](c:gumbel-distribution): with $a_n=1$ and $b_n=\\log n$, $F(x+\\log n)^n=(1-e^{-x}/n)^n\\to\\exp(-e^{-x})$.",
-   "A Pareto law with $1-F(x)=x^{-\\alpha}$ for $x\\ge1$ lies in the MDA of the [Frechet distribution](c:frechet-distribution) $\\Phi_\\alpha$, with $a_n=n^{1/\\alpha}$ and $b_n=0$.",
-   "The uniform law on $[0,1]$ lies in the MDA of the reversed Weibull law $\\Psi_1(x)=e^{x}$ for $x<0$, because $P(n(M_n-1)\\le x)=(1+x/n)^n\\to e^x$.",
-   "Non-example: the [Poisson distribution](c:poisson-distribution) lies in no maximum domain of attraction, because $P(X>k)/P(X>k-1)\\to0$, while a nondegenerate limit for an integer-valued law needs this ratio to tend to $1$."
-  ],
-  "requires": [
-   "c:extreme-value-distribution",
-   "c:distribution-function",
-   "c:iid-random-variables",
-   "c:convergence-in-distribution"
-  ],
-  "links": []
- },
- {
-  "id": "c:metropolis-hastings-algorithm",
-  "reminder": "Metropolis–Hastings proposes a move with a kernel $q$ and accepts it with a probability that makes $\\pi$ stationary.",
-  "definition": "Let $\\pi$ be a target distribution with $\\pi(x)>0$ on a countable set $S$, and let $q$ be a proposal [Markov kernel](c:markov-kernel) on $S$. From state $x$, the Metropolis–Hastings chain proposes $y\\sim q(x,\\cdot)$ and moves to $y$ with probability $a(x,y)=\\min\\{1,\\pi(y)q(y,x)/(\\pi(x)q(x,y))\\}$, and otherwise it stays at $x$. The resulting chain satisfies [detailed balance](c:detailed-balance) with respect to $\\pi$, so $\\pi$ is a [stationary distribution](c:stationary-distribution).",
-  "examples": [
-   "With a symmetric proposal $q(x,y)=q(y,x)$, the rule becomes the Metropolis rule $a(x,y)=\\min\\{1,\\pi(y)/\\pi(x)\\}$.",
-   "For the [Ising model](c:ising-model) at inverse temperature $\\beta$, propose to flip the spin at a uniform random site and accept with probability $\\min\\{1,e^{-\\beta\\Delta H}\\}$, where $\\Delta H$ is the energy change.",
-   "Non-example: on the path with vertices $0,1,2$, the chain that always accepts simple random walk proposals has stationary law $(1/4,1/2,1/4)$. So it does not sample the uniform target, and the acceptance step is necessary."
-  ],
-  "requires": [
-   "c:stationary-distribution",
-   "c:detailed-balance",
-   "c:markov-kernel",
-   "c:monte-carlo-method"
-  ],
-  "links": [
-   {
-    "to": "c:monte-carlo-method",
-    "type": "specializes",
-    "steps": [
-     "A Monte Carlo method estimates an expectation by an average over random samples.",
-     "Metropolis–Hastings produces the samples as successive states of a Markov chain with stationary law $\\pi$.",
-     "For an irreducible chain, the ergodic theorem makes time averages converge to expectations under $\\pi$."
-    ],
-    "why": "It shows that Markov chain Monte Carlo replaces independent samples by dependent samples from a chain that is easy to run."
-   }
-  ]
- },
- {
-  "id": "c:microcanonical-ensemble",
-  "reminder": "The law of a system's microstates conditioned on one fixed value of its energy.",
-  "definition": "Given a prior [probability measure](c:probability-measure) $P_N$ on microstates and a mean energy $h_N$, the microcanonical ensemble at mean energy $u$ is $P_N$ conditioned on $h_N \\in [u - r, u + r]$, with $r \\to 0$. It describes an isolated system with a fixed energy, while the [canonical ensemble](c:canonical-ensemble) describes a system in a heat bath.",
-  "examples": [
-   "For $N$ two-level atoms with the uniform prior, the microcanonical ensemble at energy $k$ is the uniform law on the $\\binom{N}{k}$ configurations with exactly $k$ excited atoms.",
-   "For an ideal gas of $N$ particles in a box, the microcanonical ensemble at total kinetic energy $E$ makes the positions uniform in the box and the momenta uniform on the sphere $|p|^2 = 2mE$.",
-   "Non-example: the Gibbs law $e^{-\\beta H}/Z$ gives a positive weight to every energy, so it is the canonical and not the microcanonical ensemble."
+   "Every nondegenerate [Gaussian measure](c:gaussian-measure) is log-concave, since $V(x)=\\tfrac12(x-m)^\\top\\Sigma^{-1}(x-m)+c$ is convex.",
+   "The uniform measure on a [convex body](c:convex-body) $K$ is log-concave, with $V$ constant on $K$ and $V=+\\infty$ outside $K$.",
+   "The [exponential distribution](c:exponential-distribution) with rate $1$ is log-concave, with $V(x)=x$ for $x\\ge0$ and $V=+\\infty$ on $(-\\infty,0)$.",
+   "Non-example: the Cauchy distribution with density $1/(\\pi(1+x^2))$ is not log-concave, because $V(x)=\\log(1+x^2)+\\log\\pi$ has $V''(x)<0$ for $|x|>1$."
   ],
   "requires": [
    "c:probability-measure",
-   "c:canonical-ensemble"
+   "c:convex-function",
+   "c:lebesgue-measure",
+   "c:probability-density-function"
   ],
-  "links": []
+  "links": [
+   {
+    "to": "c:gaussian-measure",
+    "type": "generalizes",
+    "steps": [
+     "Take a log-concave density $e^{-V}$ on $\\mathbb R^n$.",
+     "Choose $V(x)=\\tfrac12(x-m)^\\top\\Sigma^{-1}(x-m)+c$, a convex quadratic with $\\Sigma$ positive definite.",
+     "Then $e^{-V}$ is the density of the Gaussian measure with mean $m$ and covariance $\\Sigma$."
+    ],
+    "why": "It shows that Gaussian measures are the log-concave measures with a quadratic potential, so results for log-concave measures apply to them."
+   }
+  ]
  }
 ]

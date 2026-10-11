@@ -1,5 +1,152 @@
 [
  {
+  "id": "c:log-sobolev-inequality",
+  "reminder": "A logarithmic Sobolev inequality bounds the entropy of $f^2$ by a constant times the Dirichlet energy of $f$.",
+  "definition": "A [probability measure](c:probability-measure) $\\mu$ on $\\mathbb R^n$ satisfies a logarithmic Sobolev inequality with constant $C>0$ if $\\mathrm{Ent}_\\mu(f^2)\\le2C\\int|\\nabla f|^2\\,d\\mu$ for every smooth function $f$. Here $\\mathrm{Ent}_\\mu(g)=\\int g\\log g\\,d\\mu-\\int g\\,d\\mu\\,\\log\\int g\\,d\\mu$ for $g\\ge0$. For a [Markov semigroup](c:markov-semigroup) with invariant measure $\\mu$, the Dirichlet form $\\mathcal E(f,f)$ replaces $\\int|\\nabla f|^2\\,d\\mu$.",
+  "examples": [
+   "The standard [Gaussian measure](c:gaussian-measure) on $\\mathbb R^n$ satisfies it with $C=1$, for every $n$ (Gross, 1975).",
+   "If $\\mu=e^{-V}dx$ with $\\nabla^2V\\ge\\kappa I$ for some $\\kappa>0$, the Bakry–Émery criterion gives the inequality with $C=1/\\kappa$.",
+   "For a probability density $g$ with respect to $\\mu$, $\\mathrm{Ent}_\\mu(g)$ is the [relative entropy](c:relative-entropy) of $g\\,\\mu$ with respect to $\\mu$.",
+   "Non-example: the two-sided exponential law $\\tfrac12e^{-|x|}dx$ satisfies a Poincaré inequality but no logarithmic Sobolev inequality. The latter would force Gaussian tails for the function $f(x)=x$."
+  ],
+  "requires": [
+   "c:poincare-inequality",
+   "c:gradient",
+   "c:probability-measure",
+   "c:relative-entropy"
+  ],
+  "links": [
+   {
+    "to": "c:poincare-inequality",
+    "type": "specializes",
+    "steps": [
+     "Apply the inequality to $f=1+\\varepsilon g$, where $g$ is smooth and bounded with $\\int g\\,d\\mu=0$.",
+     "As $\\varepsilon\\to0$, a Taylor expansion gives $\\mathrm{Ent}_\\mu(f^2)=2\\varepsilon^2\\mathrm{Var}_\\mu(g)+o(\\varepsilon^2)$.",
+     "The right side equals $2C\\varepsilon^2\\int|\\nabla g|^2\\,d\\mu$.",
+     "Divide by $2\\varepsilon^2$ and let $\\varepsilon\\to0$ to get the Poincaré inequality with the same constant $C$."
+    ],
+    "why": "It shows that a logarithmic Sobolev inequality is stronger than a Poincaré inequality with the same constant."
+   }
+  ]
+ },
+ {
+  "id": "c:loss-function",
+  "reminder": "A loss function $L(\\theta,a)$ gives the cost of action $a$ when the true state is $\\theta$.",
+  "definition": "In statistical decision theory, a loss function is a measurable map $L:\\Theta\\times\\mathcal A\\to[0,\\infty)$, where $L(\\theta,a)$ is the cost of the action or estimate $a$ when the true parameter is $\\theta$. For a decision rule $\\delta$ and data $X$ with law $P_\\theta$, the [risk](c:risk) is the expected loss $R(\\theta,\\delta)=\\mathbb E_\\theta[L(\\theta,\\delta(X))]$. In prediction, a loss $\\ell(\\hat y,y)$ compares a prediction $\\hat y$ with the observed outcome $y$.",
+  "examples": [
+   "The squared loss $L(\\theta,a)=(a-\\theta)^2$ has as risk the [mean squared error](c:mean-squared-error) of the estimator.",
+   "The 0-1 loss $\\ell(\\hat y,y)=\\mathbf 1\\{\\hat y\\ne y\\}$ in classification has as risk the probability of a wrong label.",
+   "The absolute loss $|a-y|$ has expected value $\\mathbb E|a-Y|$, which is minimal when $a$ is a median of $Y$.",
+   "Non-example: $L(\\theta,a)=a-\\theta$ is not a loss function, because it takes negative values and its expectation tends to $-\\infty$ as $a\\to-\\infty$, so no action is optimal."
+  ],
+  "requires": [
+   "c:random-variable",
+   "c:expected-value",
+   "c:measurable-function"
+  ],
+  "links": [
+   {
+    "to": "c:nonnegative-measurable-function",
+    "type": "specializes",
+    "steps": [
+     "Give the parameter set $\\Theta$ and the action set $\\mathcal A$ each a sigma-algebra.",
+     "A loss function is a nonnegative measurable function on the product $\\Theta\\times\\mathcal A$.",
+     "The decision meaning comes from the risk, which integrates the loss against the law of the data."
+    ],
+    "why": "It shows that a loss function is an ordinary nonnegative measurable function, so the integration theory for such functions applies to risks."
+   }
+  ]
+ },
+ {
+  "id": "c:markov-semigroup",
+  "reminder": "A Markov semigroup $(P_t)$ gives the expected value $P_tf(x)=\\mathbb E_x f(X_t)$ of a Markov process at time $t$.",
+  "definition": "A Markov semigroup is a family $(P_t)_{t\\ge0}$ of linear operators on bounded measurable functions with $P_0=I$, $P_{t+s}=P_tP_s$, $P_tf\\ge0$ whenever $f\\ge0$, and $P_t1=1$. Typically $P_tf(x)=\\mathbb E[f(X_t)\\mid X_0=x]$ for a time-homogeneous Markov process $(X_t)$, and each $P_t$ is given by a [Markov kernel](c:markov-kernel). Its generator is $Lf=\\lim_{t\\downarrow0}(P_tf-f)/t$, and a measure $\\mu$ is invariant when $\\int P_tf\\,d\\mu=\\int f\\,d\\mu$ for all $t$.",
+  "examples": [
+   "The heat semigroup $P_tf(x)=\\mathbb E f(x+B_t)$ of [Brownian motion](c:brownian-motion) has generator $\\tfrac12\\Delta$.",
+   "For a continuous-time Markov chain on a finite set with rate matrix $Q$, $P_t=e^{tQ}$.",
+   "The Ornstein–Uhlenbeck semigroup $P_tf(x)=\\mathbb E f(e^{-t}x+\\sqrt{1-e^{-2t}}\\,Z)$, with $Z\\sim N(0,1)$, has invariant measure $N(0,1)$.",
+   "Non-example: $P_tf=e^{-t}f$ is a positive semigroup, but $P_t1=e^{-t}\\ne1$. It describes a process that is killed at rate $1$, so it is only sub-Markov."
+  ],
+  "requires": [
+   "c:markov-kernel",
+   "c:stochastic-process",
+   "c:conditional-expectation"
+  ],
+  "links": [
+   {
+    "to": "c:c0-semigroup",
+    "type": "specializes",
+    "steps": [
+     "Let the semigroup act on $L^2(\\mu)$ for an invariant measure $\\mu$, where each $P_t$ is a contraction.",
+     "Under the usual continuity assumption, $t\\mapsto P_tf$ is continuous in norm, so $(P_t)$ is a $C_0$-semigroup.",
+     "The Markov property adds positivity and conservation of mass, $P_t1=1$."
+    ],
+    "why": "It shows that the analytic theory of $C_0$-semigroups, with generators and resolvents, applies to Markov processes."
+   }
+  ]
+ },
+ {
+  "id": "c:max-domain-of-attraction",
+  "reminder": "The maximum domain of attraction of $G$ collects the laws whose normalized sample maxima converge in distribution to $G$.",
+  "definition": "Let $G$ be an [extreme value distribution](c:extreme-value-distribution). A [distribution function](c:distribution-function) $F$ lies in the maximum domain of attraction of $G$, written $F\\in\\mathrm{MDA}(G)$, when for [iid random variables](c:iid-random-variables) $X_1,X_2,\\dots$ with distribution function $F$ and $M_n=\\max(X_1,\\dots,X_n)$ there are constants $a_n>0$ and $b_n\\in\\mathbb{R}$ with $(M_n-b_n)/a_n\\to G$ in distribution. Equivalently, $F(a_nx+b_n)^n\\to G(x)$ for every real $x$.",
+  "examples": [
+   "The [exponential distribution](c:exponential-distribution) with rate $1$ lies in the MDA of the [Gumbel distribution](c:gumbel-distribution): with $a_n=1$ and $b_n=\\log n$, $F(x+\\log n)^n=(1-e^{-x}/n)^n\\to\\exp(-e^{-x})$.",
+   "A Pareto law with $1-F(x)=x^{-\\alpha}$ for $x\\ge1$ lies in the MDA of the [Frechet distribution](c:frechet-distribution) $\\Phi_\\alpha$, with $a_n=n^{1/\\alpha}$ and $b_n=0$.",
+   "The uniform law on $[0,1]$ lies in the MDA of the reversed Weibull law $\\Psi_1(x)=e^{x}$ for $x<0$, because $P(n(M_n-1)\\le x)=(1+x/n)^n\\to e^x$.",
+   "Non-example: the [Poisson distribution](c:poisson-distribution) lies in no maximum domain of attraction, because $P(X>k)/P(X>k-1)\\to0$, while a nondegenerate limit for an integer-valued law needs this ratio to tend to $1$."
+  ],
+  "requires": [
+   "c:extreme-value-distribution",
+   "c:distribution-function",
+   "c:iid-random-variables",
+   "c:convergence-in-distribution"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:metropolis-hastings-algorithm",
+  "reminder": "Metropolis–Hastings proposes a move with a kernel $q$ and accepts it with a probability that makes $\\pi$ stationary.",
+  "definition": "Let $\\pi$ be a target distribution with $\\pi(x)>0$ on a countable set $S$, and let $q$ be a proposal [Markov kernel](c:markov-kernel) on $S$. From state $x$, the Metropolis–Hastings chain proposes $y\\sim q(x,\\cdot)$ and moves to $y$ with probability $a(x,y)=\\min\\{1,\\pi(y)q(y,x)/(\\pi(x)q(x,y))\\}$, and otherwise it stays at $x$. The resulting chain satisfies [detailed balance](c:detailed-balance) with respect to $\\pi$, so $\\pi$ is a [stationary distribution](c:stationary-distribution).",
+  "examples": [
+   "With a symmetric proposal $q(x,y)=q(y,x)$, the rule becomes the Metropolis rule $a(x,y)=\\min\\{1,\\pi(y)/\\pi(x)\\}$.",
+   "For the [Ising model](c:ising-model) at inverse temperature $\\beta$, propose to flip the spin at a uniform random site and accept with probability $\\min\\{1,e^{-\\beta\\Delta H}\\}$, where $\\Delta H$ is the energy change.",
+   "Non-example: on the path with vertices $0,1,2$, the chain that always accepts simple random walk proposals has stationary law $(1/4,1/2,1/4)$. So it does not sample the uniform target, and the acceptance step is necessary."
+  ],
+  "requires": [
+   "c:stationary-distribution",
+   "c:detailed-balance",
+   "c:markov-kernel",
+   "c:monte-carlo-method"
+  ],
+  "links": [
+   {
+    "to": "c:monte-carlo-method",
+    "type": "specializes",
+    "steps": [
+     "A Monte Carlo method estimates an expectation by an average over random samples.",
+     "Metropolis–Hastings produces the samples as successive states of a Markov chain with stationary law $\\pi$.",
+     "For an irreducible chain, the ergodic theorem makes time averages converge to expectations under $\\pi$."
+    ],
+    "why": "It shows that Markov chain Monte Carlo replaces independent samples by dependent samples from a chain that is easy to run."
+   }
+  ]
+ },
+ {
+  "id": "c:microcanonical-ensemble",
+  "reminder": "The law of a system's microstates conditioned on one fixed value of its energy.",
+  "definition": "Given a prior [probability measure](c:probability-measure) $P_N$ on microstates and a mean energy $h_N$, the microcanonical ensemble at mean energy $u$ is $P_N$ conditioned on $h_N \\in [u - r, u + r]$, with $r \\to 0$. It describes an isolated system with a fixed energy, while the [canonical ensemble](c:canonical-ensemble) describes a system in a heat bath.",
+  "examples": [
+   "For $N$ two-level atoms with the uniform prior, the microcanonical ensemble at energy $k$ is the uniform law on the $\\binom{N}{k}$ configurations with exactly $k$ excited atoms.",
+   "For an ideal gas of $N$ particles in a box, the microcanonical ensemble at total kinetic energy $E$ makes the positions uniform in the box and the momenta uniform on the sphere $|p|^2 = 2mE$.",
+   "Non-example: the Gibbs law $e^{-\\beta H}/Z$ gives a positive weight to every energy, so it is the canonical and not the microcanonical ensemble."
+  ],
+  "requires": [
+   "c:probability-measure",
+   "c:canonical-ensemble"
+  ],
+  "links": []
+ },
+ {
   "id": "c:mixing-time",
   "reminder": "The mixing time is the first time the worst-case total variation distance to stationarity is at most $\\varepsilon$.",
   "definition": "Let $P$ be the transition matrix of an irreducible and aperiodic [Markov chain](c:markov-chain) on a finite set, with [stationary distribution](c:stationary-distribution) $\\pi$. Let $d(t)=\\max_x\\|P^t(x,\\cdot)-\\pi\\|_{\\mathrm{TV}}$ be the worst-case [total variation distance](c:total-variation-distance) after $t$ steps. The mixing time is $t_{\\mathrm{mix}}(\\varepsilon)=\\min\\{t\\ge0:d(t)\\le\\varepsilon\\}$, and $t_{\\mathrm{mix}}=t_{\\mathrm{mix}}(1/4)$.",
@@ -84,7 +231,7 @@
   "definition": "Bernoulli bond percolation with parameter $p\\in[0,1]$ on a [graph](c:graph) $G=(V,E)$ declares each edge open with probability $p$ and closed otherwise, independently of all other edges. Its law is the [product measure](c:product-measure) $\\mathbb P_p=\\bigotimes_{e\\in E}\\mathrm{Bernoulli}(p)$ on $\\{0,1\\}^E$. The open clusters are the [connected components](c:connected-component) of the graph $(V,\\{e:\\omega(e)=1\\})$, and site percolation does the same with vertices.",
   "examples": [
    "On $\\mathbb Z^2$, bond percolation has an infinite open cluster almost surely exactly when $p>1/2$ (Kesten, 1980).",
-   "On the rooted tree where each vertex has two children, the open cluster of the root is a Galton–Watson tree with Binomial$(2,p)$ offspring. So it is infinite with positive probability exactly when $p>1/2$.",
+   "On the rooted tree where each vertex has two children, the open cluster of the root is a [Galton–Watson tree](c:branching-process) with Binomial$(2,p)$ offspring. So it is infinite with positive probability exactly when $p>1/2$.",
    "On the complete graph $K_n$, Bernoulli percolation with $p=c/n$ is the Erdős–Rényi random graph $G(n,c/n)$.",
    "Non-example: the [uniform spanning tree](c:uniform-spanning-tree) is a random subgraph, but its edges are dependent. On a cycle it always removes exactly one edge."
   ],
@@ -146,6 +293,23 @@
     "why": "It shows that the critical temperature is the location of a phase transition when temperature is the only parameter that varies."
    }
   ]
+ },
+ {
+  "id": "c:poincare-inequality",
+  "reminder": "A Poincaré inequality bounds the variance of a function by a constant times the mean square of its gradient.",
+  "definition": "A [probability measure](c:probability-measure) $\\mu$ on $\\mathbb R^n$ satisfies a Poincaré inequality with constant $C>0$ if $\\mathrm{Var}_\\mu(f)\\le C\\int|\\nabla f|^2\\,d\\mu$ for every smooth function $f$ with $\\int f^2\\,d\\mu<\\infty$. For $\\mu=e^{-V}dx$, the best constant is $1/\\lambda_1$, where $\\lambda_1$ is the [spectral gap](c:spectral-gap) of the generator $L=\\Delta-\\nabla V\\cdot\\nabla$. For a reversible [Markov chain](c:markov-chain), the Dirichlet form $\\mathcal E(f,f)$ replaces $\\int|\\nabla f|^2\\,d\\mu$.",
+  "examples": [
+   "The standard Gaussian measure satisfies it with $C=1$, so $\\mathrm{Var}(f(Z))\\le\\mathbb E|\\nabla f(Z)|^2$ for $Z\\sim N(0,I_n)$.",
+   "The uniform measure on $[0,1]$ satisfies it with the best constant $C=1/\\pi^2$, attained by $f(x)=\\cos(\\pi x)$.",
+   "The two-sided exponential law $\\tfrac12e^{-|x|}dx$ satisfies it with $C=4$.",
+   "Non-example: the uniform law on $[0,1]\\cup[2,3]$ satisfies no Poincaré inequality. A smooth $f$ equal to $0$ on $[0,1]$ and $1$ on $[2,3]$ has $\\nabla f=0$ on the support but variance $1/4$."
+  ],
+  "requires": [
+   "c:variance",
+   "c:gradient",
+   "c:probability-measure"
+  ],
+  "links": []
  },
  {
   "id": "c:point-process",
@@ -424,6 +588,33 @@
   ]
  },
  {
+  "id": "c:recurrence",
+  "reminder": "A Markov chain is recurrent when it returns to its starting state with probability one.",
+  "definition": "A state $x$ of a [Markov chain](c:markov-chain) is recurrent if $\\mathbb P_x(\\tau_x^+<\\infty)=1$, where $\\tau_x^+=\\min\\{n\\ge1:X_n=x\\}$ is the return time, and it is transient otherwise. Equivalently, $x$ is recurrent exactly when $\\sum_{n\\ge0}P^n(x,x)=\\infty$, that is, when the expected number of visits to $x$ is infinite. In an irreducible chain all states are recurrent or all are transient, and the chain is called recurrent or transient accordingly.",
+  "examples": [
+   "Simple random walk on $\\mathbb Z$ and on $\\mathbb Z^2$ is recurrent, and on $\\mathbb Z^d$ with $d\\ge3$ it is transient (Pólya's theorem).",
+   "Every irreducible chain on a finite state space is recurrent.",
+   "Non-example: the walk on $\\mathbb Z$ that steps $+1$ with probability $2/3$ and $-1$ with probability $1/3$ is transient. It drifts to $+\\infty$ and returns to $0$ with probability $2/3$."
+  ],
+  "requires": [
+   "c:markov-chain",
+   "c:stopping-time",
+   "c:conditional-probability"
+  ],
+  "links": [
+   {
+    "to": "c:positive-recurrence",
+    "type": "generalizes",
+    "steps": [
+     "A recurrent state $x$ has $\\tau_x^+<\\infty$ almost surely under $\\mathbb P_x$.",
+     "Positive recurrence adds the condition $\\mathbb E_x[\\tau_x^+]<\\infty$.",
+     "Simple random walk on $\\mathbb Z$ is recurrent but not positive recurrent, because $\\mathbb E_0[\\tau_0^+]=\\infty$."
+    ],
+    "why": "It shows that recurrence asks only for a finite return time, while positive recurrence asks for a finite mean return time."
+   }
+  ]
+ },
+ {
   "id": "c:regularly-varying-function",
   "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
   "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
@@ -554,6 +745,33 @@
   "links": []
  },
  {
+  "id": "c:semicircle-distribution",
+  "reminder": "The semicircle distribution has density $\\frac1{2\\pi}\\sqrt{4-x^2}$ on $[-2,2]$, and its even moments are the Catalan numbers.",
+  "definition": "The standard semicircle distribution is the probability distribution on $\\mathbb R$ with [density](c:probability-density-function) $\\frac1{2\\pi}\\sqrt{4-x^2}$ on $[-2,2]$ and $0$ outside. Its odd [moments](c:moment) are $0$, and its moment of order $2k$ is the [Catalan number](c:catalan-number) $C_k=\\frac1{k+1}\\binom{2k}k$. It is the limit of the empirical spectral measures of normalized [Wigner matrices](c:wigner-matrix), and it is the central limit law of free probability.",
+  "examples": [
+   "Its mean is $0$, its variance is $C_1=1$, and its fourth moment is $C_2=2$.",
+   "Its Stieltjes transform is $G(z)=\\frac{z-\\sqrt{z^2-4}}2$, which solves $G(z)^2-zG(z)+1=0$.",
+   "Non-example: the standard normal distribution has the same mean and variance, but its fourth moment is $3$, not $2$."
+  ],
+  "requires": [
+   "c:probability-density-function",
+   "c:moment",
+   "c:catalan-number"
+  ],
+  "links": [
+   {
+    "to": "c:probability-distribution",
+    "type": "specializes",
+    "steps": [
+     "Let $f(x)=\\frac1{2\\pi}\\sqrt{4-x^2}$ on $[-2,2]$ and $f=0$ elsewhere.",
+     "Then $f\\ge0$, and $\\int f\\,dx=1$ because the half-disc of radius $2$ has area $2\\pi$.",
+     "So $f$ is a probability density, and the semicircle law is the distribution with this density."
+    ],
+    "why": "It shows that the semicircle law is an ordinary compactly supported distribution, so all its moments exist."
+   }
+  ]
+ },
+ {
   "id": "c:semimartingale",
   "reminder": "A semimartingale is a local martingale plus an adapted process of finite variation.",
   "definition": "An adapted [càdlàg](c:is-cadlag) process $X$ is a semimartingale when $X_t=X_0+M_t+A_t$, where $M$ is a [local martingale](c:local-martingale) with $M_0=0$ and $A$ is an adapted càdlàg process with $A_0=0$ whose paths have [bounded variation](c:bounded-variation) on every bounded interval. The decomposition is not unique in general, but a continuous $X$ has exactly one decomposition with continuous $M$ and $A$. By the Bichteler–Dellacherie theorem, the semimartingales are exactly the good integrators for stochastic integrals.",
@@ -649,6 +867,24 @@
     "why": "It shows that the Snell envelope is one particular supermartingale, the minimal one above the rewards, and this minimality gives optimal stopping rules."
    }
   ]
+ },
+ {
+  "id": "c:spin-glass",
+  "reminder": "A spin glass is a spin system whose couplings are random and take both signs, which causes frustration.",
+  "definition": "A spin glass is a spin system with a random Hamiltonian such as $H_J(\\sigma)=-\\sum_{x\\sim y}J_{xy}\\sigma_x\\sigma_y$, where the couplings $J_{xy}$ are [iid](c:iid-random-variables) random variables with a symmetric law, for example $N(0,1)$ or $\\pm1$ with equal probability. For a fixed realization of $J$, one studies the random [Gibbs distribution](c:gibbs-distribution) $e^{-\\beta H_J(\\sigma)}/Z_J$. The main quantity is the quenched [free energy](c:free-energy), built from $\\mathbb E\\log Z_J$.",
+  "examples": [
+   "The Edwards–Anderson model is the spin glass on $\\mathbb Z^d$ with nearest-neighbor Gaussian couplings.",
+   "The Sherrington–Kirkpatrick model is the spin glass on the complete graph with couplings $g_{ij}/\\sqrt N$.",
+   "On a triangle with couplings $1$, $1$ and $-1$, no spin configuration satisfies all three bonds. This frustration is typical of spin glasses.",
+   "Non-example: the Mattis model $J_{xy}=\\xi_x\\xi_y$ with random signs $\\xi_x$ has couplings of both signs, but the change $\\sigma_x\\mapsto\\xi_x\\sigma_x$ turns it into the ferromagnet. So it has no frustration and is not a true spin glass."
+  ],
+  "requires": [
+   "c:ising-model",
+   "c:gibbs-distribution",
+   "c:iid-random-variables",
+   "c:free-energy"
+  ],
+  "links": []
  },
  {
   "id": "c:spontaneous-magnetization",
@@ -982,6 +1218,25 @@
   "links": []
  },
  {
+  "id": "c:tracy-widom-distribution",
+  "reminder": "The limit law of the centred and rescaled largest eigenvalue of a large Gaussian unitary random matrix.",
+  "definition": "The Tracy-Widom distribution ($\\beta = 2$) is the law on $\\mathbb{R}$ with distribution function $F_2(s) = \\det(I - A)_{L^2[s,\\infty)} = \\exp\\big(-\\int_s^\\infty (x - s)\\, u(x)^2\\, dx\\big)$. Here $A$ is the Airy kernel $A(x,y) = (\\operatorname{Ai}(x)\\operatorname{Ai}'(y) - \\operatorname{Ai}'(x)\\operatorname{Ai}(y))/(x - y)$, and $u$ is the Hastings-McLeod solution of the [Painlevé](c:painleve-transcendent) II equation $u'' = 2u^3 + xu$ with $u(x)^2 \\sim \\operatorname{Ai}(x)^2$ as $x \\to +\\infty$.",
+  "examples": [
+   "For a GUE [random matrix](c:random-matrix) normalized so that its eigenvalue distribution tends to the semicircle law on $[-2, 2]$, $N^{2/3}(\\lambda_{\\max} - 2)$ converges in law to $F_2$.",
+   "The longest increasing subsequence $l_N$ of a uniform random permutation satisfies $(l_N - 2\\sqrt{N})/N^{1/6} \\to F_2$ in law.",
+   "Non-example: the maximum of $N$ independent standard normal variables, after centring and scaling, tends to the Gumbel law, not to $F_2$."
+  ],
+  "requires": [
+   "c:random-matrix",
+   "c:eigenvalue",
+   "c:painleve-transcendent",
+   "c:airy-function",
+   "c:fredholm-determinant",
+   "c:distribution-function"
+  ],
+  "links": []
+ },
+ {
   "id": "c:triangular-array",
   "reminder": "A triangular array has rows of random variables that are independent within each row, with row lengths that grow.",
   "definition": "A triangular array is a family of real [random variables](c:random-variable) $X_{n,k}$, $n\\ge1$, $1\\le k\\le k_n$, with $k_n\\to\\infty$, such that for each $n$ the variables $X_{n,1},\\dots,X_{n,k_n}$ of row $n$ are [independent](c:independent-random-variables). Variables in different rows can be dependent, and they can live on different probability spaces. Limit theorems for arrays describe the row sums $S_n=X_{n,1}+\\dots+X_{n,k_n}$.",
@@ -1076,21 +1331,5 @@
     "why": "It shows that entanglement entropy is the von Neumann entropy of a subsystem of a pure state."
    }
   ]
- },
- {
-  "id": "c:xy-model",
-  "reminder": "A lattice spin model with unit vectors in the plane and the nearest-neighbor energy −S_i · S_j.",
-  "definition": "The XY model, or plane rotator, on $\\mathbb{Z}^d$ has spins $S_i = (\\cos\\vartheta_i, \\sin\\vartheta_i)$ with the uniform a priori measure on the angles. Its finite-volume [Gibbs measures](c:gibbs-measure) at inverse temperature $\\beta$ have the density proportional to $\\exp(\\beta \\sum_{i \\sim j} S_i \\cdot S_j)$, for a fixed [boundary condition](c:boundary-condition).",
-  "examples": [
-   "In dimension $2$ the spin correlations of the XY model tend to $0$ at every temperature, and at low temperature they decay at least like a power of the distance.",
-   "In dimension $d \\ge 3$ the XY model has spontaneous magnetization at low temperature.",
-   "Non-example: the [Ising model](c:ising-model) is not an XY model, because its spins take only the values $\\pm 1$ and it has no continuous symmetry."
-  ],
-  "requires": [
-   "c:gibbs-measure",
-   "c:boundary-condition",
-   "c:circle"
-  ],
-  "links": []
  }
 ]
