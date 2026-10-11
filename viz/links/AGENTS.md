@@ -21,13 +21,16 @@ theme. The WebMCP tools are in `src/tools.json`; `visual.json` names the same to
 
 ## Provenance
 
-`links.json` holds 2,523 of the 16,431 records of `data/paper-links/paper-links.yaml` in yujieteo/sitedumb
+`links.json` held 2,523 of the 16,431 records of `data/paper-links/paper-links.yaml` in yujieteo/sitedumb
 (private) at commit 8a823b9bd4007b3116d21c12593f227baed2a806, the last commit with the old Paper Links page. It
 was converted once from YAML to JSON, one record a line, with the keys `title`, `url`, `category`, `tags`,
 `authors` and `year` (when the record has them) and `note`. Then every record on `github.com` (9,000) and
 `gitlab.com` (4,908) was removed, because those URLs open a viewer page, not the file. Records on `*.github.io`,
 `*.gitlab.io` and all other hosts stay, in order and unchanged. Do not rewrite a viewer URL to a raw URL: a raw URL
 downloads the file.
+After that, 416 new records were added at the end: 277 Beamer slide PDFs (tag `slides`) and 139 pure-maths papers
+(tag `paper`). Each one is a PDF on a university web server. Each one opened as `application/pdf` with HTTP 200
+when it was added. The slides show Beamer in the PDF metadata and have landscape pages. No old record changed.
 `data/resources/resources.yaml` of the old site is not part of it. Edit `links.json` itself from now on.
 
 In `links.json`, the slash after `/home` or `/Users` is written `\/`. JSON reads it as the same slash, but
