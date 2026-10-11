@@ -44,7 +44,7 @@ impl Out {
 
 fn entries(n: usize) -> String { format!("{n} {}", if n == 1 { "entry" } else { "entries" }) }
 
-/// 2523 as 2,523.
+/// 2939 as 2,939.
 pub fn thousands(n: usize) -> String {
     let s = n.to_string();
     s.chars().enumerate().fold(String::new(), |mut o, (k, c)| { if k > 0 && (s.len() - k) % 3 == 0 { o.push(',') } o.push(c); o })
