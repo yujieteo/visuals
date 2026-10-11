@@ -1,0 +1,3178 @@
+[
+ {
+  "id": "nm:technique-singular-value-decomposition",
+  "statement": "Let $A$ be a complex $m \\times n$ [matrix](c:matrix) of rank $r$. Then $A = U \\Sigma V^*$ for [unitary](c:unitary-operator) matrices $U$, $V$ and a rectangular diagonal matrix $\\Sigma$ with entries $\\sigma_1 \\ge \\dots \\ge \\sigma_r > 0$. These entries are the square roots of the positive [eigenvalues](c:eigenvalue) of $A^*A$. The [operator norm](c:operator-norm) of $A$ is $\\sigma_1$, or $0$ if $r = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:matrix",
+    "text": "The map $A$ is a complex [matrix](c:matrix) of size $m \\times n$ with $m, n \\ge 1$, and its [adjoint](c:adjoint-operator) $A^*$ is the conjugate transpose.",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:rank",
+    "text": "The matrix $A$ has rank $r$, where $0 \\le r \\le \\min(m, n)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There are unitary $U$, $V$ and a rectangular diagonal $\\Sigma$ with $A = U \\Sigma V^*$. The positive diagonal entries of $\\Sigma$ are the square roots of the positive eigenvalues of $A^*A$, and $\\|A\\| = \\sigma_1$.",
+  "formal": {
+   "decl": "LinearMap.singularValues_fin",
+   "difference": "The declaration is in Mathlib.Analysis.InnerProductSpace.SingularValues. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Adjoint square",
+    "slogan": "Diagonalize $A^*A$, turn its eigenvectors into left singular vectors, and read the factorization and the norm.",
+    "scope": "The whole theorem. The case $r = 0$ means $A = 0$, and then $\\Sigma = 0$ and the norm is $0$.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:dimension-count",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:matrix",
+      "why": "The matrix $A$ gives the Hermitian matrix $A^*A$ and the vectors $Av_i$.",
+      "steps": [
+       "s:hermitian",
+       "s:left"
+      ]
+     },
+     {
+      "h": "h:rank",
+      "why": "The rank equals the dimension of the range, which counts the positive [eigenvalues](c:eigenvalue).",
+      "steps": [
+       "s:rank"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hermitian",
+      "slogan": "Diagonalize the positive semidefinite matrix $A^*A$ in an [orthonormal basis](c:orthonormal-basis) of eigenvectors.",
+      "detail": "The matrix $A^*A$ is Hermitian, and $v^*A^*Av = \\|Av\\|^2 \\ge 0$, so it is [positive semidefinite](c:positive-semidefinite-matrix). The Hermitian spectral theorem gives an orthonormal basis $v_1, \\dots, v_n$ with real [eigenvalues](c:eigenvalue) $\\lambda_i \\ge 0$. Order them so that $\\lambda_1 \\ge \\dots \\ge \\lambda_p > 0$ and $\\lambda_i = 0$ for $i > p$.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:left",
+      "slogan": "Divide each image $Av_i$ by $\\sigma_i = \\sqrt{\\lambda_i}$ to get orthonormal vectors.",
+      "detail": "For $i \\le p$ put $u_i = Av_i / \\sigma_i$. Then $\\langle u_i, u_j \\rangle = \\langle v_i, A^*Av_j \\rangle / (\\sigma_i \\sigma_j) = \\lambda_j \\delta_{ij} / (\\sigma_i \\sigma_j) = \\delta_{ij}$. So $u_1, \\dots, u_p$ are orthonormal.",
+      "uses": []
+     },
+     {
+      "id": "s:rank",
+      "slogan": "Show that the number $p$ of positive eigenvalues equals the rank $r$.",
+      "detail": "For $i > p$ we have $\\|Av_i\\|^2 = \\lambda_i = 0$, so $Av_i = 0$. Expand a vector in the basis $v_i$ to see that the range of $A$ is the span of $u_1, \\dots, u_p$. This span has dimension $p$, so $p = r$.",
+      "uses": []
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Extend the orthonormal vectors $u_1, \\dots, u_r$ to an orthonormal basis of $\\mathbb{C}^m$.",
+      "detail": "If the span of the vectors is proper, pick a vector outside it. Subtract its projections on the existing vectors and normalize the nonzero remainder. Repeat until $m$ vectors exist.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Put the basis vectors into the columns of $U$ and $V$ and read $A = U \\Sigma V^*$.",
+      "detail": "The matrices $U$ and $V$ are unitary. The equations $Av_i = \\sigma_i u_i$ for $i \\le r$ and $Av_i = 0$ for $i > r$ give $U^*AV = \\Sigma$. Multiply by $U$ on the left and by $V^*$ on the right.",
+      "uses": []
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Bound $\\|Ax\\|$ by $\\sigma_1 \\|x\\|$ and test the bound on $v_1$.",
+      "detail": "For $x = \\sum c_i v_i$ the vectors $u_i$ are orthonormal, so $\\|Ax\\|^2 = \\sum_{i \\le r} \\sigma_i^2 |c_i|^2 \\le \\sigma_1^2 \\|x\\|^2$. Equality holds for $x = v_1$ when $r > 0$. So the [operator norm](c:operator-norm) is $\\sigma_1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hermitian",
+      "s:left"
+     ],
+     [
+      "s:left",
+      "s:rank"
+     ],
+     [
+      "s:hermitian",
+      "s:rank"
+     ],
+     [
+      "s:rank",
+      "s:complete"
+     ],
+     [
+      "s:left",
+      "s:complete"
+     ],
+     [
+      "s:rank",
+      "s:factor"
+     ],
+     [
+      "s:complete",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:norm"
+     ]
+    ],
+    "conclusion": "s:norm",
+    "concepts": {
+     "c:matrix": "The proof starts from the matrix $A$ and builds $A^*A$ from it.",
+     "c:adjoint-operator": "The adjoint $A^*$ gives the Hermitian matrix $A^*A$.",
+     "c:unitary-operator": "The matrices $U$ and $V$ are unitary because their columns are orthonormal.",
+     "c:eigenvalue": "The singular values are square roots of eigenvalues of $A^*A$.",
+     "c:operator-norm": "The norm is the largest stretch of a unit vector, which is $\\sigma_1$.",
+     "c:orthonormal-basis": "The eigenvectors of $A^*A$ form the basis that gives $V$.",
+     "c:positive-semidefinite-matrix": "Positive semidefiniteness makes every eigenvalue of $A^*A$ nonnegative."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-moebius-inversion",
+  "statement": "Let $R$ be a commutative ring and let $f, g$ be [arithmetic functions](c:arithmetic-function) with values in $R$. Then $g(n) = \\sum_{d \\mid n} f(d)$ for all $n \\ge 1$ if and only if $f(n) = \\sum_{d \\mid n} \\mu(d)\\, g(n/d)$ for all $n \\ge 1$. Here $\\mu(n) = (-1)^k$ if $n$ is a product of $k$ distinct primes, and $\\mu(n) = 0$ if $n$ is not [squarefree](c:squarefree-integer).",
+  "hypotheses": [
+   {
+    "id": "h:values",
+    "text": "The functions $f$ and $g$ are [arithmetic functions](c:arithmetic-function) with values in a commutative ring, or in an abelian group. No other condition holds.",
+    "concept": "c:arithmetic-function"
+   },
+   {
+    "id": "h:all-n",
+    "text": "Each of the two equivalent statements holds for every $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The sum formula for $g$ holds if and only if the inversion formula for $f$ holds.",
+  "formal": {
+   "decl": "sum_eq_iff_sum_mul_moebius_eq",
+   "difference": "The declaration is in Mathlib.NumberTheory.ArithmeticFunction.Moebius. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Divisor sums",
+    "slogan": "Sum $\\mu$ over the divisors of $n$ to get $\\delta_{n,1}$, then swap the order of summation in each direction.",
+    "scope": "Both directions, for values in a ring or in an abelian group. The abelian group case reads $\\mu(d)\\,g(n/d)$ as an integer multiple.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:algebraic-identity",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:values",
+      "why": "Only sums and integer multiples of values occur, so a ring or an abelian group is enough.",
+      "steps": [
+       "s:forward",
+       "s:converse",
+       "s:group"
+      ]
+     },
+     {
+      "h": "h:all-n",
+      "why": "The identities must hold at every divisor of $n$, so the swapped sums have the same finite index sets.",
+      "steps": [
+       "s:forward",
+       "s:converse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:key",
+      "slogan": "Prove that $\\mu$ sums to $1$ over the divisors of $1$ and to $0$ for $n > 1$.",
+      "detail": "For $n = 1$ the sum is $\\mu(1) = 1$. For $n > 1$ with $k$ distinct prime factors, only the squarefree divisors count. There are $\\binom{k}{j}$ of them with $j$ primes, each with $\\mu = (-1)^j$. So the sum is $(1 - 1)^k = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:forward",
+      "slogan": "Insert the sum for $g$ into the inversion sum and swap the order of summation.",
+      "detail": "Assume $g(n) = \\sum_{e \\mid n} f(e)$. The pairs $(d, e)$ with $d \\mid n$ and $e \\mid n/d$ are the pairs with $e \\mid n$ and $d \\mid n/e$. So $\\sum_{d \\mid n} \\mu(d)\\,g(n/d) = \\sum_{e \\mid n} f(e) \\sum_{d \\mid n/e} \\mu(d)$. By step 1 only $e = n$ survives, and the total is $f(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Insert the inversion formula into the divisor sum of $f$ and swap the order of summation.",
+      "detail": "Assume $f(n) = \\sum_{d \\mid n} \\mu(d)\\,g(n/d)$. Then $\\sum_{d \\mid n} f(d) = \\sum_{d \\mid n} \\sum_{e \\mid d} \\mu(e)\\,g(d/e)$. Put $m = d/e$ and swap the sums to get $\\sum_{m \\mid n} g(m) \\sum_{e \\mid n/m} \\mu(e)$. By step 1 only $m = n$ survives, and the total is $g(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:group",
+      "slogan": "Repeat both computations for values in an abelian group.",
+      "detail": "Each term $\\mu(d)\\,g(n/d)$ is an integer multiple of a group element. All sums are finite, so the reindexing is valid. Hence the equivalence holds in a ring and in an abelian group.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:key",
+      "s:forward"
+     ],
+     [
+      "s:key",
+      "s:converse"
+     ],
+     [
+      "s:forward",
+      "s:group"
+     ],
+     [
+      "s:converse",
+      "s:group"
+     ]
+    ],
+    "conclusion": "s:group",
+    "concepts": {
+     "c:arithmetic-function": "The statement is about functions defined on the positive integers.",
+     "c:squarefree-integer": "Only squarefree divisors give nonzero values of $\\mu$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-cyclotomic-factorization-of-x-n-minus-1",
+  "statement": "The [cyclotomic polynomial](c:cyclotomic-polynomial) $\\Phi_n$ is the product of $X - \\zeta$ over the primitive $n$-th [roots of unity](c:root-of-unity) $\\zeta$ in $\\mathbb{C}$. Then $X^n - 1 = \\prod_{d \\mid n} \\Phi_d(X)$. The polynomial $\\Phi_n$ is monic with integer coefficients and has degree $\\varphi(n)$, so $\\sum_{d \\mid n} \\varphi(d) = n$ for [Euler's totient function](c:euler-s-totient-function).",
+  "hypotheses": [
+   {
+    "id": "h:n",
+    "text": "The number $n$ is a positive integer.",
+    "concept": null
+   },
+   {
+    "id": "h:primitive",
+    "text": "A primitive $n$-th root of unity is a complex number of multiplicative order exactly $n$, as in [primitive roots of unity](c:is-primitive-root).",
+    "concept": "c:is-primitive-root"
+   }
+  ],
+  "conclusion": "We have $X^n - 1 = \\prod_{d \\mid n} \\Phi_d$, $\\deg \\Phi_n = \\varphi(n)$, $\\Phi_n \\in \\mathbb{Z}[X]$ is monic, and $\\sum_{d \\mid n} \\varphi(d) = n$.",
+  "formal": {
+   "decl": "Polynomial.prod_cyclotomic_eq_X_pow_sub_one",
+   "difference": "The declaration is in Mathlib.RingTheory.Polynomial.Cyclotomic.Basic. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Group the roots by order",
+    "slogan": "Split the $n$ roots of $X^n - 1$ by their order, count them, and show integrality by division with remainder.",
+    "scope": "All four claims for each $n \\ge 1$. The case $n = 1$ gives $\\Phi_1 = X - 1$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:strong-induction",
+     "m:division-algorithm"
+    ],
+    "roles": [
+     {
+      "h": "h:n",
+      "why": "The polynomial $X^n - 1$ has $n$ distinct roots only because $n$ is a positive integer.",
+      "steps": [
+       "s:roots"
+      ]
+     },
+     {
+      "h": "h:primitive",
+      "why": "The order of a root splits the roots into the sets of primitive $d$-th roots for $d \\mid n$.",
+      "steps": [
+       "s:group",
+       "s:degree"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:roots",
+      "slogan": "Write $X^n - 1$ as the product of its $n$ distinct linear factors.",
+      "detail": "The numbers $e^{2\\pi i k/n}$ for $k = 0, \\dots, n-1$ are distinct roots of $X^n - 1$. A polynomial of degree $n$ has at most $n$ roots, and $X^n - 1$ is monic. So $X^n - 1 = \\prod_{k=0}^{n-1} (X - e^{2\\pi i k/n})$.",
+      "uses": []
+     },
+     {
+      "id": "s:group",
+      "slogan": "Group the linear factors by the multiplicative order $d$ of their root.",
+      "detail": "The order $d$ of a root $\\zeta$ divides $n$, because the integers $m$ with $\\zeta^m = 1$ form a subgroup of $\\mathbb{Z}$ that contains $n$. The roots of order $d$ are exactly the [primitive](c:is-primitive-root) $d$-th roots. Every primitive $d$-th root with $d \\mid n$ is a root of $X^n - 1$. So $X^n - 1 = \\prod_{d \\mid n} \\Phi_d$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Count the primitive roots to get the degree $\\varphi(n)$ and the identity $\\sum_{d \\mid n} \\varphi(d) = n$.",
+      "detail": "The root $e^{2\\pi i k/n}$ has order $n / \\gcd(k, n)$. So it is primitive if and only if $\\gcd(k, n) = 1$ with $1 \\le k \\le n$, and there are $\\varphi(n)$ such roots. Comparing degrees in the factorization gives $n = \\sum_{d \\mid n} \\varphi(d)$.",
+      "uses": []
+     },
+     {
+      "id": "s:integer",
+      "slogan": "Show by strong induction on $n$ that $\\Phi_n$ is monic with integer coefficients.",
+      "detail": "Assume it for all $d < n$. Then $g = \\prod_{d \\mid n,\\, d < n} \\Phi_d$ is monic in $\\mathbb{Z}[X]$ and $X^n - 1 = g\\,\\Phi_n$. Division by the monic $g$ in $\\mathbb{Z}[X]$ gives $X^n - 1 = gq + r$ with $\\deg r < \\deg g$. Then $g(\\Phi_n - q) = r$ forces $r = 0$, so $\\Phi_n = q$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the factorization, the degree and the integrality into the four claims.",
+      "detail": "Step 2 gives the factorization. Step 3 gives the degree and the sum formula. Step 4 gives integer coefficients and monic form.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:roots",
+      "s:group"
+     ],
+     [
+      "s:group",
+      "s:degree"
+     ],
+     [
+      "s:group",
+      "s:integer"
+     ],
+     [
+      "s:degree",
+      "s:collect"
+     ],
+     [
+      "s:integer",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:cyclotomic-polynomial": "The theorem factors $X^n - 1$ into these polynomials.",
+     "c:root-of-unity": "The roots of $X^n - 1$ are the $n$-th roots of unity.",
+     "c:euler-s-totient-function": "The count of primitive roots is the totient $\\varphi(n)$.",
+     "c:is-primitive-root": "Primitive roots are the roots of exact order $n$ and give $\\Phi_n$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-euler-trail-criterion",
+  "statement": "Let $G$ be a finite simple [graph](c:graph) with an edge, such that all vertices of positive [degree](c:vertex-degree) lie in one [connected](c:connected-graph) component. Then $G$ has an [Euler circuit](c:euler-circuit) if and only if every vertex has even degree. For vertices $u \\ne v$, $G$ has a trail from $u$ to $v$ that uses every edge exactly once if and only if $u$ and $v$ are the only vertices of odd degree.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The [graph](c:graph) $G$ is finite and simple, and it has at least one edge.",
+    "concept": "c:graph"
+   },
+   {
+    "id": "h:connected",
+    "text": "All vertices of positive degree lie in one [connected](c:connected-graph) component. Isolated vertices are allowed.",
+    "concept": "c:connected-graph"
+   }
+  ],
+  "conclusion": "An Euler circuit exists exactly when all degrees are even. An Euler trail from $u$ to $v$ exists exactly when $u$ and $v$ are the only odd vertices.",
+  "formal": {
+   "decl": "IsEulerian.even_degree_iff",
+   "difference": "The declaration is in Mathlib.Combinatorics.SimpleGraph.Trails. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Longest trail",
+    "slogan": "Count edges at a vertex along a trail, extend a longest trail, and add one new vertex to join two odd vertices.",
+    "scope": "Parts (a) and (b), both directions. A trail is a walk with no repeated edge; a vertex may repeat.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finitely many trails exist, so a longest trail exists, and no edge is a loop.",
+      "steps": [
+       "s:longest"
+      ]
+     },
+     {
+      "h": "h:connected",
+      "why": "One component lets a walk reach any unused edge from the end of the trail, and it stays true after the new vertex is added.",
+      "steps": [
+       "s:cover",
+       "s:path"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:count",
+      "slogan": "Count the edges of a trail at a vertex $w$ by its inner visits and its ends.",
+      "detail": "Let $W$ be a trail. Each inner visit to $w$ uses two distinct edges. The start uses one edge and the end uses one edge. So the edges of $W$ at $w$ number $2 \\cdot (\\text{inner visits}) + (\\text{ends equal to } w)$.",
+      "uses": []
+     },
+     {
+      "id": "s:necessity",
+      "slogan": "Read the parity of every degree from an Euler trail by the count.",
+      "detail": "An Euler trail contains all edges at $w$, so $\\deg(w)$ is given by step 1. If the trail is closed, both ends are the start and every degree is even. If it is open from $u$ to $v$, only $u$ and $v$ have odd degree. This proves the 'only if' parts.",
+      "uses": []
+     },
+     {
+      "id": "s:longest",
+      "slogan": "Take a longest trail $W$ when all degrees are even and show that it is closed.",
+      "detail": "Let $W$ go from $a$ to $b$ with $a \\ne b$. By step 1 the number of edges of $W$ at $b$ is odd, but $\\deg(b)$ is even. So an edge at $b$ is not in $W$, and appending it gives a longer trail. This contradicts the choice of $W$, so $a = b$.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Show that the longest closed trail $W$ uses every edge.",
+      "detail": "Suppose an edge is missing from $W$. Because all vertices of positive degree are connected, a walk from $a$ leads to the missing edge. Its first edge $f$ not in $W$ starts at a vertex $x$ on $W$. Rotate $W$ to start at $x$ and append $f$. The new trail is longer than $W$, a contradiction. So $W$ is an Euler circuit.",
+      "uses": []
+     },
+     {
+      "id": "s:path",
+      "slogan": "Add a new vertex $z$ joined to $u$ and $v$ to reduce part (b) to part (a).",
+      "detail": "Let $u$ and $v$ be the only odd vertices. In the new graph all degrees are even and the positive-degree vertices stay connected. By step 4 it has an Euler circuit. Rotate it to start with $zu$. Its last edge is $zv$. Delete $z$ to get a trail from $u$ to $v$ through all edges. The necessity part is step 2.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:count",
+      "s:necessity"
+     ],
+     [
+      "s:count",
+      "s:longest"
+     ],
+     [
+      "s:longest",
+      "s:cover"
+     ],
+     [
+      "s:cover",
+      "s:path"
+     ],
+     [
+      "s:necessity",
+      "s:path"
+     ]
+    ],
+    "conclusion": "s:path",
+    "concepts": {
+     "c:graph": "The theorem is about finite simple graphs and their trails.",
+     "c:vertex-degree": "The criterion depends on the parity of each degree.",
+     "c:connected-graph": "Connectedness lets a walk reach any unused edge.",
+     "c:euler-circuit": "An Euler circuit is the closed trail that the theorem constructs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-transvection-diagonalisation",
+  "statement": "Let $K$ be a field and let $M$ be an $n \\times n$ matrix over $K$. Then $M = L_1 \\cdots L_p \\, D \\, R_1 \\cdots R_q$ with [transvections](c:transvection) $L_i$, $R_j$ and a [diagonal matrix](c:diagonal-matrix) $D$. If $M$ is invertible, $D$ can be $\\mathrm{diag}(1, \\dots, 1, \\det M)$. Hence $\\mathrm{SL}_n(K)$ is generated by transvections.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The ring $K$ is a field, so every nonzero entry has an inverse.",
+    "concept": null
+   },
+   {
+    "id": "h:transvection",
+    "text": "A [transvection](c:transvection) is a matrix $I + cE_{ij}$ with $i \\ne j$ and $c \\in K$. It has determinant $1$.",
+    "concept": "c:transvection"
+   }
+  ],
+  "conclusion": "The matrix $M$ is a product of transvections, a diagonal matrix and transvections. For invertible $M$ the diagonal matrix has the form $\\mathrm{diag}(1, \\dots, 1, \\det M)$.",
+  "formal": {
+   "decl": "exists_list_transvec_mul_mul_list_transvec_eq_diagonal",
+   "difference": "The declaration is in Mathlib.LinearAlgebra.Matrix.Transvection. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Row and column clearing",
+    "slogan": "Clear the first row and column with transvections, induct on the smaller block, and then normalize the diagonal.",
+    "scope": "All matrices. The case $M = 0$ takes $D = 0$ and no transvections. The case $n = 1$ is already diagonal.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Division by the pivot $p$ and by $a$ in the diagonal identity needs a field.",
+      "steps": [
+       "s:clear",
+       "s:diag"
+      ]
+     },
+     {
+      "h": "h:transvection",
+      "why": "Transvections realize row and column additions, and they have [determinant](c:determinant) $1$, so the product keeps $\\det M$.",
+      "steps": [
+       "s:pivot",
+       "s:diag",
+       "s:sl"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pivot",
+      "slogan": "Move a nonzero entry to the corner with one row and one column transvection.",
+      "detail": "The inverse of $I + cE_{ij}$ is $I - cE_{ij}$, so it is enough to turn $M$ into a diagonal matrix by transvections on both sides. Choose $M_{ij} \\ne 0$. Add row $i$ to row $1$ if $M_{1j} = 0$. Then add column $j$ to column $1$ if $M_{11} = 0$. Now $p = M_{11} \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:clear",
+      "slogan": "Add multiples of row $1$ and column $1$ to clear the first column and the first row.",
+      "detail": "For each $i > 1$ add $-(M_{i1}/p)$ times row $1$ to row $i$. Then for each $j > 1$ add $-(M_{1j}/p)$ times column $1$ to column $j$. This keeps column $1$ and gives $\\mathrm{diag}(p, N)$ with $N$ of size $n-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Apply induction to the block $N$ and extend its transvections by $1$ in the corner.",
+      "detail": "By induction $N = L' D' R'$. A transvection of size $n-1$ extends to size $n$ by a $1$ on the first diagonal place. So $\\mathrm{diag}(p, N) = \\mathrm{diag}(1, L')\\,\\mathrm{diag}(p, D')\\,\\mathrm{diag}(1, R')$, and $\\mathrm{diag}(p, D')$ is diagonal.",
+      "uses": []
+     },
+     {
+      "id": "s:diag",
+      "slogan": "Turn an invertible diagonal matrix into $\\mathrm{diag}(1, \\dots, 1, \\det M)$ by transvections.",
+      "detail": "Let $w(a) = T_{12}(a)\\,T_{21}(-a^{-1})\\,T_{12}(a) = \\begin{pmatrix} 0 & a \\\\ -a^{-1} & 0 \\end{pmatrix}$. Then $w(a)\\,w(-1) = \\mathrm{diag}(a, a^{-1})$, a product of six transvections. Also $\\mathrm{diag}(a, b) = \\mathrm{diag}(a, a^{-1})\\,\\mathrm{diag}(1, ab)$. Apply this to $(d_1, d_2)$, then $(d_1 d_2, d_3)$, and so on. Since $\\det D = \\det M$, the result is $D = Q\\,\\mathrm{diag}(1, \\dots, 1, \\det M)$ with $Q$ a product of transvections.",
+      "uses": []
+     },
+     {
+      "id": "s:sl",
+      "slogan": "Take $\\det M = 1$ to show that the transvections generate $\\mathrm{SL}_n(K)$.",
+      "detail": "If $\\det M = 1$, then $\\mathrm{diag}(1, \\dots, 1, \\det M)$ is the identity. So $M$ is a product of transvections.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pivot",
+      "s:clear"
+     ],
+     [
+      "s:clear",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:diag"
+     ],
+     [
+      "s:diag",
+      "s:sl"
+     ]
+    ],
+    "conclusion": "s:sl",
+    "concepts": {
+     "c:transvection": "Transvections are the only factors besides the diagonal matrix.",
+     "c:diagonal-matrix": "The proof reduces $M$ to a diagonal matrix.",
+     "c:determinant": "Transvections have determinant $1$, so $\\det D = \\det M$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-mcshane-lipschitz-extension",
+  "statement": "Let $(X, d)$ be a [metric space](c:metric-space), let $S \\subseteq X$ be nonempty, and let $f\\colon S \\to \\mathbb{R}$ be $K$-[Lipschitz](c:lipschitz-function) with $K \\ge 0$. Then $F(x) = \\inf_{s \\in S} (f(s) + K d(x, s))$ is a $K$-Lipschitz [extension](c:extension) of $f$ to $X$. Also $G(x) = \\sup_{s \\in S} (f(s) - K d(x, s))$ is one, and $G \\le H \\le F$ for every $K$-Lipschitz extension $H$.",
+  "hypotheses": [
+   {
+    "id": "h:metric",
+    "text": "The pair $(X, d)$ is a [metric space](c:metric-space) and $S$ is a nonempty subset. The set $S$ need not be closed.",
+    "concept": "c:metric-space"
+   },
+   {
+    "id": "h:lipschitz",
+    "text": "The function $f\\colon S \\to \\mathbb{R}$ satisfies $|f(s) - f(t)| \\le K d(s, t)$ for all $s, t \\in S$, with a constant $K \\ge 0$.",
+    "concept": "c:lipschitz-function"
+   }
+  ],
+  "conclusion": "The function $F$ is a real valued $K$-Lipschitz extension of $f$. The function $G$ is another one, and $G \\le H \\le F$ for every $K$-Lipschitz extension $H$.",
+  "formal": {
+   "decl": "LipschitzOnWith.extend_real",
+   "difference": "The declaration is in Mathlib.Topology.MetricSpace.Lipschitz. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Infimum of cones",
+    "slogan": "Show that the infimum of the cones $f(s) + K d(x, s)$ is finite, extends $f$ and is $K$-Lipschitz, and then compare with any extension.",
+    "scope": "The whole theorem. The target is $\\mathbb{R}$, and the proof of the Lipschitz bound uses $K \\ge 0$.",
+    "mechanisms": [
+     "m:triangle-inequality",
+     "m:construction-explicit",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:metric",
+      "why": "The triangle inequality for $d$ moves a cone from $y$ to $x$ and bounds the infimum from below.",
+      "steps": [
+       "s:finite",
+       "s:lipschitz"
+      ]
+     },
+     {
+      "h": "h:lipschitz",
+      "why": "The Lipschitz bound on $f$ bounds the cones from below and shows that $F = f$ on $S$.",
+      "steps": [
+       "s:finite",
+       "s:extends",
+       "s:order"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite",
+      "slogan": "Bound the cones $f(s) + K d(x, s)$ from below to show that $F(x)$ is a real number.",
+      "detail": "Fix $s_0 \\in S$. For every $s \\in S$, the Lipschitz bound and the triangle inequality give $f(s) \\ge f(s_0) - K d(s, s_0) \\ge f(s_0) - K d(s, x) - K d(x, s_0)$. So $f(s) + K d(x, s) \\ge f(s_0) - K d(x, s_0)$. The nonempty set of values is bounded below, so the infimum is real.",
+      "uses": []
+     },
+     {
+      "id": "s:extends",
+      "slogan": "Show that $F(x) = f(x)$ for every $x \\in S$.",
+      "detail": "Take $s = x$ to get $F(x) \\le f(x)$. For any $s \\in S$, $f(x) - f(s) \\le K d(x, s)$, so $f(s) + K d(x, s) \\ge f(x)$. Taking the infimum over $s$ gives $F(x) \\ge f(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:lipschitz",
+      "slogan": "Move the cones from $y$ to $x$ and take infima to show that $F$ is $K$-Lipschitz.",
+      "detail": "For $s \\in S$ the triangle inequality gives $d(x, s) \\le d(y, s) + d(x, y)$. As $K \\ge 0$, $F(x) \\le f(s) + K d(y, s) + K d(x, y)$ for every $s$. The infimum over $s$ gives $F(x) \\le F(y) + K d(x, y)$. Swap $x$ and $y$ for the other inequality.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Squeeze any $K$-Lipschitz extension $H$ between the two cone envelopes.",
+      "detail": "For $s \\in S$ we have $H(x) \\le H(s) + K d(x, s) = f(s) + K d(x, s)$. The infimum over $s$ gives $H \\le F$. Also $H(x) \\ge f(s) - K d(x, s)$, and the supremum over $s$ gives $G \\le H$.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Apply the steps above to $-f$ to see that $G$ is also a $K$-Lipschitz extension.",
+      "detail": "The function $-f$ is $K$-Lipschitz on $S$. Its infimum envelope is $x \\mapsto \\inf_s (-f(s) + K d(x, s)) = -G(x)$. By the first three steps, $-G$ is real valued, $K$-Lipschitz and equal to $-f$ on $S$. So $G$ has the same properties for $f$, and step 4 gives $G \\le H \\le F$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:finite",
+      "s:extends"
+     ],
+     [
+      "s:finite",
+      "s:lipschitz"
+     ],
+     [
+      "s:lipschitz",
+      "s:dual"
+     ],
+     [
+      "s:extends",
+      "s:dual"
+     ],
+     [
+      "s:order",
+      "s:dual"
+     ]
+    ],
+    "conclusion": "s:dual",
+    "concepts": {
+     "c:metric-space": "The distance $d$ and its triangle inequality control the cones.",
+     "c:lipschitz-function": "The Lipschitz bound on $f$ is the property that $F$ keeps.",
+     "c:extension": "The function $F$ must agree with $f$ on $S$ and keep its constant."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-euclidean-ball-volume-gaussian",
+  "statement": "Let $V_n$ be the [Lebesgue measure](c:lebesgue-measure) of the [unit ball](c:unit-ball) of $\\mathbb{R}^n$. Then $V_n = \\pi^{n/2} / \\Gamma(n/2 + 1)$, where $\\Gamma$ is the [Gamma function](c:gamma-function), and a ball of radius $r$ has measure $V_n r^n$. So $V_{2k} = \\pi^k / k!$ and $V_{2k+1} = 2^{k+1} \\pi^k / (2k+1)!!$.",
+  "hypotheses": [
+   {
+    "id": "h:dim",
+    "text": "The number $n \\ge 1$ is an integer, and the measure is [Lebesgue measure](c:lebesgue-measure) on $\\mathbb{R}^n$.",
+    "concept": "c:lebesgue-measure"
+   },
+   {
+    "id": "h:gauss",
+    "text": "The one-dimensional [Gaussian integral](c:gaussian-integral) $\\int_{\\mathbb{R}} e^{-t^2}\\,dt = \\sqrt{\\pi}$ is known.",
+    "concept": "c:gaussian-integral"
+   },
+   {
+    "id": "h:gamma",
+    "text": "The [Gamma function](c:gamma-function) is $\\Gamma(s) = \\int_0^\\infty u^{s-1} e^{-u}\\,du$ for $s > 0$.",
+    "concept": "c:gamma-function"
+   }
+  ],
+  "conclusion": "The unit ball has measure $V_n = \\pi^{n/2} / \\Gamma(n/2 + 1)$, the ball of radius $r$ has measure $V_n r^n$, and the closed and open balls have the same measure.",
+  "formal": {
+   "decl": "InnerProductSpace.volume_ball_of_dim_even",
+   "difference": "The declaration is in Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Two ways to integrate a Gaussian",
+    "slogan": "Integrate $e^{-|x|^2}$ once as a product and once by its level sets, and compare the two values.",
+    "scope": "The open ball, then the closed ball, for every dimension $n \\ge 1$.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:change-of-variables",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:dim",
+      "why": "The dimension fixes the product structure of $e^{-|x|^2}$ and the scaling factor $r^n$.",
+      "steps": [
+       "s:gauss-n",
+       "s:scale"
+      ]
+     },
+     {
+      "h": "h:gauss",
+      "why": "The value $\\sqrt{\\pi}$ of the one-dimensional integral gives the total $\\pi^{n/2}$.",
+      "steps": [
+       "s:gauss-n"
+      ]
+     },
+     {
+      "h": "h:gamma",
+      "why": "The substitution $s = e^{-u}$ turns the level-set integral into a value of $\\Gamma$.",
+      "steps": [
+       "s:layer"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gauss-n",
+      "slogan": "Split $e^{-|x|^2}$ into a product to integrate it over $\\mathbb{R}^n$.",
+      "detail": "The function $e^{-|x|^2} = \\prod_i e^{-x_i^2}$ is a product. By Fubini-Tonelli, $\\int_{\\mathbb{R}^n} e^{-|x|^2}\\,dx = \\left( \\int_{\\mathbb{R}} e^{-t^2}\\,dt \\right)^n = \\pi^{n/2}$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:scale",
+      "slogan": "Scale the unit ball by $r$ to get the measure of a ball of radius $r$.",
+      "detail": "The map $x \\mapsto rx$ has determinant $r^n$. So the ball of radius $r$ has measure $r^n V_n$ for $r > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:layer",
+      "slogan": "Slice the region under the Gaussian by height to express its volume with $\\Gamma$.",
+      "detail": "Let $g(x) = e^{-|x|^2}$. By Cavalieri's principle, $\\int g\\,dx = \\int_0^1 \\mathrm{vol}\\{g > s\\}\\,ds$. For $0 < s < 1$ the set $\\{g > s\\}$ is the open ball of radius $(-\\ln s)^{1/2}$, with measure $V_n (-\\ln s)^{n/2}$ by step 2. The substitution $s = e^{-u}$ gives $\\int g\\,dx = V_n \\int_0^\\infty u^{n/2} e^{-u}\\,du = V_n\\,\\Gamma(n/2 + 1)$.",
+      "uses": [
+       "nm:cavalieri-s-principle"
+      ]
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Equate the two values of the Gaussian integral and solve for $V_n$.",
+      "detail": "Steps 1 and 3 give $V_n\\,\\Gamma(n/2 + 1) = \\pi^{n/2}$, and $\\Gamma(n/2 + 1) > 0$. So $V_n = \\pi^{n/2} / \\Gamma(n/2 + 1)$. For $n = 2k$, $\\Gamma(k + 1) = k!$. For $n = 2k + 1$, $\\Gamma(k + 3/2) = \\frac{(2k+1)!!}{2^{k+1}} \\sqrt{\\pi}$ by $\\Gamma(s+1) = s\\Gamma(s)$ and $\\Gamma(1/2) = \\sqrt{\\pi}$.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Compare the closed ball with slightly larger open balls to show that it has the same measure.",
+      "detail": "The sphere has measure $0$, so the closed ball has measure $V_n$. Alternatively, the closed ball lies in the open ball of radius $1 + \\eta$, with measure $V_n (1 + \\eta)^n$, and this tends to $V_n$ as $\\eta \\to 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:gauss-n",
+      "s:solve"
+     ],
+     [
+      "s:scale",
+      "s:layer"
+     ],
+     [
+      "s:layer",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:closed"
+     ]
+    ],
+    "conclusion": "s:closed",
+    "concepts": {
+     "c:lebesgue-measure": "Volume in the theorem means Lebesgue measure.",
+     "c:unit-ball": "The proof computes the measure of the unit ball.",
+     "c:gamma-function": "The level-set integral equals a value of the Gamma function.",
+     "c:gaussian-integral": "The value $\\sqrt{\\pi}$ gives the total integral of the Gaussian."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-jacobi-theta-inversion-poisson",
+  "statement": "For real $t > 0$ let $\\theta(t) = \\sum_{n \\in \\mathbb{Z}} e^{-\\pi n^2 t}$, the [Jacobi theta function](c:jacobi-theta-function) on the imaginary axis. Then $\\theta(1/t) = \\sqrt{t}\\,\\theta(t)$. More generally, for complex $\\tau$ with $\\mathrm{Im}\\,\\tau > 0$, $\\sum_n e^{\\pi i n^2 \\tau} = (-i\\tau)^{-1/2} \\sum_n e^{-\\pi i n^2 / \\tau}$.",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "The number $t > 0$ is real. In the general form $\\mathrm{Im}\\,\\tau > 0$, and the square root is the principal root.",
+    "concept": null
+   },
+   {
+    "id": "h:ft",
+    "text": "The [Fourier transform](c:fourier-transform) is $\\hat f(\\xi) = \\int f(x) e^{-2\\pi i x \\xi}\\,dx$.",
+    "concept": "c:fourier-transform"
+   }
+  ],
+  "conclusion": "We have $\\theta(1/t) = \\sqrt{t}\\,\\theta(t)$ for $t > 0$, and the general identity holds for $\\mathrm{Im}\\,\\tau > 0$.",
+  "formal": {
+   "decl": "jacobiTheta_S_smul",
+   "difference": "The declaration is in Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Poisson summation of a Gaussian",
+    "slogan": "Periodize the Gaussian, sum its Fourier series at $0$, and extend the identity by analytic continuation.",
+    "scope": "The real identity first, by Poisson summation of $f(x) = e^{-\\pi t x^2}$. Then the complex identity by the identity theorem.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:uniform-convergence",
+     "m:analytic-continuation"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "Gaussian decay needs $t > 0$, and holomorphy of both sides needs $\\mathrm{Im}\\,\\tau > 0$.",
+      "steps": [
+       "s:ft",
+       "s:periodize",
+       "s:read",
+       "s:continue"
+      ]
+     },
+     {
+      "h": "h:ft",
+      "why": "The convention for $\\hat f$ fixes the Gaussian transform and the Fourier coefficients of the periodization.",
+      "steps": [
+       "s:ft",
+       "s:periodize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ft",
+      "slogan": "Compute the [Fourier transform](c:fourier-transform) of $f(x) = e^{-\\pi t x^2}$ by a differential equation.",
+      "detail": "Put $I(\\xi) = \\int e^{-ax^2 - 2\\pi i x \\xi}\\,dx$ with $a = \\pi t$. Differentiation under the integral and integration by parts give $I'(\\xi) = -(2\\pi^2 \\xi / a)\\,I(\\xi)$. So $I(\\xi) = I(0)\\,e^{-\\pi^2 \\xi^2 / a}$. The Gaussian integral gives $I(0) = \\sqrt{\\pi / a}$, so $\\hat f(\\xi) = t^{-1/2} e^{-\\pi \\xi^2 / t}$.",
+      "uses": [
+       "nm:technique-gaussian-quadratic-integral"
+      ]
+     },
+     {
+      "id": "s:periodize",
+      "slogan": "Sum the translates of $f$ to get a periodic function whose Fourier coefficients are $\\hat f(m)$.",
+      "detail": "Put $F(x) = \\sum_n f(x + n)$. The series and the series of derivatives converge uniformly on $[0, 1]$ by Gaussian decay, so $F$ is $C^1$ and $1$-periodic. Uniform convergence allows the exchange of sum and integral, and $\\int_0^1 F(x) e^{-2\\pi i m x}\\,dx = \\hat f(m)$.",
+      "uses": []
+     },
+     {
+      "id": "s:series",
+      "slogan": "Evaluate the [Fourier series](c:fourier-series) of $F$ at $x = 0$.",
+      "detail": "A $C^1$ periodic function equals its Fourier series at every point. The series converges absolutely, because $\\hat f(m)$ decays like a Gaussian. So $F(0) = \\sum_m \\hat f(m)$.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read both sides of $F(0) = \\sum_m \\hat f(m)$ as values of $\\theta$.",
+      "detail": "On the left, $F(0) = \\sum_n e^{-\\pi t n^2} = \\theta(t)$. On the right, step 1 gives $\\sum_m \\hat f(m) = t^{-1/2} \\sum_m e^{-\\pi m^2 / t} = t^{-1/2}\\,\\theta(1/t)$. So $\\theta(1/t) = \\sqrt{t}\\,\\theta(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:continue",
+      "slogan": "Extend the identity from the imaginary axis to the upper half plane.",
+      "detail": "Both sides are holomorphic for $\\mathrm{Im}\\,\\tau > 0$, because the series converge uniformly on sets $\\mathrm{Im}\\,\\tau \\ge \\delta$ and $\\mathrm{Re}(-i\\tau) > 0$. For $\\tau = it$ they equal $\\theta(t)$ and $t^{-1/2}\\theta(1/t)$, which agree by step 4. The points $it$ have an accumulation point in the connected upper half plane, so the identity theorem gives equality everywhere.",
+      "uses": [
+       "wd:Q1038716"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:ft",
+      "s:read"
+     ],
+     [
+      "s:periodize",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:read"
+     ],
+     [
+      "s:read",
+      "s:continue"
+     ]
+    ],
+    "conclusion": "s:continue",
+    "concepts": {
+     "c:jacobi-theta-function": "The theorem is the inversion law of the theta function.",
+     "c:fourier-transform": "The Fourier transform of the Gaussian gives the dual theta sum.",
+     "c:fourier-series": "The Fourier series of the periodization is evaluated at $0$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-left-adjoint-preserves-colimits",
+  "statement": "Let $L\\colon C \\to D$ be a [left adjoint](c:is-left-adjoint) of $R\\colon D \\to C$. If $(c, \\iota)$ is a [colimit](c:colimit) cocone of a diagram $K\\colon J \\to C$, then $(Lc, L\\iota)$ is a colimit cocone of $L \\circ K$. Dually, $R$ preserves limits. So $L$ preserves initial objects, coproducts and coequalizers, and $R$ preserves terminal objects, products and equalizers. In pointed categories $L$ preserves [cokernels](c:cokernel) and $R$ preserves kernels.",
+  "hypotheses": [
+   {
+    "id": "h:adj",
+    "text": "The functor $L$ is [left adjoint](c:adjoint-functor) to $R$: a bijection $\\mathrm{Hom}_D(LX, Y) \\cong \\mathrm{Hom}_C(X, RY)$ is natural in $X$ and $Y$.",
+    "concept": "c:adjoint-functor"
+   },
+   {
+    "id": "h:colimit",
+    "text": "The diagram $K\\colon J \\to C$ has a [colimit](c:colimit) cocone $(c, \\iota)$ in $C$. The index category $J$ is arbitrary, and the theorem does not claim that colimits exist.",
+    "concept": "c:colimit"
+   },
+   {
+    "id": "h:pointed",
+    "text": "For kernels and cokernels, the categories $C$ and $D$ are pointed, which means that each has a zero object.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The cocone $(Lc, L\\iota)$ is a colimit of $L \\circ K$, and dually $R$ preserves limits. In pointed categories $L$ preserves cokernels and $R$ preserves kernels.",
+  "formal": {
+   "decl": "leftAdjoint_preservesColimits",
+   "difference": "The declaration is in Mathlib.CategoryTheory.Adjunction.Limits. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Cocones through the bijection",
+    "slogan": "Transport cocones across the adjunction bijection and compare it with the universal property of the colimit.",
+    "scope": "The colimit part is proved, and the limit part follows in the opposite categories. The shapes empty, discrete and parallel pair give the listed special cases.",
+    "mechanisms": [
+     "m:adjunction",
+     "m:universal-property",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:adj",
+      "why": "The natural bijection turns cocones over $L \\circ K$ into cocones over $K$ and morphisms out of $Lc$ into morphisms out of $c$.",
+      "steps": [
+       "s:cocones",
+       "s:universal"
+      ]
+     },
+     {
+      "h": "h:colimit",
+      "why": "The universal property of $(c, \\iota)$ identifies cocones over $K$ with morphisms out of $c$.",
+      "steps": [
+       "s:universal",
+       "s:combine"
+      ]
+     },
+     {
+      "h": "h:pointed",
+      "why": "A zero object makes the zero morphism a coequalizer partner, which gives cokernels and kernels.",
+      "steps": [
+       "s:special"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cocones",
+      "slogan": "Match the cocones over $L \\circ K$ with vertex $Y$ to the cocones over $K$ with vertex $RY$.",
+      "detail": "Let $a$ be the adjunction bijection. Naturality in the first variable gives $a(h \\circ L(f)) = a(h) \\circ f$. For $u\\colon j \\to k$ in $J$, $g_k \\circ L(K(u)) = g_j$ if and only if $a(g_k) \\circ K(u) = a(g_j)$. So $(g_j)$ is a cocone over $L \\circ K$ if and only if $(a(g_j))$ is a cocone over $K$.",
+      "uses": []
+     },
+     {
+      "id": "s:universal",
+      "slogan": "Match the morphisms $h\\colon Lc \\to Y$ to the cocones over $K$ with vertex $RY$.",
+      "detail": "The colimit property gives a bijection $f \\mapsto (f \\circ \\iota_j)$ from morphisms $c \\to RY$ to cocones over $K$ with vertex $RY$. By naturality, $a(h \\circ L(\\iota_j)) = a(h) \\circ \\iota_j$. So $h$ corresponds to the cocone $(a(h) \\circ \\iota_j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Compose the bijections to show that $(Lc, L\\iota)$ is a colimit cocone.",
+      "detail": "The map $h \\mapsto (h \\circ L(\\iota_j))_j$ from $\\mathrm{Hom}(Lc, Y)$ to cocones over $L \\circ K$ is a composite of three bijections. So every cocone $(g_j)$ over $L \\circ K$ has exactly one $h$ with $g_j = h \\circ L(\\iota_j)$. This is the universal property of a colimit.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Apply the colimit result in the opposite categories to show that $R$ preserves limits.",
+      "detail": "The functor $R^{op}$ is left adjoint to $L^{op}$. A limit in $D$ is a colimit in $D^{op}$. So $R$ preserves limits.",
+      "uses": []
+     },
+     {
+      "id": "s:special",
+      "slogan": "Read the special cases from the empty, discrete and parallel-pair diagrams.",
+      "detail": "The empty diagram gives initial objects, a discrete diagram gives coproducts and a parallel pair gives coequalizers. Dually $R$ preserves terminal objects, products and equalizers. In pointed categories $L$ keeps the zero object and zero morphisms, so it keeps the coequalizer of $(f, 0)$, which is the [cokernel](c:cokernel). Dually $R$ preserves kernels.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cocones",
+      "s:combine"
+     ],
+     [
+      "s:universal",
+      "s:combine"
+     ],
+     [
+      "s:combine",
+      "s:dual"
+     ],
+     [
+      "s:combine",
+      "s:special"
+     ],
+     [
+      "s:dual",
+      "s:special"
+     ]
+    ],
+    "conclusion": "s:special",
+    "concepts": {
+     "c:is-left-adjoint": "The theorem assumes that $L$ has a right adjoint.",
+     "c:adjoint-functor": "The adjunction bijection moves cocones from one side to the other.",
+     "c:colimit": "The universal property of the colimit is what $L$ preserves.",
+     "c:cokernel": "A cokernel is a coequalizer with the zero morphism."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-ordinal-cantor-normal-form",
+  "statement": "Let $b > 1$ be an [ordinal](c:ordinal). Every ordinal $o > 0$ is $b^{e_1} c_1 + \\dots + b^{e_k} c_k$ in exactly one way, with ordinals $e_1 > \\dots > e_k$ and $0 < c_i < b$. The leading exponent $e_1$ is the largest $e$ with $b^e \\le o$. For $b = \\omega$ this is the Cantor normal form.",
+  "hypotheses": [
+   {
+    "id": "h:base",
+    "text": "The base $b$ is an [ordinal](c:ordinal) with $b > 1$.",
+    "concept": "c:ordinal"
+   },
+   {
+    "id": "h:shape",
+    "text": "The exponents strictly decrease, $0 < c_i < b$, and each $c_i$ stands to the right of $b^{e_i}$ in [ordinal arithmetic](c:ordinal-arithmetic).",
+    "concept": "c:ordinal-arithmetic"
+   }
+  ],
+  "conclusion": "Each ordinal $o > 0$ has exactly one such list, and its leading exponent is the largest $e$ with $b^e \\le o$.",
+  "formal": {
+   "decl": "CNF.foldr",
+   "difference": "The declaration is in Mathlib.SetTheory.Ordinal.CantorNormalForm. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Division by the leading power",
+    "slogan": "Bound the value of a list by its leading power, divide by that power, and induct on the remainder.",
+    "scope": "Existence and uniqueness for $o > 0$; the case $o = 0$ gives the empty list. Ordinal multiplication does not commute, so the coefficient stands on the right.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:division-algorithm",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:base",
+      "why": "Since $b > 1$, the powers $b^e$ grow with $e$, so the leading exponent is well defined.",
+      "steps": [
+       "s:bound",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:shape",
+      "why": "Decreasing exponents and coefficients below $b$ bound the tail below $b^{e_1}$ and make the division unique.",
+      "steps": [
+       "s:bound",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bound",
+      "slogan": "Bound the value $o$ of any such list between $b^{e_1}$ and $b^{e_1 + 1}$.",
+      "detail": "Write $o = b^{e_1} c_1 + t$ with $t$ the value of the tail. Then $b^{e_1} \\le o$ because $c_1 \\ge 1$. By induction on the length, $t < b^{e_2 + 1} \\le b^{e_1}$. So $o < b^{e_1}(c_1 + 1) \\le b^{e_1 + 1}$, and $e_1$ is the logarithm of $o$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Take the largest $e$ with $b^e \\le o$ and divide $o$ by $b^e$ with remainder.",
+      "detail": "The power $b^x$ is continuous and unbounded, so $e = \\log_b(o)$ exists and $b^e \\le o < b^{e+1}$. Division gives $o = b^e c + r$ with $r < b^e$. Here $c \\ge 1$, and $c \\ge b$ would give $o \\ge b^{e+1}$. So $0 < c < b$.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Build the list by strong induction, putting $(e, c)$ in front of the list for $r$.",
+      "detail": "If $r = 0$, the list is $b^e c$. If $r > 0$, then $r < b^e \\le o$, so the induction hypothesis gives a list for $r$. By step 1 its leading exponent is $\\log_b(r) < e$. Put $(e, c)$ in front to get a decreasing list with value $o$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that any list for $o$ has the leading pair and the tail from step 2.",
+      "detail": "Take a list with leading pair $(e_1, c_1)$ and tail value $t$. By step 1, $e_1 = \\log_b(o)$ and $t < b^{e_1}$. So $o = b^{e_1} c_1 + t$ is the division of $o$ by $b^{e_1}$, and its quotient and remainder are unique. The tail is a list for $t < o$, so by induction it is the list from step 3.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bound",
+      "s:divide"
+     ],
+     [
+      "s:bound",
+      "s:exist"
+     ],
+     [
+      "s:divide",
+      "s:exist"
+     ],
+     [
+      "s:exist",
+      "s:unique"
+     ],
+     [
+      "s:bound",
+      "s:unique"
+     ],
+     [
+      "s:divide",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:ordinal": "The base and all exponents and coefficients are ordinals.",
+     "c:ordinal-arithmetic": "Ordinal power, product and division with remainder drive every step."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-convex-explicit-lipschitz-bound",
+  "statement": "Let $E$ be a real normed space and let $f$ be a [convex function](c:convex-function) on the open ball $B(x_0, r)$ with $|f| \\le M$ there. Then for every $\\varepsilon > 0$, $f$ is [Lipschitz](c:lipschitz-continuous-function) on $B(x_0, r - \\varepsilon)$ with constant $2M/\\varepsilon$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The function $f$ is a [convex function](c:convex-function) on the whole ball $B(x_0, r)$.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The bound $|f| \\le M$ holds on the whole ball. The space $E$ may have infinite dimension.",
+    "concept": null
+   },
+   {
+    "id": "h:eps",
+    "text": "The number $\\varepsilon$ is positive. If $\\varepsilon \\ge r$, the inner ball is empty and the claim is empty.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For all $x, y \\in B(x_0, r - \\varepsilon)$, $|f(x) - f(y)| \\le (2M/\\varepsilon) \\|x - y\\|$.",
+  "formal": {
+   "decl": "ConvexOn.lipschitzOnWith_of_abs_le",
+   "difference": "The declaration is in Mathlib.Analysis.Convex.Continuous. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Extrapolate and use convexity",
+    "slogan": "Extend the segment from $y$ through $x$ by length $\\varepsilon$, write $x$ as a convex combination, and apply convexity.",
+    "scope": "The case $x \\ne y$ in the inner ball; the case $x = y$ is trivial. The bound does not depend on the dimension.",
+    "mechanisms": [
+     "m:convexity",
+     "m:symmetry",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity bounds $f(x)$ by the convex combination of $f(y)$ and $f(z)$.",
+      "steps": [
+       "s:combo"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The bound $M$ controls $|f(z) - f(y)|$ by $2M$.",
+      "steps": [
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:eps",
+      "why": "The margin $\\varepsilon$ keeps the extrapolated point $z$ inside the big ball.",
+      "steps": [
+       "s:extrapolate",
+       "s:inball"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:extrapolate",
+      "slogan": "Extend the segment from $y$ through $x$ by length $\\varepsilon$ to a point $z$.",
+      "detail": "Let $x, y$ be distinct points of $B(x_0, r - \\varepsilon)$ and $d = \\|x - y\\|$. Define $z = x + (\\varepsilon / d)(x - y)$. Then $\\|z - x\\| = \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:inball",
+      "slogan": "Show that $z$ lies in the big ball, so that $|f(z)| \\le M$.",
+      "detail": "The triangle inequality gives $\\|z - x_0\\| \\le \\|x - x_0\\| + \\varepsilon < (r - \\varepsilon) + \\varepsilon = r$. So $z \\in B(x_0, r)$ and $|f(z)| \\le M$.",
+      "uses": []
+     },
+     {
+      "id": "s:combo",
+      "slogan": "Write $x$ as a convex combination of $y$ and $z$.",
+      "detail": "Put $a = \\varepsilon / (\\varepsilon + d)$ and $b = d / (\\varepsilon + d)$. Then $a + b = 1$ and $a y + b z = ((\\varepsilon + d) x) / (\\varepsilon + d) = x$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Apply convexity and bound $f(x) - f(y)$ by $(2M/\\varepsilon)\\,d$.",
+      "detail": "Convexity gives $f(x) \\le a f(y) + b f(z)$. As $a = 1 - b$, this means $f(x) - f(y) \\le b\\,(f(z) - f(y))$. Both points are in the ball, so $|f(z) - f(y)| \\le 2M$. Hence $f(x) - f(y) \\le 2M d / (\\varepsilon + d) \\le 2M d / \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Exchange $x$ and $y$ to get the bound for $|f(x) - f(y)|$.",
+      "detail": "The same argument with $x$ and $y$ exchanged gives $f(y) - f(x) \\le (2M/\\varepsilon)\\,\\|x - y\\|$. So $|f(x) - f(y)| \\le (2M/\\varepsilon)\\,\\|x - y\\|$ on $B(x_0, r - \\varepsilon)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:extrapolate",
+      "s:inball"
+     ],
+     [
+      "s:extrapolate",
+      "s:combo"
+     ],
+     [
+      "s:inball",
+      "s:bound"
+     ],
+     [
+      "s:combo",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:swap"
+     ]
+    ],
+    "conclusion": "s:swap",
+    "concepts": {
+     "c:convex-function": "Convexity is the only property of $f$ that gives the one-sided bound.",
+     "c:lipschitz-continuous-function": "The conclusion is a Lipschitz bound with an explicit constant."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-metropolis-hastings-detailed-balance",
+  "statement": "Let $S$ be a finite set, $\\pi$ a positive probability vector on $S$, and $q$ a [Markov kernel](c:markov-kernel) on $S$ with $q(x, y) > 0$ if and only if $q(y, x) > 0$ for $x \\ne y$. Put $a(x, y) = \\min\\{1, \\pi(y) q(y, x) / (\\pi(x) q(x, y))\\}$ and $P(x, y) = q(x, y)\\,a(x, y)$ for $x \\ne y$, with $P(x, x)$ chosen so that rows sum to $1$. Then $P$ satisfies [detailed balance](c:detailed-balance) with $\\pi$, and $\\pi P = \\pi$.",
+  "hypotheses": [
+   {
+    "id": "h:pi",
+    "text": "The vector $\\pi$ is a probability vector with $\\pi(x) > 0$ for all $x$. Only ratios of $\\pi$ occur.",
+    "concept": null
+   },
+   {
+    "id": "h:proposal",
+    "text": "The proposal $q$ is a stochastic matrix, a [Markov kernel](c:markov-kernel), and it can go back: $q(x, y) > 0$ if and only if $q(y, x) > 0$ for $x \\ne y$.",
+    "concept": "c:markov-kernel"
+   }
+  ],
+  "conclusion": "The matrix $P$ is stochastic, $\\pi(x) P(x, y) = \\pi(y) P(y, x)$ for all $x, y$, and $\\pi P = \\pi$.",
+  "formal": {
+   "decl": "IsReversible.invariant",
+   "difference": "The declaration is in Mathlib.Probability.Kernel.Invariance. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Check detailed balance by cases",
+    "slogan": "Check that the rows of $P$ sum to $1$, check detailed balance pair by pair, and sum it over $x$.",
+    "scope": "The statement gives stationarity only. Convergence needs that $P$ is irreducible and aperiodic, and this is not proved here.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:algebraic-identity",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:pi",
+      "why": "Positivity of $\\pi$ makes the ratio in $a(x, y)$ defined.",
+      "steps": [
+       "s:balance"
+      ]
+     },
+     {
+      "h": "h:proposal",
+      "why": "The reverse condition makes $q(x, y) = 0$ and $q(y, x) = 0$ occur together, and row sums of $q$ bound the row sums of $P$.",
+      "steps": [
+       "s:stochastic",
+       "s:zero"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:stochastic",
+      "slogan": "Show that $P$ is a stochastic matrix.",
+      "detail": "For $x \\ne y$, $P(x, y) \\ge 0$. Also $\\sum_{y \\ne x} P(x, y) \\le \\sum_{y \\ne x} q(x, y) \\le 1$ because $a \\le 1$, so $P(x, x) \\ge 0$. Each row sums to $1$ by the definition of $P(x, x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Check detailed balance for the diagonal pairs and for pairs with $q(x, y) = 0$.",
+      "detail": "If $q(x, y) = 0$, then $q(y, x) = 0$, so $P(x, y) = P(y, x) = 0$ and both sides are $0$. For $x = y$ the identity $\\pi(x) P(x, x) = \\pi(x) P(x, x)$ is trivial.",
+      "uses": []
+     },
+     {
+      "id": "s:balance",
+      "slogan": "Check detailed balance for pairs with $q(x, y) > 0$ in the two cases of the ratio.",
+      "detail": "Put $r = \\pi(y) q(y, x) / (\\pi(x) q(x, y)) > 0$. Then $a(x, y) = \\min\\{1, r\\}$ and $a(y, x) = \\min\\{1, 1/r\\}$. If $r \\ge 1$, both sides equal $\\pi(x) q(x, y)$. If $r < 1$, both sides equal $\\pi(y) q(y, x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:stationary",
+      "slogan": "Sum detailed balance over $x$ to get $\\pi P = \\pi$.",
+      "detail": "For each $y$, $\\sum_x \\pi(x) P(x, y) = \\sum_x \\pi(y) P(y, x) = \\pi(y) \\sum_x P(y, x) = \\pi(y)$. This is $\\pi P = \\pi$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:stochastic",
+      "s:stationary"
+     ],
+     [
+      "s:zero",
+      "s:stationary"
+     ],
+     [
+      "s:balance",
+      "s:stationary"
+     ]
+    ],
+    "conclusion": "s:stationary",
+    "concepts": {
+     "c:markov-kernel": "The proposal $q$ and the chain $P$ are Markov kernels on $S$.",
+     "c:detailed-balance": "Detailed balance is the pairwise identity that gives stationarity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-kronecker-sum-sylvester-equation",
+  "statement": "Let $A$ be $m \\times m$ and $B$ be $n \\times n$ over $\\mathbb{C}$, with [eigenvalues](c:eigenvalue) $\\lambda_i$ and $\\mu_j$. Then $\\mathrm{vec}(AX + XB) = K\\,\\mathrm{vec}(X)$ with $K = I_n \\otimes A + B^T \\otimes I_m$. The [Kronecker product](c:kronecker-product) sums have eigenvalues $\\lambda_i + \\mu_j$. So $AX + XB = C$ has a unique solution for every $C$ if and only if $A$ and $-B$ share no eigenvalue.",
+  "hypotheses": [
+   {
+    "id": "h:sizes",
+    "text": "The matrices $A$ and $B$ are square, of sizes $m$ and $n$, over $\\mathbb{C}$. The matrices $C$ and $X$ are $m \\times n$.",
+    "concept": null
+   },
+   {
+    "id": "h:kron",
+    "text": "The [Kronecker product](c:kronecker-product) $P \\otimes Q$ has block $(i, j)$ equal to $P_{ij} Q$.",
+    "concept": "c:kronecker-product"
+   }
+  ],
+  "conclusion": "We have $\\mathrm{vec}(AX + XB) = K\\,\\mathrm{vec}(X)$, the eigenvalues of $K$ are the sums $\\lambda_i + \\mu_j$, $\\det K = \\prod (\\lambda_i + \\mu_j)$, and the Sylvester equation is uniquely solvable if and only if $A$ and $-B$ share no eigenvalue.",
+  "formal": {
+   "decl": "Matrix.kroneckerMapBilinear_mul_mul",
+   "difference": "The declaration is in Mathlib.LinearAlgebra.Matrix.Kronecker. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Triangularise the Kronecker sum",
+    "slogan": "Write the equation as $K\\,\\mathrm{vec}(X) = \\mathrm{vec}(C)$, triangularise $A$ and $B$, and read the eigenvalues of $K$ from the diagonal.",
+    "scope": "The full statement over $\\mathbb{C}$. The eigenvalues count with algebraic multiplicity.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:induction",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:sizes",
+      "why": "Complex entries give Schur-type triangularisation, and the sizes fix the shape of $K$.",
+      "steps": [
+       "s:vec",
+       "s:triangular"
+      ]
+     },
+     {
+      "h": "h:kron",
+      "why": "The block rule gives the vec identity and the mixed product rule.",
+      "steps": [
+       "s:vec",
+       "s:mixed",
+       "s:similar"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:vec",
+      "slogan": "Show that $\\mathrm{vec}(AXB) = (B^T \\otimes A)\\,\\mathrm{vec}(X)$ and deduce $\\mathrm{vec}(AX + XB) = K\\,\\mathrm{vec}(X)$.",
+      "detail": "Column $j$ of $AXB$ is $\\sum_l B_{lj} A x_l$. So block $(j, l)$ of the matrix of $X \\mapsto AXB$ is $B_{lj} A$, which is block $(j, l)$ of $B^T \\otimes A$. Apply this with $B = I$ and with $A = I$, and add.",
+      "uses": []
+     },
+     {
+      "id": "s:mixed",
+      "slogan": "Prove the mixed product rule $(P \\otimes Q)(R \\otimes S) = PR \\otimes QS$.",
+      "detail": "The entry at row $(i, a)$ and column $(j, b)$ of the left side is $\\sum_{k, c} P_{ik} Q_{ac} R_{kj} S_{cb}$. This equals $(PR)_{ij} (QS)_{ab}$.",
+      "uses": []
+     },
+     {
+      "id": "s:triangular",
+      "slogan": "Triangularise $A$ and $B$ over $\\mathbb{C}$ by similarity.",
+      "detail": "Take an eigenvector $v$ and extend it to a basis. The first column of the matrix is then $(\\lambda, 0, \\dots, 0)^T$. Induct on the lower right block. The diagonal lists the eigenvalues with algebraic multiplicity.",
+      "uses": []
+     },
+     {
+      "id": "s:similar",
+      "slogan": "Conjugate $K$ by $G = Q^{-T} \\otimes P$ to get a triangular matrix $T$.",
+      "detail": "Let $P^{-1} A P = S$ and $Q^{-1} B Q = R$ be upper triangular. The mixed product rule gives $G^{-1} (I_n \\otimes A) G = I_n \\otimes S$ and $G^{-1} (B^T \\otimes I_m) G = R^T \\otimes I_m$. So $G^{-1} K G = I_n \\otimes S + R^T \\otimes I_m = T$. Order the pairs $(j, i)$ by $i - j$ to see that $T$ is upper triangular with diagonal entries $\\lambda_i + \\mu_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Read the eigenvalues, the determinant and the solvability from the diagonal of $T$.",
+      "detail": "The eigenvalues of $K$ are $\\lambda_i + \\mu_j$ and $\\det K = \\prod (\\lambda_i + \\mu_j)$. The map $X \\mapsto AX + XB$ is $K$ in coordinates. It is bijective if and only if no sum is zero, which means that $A$ and $-B$ share no eigenvalue. Otherwise $K$ has a kernel vector, which gives a nonzero $X$ with $AX + XB = 0$, and some $C$ have no solution.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:vec",
+      "s:similar"
+     ],
+     [
+      "s:mixed",
+      "s:similar"
+     ],
+     [
+      "s:triangular",
+      "s:similar"
+     ],
+     [
+      "s:similar",
+      "s:solve"
+     ],
+     [
+      "s:vec",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:eigenvalue": "The sums $\\lambda_i + \\mu_j$ are the eigenvalues of $K$.",
+     "c:kronecker-product": "The matrix $K$ is a sum of two Kronecker products."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-discriminant-norm-of-derivative-and-index",
+  "statement": "Let $\\alpha$ have monic irreducible minimal polynomial $f$ of degree $n$ over $\\mathbb{Q}$, with roots $\\alpha_i$, and let $L = \\mathbb{Q}(\\alpha)$. Then $\\mathrm{disc}(f) = \\prod_{i<j} (\\alpha_i - \\alpha_j)^2 = (-1)^{n(n-1)/2} N_{L/\\mathbb{Q}}(f'(\\alpha))$. If $\\alpha$ is in the [ring of integers](c:ring-of-integers) $O_L$ and $\\mathbb{Z}[\\alpha]$ has index $m$, then $\\mathrm{disc}(f) = m^2 d_L$.",
+  "hypotheses": [
+   {
+    "id": "h:irr",
+    "text": "The polynomial $f$ is monic and irreducible over $\\mathbb{Q}$, so its roots are distinct and $L$ is a [number field](c:number-field) of degree $n$.",
+    "concept": "c:number-field"
+   },
+   {
+    "id": "h:integral",
+    "text": "For the index formula, $\\alpha$ is in $O_L$, the ring $\\mathbb{Z}[\\alpha]$ has finite index $m$, and $O_L$ is a free $\\mathbb{Z}$-module of rank $n$.",
+    "concept": "c:ring-of-integers"
+   }
+  ],
+  "conclusion": "We have $\\mathrm{disc}(f) = (-1)^{n(n-1)/2} N_{L/\\mathbb{Q}}(f'(\\alpha))$, and in the integral case $\\mathrm{disc}(f) = m^2 d_L$.",
+  "formal": {
+   "decl": "Algebra.discr_powerBasis_eq_norm",
+   "difference": "The declaration is in Mathlib.RingTheory.Discriminant. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Trace form as a square",
+    "slogan": "Write the trace form as $M^T M$, evaluate $\\det M$ as a Vandermonde determinant, and compare lattices for the index.",
+    "scope": "The first part needs only the irreducible $f$. The index part needs $\\alpha \\in O_L$ with $[O_L : \\mathbb{Z}[\\alpha]] < \\infty$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:coordinates",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:irr",
+      "why": "Distinct roots give $n$ embeddings and make $f'(\\alpha_i)$ nonzero.",
+      "steps": [
+       "s:square",
+       "s:vandermonde",
+       "s:derivative",
+       "s:sign"
+      ]
+     },
+     {
+      "h": "h:integral",
+      "why": "A $\\mathbb{Z}$-basis of $O_L$ gives the integer change of basis matrix $T$.",
+      "steps": [
+       "s:index",
+       "s:smith"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:square",
+      "slogan": "Write the trace matrix of a basis $b$ as $M^T M$ with $M = (\\sigma_k(b_i))$.",
+      "detail": "The $n$ embeddings send $\\alpha$ to $\\alpha_1, \\dots, \\alpha_n$. Since $\\mathrm{Tr}(b_i b_j) = \\sum_k \\sigma_k(b_i)\\sigma_k(b_j)$, the trace matrix is $M^T M$. So $\\mathrm{disc}(b) = \\det(M)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:vandermonde",
+      "slogan": "Evaluate $\\det M$ for the basis $\\alpha^{i-1}$ as a Vandermonde determinant.",
+      "detail": "Here $M_{ki} = \\alpha_k^{i-1}$, a Vandermonde matrix with distinct nodes. So $\\det M = \\prod_{k<l} (\\alpha_l - \\alpha_k)$ and $\\mathrm{disc}(f) = \\prod_{k<l} (\\alpha_k - \\alpha_l)^2$.",
+      "uses": [
+       "nm:technique-vandermonde-determinant"
+      ]
+     },
+     {
+      "id": "s:derivative",
+      "slogan": "Write the norm of $f'(\\alpha)$ as a product over ordered pairs of roots.",
+      "detail": "From $f = \\prod (x - \\alpha_j)$ we get $f'(\\alpha_i) = \\prod_{j \\ne i} (\\alpha_i - \\alpha_j)$. The conjugates of $f'(\\alpha)$ are the $f'(\\alpha_i)$, because $f'$ is rational. So $N(f'(\\alpha)) = \\prod_{i \\ne j} (\\alpha_i - \\alpha_j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Pair the factors $(i, j)$ and $(j, i)$ to find the sign.",
+      "detail": "Each pair gives $(\\alpha_i - \\alpha_j)(\\alpha_j - \\alpha_i) = -(\\alpha_i - \\alpha_j)^2$, and there are $n(n-1)/2$ pairs. So $N(f'(\\alpha)) = (-1)^{n(n-1)/2} \\prod_{i<j} (\\alpha_i - \\alpha_j)^2 = (-1)^{n(n-1)/2}\\mathrm{disc}(f)$.",
+      "uses": []
+     },
+     {
+      "id": "s:index",
+      "slogan": "Express the power basis in a $\\mathbb{Z}$-basis of $O_L$ and compare the two trace matrices.",
+      "detail": "Write $\\alpha^{i-1} = \\sum_j T_{ij} w_j$ with an integer matrix $T$. The trace form is bilinear, so $G(\\alpha) = T\\,G(w)\\,T^T$. So $\\mathrm{disc}(f) = \\det(T)^2 d_L$.",
+      "uses": []
+     },
+     {
+      "id": "s:smith",
+      "slogan": "Show that $|\\det T|$ is the index $m$ and finish.",
+      "detail": "The lattice $\\mathbb{Z}[\\alpha]$ is the row lattice of $T$ in $\\mathbb{Z}^n = O_L$. By the Smith normal form theorem, its index is $|\\det T|$. So $m = |\\det T|$ and $\\mathrm{disc}(f) = m^2 d_L$.",
+      "uses": [
+       "nm:technique-smith-normal-form-determinantal-divisors"
+      ]
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the norm formula and the index formula.",
+      "detail": "Step 4 gives $\\mathrm{disc}(f) = (-1)^{n(n-1)/2} N_{L/\\mathbb{Q}}(f'(\\alpha))$. Step 6 gives $\\mathrm{disc}(f) = m^2 d_L$ in the integral case.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:square",
+      "s:vandermonde"
+     ],
+     [
+      "s:vandermonde",
+      "s:sign"
+     ],
+     [
+      "s:derivative",
+      "s:sign"
+     ],
+     [
+      "s:square",
+      "s:index"
+     ],
+     [
+      "s:vandermonde",
+      "s:index"
+     ],
+     [
+      "s:index",
+      "s:smith"
+     ],
+     [
+      "s:sign",
+      "s:collect"
+     ],
+     [
+      "s:smith",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:number-field": "The field $L$ has $n$ embeddings into $\\mathbb{C}$.",
+     "c:ring-of-integers": "The ring $O_L$ and its integral basis define $d_L$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-dirichlet-kernel-pointwise-fourier-convergence",
+  "statement": "Let $f$ be $2\\pi$-periodic and integrable, with partial [Fourier series](c:fourier-series) sums $S_N f$. Let $f(x_0+)$ and $f(x_0-)$ exist, with $|f(x_0 \\pm s) - f(x_0 \\pm)| \\le Cs$ for $0 < s < \\delta$. Then $S_N f(x_0) \\to \\frac12 (f(x_0+) + f(x_0-))$.",
+  "hypotheses": [
+   {
+    "id": "h:periodic",
+    "text": "The function $f\\colon \\mathbb{R} \\to \\mathbb{C}$ is a [periodic function](c:periodic-function) with period $2\\pi$, and it is integrable on $[-\\pi, \\pi]$.",
+    "concept": "c:periodic-function"
+   },
+   {
+    "id": "h:onesided",
+    "text": "The one-sided limits at $x_0$ exist, and the one-sided Lipschitz bounds hold with constants $C, \\delta > 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The partial sums $S_N f(x_0)$ converge to the midpoint $\\frac12 (f(x_0+) + f(x_0-))$ as $N \\to \\infty$.",
+  "formal": {
+   "decl": "has_pointwise_sum_fourier_series_of_summable",
+   "difference": "The declaration is in Mathlib.Analysis.Fourier.AddCircle. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Fold the Dirichlet kernel",
+    "slogan": "Write $S_N f(x_0)$ as an integral against the Dirichlet kernel, subtract the midpoint, and apply the Riemann-Lebesgue lemma.",
+    "scope": "The theorem is pointwise. It gives no rate and no uniform convergence, and the value $f(x_0)$ does not enter.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:symmetry",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:periodic",
+      "why": "Periodicity lets us substitute $y = x - s$ and fold the integral at $0$.",
+      "steps": [
+       "s:conv",
+       "s:fold"
+      ]
+     },
+     {
+      "h": "h:onesided",
+      "why": "The Lipschitz bounds make $h(s) = g(s)/\\sin(s/2)$ integrable near $0$.",
+      "steps": [
+       "s:integrable"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:conv",
+      "slogan": "Write $S_N f(x)$ as an integral of $f(x - s)$ against the Dirichlet kernel $D_N$.",
+      "detail": "Insert $c_n$ and swap the finite sum and the integral. Substitute $y = x - s$ and use periodicity to get $S_N f(x) = \\frac{1}{2\\pi} \\int_{-\\pi}^{\\pi} f(x - s) D_N(s)\\,ds$, with $D_N(s) = \\sum_{|n| \\le N} e^{ins}$.",
+      "uses": []
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Sum the geometric series for $D_N$ and find its mass.",
+      "detail": "For $s \\notin 2\\pi\\mathbb{Z}$, $D_N(s) = \\sin((N + \\frac12)s)/\\sin(s/2)$. Only the term $n = 0$ has a nonzero integral, so $\\frac{1}{2\\pi} \\int_{-\\pi}^{\\pi} D_N = 1$. The kernel is even, so $\\frac{1}{2\\pi} \\int_0^\\pi D_N = \\frac12$.",
+      "uses": []
+     },
+     {
+      "id": "s:fold",
+      "slogan": "Fold the integral at $0$ and subtract the midpoint.",
+      "detail": "As $D_N$ is even, $S_N f(x_0) = \\frac{1}{2\\pi} \\int_0^\\pi [f(x_0 - s) + f(x_0 + s)] D_N(s)\\,ds$. Step 2 gives the midpoint as a similar integral. Put $g(s) = f(x_0 - s) + f(x_0 + s) - f(x_0-) - f(x_0+)$. Then $S_N f(x_0) - m = \\frac{1}{2\\pi} \\int_0^\\pi h(s) \\sin((N + \\frac12)s)\\,ds$ with $h = g/\\sin(s/2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrable",
+      "slogan": "Show that $h$ is integrable on $(0, \\pi)$.",
+      "detail": "For $s < \\delta$, $|g(s)| \\le 2Cs$ and $\\sin(s/2) \\ge s/\\pi$, so $|h| \\le 2\\pi C$. On $[\\delta, \\pi]$, $\\sin(s/2) \\ge \\sin(\\delta/2) > 0$ and $g$ is integrable because $f$ is.",
+      "uses": []
+     },
+     {
+      "id": "s:rl",
+      "slogan": "Apply the Riemann-Lebesgue lemma to the sine integral.",
+      "detail": "Extend $h$ by $0$ to an integrable function on $\\mathbb{R}$. Write the sine as a difference of two exponentials. The lemma gives $\\int h(s) e^{\\pm i(N + 1/2)s}\\,ds \\to 0$. So $S_N f(x_0) - m \\to 0$.",
+      "uses": [
+       "nm:riemann-lebesgue-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:conv",
+      "s:fold"
+     ],
+     [
+      "s:kernel",
+      "s:fold"
+     ],
+     [
+      "s:fold",
+      "s:integrable"
+     ],
+     [
+      "s:integrable",
+      "s:rl"
+     ],
+     [
+      "s:fold",
+      "s:rl"
+     ]
+    ],
+    "conclusion": "s:rl",
+    "concepts": {
+     "c:fourier-series": "The theorem is about the partial sums of the Fourier series.",
+     "c:periodic-function": "Periodicity allows the substitution and the folding."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-poset-mobius-function-inversion",
+  "statement": "Let $P$ be a [partial order](c:partial-order) with all intervals [finite](c:finite-set). Define $\\mu(a, a) = 1$ and $\\mu(a, b) = -\\sum_{a \\le x < b} \\mu(a, x)$ for $a < b$. Then $\\sum_{a \\le x \\le b} \\mu(a, x) = \\delta_{ab} = \\sum_{a \\le x \\le b} \\mu(x, b)$. Sums $g(b) = \\sum_{a \\le b} f(a)$ invert to $f(b) = \\sum_{a \\le b} \\mu(a, b) g(a)$. Also $\\mu$ multiplies on products.",
+  "hypotheses": [
+   {
+    "id": "h:locfin",
+    "text": "The set $P$ is a [partial order](c:partial-order) and every interval $[a, b]$ is a [finite set](c:finite-set).",
+    "concept": "c:partial-order"
+   },
+   {
+    "id": "h:values",
+    "text": "The functions $f$ and $g$ take values in an abelian group, and $\\mu$ takes values in $\\mathbb{Z}$.",
+    "concept": null
+   },
+   {
+    "id": "h:downsets",
+    "text": "For inversion from below, each set $\\{a : a \\le b\\}$ is finite. For inversion from above, each set $\\{b : b \\ge a\\}$ is finite.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "Both identities for $\\mu$ hold, the two inversion formulas hold, and $\\mu$ is multiplicative on product orders, with $\\mu(A, B) = (-1)^{|B \\setminus A|}$ on subset lattices.",
+  "formal": {
+   "decl": "mu_apply",
+   "difference": "The declaration is in Mathlib.Combinatorics.Enumerative.IncidenceAlgebra. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Convolution in the incidence algebra",
+    "slogan": "Treat sums over intervals as a convolution, show that $\\mu$ is a two-sided inverse of $\\zeta$, and substitute.",
+    "scope": "Statements (1) to (5), including the Boolean and divisor lattices. The proof uses only finite sums, so reindexing is valid.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:locfin",
+      "why": "Finite intervals make the recursion for $\\mu$ and every convolution sum finite.",
+      "steps": [
+       "s:rec",
+       "s:assoc",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:values",
+      "why": "An abelian group allows sums of values of $f$ with integer coefficients.",
+      "steps": [
+       "s:below"
+      ]
+     },
+     {
+      "h": "h:downsets",
+      "why": "Finite down-sets and up-sets allow the swap of the two finite sums.",
+      "steps": [
+       "s:below"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rec",
+      "slogan": "Define $\\mu$ by recursion on the size of the interval and show $\\mu * \\zeta = \\delta$.",
+      "detail": "For $a < b$ and $a \\le x < b$ the interval $[a, x]$ is smaller than $[a, b]$, so the recursion works. It says that $\\sum_{a \\le x \\le b} \\mu(a, x) = 0$ for $a < b$ and $1$ for $a = b$.",
+      "uses": []
+     },
+     {
+      "id": "s:assoc",
+      "slogan": "Prove that convolution is associative with unit $\\delta$, and that the left inverse equals the right inverse.",
+      "detail": "Both ways to bracket $h * k * l$ at $(a, b)$ give a sum of $h(a, x) k(x, y) l(y, b)$ over $a \\le x \\le y \\le b$. Define $\\mu'$ by the dual recursion at the upper end, so that $\\zeta * \\mu' = \\delta$. Then $\\mu = \\mu * (\\zeta * \\mu') = (\\mu * \\zeta) * \\mu' = \\mu'$. This gives the second identity of (1).",
+      "uses": []
+     },
+     {
+      "id": "s:below",
+      "slogan": "Substitute $g$ into the sum with $\\mu$ and swap the finite sums to invert from below.",
+      "detail": "The pairs $(c, a)$ with $c \\le a \\le b$ are finite. Swapping gives $\\sum_{c \\le b} f(c) \\sum_{c \\le a \\le b} \\mu(a, b) = f(b)$ by the second identity. The same argument with the first identity inverts from above.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that any function $h$ with $h * \\zeta = \\delta$ equals $\\mu$.",
+      "detail": "The case $a = b$ gives $h(a, a) = 1$. The case $a < b$ gives $h(a, b) = -\\sum_{a \\le x < b} h(a, x)$. Induction on $|[a, b]|$ shows that $h = \\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Prove the product rule with the uniqueness step.",
+      "detail": "Put $\\nu((a, c), (b, d)) = \\mu_P(a, b)\\mu_Q(c, d)$. Since $[(a, c), (b, d)] = [a, b] \\times [c, d]$, the sum of $\\nu$ over the interval factors as $\\delta_{ab}\\delta_{cd}$. By uniqueness, $\\nu = \\mu_{P \\times Q}$.",
+      "uses": []
+     },
+     {
+      "id": "s:examples",
+      "slogan": "Compute $\\mu$ on the Boolean lattice and the divisor lattice.",
+      "detail": "On the chain $0 < 1$, $\\mu(0, 1) = -1$. Intervals of the Boolean lattice are products of such chains, so $\\mu(A, B) = (-1)^{|B \\setminus A|}$. On a chain $0 < \\dots < e$, the recursion gives $\\mu(i, i+1) = -1$ and $\\mu(i, j) = 0$ for $j \\ge i + 2$. The product rule gives the number-theoretic $\\mu(m/d)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rec",
+      "s:assoc"
+     ],
+     [
+      "s:assoc",
+      "s:below"
+     ],
+     [
+      "s:rec",
+      "s:unique"
+     ],
+     [
+      "s:unique",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:examples"
+     ],
+     [
+      "s:below",
+      "s:examples"
+     ]
+    ],
+    "conclusion": "s:examples",
+    "concepts": {
+     "c:partial-order": "The poset order defines the intervals and the sums.",
+     "c:finite-set": "Finite sets make every sum and swap legal."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-weighted-partition-generating-function-euler-product",
+  "statement": "Let $R$ be a commutative ring and let $f(i, m) \\in R$ with $f(i, 0) = 1$. For an [integer partition](c:integer-partition) $\\lambda$ put $W(\\lambda) = \\prod_i f(i, m_i(\\lambda))$, where $m_i$ counts parts equal to $i$. Then in $R[[x]]$, $\\sum_n (\\sum_{\\lambda \\vdash n} W(\\lambda)) x^n = \\prod_{i \\ge 1} \\sum_{m \\ge 0} f(i, m) x^{im}$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The ring $R$ is commutative with identity, and the power series are in the ring of [formal power series](c:formal-power-series) $R[[x]]$.",
+    "concept": "c:formal-power-series"
+   },
+   {
+    "id": "h:unit",
+    "text": "We have $f(i, 0) = 1$ for every $i \\ge 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:partition",
+    "text": "A partition of $n$ is a multiset of positive integers with sum $n$. The empty partition is the only partition of $0$, with weight $1$.",
+    "concept": "c:integer-partition"
+   }
+  ],
+  "conclusion": "The [generating function](c:generating-function) of the weights $W$ over all partitions equals the Euler product.",
+  "formal": {
+   "decl": "hasProd_genFun",
+   "difference": "The declaration is in Mathlib.Combinatorics.Enumerative.Partition.GenFun. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Expand the product by multiplicities",
+    "slogan": "Show that the infinite product is defined, expand a finite truncation, and match tuples of multiplicities with partitions.",
+    "scope": "The identity as power series in $R[[x]]$, one coefficient at a time. The case $f \\equiv 1$ is the classical Euler product.",
+    "mechanisms": [
+     "m:bijection",
+     "m:generating-function",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Power series let us compare coefficients and define the infinite product by truncation.",
+      "steps": [
+       "s:defined",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:unit",
+      "why": "The condition $f(i, 0) = 1$ makes each factor $1$ plus terms of degree at least $i$.",
+      "steps": [
+       "s:defined",
+       "s:bijection"
+      ]
+     },
+     {
+      "h": "h:partition",
+      "why": "Partitions are multisets, so they match tuples of multiplicities.",
+      "steps": [
+       "s:bijection"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:defined",
+      "slogan": "Show that the infinite product is defined coefficient by coefficient.",
+      "detail": "Put $F_i = \\sum_m f(i, m) x^{im}$. As $f(i, 0) = 1$, $F_i = 1 + $ terms of degree at least $i$. So for each $N$ the factors with $i > N$ do not change the coefficients up to $x^N$. The coefficient of $x^N$ is that of $F_1 \\cdots F_N$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand $F_1 \\cdots F_N$ and select the coefficient of $x^N$.",
+      "detail": "Multiplying out gives the sum over tuples $(m_1, \\dots, m_N)$ of $(\\prod_i f(i, m_i))\\,x^{\\sum i m_i}$. The coefficient of $x^N$ sums $\\prod_i f(i, m_i)$ over tuples with $\\sum i m_i = N$.",
+      "uses": []
+     },
+     {
+      "id": "s:bijection",
+      "slogan": "Match these tuples with the partitions of $N$.",
+      "detail": "The map $\\lambda \\mapsto (m_1(\\lambda), \\dots, m_N(\\lambda))$ is injective, because a multiset is set by its multiplicities. It is onto the tuples with $\\sum i m_i = N$. The weight $W(\\lambda)$ equals $\\prod_{i \\le N} f(i, m_i)$, because $f(i, 0) = 1$ for $i > N$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Equate the coefficients for every $N$ and read the classical case.",
+      "detail": "The coefficient of $x^N$ in the product is $\\sum_{\\lambda \\vdash N} W(\\lambda)$ for all $N \\ge 0$. For $f \\equiv 1$ each factor is $1/(1 - x^i)$, so $\\sum p(n) x^n = \\prod_i 1/(1 - x^i)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:defined",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:bijection"
+     ],
+     [
+      "s:bijection",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:formal-power-series": "The product and the equality live in $R[[x]]$.",
+     "c:integer-partition": "The sum runs over the partitions of $n$.",
+     "c:generating-function": "The theorem is a closed form of a generating function."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-finite-nilpotent-group-characterizations",
+  "statement": "Let $G$ be a finite group. These are equivalent. (1) $G$ is a [nilpotent group](c:nilpotent-group). (2) Every proper subgroup $H$ is properly contained in its [normalizer](c:normalizer). (3) Every maximal subgroup is normal. (4) Every [Sylow subgroup](c:sylow-subgroup) is normal. (5) $G$ is the internal [direct product](c:direct-product) of its Sylow subgroups.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:maximal",
+    "text": "A maximal subgroup is a proper subgroup that lies in no other proper subgroup.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The five statements are equivalent, and in (5) each Sylow subgroup is unique by (4).",
+  "formal": {
+   "decl": "Group.isNilpotent_of_finite_tfae",
+   "difference": "The declaration is in Mathlib.GroupTheory.Nilpotent. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Prove a cycle of implications",
+    "slogan": "Prove $(1) \\Rightarrow (2) \\Rightarrow (3) \\Rightarrow (4) \\Rightarrow (5) \\Rightarrow (1)$, using the Frattini argument and the nontrivial center of a $p$-group.",
+    "scope": "All five statements for a finite group. The cycle of implications proves the equivalence.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:contradiction",
+     "m:induction",
+     "m:group-action-orbits"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a maximal subgroup above any proper subgroup and gives Sylow subgroups.",
+      "steps": [
+       "s:sylow",
+       "s:product",
+       "s:pgroup"
+      ]
+     },
+     {
+      "h": "h:maximal",
+      "why": "Maximal subgroups link the normalizer condition to normality of Sylow subgroups.",
+      "steps": [
+       "s:maximal",
+       "s:sylow"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normalizer",
+      "slogan": "Show that nilpotent implies the normalizer condition, using the upper central series.",
+      "detail": "Let $Z_i$ be the upper central series and let $H$ be proper. Take the largest $i$ with $Z_i \\le H$. Pick $z \\in Z_{i+1} \\setminus H$. For $h \\in H$, $zhz^{-1}h^{-1} \\in Z_i \\le H$, so $zhz^{-1} \\in H$. So $z \\in N_G(H) \\setminus H$.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Show that the normalizer condition makes every maximal subgroup normal.",
+      "detail": "For maximal $M$, $M$ is properly inside $N_G(M)$. By maximality $N_G(M) = G$, so $M$ is normal.",
+      "uses": []
+     },
+     {
+      "id": "s:sylow",
+      "slogan": "Show that normal maximal subgroups force every Sylow subgroup to be normal.",
+      "detail": "Suppose a Sylow subgroup $P$ is not normal. Then $N_G(P)$ lies in a maximal subgroup $M$, which is normal. Also $P$ is Sylow in $M$. The Frattini argument gives $G = M N_G(P) = M$. This contradicts that $M$ is proper.",
+      "uses": [
+       "nm:frattini-s-argument"
+      ]
+     },
+     {
+      "id": "s:product",
+      "slogan": "Show that normal Sylow subgroups give the internal direct product.",
+      "detail": "Each prime has one normal Sylow subgroup $P_p$, and different ones meet in $1$ by coprime orders. Elements of $P_p$ and $P_q$ commute, because their commutator lies in $P_p \\cap P_q = 1$. So $(x_i) \\mapsto \\prod x_i$ is a homomorphism. It is injective by coprime orders and bijective by counting, so $G \\cong \\prod P_p$.",
+      "uses": []
+     },
+     {
+      "id": "s:pgroup",
+      "slogan": "Show that every finite $p$-group is nilpotent, and that a product of two nilpotent groups is nilpotent.",
+      "detail": "Induct on $|P|$. The center $Z(P)$ is nontrivial by the fixed point congruence, and $P/Z(P)$ is a smaller $p$-group, so $Z_{i+1}(P)$ is the preimage of $Z_i(P/Z(P))$. For $A \\times B$, $Z_i(A \\times B) = Z_i(A) \\times Z_i(B)$, so the larger class index reaches the whole product.",
+      "uses": [
+       "nm:technique-p-group-fixed-point-congruence"
+      ]
+     },
+     {
+      "id": "s:close",
+      "slogan": "Close the cycle: a direct product of Sylow subgroups is nilpotent.",
+      "detail": "In (5), $G$ is the direct product of $p$-groups. Each factor is nilpotent, so $G$ is nilpotent by the product result.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normalizer",
+      "s:maximal"
+     ],
+     [
+      "s:maximal",
+      "s:sylow"
+     ],
+     [
+      "s:sylow",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:close"
+     ],
+     [
+      "s:pgroup",
+      "s:close"
+     ]
+    ],
+    "conclusion": "s:close",
+    "concepts": {
+     "c:nilpotent-group": "Statement (1) is the property that the cycle returns to.",
+     "c:normalizer": "The normalizer condition is statement (2).",
+     "c:sylow-subgroup": "Normal Sylow subgroups connect statements (3), (4) and (5).",
+     "c:direct-product": "Statement (5) says that $G$ is a direct product."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-symmetric-group-conjugacy-cycle-type-class-sizes",
+  "statement": "In the [symmetric group](c:symmetric-group) $S_n$, two permutations are in the same [conjugacy class](c:conjugacy-class) if and only if they have the same cycle type. So the classes correspond to partitions of $n$. If $\\sigma$ has $m_k$ cycles of length $k$, its centralizer has order $\\prod k^{m_k} m_k!$ and its class has $n!/\\prod k^{m_k} m_k!$ elements.",
+  "hypotheses": [
+   {
+    "id": "h:n",
+    "text": "The number $n \\ge 1$ is an integer, and $S_n$ is the group of all permutations of $\\{1, \\dots, n\\}$.",
+    "concept": null
+   },
+   {
+    "id": "h:type",
+    "text": "The cycle type of $\\sigma$ lists all cycle lengths, with fixed points as $1$-cycles. The numbers $m_k$ satisfy $\\sum k m_k = n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Conjugacy classes of $S_n$ match cycle types, the centralizer of $\\sigma$ has order $\\prod k^{m_k} m_k!$, and the class of $\\sigma$ has $n!/\\prod k^{m_k} m_k!$ elements.",
+  "formal": {
+   "decl": "Equiv.Perm.isConj_iff_cycleType_eq",
+   "difference": "The declaration is in Mathlib.GroupTheory.Perm.Cycle.Type. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Relabel cycles, then count symmetries",
+    "slogan": "Show that conjugation relabels points, build a conjugating map from a cycle matching, and count the centralizer by orbit and stabilizer.",
+    "scope": "All $n \\ge 1$. The count of classes is the number of partitions of $n$.",
+    "mechanisms": [
+     "m:bijection",
+     "m:group-action-orbits",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:n",
+      "why": "The group $S_n$ acts on $\\{1, \\dots, n\\}$, so conjugation relabels the points.",
+      "steps": [
+       "s:relabel",
+       "s:build"
+      ]
+     },
+     {
+      "h": "h:type",
+      "why": "The multiplicities $m_k$ set the number of cycle matchings and rotations.",
+      "steps": [
+       "s:centralizer",
+       "s:class"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:relabel",
+      "slogan": "Show that $g\\sigma g^{-1}$ has the cycles of $\\sigma$ with every point renamed by $g$.",
+      "detail": "If $(a_1\\ a_2\\ \\dots\\ a_k)$ is a cycle of $\\sigma$, then $g\\sigma g^{-1}(g(a_i)) = g(a_{i+1})$. So $g\\sigma g^{-1}$ has the cycle $(g(a_1)\\ \\dots\\ g(a_k))$. Conjugate permutations have the same cycle type.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build a conjugating permutation for two permutations of the same cycle type.",
+      "detail": "Match the cycles of each length $k$ in $\\sigma$ and $\\tau$ by any bijection. Write the pairs as $(a_1\\ \\dots\\ a_k)$ and $(b_1\\ \\dots\\ b_k)$ and set $g(a_i) = b_i$. Cycles cover $\\{1, \\dots, n\\}$ once, so $g$ is a bijection and $g\\sigma g^{-1} = \\tau$.",
+      "uses": []
+     },
+     {
+      "id": "s:centralizer",
+      "slogan": "Count the permutations that commute with $\\sigma$.",
+      "detail": "If $g$ commutes with $\\sigma$, step 1 shows that $g$ maps cycles to cycles of the same length. This gives $m_k!$ bijections for each $k$. Then $g$ sends the first point of each $k$-cycle to one of $k$ points of its image cycle, and $g(\\sigma^j a) = \\sigma^j g(a)$ fixes the rest. Every such choice commutes with $\\sigma$. So $|C(\\sigma)| = \\prod k^{m_k} m_k!$.",
+      "uses": []
+     },
+     {
+      "id": "s:class",
+      "slogan": "Apply the orbit-stabilizer theorem to the conjugation action.",
+      "detail": "Conjugation is a [group action](c:group-action). The [stabilizer](c:stabilizer) of $\\sigma$ is $C(\\sigma)$, and its orbit is the conjugacy class. So the class has $n!/|C(\\sigma)|$ elements.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Match the classes with the partitions of $n$.",
+      "detail": "By steps 1 and 2, classes correspond one to one to cycle types. A cycle type is a multiset of positive integers with sum $n$, which is a partition of $n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:relabel",
+      "s:build"
+     ],
+     [
+      "s:relabel",
+      "s:centralizer"
+     ],
+     [
+      "s:centralizer",
+      "s:class"
+     ],
+     [
+      "s:build",
+      "s:count"
+     ],
+     [
+      "s:class",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:symmetric-group": "The group $S_n$ and its cycle structure are the object of study.",
+     "c:conjugacy-class": "The classes are the orbits of conjugation.",
+     "c:stabilizer": "The centralizer is the stabilizer under conjugation.",
+     "c:group-action": "Conjugation is an action that relabels points."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-noetherian-ring-minimal-primes-irreducible-components",
+  "statement": "Let $R$ be a [Noetherian ring](c:noetherian-ring) and $I$ an ideal. The minimal [prime ideals](c:prime-ideal) $P_1, \\dots, P_r$ over $I$ are finite in number, and $\\sqrt{I} = P_1 \\cap \\dots \\cap P_r$. The sets $V(P_i)$ are exactly the [irreducible](c:irreducible-space) components of $V(I)$ in the [prime spectrum](c:prime-spectrum). Also $V(J)$ is irreducible if and only if $\\sqrt{J}$ is prime.",
+  "hypotheses": [
+   {
+    "id": "h:noeth",
+    "text": "The ring $R$ is a [Noetherian ring](c:noetherian-ring): every ascending chain of ideals stops.",
+    "concept": "c:noetherian-ring"
+   },
+   {
+    "id": "h:topology",
+    "text": "The set $V(I)$ has the subspace topology from the [prime spectrum](c:prime-spectrum) $\\mathrm{Spec}\\,R$.",
+    "concept": "c:prime-spectrum"
+   }
+  ],
+  "conclusion": "The minimal primes over $I$ are finite in number with intersection $\\sqrt{I}$, the $V(P_i)$ are the irreducible components of $V(I)$, and $V(J)$ is irreducible if and only if $\\sqrt{J}$ is prime.",
+  "formal": {
+   "decl": "Ideal.finite_minimalPrimes_of_isNoetherianRing",
+   "difference": "The declaration is in Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Noetherian induction on radicals",
+    "slogan": "Show by a maximal counterexample that the radical is a finite intersection of primes, and then read the components from the irredundant form.",
+    "scope": "All three parts. The case $I = R$ has $r = 0$.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:noeth",
+      "why": "The Noetherian condition gives a maximal ideal in the set of bad ideals.",
+      "steps": [
+       "s:exist"
+      ]
+     },
+     {
+      "h": "h:topology",
+      "why": "Closed sets $V(J)$ and irreducibility are statements in the Zariski topology.",
+      "steps": [
+       "s:irreducible",
+       "s:components"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:exist",
+      "slogan": "Take a maximal ideal whose radical is not a finite intersection of primes and derive a contradiction.",
+      "detail": "Such an ideal $I$ is not $R$ and not prime, so $ab \\in I$ with $a, b \\notin I$. The ideals $I + (a)$ and $I + (b)$ are larger, so their radicals are finite intersections of primes. If $x$ is in both radicals, $x^{k+l} \\in I + (ab) = I$, so $\\sqrt{I} = \\sqrt{I + (a)} \\cap \\sqrt{I + (b)}$. This is a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:irredundant",
+      "slogan": "Remove redundant primes to get $\\sqrt{I} = P_1 \\cap \\dots \\cap P_r$ with no inclusions between the $P_i$.",
+      "detail": "If $Q_j \\subseteq Q_k$, delete $Q_k$. The intersection stays the same. Repeat until no prime contains another.",
+      "uses": []
+     },
+     {
+      "id": "s:minimal",
+      "slogan": "Show that every prime over $I$ contains some $P_i$, and that the $P_i$ are the minimal primes over $I$.",
+      "detail": "If a prime $Q \\supseteq I$ contains no $P_i$, pick $x_i \\in P_i \\setminus Q$. Then $\\prod x_i \\in \\sqrt{I} \\subseteq Q$, which contradicts primality. So each $Q$ contains some $P_i$, and the no-inclusion condition makes each $P_i$ minimal. A minimal $Q$ equals some $P_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:irreducible",
+      "slogan": "Prove that $V(J)$ is irreducible if and only if $\\sqrt{J}$ is prime.",
+      "detail": "If $V(J)$ is irreducible and $ab \\in \\sqrt{J}$, then $V(J) \\subseteq V(a) \\cup V(b)$, so $V(J) \\subseteq V(a)$, say. Then $a$ is in every prime over $J$, so $a \\in \\sqrt{J}$ by the nilradical theorem. Conversely, if $\\sqrt{J} = P$ is prime and $V(P) = V(J_1) \\cup V(J_2)$, then $P \\in V(J_1)$, say. So $V(P) \\subseteq V(J_1)$ and $V(P)$ is irreducible.",
+      "uses": [
+       "nm:technique-nilradical-intersection-of-primes"
+      ]
+     },
+     {
+      "id": "s:components",
+      "slogan": "Show that the $V(P_i)$ cover $V(I)$ and are its maximal irreducible subsets.",
+      "detail": "A prime lies in $V(I)$ if and only if it contains some $P_i$, so $V(I) = \\bigcup V(P_i)$. Each $V(P_i)$ is irreducible, and none lies in another. An irreducible $Z \\subseteq V(I)$ has closure $V(J)$ with $\\sqrt{J}$ prime, and $\\sqrt{J}$ contains some $P_i$. So $Z \\subseteq V(P_i)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exist",
+      "s:irredundant"
+     ],
+     [
+      "s:irredundant",
+      "s:minimal"
+     ],
+     [
+      "s:minimal",
+      "s:components"
+     ],
+     [
+      "s:irreducible",
+      "s:components"
+     ]
+    ],
+    "conclusion": "s:components",
+    "concepts": {
+     "c:noetherian-ring": "The ascending chain condition gives the maximal bad ideal.",
+     "c:prime-ideal": "Primes form the decomposition of the radical.",
+     "c:irreducible-space": "The components are maximal irreducible subsets.",
+     "c:prime-spectrum": "The sets $V(I)$ live in the prime spectrum."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-ext-of-cyclic-module-by-nonzerodivisor",
+  "statement": "Let $R$ be a commutative ring, let $x \\in R$ be a [non zero divisor](c:zero-divisor), and let $N$ be an $R$-module. Then $\\mathrm{Ext}^0_R(R/(x), N) \\cong N[x] = \\{n : xn = 0\\}$ and $\\mathrm{Ext}^1_R(R/(x), N) \\cong N/xN$. Also $\\mathrm{Ext}^k_R(R/(x), N) = 0$ for $k \\ge 2$, where $\\mathrm{Ext}$ is the [Ext group](c:ext-group).",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The ring $R$ is commutative with $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:nzd",
+    "text": "The element $x$ is not a zero divisor: $xr = 0$ implies $r = 0$.",
+    "concept": "c:zero-divisor"
+   },
+   {
+    "id": "h:ext",
+    "text": "The groups $\\mathrm{Ext}^k_R(-, N)$ are the right derived functors of $\\mathrm{Hom}_R(-, N)$. They give a long [exact sequence](c:exact-sequence) for each short one, and vanish in degrees $k \\ge 1$ on a [projective module](c:projective-module).",
+    "concept": "c:ext-group"
+   }
+  ],
+  "conclusion": "We have $\\mathrm{Ext}^0 \\cong N[x]$, $\\mathrm{Ext}^1 \\cong N/xN$, and $\\mathrm{Ext}^k = 0$ for $k \\ge 2$.",
+  "formal": {
+   "decl": "CategoryTheory.Abelian.Ext.contravariant_sequence_exact₃",
+   "difference": "The declaration is in Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Resolve $R/(x)$ by two free modules",
+    "slogan": "Use the short exact sequence $0 \\to R \\to R \\to R/(x) \\to 0$ and its long exact Ext sequence.",
+    "scope": "All degrees $k \\ge 0$. The module $N$ is arbitrary.",
+    "mechanisms": [
+     "m:long-exact-sequence",
+     "m:exact-sequence",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity makes multiplication by $x$ a module map $R \\to R$.",
+      "steps": [
+       "s:ses"
+      ]
+     },
+     {
+      "h": "h:nzd",
+      "why": "The non zero divisor makes multiplication by $x$ injective.",
+      "steps": [
+       "s:ses"
+      ]
+     },
+     {
+      "h": "h:ext",
+      "why": "The long exact sequence and the vanishing on free modules give all the groups.",
+      "steps": [
+       "s:les",
+       "s:free",
+       "s:low",
+       "s:high"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ses",
+      "slogan": "Form the short exact sequence $0 \\to R \\to R \\to R/(x) \\to 0$ with the map $r \\mapsto xr$.",
+      "detail": "Multiplication by $x$ is injective because $x$ is a non zero divisor. Its cokernel is $R/(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:les",
+      "slogan": "Apply $\\mathrm{Ext}^\\bullet(-, N)$ to get a long exact sequence.",
+      "detail": "The sequence reads $0 \\to \\mathrm{Hom}(R/(x), N) \\to \\mathrm{Hom}(R, N) \\to \\mathrm{Hom}(R, N) \\to \\mathrm{Ext}^1(R/(x), N) \\to \\mathrm{Ext}^1(R, N) \\to \\cdots$.",
+      "uses": []
+     },
+     {
+      "id": "s:free",
+      "slogan": "Use that $R$ is free to simplify the middle terms.",
+      "detail": "The module $R$ is projective, so $\\mathrm{Ext}^k(R, N) = 0$ for $k \\ge 1$. Also $\\mathrm{Hom}(R, N) \\cong N$ by $\\varphi \\mapsto \\varphi(1)$, and the induced map is $n \\mapsto xn$.",
+      "uses": []
+     },
+     {
+      "id": "s:low",
+      "slogan": "Read degrees $0$ and $1$ as a kernel and a cokernel of multiplication by $x$.",
+      "detail": "Exactness gives $\\mathrm{Hom}(R/(x), N) = \\ker(x\\colon N \\to N) = N[x]$. It also gives $\\mathrm{Ext}^1(R/(x), N) = \\mathrm{coker}(x) = N/xN$, because the next term $\\mathrm{Ext}^1(R, N)$ is zero.",
+      "uses": []
+     },
+     {
+      "id": "s:high",
+      "slogan": "Show that the higher groups vanish.",
+      "detail": "For $k \\ge 2$ the sequence $\\mathrm{Ext}^{k-1}(R, N) \\to \\mathrm{Ext}^k(R/(x), N) \\to \\mathrm{Ext}^k(R, N)$ is exact. Both outer groups are zero, so the middle group is zero.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "State the three results together.",
+      "detail": "Steps 4 and 5 give $N[x]$ in degree $0$, $N/xN$ in degree $1$ and $0$ in degrees $k \\ge 2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ses",
+      "s:les"
+     ],
+     [
+      "s:les",
+      "s:free"
+     ],
+     [
+      "s:free",
+      "s:low"
+     ],
+     [
+      "s:free",
+      "s:high"
+     ],
+     [
+      "s:low",
+      "s:collect"
+     ],
+     [
+      "s:high",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:zero-divisor": "A non zero divisor makes multiplication by $x$ injective.",
+     "c:ext-group": "The theorem computes Ext groups.",
+     "c:exact-sequence": "Exactness of the long sequence gives each group.",
+     "c:projective-module": "Free modules are projective, so higher Ext groups vanish."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-legendre-rodrigues-orthogonality-recurrence",
+  "statement": "For $n \\ge 0$ let $P_n = \\frac{1}{2^n n!} \\frac{d^n}{dx^n}(x^2 - 1)^n$, the [Legendre polynomial](c:legendre-polynomial). Then $P_n$ has degree $n$ with $P_n(1) = 1$. Also $\\int_{-1}^1 P_m P_n\\,dx$ is $0$ for $m \\ne n$ and $2/(2n+1)$ for $m = n$. The recurrence $(2n+1)xP_n = (n+1)P_{n+1} + nP_{n-1}$ holds, and the $P_k$ give an expansion of every [polynomial](c:polynomial).",
+  "hypotheses": [
+   {
+    "id": "h:ints",
+    "text": "The numbers $m$ and $n$ are non-negative integers.",
+    "concept": null
+   },
+   {
+    "id": "h:riemann",
+    "text": "All integrals are Riemann integrals of polynomials over $[-1, 1]$, and the pairing is [orthogonality](c:orthogonality) for this integral.",
+    "concept": "c:orthogonality"
+   }
+  ],
+  "conclusion": "Degree, leading coefficient, parity and $P_n(1) = 1$ hold. Orthogonality holds with norm $2/(2n+1)$. The three-term recurrence holds. Every polynomial of degree at most $N$ is $\\sum c_k P_k$ with $c_k = \\frac{2k+1}{2} \\int f P_k$.",
+  "formal": {
+   "decl": "integral_mul_deriv_eq_deriv_mul",
+   "difference": "The declaration is in Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Rodrigues formula and integration by parts",
+    "slogan": "Integrate by parts $n$ times against the Rodrigues derivative, compute the norm, and expand with the orthogonal basis.",
+    "scope": "Parts (a) to (d). The recurrence is proved for $n \\ge 1$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:orthogonal-projection",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:ints",
+      "why": "The order $n$ of the derivative must be a non-negative integer.",
+      "steps": [
+       "s:basic",
+       "s:ibp"
+      ]
+     },
+     {
+      "h": "h:riemann",
+      "why": "Integration by parts on $[-1, 1]$ gives orthogonality, and the pairing gives the expansion.",
+      "steps": [
+       "s:ibp",
+       "s:orth",
+       "s:recur",
+       "s:expand"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:basic",
+      "slogan": "Find the degree, the leading coefficient, the parity and the value at $1$ of $P_n$.",
+      "detail": "Put $u_n = (x^2 - 1)^n$. The $n$-th derivative of $x^{2n}$ is $\\frac{(2n)!}{n!} x^n$, so $k_n = \\frac{(2n)!}{2^n (n!)^2}$. The function $u_n$ is even, so $P_n(-x) = (-1)^n P_n(x)$. The Leibniz rule at $x = 1$ leaves only the term $n!(x+1)^n$, so $P_n(1) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:ibp",
+      "slogan": "Move the $n$ derivatives from $u_n$ onto the other factor by integration by parts.",
+      "detail": "For $j < n$ every term of $u_n^{(j)}$ has factors $(x-1)^{n-i}$ and $(x+1)^{n-j+i}$ with positive exponents, so $u_n^{(j)}(\\pm 1) = 0$. So boundary terms vanish and $\\int g\\,u_n^{(n)}\\,dx = (-1)^n \\int g^{(n)} u_n\\,dx$.",
+      "uses": []
+     },
+     {
+      "id": "s:orth",
+      "slogan": "Prove orthogonality and compute the norm.",
+      "detail": "For $m < n$ take $g = P_m$. Then $g^{(n)} = 0$, so $\\int P_m P_n = 0$. For $g = P_n$, $g^{(n)}$ is the constant $\\frac{(2n)!}{2^n n!}$, so $\\int P_n^2 = \\frac{(2n)!}{(2^n n!)^2} I_n$ with $I_n = \\int (1-x^2)^n$. Integration by parts gives $(2n+1) I_n = 2n I_{n-1}$ with $I_0 = 2$. So $I_n = \\frac{2^{2n+1} (n!)^2}{(2n+1)!}$ and $\\int P_n^2 = \\frac{2}{2n+1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:recur",
+      "slogan": "Expand $xP_n$ in the orthogonal basis and find the three coefficients.",
+      "detail": "Write $xP_n = \\sum_{j \\le n+1} c_j P_j$ with $c_j = \\langle xP_n, P_j \\rangle / \\langle P_j, P_j \\rangle$. For $j < n-1$, $\\langle P_n, xP_j \\rangle = 0$ by degree. For $j = n$ the integrand $xP_n^2$ is odd. Leading coefficients give $c_{n+1} = k_n / k_{n+1} = \\frac{n+1}{2n+1}$ and $c_{n-1} = \\frac{n}{2n+1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand a polynomial in $P_0, \\dots, P_N$ with the orthogonality relation.",
+      "detail": "The $P_k$ are orthogonal, nonzero, and have degrees $0, \\dots, N$. So they form a basis of the polynomials of degree at most $N$. The coefficient along $P_k$ is $\\langle f, P_k \\rangle / \\langle P_k, P_k \\rangle = \\frac{2k+1}{2} \\langle f, P_k \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect parts (a) to (d).",
+      "detail": "Step 1 gives (a). Steps 3 and 4 give (b) and (c). Step 5 gives (d).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:basic",
+      "s:orth"
+     ],
+     [
+      "s:ibp",
+      "s:orth"
+     ],
+     [
+      "s:orth",
+      "s:recur"
+     ],
+     [
+      "s:basic",
+      "s:recur"
+     ],
+     [
+      "s:orth",
+      "s:expand"
+     ],
+     [
+      "s:recur",
+      "s:collect"
+     ],
+     [
+      "s:expand",
+      "s:collect"
+     ],
+     [
+      "s:basic",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:legendre-polynomial": "The Rodrigues formula defines the Legendre polynomial.",
+     "c:polynomial": "The expansion theorem is about polynomials of bounded degree.",
+     "c:orthogonality": "Orthogonality gives the norm, the recurrence and the expansion."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-peano-kernel-simpson-error",
+  "statement": "Let $f \\in C^4[-h, h]$, $S(f) = \\frac{h}{3}(f(-h) + 4f(0) + f(h))$ and $R(f) = \\int_{-h}^h f - S(f)$. With $K(t) = -(h - |t|)^3 (h + 3|t|)/72$, we have $R(f) = \\int K f^{(4)}$. The kernel $K$ is even, nonpositive and has $\\int K = -h^5/90$. So $R(f) = -\\frac{h^5}{90} f^{(4)}(\\xi)$ for some $\\xi \\in (-h, h)$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "The function $f$ is real and four times continuously differentiable on $[-h, h]$.",
+    "concept": null
+   },
+   {
+    "id": "h:h",
+    "text": "The number $h$ is positive, and $R(f)$ is a [Riemann integral](c:riemann-integral) minus a finite sum.",
+    "concept": "c:riemann-integral"
+   }
+  ],
+  "conclusion": "The error is $R(f) = \\int_{-h}^h K f^{(4)}$ with $K \\le 0$ and $\\int K = -h^5/90$, so $R(f) = -\\frac{h^5}{90} f^{(4)}(\\xi)$, and $m \\le f^{(4)} \\le M$ gives $-Mh^5/90 \\le R(f) \\le -mh^5/90$.",
+  "formal": {
+   "decl": "taylor_integral_remainder_of_absolutelyContinuous",
+   "difference": "The declaration is in Mathlib.Analysis.Calculus.Taylor. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Peano kernel by Taylor and Fubini",
+    "slogan": "Show that $R$ kills cubics, apply $R$ to the Taylor remainder, exchange integrals, and compute the kernel.",
+    "scope": "The error formula, the kernel properties, the mean value form and the bounds, for every $h > 0$.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:fubini-swap",
+     "m:mean-value"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Four continuous derivatives allow a Taylor expansion with an integral remainder.",
+      "steps": [
+       "s:taylor",
+       "s:swap",
+       "s:mean"
+      ]
+     },
+     {
+      "h": "h:h",
+      "why": "A positive $h$ makes the interval and the weights well defined.",
+      "steps": [
+       "s:exact",
+       "s:kernel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:exact",
+      "slogan": "Show that $R(f) = 0$ for every polynomial of degree at most $3$.",
+      "detail": "The functional $R$ is linear. For $f = 1$ and $f = x^2$ direct computation gives $0$. For $f = x$ and $f = x^3$ both the integral and $S$ vanish by symmetry.",
+      "uses": []
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Write $f$ as a cubic plus an integral of $f^{(4)}$ against a kernel $G$.",
+      "detail": "[Taylor's theorem](c:taylor-series) at $0$ gives $f(x) = T(x) + \\int_{-h}^h G(x, t) f^{(4)}(t)\\,dt$ with a cubic $T$. Here $G(x, t) = (x-t)_+^3/6$ for $t \\ge 0$ and $G(x, t) = (t-x)_+^3/6$ for $t \\le 0$.",
+      "uses": [
+       "wd:Q1137206"
+      ]
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Apply $R$ to this formula and exchange the integrals.",
+      "detail": "The functional $R$ kills $T$. The kernel $G$ is bounded and piecewise continuous, so Fubini allows the exchange. So $R(f) = \\int K f^{(4)}$ with $K(t) = R_x[G(x, t)]$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Compute $K(t)$ for $t \\ge 0$ and extend it to $t < 0$ by symmetry.",
+      "detail": "For $t > 0$, $G(-h, t) = G(0, t) = 0$, $G(h, t) = (h-t)^3/6$ and $\\int G\\,dx = (h-t)^4/24$. So $K(t) = (h-t)^4/24 - \\frac{h}{18}(h-t)^3 = -(h-t)^3(h+3t)/72$. Since $G(x, t) = G(-x, -t)$ and the nodes are symmetric, $K$ is even.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Show that $K \\le 0$ and compute $\\int K$.",
+      "detail": "On $|t| \\le h$ both factors $h - |t|$ and $h + 3|t|$ are non-negative, so $K \\le 0$. With $u = h - t$, $\\int_0^h u^3 (4h - 3u)\\,du = 2h^5/5$. So $\\int K = 2 \\cdot (-\\frac{1}{72}) \\cdot \\frac{2h^5}{5} = -h^5/90$.",
+      "uses": []
+     },
+     {
+      "id": "s:mean",
+      "slogan": "Use the mean value argument for a one-signed weight and bound $R(f)$.",
+      "detail": "The kernel is continuous and negative inside $(-h, h)$. So $\\int K f^{(4)} / \\int K$ is a weighted average of $f^{(4)}$. The intermediate value theorem gives $\\xi$ with $f^{(4)}(\\xi)$ equal to the average. Since $K \\le 0$, $m \\le f^{(4)} \\le M$ gives the bounds on $R(f)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exact",
+      "s:swap"
+     ],
+     [
+      "s:taylor",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:kernel"
+     ],
+     [
+      "s:kernel",
+      "s:sign"
+     ],
+     [
+      "s:sign",
+      "s:mean"
+     ]
+    ],
+    "conclusion": "s:mean",
+    "concepts": {
+     "c:taylor-series": "Taylor's theorem with integral remainder gives the kernel representation.",
+     "c:riemann-integral": "The error is a Riemann integral of the fourth derivative."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-poisson-superposition-thinning",
+  "statement": "Write $\\pi_r(n) = e^{-r} r^n/n!$. (a) If $X \\sim$ [Poisson](c:poisson-distribution)$(a)$ and $Y \\sim$ Poisson$(b)$ are [independent](c:independent-random-variables), then $X + Y \\sim$ Poisson$(a+b)$. (b) Given $X + Y = n$, $X \\sim$ [Bin](c:binomial-distribution)$(n, a/(a+b))$. (c) If $N \\sim$ Poisson$(\\lambda)$ and each point is kept with probability $p$, then $K$ and $N - K$ are independent Poisson$(\\lambda p)$ and Poisson$(\\lambda(1-p))$.",
+  "hypotheses": [
+   {
+    "id": "h:rates",
+    "text": "The rates $a$, $b$ and $\\lambda$ are positive, and $0 < p < 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:indep",
+    "text": "The variables $X$ and $Y$ are [independent](c:independent-random-variables). In (c) the keep decisions are independent of each other and of $N$.",
+    "concept": "c:independent-random-variables"
+   }
+  ],
+  "conclusion": "The sum of independent Poisson variables is Poisson, the conditional law is binomial, and thinning gives two independent Poisson variables.",
+  "formal": {
+   "decl": "poissonMeasure_conv_poissonMeasure",
+   "difference": "The declaration is in Mathlib.Probability.Distributions.Poisson.Basic. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Convolution and binomial theorem",
+    "slogan": "Convolve two Poisson laws and sum with the binomial theorem; then factor the joint law of the thinned counts.",
+    "scope": "Parts (a), (b) and (c). Part (c) does not use part (a).",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:bijection",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:rates",
+      "why": "Positive rates make the laws $\\pi_r$ well defined, and $0 < p < 1$ makes thinning nontrivial.",
+      "steps": [
+       "s:sum",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:indep",
+      "why": "Independence turns the law of a sum into a convolution and the joint law into a product.",
+      "steps": [
+       "s:conv",
+       "s:joint",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:conv",
+      "slogan": "Write the law of $X + Y$ as a discrete convolution.",
+      "detail": "For independent integer variables, $P(X + Y = n) = \\sum_{j=0}^n \\pi_a(j)\\pi_b(n-j)$. This sum splits the event by the value $j$ of $X$, because $Y$ must then equal $n - j$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Evaluate the sum with the binomial theorem.",
+      "detail": "Each term is $\\frac{e^{-(a+b)}}{n!} \\binom{n}{j} a^j b^{n-j}$. The binomial theorem gives $e^{-(a+b)}(a+b)^n/n! = \\pi_{a+b}(n)$. This proves (a).",
+      "uses": [
+       "wd:Q26708"
+      ]
+     },
+     {
+      "id": "s:cond",
+      "slogan": "Divide the joint probability by $P(X + Y = n)$ to find the conditional law.",
+      "detail": "For $0 \\le j \\le n$, $P(X = j \\mid X + Y = n) = \\pi_a(j)\\pi_b(n-j)/\\pi_{a+b}(n) = \\binom{n}{j} (\\frac{a}{a+b})^j (\\frac{b}{a+b})^{n-j}$. This is the binomial law and proves (b).",
+      "uses": []
+     },
+     {
+      "id": "s:joint",
+      "slogan": "Find the joint law of the kept and the lost points in (c).",
+      "detail": "For $n = j + l$, $P(K = j, N - K = l) = P(N = n) \\binom{n}{j} p^j (1-p)^l$, because given $N = n$ the count $K$ is binomial.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor the joint law into two Poisson laws.",
+      "detail": "Use $\\lambda^n = \\lambda^j \\lambda^l$ and $e^{-\\lambda} = e^{-\\lambda p} e^{-\\lambda(1-p)}$. The joint law is $\\pi_{\\lambda p}(j)\\,\\pi_{\\lambda(1-p)}(l)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Read the marginals and independence from the product form.",
+      "detail": "A joint law that is a product of two laws has those laws as marginals, and the variables are independent. This proves (c). Together with steps 2 and 3, this proves the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:conv",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:cond"
+     ],
+     [
+      "s:cond",
+      "s:conclude"
+     ],
+     [
+      "s:joint",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:poisson-distribution": "The theorem is about sums and thinning of Poisson variables.",
+     "c:binomial-distribution": "The conditional law and the thinning step are binomial.",
+     "c:independent-random-variables": "Independence gives convolutions and product laws."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-jacobson-nonzero-spectrum-ab-ba",
+  "statement": "Let $a, b$ be elements of an associative unital algebra over a field $k$. If $1 - ab$ is [invertible](c:invertible), then $1 - ba$ is, with inverse $1 + b(1-ab)^{-1}a$. Hence $\\sigma(ab) \\setminus \\{0\\} = \\sigma(ba) \\setminus \\{0\\}$, where $\\sigma$ is the [spectrum](c:spectrum-of-an-operator). For matrices, the nonzero [eigenvalues](c:eigenvalue) of $ab$ and $ba$ have equal multiplicity. The point $0$ may lie in one spectrum only.",
+  "hypotheses": [
+   {
+    "id": "h:alg",
+    "text": "The algebra $A$ is associative with unit, and need not be commutative. The field $k$ is arbitrary, and no norm is used.",
+    "concept": null
+   },
+   {
+    "id": "h:matrix",
+    "text": "For the eigenspace statement, $a$ is $m \\times n$ and $b$ is $n \\times m$ over $k$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "We have $(1-ba)^{-1} = 1 + b(1-ab)^{-1}a$, the spectra agree away from $0$, the eigenspaces for $\\lambda \\ne 0$ have equal dimension, and $0$ can lie in one spectrum only.",
+  "formal": {
+   "decl": "nonzero_mul_comm",
+   "difference": "The declaration is in Mathlib.Algebra.Algebra.Spectrum.Basic. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Verify the explicit inverse",
+    "slogan": "Verify the inverse by direct multiplication, deduce the spectra, map eigenvectors by $b$, and give an example for $0$.",
+    "scope": "The algebra case, the rectangular matrix case, the eigenspaces and a counterexample for $0$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:counterexample-family",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:alg",
+      "why": "Only associativity and the unit are needed for the inverse identity.",
+      "steps": [
+       "s:inverse",
+       "s:spectra",
+       "s:zero"
+      ]
+     },
+     {
+      "h": "h:matrix",
+      "why": "The sizes make $ab$ and $ba$ square and let $b$ map eigenvectors.",
+      "steps": [
+       "s:rect",
+       "s:eigen"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:inverse",
+      "slogan": "Multiply out $(1-ba)v$ and $v(1-ba)$ for $v = 1 + bua$ with $u = (1-ab)^{-1}$.",
+      "detail": "We get $(1-ba)v = 1 + bua - ba - babua = 1 - ba + b(1-ab)ua = 1$. Similarly $v(1-ba) = 1 - ba + bu(1-ab)a = 1$. So $v$ is the two-sided inverse.",
+      "uses": []
+     },
+     {
+      "id": "s:spectra",
+      "slogan": "Scale by $\\lambda \\ne 0$ to compare the two spectra.",
+      "detail": "Write $\\lambda - ab = \\lambda(1 - (\\lambda^{-1}a)b)$ and $\\lambda - ba = \\lambda(1 - b(\\lambda^{-1}a))$. By step 1, one is invertible if and only if the other is.",
+      "uses": []
+     },
+     {
+      "id": "s:eigen",
+      "slogan": "Map eigenvectors of $ab$ to eigenvectors of $ba$ by $x \\mapsto bx$.",
+      "detail": "If $abx = \\lambda x$, then $ba(bx) = \\lambda bx$. If $bx = 0$ then $\\lambda x = 0$, so $x = 0$. The map is injective, and exchanging $a$ and $b$ gives an injection the other way. So the dimensions are equal.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Give an example in which $0$ lies in one spectrum only.",
+      "detail": "On the space with basis $e_0, e_1, \\dots$ let $S e_i = e_{i+1}$ and $S^* e_0 = 0$, $S^* e_{i+1} = e_i$. For $a = S^*$ and $b = S$, $ab = 1$ is invertible, but $ba$ kills $e_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:rect",
+      "slogan": "Reduce the rectangular case to square matrices by padding with zeros.",
+      "detail": "Let $N = \\max(m, n)$. Pad $a$ and $b$ to $N \\times N$ matrices $a'$ and $b'$. Then $1 - a'b' = (1 - ab) \\oplus 1$ and $1 - b'a' = (1 - ba) \\oplus 1$. The square case gives the formula for $(1-ba)^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the parts of the theorem.",
+      "detail": "Step 1 gives the inverse. Steps 2 and 3 give the spectra and eigenspaces. Step 4 gives the example, and step 5 gives the rectangular case.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:inverse",
+      "s:spectra"
+     ],
+     [
+      "s:inverse",
+      "s:rect"
+     ],
+     [
+      "s:spectra",
+      "s:collect"
+     ],
+     [
+      "s:eigen",
+      "s:collect"
+     ],
+     [
+      "s:zero",
+      "s:collect"
+     ],
+     [
+      "s:rect",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:invertible": "The inverse identity is the core of the proof.",
+     "c:spectrum-of-an-operator": "The spectra of $ab$ and $ba$ are compared.",
+     "c:eigenvalue": "The nonzero eigenvalues have equal multiplicity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-lyapunov-lp-interpolation",
+  "statement": "Let $(\\Omega, \\mu)$ be a measure space and $0 < p < r < q \\le \\infty$, with $1/r = (1-\\theta)/p + \\theta/q$. Then every measurable $f$ satisfies $\\|f\\|_r \\le \\|f\\|_p^{1-\\theta} \\|f\\|_q^\\theta$. So $L^p \\cap L^q \\subset L^r$, where $L^p$ is an [Lp space](c:lp-space) with [norm](c:norm) $\\|\\cdot\\|_p$.",
+  "hypotheses": [
+   {
+    "id": "h:exps",
+    "text": "The exponents satisfy $0 < p < r < q \\le \\infty$, and $\\theta \\in (0, 1)$ is set by $1/r = (1-\\theta)/p + \\theta/q$.",
+    "concept": null
+   },
+   {
+    "id": "h:meas",
+    "text": "The function $f$ is measurable. A norm may be infinite, in which case the inequality is trivial when the right side is infinite.",
+    "concept": "c:lp-space"
+   }
+  ],
+  "conclusion": "The inequality $\\|f\\|_r \\le \\|f\\|_p^{1-\\theta}\\|f\\|_q^\\theta$ holds, and $L^p \\cap L^q \\subset L^r$.",
+  "formal": {
+   "decl": "lintegral_Lp_mul_le_Lq_mul_Lr",
+   "difference": "The declaration is in Mathlib.MeasureTheory.Integral.MeanInequalities. It states a related or smaller fact, not this exact statement."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Hölder with a split power",
+    "slogan": "Split $|f|^r$ into two powers, apply Hölder with conjugate exponents, and take the $r$-th root.",
+    "scope": "Both the case $q < \\infty$ and the case $q = \\infty$. Infinite norms on the right make the inequality trivial.",
+    "mechanisms": [
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:exps",
+      "why": "The relation for $\\theta$ makes the Hölder exponents conjugate.",
+      "steps": [
+       "s:exponents",
+       "s:holder"
+      ]
+     },
+     {
+      "h": "h:meas",
+      "why": "Measurability makes the integrals of $|f|^p$ and $|f|^q$ defined.",
+      "steps": [
+       "s:holder",
+       "s:infty"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:exponents",
+      "slogan": "Find conjugate exponents $P$ and $Q$ from $\\theta$ when $q < \\infty$.",
+      "detail": "Put $s = r(1-\\theta)/p$ and $t = r\\theta/q$. The relation for $\\theta$ gives $s + t = 1$ with $s, t \\in (0, 1)$. So $P = 1/s$ and $Q = 1/t$ are [Hölder conjugate exponents](c:holder-conjugate-exponents).",
+      "uses": []
+     },
+     {
+      "id": "s:holder",
+      "slogan": "Split $|f|^r = |f|^{(1-\\theta)r}|f|^{\\theta r}$ and apply Hölder.",
+      "detail": "Hölder gives $\\int |f|^r \\le (\\int |f|^{(1-\\theta)rP})^{1/P} (\\int |f|^{\\theta r Q})^{1/Q}$. Here $(1-\\theta)rP = p$ and $\\theta r Q = q$. So $\\int |f|^r \\le (\\int |f|^p)^{(1-\\theta)r/p} (\\int |f|^q)^{\\theta r/q}$.",
+      "uses": [
+       "nm:weighted-holder-inequality"
+      ]
+     },
+     {
+      "id": "s:root",
+      "slogan": "Take the $r$-th root of both sides.",
+      "detail": "The exponents become $1 - \\theta$ and $\\theta$, so $\\|f\\|_r \\le \\|f\\|_p^{1-\\theta}\\|f\\|_q^\\theta$. If a norm on the right is infinite, the inequality is trivial.",
+      "uses": []
+     },
+     {
+      "id": "s:infty",
+      "slogan": "Treat the case $q = \\infty$ directly.",
+      "detail": "Almost everywhere $|f|^r \\le |f|^p \\|f\\|_\\infty^{r-p}$. So $\\|f\\|_r^r \\le \\|f\\|_p^p \\|f\\|_\\infty^{r-p}$. The exponents $p/r = 1 - \\theta$ and $1 - p/r = \\theta$ give the claim.",
+      "uses": []
+     },
+     {
+      "id": "s:inclusion",
+      "slogan": "Deduce the inclusion and the convexity of $1/s \\mapsto \\log\\|f\\|_s$.",
+      "detail": "If $f \\in L^p \\cap L^q$ the right side is finite, so $f \\in L^r$ and $\\|f\\|_r \\le \\max(\\|f\\|_p, \\|f\\|_q)$. With $t = 1/s$, $t_r = (1-\\theta)t_p + \\theta t_q$, so the inequality says that $\\log\\|f\\|_{1/t}$ is convex in $t$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exponents",
+      "s:holder"
+     ],
+     [
+      "s:holder",
+      "s:root"
+     ],
+     [
+      "s:root",
+      "s:inclusion"
+     ],
+     [
+      "s:infty",
+      "s:inclusion"
+     ]
+    ],
+    "conclusion": "s:inclusion",
+    "concepts": {
+     "c:lp-space": "The inequality compares the norms of three $L^p$ spaces.",
+     "c:norm": "The inequality is stated for norms.",
+     "c:holder-conjugate-exponents": "Hölder needs conjugate exponents $P$ and $Q$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]
