@@ -33,8 +33,17 @@ A record has: `id` (`nm:...`), `name`, `aliases`, `type`, `cats`, `application_c
 A deferred record also has `deferred_reason`. A core record with no prerequisite result has `empty_prerequisites_reason`.
 t2 may give one `worked_application`. The CLI turns it into `applications`.
 
+A published source uses `kind: literature`, with `citation`, `module` (chapter or section), `declaration` (theorem or equation),
+and `page`. It keeps `url`, `revision`, `alignment`, `attribution`, `reuse`, `excerpt` and `excerpt_sha256`.
+These fields identify a published statement. They do not identify a formal declaration. A Mathlib source keeps its existing fields.
+
+A deep result can use `proof.kind: outline`. Its scope must name the outline.
+Its `proof.source` must hold `kind: cited`, `ref` (the full reference of the published proof) and a stable HTTPS `url`.
+The proof steps must name the real ingredients of that proof. The length check and the worked application check still apply.
+The judge must check the published reference and every ingredient. An accepted outline stays labelled as an outline in the catalog.
+
 The validator rejects: unknown prerequisites, concepts or categories; a changed source excerpt; a counted record
-with a proof shorter than 350 characters, a proof that is not authored, or no worked application; a calculation
+with a proof shorter than 350 characters, a proof that is neither authored nor a cited outline, or no worked application; a calculation
 step where `expression` and `expected` differ in exact arithmetic; a duplicate name; a prerequisite on a deferred record.
 
 ## Commands

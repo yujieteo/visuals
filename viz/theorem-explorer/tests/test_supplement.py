@@ -1,5 +1,6 @@
 """The local result-pack queue rejects incomplete records and answers before publication."""
 import copy
+from unittest.mock import patch
 import sys
 import tempfile
 import unittest
@@ -80,6 +81,71 @@ class PackTests(unittest.TestCase):
         r = copy.deepcopy(next(x for x in self.records if x["applications"]))
         r["worked_application"] = r.pop("applications")[0]
         self.assertEqual(supplement.normalize(r)["applications"][0]["title"], r["worked_application"]["title"])
+
+
+class LiteratureTests(PackTests):
+    def literature(self):
+        record = copy.deepcopy(next(r for r in self.records if r["status"] == "candidate" and r["selection"] == "core"))
+        record["source"] = {
+            "kind": "literature", "citation": "Authors, A published result, Journal 1 (2000), 1-10.",
+            "module": "Section 2", "declaration": "Theorem 1", "page": "pp. 3-4",
+            "url": "https://example.org/paper", "revision": "Published edition, 2000",
+            "alignment": "The authored statement matches the cited theorem.", "attribution": "Authors, 2000",
+            "reuse": "Authored paraphrase with a source reference.", "excerpt": "A short identifying statement.",
+        }
+        record["source"]["excerpt_sha256"] = common.sha256_bytes(record["source"]["excerpt"].encode())
+        record["proof"].update(kind="outline", scope="Outline of the published proof under the stated hypotheses.",
+                               source={"kind": "cited", "ref": record["source"]["citation"], "url": record["source"]["url"]})
+        return record
+
+    def test_literature_outline_keeps_its_source_identity(self):
+        record = self.literature()
+        # Use a complete reviewed record to exercise the real mixed-source overlay.
+        self.records = [record if r["id"] == record["id"] else r for r in self.records]
+        self.write(self.records)
+        packs, raw, existing, checker = supplement.inputs(data=self.data)
+        by_id = {r["id"]: r for r in packs["methods"]}
+        state, _ = supplement.pack_state(packs, existing)
+        judgments = common.read_json(DATA / "methods-judgments.json")
+        state["methods"][record["id"]] = judgments[record["id"]]
+        with patch.object(supplement, "pack_state", return_value=(state, by_id)):
+            result, _, _ = supplement.overlay(raw, data=self.data)
+        rows = supplement.unpack(result, "core")["rows"]
+        detail = supplement.unpack(result, "detail")
+        i = next(i for i, r in enumerate(rows) if r["id"] == record["id"])
+        self.assertEqual(rows[i]["evk"], ["source-proof", "cited-outline"])
+        self.assertEqual(detail[i]["decls"], [])
+        self.assertEqual(detail[i]["ndecls"], 0)
+        self.assertIsNone(detail[i]["mod"])
+        ev = detail[i]["evs"][0]
+        self.assertEqual(ev["kind"], "source statement")
+        self.assertEqual(ev["location"], "Section 2, Theorem 1, pp. 3-4")
+        self.assertEqual(ev["citation"], record["source"]["citation"])
+        self.assertEqual(detail[i]["proof"]["kind"], "outline")
+        self.assertIn("outline", detail[i]["proof"]["verification"])
+        formal = next(d for d in detail if d.get("pack") == "methods" and d["ndecls"] == 1)
+        self.assertEqual(formal["evs"][0]["kind"], "formal declaration")
+
+    def test_outline_requires_a_published_proof_and_explicit_label(self):
+        for mutate in (lambda r: r["proof"].pop("source"),
+                       lambda r: r["proof"].update(scope="Complete proof of the stated result."),
+                       lambda r: r["proof"]["source"].update(url="file:///paper")):
+            record = self.literature()
+            mutate(record)
+            self.write([record if r["id"] == record["id"] else r for r in self.records])
+            with self.assertRaisesRegex(ValueError, "outline|published proof URL"):
+                supplement.inputs(data=self.data)
+
+    def test_literature_requires_an_exact_location_and_valid_excerpt(self):
+        for missing in ("citation", "module", "declaration", "page"):
+            source = self.literature()["source"]
+            source.pop(missing)
+            with self.assertRaisesRegex(ValueError, missing):
+                supplement.check_source("nm:test", source)
+        source = self.literature()["source"]
+        source["excerpt"] += " changed"
+        with self.assertRaisesRegex(ValueError, "excerpt"):
+            supplement.check_source("nm:test", source)
 
 
 class ValidateTests(unittest.TestCase):
