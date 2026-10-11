@@ -241,7 +241,7 @@ def answer_rows(folder, identities=None):
                 raise StepFailed("duplicate IDs or malformed answer fields")
             rows[rid] = row
             if identities is not None:
-                identities[rid] = judge.provenance(config=meta["judges"][rid] if "judges" in meta else meta)
+                identities[rid] = judge.provenance(config=meta["judges"].get(rid) if "judges" in meta else meta)
     return rows
 
 
@@ -416,7 +416,12 @@ def assemble(log):
     return {"snapshot": new["snapshot"]["id"], "previous": new["snapshot"]["previous"]}
 
 
-def publish(log):
+def publish(log, apply_supplement=True):
+    if apply_supplement and (VISUAL / "raw.json").is_file():
+        import supplement
+        raw = read_json(OUT / "raw.json")
+        raw, _, _ = supplement.overlay(raw)
+        write_json(OUT / "raw.json", raw, indent=None)
     shutil.copy(OUT / "raw.json", VISUAL / "raw.json")
     run([sys.executable, VISUAL / "build.py"], log, cwd=VISUAL)
     run([sys.executable, VISUAL / "build.py", "--verify"], log, cwd=VISUAL)
@@ -428,6 +433,10 @@ ACTIONS = {"resolve": resolve, "fetch": fetch, "extract": extract, "stages": sta
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "--supplement":
+        import supplement
+        return supplement.main(argv[1:])
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true", help="skip resolve and fetch: use the pins and the work directory")
     ap.add_argument("--from", dest="start", choices=STEPS, default="resolve", help="the first step to run")

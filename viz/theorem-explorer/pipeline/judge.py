@@ -49,11 +49,11 @@ def score(cell):
 
 
 class Checker:
-    def __init__(self):
+    def __init__(self, ids=None):
         tax = read_json(DATA / "arxiv-taxonomy.json")
         self.known = {c["id"] for c in tax["categories"]}
         self.aliases = tax["aliases"]
-        self.ids = {e["id"] for e in json.loads((STAGE / "evidence.json").read_text(encoding="utf-8"))}
+        self.ids = set(ids) if ids is not None else {e["id"] for e in json.loads((STAGE / "evidence.json").read_text(encoding="utf-8"))}
 
     def cats(self, cell, notes):
         out = []
@@ -148,7 +148,7 @@ def validate_batch(toon_text, batch_ids, checker):
         if set(row.keys()) != set(FIELDS):
             raise ValueError(f"row {row.get('id')}: field mismatch")
 
-    return table
+    return [checker.row(row, set(batch_ids)) for row in table]
 
 
 def collect(folder="answers"):

@@ -1,119 +1,76 @@
-# Local proof and judgment queue
+# Local result-pack queue (te-supplement/1)
 
-The local queue adds results to the committed snapshot. It uses no model API, paid service, full corpus download, or scheduled refresh.
+A result pack adds complete, hand-authored results to the catalog. No paid API, new service or scheduled refresh is used.
+A Codex or Claude agent reads a prepared packet and writes an answer file. The CLI validates the answer and stores it.
 
-The batch contains 200 accepted results across 10 official arXiv topics. The catalog count changes from 2,389 to 2,589. Another 14 candidates remain deferred.
+## Packs
 
-| Topic | New results |
-| --- | ---: |
-| math.LO | 68 |
-| math.GN | 34 |
-| math.FA | 20 |
-| math.CA | 18 |
-| math.RA | 16 |
-| math.NT | 14 |
-| math.CO | 12 |
-| math.GR | 6 |
-| math.OC | 6 |
-| math.PR | 6 |
+| Pack | Owner | Records file | Judgments file |
+|---|---|---|---|
+| `methods` | t1 | `data/methods-results.json` | `data/methods-judgments.json` |
+| `techniques` | t2 | `data/techniques-results.json` | `data/techniques-judgments.json` |
+| `statphys` | t3 | `data/statphys-results.json` | `data/statphys-judgments.json` |
 
-The source search compared names, aliases, and declaration names against the catalog. It used small individual files from the existing pinned mathlib commit.
-The batch excludes direct aliases and repeated forms of the same source result.
+The CLI finds a pack from the file `data/<pack>-results.json`. All packs are validated together:
+IDs, names and aliases are unique across the catalog and all packs. A prerequisite can point to a result in another pack.
 
-Before this batch, the review examined `nm:union-bound`, `nm:pigeonhole-principle`, `wd:Q513028`, and `wd:Q303402` in Theorem Explorer.
-Those records expose conditions and source references, but no complete proof text.
-The complete Theorem Learner examples `wd:Q752375` and `wd:Q670235` supplied the structure for explicit conditions, numbered steps, and prerequisite links.
+## Counts
 
-## Evidence and limits
+Counts are read from the files. They are not typed by hand. Run `status` for the current numbers.
 
-`data/supplement-results.json` retains each candidate, statement, conditions, proof, source excerpt, source context, hashes, attribution, and prerequisites.
-The 42 authored proofs use explicit mathematical steps. The 158 source proofs retain the exact Lean declarations and their inherited source contexts.
-For a source proof, the Lean declaration and context are the statement of record. The catalog does not invent an English translation.
+- `counted`: accepted results with `selection: core`. Only these count toward the 200 target.
+- `support`: accepted results with `selection: support`. A support result stays only if a counted result needs it.
+- `deferred`: records with `status: deferred`, or with a judge decision `defer`. They stay outside the catalog.
 
-`data/supplement-judgments.json` retains the accepted answers, condition reviews, source alignment, prerequisite reviews, and verdicts for 351 proof steps.
-Each judgment retains the model, provider, session, access method, reasoning profile, input hash, packet hash, answer hash, and review date.
-The model identity follows the Firstmate dispatch profile. No remote API response exists to confirm the deployment variant.
+## Record
 
-An agent judgment is not a formal proof. No local Lean check exists for these additions.
-The historical snapshot keeps its original judge and source dates. Each new result has its own assessment and source date.
-The existing formal extraction counts remain intact. Source proof text does not count as a new imported-build check.
+A record has: `id` (`nm:...`), `name`, `aliases`, `type`, `cats`, `application_cats`, `statement`, `hypotheses`,
+`prerequisites [{id, reason}]`, `concepts`, `concept_prerequisites` (`c:` IDs from the concepts pack), `source`
+(mathlib `url`, `revision`, `module`, `declaration`, `lines`, `module_sha256`, `excerpt`, `excerpt_sha256`,
+`attribution`, `reuse`, `alignment`), `proof {kind, verification, scope, steps [{id, text, uses}]}`, `proof_status`,
+`authored`, `status` (`candidate` or `deferred`), `selection` (`core` or `support`),
+`applications [{id, title, inputs, hypotheses, steps [{id, text, expression?, expected?}], conclusion}]`.
+A deferred record also has `deferred_reason`. A core record with no prerequisite result has `empty_prerequisites_reason`.
+t2 may give one `worked_application`. The CLI turns it into `applications`.
 
-Research influence and practical impact remain unknown because this batch has no documented use measurements.
-The rubric stays at `te-rubric/1`. No new rubric component exists. Application categories remain unclassified without evidence.
-The prior arXiv popularity pack remains intact. New results have no new paper counts.
-
-The deferred records contain a reason. They remain outside the catalog and do not count toward the 200 accepted results.
+The validator rejects: unknown prerequisites, concepts or categories; a changed source excerpt; a counted record
+with a proof shorter than 350 characters, a proof that is not authored, or no worked application; a calculation
+step where `expression` and `expected` differ in exact arithmetic; a duplicate name; a prerequisite on a deferred record.
 
 ## Commands
 
-Run these commands from `viz/theorem-explorer`.
-Set `TE_WORK` to a task folder when the default work folder is not suitable.
+Run from `viz/theorem-explorer/pipeline`. Each command prints TOON.
 
-```sh
-python3 pipeline/run.py --supplement status
-python3 pipeline/run.py --supplement prepare --batch-size 6 --max-chars 48000
+```
+python3 run.py --supplement status                                 counts, coverage, unresolved judgments, next command
+python3 run.py --supplement --pack P check                         validate the records of pack P
+python3 run.py --supplement --pack P prepare [--batch-size N]      write the prompt and packets to build/te-work/supplement/P/
+python3 run.py --supplement --pack P accept --batch batch-NNN --answer FILE --identity FILE
+python3 run.py --supplement build                                  append accepted results to raw.json and rebuild index.html
 ```
 
-Preparation writes `<work>/supplement/index.json` and `batch-NNN.toon` files.
-Each packet contains the existing prompt, rubric, complete statement, conditions, proof, and linked evidence.
-The bound includes the prompt and rubric. If one complete record exceeds the bound, preparation stops without truncation.
-The status output contains coverage, accepted and deferred counts, unresolved judgments, and the next command in TOON.
-An unchanged accepted judgment needs no new packet.
+`prepare` writes `batch-NNN.toon`. Give each packet to a judge in a fresh context. The judge writes four TOON tables:
 
-Give each packet to a Codex agent in the current session. No script calls a model.
-The agent must return all 3 TOON tables that the packet requests.
-It must assess every condition, source alignment, prerequisite, and numbered proof step.
-
-Save the actual identity in a JSON file outside the catalog:
-
-```json
-{
- "id": "judge/PROVIDER/MODEL/SESSION",
- "model": "ACTUAL_MODEL",
- "provider": "ACTUAL_PROVIDER",
- "session": "ACTUAL_SESSION",
- "access": "Codex session; no model API call",
- "reasoning": "ACTUAL_REASONING_PROFILE"
-}
+```
+answers[N]{id,type,eff,res,pra,rea,hyp,pro,app,cats,acats,level,effort,pre,rel,conf,why}
+reviews[N]{id,decision,conditions,prerequisites,alignment,why}
+steps[M]{id,step,verdict,why}
+computations[K]{id,application,step,verdict,why}   only when a record has applications
 ```
 
-Accept one complete answer file:
+The `effort` cell uses `/` between 3 bands. The `pre` cell lists the record's prerequisite result IDs, and may list its concept IDs.
+`accept` checks the whole batch before it writes anything. It rejects wrong IDs, categories, scores, prerequisites,
+missing explanations, a missing step or calculation review, and an accepted result with a deferred step.
 
-```sh
-python3 pipeline/run.py --supplement accept \
-  --batch batch-000 --answer answer.toon --identity identity.json
-python3 pipeline/run.py --supplement status
-```
+The identity file holds `id`, `model`, `provider`, `session`, `access` and optionally `reasoning`. The real model must be given.
+`accept` stores the identity and the hashes of the input, the packet, the answer and the rubric version in each judgment.
+Judgments from before this CLI keep their historical identity in `raw.json`. Agent judgments are not formal proofs.
+No result carries a Lean claim, because no local Lean check exists.
 
-Acceptance checks exact batch IDs, duplicates, required fields, scores, official categories, prerequisites, effort bands, and explanations.
-It also checks a verdict for every proof step. An accepted result cannot contain a deferred inference.
-Malformed or incomplete batches cause no change to the judgment file.
-Changed records or linked evidence need new judgments. The build rechecks saved answers and rejects a corrupt judgment cache.
+If a record changes, its input hash changes and its judgment is no longer used. Run `prepare` and judge it again.
 
-After the unresolved count reaches 0, rebuild and check the page:
+## Refresh
 
-```sh
-python3 pipeline/run.py --supplement build
-python3 build.py --verify
-python3 ../../scripts/check.py theorem-explorer --toon
-```
-
-The build preserves historical rows and their indices. It appends accepted results, prerequisite edges, and concept links.
-It rejects new dependency cycles. It regenerates `raw.json` and `index.html` through the project builder.
-If the builder fails, publication restores both prior artifacts.
-The normal refresh also applies the supplement before publication. Changed source evidence can require a new local review.
-
-## Add the next batch
-
-Add source records to `data/supplement-results.json` with stable IDs.
-Copy the field structure from an accepted record of the same proof kind.
-Retain every domain, quantifier, hypothesis, exception, complete proof, exact source reference, and prerequisite reason.
-Add missing prerequisite results with the same complete fields. Use catalog concept IDs for the required definitions.
-Give incomplete records `status: deferred` and an explicit `deferred_reason`.
-
-Then run `prepare`, answer the packets, run `accept`, and run `build`.
-The scripts validate structure and provenance. The agent remains responsible for the mathematical judgment.
-
-The original full refresh uses `<work>/judge/config.json` or per-answer identity files for new model provenance.
-A carried answer retains its original identity. A changed answer uses the current configured identity.
-The previous hard-coded Claude identity remains only in historical snapshot data.
+`run.py` (full refresh) applies the accepted packs after `assemble`, so a refresh does not drop them.
+`run.py --supplement build` applies them to the committed `raw.json` and runs `build.py` and `build.py --verify`.
+It stops if any candidate has no accepted judgment.
