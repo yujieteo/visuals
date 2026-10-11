@@ -349,6 +349,7 @@ button.sort { min-height: 0; padding: 0; border: 0; background: none; font-weigh
 .two > * { min-width: 0; }
 .inset { padding: var(--space-2) var(--space-3); background: var(--surface); border-radius: var(--r); }
 blockquote { margin: 0; overflow-wrap: anywhere; }
+mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 pre.lean, code { font-family: var(--mono); font-size: var(--text-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
 ul.next li, ul.evidence li { margin: 0 0 var(--space-1); overflow-wrap: anywhere; }
 .readout dd { overflow-wrap: anywhere; }
@@ -3601,7 +3602,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   const prose = (text) => {
     const t = String(text ?? "");
     if (!t.includes("$")) return h("blockquote", { text: t });
-    return h("blockquote", { "data-prose-tex": "", text: t.replace(/\$\$([^$]+)\$\$/g, "\\[$1\\]").replace(/\$([^$\n]+)\$/g, "\\($1\\)") });
+    // A split inside a one-column align gives MathJax an empty columnspacing, which Firefox reports as a console error: keep the split alone.
+    const tex = t.replace(/\\begin\{align\*?\}\s*(\\begin\{split\}[\s\S]*?\\end\{split\})\s*\\end\{align\*?\}/g, "$1");
+    return h("blockquote", { "data-prose-tex": "", text: tex.replace(/\$\$([^$]+)\$\$/g, "\\[$1\\]").replace(/\$([^$\n]+)\$/g, "\\($1\\)") });
   };
   function typesetProse() {
     const mj = /** @type {any} */ (globalThis).MathJax;

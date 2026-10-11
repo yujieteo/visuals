@@ -35,7 +35,9 @@
   const prose = (text) => {
     const t = String(text ?? "");
     if (!t.includes("$")) return h("blockquote", { text: t });
-    return h("blockquote", { "data-prose-tex": "", text: t.replace(/\$\$([^$]+)\$\$/g, "\\[$1\\]").replace(/\$([^$\n]+)\$/g, "\\($1\\)") });
+    // A split inside a one-column align gives MathJax an empty columnspacing, which Firefox reports as a console error: keep the split alone.
+    const tex = t.replace(/\\begin\{align\*?\}\s*(\\begin\{split\}[\s\S]*?\\end\{split\})\s*\\end\{align\*?\}/g, "$1");
+    return h("blockquote", { "data-prose-tex": "", text: tex.replace(/\$\$([^$]+)\$\$/g, "\\[$1\\]").replace(/\$([^$\n]+)\$/g, "\\($1\\)") });
   };
   function typesetProse() {
     const mj = /** @type {any} */ (globalThis).MathJax;
