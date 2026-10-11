@@ -1,5 +1,490 @@
 [
  {
+  "id": "c:mixing-time",
+  "reminder": "The mixing time is the first time the worst-case total variation distance to stationarity is at most $\\varepsilon$.",
+  "definition": "Let $P$ be the transition matrix of an irreducible and aperiodic [Markov chain](c:markov-chain) on a finite set, with [stationary distribution](c:stationary-distribution) $\\pi$. Let $d(t)=\\max_x\\|P^t(x,\\cdot)-\\pi\\|_{\\mathrm{TV}}$ be the worst-case [total variation distance](c:total-variation-distance) after $t$ steps. The mixing time is $t_{\\mathrm{mix}}(\\varepsilon)=\\min\\{t\\ge0:d(t)\\le\\varepsilon\\}$, and $t_{\\mathrm{mix}}=t_{\\mathrm{mix}}(1/4)$.",
+  "examples": [
+   "For the lazy random walk on the hypercube $\\{0,1\\}^n$, $t_{\\mathrm{mix}}(\\varepsilon)=\\tfrac12n\\log n\\,(1+o(1))$ for each fixed $\\varepsilon\\in(0,1)$, which is a cutoff.",
+   "For the lazy random walk on the cycle $\\mathbb Z_n$, $t_{\\mathrm{mix}}$ is of order $n^2$.",
+   "Non-example: for simple random walk on the cycle $\\mathbb Z_n$ with $n$ even, the chain is periodic and $d(t)\\ge1/2$ for all $t$. So $d(t)\\le1/4$ never holds, and $t_{\\mathrm{mix}}$ is not finite."
+  ],
+  "requires": [
+   "c:stationary-distribution",
+   "c:total-variation-distance",
+   "c:markov-chain"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:operator-convex-function",
+  "reminder": "A real function is operator convex when convexity holds for self-adjoint matrices of every size in the matrix order.",
+  "definition": "A function $f:I\\to\\mathbb R$ on an interval $I$ is operator convex if $f(tA+(1-t)B)\\le tf(A)+(1-t)f(B)$ for all $t\\in[0,1]$, all $n\\ge1$ and all [self-adjoint](c:self-adjoint-operator) $n\\times n$ matrices $A,B$ with spectra in $I$. Here $f(A)$ is defined by the [functional calculus](c:functional-calculus), and $X\\le Y$ means that $Y-X$ is [positive semidefinite](c:positive-semidefinite-matrix).",
+  "examples": [
+   "The function $f(x)=x^2$ is operator convex on $\\mathbb R$, because $tA^2+(1-t)B^2-(tA+(1-t)B)^2=t(1-t)(A-B)^2$ is positive semidefinite.",
+   "The functions $x\\log x$ on $[0,\\infty)$, $-\\log x$ on $(0,\\infty)$ and $1/x$ on $(0,\\infty)$ are operator convex.",
+   "Non-example: $f(x)=x^3$ on $[0,\\infty)$ is convex but not operator convex. On $(0,\\infty)$, the power $x^p$ is operator convex only for $p\\in[-1,0]\\cup[1,2]$."
+  ],
+  "requires": [
+   "c:convex-function",
+   "c:self-adjoint-operator",
+   "c:functional-calculus",
+   "c:positive-semidefinite-matrix"
+  ],
+  "links": [
+   {
+    "to": "c:convex-function",
+    "type": "specializes",
+    "steps": [
+     "Take $n=1$, so the matrices $A$ and $B$ are real numbers $a,b\\in I$.",
+     "For $1\\times1$ matrices the matrix order is the usual order of real numbers.",
+     "The operator inequality becomes $f(ta+(1-t)b)\\le tf(a)+(1-t)f(b)$.",
+     "So every operator convex function is a convex function."
+    ],
+    "why": "It shows that operator convexity is ordinary convexity required at every matrix size, which is a strictly stronger condition."
+   }
+  ]
+ },
+ {
+  "id": "c:optimal-stopping-problem",
+  "reminder": "An optimal stopping problem asks for a stopping time that maximizes the expected reward of stopping a random process.",
+  "definition": "Let $(Z_n)_{0\\le n\\le N}$, with $N\\le\\infty$, be integrable rewards adapted to a [filtration](c:filtration) $(\\mathcal{F}_n)$. The optimal stopping problem asks for the [expected value](c:expected-value) $V=\\sup_\\tau\\mathbb{E}[Z_\\tau]$ over all [stopping times](c:stopping-time) $\\tau\\le N$, with $\\tau<\\infty$ almost surely when $N=\\infty$, and for an optimal $\\tau^*$ with $\\mathbb{E}[Z_{\\tau^*}]=V$. Because $\\tau$ is a stopping time, each decision to stop uses only the information available at that time.",
+  "examples": [
+   "Secretary problem: $N$ candidates arrive in random order, and the reward is $1$ if the chosen one is the best. The optimal rule rejects about $N/e$ candidates and then takes the first one better than all before, with success probability near $1/e$.",
+   "American option: the holder chooses an exercise time to maximize the expected discounted payoff, and the [Snell envelope](c:snell-envelope) gives the value.",
+   "Selling an asset: with iid offers $X_n$ of finite variance, a cost $c$ per offer and reward $Z_n=X_n-cn$, the optimal rule accepts the first offer above the level $a$ that solves $\\mathbb{E}[(X_1-a)^+]=c$.",
+   "Non-example: the rule that stops at the time of the largest reward is not admissible, because it is not a stopping time: it needs the future values."
+  ],
+  "requires": [
+   "c:stopping-time",
+   "c:filtration",
+   "c:expected-value",
+   "c:stochastic-process"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:pathwise-uniqueness",
+  "reminder": "Pathwise uniqueness means that two solutions driven by the same Brownian motion from the same start agree almost surely.",
+  "definition": "A [stochastic differential equation](c:stochastic-differential-equation) $dX_t=b(t,X_t)\\,dt+\\sigma(t,X_t)\\,dB_t$ has pathwise uniqueness when, for any two solutions $X$ and $X'$ on a common filtered probability space with the same [Brownian motion](c:brownian-motion) $B$ and $X_0=X'_0$ almost surely, $P(X_t=X'_t\\text{ for all }t\\ge0)=1$. By the Yamada–Watanabe theorem, weak existence and pathwise uniqueness together give a unique [strong solution](c:strong-solution) and uniqueness in law.",
+  "examples": [
+   "Lipschitz coefficients give pathwise uniqueness, by Gronwall's lemma applied to $\\mathbb{E}|X_t-X'_t|^2$.",
+   "In dimension one, the Yamada–Watanabe condition allows a diffusion coefficient that is Hölder of order $1/2$, so $dX_t=\\sqrt{|X_t|}\\,dB_t$ has pathwise uniqueness.",
+   "Non-example: for Tanaka's equation $dX_t=\\operatorname{sgn}(X_t)\\,dB_t$ with $X_0=0$, if $X$ is a solution then so is $-X$, so pathwise uniqueness fails, although uniqueness in law holds.",
+   "Non-example: the deterministic equation $dX_t=3X_t^{2/3}\\,dt$ with $X_0=0$ has the two solutions $X_t=0$ and $X_t=t^3$."
+  ],
+  "requires": [
+   "c:stochastic-differential-equation",
+   "c:brownian-motion"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:percolation",
+  "reminder": "Bernoulli percolation keeps each edge of a graph independently with probability $p$ and studies the connected clusters.",
+  "definition": "Bernoulli bond percolation with parameter $p\\in[0,1]$ on a [graph](c:graph) $G=(V,E)$ declares each edge open with probability $p$ and closed otherwise, independently of all other edges. Its law is the [product measure](c:product-measure) $\\mathbb P_p=\\bigotimes_{e\\in E}\\mathrm{Bernoulli}(p)$ on $\\{0,1\\}^E$. The open clusters are the [connected components](c:connected-component) of the graph $(V,\\{e:\\omega(e)=1\\})$, and site percolation does the same with vertices.",
+  "examples": [
+   "On $\\mathbb Z^2$, bond percolation has an infinite open cluster almost surely exactly when $p>1/2$ (Kesten, 1980).",
+   "On the rooted tree where each vertex has two children, the open cluster of the root is a Galton–Watson tree with Binomial$(2,p)$ offspring. So it is infinite with positive probability exactly when $p>1/2$.",
+   "On the complete graph $K_n$, Bernoulli percolation with $p=c/n$ is the Erdős–Rényi random graph $G(n,c/n)$.",
+   "Non-example: the uniform spanning tree is a random subgraph, but its edges are dependent. On a cycle it always removes exactly one edge."
+  ],
+  "requires": [
+   "c:graph",
+   "c:bernoulli-distribution",
+   "c:product-measure",
+   "c:connected-component"
+  ],
+  "links": [
+   {
+    "to": "c:product-measure",
+    "type": "specializes",
+    "steps": [
+     "Give each edge $e$ the Bernoulli($p$) law on $\\{0,1\\}$.",
+     "Take the product of these laws over all edges $e\\in E$.",
+     "The product measure on $\\{0,1\\}^E$ is the law of Bernoulli bond percolation."
+    ],
+    "why": "It shows that the independence of the edges is a product structure, which gives tools such as the Kolmogorov zero-one law."
+   },
+   {
+    "to": "c:random-cluster-model",
+    "type": "specializes",
+    "steps": [
+     "Take the random-cluster weight $p^{|\\omega|}(1-p)^{|E\\setminus\\omega|}q^{k(\\omega)}$ on a finite graph.",
+     "Set $q=1$, so the factor $q^{k(\\omega)}$ equals $1$.",
+     "The remaining weight is already normalized, and it is the Bernoulli percolation law."
+    ],
+    "why": "It shows that Bernoulli percolation is the random-cluster model without the cluster weight, which is why its edges are independent."
+   }
+  ]
+ },
+ {
+  "id": "c:phase-transition",
+  "reminder": "A phase transition is a parameter value where the infinite-volume free energy is not analytic or several Gibbs measures coexist.",
+  "definition": "A phase transition of a lattice model is a value of its parameters, such as the inverse temperature $\\beta$ and the field $h$, at which the infinite-volume [free energy](c:free-energy) is not real-analytic. It is first-order when a first derivative of the free energy is discontinuous there. In the [Ising model](c:ising-model) this happens at $h=0$ and $\\beta>\\beta_c$, where the derivative in $h$ jumps and several infinite-volume [Gibbs measures](c:gibbs-measure) coexist.",
+  "examples": [
+   "In the two-dimensional Ising model at $h=0$ and $\\beta>\\beta_c=\\tfrac12\\log(1+\\sqrt2)$, the derivative of the pressure in $h$ jumps from $-m^*(\\beta)$ to $m^*(\\beta)$, a first-order transition.",
+   "At $\\beta=\\beta_c$ and $h=0$, the Onsager free energy of the two-dimensional Ising model has continuous first derivatives but is not analytic in $\\beta$, a continuous transition.",
+   "In [Bernoulli percolation](c:percolation), the probability $\\theta(p)$ that the origin lies in an infinite cluster is $0$ below the [critical probability](c:critical-probability) and positive above it, so $\\theta$ is not analytic at $p_c$.",
+   "Non-example: the one-dimensional Ising model has no phase transition. Its pressure $\\log(e^\\beta\\cosh h+\\sqrt{e^{2\\beta}\\sinh^2h+e^{-2\\beta}})$ is real-analytic in $(\\beta,h)$."
+  ],
+  "requires": [
+   "c:free-energy",
+   "c:gibbs-measure",
+   "c:analytic-function",
+   "c:thermodynamic-limit"
+  ],
+  "links": [
+   {
+    "to": "c:critical-temperature",
+    "type": "generalizes",
+    "steps": [
+     "A phase transition can occur in any parameter, such as $\\beta$, $h$ or $p$.",
+     "Fix $h=0$ and vary only the inverse temperature $\\beta$.",
+     "The value $\\beta_c$ that separates the disordered and the ordered regime is the critical point in $\\beta$.",
+     "Its temperature $T_c=1/(k_B\\beta_c)$ is the critical temperature."
+    ],
+    "why": "It shows that the critical temperature is the location of a phase transition when temperature is the only parameter that varies."
+   }
+  ]
+ },
+ {
+  "id": "c:point-process",
+  "reminder": "A point process is a random locally finite set of points, described by the random counts it puts in sets.",
+  "definition": "Let $E$ be a locally compact Hausdorff space with a countable base, and let $M_p(E)$ be the set of [Radon measures](c:radon-measure) on $E$ with values in $\\{0,1,2,\\dots,\\infty\\}$, which are the locally finite sums of [Dirac measures](c:dirac-measure). A point process on $E$ is a [random variable](c:random-variable) $N$ with values in $M_p(E)$, where $M_p(E)$ has the sigma-algebra generated by the maps $\\mu\\mapsto\\mu(B)$ for Borel sets $B$. Each count $N(B)$ is then a random variable, and it is finite when $B$ is relatively compact.",
+  "examples": [
+   "The points $T_1<T_2<\\dots$ of a [Poisson process](c:poisson-process) on $[0,\\infty)$ form the point process $N=\\sum_n\\delta_{T_n}$, with $N([0,t])=N_t$.",
+   "If $X_1,\\dots,X_n$ are iid and uniform on $[0,1]$, then $N=\\sum_{i\\le n}\\delta_{X_i}$ is a point process with $N([0,1])=n$, the binomial process.",
+   "In extreme value theory, $N_n=\\sum_{i\\le n}\\delta_{(i/n,(X_i-b_n)/a_n)}$ records the times and sizes of normalized observations.",
+   "Non-example: the measure $\\sum_{k\\ge1}\\delta_{1/k}$ on $E=\\mathbb{R}$ is not locally finite, because every neighbourhood of $0$ contains infinitely many of its atoms."
+  ],
+  "requires": [
+   "c:radon-measure",
+   "c:dirac-measure",
+   "c:random-variable"
+  ],
+  "links": [
+   {
+    "to": "c:poisson-random-measure",
+    "type": "generalizes",
+    "steps": [
+     "A [Poisson random measure](c:poisson-random-measure) $N$ with mean measure $\\mu$ is a random integer-valued measure on $E$.",
+     "When $\\mu$ is a Radon measure, each count $N(B)$ for a compact set $B$ is Poisson with finite mean, so it is finite.",
+     "So $N$ is a point process with the extra property of independent Poisson counts on disjoint sets."
+    ],
+    "why": "It shows that Poisson random measures are the basic point processes, the ones with no interaction between disjoint regions."
+   },
+   {
+    "to": "c:renewal-process",
+    "type": "generalizes",
+    "steps": [
+     "Take a [renewal process](c:renewal-process) with renewal times $S_n=X_1+\\dots+X_n$ and iid interarrival times $X_i>0$.",
+     "The measure $N=\\sum_{n\\ge1}\\delta_{S_n}$ puts one point at each renewal time.",
+     "Since $S_n\\to\\infty$ almost surely, each bounded interval holds finitely many points, so $N$ is a point process on $[0,\\infty)$.",
+     "Its counting function $t\\mapsto N([0,t])$ is the renewal counting process."
+    ],
+    "why": "It shows that renewal processes are the point processes on the half line with iid gaps between the points."
+   }
+  ]
+ },
+ {
+  "id": "c:poisson-random-measure",
+  "reminder": "A Poisson random measure puts independent Poisson numbers of points in disjoint sets, with means given by a fixed measure.",
+  "definition": "Let $\\mu$ be a [sigma-finite measure](c:sigma-finite-measure) on a measurable space $(E,\\mathcal{E})$. A Poisson random measure with mean measure $\\mu$ is a random measure $N$ on $E$ with values in $\\{0,1,2,\\dots,\\infty\\}$ such that $N(B)$ has the [Poisson distribution](c:poisson-distribution) with mean $\\mu(B)$ for each $B$ with $\\mu(B)<\\infty$, and $N(B_1),\\dots,N(B_k)$ are [independent random variables](c:independent-random-variables) for disjoint $B_1,\\dots,B_k$. Such an $N$ exists for every sigma-finite $\\mu$, and $\\mu$ determines its law.",
+  "examples": [
+   "With $E=[0,\\infty)$ and $\\mu$ equal to $\\lambda$ times [Lebesgue measure](c:lebesgue-measure), the Poisson random measure is the set of points of a homogeneous [Poisson process](c:poisson-process) with rate $\\lambda$.",
+   "If $K$ is Poisson with mean $\\mu(E)<\\infty$ and, given $K$, the points $X_1,\\dots,X_K$ are iid with law $\\mu/\\mu(E)$, then $\\sum_{i\\le K}\\delta_{X_i}$ is a Poisson random measure with mean measure $\\mu$.",
+   "The jumps of a [Lévy process](c:levy-process) with [Lévy measure](c:levy-measure) $\\nu$ form a Poisson random measure on $[0,\\infty)\\times(\\mathbb{R}\\setminus\\{0\\})$ with mean measure $dt\\otimes\\nu$.",
+   "Non-example: for a fixed number $n$ of iid uniform points on $[0,1]$, the counts in $[0,1/2]$ and in $(1/2,1]$ add up to $n$, so they are not independent and not Poisson."
+  ],
+  "requires": [
+   "c:point-process",
+   "c:poisson-distribution",
+   "c:sigma-finite-measure",
+   "c:independent-random-variables"
+  ],
+  "links": [
+   {
+    "to": "c:point-process",
+    "type": "specializes",
+    "steps": [
+     "Let $E$ be locally compact with a countable base, and let the mean measure $\\mu$ be a Radon measure.",
+     "Then each compact set $B$ has $\\mu(B)<\\infty$, so $N(B)$ is Poisson with finite mean and is finite almost surely.",
+     "So $N$ is locally finite, and it is a [point process](c:point-process) with independent Poisson counts."
+    ],
+    "why": "It places Poisson random measures among point processes as the case with independent Poisson counts."
+   },
+   {
+    "to": "c:poisson-process",
+    "type": "generalizes",
+    "steps": [
+     "Take $E=[0,\\infty)$ and let $\\mu$ be $\\lambda$ times [Lebesgue measure](c:lebesgue-measure).",
+     "Set $N_t=N([0,t])$ for $t\\ge0$.",
+     "Then $N_t-N_s=N((s,t])$ is Poisson with mean $\\lambda(t-s)$, and the counts of disjoint intervals are independent.",
+     "So $(N_t)$ is a [Poisson process](c:poisson-process) with rate $\\lambda$."
+    ],
+    "why": "It shows that the Poisson process is the Poisson random measure on the half line with a constant rate."
+   }
+  ]
+ },
+ {
+  "id": "c:polymer-model",
+  "reminder": "A polymer model is a gas of polymers with activities, in which incompatible polymers cannot appear together.",
+  "definition": "An abstract polymer model consists of a countable set $\\mathcal P$ of polymers, a symmetric and reflexive incompatibility relation on $\\mathcal P$, and an activity $z:\\mathcal P\\to\\mathbb C$. For a finite set of polymers, the polymer [partition function](c:partition-function) is $\\Xi=\\sum_\\Gamma\\prod_{\\gamma\\in\\Gamma}z(\\gamma)$, summed over all families $\\Gamma$ of pairwise compatible polymers, the empty family included.",
+  "examples": [
+   "In the hard-core model on a finite graph, the polymers are the vertices, two vertices are incompatible when they are equal or adjacent, and $\\Xi=\\sum_I\\lambda^{|I|}$ over the [independent sets](c:independent-set) $I$.",
+   "In the low-temperature Ising model with plus boundary condition, the polymers are Peierls contours, two contours are incompatible when they touch, and $z(\\gamma)=e^{-2\\beta|\\gamma|}$.",
+   "Non-example: a gas in which any two particles in a row are allowed but three are forbidden is not a polymer model. A polymer model allows only pairwise incompatibility."
+  ],
+  "requires": [
+   "c:partition-function",
+   "c:graph",
+   "c:finite-set"
+  ],
+  "links": [
+   {
+    "to": "c:independent-set",
+    "type": "generalizes",
+    "steps": [
+     "Take the polymers to be the vertices of a finite graph.",
+     "Declare two vertices incompatible when they are equal or adjacent.",
+     "Then a compatible family of polymers is exactly an independent set of the graph."
+    ],
+    "why": "It shows that a polymer model is a hard-core gas on the incompatibility graph of its polymers."
+   }
+  ]
+ },
+ {
+  "id": "c:potts-model",
+  "reminder": "The Potts model gives each vertex one of $q$ states and rewards neighbors that are in the same state.",
+  "definition": "The $q$-state Potts model on a finite [graph](c:graph) $G=(V,E)$ is the [Gibbs distribution](c:gibbs-distribution) on $\\{1,\\dots,q\\}^V$ given by $\\mu_\\beta(\\sigma)=Z^{-1}\\exp(\\beta\\sum_{xy\\in E}\\mathbf 1\\{\\sigma_x=\\sigma_y\\})$. Its Hamiltonian is $H(\\sigma)=-\\sum_{xy\\in E}\\mathbf 1\\{\\sigma_x=\\sigma_y\\}$, and $\\beta>0$ gives the ferromagnetic model. For $q=2$ it is the [Ising model](c:ising-model) at inverse temperature $\\beta/2$.",
+  "examples": [
+   "For $q=2$, identify the states with spins $\\pm1$. The identity $\\mathbf 1\\{s=s'\\}=(1+ss')/2$ shows that the Potts weight is the Ising weight at $\\beta/2$, up to a constant.",
+   "On $\\mathbb Z^2$ the ferromagnetic Potts model with $q\\ge2$ has critical point $\\beta_c(q)=\\log(1+\\sqrt q)$.",
+   "As $\\beta\\to-\\infty$ on a finite graph with a proper $q$-coloring, the antiferromagnetic Potts measure tends to the uniform proper $q$-coloring.",
+   "Non-example: for $q\\ge4$, the clock model with energy $-\\sum\\cos(2\\pi(\\sigma_x-\\sigma_y)/q)$ is not a Potts model. Its energy depends on the difference of the states, not only on their equality."
+  ],
+  "requires": [
+   "c:ising-model",
+   "c:gibbs-distribution",
+   "c:graph"
+  ],
+  "links": [
+   {
+    "to": "c:ising-model",
+    "type": "generalizes",
+    "steps": [
+     "Take $q=2$ and identify the states $1,2$ with the spins $+1,-1$.",
+     "For spins $s,s'$, the identity $\\mathbf 1\\{s=s'\\}=(1+ss')/2$ holds.",
+     "So the 2-state Potts measure at $\\beta$ equals the Ising measure at $\\beta/2$."
+    ],
+    "why": "It shows that the Potts model extends the Ising model from two states to $q$ states."
+   }
+  ]
+ },
+ {
+  "id": "c:quadratic-variation",
+  "reminder": "The quadratic variation of a process is the limit of its sums of squared increments over finer partitions.",
+  "definition": "For a [semimartingale](c:semimartingale) $X$ and partitions $0=t_0<t_1<\\dots<t_k=t$ of $[0,t]$ with mesh tending to $0$, the quadratic variation is $[X]_t=\\lim\\sum_i(X_{t_{i+1}}-X_{t_i})^2$, where the limit exists in probability. For a continuous [local martingale](c:local-martingale) $M$, $[M]=\\langle M\\rangle$ is the unique continuous increasing adapted process with $\\langle M\\rangle_0=0$ such that $M^2-\\langle M\\rangle$ is a local martingale. A continuous path of finite variation has quadratic variation $0$.",
+  "examples": [
+   "[Brownian motion](c:brownian-motion) has $[B]_t=t$.",
+   "For $M_t=\\int_0^tH_s\\,dB_s$, the quadratic variation is $\\langle M\\rangle_t=\\int_0^tH_s^2\\,ds$.",
+   "A continuous function of finite variation, such as $t\\mapsto t$, has quadratic variation $0$.",
+   "Non-example: for the compensated Poisson process $M_t=N_t-\\lambda t$, the predictable bracket $\\langle M\\rangle_t=\\lambda t$ is not the quadratic variation, which is $[M]_t=N_t$."
+  ],
+  "requires": [
+   "c:semimartingale",
+   "c:local-martingale",
+   "c:convergence-in-probability"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:quantum-relative-entropy",
+  "reminder": "The quantum relative entropy $S(\\rho\\|\\sigma)=\\mathrm{tr}\\,\\rho(\\log\\rho-\\log\\sigma)$ compares two [density matrices](c:density-matrix).",
+  "definition": "For [density matrices](c:density-matrix) $\\rho$ and $\\sigma$ on a finite-dimensional [Hilbert space](c:hilbert-space), the quantum relative entropy is $S(\\rho\\|\\sigma)=\\mathrm{tr}\\,\\rho(\\log\\rho-\\log\\sigma)$ when the support of $\\rho$ lies in the support of $\\sigma$, and $S(\\rho\\|\\sigma)=+\\infty$ otherwise. Here $\\log$ is the [matrix logarithm](c:matrix-logarithm) on the support, with $0\\log0=0$. By Klein's inequality, $S(\\rho\\|\\sigma)\\ge0$, with equality exactly when $\\rho=\\sigma$.",
+  "examples": [
+   "For commuting states $\\rho=\\mathrm{diag}(p_1,\\dots,p_d)$ and $\\sigma=\\mathrm{diag}(q_1,\\dots,q_d)$, $S(\\rho\\|\\sigma)=\\sum_ip_i\\log(p_i/q_i)$, the classical [relative entropy](c:relative-entropy) of $p$ and $q$.",
+   "For the maximally mixed state $\\sigma=I/d$, $S(\\rho\\|I/d)=\\log d-S(\\rho)$, where $S(\\rho)=-\\mathrm{tr}\\,\\rho\\log\\rho$ is the [von Neumann entropy](c:von-neumann-entropy).",
+   "Non-example: $S$ is not a metric, because it is not symmetric. For $\\rho=\\mathrm{diag}(1,0)$ and $\\sigma=I/2$, $S(\\rho\\|\\sigma)=\\log2$, but $S(\\sigma\\|\\rho)=+\\infty$ since the support of $\\sigma$ is not inside the support of $\\rho$."
+  ],
+  "requires": [
+   "c:density-matrix",
+   "c:matrix-logarithm",
+   "c:trace-of-a-matrix",
+   "c:relative-entropy"
+  ],
+  "links": [
+   {
+    "to": "c:relative-entropy",
+    "type": "generalizes",
+    "steps": [
+     "Take two density matrices $\\rho$ and $\\sigma$ that commute.",
+     "Diagonalize both in one orthonormal basis, with eigenvalues $p_i$ and $q_i$.",
+     "Then $\\mathrm{tr}\\,\\rho(\\log\\rho-\\log\\sigma)$ equals $\\sum_ip_i\\log(p_i/q_i)$ in this basis.",
+     "This is the classical relative entropy of the probability vectors $p$ and $q$."
+    ],
+    "why": "It shows that the quantum relative entropy reduces to the classical one when the two states commute."
+   }
+  ]
+ },
+ {
+  "id": "c:queueing-system",
+  "reminder": "A queueing system models customers who arrive, wait in line and get service from one or more servers.",
+  "definition": "A queueing system is a [stochastic process](c:stochastic-process) model given by an arrival process of customers, a law of service times, a number $s$ of servers, a capacity of the waiting room and a service discipline, such as first come, first served. Kendall's notation $A/B/s$ names the interarrival law $A$, the service law $B$ and $s$, with $M$ for exponential (memoryless) laws and $G$ for general laws. Its main processes are the number $Q(t)$ of customers in the system and the waiting times $W_n$ of the customers.",
+  "examples": [
+   "The [M/M/1 queue](c:m-m-1-queue) has [Poisson process](c:poisson-process) arrivals with rate $\\lambda$, exponential service times with rate $\\mu$ and one server, and it is stable when $\\lambda<\\mu$.",
+   "In a single-server queue with first come, first served, the waiting times satisfy Lindley's recursion $W_{n+1}=\\max(0,W_n+V_n-T_{n+1})$, where $V_n$ is a service time and $T_{n+1}$ an interarrival time.",
+   "In the stable M/M/1 queue with $\\rho=\\lambda/\\mu<1$, the stationary number in the system is geometric, $P(Q=k)=(1-\\rho)\\rho^k$.",
+   "Non-example: a Poisson stream of arrivals alone is not a queueing system, because it has no servers and no service times."
+  ],
+  "requires": [
+   "c:stochastic-process",
+   "c:random-variable",
+   "c:poisson-process"
+  ],
+  "links": [
+   {
+    "to": "c:m-m-1-queue",
+    "type": "generalizes",
+    "steps": [
+     "Start from a general queueing system $A/B/s$ with an arrival law, a service law and $s$ servers.",
+     "Take Poisson arrivals with rate $\\lambda$, so that the interarrival law $A$ is exponential.",
+     "Take exponential service times with rate $\\mu$ and a single server, $s=1$.",
+     "The result is the [M/M/1 queue](c:m-m-1-queue), whose queue length is a birth and death chain."
+    ],
+    "why": "It shows that the M/M/1 queue is the simplest queueing system, where memoryless laws make the queue length a Markov chain."
+   }
+  ]
+ },
+ {
+  "id": "c:random-cluster-model",
+  "reminder": "The random-cluster model weights an edge set $\\omega$ by $p^{|\\omega|}(1-p)^{|E\\setminus\\omega|}q^{k(\\omega)}$, with $k(\\omega)$ the number of clusters.",
+  "definition": "The random-cluster model on a finite [graph](c:graph) $G=(V,E)$ with parameters $p\\in[0,1]$ and $q>0$ is the probability measure on edge sets $\\omega\\subseteq E$ given by $\\phi_{p,q}(\\omega)=Z^{-1}p^{|\\omega|}(1-p)^{|E\\setminus\\omega|}q^{k(\\omega)}$. Here $k(\\omega)$ is the number of [connected components](c:connected-component) of $(V,\\omega)$, isolated vertices included. For $q=1$ it is [Bernoulli percolation](c:percolation), and for integer $q\\ge2$ the Edwards–Sokal coupling links it to the [Potts model](c:potts-model) with $p=1-e^{-\\beta}$.",
+  "examples": [
+   "For $q=2$ and $p=1-e^{-2\\beta}$, the Ising correlation $\\langle\\sigma_x\\sigma_y\\rangle_\\beta$ equals the probability that $x$ and $y$ are joined by open edges.",
+   "As $p\\to0$ and $q\\to0$ with $q/p\\to0$, $\\phi_{p,q}$ on a connected graph tends to the uniform spanning tree.",
+   "Non-example: for $q=2$ the edges are not independent. On a triangle, an edge is open with conditional probability $p$ when the other two edges are open, but $p/(p+2(1-p))$ when they are closed."
+  ],
+  "requires": [
+   "c:percolation",
+   "c:potts-model",
+   "c:connected-component",
+   "c:graph"
+  ],
+  "links": [
+   {
+    "to": "c:percolation",
+    "type": "generalizes",
+    "steps": [
+     "Set $q=1$ in the random-cluster weight.",
+     "The factor $q^{k(\\omega)}$ becomes $1$ for every edge set $\\omega$.",
+     "The weight $p^{|\\omega|}(1-p)^{|E\\setminus\\omega|}$ is the Bernoulli percolation law, with $Z=1$."
+    ],
+    "why": "It shows that the random-cluster model adds a weight on the number of clusters to Bernoulli percolation."
+   }
+  ]
+ },
+ {
+  "id": "c:random-current",
+  "reminder": "A random current is a random integer-valued function on edges whose odd-degree vertices form a prescribed source set.",
+  "definition": "For the [Ising model](c:ising-model) on a finite graph $G=(V,E)$ with coupling constants $\\beta J_{xy}\\ge0$, a current is a function $n:E\\to\\{0,1,2,\\dots\\}$, and its source set $\\partial n$ is the set of vertices $x$ with $\\sum_yn_{xy}$ odd. The weight of $n$ is $w(n)=\\prod_{xy\\in E}(\\beta J_{xy})^{n_{xy}}/n_{xy}!$, and the random current with sources $A$ has law proportional to $w(n)\\mathbf 1\\{\\partial n=A\\}$. Expanding each factor $e^{\\beta J_{xy}\\sigma_x\\sigma_y}$ in a power series gives $\\langle\\prod_{x\\in A}\\sigma_x\\rangle=\\sum_{\\partial n=A}w(n)/\\sum_{\\partial n=\\emptyset}w(n)$.",
+  "examples": [
+   "On one edge $xy$, $\\sum_{n\\text{ even}}\\beta^n/n!=\\cosh\\beta$ and $\\sum_{n\\text{ odd}}\\beta^n/n!=\\sinh\\beta$, so $\\langle\\sigma_x\\sigma_y\\rangle=\\tanh\\beta$.",
+   "All weights $w(n)$ are nonnegative, so the formula gives the first Griffiths inequality $\\langle\\prod_{x\\in A}\\sigma_x\\rangle\\ge0$ at once.",
+   "Non-example: the edges with $n_{xy}>0$ do not form Bernoulli percolation, because the parity condition $\\partial n=A$ couples the edges. On a triangle with $A=\\emptyset$, the three values always have the same parity."
+  ],
+  "requires": [
+   "c:ising-model",
+   "c:graph",
+   "c:partition-function"
+  ],
+  "links": [
+   {
+    "to": "c:conditional-distribution",
+    "type": "specializes",
+    "steps": [
+     "Give each edge $e$ an independent Poisson variable $n_e$ with mean $\\beta J_e$.",
+     "The law of $n$ is then proportional to $\\prod_e(\\beta J_e)^{n_e}/n_e!$.",
+     "Condition this law on the event $\\partial n=A$.",
+     "The conditional distribution is the random current with sources $A$."
+    ],
+    "why": "It shows that a random current is a family of independent Poisson variables conditioned on a parity constraint."
+   }
+  ]
+ },
+ {
+  "id": "c:regularly-varying-function",
+  "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
+  "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
+  "examples": [
+   "The power function $f(x)=x^\\rho$ is regularly varying with index $\\rho$, because $f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $x$.",
+   "The Pareto tail $1-F(x)=x^{-\\alpha}$ for $x\\ge1$ is regularly varying with index $-\\alpha$, and so is $x^{-\\alpha}\\log x$.",
+   "Non-example: $f(x)=e^x$ is not regularly varying, because $f(\\lambda x)/f(x)=e^{(\\lambda-1)x}$ tends to $\\infty$ for every $\\lambda>1$."
+  ],
+  "requires": [
+   "c:measurable-function",
+   "c:limit-of-a-function"
+  ],
+  "links": [
+   {
+    "to": "c:slowly-varying-function",
+    "type": "generalizes",
+    "steps": [
+     "Let $f$ be regularly varying with index $\\rho$, so $f(\\lambda x)/f(x)\\to\\lambda^\\rho$ for every $\\lambda>0$.",
+     "Set the index to $\\rho=0$, so that the limit $\\lambda^0$ equals $1$ for every $\\lambda$.",
+     "A function with $f(\\lambda x)/f(x)\\to1$ for every $\\lambda>0$ is by definition a [slowly varying function](c:slowly-varying-function).",
+     "So the slowly varying functions are the regularly varying functions of index $0$."
+    ],
+    "why": "It shows that slow variation is the index-zero case, and that each regularly varying function is a power times a slowly varying one."
+   }
+  ]
+ },
+ {
+  "id": "c:renewal-function",
+  "reminder": "The renewal function gives the expected number of renewals up to time $t$.",
+  "definition": "For a [renewal process](c:renewal-process) with interarrival distribution $F$ and renewal times $S_n$, the renewal function is $U(t)=\\sum_{n\\ge0}F^{*n}(t)=E[\\#\\{n\\ge0:S_n\\le t\\}]$ for $t\\ge0$, where $F^{*n}$ is the $n$-fold [convolution](c:convolution) power and $F^{*0}$ is the point mass at $0$. It counts the renewal at time $0$, so $U(t)=1+E[N(t)]$, and some authors call $m(t)=E[N(t)]=U(t)-1$ the renewal function.",
+  "examples": [
+   "For exponential interarrival times with rate $\\lambda$, $E[N(t)]=\\lambda t$ and $U(t)=1+\\lambda t$.",
+   "For interarrival times uniform on $[0,1]$, $F^{*n}(t)=t^n/n!$ for $0\\le t\\le1$, so $U(t)=e^t$ there.",
+   "The elementary renewal theorem gives $U(t)/t\\to1/\\mu$ as $t\\to\\infty$, where $\\mu=E[X_1]$.",
+   "Non-example: $1+t/\\mu$ is the renewal function only for exponential gaps, because for gaps uniform on $[0,1]$, with $\\mu=1/2$, $U(1)=e$ and not $3$."
+  ],
+  "requires": [
+   "c:renewal-process",
+   "c:convolution",
+   "c:expected-value"
+  ],
+  "links": []
+ },
+ {
+  "id": "c:renewal-process",
+  "reminder": "A renewal process counts the events of a sequence whose gaps are independent and identically distributed positive times.",
+  "definition": "Let $X_1,X_2,\\dots$ be positive [iid random variables](c:iid-random-variables), and let $S_0=0$ and $S_n=X_1+\\dots+X_n$. The renewal process is the [stochastic process](c:stochastic-process) $N(t)=\\#\\{n\\ge1:S_n\\le t\\}$, $t\\ge0$, which counts the renewal times $S_n$ in $[0,t]$. The $X_i$ are the interarrival times, and their common law $F$ is the interarrival distribution.",
+  "examples": [
+   "If the $X_i$ are exponential with rate $\\lambda$, then $N(t)$ is a [Poisson process](c:poisson-process) with rate $\\lambda$.",
+   "Replacements of a light bulb with iid lifetimes form a renewal process, and $N(t)$ is the number of bulbs that fail by time $t$.",
+   "The return times of a recurrent [Markov chain](c:markov-chain) to its starting state are renewal times, by the strong Markov property.",
+   "Non-example: if $X_n=X_1$ for all $n$ with a random $X_1>0$, the gaps are identically distributed but not independent, so $N(t)=\\lfloor t/X_1\\rfloor$ is not a renewal process."
+  ],
+  "requires": [
+   "c:iid-random-variables",
+   "c:stochastic-process"
+  ],
+  "links": [
+   {
+    "to": "c:poisson-process",
+    "type": "generalizes",
+    "steps": [
+     "Take a renewal process whose interarrival times are exponential with rate $\\lambda$.",
+     "Then $S_n$ has the gamma law with shape $n$, and $P(N(t)=n)=P(S_n\\le t<S_{n+1})=e^{-\\lambda t}(\\lambda t)^n/n!$.",
+     "The memoryless property of the gaps makes the counts on disjoint intervals independent.",
+     "So $N$ is a [Poisson process](c:poisson-process) with rate $\\lambda$, the renewal process with exponential gaps."
+    ],
+    "why": "It shows that the Poisson process is the renewal process with memoryless gaps, so renewal theory extends its results to general gaps."
+   }
+  ]
+ },
+ {
   "id": "c:ruin-probability",
   "reminder": "The ruin probability $\\psi(u)$ is the probability that the capital of an insurer, started at $u$, ever falls below zero.",
   "definition": "For a risk process $R_t=u+ct-S_t$, as in the [Cramér–Lundberg model](c:cramer-lundberg-model), the ruin time is the [stopping time](c:stopping-time) $\\tau(u)=\\inf\\{t\\ge0:R_t<0\\}$, and the (infinite-horizon) ruin probability is $\\psi(u)=P(\\tau(u)<\\infty)$ for initial capital $u\\ge0$. The finite-horizon ruin probability is $\\psi(u,T)=P(\\tau(u)\\le T)$. Equivalently, $\\psi(u)=P(\\sup_{t\\ge0}(S_t-ct)>u)$.",
@@ -125,6 +610,36 @@
   ]
  },
  {
+  "id": "c:snell-envelope",
+  "reminder": "The Snell envelope of a reward process is the smallest supermartingale that lies above it.",
+  "definition": "Let $(Z_n)_{0\\le n\\le N}$ be an adapted process of integrable rewards for a filtration $(\\mathcal{F}_n)$. Its Snell envelope is defined backwards by $U_N=Z_N$ and $U_n=\\max(Z_n,\\mathbb{E}[U_{n+1}\\mid\\mathcal{F}_n])$ for $n<N$. It is the smallest [supermartingale](c:supermartingale) with $U_n\\ge Z_n$ for all $n$, and $U_n=\\operatorname{ess\\,sup}_\\tau\\mathbb{E}[Z_\\tau\\mid\\mathcal{F}_n]$ over the [stopping times](c:stopping-time) $\\tau$ with $n\\le\\tau\\le N$.",
+  "examples": [
+   "If $(Z_n)$ is a supermartingale, then $U=Z$, and it is optimal to stop at once.",
+   "If $(Z_n)$ is a submartingale, then $U_n=\\mathbb{E}[Z_N\\mid\\mathcal{F}_n]$, and it is optimal to wait until time $N$.",
+   "In a complete discrete-time market, the discounted price of an American option is the Snell envelope of the discounted payoff under the risk-neutral measure.",
+   "Non-example: with $N=1$, $Z_0=1$ and $Z_1=0$, the process $\\mathbb{E}[Z_N\\mid\\mathcal{F}_n]$ is $0$ at time $0$, so it does not lie above $Z$, while $U_0=1$."
+  ],
+  "requires": [
+   "c:supermartingale",
+   "c:stopping-time",
+   "c:conditional-expectation",
+   "c:optimal-stopping-problem"
+  ],
+  "links": [
+   {
+    "to": "c:supermartingale",
+    "type": "specializes",
+    "steps": [
+     "By the definition of $U_n$ as a maximum, $U_n\\ge\\mathbb{E}[U_{n+1}\\mid\\mathcal{F}_n]$, so $U$ is a [supermartingale](c:supermartingale).",
+     "The same maximum gives $U_n\\ge Z_n$, so $U$ lies above the reward process.",
+     "If $V$ is another supermartingale with $V\\ge Z$, backward induction from $V_N\\ge Z_N=U_N$ gives $V_n\\ge U_n$ for all $n$.",
+     "So $U$ is the least element of the set of supermartingales that lie above $Z$."
+    ],
+    "why": "It shows that the Snell envelope is one particular supermartingale, the minimal one above the rewards, and this minimality gives optimal stopping rules."
+   }
+  ]
+ },
+ {
   "id": "c:spontaneous-magnetization",
   "reminder": "The spontaneous magnetization $m^*(\\beta)=\\lim_{h\\downarrow0}\\langle\\sigma_0\\rangle_{\\beta,h}$ is the magnetization that remains when the external field vanishes.",
   "definition": "For the [Ising model](c:ising-model) on $\\mathbb Z^d$ at [inverse temperature](c:inverse-temperature) $\\beta$, the spontaneous magnetization is $m^*(\\beta)=\\lim_{h\\downarrow0}\\langle\\sigma_0\\rangle_{\\beta,h}$, where $\\langle\\cdot\\rangle_{\\beta,h}$ is the infinite-volume state in the field $h>0$. It equals $\\langle\\sigma_0\\rangle^+_\\beta$, the [expected value](c:expected-value) of the spin at the origin under the plus Gibbs measure at $h=0$, and also the right derivative $\\partial\\psi/\\partial h(\\beta,0^+)$ of the pressure. For $d\\ge2$, $m^*(\\beta)=0$ for $\\beta\\le\\beta_c$ and $m^*(\\beta)>0$ for $\\beta>\\beta_c$.",
@@ -151,6 +666,22 @@
     "why": "It shows that the order parameter of the Ising model is its simplest correlation function under the plus boundary condition."
    }
   ]
+ },
+ {
+  "id": "c:squared-bessel-process",
+  "reminder": "The squared distance from the origin of a Brownian motion, extended to every real dimension δ ≥ 0.",
+  "definition": "For $\\delta \\ge 0$, the squared Bessel process of dimension $\\delta$, written BESQ($\\delta$), is the nonnegative solution of $dZ_t = \\delta\\,dt + 2\\sqrt{Z_t}\\,dW_t$ for a [Brownian motion](c:brownian-motion) $W$. Its transition law has the Laplace transform $E_z e^{-\\lambda Z_t} = (1+2\\lambda t)^{-\\delta/2} \\exp(-\\lambda z/(1+2\\lambda t))$.",
+  "examples": [
+   "For an integer $d \\ge 1$ and a $d$-dimensional Brownian motion $W$, the process $|W_t|^2$ is BESQ($d$).",
+   "BESQ(0) is a martingale that stays at 0 once it hits 0. It is Feller's diffusion for the size of a critical branching population.",
+   "Non-example: a linear Brownian motion $B$ is not a squared Bessel process, because it takes negative values."
+  ],
+  "requires": [
+   "c:brownian-motion",
+   "c:stochastic-differential-equation",
+   "c:markov-chain"
+  ],
+  "links": []
  },
  {
   "id": "c:stable-distribution",
@@ -189,6 +720,21 @@
     "why": "It shows that the normal law is the only stable law with finite variance, and that all other stable laws have heavy power tails."
    }
   ]
+ },
+ {
+  "id": "c:stable-pair-potential",
+  "reminder": "A pair potential whose total energy of n particles is never below −B times n for one constant B.",
+  "definition": "An even [measurable function](c:measurable-function) $V\\colon \\mathbb{R}^d \\to \\mathbb{R} \\cup \\{+\\infty\\}$ is a stable pair potential if there is $B \\ge 0$ with $\\sum_{1 \\le i < j \\le n} V(x_i - x_j) \\ge -Bn$ for all $n \\ge 2$ and all $x_1, \\dots, x_n \\in \\mathbb{R}^d$. The smallest such $B$ is the stability constant.",
+  "examples": [
+   "Every nonnegative potential is stable with $B = 0$, for example the hard-core potential that is $+\\infty$ on a ball and $0$ outside it.",
+   "The Lennard-Jones potential $V(x) = |x|^{-12} - |x|^{-6}$ is stable.",
+   "Non-example: a continuous potential with $V(0) < 0$ is not stable, because $n$ particles near $0$ have energy close to $V(0)\\, n(n-1)/2$."
+  ],
+  "requires": [
+   "c:measurable-function",
+   "c:extended-real-number"
+  ],
+  "links": []
  },
  {
   "id": "c:stationary-distribution",
@@ -353,12 +899,40 @@
   ]
  },
  {
+  "id": "c:submartingale",
+  "reminder": "A submartingale is an adapted integrable process whose conditional mean of the next value is at least the present value.",
+  "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a submartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\ge X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\ge X_s$ for $s\\le t$. So a submartingale increases on average, and $-X$ is a [supermartingale](c:supermartingale).",
+  "examples": [
+   "If $(M_n)$ is a [martingale](c:martingale) and $\\varphi$ is a [convex function](c:convex-function) with $\\varphi(M_n)$ integrable, then $\\varphi(M_n)$ is a submartingale, by Jensen's inequality for conditional expectations.",
+   "In particular, $|M_n|$ and $M_n^2$ are submartingales when $(M_n)$ is a square-integrable martingale.",
+   "Non-example: a random walk with integrable steps of mean $-1/3$ is not a submartingale, because $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]=X_n-1/3<X_n$."
+  ],
+  "requires": [
+   "c:filtration",
+   "c:integrable-function",
+   "c:conditional-expectation",
+   "c:martingale"
+  ],
+  "links": [
+   {
+    "to": "c:martingale",
+    "type": "generalizes",
+    "steps": [
+     "Let $(X_n)$ be a [martingale](c:martingale), so $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]=X_n$.",
+     "Equality implies the inequality $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\ge X_n$, so $(X_n)$ is a submartingale.",
+     "A submartingale is a martingale exactly when its mean $\\mathbb{E}[X_n]$ does not depend on $n$."
+    ],
+    "why": "It shows that a martingale is a submartingale without drift, so Doob's inequalities for submartingales apply to martingales."
+   }
+  ]
+ },
+ {
   "id": "c:supermartingale",
   "reminder": "A supermartingale is an adapted integrable process whose conditional mean of the next value is at most the present value.",
-  "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a submartingale.",
+  "definition": "An adapted process $(X_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ is a supermartingale when the [conditional expectation](c:conditional-expectation) satisfies $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]\\le X_n$ almost surely for every $n$. In continuous time the condition is $\\mathbb{E}[X_t\\mid\\mathcal{F}_s]\\le X_s$ for $s\\le t$. So a supermartingale decreases on average, and $-X$ is a [submartingale](c:submartingale).",
   "examples": [
    "The fortune in a game that is unfavourable to the player, $X_n=\\xi_1+\\dots+\\xi_n$ with independent integrable steps of mean at most $0$, is a supermartingale.",
-   "If $f$ is a finite excessive function for a [Markov chain](c:markov-chain) $(Y_n)$ and $\\mathbb{E}[f(Y_0)]<\\infty$, then $f(Y_n)$ is a nonnegative supermartingale.",
+   "If $f$ is a finite [excessive function](c:excessive-function) for a [Markov chain](c:markov-chain) $(Y_n)$ and $\\mathbb{E}[f(Y_0)]<\\infty$, then $f(Y_n)$ is a nonnegative supermartingale.",
    "Every [martingale](c:martingale) is a supermartingale.",
    "Non-example: a simple random walk with $P(\\xi_i=1)=2/3$ is not a supermartingale, because $\\mathbb{E}[X_{n+1}\\mid\\mathcal{F}_n]=X_n+1/3>X_n$."
   ],
@@ -380,6 +954,21 @@
     "why": "It shows that results for supermartingales, such as the convergence of nonnegative supermartingales, apply to martingales."
    }
   ]
+ },
+ {
+  "id": "c:symmetric-subspace",
+  "reminder": "The subspace of a tensor power of vectors that every permutation of the factors leaves unchanged.",
+  "definition": "For a Hilbert space $H$, the symmetric subspace $\\mathrm{Sym}^N(H) \\subset H^{\\otimes N}$ is the set of vectors $\\Psi$ with $U_\\pi \\Psi = \\Psi$ for every [permutation](c:permutation) $\\pi$ of the $N$ [tensor](c:tensor-product) factors. It is the state space of $N$ bosons, and $\\dim \\mathrm{Sym}^N(\\mathbb{C}^d) = \\binom{N+d-1}{d-1}$.",
+  "examples": [
+   "Every product vector $u^{\\otimes N}$ lies in $\\mathrm{Sym}^N(H)$.",
+   "$\\mathrm{Sym}^2(\\mathbb{C}^2)$ is the 3-dimensional triplet space spanned by $|00\\rangle$, $|11\\rangle$ and $|01\\rangle + |10\\rangle$.",
+   "Non-example: the singlet $|01\\rangle - |10\\rangle$ changes sign under the swap of the two factors, so it is not in $\\mathrm{Sym}^2(\\mathbb{C}^2)$."
+  ],
+  "requires": [
+   "c:tensor-product",
+   "c:permutation"
+  ],
+  "links": []
  },
  {
   "id": "c:triangular-array",
@@ -449,5 +1038,21 @@
     "why": "It shows that entanglement entropy is the von Neumann entropy of a subsystem of a pure state."
    }
   ]
+ },
+ {
+  "id": "c:xy-model",
+  "reminder": "A lattice spin model with unit vectors in the plane and the nearest-neighbor energy −S_i · S_j.",
+  "definition": "The XY model, or plane rotator, on $\\mathbb{Z}^d$ has spins $S_i = (\\cos\\vartheta_i, \\sin\\vartheta_i)$ with the uniform a priori measure on the angles. Its finite-volume [Gibbs measures](c:gibbs-measure) at inverse temperature $\\beta$ have the density proportional to $\\exp(\\beta \\sum_{i \\sim j} S_i \\cdot S_j)$, for a fixed [boundary condition](c:boundary-condition).",
+  "examples": [
+   "In dimension $2$ the spin correlations of the XY model tend to $0$ at every temperature, and at low temperature they decay at least like a power of the distance.",
+   "In dimension $d \\ge 3$ the XY model has spontaneous magnetization at low temperature.",
+   "Non-example: the [Ising model](c:ising-model) is not an XY model, because its spins take only the values $\\pm 1$ and it has no continuous symmetry."
+  ],
+  "requires": [
+   "c:gibbs-measure",
+   "c:boundary-condition",
+   "c:circle"
+  ],
+  "links": []
  }
 ]
