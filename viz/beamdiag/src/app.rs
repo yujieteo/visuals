@@ -365,7 +365,7 @@ impl App {
     /* ---------- the editor ---------- */
 
     fn num_input(&self, label: &str, value: f64, field: &str) -> String {
-        format!("<label class=\"f\"><span>{}</span><input type=\"number\" step=\"any\" value=\"{}\" data-field=\"{field}\"></label>", esc(label), tidy(value))
+        format!("<label class=\"f\"><span>{}</span><input type=\"number\" step=\"any\" value=\"{}\" name=\"{field}\" data-field=\"{field}\"></label>", esc(label), tidy(value))
     }
     fn remove_button(label: &str, act: &str, i: usize) -> String {
         format!("<button type=\"button\" class=\"btn icon\" aria-label=\"{}\" data-act=\"{act}\" data-arg=\"{i}\">×</button>", esc(label))
@@ -375,7 +375,7 @@ impl App {
         let (l, len) = (self.attach, self.sym(Q::Length));
         self.st.supports.iter().enumerate().map(|(i, s)| {
             let kinds = options(&[("pin".into(), "Pin".into()), ("fixed".into(), "Fixed".into())], s.kind.name());
-            format!("<li class=\"item\"><div class=\"fields\"><label class=\"f\"><span>Support {}</span><select data-field=\"supports.{i}.kind\">{kinds}</select></label>{}</div>{}</li>",
+            format!("<li class=\"item\"><div class=\"fields\"><label class=\"f\"><span>Support {}</span><select name=\"supports.{i}.kind\" data-field=\"supports.{i}.kind\">{kinds}</select></label>{}</div>{}</li>",
                 i + 1, self.num_input(&format!("x ({len})"), self.show_x(s.x, l), &format!("supports.{i}.x")), Self::remove_button(&format!("Remove support {}", i + 1), "remove-support", i))
         }).collect()
     }
