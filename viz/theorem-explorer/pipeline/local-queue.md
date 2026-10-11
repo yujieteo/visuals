@@ -8,7 +8,7 @@ A Codex or Claude agent reads a prepared packet and writes an answer file. The C
 | Pack | Owner | Records file | Judgments file |
 |---|---|---|---|
 | `methods` | t1 | `data/methods-results.json` | `data/methods-judgments.json` |
-| `techniques` | t2 | `data/techniques-results.json` | `data/techniques-judgments.json` |
+| `technique` | t2 | `data/technique-results.json` | `data/technique-judgments.json` |
 | `statphys` | t3 | `data/statphys-results.json` | `data/statphys-judgments.json` |
 
 The CLI finds a pack from the file `data/<pack>-results.json`. All packs are validated together:
