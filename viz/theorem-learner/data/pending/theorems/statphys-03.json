@@ -1,0 +1,3547 @@
+[
+ {
+  "id": "nm:statphys-levy-ito-decomposition",
+  "statement": "Let $X$ be a [Lévy process](c:levy-process) in $\\mathbb{R}^n$ with càdlàg paths, and let $N_t(A)$ count its jumps $\\Delta X_s \\in A$ for $s \\le t$. Then $\\nu(A) = E[N_1(A)]$ is a [Lévy measure](c:levy-measure), the counts on sets away from $0$ are [Poisson processes](c:poisson-process), and $X_t = B_t + \\gamma t + \\sum_{s \\le t} \\Delta X_s 1(|\\Delta X_s| \\ge 1) + X^d_t$. Here $B$ is a continuous centered [Gaussian process](c:gaussian-process) independent of the jumps, and $X^d_t$ is the $L^2$ limit of the compensated sums of the jumps with $\\varepsilon \\le |\\Delta X_s| < 1$.",
+  "hypotheses": [
+   {
+    "id": "h:levy",
+    "text": "$X$ is a [Lévy process](c:levy-process): $X_0 = 0$, the increment $X_{t+s} - X_t$ is independent of the past and has the law of $X_s$, $X$ is continuous in probability, and its càdlàg version is used.",
+    "concept": "c:levy-process"
+   }
+  ],
+  "conclusion": "Every [Lévy process](c:levy-process) is the sum of an independent continuous [Gaussian process](c:gaussian-process), a linear drift, a finite sum of big jumps and an $L^2$ limit of compensated small jumps, with jump counts given by [Poisson processes](c:poisson-process).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "martingale-decomposition",
+    "name": "Square-integrable martingales and orthogonal jumps",
+    "slogan": "Peel off the jumps shell by shell as orthogonal compensated martingales, and show that the continuous remainder is Gaussian.",
+    "scope": "Outline of the proof of Theorem 3.12 (A) in Bretagnolle's notes (arXiv:1506.06624). The formula for the characteristic exponent and its uniqueness are not covered.",
+    "mechanisms": [
+     "m:martingale",
+     "m:orthogonal-projection",
+     "m:cauchy-completeness",
+     "m:taylor-expansion",
+     "m:characteristic-function",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:levy",
+      "why": "Independent stationary increments give the strong Markov property, Poisson jump counts, exponential martingales and the independence of the pieces.",
+      "steps": [
+       "s:regularize",
+       "s:counts",
+       "s:orthogonal",
+       "s:gaussian"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:regularize",
+      "slogan": "Take càdlàg paths and get all moments when the jumps are bounded.",
+      "detail": "The exponential [martingales](c:martingale) $e^{i\\langle u, X_t\\rangle}/E[e^{i\\langle u, X_t\\rangle}]$ give a càdlàg version. With the strong Markov property, the times at which $X$ moves by $M$ have i.i.d. gaps, so $P(|X_t| \\ge 2kM) \\le e^t a^k$ with $a < 1$ when no jump reaches size $M$.",
+      "uses": [
+       "nm:optional-sampling-theorem"
+      ]
+     },
+     {
+      "id": "s:counts",
+      "slogan": "Count the jumps in sets away from zero and remove the big jumps.",
+      "detail": "For $0 \\notin \\bar A$ the count $N_t(A)$ is a counting process with [independent increments](c:independent-increments) and unit jumps, so it is a [Poisson process](c:poisson-process). After the jumps with $|x| \\ge 1$ are removed, the rest has all moments, mean $\\gamma t$, and becomes a centered martingale $X''$.",
+      "uses": []
+     },
+     {
+      "id": "s:isometry",
+      "slogan": "Compensated jump integrals satisfy an $L^2$ isometry and form closed martingale subspaces.",
+      "detail": "For $0 \\notin \\bar B$, $E[(\\int_B f\\,dN_t - t\\int_B f\\,d\\nu)^2] = t\\int_B f^2\\,d\\nu$. Doob's inequality makes the space of square-integrable càdlàg martingales complete, and the compensated integrals form a closed subspace.",
+      "uses": [
+       "nm:doob-s-maximal-inequality",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:orthogonal",
+      "slogan": "Martingales without common jump times are orthogonal, so the jump pieces are independent.",
+      "detail": "Sums over fine partitions show that the product of two such exponential martingales has mean zero when one has finite variation. This factorizes the joint [characteristic function](c:characteristic-function), so jump processes on disjoint sets are independent.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:small",
+      "slogan": "Sum the compensated shell jumps in $L^2$ and show that the remainder is continuous.",
+      "detail": "Orthogonality gives $t\\int_{A_m} |x|^2\\,\\nu(dx) \\le E|X''_t|^2$, so the compensated shell sums converge in $L^2$ to $X^d$. The remainder $X'' - Y(A_m)$ has no jump above $1/(m+1)$, so its uniform limit $X^c$ is continuous.",
+      "uses": [
+       "nm:doob-s-maximal-inequality"
+      ]
+     },
+     {
+      "id": "s:gaussian",
+      "slogan": "A continuous centered Lévy process is Gaussian by a second-order Taylor expansion.",
+      "detail": "Along a fine partition, a second-order expansion gives $e^{-t\\psi(u)} - 1 = -\\frac{u^2}{2}\\int_0^t e^{-s\\psi(u)}\\,ds$, because path continuity kills the remainder. So $\\psi(u) = u^2/2$ after scaling, and the continuous part is a [Gaussian process](c:gaussian-process).",
+      "uses": [
+       "wd:Q1137206",
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Add the Gaussian part, the drift, the big jumps and the compensated small jumps.",
+      "detail": "The pieces give $X_t = X^c_t + \\gamma t + X_t(\\{|x| \\ge 1\\}) + X^d_t$. The continuous part is independent of all jumps by the orthogonality step, and the two bounds on $\\nu$ make it a [Lévy measure](c:levy-measure).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:regularize",
+      "s:counts"
+     ],
+     [
+      "s:counts",
+      "s:isometry"
+     ],
+     [
+      "s:isometry",
+      "s:orthogonal"
+     ],
+     [
+      "s:orthogonal",
+      "s:small"
+     ],
+     [
+      "s:isometry",
+      "s:small"
+     ],
+     [
+      "s:regularize",
+      "s:gaussian"
+     ],
+     [
+      "s:small",
+      "s:gaussian"
+     ],
+     [
+      "s:gaussian",
+      "s:assemble"
+     ],
+     [
+      "s:small",
+      "s:assemble"
+     ],
+     [
+      "s:counts",
+      "s:assemble"
+     ],
+     [
+      "s:orthogonal",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:levy-process": "The theorem decomposes the paths of an arbitrary Lévy process.",
+     "c:levy-measure": "The mean jump counts per unit time form the Lévy measure of the process.",
+     "c:poisson-process": "The number of jumps in a set away from zero is a Poisson process.",
+     "c:gaussian-process": "The continuous remainder after all jumps are removed is a Gaussian process.",
+     "c:martingale": "Compensated jump sums and the continuous part are square-integrable martingales.",
+     "c:independent-increments": "Independent increments make the jump counts Poisson and the pieces independent.",
+     "c:characteristic-function": "Factorized joint characteristic functions prove the independence of the pieces."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. L. Bretagnolle, The Lévy–Itô Decomposition Theorem, translation and notes by P. Ouwehand, arXiv:1506.06624v1 (2015), Theorem 3.12 (A), pp. 8-9, with Corollary 1.5, Theorem 2.1 and Lemmas 3.5-3.11.",
+     "url": "https://arxiv.org/pdf/1506.06624v1",
+     "note": "The steps follow the martingale proof of the source. The orthogonality step states the finite-variation condition that the partition argument of the source needs."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:infinitely-divisible-distribution",
+    "name": "infinitely divisible distribution",
+    "reminder": "An infinitely divisible law is, for every $n$, the law of a sum of $n$ iid random variables.",
+    "definition": "A [probability distribution](c:probability-distribution) $\\mu$ on $\\mathbb{R}^d$ is infinitely divisible when for every $n\\ge1$ there is a probability distribution $\\mu_n$ with $\\mu=\\mu_n^{*n}$, the $n$-fold [convolution](c:convolution) power. Equivalently, for every $n$, a random variable with law $\\mu$ has the law of $Y_{n,1}+\\dots+Y_{n,n}$ with [iid random variables](c:iid-random-variables) $Y_{n,k}$. The Lévy–Khintchine formula describes all such laws by a drift, a Gaussian covariance and a [Lévy measure](c:levy-measure).",
+    "requires": [
+     "c:probability-distribution",
+     "c:convolution",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:levy-measure",
+    "name": "Levy measure",
+    "reminder": "The Lévy measure $\\nu(A)$ is the expected number of jumps per unit time of a Lévy process with size in $A$.",
+    "definition": "A Lévy measure on $\\mathbb{R}^d$ is a [measure](c:measure) $\\nu$ on $\\mathbb{R}^d\\setminus\\{0\\}$ with $\\int\\min(1,|x|^2)\\,\\nu(dx)<\\infty$. In the Lévy–Khintchine formula for an [infinitely divisible distribution](c:infinitely-divisible-distribution) or a [Lévy process](c:levy-process) $X$, it describes the jumps: $\\nu(A)=\\mathbb{E}[\\#\\{s\\le1:\\Delta X_s\\in A\\}]$ for each Borel set $A$ at positive distance from $0$. It can have infinite total mass near $0$, which means infinitely many small jumps.",
+    "requires": [
+     "c:measure",
+     "c:infinitely-divisible-distribution",
+     "c:characteristic-function"
+    ]
+   },
+   {
+    "id": "c:levy-process",
+    "name": "Levy process",
+    "reminder": "A Lévy process starts at zero and has stationary independent increments and right-continuous paths with left limits.",
+    "definition": "A Lévy process is a [stochastic process](c:stochastic-process) $(X_t)_{t\\ge0}$ with values in $\\mathbb{R}^d$ such that $X_0=0$ almost surely, $X$ has [independent increments](c:independent-increments), the law of $X_{t+s}-X_s$ depends only on $t$, and almost every path is [càdlàg](c:is-cadlag). Each $X_t$ has an [infinitely divisible distribution](c:infinitely-divisible-distribution), and the Lévy–Khintchine formula gives $\\mathbb{E}[e^{i\\langle u,X_t\\rangle}]=e^{t\\psi(u)}$ with an exponent $\\psi$ that a drift, a Gaussian covariance and a [Lévy measure](c:levy-measure) determine.",
+    "requires": [
+     "c:stochastic-process",
+     "c:independent-increments",
+     "c:is-cadlag"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-stable-characteristic-function",
+  "statement": "A function $\\varphi$ is the [characteristic function](c:characteristic-function) of a [stable distribution](c:stable-distribution) on $\\mathbb{R}$ if and only if $\\varphi(t) = \\exp\\big(i\\mu t - |ct|^\\alpha (1 - i\\beta\\,\\mathrm{sign}(t)\\,\\omega_\\alpha(t))\\big)$, with $\\omega_\\alpha(t) = \\tan(\\pi\\alpha/2)$ for $\\alpha \\ne 1$, $\\omega_1(t) = -\\tfrac{2}{\\pi}\\log|t|$, and $0 < \\alpha \\le 2$, $c \\ge 0$, $|\\beta| \\le 1$, $\\mu \\in \\mathbb{R}$.",
+  "hypotheses": [
+   {
+    "id": "h:stable",
+    "text": "The law is [stable](c:stable-distribution): for every $n$, the sum of $n$ [independent](c:independent-random-variables) copies $X_1, \\dots, X_n$ has the law of $a_n X_1 + b_n$ with $a_n > 0$ and $b_n \\in \\mathbb{R}$.",
+    "concept": "c:stable-distribution"
+   },
+   {
+    "id": "h:parameters",
+    "text": "In the formula $0 < \\alpha \\le 2$, $c \\ge 0$, $|\\beta| \\le 1$ and $\\mu \\in \\mathbb{R}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [stable](c:stable-distribution) laws are exactly the laws with this [characteristic function](c:characteristic-function). A stable law that is not a point mass has $c > 0$ and norming constants $a_n = n^{1/\\alpha}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "functional-equation",
+    "name": "Through the functional equation and tail balance",
+    "slogan": "Solve the functional equation of the characteristic function, then bound the skewness constant through the balance of the two tails.",
+    "scope": "The full equivalence. The sufficiency rests on the Lévy–Khintchine formula, and the bound on the skewness constant rests on the cited tail estimates in Sections 6-7 of the source.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:construction-explicit",
+     "m:case-analysis",
+     "m:contradiction",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:stable",
+      "why": "Stability gives the functional equation $\\varphi(t)^n = \\varphi(a_n t)e^{ib_n t}$, which the necessity steps solve.",
+      "steps": [
+       "s:functional-equation",
+       "s:power-law",
+       "s:alpha-one"
+      ]
+     },
+     {
+      "h": "h:parameters",
+      "why": "The sufficiency step needs these bounds to build a Lévy measure, and the necessity steps prove that they hold.",
+      "steps": [
+       "s:sufficiency",
+       "s:index-bound",
+       "s:skewness"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sufficiency",
+      "slogan": "An explicit Lévy measure makes each formula the characteristic function of a stable law.",
+      "detail": "For $0 < \\alpha < 2$ the [Lévy measure](c:levy-measure) $[(1-\\beta)1(x<0) + (1+\\beta)1(x>0)]\\,c^\\alpha dx/(2K(\\alpha)|x|^{1+\\alpha})$ with $K(\\alpha) = -\\Gamma(-\\alpha)\\cos(\\pi\\alpha/2)$ gives the exponent up to a drift. The Lévy–Khintchine formula makes it a characteristic function, and $n\\psi_{\\alpha,c,\\beta,\\mu} = \\psi_{\\alpha,n^{1/\\alpha}c,\\beta,n\\mu}$ gives stability.",
+      "uses": [
+       "nm:statphys-levy-khintchine"
+      ]
+     },
+     {
+      "id": "s:functional-equation",
+      "slogan": "The functional equation forces power norming constants and a characteristic function without zeros.",
+      "detail": "From $\\varphi(t)^n = \\varphi(a_n t)e^{ib_n t}$ one gets $1 = a_1 < a_2 < \\cdots$, $a_{mn} = a_m a_n$, $b_m(n - a_n) = b_n(m - a_m)$ and $\\varphi(t) \\ne 0$. A strictly increasing multiplicative sequence is $a_n = n^{1/\\alpha}$.",
+      "uses": []
+     },
+     {
+      "id": "s:power-law",
+      "slogan": "For index different from one, the shifted logarithm is homogeneous of degree alpha.",
+      "detail": "With $b_n = \\gamma(n - n^{1/\\alpha})$ the function $\\psi_0 = \\log\\varphi - i\\gamma t$ satisfies $\\psi_0(rt) = r^\\alpha \\psi_0(t)$ for $r, t > 0$. Conjugation gives $\\log\\varphi(t) = i\\gamma t - c|t|^\\alpha(1 - ic'\\,\\mathrm{sign}(t))$ with $c > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:alpha-one",
+      "slogan": "For index one, the drift correction is a logarithm, which gives the term in t log t.",
+      "detail": "The numbers $B_r$ in $r\\log\\varphi(t) = \\log\\varphi(rt) + iB_r rt$ satisfy $B_{rs} = B_r + B_s$ and are continuous, so $B_r = \\lambda\\log r$. This gives $\\log\\varphi(t) = iyt - c(t + ic't\\log t)$ for $t > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:index-bound",
+      "slogan": "A second-moment argument excludes an index above two.",
+      "detail": "Since $1 - \\mathrm{Re}\\,\\varphi(t) \\sim c|t|^\\alpha$ and $2(1 - \\mathrm{Re}\\,\\varphi(t))/t^2 \\to E[X^2]$, an index $\\alpha > 2$ gives $E[X^2] = 0$. Then $X$ has mean 0 and [variance](c:variance) 0, so the law is a point mass, which is a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:skewness",
+      "slogan": "Tail balance through regular variation bounds the skewness constant by one.",
+      "detail": "The real and imaginary parts of $\\varphi$ near 0 are [regularly varying](c:regularly-varying-function) and control the tail sum $H$ and the tail difference $K$. For $\\alpha \\ne 1, 2$ this gives $c' = \\beta\\tan(\\pi\\alpha/2)$ with $\\beta = \\lim K/H \\in [-1, 1]$. For $\\alpha = 2$ the [normal](c:normal-distribution) limit of the central limit theorem gives $c' = 0$. For $\\alpha = 1$ the bound $|K_2| \\le H_2$ gives $|c'| \\le 2/\\pi$.",
+      "uses": [
+       "wd:Q190391",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Rename the constants to get the canonical form and close both directions.",
+      "detail": "Write $c' = \\beta\\tan(\\pi\\alpha/2)$ or $c' = 2\\beta/\\pi$, put $\\mu = \\gamma$ or $\\mu = y$, and replace $c$ by $c^\\alpha$. The exponent then has the stated form, and the sufficiency step gives the converse.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:functional-equation",
+      "s:power-law"
+     ],
+     [
+      "s:functional-equation",
+      "s:alpha-one"
+     ],
+     [
+      "s:power-law",
+      "s:index-bound"
+     ],
+     [
+      "s:power-law",
+      "s:skewness"
+     ],
+     [
+      "s:alpha-one",
+      "s:skewness"
+     ],
+     [
+      "s:index-bound",
+      "s:skewness"
+     ],
+     [
+      "s:skewness",
+      "s:assemble"
+     ],
+     [
+      "s:sufficiency",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:characteristic-function": "The theorem is an explicit formula for the characteristic function.",
+     "c:stable-distribution": "The theorem lists exactly the stable distributions on the line.",
+     "c:independent-random-variables": "Stability compares a sum of independent copies with a rescaled copy.",
+     "c:levy-measure": "An explicit Lévy measure proves that each formula is a characteristic function.",
+     "c:variance": "A finite second moment near zero rules out an index above two.",
+     "c:regularly-varying-function": "Regular variation links the characteristic function near zero to the tails.",
+     "c:normal-distribution": "For index two the stable law is the normal law."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "E. J. G. Pitman and J. Pitman, A direct approach to the stable distributions, arXiv:1604.07350v1 (2016), Theorem 1.1, p. 2, with the proof in Sections 4-8, pp. 8-22.",
+     "url": "https://arxiv.org/pdf/1604.07350v1",
+     "note": "The steps follow the source. The Eulerian integrals of Lemma 4.2 and the tail estimates of Lemma 6.1, Theorem 6.3 and Theorem 6.4 are taken from the source and are not proved here."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:infinitely-divisible-distribution",
+    "name": "infinitely divisible distribution",
+    "reminder": "An infinitely divisible law is, for every $n$, the law of a sum of $n$ iid random variables.",
+    "definition": "A [probability distribution](c:probability-distribution) $\\mu$ on $\\mathbb{R}^d$ is infinitely divisible when for every $n\\ge1$ there is a probability distribution $\\mu_n$ with $\\mu=\\mu_n^{*n}$, the $n$-fold [convolution](c:convolution) power. Equivalently, for every $n$, a random variable with law $\\mu$ has the law of $Y_{n,1}+\\dots+Y_{n,n}$ with [iid random variables](c:iid-random-variables) $Y_{n,k}$. The Lévy–Khintchine formula describes all such laws by a drift, a Gaussian covariance and a [Lévy measure](c:levy-measure).",
+    "requires": [
+     "c:probability-distribution",
+     "c:convolution",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:levy-measure",
+    "name": "Levy measure",
+    "reminder": "The Lévy measure $\\nu(A)$ is the expected number of jumps per unit time of a Lévy process with size in $A$.",
+    "definition": "A Lévy measure on $\\mathbb{R}^d$ is a [measure](c:measure) $\\nu$ on $\\mathbb{R}^d\\setminus\\{0\\}$ with $\\int\\min(1,|x|^2)\\,\\nu(dx)<\\infty$. In the Lévy–Khintchine formula for an [infinitely divisible distribution](c:infinitely-divisible-distribution) or a [Lévy process](c:levy-process) $X$, it describes the jumps: $\\nu(A)=\\mathbb{E}[\\#\\{s\\le1:\\Delta X_s\\in A\\}]$ for each Borel set $A$ at positive distance from $0$. It can have infinite total mass near $0$, which means infinitely many small jumps.",
+    "requires": [
+     "c:measure",
+     "c:infinitely-divisible-distribution",
+     "c:characteristic-function"
+    ]
+   },
+   {
+    "id": "c:regularly-varying-function",
+    "name": "regularly varying function",
+    "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
+    "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
+    "requires": [
+     "c:measurable-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:stable-distribution",
+    "name": "stable distribution",
+    "reminder": "A stable law keeps its type under sums: a sum of iid copies is an affine image of one copy.",
+    "definition": "A nondegenerate law $\\mu$ on $\\mathbb{R}$ is stable when for every $n\\ge1$ there are $a_n>0$ and $b_n\\in\\mathbb{R}$ such that, for [iid random variables](c:iid-random-variables) $X,X_1,\\dots,X_n$ with law $\\mu$, the sum $X_1+\\dots+X_n$ has the law of $a_nX+b_n$. Then $a_n=n^{1/\\alpha}$ for an index $\\alpha\\in(0,2]$, and the index $\\alpha=2$ gives the normal laws. The stable laws are exactly the nondegenerate limits in distribution of affinely normalized sums of iid random variables.",
+    "requires": [
+     "c:iid-random-variables",
+     "c:probability-distribution",
+     "c:convergence-in-distribution"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-generalized-clt",
+  "statement": "Let $X_1, X_2, \\dots$ be [i.i.d.](c:iid-random-variables) with $P(|X_1| > x) = x^{-\\alpha}L(x)$, $0 < \\alpha < 2$, $L$ [slowly varying](c:slowly-varying-function), and $P(X_1 > x)/P(|X_1| > x) \\to \\theta$. With $a_n = \\inf\\{x : P(|X_1|>x) \\le 1/n\\}$ and $b_n = n\\mathbb{E}[X_1; |X_1| \\le a_n]$, $(S_n - b_n)/a_n$ [converges in distribution](c:convergence-in-distribution) to a nondegenerate [stable](c:stable-distribution) $Y$ with [Lévy measure](c:levy-measure) $\\nu(dx) = \\theta\\alpha x^{-\\alpha-1}dx$ on $x>0$ and $(1-\\theta)\\alpha|x|^{-\\alpha-1}dx$ on $x<0$.",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The variables $X_1, X_2, \\dots$ are [i.i.d.](c:iid-random-variables)",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:tail",
+    "text": "The tail $T(x) = P(|X_1| > x)$ is [regularly varying](c:regularly-varying-function) with index $-\\alpha$, $0 < \\alpha < 2$.",
+    "concept": "c:regularly-varying-function"
+   },
+   {
+    "id": "h:balance",
+    "text": "The right tail carries the fraction $\\theta \\in [0,1]$ of the total tail: $P(X_1 > x)/T(x) \\to \\theta$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$(S_n - b_n)/a_n$ [converges in distribution](c:convergence-in-distribution) to a nondegenerate $Y$ with $\\mathbb{E}e^{itY} = \\exp\\int (e^{itx} - 1 - itx 1_{|x|\\le 1})\\,\\nu(dx)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "direct-characteristic-function",
+    "name": "Direct characteristic function computation",
+    "slogan": "Scale so that one jump exceeds $a_n$ about once, control small values by a halving bound, and take the limit of $n(\\chi_n - 1)$.",
+    "scope": "Sufficiency for $0 < \\alpha < 2$.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:epsilon-delta",
+     "m:cauchy-schwarz",
+     "m:telescoping",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Identical independent summands make the [characteristic function](c:characteristic-function) of $S_n/a_n$ an $n$-th power.",
+      "steps": [
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:tail",
+      "why": "Regular variation gives $nT(xa_n) \\to x^{-\\alpha}$ and the halving bound, and $\\alpha < 2$ makes the small values negligible.",
+      "steps": [
+       "s:scale",
+       "s:halving",
+       "s:small"
+      ]
+     },
+     {
+      "h": "h:balance",
+      "why": "Tail balance splits the limit of $nP(X_1/a_n \\in \\cdot)$ into the two half-line densities of $\\nu$.",
+      "steps": [
+       "s:scale",
+       "s:exponent"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:scale",
+      "slogan": "The scale $a_n$ makes the expected number of large values converge.",
+      "detail": "From $T(a_n) \\le 1/n < T(a_n/\\lambda)$ and regular variation, $nT(a_n) \\to 1$, so $nP(X_1 > xa_n) \\to \\theta x^{-\\alpha}$ and $nP(X_1 < -xa_n) \\to (1-\\theta)x^{-\\alpha}$.",
+      "uses": []
+     },
+     {
+      "id": "s:halving",
+      "slogan": "Repeated halving gives a uniform power bound on tail ratios.",
+      "detail": "With $T(s/2) \\le 2^{\\alpha+\\delta}T(s)$ for $s \\ge t_0$, iteration gives $T(yt) \\le C y^{-\\alpha-\\delta}T(t)$ for all $t \\ge t_0$ and $0 < y \\le 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Values below $\\varepsilon a_n$ carry a small total second moment.",
+      "detail": "$n\\mathbb{E}[(X_1/a_n)^2; |X_1| \\le \\varepsilon a_n] \\le \\int_0^\\varepsilon 2y\\,nT(ya_n)\\,dy \\le K\\varepsilon^{2-\\alpha-\\delta}$, which tends to 0 with $\\varepsilon$ because $\\alpha + \\delta < 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:exponent",
+      "slogan": "The exponent $n(\\chi_n - 1) - itn\\beta_n$ converges to $\\int h_t\\,d\\nu$.",
+      "detail": "Weak convergence of $nP(X_1/a_n \\in \\cdot)$ away from 0 handles $|x| > \\varepsilon$. The bound $|h_t(x)| \\le t^2x^2/2$ and the small-value estimate handle $|x| \\le \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Compare the $n$-th power with an exponential.",
+      "detail": "Cauchy–Schwarz gives $n\\beta_n^2 \\to 0$, so $n|\\chi_n - 1|^2 \\to 0$ and $|\\chi_n^n - e^{n(\\chi_n - 1)}| \\le n|\\chi_n - 1|^2 \\to 0$. Hence $\\mathbb{E}e^{itZ_n} \\to e^{\\psi(t)}$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Continuity at 0 identifies a nondegenerate limit law.",
+      "detail": "Dominated convergence makes $\\psi$ continuous at 0, and Lévy's continuity theorem gives $Z_n \\Rightarrow Y$. Since $\\operatorname{Re}\\psi(t) < 0$ for $t \\ne 0$, $Y$ is not constant.",
+      "uses": [
+       "wd:Q1067156",
+       "wd:Q1966978"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:scale",
+      "s:exponent"
+     ],
+     [
+      "s:scale",
+      "s:small"
+     ],
+     [
+      "s:halving",
+      "s:small"
+     ],
+     [
+      "s:small",
+      "s:exponent"
+     ],
+     [
+      "s:small",
+      "s:product"
+     ],
+     [
+      "s:exponent",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:iid-random-variables": "The summands are one i.i.d. sequence with a heavy tail.",
+     "c:slowly-varying-function": "The slowly varying factor L does not change the scaling exponent of the tail.",
+     "c:regularly-varying-function": "Regular variation of the tail with index minus alpha drives every limit in the proof.",
+     "c:convergence-in-distribution": "The conclusion is convergence in distribution of the centered and scaled sums.",
+     "c:stable-distribution": "The limit is a stable law of index alpha.",
+     "c:levy-measure": "The limit is described by its Lévy measure with power-law densities on both half-lines.",
+     "c:characteristic-function": "The proof computes the limit of the characteristic functions directly."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (author's online version, January 2019), Theorem 3.8.2, pp. 186-189, with Lemma 3.8.3 on p. 187.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "The scale step and the halving bound follow Durrett. The limit is computed directly with characteristic functions instead of Durrett's Poisson point process argument."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:infinitely-divisible-distribution",
+    "name": "infinitely divisible distribution",
+    "reminder": "An infinitely divisible law is, for every $n$, the law of a sum of $n$ iid random variables.",
+    "definition": "A [probability distribution](c:probability-distribution) $\\mu$ on $\\mathbb{R}^d$ is infinitely divisible when for every $n\\ge1$ there is a probability distribution $\\mu_n$ with $\\mu=\\mu_n^{*n}$, the $n$-fold [convolution](c:convolution) power. Equivalently, for every $n$, a random variable with law $\\mu$ has the law of $Y_{n,1}+\\dots+Y_{n,n}$ with [iid random variables](c:iid-random-variables) $Y_{n,k}$. The Lévy–Khintchine formula describes all such laws by a drift, a Gaussian covariance and a [Lévy measure](c:levy-measure).",
+    "requires": [
+     "c:probability-distribution",
+     "c:convolution",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:levy-measure",
+    "name": "Levy measure",
+    "reminder": "The Lévy measure $\\nu(A)$ is the expected number of jumps per unit time of a Lévy process with size in $A$.",
+    "definition": "A Lévy measure on $\\mathbb{R}^d$ is a [measure](c:measure) $\\nu$ on $\\mathbb{R}^d\\setminus\\{0\\}$ with $\\int\\min(1,|x|^2)\\,\\nu(dx)<\\infty$. In the Lévy–Khintchine formula for an [infinitely divisible distribution](c:infinitely-divisible-distribution) or a [Lévy process](c:levy-process) $X$, it describes the jumps: $\\nu(A)=\\mathbb{E}[\\#\\{s\\le1:\\Delta X_s\\in A\\}]$ for each Borel set $A$ at positive distance from $0$. It can have infinite total mass near $0$, which means infinitely many small jumps.",
+    "requires": [
+     "c:measure",
+     "c:infinitely-divisible-distribution",
+     "c:characteristic-function"
+    ]
+   },
+   {
+    "id": "c:regularly-varying-function",
+    "name": "regularly varying function",
+    "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
+    "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
+    "requires": [
+     "c:measurable-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:slowly-varying-function",
+    "name": "slowly varying function",
+    "reminder": "A slowly varying function $L$ satisfies $L(\\lambda x)/L(x)\\to1$ as $x\\to\\infty$ for every $\\lambda>0$.",
+    "definition": "A positive [measurable function](c:measurable-function) $L$ on $(0,\\infty)$ is slowly varying at infinity when $\\lim_{x\\to\\infty}L(\\lambda x)/L(x)=1$ for every $\\lambda>0$. Equivalently, $L$ is a [regularly varying function](c:regularly-varying-function) of index $0$. Such an $L$ changes more slowly than every power: $x^{-\\varepsilon}L(x)\\to0$ and $x^{\\varepsilon}L(x)\\to\\infty$ for every $\\varepsilon>0$.",
+    "requires": [
+     "c:regularly-varying-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:stable-distribution",
+    "name": "stable distribution",
+    "reminder": "A stable law keeps its type under sums: a sum of iid copies is an affine image of one copy.",
+    "definition": "A nondegenerate law $\\mu$ on $\\mathbb{R}$ is stable when for every $n\\ge1$ there are $a_n>0$ and $b_n\\in\\mathbb{R}$ such that, for [iid random variables](c:iid-random-variables) $X,X_1,\\dots,X_n$ with law $\\mu$, the sum $X_1+\\dots+X_n$ has the law of $a_nX+b_n$. Then $a_n=n^{1/\\alpha}$ for an index $\\alpha\\in(0,2]$, and the index $\\alpha=2$ gives the normal laws. The stable laws are exactly the nondegenerate limits in distribution of affinely normalized sums of iid random variables.",
+    "requires": [
+     "c:iid-random-variables",
+     "c:probability-distribution",
+     "c:convergence-in-distribution"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-normal-domain-of-attraction",
+  "statement": "Let $X_1, X_2, \\dots$ be [i.i.d.](c:iid-random-variables) and not constant, with $T(y) = P(|X_1| > y)$ and $U(y) = \\mathbb{E}[X_1^2; |X_1| \\le y]$. Some $a_n > 0$ and $b_n$ give $(S_n - b_n)/a_n \\Rightarrow N(0,1)$ if and only if $y^2T(y)/U(y) \\to 0$. So the law of $X_1$ is in the [domain of attraction](c:domain-of-attraction) of the [normal distribution](c:normal-distribution) exactly when the tail is small against the truncated second moment.",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The variables $X_1, X_2, \\dots$ are [i.i.d.](c:iid-random-variables)",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:nondegenerate",
+    "text": "$X_1$ is a [random variable](c:random-variable) that is not almost surely constant.",
+    "concept": "c:random-variable"
+   }
+  ],
+  "conclusion": "Normalized sums [converge in distribution](c:convergence-in-distribution) to $N(0,1)$ for some constants exactly when $y^2T(y)/U(y) \\to 0$, which makes $U$ [slowly varying](c:slowly-varying-function).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "truncation-and-symmetrization",
+    "name": "Truncation for sufficiency, symmetrization for necessity",
+    "slogan": "Truncate at the scale where $nU(a_n) = a_n^2$ for sufficiency, and use symmetrization to show that a Gaussian limit leaves no room for large values.",
+    "scope": "Both directions for nondegenerate $X_1$.",
+    "mechanisms": [
+     "m:approximation",
+     "m:cauchy-schwarz",
+     "m:characteristic-function",
+     "m:symmetry",
+     "m:algebraic-identity",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Identical independent summands make the truncated array satisfy the Lindeberg–Feller hypotheses, and make the [characteristic function](c:characteristic-function) of the symmetrized sum a power $\\psi(t/a_n)^n$.",
+      "steps": [
+       "s:sufficiency",
+       "s:symmetrize"
+      ]
+     },
+     {
+      "h": "h:nondegenerate",
+      "why": "A nondegenerate $X_1$ forces $a_n \\to \\infty$ and gives $U(y) > 0$ for large $y$.",
+      "steps": [
+       "s:symmetrize",
+       "s:desymmetrize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sufficiency",
+      "slogan": "Truncate at the scale with $nU(a_n) = a_n^2$ and apply Lindeberg–Feller.",
+      "detail": "The condition makes $U$ [slowly varying](c:slowly-varying-function). With $nU(a_n) = a_n^2$, truncation at $a_n$ changes $S_n$ with probability at most $nT(a_n) \\to 0$, the centered truncated [triangular array](c:triangular-array) has variance sum tending to 1, and slow variation gives the Lindeberg condition.",
+      "uses": [
+       "nm:statphys-lindeberg-feller",
+       "nl:16121",
+       "wd:Q643826"
+      ]
+     },
+     {
+      "id": "s:symmetrize",
+      "slogan": "Symmetrize, get uniform convergence of the characteristic functions, and show $a_n \\to \\infty$.",
+      "detail": "With $X^s = X_1 - X'_1$ and $\\psi = |\\varphi|^2$, $\\psi(t/a_n)^n \\to e^{-t^2}$ uniformly on compacts by tightness. A bounded subsequence of $a_n$ would force $\\psi \\equiv 1$ and a constant $X_1$.",
+      "uses": [
+       "wd:Q7249519"
+      ]
+     },
+     {
+      "id": "s:tails",
+      "slogan": "An algebraic identity kills the large values of $X^s$.",
+      "detail": "With $f_n(t) = n(1 - \\psi(t/a_n)) \\to t^2$, the identity $2(1-\\cos x)^2 = 4(1 - \\cos x) - (1 - \\cos 2x)$ gives $n\\mathbb{E}[2(1 - \\cos(tX^s/a_n))^2] \\to 0$. Integrating in $t$ yields $nP(|X^s| > \\varepsilon a_n) \\to 0$.",
+      "uses": [
+       "wd:Q1067156",
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:moment",
+      "slogan": "The truncated second moment of $X^s$ matches the Gaussian variance.",
+      "detail": "Expanding $1 - \\cos y = y^2/2 - r(y)$ gives $n\\mathbb{E}[(X^s)^2; |X^s| \\le \\varepsilon a_n]/a_n^2 \\to 2$ for every $\\varepsilon > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:interpolate",
+      "slogan": "Bounded ratios $a_{n+1}/a_n$ pass from the sequence $a_n$ to all large $y$.",
+      "detail": "If $a_{n+1}/a_n$ were unbounded, the moment limit would fail at $n+1$. For $a_n \\le y < a_{n+1}$, $y^2T^s(y)/U^s(y) \\le K^2 nT^s(a_n)/(nU^s(a_n)/a_n^2) \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:desymmetrize",
+      "slogan": "Return from $X^s$ to $X_1$ through a [median](c:median).",
+      "detail": "With $Y = X_1 - m$, $P(|Y| > y) \\le 2T^s(y)$ and $U^s(y) \\le 4\\mathbb{E}[\\min(Y^2, y^2)]$ transfer the condition to $Y$, and a shift by $m$ changes $T$ and $U$ only by constant factors at scale $y/2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:symmetrize",
+      "s:tails"
+     ],
+     [
+      "s:tails",
+      "s:moment"
+     ],
+     [
+      "s:moment",
+      "s:interpolate"
+     ],
+     [
+      "s:tails",
+      "s:interpolate"
+     ],
+     [
+      "s:interpolate",
+      "s:desymmetrize"
+     ],
+     [
+      "s:sufficiency",
+      "s:desymmetrize"
+     ]
+    ],
+    "conclusion": "s:desymmetrize",
+    "concepts": {
+     "c:iid-random-variables": "The summands form one i.i.d. sequence.",
+     "c:random-variable": "The common law must not be a point mass.",
+     "c:domain-of-attraction": "The theorem describes the domain of attraction of the normal law.",
+     "c:normal-distribution": "The limit law is the standard normal distribution.",
+     "c:convergence-in-distribution": "The conclusion concerns convergence in distribution of normalized sums.",
+     "c:slowly-varying-function": "The criterion is equivalent to slow variation of the truncated second moment.",
+     "c:characteristic-function": "The necessity proof works with the characteristic function of the symmetrized variable.",
+     "c:triangular-array": "Truncation at a level that depends on n turns the sums into a triangular array.",
+     "c:median": "A median of X_1 links the tails of X_1 to the tails of its symmetrization."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Durrett, Probability: Theory and Examples, 5th ed., Theorem 3.4.14, p. 152, states the criterion without proof. This proof is authored for the catalog. Sufficiency uses the Lindeberg–Feller theorem, and necessity uses symmetrization and characteristic functions."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:domain-of-attraction",
+    "name": "domain of attraction",
+    "reminder": "The domain of attraction of a stable law collects the laws whose normalized partial sums converge to it.",
+    "definition": "Let $G$ be a [stable distribution](c:stable-distribution). A law $F$ is in the domain of attraction of $G$ when, for [iid random variables](c:iid-random-variables) $X_1,X_2,\\dots$ with law $F$ and $S_n=X_1+\\dots+X_n$, there are constants $a_n>0$ and $b_n$ with $(S_n-b_n)/a_n\\to G$ in distribution. For $0<\\alpha<2$, $F$ is in the domain of attraction of an $\\alpha$-stable law exactly when $P(|X_1|>x)$ is [regularly varying](c:regularly-varying-function) with index $-\\alpha$ and the ratio $P(X_1>x)/P(|X_1|>x)$ has a limit as $x\\to\\infty$.",
+    "requires": [
+     "c:stable-distribution",
+     "c:iid-random-variables",
+     "c:convergence-in-distribution"
+    ]
+   },
+   {
+    "id": "c:regularly-varying-function",
+    "name": "regularly varying function",
+    "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
+    "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
+    "requires": [
+     "c:measurable-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:slowly-varying-function",
+    "name": "slowly varying function",
+    "reminder": "A slowly varying function $L$ satisfies $L(\\lambda x)/L(x)\\to1$ as $x\\to\\infty$ for every $\\lambda>0$.",
+    "definition": "A positive [measurable function](c:measurable-function) $L$ on $(0,\\infty)$ is slowly varying at infinity when $\\lim_{x\\to\\infty}L(\\lambda x)/L(x)=1$ for every $\\lambda>0$. Equivalently, $L$ is a [regularly varying function](c:regularly-varying-function) of index $0$. Such an $L$ changes more slowly than every power: $x^{-\\varepsilon}L(x)\\to0$ and $x^{\\varepsilon}L(x)\\to\\infty$ for every $\\varepsilon>0$.",
+    "requires": [
+     "c:regularly-varying-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:stable-distribution",
+    "name": "stable distribution",
+    "reminder": "A stable law keeps its type under sums: a sum of iid copies is an affine image of one copy.",
+    "definition": "A nondegenerate law $\\mu$ on $\\mathbb{R}$ is stable when for every $n\\ge1$ there are $a_n>0$ and $b_n\\in\\mathbb{R}$ such that, for [iid random variables](c:iid-random-variables) $X,X_1,\\dots,X_n$ with law $\\mu$, the sum $X_1+\\dots+X_n$ has the law of $a_nX+b_n$. Then $a_n=n^{1/\\alpha}$ for an index $\\alpha\\in(0,2]$, and the index $\\alpha=2$ gives the normal laws. The stable laws are exactly the nondegenerate limits in distribution of affinely normalized sums of iid random variables.",
+    "requires": [
+     "c:iid-random-variables",
+     "c:probability-distribution",
+     "c:convergence-in-distribution"
+    ]
+   },
+   {
+    "id": "c:triangular-array",
+    "name": "triangular array",
+    "reminder": "A triangular array has rows of random variables that are independent within each row, with row lengths that grow.",
+    "definition": "A triangular array is a family of real [random variables](c:random-variable) $X_{n,k}$, $n\\ge1$, $1\\le k\\le k_n$, with $k_n\\to\\infty$, such that for each $n$ the variables $X_{n,1},\\dots,X_{n,k_n}$ of row $n$ are [independent](c:independent-random-variables). Variables in different rows can be dependent, and they can live on different probability spaces. Limit theorems for arrays describe the row sums $S_n=X_{n,1}+\\dots+X_{n,k_n}$.",
+    "requires": [
+     "c:random-variable",
+     "c:independent-random-variables"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-stable-laws-only-limits",
+  "statement": "A nondegenerate [random variable](c:random-variable) $Y$ is the limit in distribution of $(X_1 + \\dots + X_n - b_n)/a_n$ for some [i.i.d.](c:iid-random-variables) sequence and constants $a_n > 0$, $b_n$ if and only if $Y$ has a [stable distribution](c:stable-distribution): $Y_1 + \\dots + Y_k \\overset{d}{=} \\alpha_k Y + \\beta_k$ for every $k$, with i.i.d. copies $Y_j$ of $Y$ and some $\\alpha_k > 0$, $\\beta_k$.",
+  "hypotheses": [
+   {
+    "id": "h:nondegenerate",
+    "text": "$Y$ is a [random variable](c:random-variable) that is not almost surely constant.",
+    "concept": "c:random-variable"
+   },
+   {
+    "id": "h:normalized",
+    "text": "The summands $X_i$ are [i.i.d.](c:iid-random-variables), and the normalization uses constants $a_n > 0$ and $b_n \\in \\mathbb{R}$.",
+    "concept": "c:iid-random-variables"
+   }
+  ],
+  "conclusion": "$Y$ is a limit of normalized sums of an i.i.d. sequence exactly when $Y$ has a [stable distribution](c:stable-distribution).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "blocks-and-types",
+    "name": "Blocks and convergence of types",
+    "slogan": "Group $nk$ summands into $k$ blocks of length $n$, and let convergence of types turn the two limits of the same sum into a stability relation.",
+    "scope": "The whole equivalence for nondegenerate limits.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:epsilon-delta",
+     "m:algebraic-identity",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:nondegenerate",
+      "why": "Convergence of types needs two different quantiles, so both $Y$ and $Y_1 + \\dots + Y_k$ must be nondegenerate.",
+      "steps": [
+       "s:types",
+       "s:stable"
+      ]
+     },
+     {
+      "h": "h:normalized",
+      "why": "Identical laws make the $k$ blocks independent copies of $S_n$, and positive scales make quantiles transform as $q_{\\alpha V + \\beta} = \\alpha q_V + \\beta$.",
+      "steps": [
+       "s:easy",
+       "s:types",
+       "s:blocks"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "A stable law is the limit of its own normalized sums.",
+      "detail": "If $Y$ is stable, take $X_i$ i.i.d. copies of $Y$ with $a_n = \\alpha_n$ and $b_n = \\beta_n$. Then every normalized sum already has the law of $Y$.",
+      "uses": []
+     },
+     {
+      "id": "s:quantiles",
+      "slogan": "Convergence in distribution moves quantiles at their continuity points.",
+      "detail": "If $V_n \\Rightarrow V$ and the quantile function $q_V$ of the [distribution function](c:distribution-function) is continuous at $y$, then $q_{V_n}(y) \\to q_V(y)$. The proof squeezes $q_{V_n}(y)$ between two continuity points of $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:types",
+      "slogan": "Two quantiles fix the scale and the shift of an affine image.",
+      "detail": "If $W_n \\Rightarrow W$ and $\\alpha_n W_n + \\beta_n \\Rightarrow W'$ with both limits nondegenerate, then the quantiles at two good points $y_1 < y_2$ force $\\alpha_n \\to \\alpha > 0$ and $\\beta_n \\to \\beta$, and $W' \\overset{d}{=} \\alpha W + \\beta$.",
+      "uses": [
+       "wd:Q643826"
+      ]
+     },
+     {
+      "id": "s:blocks",
+      "slogan": "Split $S_{nk}$ into $k$ independent blocks of length $n$.",
+      "detail": "The normalized block sums give $W'_n \\Rightarrow Y_1 + \\dots + Y_k$ by [characteristic functions](c:characteristic-function), and the same quantity equals $(a_{nk}/a_n) Z_{nk} + (b_{nk} - k b_n)/a_n$ with $Z_{nk} \\Rightarrow Y$.",
+      "uses": [
+       "wd:Q1966978"
+      ]
+     },
+     {
+      "id": "s:stable",
+      "slogan": "Convergence of types turns the two limits into the stability relation.",
+      "detail": "The sum $Y_1 + \\dots + Y_k$ is nondegenerate, so convergence of types gives $Y_1 + \\dots + Y_k \\overset{d}{=} \\alpha_k Y + \\beta_k$ with $\\alpha_k > 0$. Together with the easy direction this proves the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:quantiles",
+      "s:types"
+     ],
+     [
+      "s:types",
+      "s:stable"
+     ],
+     [
+      "s:blocks",
+      "s:stable"
+     ],
+     [
+      "s:easy",
+      "s:stable"
+     ]
+    ],
+    "conclusion": "s:stable",
+    "concepts": {
+     "c:random-variable": "The limit Y is a single real random variable that must not be constant.",
+     "c:iid-random-variables": "The summands form one i.i.d. sequence, which makes the blocks independent copies.",
+     "c:stable-distribution": "Stable distributions are exactly the possible limits of normalized i.i.d. sums.",
+     "c:distribution-function": "Quantile functions are inverses of distribution functions and carry the convergence of types argument.",
+     "c:characteristic-function": "Characteristic functions show that the sum of the k normalized blocks converges."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (author's online version, January 2019), Theorem 3.8.8, p. 191, with Theorem 3.8.9 on pp. 191-192.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "The block argument follows Durrett. The convergence of types step uses quantile functions instead of Durrett's characteristic function proof."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:stable-distribution",
+    "name": "stable distribution",
+    "reminder": "A stable law keeps its type under sums: a sum of iid copies is an affine image of one copy.",
+    "definition": "A nondegenerate law $\\mu$ on $\\mathbb{R}$ is stable when for every $n\\ge1$ there are $a_n>0$ and $b_n\\in\\mathbb{R}$ such that, for [iid random variables](c:iid-random-variables) $X,X_1,\\dots,X_n$ with law $\\mu$, the sum $X_1+\\dots+X_n$ has the law of $a_nX+b_n$. Then $a_n=n^{1/\\alpha}$ for an index $\\alpha\\in(0,2]$, and the index $\\alpha=2$ gives the normal laws. The stable laws are exactly the nondegenerate limits in distribution of affinely normalized sums of iid random variables.",
+    "requires": [
+     "c:iid-random-variables",
+     "c:probability-distribution",
+     "c:convergence-in-distribution"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-khinchine-triangular-arrays",
+  "statement": "Let $X_{n,1}, \\dots, X_{n,k_n}$ be [independent](c:independent-random-variables) in each row of a [triangular array](c:triangular-array), with $\\max_k P(|X_{n,k}| > \\varepsilon) \\to 0$ for every $\\varepsilon > 0$. If $S_n - a_n$ [converges in distribution](c:convergence-in-distribution) to $Z$, where $S_n = X_{n,1} + \\dots + X_{n,k_n}$, then $Z$ has an [infinitely divisible distribution](c:infinitely-divisible-distribution).",
+  "hypotheses": [
+   {
+    "id": "h:independent-rows",
+    "text": "For each $n$ the variables $X_{n,1}, \\dots, X_{n,k_n}$ are [independent](c:independent-random-variables). They need not have the same law.",
+    "concept": "c:independent-random-variables"
+   },
+   {
+    "id": "h:infinitesimal",
+    "text": "The [triangular array](c:triangular-array) is infinitesimal: $\\max_{k \\le k_n} P(|X_{n,k}| > \\varepsilon) \\to 0$ as $n \\to \\infty$ for every $\\varepsilon > 0$.",
+    "concept": "c:triangular-array"
+   },
+   {
+    "id": "h:convergence",
+    "text": "For some constants $a_n$, $S_n - a_n$ [converges in distribution](c:convergence-in-distribution) to a random variable $Z$.",
+    "concept": "c:convergence-in-distribution"
+   }
+  ],
+  "conclusion": "The limit $Z$ has an [infinitely divisible distribution](c:infinitely-divisible-distribution): for every $m$ it is the law of a sum of $m$ i.i.d. random variables.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "accompanying-laws",
+    "name": "Accompanying compound Poisson laws",
+    "slogan": "Replace each centered summand by a compound Poisson variable with the same jump law, and show that the error vanishes.",
+    "scope": "The whole statement. The Lévy–Khintchine triple of the limit is not computed.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:subsequence",
+     "m:taylor-expansion",
+     "m:fubini-swap",
+     "m:symmetry",
+     "m:telescoping"
+    ],
+    "roles": [
+     {
+      "h": "h:independent-rows",
+      "why": "Independence in a row makes the characteristic function of $S_n$ a product, which the proof compares factor by factor.",
+      "steps": [
+       "s:accompanying",
+       "s:row-bound",
+       "s:compare"
+      ]
+     },
+     {
+      "h": "h:infinitesimal",
+      "why": "Infinitesimality makes the truncated means and every $|\\chi_{n,k}(t) - 1|$ small uniformly in $k$, which kills the quadratic error.",
+      "steps": [
+       "s:small",
+       "s:one-summand"
+      ]
+     },
+     {
+      "h": "h:convergence",
+      "why": "Convergence makes the sums tight, which bounds the symmetrized row sums, and it gives the target of the accompanying laws.",
+      "steps": [
+       "s:row-bound",
+       "s:accompanying"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closure",
+      "slogan": "Limits of infinitely divisible laws are again infinitely divisible.",
+      "detail": "The $m$-th convolution roots of a convergent sequence are [tight](c:tightness) because $P(Y > y)^m \\le P(Y_1 + \\dots + Y_m > my)$. A limit point $\\nu$ of the roots satisfies $\\hat\\nu^m = \\hat\\mu$.",
+      "uses": [
+       "wd:Q7249519"
+      ]
+     },
+     {
+      "id": "s:accompanying",
+      "slogan": "Build the accompanying infinitely divisible laws from the centered summands.",
+      "detail": "Center by the truncated means $b_{n,k}$ and set $G_n(t) = e^{it(B_n - a_n)} \\prod_k \\exp(\\chi_{n,k}(t) - 1)$. Each factor is the [characteristic function](c:characteristic-function) of a [compound Poisson](c:compound-poisson-process) sum, so $G_n$ belongs to an infinitely divisible law.",
+      "uses": [
+       "wd:Q1966978"
+      ]
+     },
+     {
+      "id": "s:small",
+      "slogan": "The truncated means and the centered characteristic functions are uniformly small.",
+      "detail": "Infinitesimality gives $\\max_k |b_{n,k}| \\to 0$ and then $\\max_k |\\chi_{n,k}(t) - 1| \\le 2|t|\\varepsilon + 2\\max_k P(|X_{n,k}| > \\varepsilon) \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:one-summand",
+      "slogan": "Bound each centered summand by its symmetrized truncated second moment.",
+      "detail": "A Taylor bound on $\\{|X| < 1\\}$, the identity $\\mathrm{Var}\\,U = \\frac12 E[(U - U')^2]$ and a weak symmetrization inequality give $|\\chi(t) - 1| \\le C(t)\\,E[\\min(1, (X^s)^2)]$.",
+      "uses": [
+       "wd:Q1137206"
+      ]
+     },
+     {
+      "id": "s:row-bound",
+      "slogan": "Tightness of the sums bounds the symmetrized truncated second moments of a whole row.",
+      "detail": "The symmetrized sum has real [characteristic function](c:characteristic-function) $\\prod_k |\\varphi_{n,k}|^2 \\ge 5/8$ near $0$. Integrating $1 - \\cos(tv)$ over $[0, \\delta]$ turns this into $\\sum_k E[\\min(1, (X^s_{n,k})^2)] \\le (7/\\delta^2) \\log(8/5)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two products factor by factor and conclude with the closure step.",
+      "detail": "The product bound gives $|E[e^{it(S_n - a_n)}] - G_n(t)| \\le \\max_k |\\chi_{n,k}(t) - 1| \\cdot \\sum_k |\\chi_{n,k}(t) - 1| \\to 0$. So the accompanying laws converge to $Z$, which is then [infinitely divisible](c:infinitely-divisible-distribution).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:small",
+      "s:compare"
+     ],
+     [
+      "s:one-summand",
+      "s:compare"
+     ],
+     [
+      "s:row-bound",
+      "s:compare"
+     ],
+     [
+      "s:accompanying",
+      "s:compare"
+     ],
+     [
+      "s:closure",
+      "s:compare"
+     ],
+     [
+      "s:small",
+      "s:one-summand"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:independent-random-variables": "Independence in each row makes the characteristic function of a row sum a product.",
+     "c:triangular-array": "The theorem concerns row sums of a triangular array whose rows may change with n.",
+     "c:convergence-in-distribution": "The hypothesis and the comparison argument are both about convergence in distribution.",
+     "c:infinitely-divisible-distribution": "The conclusion is that every possible limit is infinitely divisible.",
+     "c:tightness": "Tightness of the convolution roots and of the row sums drives two key bounds.",
+     "c:characteristic-function": "The proof compares characteristic functions of the sums and of the accompanying laws.",
+     "c:compound-poisson-process": "Each summand is replaced by a compound Poisson variable with the same jump law."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The method of accompanying infinitely divisible laws follows the associated distributions in Section 1 of P. Major, Limit theorems and infinitely divisible distributions, Part II. The symmetrization estimates of steps s4-s5 and the closure step s1 are written out here instead of the canonical-measure analysis of the source."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:compound-poisson-process",
+    "name": "compound Poisson process",
+    "reminder": "A compound Poisson process adds up iid random jumps at the arrival times of a Poisson process.",
+    "definition": "Let $(N_t)_{t\\ge0}$ be a [Poisson process](c:poisson-process) with rate $\\lambda>0$, and let $Y_1,Y_2,\\dots$ be [iid random variables](c:iid-random-variables) that are independent of $(N_t)$. The compound Poisson process is $S_t=\\sum_{i=1}^{N_t}Y_i$, with $S_t=0$ when $N_t=0$. It has independent and stationary increments, and $E[e^{i\\theta S_t}]=\\exp(\\lambda t(\\varphi_Y(\\theta)-1))$, where $\\varphi_Y$ is the [characteristic function](c:characteristic-function) of $Y_1$.",
+    "requires": [
+     "c:poisson-process",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:infinitely-divisible-distribution",
+    "name": "infinitely divisible distribution",
+    "reminder": "An infinitely divisible law is, for every $n$, the law of a sum of $n$ iid random variables.",
+    "definition": "A [probability distribution](c:probability-distribution) $\\mu$ on $\\mathbb{R}^d$ is infinitely divisible when for every $n\\ge1$ there is a probability distribution $\\mu_n$ with $\\mu=\\mu_n^{*n}$, the $n$-fold [convolution](c:convolution) power. Equivalently, for every $n$, a random variable with law $\\mu$ has the law of $Y_{n,1}+\\dots+Y_{n,n}$ with [iid random variables](c:iid-random-variables) $Y_{n,k}$. The Lévy–Khintchine formula describes all such laws by a drift, a Gaussian covariance and a [Lévy measure](c:levy-measure).",
+    "requires": [
+     "c:probability-distribution",
+     "c:convolution",
+     "c:iid-random-variables"
+    ]
+   },
+   {
+    "id": "c:triangular-array",
+    "name": "triangular array",
+    "reminder": "A triangular array has rows of random variables that are independent within each row, with row lengths that grow.",
+    "definition": "A triangular array is a family of real [random variables](c:random-variable) $X_{n,k}$, $n\\ge1$, $1\\le k\\le k_n$, with $k_n\\to\\infty$, such that for each $n$ the variables $X_{n,1},\\dots,X_{n,k_n}$ of row $n$ are [independent](c:independent-random-variables). Variables in different rows can be dependent, and they can live on different probability spaces. Limit theorems for arrays describe the row sums $S_n=X_{n,1}+\\dots+X_{n,k_n}$.",
+    "requires": [
+     "c:random-variable",
+     "c:independent-random-variables"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-lindeberg-feller",
+  "statement": "Let $X_{n,1}, \\dots, X_{n,k_n}$ be a [triangular array](c:triangular-array) of [independent](c:independent-random-variables) centered variables with $\\sum_m \\mathbb{E} X_{n,m}^2 \\to \\sigma^2 \\in (0,\\infty)$ and $\\sum_m \\mathbb{E}[X_{n,m}^2; |X_{n,m}| > \\varepsilon] \\to 0$ for every $\\varepsilon > 0$. Then $S_n = \\sum_m X_{n,m}$ [converges in distribution](c:convergence-in-distribution) to $N(0, \\sigma^2)$.",
+  "hypotheses": [
+   {
+    "id": "h:independent",
+    "text": "In each row the variables $X_{n,1}, \\dots, X_{n,k_n}$ are [independent](c:independent-random-variables), with $\\mathbb{E} X_{n,m} = 0$ and $\\mathbb{E} X_{n,m}^2 < \\infty$.",
+    "concept": "c:independent-random-variables"
+   },
+   {
+    "id": "h:variance",
+    "text": "The row [variances](c:variance) satisfy $\\sum_m \\mathbb{E} X_{n,m}^2 \\to \\sigma^2$ with $0 < \\sigma^2 < \\infty$.",
+    "concept": "c:variance"
+   },
+   {
+    "id": "h:lindeberg",
+    "text": "For every $\\varepsilon > 0$, $\\sum_m \\mathbb{E}[X_{n,m}^2; |X_{n,m}| > \\varepsilon] \\to 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$S_n$ [converges in distribution](c:convergence-in-distribution) to the [normal distribution](c:normal-distribution) $N(0, \\sigma^2)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "characteristic-functions",
+    "name": "Taylor bound and product comparison",
+    "slogan": "Compare each characteristic function with $1 - t^2\\sigma_{n,m}^2/2$, multiply the comparisons, and take the limit of the product.",
+    "scope": "The whole theorem. Feller's converse is not part of this proof.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:taylor-expansion",
+     "m:telescoping",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:independent",
+      "why": "Independence turns the [characteristic function](c:characteristic-function) of $S_n$ into a product, and the zero mean removes the linear Taylor term.",
+      "steps": [
+       "s:reduce",
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:variance",
+      "why": "The variance limit fixes the limit $t^2\\sigma^2/2$ of the sum of the quadratic terms.",
+      "steps": [
+       "s:taylor",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:lindeberg",
+      "why": "The Lindeberg condition makes the Taylor errors small in total and makes every single variance small.",
+      "steps": [
+       "s:taylor",
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the claim to convergence of a product of [characteristic functions](c:characteristic-function).",
+      "detail": "By independence $\\mathbb{E} e^{itS_n} = \\prod_m \\varphi_{n,m}(t)$. Lévy's continuity theorem shows that it suffices to prove $\\prod_m \\varphi_{n,m}(t) \\to e^{-\\sigma^2 t^2/2}$ for every real $t$.",
+      "uses": [
+       "wd:Q1966978"
+      ]
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Bound each characteristic function by its second-order Taylor polynomial.",
+      "detail": "From $|e^{ix} - 1 - ix + x^2/2| \\le \\min(|x|^3/6, x^2)$ and $\\mathbb{E} X_{n,m} = 0$ we get $|\\varphi_{n,m}(t) - (1 - t^2\\sigma_{n,m}^2/2)| \\le \\frac{|t|^3\\varepsilon}{6}\\mathbb{E}[X_{n,m}^2; |X_{n,m}| \\le \\varepsilon] + t^2 \\mathbb{E}[X_{n,m}^2; |X_{n,m}| > \\varepsilon]$. Summing over $m$, the total error is at most $|t|^3\\varepsilon\\sigma^2/6$ in the limit, for every $\\varepsilon$.",
+      "uses": [
+       "wd:Q1137206"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two products term by term with the telescoping product bound.",
+      "detail": "The Lindeberg condition gives $\\max_m \\sigma_{n,m}^2 \\le \\varepsilon^2 + o(1)$, so all factors $1 - t^2\\sigma_{n,m}^2/2$ lie in $[0,1]$ for large $n$. For numbers of modulus at most 1, $|\\prod z_m - \\prod w_m| \\le \\sum |z_m - w_m|$, which tends to 0 by the previous step.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Compute the limit of the product of the quadratic factors with a logarithm bound.",
+      "detail": "With $c_{n,m} = t^2\\sigma_{n,m}^2/2$, the bound $|\\log(1-c) + c| \\le c^2$ for $0 \\le c \\le 1/2$ gives $|\\log\\prod_m(1 - c_{n,m}) + \\sum_m c_{n,m}| \\le \\max_m c_{n,m}\\sum_m c_{n,m} \\to 0$. So the product tends to $e^{-\\sigma^2t^2/2}$, the [characteristic function](c:characteristic-function) of the [normal distribution](c:normal-distribution).",
+      "uses": [
+       "wd:Q1966978"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:taylor",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:limit"
+     ],
+     [
+      "s:reduce",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:triangular-array": "The theorem concerns row sums of a triangular array, not one fixed sequence.",
+     "c:independent-random-variables": "Independence within each row factorizes the characteristic function of the row sum.",
+     "c:convergence-in-distribution": "The conclusion is convergence in distribution of the row sums.",
+     "c:variance": "The row variances converge to the variance of the normal limit.",
+     "c:characteristic-function": "The proof works entirely with characteristic functions and their products.",
+     "c:normal-distribution": "The limit law is the centered normal distribution with variance sigma squared."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (author's online version, January 2019), Theorem 3.4.10, pp. 148-149, with Lemma 3.4.3, p. 144.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "The steps follow Durrett's proof. The last step replaces his Exercise 3.1.1 by an explicit logarithm bound."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:triangular-array",
+    "name": "triangular array",
+    "reminder": "A triangular array has rows of random variables that are independent within each row, with row lengths that grow.",
+    "definition": "A triangular array is a family of real [random variables](c:random-variable) $X_{n,k}$, $n\\ge1$, $1\\le k\\le k_n$, with $k_n\\to\\infty$, such that for each $n$ the variables $X_{n,1},\\dots,X_{n,k_n}$ of row $n$ are [independent](c:independent-random-variables). Variables in different rows can be dependent, and they can live on different probability spaces. Limit theorems for arrays describe the row sums $S_n=X_{n,1}+\\dots+X_{n,k_n}$.",
+    "requires": [
+     "c:random-variable",
+     "c:independent-random-variables"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-gnedenko-local-limit",
+  "statement": "Let $X_1, X_2, \\dots$ be [i.i.d.](c:iid-random-variables) with mean 0, [variance](c:variance) $\\sigma^2 \\in (0,\\infty)$ and a lattice law of span $h$, so that $X_1 \\in b + h\\mathbb{Z}$ almost surely. Then the [random walk](c:random-walk) $S_n$ satisfies $\\sup_{x \\in L_n} |\\tfrac{\\sqrt n}{h} P(S_n/\\sqrt n = x) - g(x)| \\to 0$, where $L_n = \\{(nb + hz)/\\sqrt n\\}$ and $g$ is the density of the [normal distribution](c:normal-distribution) $N(0,\\sigma^2)$.",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The steps $X_1, X_2, \\dots$ are [i.i.d.](c:iid-random-variables)",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:moments",
+    "text": "The steps have mean 0 and [variance](c:variance) $\\sigma^2$ with $0 < \\sigma^2 < \\infty$.",
+    "concept": "c:variance"
+   },
+   {
+    "id": "h:span",
+    "text": "The steps lie in $b + h\\mathbb{Z}$ almost surely, and no larger $h$ has this property.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\sup_{x \\in L_n} |\\tfrac{\\sqrt n}{h} P(S_n/\\sqrt n = x) - g(x)| \\to 0$, where $g$ is the [density](c:probability-density-function) of $N(0,\\sigma^2)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "lattice-inversion",
+    "name": "Inversion on the lattice",
+    "slogan": "Write each point probability as an integral of the [characteristic function](c:characteristic-function) over one period, then compare it with the Gaussian integral.",
+    "scope": "The whole theorem for lattice laws.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:taylor-expansion",
+     "m:dominated-convergence",
+     "m:compactness-extremum"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Independence and identical laws make the [characteristic function](c:characteristic-function) of $S_n$ equal to $\\varphi^n$.",
+      "steps": [
+       "s:inversion",
+       "s:pointwise"
+      ]
+     },
+     {
+      "h": "h:moments",
+      "why": "Mean 0 and finite variance give the Gaussian limit and the bound $|\\varphi(u)| \\le e^{-\\sigma^2u^2/4}$ near 0.",
+      "steps": [
+       "s:pointwise",
+       "s:near"
+      ]
+     },
+     {
+      "h": "h:span",
+      "why": "The lattice makes the inversion integral run over one period, and the maximal span gives $|\\varphi| < 1$ away from 0 on that period.",
+      "steps": [
+       "s:inversion",
+       "s:far"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:inversion",
+      "slogan": "Write the scaled point probability as a Fourier integral over one period.",
+      "detail": "For $x \\in L_n$, $\\frac{\\sqrt n}{h}p_n(x) = \\frac{1}{2\\pi}\\int_{|t| \\le \\pi\\sqrt n/h} e^{-itx}\\varphi(t/\\sqrt n)^n\\,dt$. Subtracting $g(x) = \\frac{1}{2\\pi}\\int e^{-itx}e^{-\\sigma^2t^2/2}\\,dt$ gives an error bound $I_n$ that does not depend on $x$.",
+      "uses": [
+       "wd:Q3984053"
+      ]
+     },
+     {
+      "id": "s:pointwise",
+      "slogan": "The central limit theorem gives pointwise convergence of the integrand.",
+      "detail": "$\\varphi(t/\\sqrt n)^n \\to e^{-\\sigma^2t^2/2}$ for each $t$, and bounded convergence handles every fixed window $|t| \\le A$.",
+      "uses": [
+       "wd:Q190391",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:near",
+      "slogan": "A Taylor bound gives a Gaussian majorant for moderate $t$.",
+      "detail": "For $|u| \\le \\delta$, $|\\varphi(u)| \\le 1 - \\sigma^2u^2/4 \\le e^{-\\sigma^2u^2/4}$. So on $A < |t| \\le \\delta\\sqrt n$ the integrand is at most $2e^{-\\sigma^2t^2/4}$, whose integral is small for large $A$.",
+      "uses": [
+       "wd:Q1137206"
+      ]
+     },
+     {
+      "id": "s:far",
+      "slogan": "The maximal span keeps $|\\varphi|$ below a constant $\\eta < 1$ away from 0.",
+      "detail": "If $|\\varphi(u)| = 1$ with $0 < u < 2\\pi/h$, then $X_1$ lives on a lattice of span $2\\pi/u > h$, which is impossible. Continuity on $\\delta \\le |u| \\le \\pi/h$ gives $|\\varphi| \\le \\eta < 1$, and the far part of $I_n$ is at most $(2\\pi\\sqrt n/h)\\eta^n$ plus a Gaussian tail.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Add the three ranges of $t$ and let the window grow.",
+      "detail": "The three pieces give $\\limsup_n I_n \\le 2\\int_{|t| > A} e^{-\\sigma^2t^2/4}\\,dt$ for every $A$, so $I_n \\to 0$ uniformly in $x$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:inversion",
+      "s:combine"
+     ],
+     [
+      "s:pointwise",
+      "s:combine"
+     ],
+     [
+      "s:near",
+      "s:combine"
+     ],
+     [
+      "s:far",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:iid-random-variables": "The steps of the walk are independent with one common lattice law.",
+     "c:variance": "The variance of one step sets the width of the Gaussian profile.",
+     "c:random-walk": "The theorem describes the point probabilities of a random walk on a lattice.",
+     "c:normal-distribution": "The point probabilities approach the density of the normal distribution.",
+     "c:probability-density-function": "The limit profile is the Gaussian density evaluated on the lattice points.",
+     "c:characteristic-function": "The proof inverts the characteristic function of the walk over one period."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (author's online version, January 2019), Theorem 3.5.3, pp. 162-164, with Theorem 3.5.2 on p. 162.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "The steps follow Durrett's proof. The fact that |φ| < 1 on (0, 2π/h) is proved inline."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-lamperti-self-similar",
+  "statement": "Let $Y$ be a real [stochastic process](c:stochastic-process) and $f(a) \\to \\infty$. If $Y(at)/f(a)$ converges in finite-dimensional distributions to a proper process $X$ that is continuous in probability, then $f(ab)/f(a) \\to b^H$ for some $H > 0$, so $f$ is a [regularly varying function](c:regularly-varying-function), and $X$ is an $H$-[self-similar process](c:self-similar-process). Every such process with $H > 0$ is a limit of this kind.",
+  "hypotheses": [
+   {
+    "id": "h:normalization",
+    "text": "The normalization satisfies $f(a) > 0$ and $f(a) \\to \\infty$ as $a \\to \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:fdd",
+    "text": "The finite-dimensional distributions of $Y(at)/f(a)$ [converge in distribution](c:convergence-in-distribution) to those of $X$ as $a \\to \\infty$.",
+    "concept": "c:convergence-in-distribution"
+   },
+   {
+    "id": "h:proper",
+    "text": "$X$ is continuous in probability on $[0, \\infty)$, and no $X(t)$ with $t > 0$ is almost surely constant.",
+    "concept": "c:stochastic-process"
+   }
+  ],
+  "conclusion": "The limit is a [self-similar process](c:self-similar-process) with index $H > 0$, $X(0) = 0$, and the normalization is $f(a) = a^H L(a)$ with a [slowly varying function](c:slowly-varying-function) $L$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "types-and-double-limit",
+    "name": "Convergence of types and a double limit",
+    "slogan": "Compare two normalizations of the same variable to get power scaling, then let two scales go to infinity together.",
+    "scope": "The real-valued theorem without a centering function. The law of the limit is not determined.",
+    "mechanisms": [
+     "m:epsilon-delta",
+     "m:algebraic-identity",
+     "m:contradiction",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:normalization",
+      "why": "Growth of $f$ makes $X(0) = 0$ and excludes a negative index.",
+      "steps": [
+       "s:positive"
+      ]
+     },
+     {
+      "h": "h:fdd",
+      "why": "Convergence at time $b$ under two normalizations and at many times together drives the types argument and the double limit.",
+      "steps": [
+       "s:types",
+       "s:self-similar"
+      ]
+     },
+     {
+      "h": "h:proper",
+      "why": "Nondegenerate marginals make the types lemma apply, and continuity makes the scaling factor continuous and excludes the index zero.",
+      "steps": [
+       "s:types",
+       "s:power",
+       "s:positive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:types",
+      "slogan": "Convergence of types gives a limit of the ratio $f(ab)/f(a)$.",
+      "detail": "Both $Y(ab)/f(ab) \\Rightarrow X(1)$ and $Y(ab)/f(a) \\Rightarrow X(b)$ hold with nondegenerate limits, so the ratio of the normalizations converges to some $l(b) \\in (0, \\infty)$ with $X(b) \\overset{d}{=} l(b) X(1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:power",
+      "slogan": "The scaling factor $l$ is multiplicative and continuous, so it is a power.",
+      "detail": "The identity $l(bc) = l(b) l(c)$ and continuity in probability give $l(b) = b^H$. Hence $f(a) = a^H L(a)$ with $L$ a [slowly varying function](c:slowly-varying-function), and $f$ is a [regularly varying function](c:regularly-varying-function).",
+      "uses": []
+     },
+     {
+      "id": "s:self-similar",
+      "slogan": "A double limit in two scales gives the self-similarity of all finite-dimensional laws.",
+      "detail": "As $b \\to \\infty$, $Y(abt_i)/f(b)$ tends both to $X(at_i)$ and, through $f(ab)/f(b) \\to a^H$, to $a^H X(t_i)$. Uniqueness of limits makes $X$ a [self-similar process](c:self-similar-process).",
+      "uses": [
+       "wd:Q643826"
+      ]
+     },
+     {
+      "id": "s:positive",
+      "slogan": "Growth of the normalization and continuity at zero force a positive index.",
+      "detail": "$Y(0)/f(a) \\to 0$ gives $X(0) = 0$. A negative index would make $f(2^n) \\to 0$, and the index zero would make $X(1) \\overset{d}{=} X(t) \\to 0$, which contradicts properness.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:types",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:self-similar"
+     ],
+     [
+      "s:self-similar",
+      "s:positive"
+     ],
+     [
+      "s:types",
+      "s:positive"
+     ]
+    ],
+    "conclusion": "s:positive",
+    "concepts": {
+     "c:stochastic-process": "The theorem concerns scaling limits of an arbitrary real stochastic process.",
+     "c:convergence-in-distribution": "The scaling limit is a convergence in distribution of finite-dimensional vectors.",
+     "c:regularly-varying-function": "The normalization of any proper scaling limit must be regularly varying.",
+     "c:slowly-varying-function": "The normalization equals a power times a slowly varying correction.",
+     "c:self-similar-process": "Self-similar processes are exactly the possible scaling limits."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "Y. Davydov and V. Paulauskas, Lamperti type theorems for random fields, arXiv:1705.00182v1 (2017), Theorem 3 (pp. 2-3) and the proof of Theorem 18 (pp. 20-21), which follows J. Lamperti, Trans. Amer. Math. Soc. 104 (1962), 62-78.",
+     "url": "https://arxiv.org/pdf/1705.00182v1",
+     "note": "The types step and the double limit follow the source. The power form of the scaling factor and the positivity of the index are proved here directly from continuity in probability."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:regularly-varying-function",
+    "name": "regularly varying function",
+    "reminder": "A regularly varying function grows like a power $x^\\rho$ times a slowly varying factor at infinity.",
+    "definition": "A positive [measurable function](c:measurable-function) $f$ on $(0,\\infty)$ is regularly varying at infinity with index $\\rho\\in\\mathbb{R}$ when $\\lim_{x\\to\\infty}f(\\lambda x)/f(x)=\\lambda^\\rho$ for every $\\lambda>0$. Every such $f$ has the form $f(x)=x^\\rho L(x)$, where $L$ is a [slowly varying function](c:slowly-varying-function).",
+    "requires": [
+     "c:measurable-function",
+     "c:limit-of-a-function"
+    ]
+   },
+   {
+    "id": "c:self-similar-process",
+    "name": "self-similar process",
+    "reminder": "A process whose law is unchanged when time is scaled by b and space by b^H.",
+    "definition": "A [stochastic process](c:stochastic-process) $X$ is $H$-self-similar if, for every $b > 0$, the process $(X(bt))_{t \\ge 0}$ has the same finite-dimensional distributions as $(b^H X(t))_{t \\ge 0}$. The number $H$ is the Hurst index.",
+    "requires": [
+     "c:stochastic-process",
+     "c:brownian-motion"
+    ]
+   },
+   {
+    "id": "c:slowly-varying-function",
+    "name": "slowly varying function",
+    "reminder": "A slowly varying function $L$ satisfies $L(\\lambda x)/L(x)\\to1$ as $x\\to\\infty$ for every $\\lambda>0$.",
+    "definition": "A positive [measurable function](c:measurable-function) $L$ on $(0,\\infty)$ is slowly varying at infinity when $\\lim_{x\\to\\infty}L(\\lambda x)/L(x)=1$ for every $\\lambda>0$. Equivalently, $L$ is a [regularly varying function](c:regularly-varying-function) of index $0$. Such an $L$ changes more slowly than every power: $x^{-\\varepsilon}L(x)\\to0$ and $x^{\\varepsilon}L(x)\\to\\infty$ for every $\\varepsilon>0$.",
+    "requires": [
+     "c:regularly-varying-function",
+     "c:limit-of-a-function"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-marcinkiewicz-zygmund-slln",
+  "statement": "Let $1 < p < 2$ and let $X_1, X_2, \\dots$ be [i.i.d.](c:iid-random-variables) with $\\mathbb{E} X_1 = 0$ and $\\mathbb{E}|X_1|^p < \\infty$. Then $S_n/n^{1/p} \\to 0$ [almost surely](c:almost-sure-convergence), where $S_n = X_1 + \\dots + X_n$.",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The variables $X_1, X_2, \\dots$ are [i.i.d.](c:iid-random-variables)",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:mean",
+    "text": "The [expected value](c:expected-value) is $\\mathbb{E} X_1 = 0$.",
+    "concept": "c:expected-value"
+   },
+   {
+    "id": "h:moment",
+    "text": "The [moment](c:moment) $\\mathbb{E}|X_1|^p$ is finite for some $1 < p < 2$.",
+    "concept": "c:moment"
+   }
+  ],
+  "conclusion": "$S_n/n^{1/p} \\to 0$ [almost surely](c:almost-sure-convergence).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "truncation-series",
+    "name": "Truncation, random series and Kronecker's lemma",
+    "slogan": "Truncate at $k^{1/p}$, sum the centered truncations as a random series, and correct for the small truncated means.",
+    "scope": "The whole theorem for $1 < p < 2$.",
+    "mechanisms": [
+     "m:borel-cantelli",
+     "m:fubini-swap",
+     "m:cited-deep-result",
+     "m:epsilon-delta",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Identical laws turn every truncation estimate into an expectation of one variable $X_1$, and independence lets the random series converge.",
+      "steps": [
+       "s:truncate",
+       "s:variance",
+       "s:series"
+      ]
+     },
+     {
+      "h": "h:mean",
+      "why": "The zero mean makes each truncated mean equal to minus the mean of the cut-off tail, which is small.",
+      "steps": [
+       "s:means"
+      ]
+     },
+     {
+      "h": "h:moment",
+      "why": "The $p$-th moment makes the truncation events summable, the variance series finite and the tail means small.",
+      "steps": [
+       "s:truncate",
+       "s:variance",
+       "s:means"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:truncate",
+      "slogan": "Truncate at $k^{1/p}$ and use Borel–Cantelli to discard the difference.",
+      "detail": "With $Y_k = X_k 1(|X_k| \\le k^{1/p})$, $\\sum_k P(Y_k \\ne X_k) = \\sum_k P(|X_1|^p > k) \\le \\mathbb{E}|X_1|^p < \\infty$. So almost surely $X_k = Y_k$ for all large $k$, and it is enough to study $T_n = Y_1 + \\dots + Y_n$.",
+      "uses": [
+       "nm:borel-cantelli-lemma"
+      ]
+     },
+     {
+      "id": "s:variance",
+      "slogan": "Bound the variance series of $Y_m/m^{1/p}$ by the $p$-th moment.",
+      "detail": "Tonelli gives $\\sum_m \\mathbb{E}[Y_m^2]/m^{2/p} = \\mathbb{E}[X_1^2 \\sum_{m \\ge \\max(1,|X_1|^p)} m^{-2/p}] \\le C_p\\,\\mathbb{E}[X_1^2 \\max(1,|X_1|^p)^{1-2/p}] \\le C_p(1 + \\mathbb{E}|X_1|^p)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:series",
+      "slogan": "Sum the centered truncations as a random series and apply Kronecker's lemma.",
+      "detail": "Kolmogorov's criterion makes $\\sum_m (Y_m - \\mathbb{E} Y_m)/m^{1/p}$ converge almost surely. Kronecker's lemma then gives $n^{-1/p}\\sum_{m \\le n}(Y_m - \\mathbb{E} Y_m) \\to 0$ [almost surely](c:almost-sure-convergence).",
+      "uses": [
+       "wd:Q3527233"
+      ]
+     },
+     {
+      "id": "s:means",
+      "slogan": "Show that the truncated means are too small to matter on the scale $n^{1/p}$.",
+      "detail": "Since $\\mathbb{E} X_1 = 0$, $|\\mathbb{E} Y_m| \\le m^{1/p-1}\\varepsilon_m$ with $\\varepsilon_m = \\mathbb{E}[|X_1|^p; |X_1| > m^{1/p}] \\to 0$. As $\\sum_{m \\le n} m^{1/p-1} \\le p\\,n^{1/p}$, a split at a fixed $M$ gives $n^{-1/p}\\sum_{m\\le n}\\mathbb{E} Y_m \\to 0$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Add the three pieces to get the almost sure limit.",
+      "detail": "Write $S_n/n^{1/p}$ as the truncation error, the centered truncated sum and the sum of the truncated means, each divided by $n^{1/p}$. Each piece tends to 0 almost surely.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:truncate",
+      "s:combine"
+     ],
+     [
+      "s:variance",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:combine"
+     ],
+     [
+      "s:means",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:iid-random-variables": "The theorem concerns partial sums of an i.i.d. sequence.",
+     "c:almost-sure-convergence": "The conclusion is almost sure convergence of the normalized sums.",
+     "c:expected-value": "The zero mean hypothesis controls the truncated means.",
+     "c:moment": "The finite p-th moment is the only integrability assumption."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Durrett, Probability: Theory and Examples, 5th ed. (author's online version, January 2019), Theorem 2.5.12, pp. 87-88, with Theorems 2.5.6 and 2.5.9 on pp. 84-86.",
+     "url": "https://services.math.duke.edu/~rtd/PTE/PTE5_011119.pdf",
+     "note": "The steps follow Durrett's proof. The variance series is bounded by a direct Tonelli argument."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-jensen-gap-bound",
+  "statement": "For a [twice differentiable](c:differentiable-function) function $\\varphi$ on $(a,b)$ and a square-integrable [random variable](c:random-variable) $X$ in $(a,b)$ with mean $\\mu$, the Jensen gap $E\\varphi(X) - \\varphi(\\mu)$ lies between $m\\,\\mathrm{Var}(X)$ and $M\\,\\mathrm{Var}(X)$, where $m, M$ are the infimum and supremum of the slope function $h$. Both lie between the bounds of $\\varphi''/2$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "$\\varphi$ is [twice differentiable](c:differentiable-function) on the open interval $(a, b)$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:support",
+    "text": "The [random variable](c:random-variable) $X$ satisfies $P(X \\in (a,b)) = 1$ and $E[X^2] < \\infty$.",
+    "concept": "c:random-variable"
+   }
+  ],
+  "conclusion": "With $h(x) = \\frac{\\varphi(x) - \\varphi(\\mu) - \\varphi'(\\mu)(x-\\mu)}{(x-\\mu)^2}$, $m = \\inf_{x \\ne \\mu} h$ and $M = \\sup_{x \\ne \\mu} h$: $m\\,\\mathrm{Var}(X) \\le E\\varphi(X) - \\varphi(\\mu) \\le M\\,\\mathrm{Var}(X)$ whenever the constant is finite, and $\\inf \\varphi''/2 \\le m \\le M \\le \\sup \\varphi''/2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "exact-expansion",
+    "name": "Integrate the exact second-order expansion",
+    "slogan": "The slope function $h$ makes the second-order expansion of $\\varphi$ about the mean exact, and integration kills the linear term.",
+    "scope": "The whole theorem, including the existence of $E\\varphi(X)$ in each one-sided case and the equality case for quadratic $\\varphi$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:linearity-of-expectation",
+     "m:taylor-expansion"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Differentiability at $\\mu$ defines $h$, and the second derivative gives the Lagrange remainder that compares $h$ with $\\varphi''/2$.",
+      "steps": [
+       "s:expand",
+       "s:curvature"
+      ]
+     },
+     {
+      "h": "h:support",
+      "why": "The support condition puts $\\mu$ inside $(a,b)$, and the finite second moment makes $(X-\\mu)^2$ integrable.",
+      "steps": [
+       "s:mean",
+       "s:integrate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:mean",
+      "slogan": "Show that the mean lies strictly inside the interval of definition.",
+      "detail": "Since $X - a > 0$ almost surely and a nonnegative variable with mean zero vanishes, $E[X] > a$. In the same way $E[X] < b$, so $\\varphi(\\mu)$ and $\\varphi'(\\mu)$ exist.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Write the remainder of the tangent line at the mean as $h(x)(x-\\mu)^2$.",
+      "detail": "Put $H(x) = \\varphi(x) - \\varphi(\\mu) - \\varphi'(\\mu)(x - \\mu)$. Then $H(x) = h(x)(x-\\mu)^2$ for $x \\ne \\mu$ and $H(\\mu) = 0$, so $m(x-\\mu)^2 \\le H(x) \\le M(x-\\mu)^2$ for all $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Take expectations, so that the linear term vanishes and the variance appears.",
+      "detail": "The [expected value](c:expected-value) of $\\varphi'(\\mu)(X-\\mu)$ is zero. A finite $m$ bounds the negative part of $H(X)$ by an integrable variable, so $E\\varphi(X) - \\varphi(\\mu) = E H(X) \\ge m\\,\\mathrm{Var}(X)$. The upper bound is the same with $M$. The [variance](c:variance) is $E(X-\\mu)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:curvature",
+      "slogan": "Compare the slope function with half the second derivative by the Lagrange remainder.",
+      "detail": "Taylor's theorem with the Lagrange remainder gives $h(x) = \\varphi''(\\xi)/2$ for some $\\xi$ between $\\mu$ and $x$. So the [second derivative](c:second-derivative) bounds give $\\inf\\varphi''/2 \\le m$ and $M \\le \\sup\\varphi''/2$. For a [convex function](c:convex-function), $m \\ge 0$ recovers Jensen's inequality.",
+      "uses": [
+       "wd:Q1137206"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:mean",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:integrate"
+     ],
+     [
+      "s:expand",
+      "s:curvature"
+     ],
+     [
+      "s:integrate",
+      "s:curvature"
+     ]
+    ],
+    "conclusion": "s:curvature",
+    "concepts": {
+     "c:differentiable-function": "Twice differentiability defines the slope function and the Lagrange remainder.",
+     "c:random-variable": "The random variable carries the law against which the expansion is integrated.",
+     "c:expected-value": "Expectation removes the linear term of the expansion because the mean of $X - \\mu$ is zero.",
+     "c:variance": "The variance is the integral of $(X-\\mu)^2$ and sets the scale of both bounds.",
+     "c:second-derivative": "Bounds on the second derivative give simpler constants for both bounds.",
+     "c:convex-function": "A convex function has nonnegative slope function, so the lower bound contains Jensen's inequality."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. G. Liao and A. Berg, Sharpening Jensen's Inequality, The American Statistician 73 (2019), arXiv:1707.08644v2, Theorem 1 and its proof, p. 3.",
+     "url": "https://arxiv.org/pdf/1707.08644",
+     "note": "The steps follow the source proof. The authored proof adds the location of the mean, the existence of the expectation in each one-sided case, and the exclusion of the point x = μ from the infimum and the supremum."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-bregman-conditional-mean",
+  "statement": "For a [Bregman divergence](c:bregman-divergence) $d_\\varphi$ of a [strictly convex](c:strictly-convex-function) differentiable $\\varphi$, the [conditional expectation](c:conditional-expectation) $Z = E[X \\mid \\mathcal G]$ minimizes $E\\,d_\\varphi(X, Y)$ over all $\\mathcal G$-measurable $Y$, and $E\\,d_\\varphi(X,Y) = E\\,d_\\varphi(X,Z) + E\\,d_\\varphi(Z,Y)$.",
+  "hypotheses": [
+   {
+    "id": "h:phi",
+    "text": "$\\varphi$ is [strictly convex](c:strictly-convex-function) and differentiable on a nonempty open convex set $U \\subseteq \\mathbb R^d$.",
+    "concept": "c:strictly-convex-function"
+   },
+   {
+    "id": "h:integrable",
+    "text": "$X$ is an integrable [random variable](c:random-variable) with values in $U$.",
+    "concept": "c:random-variable"
+   },
+   {
+    "id": "h:inside",
+    "text": "$\\mathcal G$ is a sub-[σ-algebra](c:sigma-algebra) and $Z = E[X \\mid \\mathcal G]$ lies in $U$ almost surely.",
+    "concept": "c:sigma-algebra"
+   }
+  ],
+  "conclusion": "For every $\\mathcal G$-measurable $U$-valued $Y$, $E\\,d_\\varphi(X,Y) = E\\,d_\\varphi(X,Z) + E\\,d_\\varphi(Z,Y)$ in $[0,\\infty]$. So $Z$ is a minimizer, and it is the unique one up to null sets when $E\\,d_\\varphi(X,Z) < \\infty$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "three-point-truncation",
+    "name": "Three-point identity with truncation",
+    "slogan": "The three-point identity splits the loss into two divergences and a cross term, and the cross term has conditional mean zero.",
+    "scope": "The whole theorem, for every integrable $X$ and every sub-σ-algebra, including the case of infinite expected loss.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:dominated-convergence",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:phi",
+      "why": "Strict convexity makes $d_\\varphi \\ge 0$ with equality only on the diagonal, which gives the minimizing property and uniqueness.",
+      "steps": [
+       "s:positive",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability of $X$ defines $Z$ and makes the truncated cross term integrable.",
+      "steps": [
+       "s:cross"
+      ]
+     },
+     {
+      "h": "h:inside",
+      "why": "The divergence $d_\\varphi(Z, Y)$ and the gradient $\\nabla\\varphi(Z)$ need $Z$ in the domain $U$.",
+      "steps": [
+       "s:identity",
+       "s:cross"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:positive",
+      "slogan": "Show that the Bregman divergence is nonnegative and vanishes only on the diagonal.",
+      "detail": "Along the segment from $y$ to $x$, convexity bounds the slope at $y$ by a chord slope, and [strict convexity](c:strictly-convex-function) makes the bound strict, so $d_\\varphi(x,y) > 0$ for $x \\ne y$.",
+      "uses": []
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Expand the three-point identity for the loss of a forecast $Y$ through $Z$.",
+      "detail": "Direct expansion gives $d_\\varphi(X,Y) = d_\\varphi(X,Z) + d_\\varphi(Z,Y) + \\langle W, X - Z\\rangle$ with $W = \\nabla\\varphi(Z) - \\nabla\\varphi(Y)$. The [gradient](c:gradient) $W$ is $\\mathcal G$-measurable.",
+      "uses": []
+     },
+     {
+      "id": "s:cross",
+      "slogan": "Kill the cross term on the sets where the gradient difference is bounded.",
+      "detail": "On $A_k = \\{|W| \\le k\\} \\in \\mathcal G$ the weight $1_{A_k}W$ is bounded and $\\mathcal G$-measurable. The defining property of the [conditional expectation](c:conditional-expectation), extended from indicators by dominated convergence, gives $E[1_{A_k}\\langle W, X - Z\\rangle] = 0$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let the truncation level grow and read off minimality and uniqueness.",
+      "detail": "On $A_k$ the identity holds in expectation for the two nonnegative [Bregman divergence](c:bregman-divergence) terms. Monotone convergence as $k \\to \\infty$ gives the full identity. The term $E\\,d_\\varphi(Z,Y) \\ge 0$ vanishes only if $Y = Z$ almost surely.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:positive",
+      "s:limit"
+     ],
+     [
+      "s:identity",
+      "s:cross"
+     ],
+     [
+      "s:cross",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:bregman-divergence": "The Bregman divergence is the loss that the theorem minimizes.",
+     "c:strictly-convex-function": "Strict convexity of the generator makes the divergence positive off the diagonal.",
+     "c:conditional-expectation": "The conditional expectation is the minimizer and makes the cross term vanish.",
+     "c:random-variable": "The observed quantity is an integrable random vector in the domain of the generator.",
+     "c:sigma-algebra": "The sub-σ-algebra describes the information available to the forecast.",
+     "c:gradient": "The gradient of the generator appears in the cross term of the three-point identity."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Banerjee, S. Merugu, I. S. Dhillon and J. Ghosh, Clustering with Bregman Divergences, JMLR 6 (2005), Proposition 1 and its proof, pp. 1710-1711.",
+     "url": "https://www.jmlr.org/papers/volume6/banerjee05b/banerjee05b.pdf",
+     "note": "The source expands J(s) − J(μ) = d_φ(μ, s) for a law with finitely many atoms. The authored proof uses the same expansion as a pointwise three-point identity and adds a truncation step for conditional expectations of general integrable vectors."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:bregman-divergence",
+    "name": "Bregman divergence",
+    "reminder": "The Bregman divergence of a convex function measures the gap between the function and its tangent plane.",
+    "definition": "Let $\\varphi$ be a [strictly convex function](c:strictly-convex-function) that is [differentiable](c:differentiable-function) on a convex open set $\\Omega\\subseteq\\mathbb{R}^d$. The Bregman divergence of $\\varphi$ is $D_\\varphi(x,y)=\\varphi(x)-\\varphi(y)-\\langle\\nabla\\varphi(y),x-y\\rangle$ for $x,y\\in\\Omega$, the gap at $x$ between $\\varphi$ and its tangent plane at $y$, where $\\nabla\\varphi$ is the [gradient](c:gradient). It satisfies $D_\\varphi(x,y)\\ge0$, with equality exactly when $x=y$, but in general it is not symmetric and does not satisfy the triangle inequality.",
+    "requires": [
+     "c:strictly-convex-function",
+     "c:gradient",
+     "c:differentiable-function"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-bregman-characterization",
+  "statement": "A smooth [loss function](c:loss-function) $F(x, y)$ with $F \\ge 0$ and $F(x,x) = 0$ makes the [expected value](c:expected-value) the optimal forecast for every finitely supported law if and only if $F$ is a [Bregman divergence](c:bregman-divergence) of a [convex function](c:convex-function). The optimum is always unique if and only if the generator is [strictly convex](c:strictly-convex-function).",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "$U \\subseteq \\mathbb R^d$ is a nonempty open convex set.",
+    "concept": null
+   },
+   {
+    "id": "h:loss",
+    "text": "The [loss function](c:loss-function) $F: U \\times U \\to [0,\\infty)$ satisfies $F(x,x) = 0$, where $x$ is the outcome and $y$ the forecast.",
+    "concept": "c:loss-function"
+   },
+   {
+    "id": "h:smooth",
+    "text": "For each $x$, the map $y \\mapsto F(x,y)$ is continuously [differentiable](c:differentiable-function) on $U$.",
+    "concept": "c:differentiable-function"
+   }
+  ],
+  "conclusion": "$E[X]$ minimizes $y \\mapsto E\\,F(X, y)$ for every $X$ with finitely many values in $U$ if and only if $F(x,y) = \\varphi(x) - \\varphi(y) - \\langle\\nabla\\varphi(y), x - y\\rangle$ for a convex differentiable $\\varphi$. The minimizer is always unique if and only if $\\varphi$ is strictly convex.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "osband-principle",
+    "name": "Osband's principle with three-point laws",
+    "slogan": "Laws with two and three atoms force the forecast gradient of the loss to be linear in the error, and integration gives the Bregman form.",
+    "scope": "Both directions and the uniqueness statement. Only laws with at most three values are used for the necessity direction.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:algebraic-identity",
+     "m:fundamental-theorem-calculus",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "Openness makes the minimum interior for Fermat's theorem, and convexity keeps means and segments inside $U$.",
+      "steps": [
+       "s:fermat",
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:loss",
+      "why": "Nonnegativity with zero diagonal makes the outcome the best forecast for a point mass and gives the subgradient inequality.",
+      "steps": [
+       "s:fermat",
+       "s:convex"
+      ]
+     },
+     {
+      "h": "h:smooth",
+      "why": "Differentiability in the forecast gives the first-order condition, and continuity of the gradient allows integration.",
+      "steps": [
+       "s:fermat",
+       "s:integrate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sufficient",
+      "slogan": "Show that a Bregman loss makes the mean optimal by the compensation identity.",
+      "detail": "For a [Bregman divergence](c:bregman-divergence), $\\sum_i \\nu_i d_\\varphi(x_i, y) - \\sum_i \\nu_i d_\\varphi(x_i, m) = d_\\varphi(m, y) \\ge 0$, where $m$ is the mean. Strict convexity makes this positive for $y \\ne m$.",
+      "uses": []
+     },
+     {
+      "id": "s:fermat",
+      "slogan": "Write the first-order condition at the mean for every law with few atoms.",
+      "detail": "If the mean $y$ minimizes $z \\mapsto \\sum_i \\nu_i F(x_i, z)$, Fermat's theorem gives $\\sum_i \\nu_i \\nabla_y F(x_i, y) = 0$. The point mass gives $\\nabla_y F(y,y) = 0$.",
+      "uses": [
+       "wd:Q727102"
+      ]
+     },
+     {
+      "id": "s:linear",
+      "slogan": "Use two-point and three-point laws to make the gradient linear in the error.",
+      "detail": "Two-point laws with mean $y$ give $h(-sv) = -s\\,h(v)$ for $h(v) = \\nabla_y F(y+v, y)$, and three-point laws give $h(u+v) = h(u) + h(v)$ near zero. So $\\nabla_y F(x,y) = M(y)(x-y)$ with a continuous matrix $M$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the forecast gradient along a segment to find an affine dependence on the outcome.",
+      "detail": "With $\\varphi = F(\\cdot, y_0)$, integration from $y_0$ to $y$ gives $F(x,y) = \\varphi(x) - \\varphi(y) + \\langle A(y), x - y\\rangle$, where $A$ is continuous.",
+      "uses": [
+       "wd:Q1217677",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:convex",
+      "slogan": "Read off convexity, the gradient and strict convexity from nonnegativity and uniqueness.",
+      "detail": "Nonnegativity makes $-A(y)$ a subgradient at every $y$, so $\\varphi$ is [convex](c:convex-function), and continuity of $A$ makes $\\varphi$ differentiable with [gradient](c:gradient) $\\nabla\\varphi = -A$. An affine piece of $\\varphi$ on $[a,b]$ would make both $a$ and the midpoint optimal for the law on $\\{a, b\\}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fermat",
+      "s:linear"
+     ],
+     [
+      "s:linear",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:convex"
+     ],
+     [
+      "s:sufficient",
+      "s:convex"
+     ]
+    ],
+    "conclusion": "s:convex",
+    "concepts": {
+     "c:loss-function": "The loss compares an outcome with a forecast and is the object being classified.",
+     "c:expected-value": "The mean of the outcome is the forecast that the loss must reward.",
+     "c:bregman-divergence": "Bregman divergences are exactly the losses for which the mean is optimal.",
+     "c:convex-function": "Convexity of the generator corresponds to the mean being a minimizer.",
+     "c:strictly-convex-function": "Strict convexity of the generator corresponds to the mean being the unique minimizer.",
+     "c:differentiable-function": "Smoothness in the forecast gives the first-order condition used by Osband's principle.",
+     "c:gradient": "The gradient of the generator gives the linear term of the Bregman form."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "T. Gneiting, Making and evaluating point forecasts, JASA 106 (2011), arXiv:0912.0902v2, Theorem 3.1 (p. 18), with Osband's principle in Section 2.4 (pp. 16-17) and the proof of Theorem 3.2 in Appendix A (p. 30).",
+     "url": "https://arxiv.org/pdf/0912.0902",
+     "note": "The source proves the one-dimensional case by Osband's principle with two-point laws. The authored proof adds three-point laws for d dimensions and derives differentiability of the generator from the continuity of the integrated gradient."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:bregman-divergence",
+    "name": "Bregman divergence",
+    "reminder": "The Bregman divergence of a convex function measures the gap between the function and its tangent plane.",
+    "definition": "Let $\\varphi$ be a [strictly convex function](c:strictly-convex-function) that is [differentiable](c:differentiable-function) on a convex open set $\\Omega\\subseteq\\mathbb{R}^d$. The Bregman divergence of $\\varphi$ is $D_\\varphi(x,y)=\\varphi(x)-\\varphi(y)-\\langle\\nabla\\varphi(y),x-y\\rangle$ for $x,y\\in\\Omega$, the gap at $x$ between $\\varphi$ and its tangent plane at $y$, where $\\nabla\\varphi$ is the [gradient](c:gradient). It satisfies $D_\\varphi(x,y)\\ge0$, with equality exactly when $x=y$, but in general it is not symmetric and does not satisfy the triangle inequality.",
+    "requires": [
+     "c:strictly-convex-function",
+     "c:gradient",
+     "c:differentiable-function"
+    ]
+   },
+   {
+    "id": "c:loss-function",
+    "name": "loss function",
+    "reminder": "A loss function $L(\\theta,a)$ gives the cost of action $a$ when the true state is $\\theta$.",
+    "definition": "In statistical decision theory, a loss function is a measurable map $L:\\Theta\\times\\mathcal A\\to[0,\\infty)$, where $L(\\theta,a)$ is the cost of the action or estimate $a$ when the true parameter is $\\theta$. For a decision rule $\\delta$ and data $X$ with law $P_\\theta$, the [risk](c:risk) is the expected loss $R(\\theta,\\delta)=\\mathbb E_\\theta[L(\\theta,\\delta(X))]$. In prediction, a loss $\\ell(\\hat y,y)$ compares a prediction $\\hat y$ with the observed outcome $y$.",
+    "requires": [
+     "c:random-variable",
+     "c:expected-value",
+     "c:measurable-function"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-bregman-pythagorean",
+  "statement": "If $x^*$ minimizes the [Bregman divergence](c:bregman-divergence) $d_\\varphi(\\cdot, y)$ over a [convex set](c:convex-set) $C$, then $d_\\varphi(x, y) \\ge d_\\varphi(x, x^*) + d_\\varphi(x^*, y)$ for every $x \\in C$, with equality when $C$ is affine.",
+  "hypotheses": [
+   {
+    "id": "h:phi",
+    "text": "$\\varphi$ is [strictly convex](c:strictly-convex-function) and differentiable on a nonempty open convex set $U \\subseteq \\mathbb R^d$.",
+    "concept": "c:strictly-convex-function"
+   },
+   {
+    "id": "h:set",
+    "text": "$C \\subseteq U$ is a nonempty [convex set](c:convex-set) and $y \\in U$.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:min",
+    "text": "$x^* \\in C$ minimizes $x \\mapsto d_\\varphi(x, y)$ over $C$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For all $x \\in C$: $\\langle \\nabla\\varphi(y) - \\nabla\\varphi(x^*), x - x^*\\rangle \\le 0$ and $d_\\varphi(x,y) \\ge d_\\varphi(x,x^*) + d_\\varphi(x^*,y)$. The minimizer is unique, the first inequality characterizes it, and both are equalities when $C = U \\cap L$ with $L$ affine.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "first-order-three-point",
+    "name": "First-order condition and three-point identity",
+    "slogan": "The one-sided derivative at the minimizer gives a variational inequality, and the three-point identity turns it into the Pythagorean inequality.",
+    "scope": "The whole theorem. Existence of the minimizer is a hypothesis and is not proved.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:extremal-choice",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:phi",
+      "why": "Differentiability gives the derivative along segments, and strict convexity makes the divergence positive off the diagonal, which gives uniqueness.",
+      "steps": [
+       "s:identity",
+       "s:variational",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:set",
+      "why": "Convexity of $C$ keeps the segment from $x^*$ to $x$ inside $C$.",
+      "steps": [
+       "s:variational"
+      ]
+     },
+     {
+      "h": "h:min",
+      "why": "Minimality makes the right derivative at the minimizer nonnegative.",
+      "steps": [
+       "s:variational"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:identity",
+      "slogan": "Expand the three-point identity of the Bregman divergence through the minimizer.",
+      "detail": "For all $x, y, z$, $d_\\varphi(x,y) - d_\\varphi(x,z) - d_\\varphi(z,y) = \\langle \\nabla\\varphi(z) - \\nabla\\varphi(y), x - z\\rangle$, because the terms $\\varphi(z)$ cancel. The [gradient](c:gradient) difference is the only cross term.",
+      "uses": []
+     },
+     {
+      "id": "s:variational",
+      "slogan": "Differentiate the divergence along the segment from the minimizer into the convex set.",
+      "detail": "For $x \\in C$ put $g(t) = d_\\varphi(x^* + t(x - x^*), y)$ on $[0,1]$. Minimality gives $g(t) \\ge g(0)$, so the right derivative $\\langle \\nabla\\varphi(x^*) - \\nabla\\varphi(y), x - x^*\\rangle$ is nonnegative.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Combine the identity and the variational inequality, then compare two minimizers.",
+      "detail": "The identity with $z = x^*$ turns the variational inequality into the Pythagorean inequality. Two minimizers $x_1, x_2$ give $d_\\varphi(x_2, x_1) \\le 0$, so $x_1 = x_2$ by strict convexity. In the affine case $t = 0$ is an interior minimum, so $g'(0) = 0$ and equality holds.",
+      "uses": [
+       "wd:Q727102"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:identity",
+      "s:unique"
+     ],
+     [
+      "s:variational",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:bregman-divergence": "The Bregman divergence is the distance-like quantity that the projection minimizes.",
+     "c:convex-set": "Convexity of the constraint set allows the segment argument at the minimizer.",
+     "c:strictly-convex-function": "A strictly convex generator makes the divergence positive off the diagonal and the projection unique.",
+     "c:gradient": "The gradient of the generator gives the first-order condition and the cross term."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "S. Bubeck, Convex Optimization: Algorithms and Complexity, Foundations and Trends in Machine Learning 8 (2015), Lemma 4.1 and its proof, pp. 298-299, with identity (4.1) on p. 297.",
+     "url": "https://arxiv.org/pdf/1405.4980",
+     "note": "The source derives the lemma from its first-order optimality condition, Proposition 1.3. The authored proof computes the one-sided derivative directly, so it needs neither a closed set nor the mirror map conditions, and it adds uniqueness and the affine case."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:bregman-divergence",
+    "name": "Bregman divergence",
+    "reminder": "The Bregman divergence of a convex function measures the gap between the function and its tangent plane.",
+    "definition": "Let $\\varphi$ be a [strictly convex function](c:strictly-convex-function) that is [differentiable](c:differentiable-function) on a convex open set $\\Omega\\subseteq\\mathbb{R}^d$. The Bregman divergence of $\\varphi$ is $D_\\varphi(x,y)=\\varphi(x)-\\varphi(y)-\\langle\\nabla\\varphi(y),x-y\\rangle$ for $x,y\\in\\Omega$, the gap at $x$ between $\\varphi$ and its tangent plane at $y$, where $\\nabla\\varphi$ is the [gradient](c:gradient). It satisfies $D_\\varphi(x,y)\\ge0$, with equality exactly when $x=y$, but in general it is not symmetric and does not satisfy the triangle inequality.",
+    "requires": [
+     "c:strictly-convex-function",
+     "c:gradient",
+     "c:differentiable-function"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-csiszar-i-projection",
+  "statement": "Let $P$ be a [probability measure](c:probability-measure) and $\\mathcal E$ a [convex set](c:convex-set) of probability measures with $D^* = \\inf_{Q \\in \\mathcal E} D(Q\\|P) < \\infty$, where $D$ is the [Kullback-Leibler divergence](c:kullback-leibler-divergence). A minimizer $Q^*$ satisfies $D(Q\\|P) \\ge D(Q\\|Q^*) + D(Q^*\\|P)$ for all $Q \\in \\mathcal E$. This inequality characterizes the minimizer, the minimizer is unique, and it exists when $\\mathcal E$ is closed in [total variation distance](c:total-variation-distance).",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "$\\mathcal E$ is a [convex set](c:convex-set) of [probability measures](c:probability-measure) on the space of $P$.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:finite",
+    "text": "The infimum $D^* = \\inf_{Q \\in \\mathcal E} D(Q\\|P)$ of the [Kullback-Leibler divergence](c:kullback-leibler-divergence) is finite.",
+    "concept": "c:kullback-leibler-divergence"
+   },
+   {
+    "id": "h:closed",
+    "text": "For existence, $\\mathcal E$ is closed in [total variation distance](c:total-variation-distance).",
+    "concept": "c:total-variation-distance"
+   }
+  ],
+  "conclusion": "There is exactly one $Q^* \\in \\mathcal E$ with $D(Q^*\\|P) = D^*$ when $\\mathcal E$ is closed, at most one in general, and a $Q^* \\in \\mathcal E$ is this minimizer if and only if $D(Q\\|P) \\ge D(Q\\|Q^*) + D(Q^*\\|P)$ for all $Q \\in \\mathcal E$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "first-variation",
+    "name": "First variation and parallelogram identity",
+    "slogan": "Moving from the minimizer toward any other element cannot decrease the divergence, and midpoints of a minimizing sequence force it to converge.",
+    "scope": "Existence, uniqueness and the Pythagorean characterization, on a general measurable space.",
+    "mechanisms": [
+     "m:convexity",
+     "m:monotone-limit",
+     "m:cauchy-completeness"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "The segment from the minimizer to another element, and the midpoint of two elements, stay in the set.",
+      "steps": [
+       "s:derivative",
+       "s:exist"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite infimum makes the divergences of the minimizer and of a minimizing sequence finite, so differences of integrals make sense.",
+      "steps": [
+       "s:derivative",
+       "s:exist"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "The total variation limit of the minimizing sequence must stay in the set.",
+      "steps": [
+       "s:exist"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:derivative",
+      "slogan": "The one-sided derivative of the divergence along a segment out of the minimizer is nonnegative.",
+      "detail": "With [densities](c:radon-nikodym-derivative) $f^*, f$ and $\\varphi(t) = t\\log t$, the difference quotients $(\\varphi(f^* + \\lambda(f - f^*)) - \\varphi(f^*))/\\lambda$ decrease as $\\lambda \\downarrow 0$ and have nonnegative integrals. Monotone convergence passes to the limit, and the limit is $-\\infty$ where $f^* = 0 < f$.",
+      "uses": [
+       "wd:Q1191319",
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:pyth",
+      "slogan": "Rewrite the nonnegative derivative as the Pythagorean inequality.",
+      "detail": "The derivative is finite, so $Q$ is [absolutely continuous](c:absolute-continuity) with respect to $Q^*$. The inequality $\\int (f - f^*)\\log f^*\\,dP \\ge 0$ then reads $D(Q\\|Q^*) \\le D(Q\\|P) - D(Q^*\\|P)$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "The inequality characterizes the minimizer and forces two minimizers to coincide.",
+      "detail": "Since $D(Q\\|Q^*) \\ge 0$, the inequality makes $Q^*$ a minimizer. For two minimizers it gives $D(Q_2\\|Q_1) = 0$, and Pinsker's inequality gives $Q_2 = Q_1$.",
+      "uses": [
+       "nm:gibbs-inequality",
+       "nm:statphys-pinsker-inequality"
+      ]
+     },
+     {
+      "id": "s:parallelogram",
+      "slogan": "The divergence obeys a parallelogram identity around the midpoint.",
+      "detail": "For the midpoint $M$ of $Q_1$ and $Q_2$, $D(Q_1\\|P) + D(Q_2\\|P) = 2D(M\\|P) + D(Q_1\\|M) + D(Q_2\\|M)$.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "A minimizing sequence is Cauchy in total variation, and its limit is a minimizer.",
+      "detail": "Midpoints stay in the set, so the identity and Pinsker's inequality make the sequence Cauchy in [total variation](c:total-variation-distance). The densities converge in $L^1$ and almost everywhere along a subsequence, the limit stays in the closed set, and Fatou's lemma bounds its divergence by $D^*$.",
+      "uses": [
+       "nm:statphys-pinsker-inequality",
+       "wd:Q5437947"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine existence, uniqueness and the characterization.",
+      "detail": "The limit of step s:exist is a minimizer, step s:unique shows that it is the only one, and step s:pyth shows that it satisfies the Pythagorean inequality.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:derivative",
+      "s:pyth"
+     ],
+     [
+      "s:pyth",
+      "s:unique"
+     ],
+     [
+      "s:unique",
+      "s:conclude"
+     ],
+     [
+      "s:parallelogram",
+      "s:exist"
+     ],
+     [
+      "s:exist",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "The reference $P$ and every element of the constraint set are probability measures on one space.",
+     "c:convex-set": "Convexity keeps the segment and the midpoint inside the constraint set.",
+     "c:kullback-leibler-divergence": "The I-projection minimizes the Kullback-Leibler divergence from the reference measure.",
+     "c:total-variation-distance": "Closedness and the Cauchy property of the minimizing sequence are in total variation distance.",
+     "c:radon-nikodym-derivative": "Densities with respect to $P$ turn each divergence into an integral of $f\\log f$.",
+     "c:absolute-continuity": "Every element of finite divergence is absolutely continuous with respect to the I-projection."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "I. Csiszár and P. C. Shields, Information Theory and Statistics: A Tutorial, Foundations and Trends in Communications and Information Theory 1(4), 2004, Theorem 3.1 (pp. 440-441), and Y. Polyanskiy and Y. Wu, Information Theory, Theorem 15.10 (p. 303).",
+     "url": "https://www.renyi.hu/~csiszar/Publications/Information_Theory_and_Statistics:_A_Tutorial.pdf",
+     "note": "Steps s:derivative and s:pyth follow the proof of Theorem 3.1 in Csiszár and Shields, on a general space as in Theorem 15.10 of Polyanskiy and Wu. Steps s:parallelogram and s:exist are authored."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-f-divergence-joint-convexity",
+  "statement": "Every [f-divergence](c:f-divergence) is jointly convex: the divergence between two [mixtures](c:mixture-of-distributions) with the same weights is at most the weighted average of the divergences between the components.",
+  "hypotheses": [
+   {
+    "id": "h:f",
+    "text": "$f:(0,\\infty) \\to \\mathbb R$ is a [convex function](c:convex-function) with $f(1) = 0$.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:measures",
+    "text": "$P_1, P_2, Q_1, Q_2$ are [probability measures](c:probability-measure) on one measurable space and $\\lambda \\in [0,1]$.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "$D_f((1-\\lambda)P_1 + \\lambda P_2 \\,\\|\\, (1-\\lambda)Q_1 + \\lambda Q_2) \\le (1-\\lambda) D_f(P_1\\|Q_1) + \\lambda D_f(P_2\\|Q_2)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "perspective",
+    "name": "Convexity of the perspective function",
+    "slogan": "The divergence is the integral of the perspective $b f(a/b)$ of the densities, and the perspective of a convex function is jointly convex.",
+    "scope": "The whole theorem, including singular parts, $f(0) = \\infty$ and infinite maximal slope.",
+    "mechanisms": [
+     "m:convexity",
+     "m:case-analysis",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:f",
+      "why": "Convexity of $f$ gives the convexity of the perspective and the bound $f(x+y) \\le f(x) + y M_f$ for the singular part.",
+      "steps": [
+       "s:slopes",
+       "s:perspective"
+      ]
+     },
+     {
+      "h": "h:measures",
+      "why": "Total mass one bounds $\\int|p-q|$, so the integrals are well defined, and the mixtures have mixed densities.",
+      "steps": [
+       "s:represent",
+       "s:integrate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:slopes",
+      "slogan": "Bound the growth of the convex function by its maximal slope at infinity.",
+      "detail": "Chord slopes of a [convex function](c:convex-function) increase, so $M_f = \\lim f(t)/t$ exists in $(-\\infty,\\infty]$ and $f(x+y) \\le f(x) + y M_f$. A subgradient $c$ at 1 gives $f(x) \\ge c(x-1)$ and $M_f \\ge c$.",
+      "uses": []
+     },
+     {
+      "id": "s:represent",
+      "slogan": "Write the divergence as the integral of the perspective of the two densities.",
+      "detail": "With [densities](c:radon-nikodym-derivative) $p, q$ for a dominating measure, the Lebesgue decomposition gives $D_f(P\\|Q) = \\int g(p,q)\\,d\\mu$, where $g(a,b) = b f(a/b)$ for $b>0$ and $g(a,0) = a M_f$. The bound $g(a,b) \\ge c(a-b)$ makes the integral well defined.",
+      "uses": []
+     },
+     {
+      "id": "s:perspective",
+      "slogan": "Prove joint convexity of the perspective on the closed quadrant by three cases.",
+      "detail": "For $b_1, b_2 > 0$ the ratio $a/b$ is a convex combination of $a_1/b_1$ and $a_2/b_2$, and convexity of $f$ applies. If one $b_i$ is zero the slope bound handles the extra mass, and if both are zero $g$ is linear.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the pointwise inequality for the densities of the two mixtures.",
+      "detail": "The [mixtures](c:mixture-of-distributions) have the mixed densities, so the pointwise convexity inequality of $g$ integrates to the joint convexity of the [f-divergence](c:f-divergence).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:slopes",
+      "s:represent"
+     ],
+     [
+      "s:slopes",
+      "s:perspective"
+     ],
+     [
+      "s:represent",
+      "s:integrate"
+     ],
+     [
+      "s:perspective",
+      "s:integrate"
+     ]
+    ],
+    "conclusion": "s:integrate",
+    "concepts": {
+     "c:f-divergence": "The f-divergence is the quantity whose joint convexity the theorem asserts.",
+     "c:convex-function": "Convexity of the generator f passes to its perspective function.",
+     "c:probability-measure": "The four arguments are probability measures, so the integrals are well defined.",
+     "c:mixture-of-distributions": "Mixtures with common weights are the convex combinations in the statement.",
+     "c:radon-nikodym-derivative": "Densities with respect to one dominating measure turn the divergence into an integral of the perspective."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The statement is Corollary 3 of Gerchinovitz, Ménard and Stoltz (arXiv:1702.05985v3, p. 4), which derives it from the data processing inequality and gives the proof in an extended version. The authored proof is the direct perspective argument and uses the inequality f(x + y) ≤ f(x) + y M_f, which is inequality (1) on p. 3 of the source."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-pinsker-inequality",
+  "statement": "For [probability measures](c:probability-measure) $P$ and $Q$ on one measurable space, the [total variation distance](c:total-variation-distance) is at most $\\sqrt{D(P\\|Q)/2}$, where $D$ is the [Kullback-Leibler divergence](c:kullback-leibler-divergence) in nats.",
+  "hypotheses": [
+   {
+    "id": "h:measures",
+    "text": "$P$ and $Q$ are [probability measures](c:probability-measure) on the same measurable space.",
+    "concept": "c:probability-measure"
+   },
+   {
+    "id": "h:nats",
+    "text": "The [Kullback-Leibler divergence](c:kullback-leibler-divergence) $D(P\\|Q) = \\int \\log \\frac{dP}{dQ}\\, dP$ uses the natural logarithm, with $D = \\infty$ when $P$ is not absolutely continuous with respect to $Q$.",
+    "concept": "c:kullback-leibler-divergence"
+   }
+  ],
+  "conclusion": "$D(P\\|Q) \\ge 2\\,\\mathrm{TV}(P,Q)^2$, and the constant $2$ is optimal.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "binary-reduction",
+    "name": "Reduction to two-point laws",
+    "slogan": "Data processing reduces the inequality to [Bernoulli laws](c:bernoulli-distribution), where an integral formula for the binary divergence gives the constant 2.",
+    "scope": "The whole theorem, including the case $D(P\\|Q) = \\infty$ and the sharpness of the constant.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:taylor-expansion",
+     "m:supremum"
+    ],
+    "roles": [
+     {
+      "h": "h:measures",
+      "why": "Both measures must be probability measures so that an event $A$ sends them to two [Bernoulli laws](c:bernoulli-distribution).",
+      "steps": [
+       "s:reduce",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:nats",
+      "why": "The natural logarithm fixes the constant $2$; in base $b$ the constant is $2\\log_b e$.",
+      "steps": [
+       "s:formula",
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Push both measures through the indicator of an event to get two Bernoulli laws.",
+      "detail": "Assume $D(P\\|Q) < \\infty$, so $P \\ll Q$. For an event $A$ the map $\\omega \\mapsto 1_A(\\omega)$ sends $P, Q$ to $\\mathrm{Ber}(p), \\mathrm{Ber}(q)$ with $p = P(A)$ and $q = Q(A)$. The data processing inequality gives $D(P\\|Q) \\ge d(p\\|q)$. If $q \\in \\{0, 1\\}$ then $p = q$ by absolute continuity.",
+      "uses": [
+       "nm:data-processing-inequality"
+      ]
+     },
+     {
+      "id": "s:formula",
+      "slogan": "Write the binary divergence as an integral with the weight $1/(t(1-t))$.",
+      "detail": "For $q \\in (0,1)$ and $p \\in [0,1]$, $d(p\\|q) = \\int_q^p \\frac{p-t}{t(1-t)}\\,dt$. Both sides vanish at $p = q$, both are continuous in $p$, and both have the derivative $\\log\\frac{p}{1-p} - \\log\\frac{q}{1-q}$ on $(0,1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the weight below by 4 to get the quadratic lower bound for Bernoulli laws.",
+      "detail": "Since $t(1-t) \\le 1/4$, the factor $p - t$ has a constant sign on the interval of integration, and $4\\int_q^p (p - t)\\,dt = 2(p-q)^2$, the formula gives $d(p\\|q) \\ge 2(p-q)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Take the supremum over events of the Bernoulli bound to reach total variation.",
+      "detail": "Each event gives $D(P\\|Q) \\ge 2(P(A) - Q(A))^2$, also when $Q(A) \\in \\{0,1\\}$ by Gibbs' inequality. The supremum over $A$ of $|P(A) - Q(A)|$ is the [total variation distance](c:total-variation-distance). The pair $\\mathrm{Ber}(1/2+\\varepsilon)$, $\\mathrm{Ber}(1/2)$ has $D = 2\\varepsilon^2 + O(\\varepsilon^4)$ and shows that $2$ is optimal.",
+      "uses": [
+       "nm:gibbs-inequality"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:conclude"
+     ],
+     [
+      "s:formula",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "Both arguments of the inequality are probability measures on one space.",
+     "c:total-variation-distance": "The total variation distance is the quantity that the inequality bounds.",
+     "c:kullback-leibler-divergence": "The Kullback-Leibler divergence is the quantity that bounds the distance.",
+     "c:bernoulli-distribution": "Bernoulli laws are the two-point case to which data processing reduces the problem."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "C. L. Canonne, A short note on an inequality between KL and TV, arXiv:2202.07198v2, Lemma 2 and its proof, p. 2.",
+     "url": "https://arxiv.org/pdf/2202.07198",
+     "note": "The steps follow the source proof, which the source attributes to the lecture notes of Yihong Wu. The authored proof checks the integral formula for the binary divergence and treats the events with Q(A) in {0, 1} explicitly."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-bretagnolle-huber",
+  "statement": "For [probability measures](c:probability-measure) $P$ and $Q$ on one space, the [total variation distance](c:total-variation-distance) satisfies $\\mathrm{TV}(P,Q) \\le \\sqrt{1 - e^{-D(P\\|Q)}}$, where $D$ is the [Kullback-Leibler divergence](c:kullback-leibler-divergence) in nats. So every event $A$ has $P(A) + Q(A^c) \\ge \\tfrac12 e^{-D(P\\|Q)}$.",
+  "hypotheses": [
+   {
+    "id": "h:measures",
+    "text": "$P$ and $Q$ are [probability measures](c:probability-measure) on the same measurable space $(\\Omega, \\mathcal F)$.",
+    "concept": "c:probability-measure"
+   },
+   {
+    "id": "h:nats",
+    "text": "The [Kullback-Leibler divergence](c:kullback-leibler-divergence) uses the natural logarithm, with $D(P\\|Q) = \\infty$ and $e^{-\\infty} = 0$ when $P$ is not [absolutely continuous](c:absolute-continuity) with respect to $Q$.",
+    "concept": "c:kullback-leibler-divergence"
+   }
+  ],
+  "conclusion": "$\\mathrm{TV}(P,Q) \\le \\sqrt{1 - e^{-D(P\\|Q)}}$ and $P(A) + Q(A^c) \\ge 1 - \\mathrm{TV}(P,Q) \\ge \\tfrac12 e^{-D(P\\|Q)}$ for every event $A$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "affinity-sandwich",
+    "name": "Sandwich of the Hellinger affinity",
+    "slogan": "The affinity $\\int\\sqrt{pq}$ lies below $\\sqrt{1-\\mathrm{TV}^2}$ by Cauchy-Schwarz and above $e^{-D/2}$ by Jensen's inequality.",
+    "scope": "The whole theorem, including the case $D(P\\|Q) = \\infty$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:cauchy-schwarz",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:measures",
+      "why": "Total mass one gives $\\int \\min(p,q) = 1 - \\mathrm{TV}$ and $\\int \\max(p,q) = 1 + \\mathrm{TV}$.",
+      "steps": [
+       "s:densities",
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:nats",
+      "why": "Finite divergence gives absolute continuity, so $q > 0$ almost surely under $P$ and $\\log(q/p)$ is integrable for Jensen's inequality.",
+      "steps": [
+       "s:densities",
+       "s:lower"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:densities",
+      "slogan": "Write both measures with densities and express TV through the pointwise minimum and maximum.",
+      "detail": "If $D = \\infty$ the bounds are trivial. Otherwise take [densities](c:radon-nikodym-derivative) $p, q$ with respect to $\\nu = P + Q$. Then $\\mathrm{TV} = \\tfrac12\\int|p-q|\\,d\\nu$, $\\int \\min(p,q)\\,d\\nu = 1 - \\mathrm{TV}$ and $\\int \\max(p,q)\\,d\\nu = 1 + \\mathrm{TV}$.",
+      "uses": [
+       "wd:Q1191319"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound the Hellinger affinity above by Cauchy-Schwarz on the minimum and the maximum.",
+      "detail": "Since $\\sqrt{pq} = \\sqrt{\\min(p,q)}\\sqrt{\\max(p,q)}$, Cauchy-Schwarz gives $(\\int\\sqrt{pq}\\,d\\nu)^2 \\le (1-\\mathrm{TV})(1+\\mathrm{TV}) = 1 - \\mathrm{TV}^2$. The left side is the square of the [Hellinger](c:hellinger-distance) affinity.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Bound the Hellinger affinity below by Jensen's inequality for the exponential under P.",
+      "detail": "With $Z = \\tfrac12\\log(q/p)$, which is $P$-integrable with mean $-D/2$, the affinity is $\\int\\sqrt{pq}\\,d\\nu = E_P[e^Z] \\ge e^{E_P Z} = e^{-D/2}$ by convexity of $\\exp$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two affinity bounds and convert the TV bound into the event bound.",
+      "detail": "The bounds give $1 - \\mathrm{TV}^2 \\ge e^{-D}$. For an event $A$, $P(A) + Q(A^c) \\ge 1 - \\mathrm{TV} \\ge 1 - \\sqrt{1 - e^{-D}} \\ge \\tfrac12 e^{-D}$, because $\\sqrt{1-x} \\le 1 - x/2$ on $[0,1]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:densities",
+      "s:upper"
+     ],
+     [
+      "s:densities",
+      "s:lower"
+     ],
+     [
+      "s:upper",
+      "s:conclude"
+     ],
+     [
+      "s:lower",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "Both arguments of the inequality are probability measures on one space.",
+     "c:total-variation-distance": "The total variation distance is the quantity that the inequality bounds.",
+     "c:kullback-leibler-divergence": "The Kullback-Leibler divergence is the quantity that controls the bound.",
+     "c:absolute-continuity": "Finite divergence forces absolute continuity, which makes the density ratio finite almost surely.",
+     "c:radon-nikodym-derivative": "Densities with respect to $P + Q$ turn all quantities into integrals of $p$ and $q$.",
+     "c:hellinger-distance": "The Hellinger affinity is the middle term that both bounds compare."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "C. L. Canonne, A short note on an inequality between KL and TV, arXiv:2202.07198v2, Lemma 3 (p. 3) and its second proof, from the argument of Tsybakov's Lemma 2.6 (p. 4).",
+     "url": "https://arxiv.org/pdf/2202.07198",
+     "note": "The steps follow the second proof of Lemma 3 in the source, equations (7) to (9). The event form follows as in Corollary 4 of the source and Theorem 14.2 of Lattimore and Szepesvári, p. 190."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:hellinger-distance",
+    "name": "Hellinger distance",
+    "reminder": "The Hellinger distance compares two probability measures through the $L^2$ distance of the square roots of their densities.",
+    "definition": "Let $P$ and $Q$ be [probability measures](c:probability-measure) with densities $p=dP/d\\lambda$ and $q=dQ/d\\lambda$, the [Radon–Nikodym derivatives](c:radon-nikodym-derivative) with respect to a measure $\\lambda$ that dominates both, such as $\\lambda=P+Q$. The Hellinger distance is $H(P,Q)=\\big(\\frac12\\int(\\sqrt p-\\sqrt q)^2\\,d\\lambda\\big)^{1/2}$, which does not depend on the choice of $\\lambda$ and lies in $[0,1]$. With this factor $\\frac12$, $H(P,Q)^2=1-\\int\\sqrt{pq}\\,d\\lambda$, and some authors omit the factor.",
+    "requires": [
+     "c:probability-measure",
+     "c:radon-nikodym-derivative"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-le-cam-two-point",
+  "statement": "Let $d$ be a metric on a parameter set (a [metric space](c:metric-space)) and let $\\Phi \\ge 0$ be nondecreasing. If two models $P_0, P_1$ in the family have parameters at distance $s$, then every estimator from $n$ [independent](c:independent-random-variables) observations has worst-case [risk](c:risk) at least $\\tfrac12\\Phi(s/2)\\,(1 - \\mathrm{TV}(P_0^n, P_1^n))$, where TV is the [total variation distance](c:total-variation-distance).",
+  "hypotheses": [
+   {
+    "id": "h:metric",
+    "text": "$d$ is a metric on the parameter set $\\Theta$, so $(\\Theta, d)$ is a [metric space](c:metric-space).",
+    "concept": "c:metric-space"
+   },
+   {
+    "id": "h:loss",
+    "text": "The loss is $\\Phi(d(\\hat\\theta, \\theta))$ with $\\Phi: [0,\\infty) \\to [0,\\infty)$ nondecreasing, and the [risk](c:risk) is its expectation.",
+    "concept": "c:risk"
+   },
+   {
+    "id": "h:pair",
+    "text": "$P_0$ and $P_1$ are [probability measures](c:probability-measure) in the model, and the data are $n$ [independent](c:independent-random-variables) observations from one model.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "$\\inf_{\\hat\\theta} \\sup_{P} E_P[\\Phi(d(\\hat\\theta, \\theta(P)))] \\ge \\tfrac12 \\Phi(s/2)\\,(1 - \\mathrm{TV}(P_0^n, P_1^n))$ with $s = d(\\theta(P_0), \\theta(P_1))$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reduce-to-test",
+    "name": "Reduce estimation to a test",
+    "slogan": "A good estimator would give a good test between the two models, but no test can separate laws that are close in total variation.",
+    "scope": "The whole statement, for every estimator and every pair of models.",
+    "mechanisms": [
+     "m:triangle-inequality",
+     "m:averaging",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:metric",
+      "why": "The triangle inequality forces the estimate to be at distance at least $s/2$ from one of the two parameters.",
+      "steps": [
+       "s:separate"
+      ]
+     },
+     {
+      "h": "h:loss",
+      "why": "A nondecreasing $\\Phi$ makes the loss at least $\\Phi(s/2)$ on the event of a large error.",
+      "steps": [
+       "s:markov"
+      ]
+     },
+     {
+      "h": "h:pair",
+      "why": "The worst case over the model is at least the larger of the two risks at $P_0$ and $P_1$.",
+      "steps": [
+       "s:average"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:markov",
+      "slogan": "Bound each risk below by the loss at s over 2 times the probability of a large error.",
+      "detail": "With $A_j = \\{d(\\hat\\theta, \\theta_j) \\ge s/2\\}$, Markov's inequality gives $E_{P_j}[\\Phi(d(\\hat\\theta, \\theta_j))] \\ge \\Phi(s/2)\\, P_j^n(A_j)$.",
+      "uses": [
+       "nm:markov-s-inequality"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "The estimate is far from at least one of the two parameters.",
+      "detail": "Since $s \\le d(\\theta_0, \\hat\\theta) + d(\\hat\\theta, \\theta_1)$, every sample lies in $A_0$ or in $A_1$. So $A_1^c \\subseteq A_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:test",
+      "slogan": "The two error probabilities of the test with rejection region A one add up to at least 1 minus TV.",
+      "detail": "$P_0^n(A_0) + P_1^n(A_1) \\ge 1 - (P_0^n(A_1) - P_1^n(A_1)) \\ge 1 - \\mathrm{TV}(P_0^n, P_1^n)$ by the definition of the [total variation distance](c:total-variation-distance).",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "The worst case is at least the average of the two risks.",
+      "detail": "$\\max_j E_{P_j}[\\cdot] \\ge \\tfrac12 (E_{P_0}[\\cdot] + E_{P_1}[\\cdot]) \\ge \\tfrac12\\Phi(s/2)(1 - \\mathrm{TV})$. The bound does not depend on $\\hat\\theta$, so it also bounds the infimum.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:markov",
+      "s:average"
+     ],
+     [
+      "s:separate",
+      "s:test"
+     ],
+     [
+      "s:test",
+      "s:average"
+     ]
+    ],
+    "conclusion": "s:average",
+    "concepts": {
+     "c:metric-space": "The triangle inequality of the parameter metric drives the reduction to a test.",
+     "c:independent-random-variables": "The $n$ observations are independent, so their joint law is the product $P^n$.",
+     "c:risk": "The minimax risk is the worst-case expected loss that the theorem bounds below.",
+     "c:total-variation-distance": "The total variation distance between the sample laws measures how well any test separates the two models.",
+     "c:probability-measure": "The two models are probability measures in the statistical family."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "Minimax Theory, lecture notes for CMU 10/36-702 Statistical Machine Learning (no author named in the file), Theorem 4 (p. 4) with the reduction of Theorem 3 (p. 3).",
+     "url": "https://www.stat.cmu.edu/~ryantibs/statml/lectures/minimax.pdf",
+     "note": "The steps follow the proof of Theorem 3 (Markov's inequality and the triangle inequality) and the first part of the proof of Theorem 4 (maximum at least average). The bound on the error sum of the test replaces the Neyman–Pearson argument of Lemma 6 of the notes."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-fano-inequality",
+  "statement": "Let $X$ and $\\hat X$ be [random variables](c:random-variable) on a finite set of $M \\ge 2$ points, with $P_e = P(\\hat X \\ne X)$. Then the conditional [entropy](c:entropy) satisfies $H(X \\mid \\hat X) \\le h(P_e) + P_e \\log(M-1)$, where $h$ is the binary entropy function. If $\\hat X = g(Y)$, the same bound holds for $H(X \\mid Y)$. For a [uniform](c:uniform-distribution) $X$ it gives $P_e \\ge 1 - (I + \\log 2)/\\log M$, where $I$ is the [mutual information](c:mutual-information) of $X$ and $Y$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "$X$ and $\\hat X$ are [random variables](c:random-variable) with values in the same finite set $\\mathcal X$ of $M \\ge 2$ points.",
+    "concept": "c:random-variable"
+   },
+   {
+    "id": "h:function",
+    "text": "For the second form, $\\hat X = g(Y)$ for a discrete [random variable](c:random-variable) $Y$ and a function $g$.",
+    "concept": "c:random-variable"
+   },
+   {
+    "id": "h:uniform",
+    "text": "For the third form, $X$ has the [uniform distribution](c:uniform-distribution) on $\\mathcal X$.",
+    "concept": "c:uniform-distribution"
+   }
+  ],
+  "conclusion": "$H(X \\mid Y) \\le H(X \\mid \\hat X) \\le h(P_e) + P_e \\log(M-1)$, and for uniform $X$, $P_e \\ge 1 - (I + \\log 2)/\\log M$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "error-indicator",
+    "name": "Split off the error indicator",
+    "slogan": "Asking whether the guess is right costs at most $h(P_e)$, and after a wrong guess $X$ has only $M-1$ possible values.",
+    "scope": "All three forms of the inequality.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:convexity",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "When the guess $\\hat x$ is wrong, $X$ lies in the $M-1$ other points of the same finite set, so its conditional entropy is at most $\\log(M-1)$.",
+      "steps": [
+       "s:group",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:function",
+      "why": "The law of $X$ given $g(Y)$ is a mixture of the laws given $Y$, and entropy is concave.",
+      "steps": [
+       "s:observe"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "A uniform $X$ has entropy $\\log M$, which turns the entropy bound into a bound on $P_e$.",
+      "steps": [
+       "s:uniform"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:group",
+      "slogan": "Split the entropy of X given a guess into the error part and the part after an error.",
+      "detail": "For a guess $\\hat x$ with error probability $e = P(X \\ne \\hat x \\mid \\hat X = \\hat x)$, the grouping identity gives $H(X \\mid \\hat X = \\hat x) = h(e) + e\\,H(\\pi')$, where $\\pi'$ is the law of $X$ given the guess and an error.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "A law on M minus 1 points has entropy at most the logarithm of M minus 1.",
+      "detail": "Gibbs' inequality against the uniform weights $1/(M-1)$ gives $H(\\pi') \\le \\log(M-1)$. The same argument on two points gives $h \\le \\log 2$.",
+      "uses": [
+       "nm:gibbs-inequality"
+      ]
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average over the guess and move the average inside the concave function h.",
+      "detail": "The errors $e(\\hat x)$ average to $P_e$ under the law of $\\hat X$. Since $h$ is concave, Jensen's inequality gives $\\sum_{\\hat x} P(\\hat X = \\hat x)\\, h(e(\\hat x)) \\le h(P_e)$. So $H(X \\mid \\hat X) \\le h(P_e) + P_e \\log(M-1)$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:observe",
+      "slogan": "Knowing Y tells at least as much about X as knowing g of Y.",
+      "detail": "The law of $X$ given $g(Y) = \\hat x$ is a mixture of the laws given $Y = y$ with $g(y) = \\hat x$. The [entropy](c:entropy) is concave because $-t\\log t$ is concave, so $H(X \\mid Y) \\le H(X \\mid g(Y))$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "For a uniform X, rewrite the bound as a lower bound on the error probability.",
+      "detail": "With $H(X) = \\log M$ and $I = \\log M - H(X \\mid Y)$, the bounds $h(P_e) \\le \\log 2$ and $\\log(M-1) \\le \\log M$ give $\\log M - I \\le \\log 2 + P_e \\log M$. Divide by $\\log M > 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:group",
+      "s:average"
+     ],
+     [
+      "s:count",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:uniform"
+     ],
+     [
+      "s:observe",
+      "s:uniform"
+     ]
+    ],
+    "conclusion": "s:uniform",
+    "concepts": {
+     "c:random-variable": "The unknown $X$, the guess $\\hat X$ and the observation $Y$ are random variables on one probability space.",
+     "c:entropy": "Conditional entropy measures the uncertainty about $X$ that remains after the guess or the observation.",
+     "c:uniform-distribution": "For a uniform $X$ the prior uncertainty is exactly $\\log M$.",
+     "c:mutual-information": "The mutual information is the reduction of entropy that the observation gives, and it controls the error floor."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Scarlett and V. Cevher, An Introductory Guide to Fano's Inequality with Applications in Statistical Estimation, arXiv:1901.00555v3, Theorem 1 (p. 9) and its proof in Appendix A.2 (p. 38).",
+     "url": "https://arxiv.org/pdf/1901.00555",
+     "note": "The steps follow equations (110) to (114) of Appendix A.2. The step 'conditioning reduces entropy' for the error indicator is written as the concavity of h, and the form with Y follows the data processing argument of Appendix A.4."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-donsker-varadhan-variational",
+  "statement": "For [probability measures](c:probability-measure) $P$ and $Q$, the [relative entropy](c:kullback-leibler-divergence) satisfies $D(P\\|Q) = \\sup_f \\{\\mathbb{E}_P[f] - \\log \\mathbb{E}_Q[e^f]\\}$, where $f$ ranges over the [measurable functions](c:measurable-function) with $\\mathbb{E}_P|f| < \\infty$ and $\\mathbb{E}_Q[e^f] < \\infty$, or only over the bounded ones.",
+  "hypotheses": [
+   {
+    "id": "h:measures",
+    "text": "$P$ and $Q$ are [probability measures](c:probability-measure) on the same measurable space.",
+    "concept": "c:probability-measure"
+   },
+   {
+    "id": "h:class",
+    "text": "The test functions $f$ are [measurable functions](c:measurable-function) with $\\mathbb{E}_P|f| < \\infty$ and $\\mathbb{E}_Q[e^f] < \\infty$.",
+    "concept": "c:measurable-function"
+   }
+  ],
+  "conclusion": "$D(P\\|Q) = \\sup_f \\{\\mathbb{E}_P[f] - \\log \\mathbb{E}_Q[e^f]\\}$, and the supremum over bounded $f$ has the same value.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "jensen-and-truncation",
+    "name": "Jensen's inequality and truncation of the log-density",
+    "slogan": "Jensen's inequality gives the upper bound, and truncations of $\\log(dP/dQ)$ come close to it.",
+    "scope": "The whole statement, including the infinite cases and attainment.",
+    "mechanisms": [
+     "m:convexity",
+     "m:approximation",
+     "m:dominated-convergence",
+     "m:monotone-limit",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:measures",
+      "why": "Two probability measures give the Radon-Nikodym density when $P \\ll Q$, and a separating event otherwise.",
+      "steps": [
+       "s:density",
+       "s:singular"
+      ]
+     },
+     {
+      "h": "h:class",
+      "why": "Integrability of $f$ under $P$ lets Jensen's inequality apply to $f - \\log h$.",
+      "steps": [
+       "s:upper"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:density",
+      "slogan": "Write $D(P\\|Q)$ as $\\mathbb{E}_P[\\log h]$ with the [Radon-Nikodym derivative](c:radon-nikodym-derivative) $h = dP/dQ$.",
+      "detail": "If $P$ is [absolutely continuous](c:absolute-continuity) with respect to $Q$, then $h > 0$ $P$-almost surely and $\\mathbb{E}_P[(\\log h)^-] \\le 1/e$, so $\\mathbb{E}_P[\\log h]$ is well defined.",
+      "uses": [
+       "wd:Q1191319"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound $\\log \\mathbb{E}_Q[e^f]$ from below by Jensen's inequality under $P$.",
+      "detail": "$\\mathbb{E}_Q[e^f] \\ge \\mathbb{E}_P[e^{f - \\log h}] \\ge e^{\\mathbb{E}_P[f] - D(P\\|Q)}$ for every admissible $f$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:singular",
+      "slogan": "If $P$ charges a $Q$-null event $E$, the functions $c\\,1_E$ make the supremum infinite.",
+      "detail": "$\\mathbb{E}_P[c\\,1_E] = cP(E)$ and $\\mathbb{E}_Q[e^{c 1_E}] = 1$, so the value is $cP(E) \\to \\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:truncate",
+      "slogan": "Truncate $\\log h$ at $\\pm n$ and pass to the limit in both terms.",
+      "detail": "For $f_n = \\max(-n, \\min(n, \\log h))$, dominated convergence gives $\\mathbb{E}_Q[e^{f_n}] \\to 1$, and monotone convergence on the positive and negative parts gives $\\mathbb{E}_P[f_n] \\to D(P\\|Q)$.",
+      "uses": [
+       "wd:Q1067156",
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the bounds: both suprema equal $D(P\\|Q)$.",
+      "detail": "Bounded functions are admissible, so the upper bound covers them, and the truncations or the functions $c\\,1_E$ reach $D(P\\|Q)$. The [expected value](c:expected-value) $\\mathbb{E}_P[\\log h]$ is attained at $f = \\log h$ when $P$ and $Q$ have the same null sets and $D(P\\|Q) < \\infty$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:density",
+      "s:upper"
+     ],
+     [
+      "s:density",
+      "s:truncate"
+     ],
+     [
+      "s:upper",
+      "s:conclude"
+     ],
+     [
+      "s:singular",
+      "s:conclude"
+     ],
+     [
+      "s:truncate",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "The formula compares two probability measures.",
+     "c:kullback-leibler-divergence": "The left side is the relative entropy of $P$ with respect to $Q$.",
+     "c:measurable-function": "The supremum runs over measurable test functions.",
+     "c:radon-nikodym-derivative": "The optimal test function is the logarithm of the Radon-Nikodym derivative.",
+     "c:absolute-continuity": "The proof splits into the cases $P \\ll Q$ and $P \\not\\ll Q$.",
+     "c:expected-value": "Both terms of the variational expression are expected values."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "Y. Polyanskiy and Y. Wu, Information Theory: From Coding to Learning, Cambridge University Press, 2025, Theorem 4.6 and its proof, pp. 72-73.",
+     "url": "https://people.lids.mit.edu/yp/homepage/data/itbook-export.pdf",
+     "note": "The source proves the upper bound by exponential tilting and the lower bound by partitions. These steps use Jensen's inequality for the first part and truncation of the log-density for the second."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-gibbs-variational-principle-finite",
+  "statement": "For a [Hamiltonian](c:hamiltonian) $H$ on a finite set $\\Omega$ and a real $\\beta$, every probability distribution $\\mu$ on $\\Omega$ satisfies $S(\\mu) - \\beta \\langle H \\rangle_\\mu \\le \\log Z$. Here $S$ is the Shannon [entropy](c:entropy) and $Z$ is the [partition function](c:partition-function). Equality holds only for the [Gibbs distribution](c:gibbs-distribution).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The configuration set $\\Omega$ is finite and nonempty, and $H\\colon \\Omega \\to \\mathbb{R}$ is a [Hamiltonian](c:hamiltonian).",
+    "concept": "c:hamiltonian"
+   },
+   {
+    "id": "h:beta",
+    "text": "The [inverse temperature](c:inverse-temperature) $\\beta$ is a real number.",
+    "concept": "c:inverse-temperature"
+   },
+   {
+    "id": "h:distribution",
+    "text": "The measure $\\mu$ is a [probability measure](c:probability-measure) on $\\Omega$, and $S(\\mu)$ uses the convention $0 \\log 0 = 0$.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "$S(\\mu) - \\beta \\langle H \\rangle_\\mu \\le \\log Z$, with equality if and only if $\\mu(\\omega) = e^{-\\beta H(\\omega)}/Z$ for every $\\omega$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "jensen-log",
+    "name": "Jensen for the logarithm",
+    "slogan": "Write the functional as an average of logarithms of Boltzmann weight over probability, and apply Jensen's inequality.",
+    "scope": "The whole statement for every real $\\beta$, with the equality case.",
+    "mechanisms": [
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes $Z$ a finite sum of positive terms, so $\\log Z$ is finite.",
+      "steps": [
+       "s:support",
+       "s:jensen"
+      ]
+     },
+     {
+      "h": "h:beta",
+      "why": "For every real $\\beta$ each weight $e^{-\\beta H(\\omega)}$ is positive and finite.",
+      "steps": [
+       "s:jensen",
+       "s:equality"
+      ]
+     },
+     {
+      "h": "h:distribution",
+      "why": "The weights $\\mu(\\omega)$ are the Jensen weights, and the convention removes the states outside the support.",
+      "steps": [
+       "s:support",
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:support",
+      "slogan": "Rewrite the functional as a $\\mu$-average of logarithms on the support of $\\mu$.",
+      "detail": "Let $A = \\{\\mu > 0\\}$. The states outside $A$ contribute nothing, so $S(\\mu) - \\beta\\langle H\\rangle_\\mu = \\sum_{\\omega \\in A} \\mu(\\omega) \\log x_\\omega$ with $x_\\omega = e^{-\\beta H(\\omega)}/\\mu(\\omega) > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:jensen",
+      "slogan": "Bound the average of logarithms with the [concave](c:concave-function) logarithm.",
+      "detail": "Jensen's inequality gives $\\sum_A \\mu \\log x \\le \\log \\sum_A \\mu x = \\log \\sum_{A} e^{-\\beta H}$. Adding the positive weights of the states outside $A$ only increases the sum, so the bound is at most $\\log Z$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:attain",
+      "slogan": "Check that the [Gibbs distribution](c:gibbs-distribution) attains the value $\\log Z$.",
+      "detail": "For $\\mu_\\beta = e^{-\\beta H}/Z$ every state has positive weight, and $-\\log \\mu_\\beta(\\omega) - \\beta H(\\omega) = \\log Z$ at every state. The average of this constant is $\\log Z$.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Show that equality forces full support and a constant ratio, hence the Gibbs distribution.",
+      "detail": "Equality in the second bound forces $A = \\Omega$ because every omitted weight is positive. Strict concavity of the logarithm forces $x_\\omega$ to be constant, so $\\mu$ is proportional to $e^{-\\beta H}$ and normalization gives $\\mu = \\mu_\\beta$.",
+      "uses": [
+       "nm:strict-jensen-inequality"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:support",
+      "s:jensen"
+     ],
+     [
+      "s:jensen",
+      "s:equality"
+     ],
+     [
+      "s:attain",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:hamiltonian": "The Hamiltonian gives the energy of each configuration.",
+     "c:entropy": "The Shannon entropy is the first term of the maximized functional.",
+     "c:partition-function": "The logarithm of the partition function is the maximum value.",
+     "c:gibbs-distribution": "The Gibbs distribution is the unique maximizer of the functional.",
+     "c:inverse-temperature": "The inverse temperature weights the energy against the entropy.",
+     "c:probability-measure": "The functional is defined on all probability distributions on the finite set.",
+     "c:concave-function": "Concavity of the logarithm gives the Jensen bound."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "S. Friedli and Y. Velenik, Statistical Mechanics of Lattice Systems (CUP 2017, authors' online version), Lemma 6.74 and its proof, p. 298.",
+     "url": "https://www.unige.ch/~velenik/smbook/Statistical_Mechanics_of_Lattice_Systems.pdf",
+     "note": "The source applies Jensen's inequality to the logarithm. These steps add the support argument that the equality case needs."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:inverse-temperature",
+    "name": "inverse temperature",
+    "reminder": "The inverse temperature $\\beta=1/(k_BT)$ multiplies the energy in the Boltzmann weight $e^{-\\beta H}$.",
+    "definition": "The inverse temperature of a system at absolute temperature $T$ is $\\beta=1/(k_BT)$, where $k_B$ is Boltzmann's constant. It is the parameter in the [Boltzmann distribution](c:boltzmann-distribution) $\\mu_\\beta(\\sigma)=e^{-\\beta H(\\sigma)}/Z(\\beta)$ of a [Hamiltonian](c:hamiltonian) $H$. Mathematical texts usually set $k_B=1$ and use $\\beta\\in[0,\\infty)$ as the parameter.",
+    "requires": [
+     "c:boltzmann-distribution",
+     "c:hamiltonian"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-gibbs-bogoliubov-feynman",
+  "statement": "For [Hermitian](c:self-adjoint-operator) $H$ and $H_0$ on a finite-dimensional space and $\\beta > 0$, the [free energies](c:free-energy) satisfy $F_0 + \\langle H - H_0 \\rangle \\le F \\le F_0 + \\langle H - H_0 \\rangle_0$, where the expectations are taken in the [Gibbs states](c:gibbs-distribution) of $H$ and $H_0$.",
+  "hypotheses": [
+   {
+    "id": "h:hermitian",
+    "text": "The operators $H$ and $H_0$ are [Hermitian](c:self-adjoint-operator) operators on a finite-dimensional Hilbert space.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:beta",
+    "text": "The inverse temperature $\\beta$ is positive.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$F_0 + \\langle H - H_0 \\rangle \\le F \\le F_0 + \\langle H - H_0 \\rangle_0$, with equality in either bound if and only if $H - H_0$ is a multiple of the identity.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "relative-entropy",
+    "name": "Non-negativity of the relative entropy",
+    "slogan": "Write the free-energy gap as the relative entropy between the two Gibbs states.",
+    "scope": "Both bounds and the equality condition in finite dimension.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:hermitian",
+      "why": "Hermitian operators have a spectral decomposition, so the Gibbs states are positive definite and their logarithms are explicit.",
+      "steps": [
+       "s:log",
+       "s:equality"
+      ]
+     },
+     {
+      "h": "h:beta",
+      "why": "Division by $\\beta > 0$ keeps the direction of the inequalities.",
+      "steps": [
+       "s:upper",
+       "s:lower"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:log",
+      "slogan": "Compute the logarithm of each [Gibbs state](c:gibbs-distribution).",
+      "detail": "With $\\rho_0 = e^{-\\beta H_0}/Z_0$, the spectral theorem gives $\\log \\rho_0 = -\\beta H_0 - (\\log Z_0) I$, and the same for $\\rho$. Here $Z_0$ is the [partition function](c:partition-function) of $H_0$.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "The [relative entropy](c:relative-entropy) of $\\rho_0$ with respect to $\\rho$ is the upper gap.",
+      "detail": "Klein's inequality gives $\\operatorname{Tr} \\rho_0(\\log \\rho_0 - \\log \\rho) \\ge 0$. Step s:log turns the left side into $\\beta(\\langle H - H_0 \\rangle_0 + F_0 - F)$.",
+      "uses": [
+       "nm:statphys-klein-inequality"
+      ]
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Exchange the two states to get the lower bound.",
+      "detail": "The relative entropy of $\\rho$ with respect to $\\rho_0$ equals $\\beta(F - F_0 - \\langle H - H_0 \\rangle)$ and is non-negative.",
+      "uses": [
+       "nm:statphys-klein-inequality"
+      ]
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Equality holds exactly when the two Gibbs states coincide.",
+      "detail": "Klein's inequality is an equality only for $\\rho_0 = \\rho$. Taking logarithms, this means that $H - H_0$ is a multiple of the identity, and the converse holds because the two operators then commute.",
+      "uses": [
+       "nm:statphys-klein-inequality"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:log",
+      "s:upper"
+     ],
+     [
+      "s:log",
+      "s:lower"
+     ],
+     [
+      "s:upper",
+      "s:equality"
+     ],
+     [
+      "s:lower",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:self-adjoint-operator": "The Hamiltonians are Hermitian operators.",
+     "c:free-energy": "The inequality bounds the free energy of $H$ by quantities of the trial system.",
+     "c:gibbs-distribution": "The expectations are taken in the Gibbs states of the two Hamiltonians.",
+     "c:partition-function": "The free energy is $-\\beta^{-1}$ times the logarithm of the partition function.",
+     "c:relative-entropy": "The gap between the two sides is a relative entropy, which is non-negative."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "B. M. Reible, C. Hartmann and L. Delle Site, Two-sided Bogoliubov inequality to estimate finite size effects in quantum molecular simulations, Lett. Math. Phys. 112 (2022) 97, Theorem IV.1 and its proof, pp. 9-10.",
+     "url": "https://arxiv.org/pdf/2111.10282",
+     "note": "The source derives both bounds from the non-negativity of the relative entropy. These steps add the equality condition."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:free-energy",
+    "name": "free energy",
+    "reminder": "The free energy is $-1/\\beta$ times the pressure $\\psi=\\lim|\\Lambda|^{-1}\\log Z_\\Lambda$ of a lattice model.",
+    "definition": "For a lattice spin model with [partition function](c:partition-function) $Z_\\Lambda(\\beta)$ in a finite box $\\Lambda\\subset\\mathbb Z^d$, the pressure is the [thermodynamic limit](c:thermodynamic-limit) $\\psi(\\beta)=\\lim_{\\Lambda\\uparrow\\mathbb Z^d}|\\Lambda|^{-1}\\log Z_\\Lambda(\\beta)$. The free energy per site is $f(\\beta)=-\\psi(\\beta)/\\beta$, where $\\beta$ is the [inverse temperature](c:inverse-temperature). For finite-range interactions, the limit exists along boxes, it does not depend on the boundary condition, and $\\psi$ is convex.",
+    "requires": [
+     "c:partition-function",
+     "c:inverse-temperature",
+     "c:thermodynamic-limit"
+    ]
+   },
+   {
+    "id": "c:inverse-temperature",
+    "name": "inverse temperature",
+    "reminder": "The inverse temperature $\\beta=1/(k_BT)$ multiplies the energy in the Boltzmann weight $e^{-\\beta H}$.",
+    "definition": "The inverse temperature of a system at absolute temperature $T$ is $\\beta=1/(k_BT)$, where $k_B$ is Boltzmann's constant. It is the parameter in the [Boltzmann distribution](c:boltzmann-distribution) $\\mu_\\beta(\\sigma)=e^{-\\beta H(\\sigma)}/Z(\\beta)$ of a [Hamiltonian](c:hamiltonian) $H$. Mathematical texts usually set $k_B=1$ and use $\\beta\\in[0,\\infty)$ as the parameter.",
+    "requires": [
+     "c:boltzmann-distribution",
+     "c:hamiltonian"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nm:statphys-peierls-bogoliubov",
+  "statement": "For [self-adjoint](c:self-adjoint-operator) matrices $H$ and $K$, $\\log \\frac{\\operatorname{Tr} e^{H+K}}{\\operatorname{Tr} e^{H}} \\ge \\frac{\\operatorname{Tr}(K e^{H})}{\\operatorname{Tr} e^{H}}$, with equality if and only if $K$ is a multiple of the identity. The right side is the mean of $K$ in the Gibbs [density matrix](c:density-matrix) $e^H/\\operatorname{Tr} e^H$.",
+  "hypotheses": [
+   {
+    "id": "h:hermitian",
+    "text": "The matrices $H$ and $K$ are [self-adjoint](c:self-adjoint-operator) $n \\times n$ matrices.",
+    "concept": "c:self-adjoint-operator"
+   }
+  ],
+  "conclusion": "$\\log \\operatorname{Tr} e^{H+K} - \\log \\operatorname{Tr} e^{H} \\ge \\operatorname{Tr}(K e^{H})/\\operatorname{Tr} e^{H}$, with equality if and only if $K = cI$ for a real $c$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "klein-shift",
+    "name": "Klein's inequality with a shift",
+    "slogan": "Apply Klein's inequality to the exponential at $H + cI$ and $H + K$, with $c$ the Gibbs mean of $K$.",
+    "scope": "The whole statement for Hermitian matrices, with the equality case.",
+    "mechanisms": [
+     "m:convexity",
+     "m:spectral-decomposition",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:hermitian",
+      "why": "Hermitian matrices have spectral decompositions, so $e^H$ is positive definite and $\\operatorname{Tr}(K e^H)$ is real.",
+      "steps": [
+       "s:mean",
+       "s:klein"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:mean",
+      "slogan": "Define the Gibbs mean $c$ of $K$ and check that it is real.",
+      "detail": "The [matrix exponential](c:matrix-exponential) $e^H$ is positive definite, so $Z = \\operatorname{Tr} e^H > 0$. The number $\\operatorname{Tr}(K e^H) = \\operatorname{Tr}(e^{H/2} K e^{H/2})$ is real, so $c = \\operatorname{Tr}(K e^H)/Z$ is real.",
+      "uses": []
+     },
+     {
+      "id": "s:klein",
+      "slogan": "Apply Klein's inequality to the exponential at $H + cI$ and $H + K$.",
+      "detail": "The exponential is a strictly [convex function](c:convex-function) with derivative $\\exp$. Since $H$ and $cI$ commute, $e^{H + cI} = e^c e^H$. Klein's inequality gives $\\operatorname{Tr} e^{H+K} \\ge e^c Z + e^c \\operatorname{Tr}[e^H(K - cI)]$.",
+      "uses": [
+       "nm:statphys-klein-inequality"
+      ]
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the linear term with the choice of $c$ and take logarithms.",
+      "detail": "The term $\\operatorname{Tr}[e^H(K - cI)]$ is zero by the choice of $c$. So $\\operatorname{Tr} e^{H+K} \\ge e^c Z$, which is $\\log(\\operatorname{Tr} e^{H+K}/Z) \\ge c$, a bound on the [partition function](c:partition-function) ratio.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Read the equality case from the equality case of Klein's inequality.",
+      "detail": "Equality holds exactly when Klein's inequality is an equality, that is, when $H + cI = H + K$. So $K = cI$. Conversely, $K = aI$ gives the value $a$ on both sides.",
+      "uses": [
+       "nm:statphys-klein-inequality"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:mean",
+      "s:klein"
+     ],
+     [
+      "s:klein",
+      "s:cancel"
+     ],
+     [
+      "s:cancel",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:self-adjoint-operator": "Both matrices are self-adjoint, so all traces in the inequality are real.",
+     "c:density-matrix": "The Gibbs density matrix of $H$ defines the mean of $K$ on the right side.",
+     "c:matrix-exponential": "The inequality compares traces of matrix exponentials.",
+     "c:convex-function": "Convexity of the exponential drives Klein's inequality.",
+     "c:partition-function": "Both traces of exponentials are partition functions of quantum systems."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "E. A. Carlen and E. H. Lieb, Some trace inequalities for exponential and logarithmic functions, arXiv:1709.05450v3, Appendix A, derivation of (A.3), p. 29.",
+     "url": "https://arxiv.org/pdf/1709.05450",
+     "note": "Carlen and Lieb choose $A = H + c$, $B = H + K$ and $c = \\operatorname{Tr}[e^H K]/\\operatorname{Tr}[e^H]$ in Klein's inequality. These steps follow them and add the equality case."
+    }
+   }
+  ],
+  "new_concepts": []
+ },
+ {
+  "id": "nm:statphys-klein-inequality",
+  "statement": "For a [convex function](c:convex-function) $f$ on an interval $I$ and [self-adjoint](c:self-adjoint-operator) matrices $A$, $B$ with spectra in $I$ (the spectrum of $A$ in the interior), $\\operatorname{Tr} f(B) - \\operatorname{Tr} f(A) \\ge \\operatorname{Tr}[f'(A)(B - A)]$. For [strictly convex](c:strictly-convex-function) $f$, equality holds only for $A = B$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The function $f\\colon I \\to \\mathbb{R}$ is a [convex function](c:convex-function), differentiable at every interior point of the interval $I$.",
+    "concept": "c:convex-function"
+   },
+   {
+    "id": "h:spectra",
+    "text": "The matrices $A$ and $B$ are [self-adjoint](c:self-adjoint-operator). Every [eigenvalue](c:eigenvalue) of $A$ is interior to $I$, and every eigenvalue of $B$ lies in $I$.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:strict",
+    "text": "For the equality case, $f$ is a [strictly convex function](c:strictly-convex-function) on $I$.",
+    "concept": "c:strictly-convex-function"
+   }
+  ],
+  "conclusion": "$\\operatorname{Tr} f(B) - \\operatorname{Tr} f(A) \\ge \\operatorname{Tr}[f'(A)(B - A)]$, with equality if and only if $A = B$ when $f$ is strictly convex. For $f(x) = x \\log x$ this gives $\\operatorname{Tr}[B(\\log B - \\log A)] \\ge \\operatorname{Tr}(B - A)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "spectral-double-sum",
+    "name": "Spectral double sum",
+    "slogan": "Expand both matrices in spectral projections, so that the trace gap becomes a sum of tangent-line gaps with nonnegative weights.",
+    "scope": "The whole statement, with the equality case and the relative-entropy case $f(x) = x \\log x$.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes every tangent-line gap $f(\\mu) - f(\\lambda) - f'(\\lambda)(\\mu - \\lambda)$ nonnegative.",
+      "steps": [
+       "s:tangent",
+       "s:positivity"
+      ]
+     },
+     {
+      "h": "h:spectra",
+      "why": "Self-adjointness gives spectral decompositions, and the spectral conditions put the tangent points in the interior of $I$.",
+      "steps": [
+       "s:expand",
+       "s:positivity"
+      ]
+     },
+     {
+      "h": "h:strict",
+      "why": "Strict convexity makes the off-diagonal gaps positive, which forces the projections to align.",
+      "steps": [
+       "s:tangent",
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tangent",
+      "slogan": "Show that the tangent line of a convex function lies below its graph.",
+      "detail": "For interior $\\lambda$, the slope $(f(x) - f(\\lambda))/(x - \\lambda)$ is nondecreasing in $x$ and tends to $f'(\\lambda)$. So $d(x, \\lambda) = f(x) - f(\\lambda) - f'(\\lambda)(x - \\lambda) \\ge 0$. A midpoint argument shows $d(x, \\lambda) > 0$ for $x \\ne \\lambda$ when $f$ is strictly convex.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Write the [trace](c:trace-of-a-matrix) gap as a double sum over pairs of [orthogonal projections](c:orthogonal-projection).",
+      "detail": "With $A = \\sum_i \\lambda_i P_i$, $B = \\sum_j \\mu_j Q_j$ and $\\sum_i P_i = \\sum_j Q_j = I$, the gap $\\operatorname{Tr} f(B) - \\operatorname{Tr} f(A) - \\operatorname{Tr}[f'(A)(B - A)]$ equals $\\sum_{i,j} d(\\mu_j, \\lambda_i) \\operatorname{Tr}(P_i Q_j)$.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:positivity",
+      "slogan": "Show that every weight $\\operatorname{Tr}(P_i Q_j)$ is a squared Hilbert-Schmidt norm.",
+      "detail": "Cyclicity of the trace gives $\\operatorname{Tr}(P_i Q_j) = \\operatorname{Tr}((P_i Q_j)^*(P_i Q_j)) \\ge 0$. Each gap $d(\\mu_j, \\lambda_i)$ is nonnegative, so the double sum is nonnegative.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Force the projections of $B$ onto the eigenspaces of $A$ when equality holds.",
+      "detail": "Under strict convexity, equality kills every pair with $\\mu_j \\ne \\lambda_i$, so $Q_j P_i = 0$ for these pairs. Then $B P_i = \\lambda_i P_i$ for every $i$, and summing over $i$ gives $B = A$. The choice $f(x) = x \\log x$ then gives the [matrix logarithm](c:matrix-logarithm) form.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tangent",
+      "s:positivity"
+     ],
+     [
+      "s:expand",
+      "s:positivity"
+     ],
+     [
+      "s:positivity",
+      "s:equality"
+     ],
+     [
+      "s:tangent",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:convex-function": "Convexity of $f$ gives the tangent-line bound behind the inequality.",
+     "c:strictly-convex-function": "Strict convexity gives the equality case $A = B$.",
+     "c:self-adjoint-operator": "Self-adjoint matrices have real spectra and spectral decompositions.",
+     "c:eigenvalue": "The eigenvalues of $A$ are the tangent points of $f$.",
+     "c:trace-of-a-matrix": "The inequality compares traces of matrix functions.",
+     "c:orthogonal-projection": "Spectral projections give the nonnegative weights of the double sum.",
+     "c:matrix-logarithm": "The case $f(x) = x \\log x$ uses the matrix logarithm of $A$ and $B$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "E. A. Carlen and E. H. Lieb, Some trace inequalities for exponential and logarithmic functions, arXiv:1709.05450v3, Appendix A, (A.1) and (A.2), p. 29.",
+     "url": "https://arxiv.org/pdf/1709.05450",
+     "note": "Carlen and Lieb give the double-sum identity and the equality case. These steps add the tangent-line bound and an explicit argument that $B P_i = \\lambda_i P_i$."
+    }
+   }
+  ],
+  "new_concepts": []
+ }
+]
