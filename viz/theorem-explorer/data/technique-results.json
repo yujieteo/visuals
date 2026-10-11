@@ -3899,6 +3899,193 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-moebius-inversion",
+   "name": "Möbius inversion on divisors",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CO"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CO"
+   ],
+   "statement": "Let μ(n)=(−1)^k if n is a product of k distinct primes, and μ(n)=0 if some square greater than 1 divides n. Let R be a commutative ring and f,g:ℕ_{>0}→R. Then g(n)=∑_{d|n} f(d) for all n≥1 if and only if f(n)=∑_{d|n} μ(d) g(n/d) for all n≥1. The same holds when R is only an abelian group, with μ(d)g(n/d) read as an integer multiple.",
+   "hypotheses": [
+    "The sums run over positive divisors d of n.",
+    "f and g take values in a commutative ring or an abelian group. No other condition holds.",
+    "Both equivalent statements must hold for every n≥1."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof uses only divisor combinatorics and the binomial theorem. No catalog theorem is cited.",
+   "concepts": [
+    "Möbius function",
+    "Dirichlet convolution",
+    "squarefree"
+   ],
+   "concept_prerequisites": [
+    "c:arithmetic-function",
+    "c:squarefree-integer"
+   ],
+   "definitions": [
+    {
+     "name": "Möbius function",
+     "text": "μ(1)=1, μ(n)=(−1)^k if n has k distinct prime factors and no repeated factor, and μ(n)=0 otherwise."
+    },
+    {
+     "name": "Dirichlet convolution",
+     "text": "(a∗b)(n)=∑_{d|n}a(d)b(n/d). The statement says that g=f∗1 if and only if f=μ∗g."
+    },
+    {
+     "name": "squarefree",
+     "text": "An integer is squarefree if no square greater than 1 divides it."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/ArithmeticFunction/Moebius.lean#L235-L242",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.ArithmeticFunction.Moebius",
+    "declaration": "sum_eq_iff_sum_mul_moebius_eq",
+    "lines": [
+     235,
+     242
+    ],
+    "module_sha256": "8615814323ab1e63b1aec5f4ba7b34586f17244c4d54a4f396d07a628c783111",
+    "excerpt": "/-- Möbius inversion for functions to a `Ring`. -/\ntheorem sum_eq_iff_sum_mul_moebius_eq [NonAssocRing R] {f g : ℕ → R} :\n    (∀ n > 0, ∑ i ∈ n.divisors, f i = g n) ↔\n      ∀ n > 0, ∑ x ∈ n.divisorsAntidiagonal, (μ x.fst : R) * g x.snd = f n := by\n  rw [sum_eq_iff_sum_smul_moebius_eq]\n  apply forall_congr'\n  refine fun a => imp_congr_right fun _ => (sum_congr rfl fun x _hx => ?_).congr_left\n  rw [zsmul_eq_mul]",
+    "excerpt_sha256": "aba3db056be549d08d6ba643594b7fbd5a696071f6fdd8541ff36ad3e6f6b02f",
+    "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the equivalence for functions on ℕ valued in a non-associative ring."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/ArithmeticFunction/Moebius.lean#L205-L233",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.ArithmeticFunction.Moebius",
+     "declaration": "sum_eq_iff_sum_smul_moebius_eq",
+     "lines": [
+      205,
+      233
+     ],
+     "module_sha256": "8615814323ab1e63b1aec5f4ba7b34586f17244c4d54a4f396d07a628c783111",
+     "excerpt": "/-- Möbius inversion for functions to an `AddCommGroup`. -/\ntheorem sum_eq_iff_sum_smul_moebius_eq [AddCommGroup R] {f g : ℕ → R} :\n    (∀ n > 0, ∑ i ∈ n.divisors, f i = g n) ↔\n      ∀ n > 0, ∑ x ∈ n.divisorsAntidiagonal, μ x.fst • g x.snd = f n := by\n  let f' : ArithmeticFunction R := ⟨fun x => if x = 0 then 0 else f x, ite_eq_left rfl⟩\n  let g' : ArithmeticFunction R := ⟨fun x => if x = 0 then 0 else g x, ite_eq_left rfl⟩\n  trans (ζ : ArithmeticFunction ℤ) • f' = g'\n  · rw [ArithmeticFunction.ext_iff]\n    apply forall_congr'\n    intro n\n    cases n with\n    | zero => simp\n    | succ n =>\n      rw [coe_zeta_smul_apply]\n      simp only [forall_prop_of_true, succ_pos', f', g', coe_mk, succ_ne_zero, ite_false]\n      rw [sum_congr rfl fun x hx => ite_eq_right (pos_of_mem_divisors hx).ne']\n  trans μ • g' = f'\n  · constructor <;> intro h <;>\n      simp only [← h, ← mul_smul, moebius_mul_coe_zeta, coe_zeta_mul_moebius, one_smul]\n  · rw [ArithmeticFunction.ext_iff]\n    apply forall_congr'\n    intro n\n    cases n with\n    | zero => simp\n    | succ n =>\n      simp only [forall_prop_of_true, succ_pos', smul_apply, f', g', coe_mk, succ_ne_zero,\n        ite_false]\n      rw [sum_congr rfl fun x hx => ?_]\n      rw [ite_eq_right (pos_of_mem_divisors (snd_mem_divisors_of_mem_antidiagonal hx)).ne']",
+     "excerpt_sha256": "286d7c2d82b71f1f7c39c323fa1f2d0f423825d9e4eb4937a4dbe605e9455051",
+     "attribution": "/-\nCopyright (c) 2020 Aaron Anderson. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Aaron Anderson\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the equivalence for functions valued in an abelian group. It matches the last claim of the statement."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Key lemma: ∑_{d|n} μ(d)=1 if n=1, and 0 if n>1. For n=1 the sum is μ(1)=1. For n>1 write n=p₁^{a₁}…p_k^{a_k} with k≥1. Only divisors d that are products of distinct primes among p₁,…,p_k give nonzero terms. There are C(k,j) such d with j primes, and each has μ(d)=(−1)^j. So the sum is ∑_{j=0}^k C(k,j)(−1)^j=(1−1)^k=0.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Forward direction. Assume g(n)=∑_{e|n} f(e) for all n. Then for fixed n, ∑_{d|n} μ(d) g(n/d)=∑_{d|n} μ(d) ∑_{e|n/d} f(e).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The pairs (d,e) with d|n and e|(n/d) are exactly the pairs with e|n and d|(n/e). Both conditions say that de divides n. So we can swap the order of summation: ∑_{e|n} f(e) ∑_{d|n/e} μ(d).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "By the key lemma the inner sum is 1 when n/e=1 and 0 otherwise. Only e=n survives, so the total is f(n).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Converse direction. Assume f(n)=∑_{d|n} μ(d) g(n/d) for all n. Then ∑_{d|n} f(d)=∑_{d|n} ∑_{e|d} μ(e) g(d/e). Put m=d/e. The pairs (d,e) with e|d|n correspond to pairs (m,e) with me|n.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Swap the sums: ∑_{m|n} g(m) ∑_{e|n/m} μ(e). By the key lemma the inner sum is 1 only for m=n. So the total is g(n). Both directions are proved.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Over an abelian group, the same computation holds. Each term μ(d)g(n/d) is an integer multiple of a group element, and the sums are finite, so rearrangement is valid.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Counting binary Lyndon words of length 6 and 12",
+    "goal": "A word is primitive if it is not a power u^a with a≥2. A Lyndon word is the least word in a conjugacy class of a primitive word. Count the Lyndon words of length n over {0,1}.",
+    "hypotheses": [
+     "Words have length n≥1 over a 2 letter alphabet.",
+     "Two words are conjugate if one is a cyclic rotation of the other."
+    ],
+    "why_theorem_applies": "Let P(d) be the number of primitive words of length d. We show ∑_{d|n}P(d)=2ⁿ for all n. Then the forward and converse directions of the theorem give P(n) in terms of powers of 2.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Each word w of length n is a power u^{n/d} of a primitive word u of length d, with d|n. We claim d is unique. Suppose w=u^{n/d}=v^{n/e} with u,v primitive and |u|=d, |v|=e. Then w is invariant under the cyclic rotation by d and by e positions, hence by the subgroup of ℤ/n generated by them, which is generated by g=gcd(d,e).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "A word invariant under rotation by g, with g|n, is the power z^{n/g} of its prefix z of length g. Since g|d, u=z^{d/g}. Primitivity of u forces d=g. In the same way e=g. So d=e, and u=v.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Hence the map w↦(d,u) is a bijection between words of length n and pairs (d,u) with d|n and u primitive of length d. So 2ⁿ=∑_{d|n}P(d).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Apply Möbius inversion with g(n)=2ⁿ and f=P: P(n)=∑_{d|n} μ(d) 2^{n/d}.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "A primitive word of length n has n distinct rotations. If two rotations by i<j agree, then the word is invariant under rotation by j−i, which would force a proper period dividing n (as in the claim above). So each conjugacy class of a primitive word has n elements, and the Lyndon count is L(n)=P(n)/n.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "For n=6 the divisors are 1,2,3,6 with μ=1,−1,−1,1. P(6)=2⁶−2³−2²+2¹=64−8−4+2=54. So L(6)=54/6=9.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "For n=12 the divisors are 1,2,3,4,6,12 with μ=1,−1,−1,0,1,0. P(12)=2¹²−2⁶−2⁴+2²=4096−64−16+4=4020. So L(12)=4020/12=335.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Check n=6 by hand: the 9 Lyndon words are 000001, 000011, 000101, 000111, 001011, 001101, 001111, 010111, 011111. This confirms the count.",
+      "uses": []
+     }
+    ],
+    "result": "There are 9 binary Lyndon words of length 6 and 335 of length 12. In general L(n)=(1/n)∑_{d|n}μ(d)2^{n/d}.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Inversion needs the relation for every n, not only for some n. Sections over divisor-closed sets need the variants for finite divisor-closed sets.",
+    "A different weighting needs a different inverse. For sums over multiples (g(n)=∑_{n|m}f(m)) the same μ gives an inverse, but the sums are infinite and need convergence.",
+    "The Lyndon count formula is a count of necklaces without symmetry. It is not a count of all necklaces."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }
