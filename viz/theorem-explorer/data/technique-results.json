@@ -8142,6 +8142,1804 @@
     "decision": "candidate; semantic review remains necessary"
    },
    "status": "candidate"
+  },
+  {
+   "id": "nm:technique-euler-zeta-even-values-bernoulli",
+   "name": "Euler formula for ζ(2k) in terms of Bernoulli numbers",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "statement": "Let B_n be the Bernoulli numbers, defined by t/(eᵗ−1)=∑_{n≥0}B_n tⁿ/n! with B₁=−1/2. Then for every integer k≥1, ζ(2k)=∑_{n≥1} n^{−2k}=(−1)^{k+1}(2π)^{2k}B_{2k}/(2·(2k)!). Equivalently ζ(2k)=(−1)^{k+1}2^{2k−1}π^{2k}B_{2k}/(2k)!. In particular ζ(2k)/π^{2k} is rational, and B_{2k} has sign (−1)^{k+1}. The proof also gives πz cot πz=∑_{k≥0}(−1)^k B_{2k}(2πz)^{2k}/(2k)! for |z|<1.",
+   "hypotheses": [
+    "k is an integer with k≥1.",
+    "The Bernoulli numbers use the convention B₁=−1/2. With B₁=+1/2 the odd index changes sign, but B_{2k} does not change.",
+    "The power series identities hold for |z|<1, the largest disc around 0 that contains no pole of cot πz other than 0."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-cotangent-partial-fractions",
+     "reason": "Step 5 expands π z cot π z using the partial fraction series."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Bernoulli numbers",
+    "Riemann zeta value",
+    "hyperbolic cotangent"
+   ],
+   "concept_prerequisites": [
+    "c:bernoulli-number",
+    "c:riemann-zeta-function",
+    "c:power-series"
+   ],
+   "definitions": [
+    {
+     "name": "Bernoulli numbers",
+     "text": "B_n is n! times the coefficient of tⁿ in the power series of t/(eᵗ−1). The recursion ∑_{j=0}^{m}C(m+1,j)B_j=0 for m≥1 and B₀=1 gives B₁=−1/2, B₂=1/6, B₄=−1/30 and B₁₂=−691/2730."
+    },
+    {
+     "name": "Riemann zeta value",
+     "text": "ζ(s)=∑_{n≥1}n^{−s} for Re s>1."
+    },
+    {
+     "name": "hyperbolic cotangent",
+     "text": "coth w=(e^w+e^{−w})/(e^w−e^{−w}). It satisfies coth(iu)=−i cot u."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L200-L212",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+    "declaration": "riemannZeta_two_mul_nat",
+    "lines": [
+     200,
+     212
+    ],
+    "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+    "excerpt": "/-- Explicit formula for `ζ (2 * k)`, for `k ∈ ℕ` with `k ≠ 0`, in terms of the Bernoulli number\n`bernoulli (2 * k)`.\n\nCompare `hasSum_zeta_nat` for a version formulated in terms of a sum over `1 / n ^ (2 * k)`, and\n`riemannZeta_neg_nat_eq_bernoulli` for values at negative integers (equivalent to the above via\nthe functional equation). -/\ntheorem riemannZeta_two_mul_nat {k : ℕ} (hk : k ≠ 0) :\n    riemannZeta (2 * k) = (-1) ^ (k + 1) * (2 : ℂ) ^ (2 * k - 1)\n      * (π : ℂ) ^ (2 * k) * bernoulli (2 * k) / (2 * k)! := by\n  convert congr(($((hasSum_zeta_nat hk).tsum_eq) : ℂ))\n  · rw [← Nat.cast_two, ← Nat.cast_mul, zeta_nat_eq_tsum_of_gt_one (by lia)]\n    simp [push_cast]\n  · norm_cast",
+    "excerpt_sha256": "3c00ab2e9a6333e1d16a27578e48bb4e42196423451128454902419cbd3caf66",
+    "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves ζ(2k)=(−1)^{k+1}2^{2k−1}π^{2k}B_{2k}/(2k)! for k≠0, in the form of the statement. The source proof goes through Fourier series of Bernoulli polynomials, not through the cotangent expansion used here."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L226-L230",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+     "declaration": "riemannZeta_two",
+     "lines": [
+      226,
+      230
+     ],
+     "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+     "excerpt": "theorem riemannZeta_two : riemannZeta 2 = (π : ℂ) ^ 2 / 6 := by\n  convert congr(($hasSum_zeta_two.tsum_eq : ℂ))\n  · rw [← Nat.cast_two, zeta_nat_eq_tsum_of_gt_one one_lt_two]\n    simp [push_cast]\n  · norm_cast",
+     "excerpt_sha256": "79ebdc2709e2b088e8f29cdb4505cc0a06a01764648e8b5074f02ca877d946a0",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the case k=1."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Bernoulli series. The function φ(t)=t/(eᵗ−1) with φ(0)=1 is holomorphic for |t|<2π. The zeros of eᵗ−1 are the points 2πim, and the point t=0 is a removable singularity. So the Taylor series of φ at 0 converges for |t|<2π. Its coefficients are B_n/n!, because they satisfy the same recursion as the formal definition.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Parity. Compute φ(t)+t/2=t(eᵗ+1)/(2(eᵗ−1))=(t/2)coth(t/2). This function is even. So the Taylor series of φ(t)+t/2 has no odd terms. Since the t term of φ is −t/2, we get B₁=−1/2 and B_n=0 for odd n≥3.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Switch to cotangent. Put t=2iu. Then (t/2)coth(t/2)=iu coth(iu)=iu(−i cot u)=u cot u. By step 2, u cot u=∑_{k≥0}B_{2k}(2iu)^{2k}/(2k)!=∑_{k≥0}(−1)^k B_{2k}(2u)^{2k}/(2k)! for |u|<π.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Put u=πz. Then πz cot πz=∑_{k≥0}(−1)^k B_{2k}(2πz)^{2k}/(2k)! for |z|<1.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Zeta expansion. By the partial fraction expansion of π cot πz, πz cot πz=1+∑_{n≥1}2z²/(z²−n²) for z∉ℤ. For |z|<1 write 2z²/(z²−n²)=−2(z/n)²/(1−(z/n)²)=−2∑_{k≥1}(z/n)^{2k}. The double series is absolutely convergent, because ∑_n∑_k|z/n|^{2k}≤∑_n(|z|²/n²)/(1−|z|²)<∞. So we may swap the sums. We get πz cot πz=1−2∑_{k≥1}ζ(2k)z^{2k}.",
+      "uses": [
+       "nm:technique-cotangent-partial-fractions"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Compare. The series of steps 4 and 5 are two power series that agree on |z|<1. So their coefficients are equal. For k≥1 this gives −2ζ(2k)=(−1)^k B_{2k}(2π)^{2k}/(2k)!. Solve for ζ(2k) to get ζ(2k)=(−1)^{k+1}(2π)^{2k}B_{2k}/(2(2k)!).",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Consequences. Since ζ(2k)>1, we get |B_{2k}|=2(2k)!ζ(2k)/(2π)^{2k}>2(2k)!/(2π)^{2k}. The sign of B_{2k} is (−1)^{k+1}. As ζ(2k)→1, |B_{2k}|∼2(2k)!/(2π)^{2k}. So the Bernoulli numbers grow faster than any geometric sequence, and the Taylor series of t/(eᵗ−1) has radius exactly 2π.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "The values ζ(2) to ζ(12) and the growth of B_{2k}",
+    "goal": "Compute ζ(2k)/π^{2k} for k=1,…,6 from Bernoulli numbers, and test the asymptotic formula for |B_{20}|.",
+    "hypotheses": [
+     "The Bernoulli numbers come from the recursion ∑_{j=0}^{m}C(m+1,j)B_j=0.",
+     "All arithmetic uses exact fractions. Decimal checks use 25 digit arithmetic."
+    ],
+    "why_theorem_applies": "The theorem applies for every k≥1. Each ζ(2k)/π^{2k} equals (−1)^{k+1}2^{2k−1}B_{2k}/(2k)!.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "The recursion gives B₂=1/6, B₄=−1/30, B₆=1/42, B₈=−1/30, B₁₀=5/66, B₁₂=−691/2730 and B₂₀=−174611/330.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For k=1 the factor is 2¹·(1/6)/2!=1/6. So ζ(2)=π²/6. For k=2 the factor is −2³·(−1/30)/4!=1/90. So ζ(4)=π⁴/90.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The same computation gives ζ(6)/π⁶=1/945, ζ(8)/π⁸=1/9450, ζ(10)/π¹⁰=1/93555 and ζ(12)/π¹²=691/638512875.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Decimal check. The formula gives ζ(12)=1.0002460865533080483, and a direct numerical zeta routine gives the same 20 digits. For ζ(10) both give 1.0009945751278180853.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Growth test. For k=10 the bound is 2·20!/(2π)²⁰=529.1237377. The exact value is |B₂₀|=174611/330=529.1242424. The ratio is 1.000000954, which equals ζ(20)=1.000000954, as the theorem predicts.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "For k=15 the same ratio is 1.000000001. So |B₃₀|=601580873.9 agrees with 2·30!/(2π)³⁰ to nine digits.",
+      "uses": []
+     }
+    ],
+    "result": "ζ(2),ζ(4),…,ζ(12) equal π²/6, π⁴/90, π⁶/945, π⁸/9450, π¹⁰/93555 and 691π¹²/638512875. The Bernoulli numbers satisfy |B_{2k}|=2(2k)!ζ(2k)/(2π)^{2k}.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The formula covers only even positive arguments. No closed form in π is known for ζ(3) or for other odd values.",
+    "The proof needs the radius 2π for the Bernoulli series. This radius comes from the poles of the cotangent, so a proof that assumes the radius would be circular.",
+    "The sign convention B₁=−1/2 matters for the odd index formulas in other results. It does not change B_{2k}."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q810431",
+      "relation": "refines",
+      "reason": "The catalog record is the Basel problem ζ(2)=π²/6. This entry gives all even values and links them to the Bernoulli numbers."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-gamma-gauss-limit-formula",
+   "name": "Gauss limit formula for the Gamma function",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.CV"
+   ],
+   "statement": "For every complex s that is not a pole of Γ (that is, s∉{0,−1,−2,…}), Γ(s)=lim_{n→∞} nˢ·n!/(s(s+1)⋯(s+n)). When Re s>0, Γ(s)=lim_{n→∞}∫₀ⁿ(1−t/n)ⁿt^{s−1}dt, and the n-th integral equals nˢB(s,n+1). The relative error of the n-th term is of order 1/n.",
+   "hypotheses": [
+    "Γ(s)=∫₀^∞e^{−t}t^{s−1}dt for Re s>0. For other s, Γ is the meromorphic continuation, which obeys Γ(s+1)=sΓ(s).",
+    "nˢ means exp(s ln n) for n≥1.",
+    "The limit is taken over integers n."
+   ],
+   "prerequisites": [
+    {
+     "id": "wd:Q1067156",
+     "reason": "Step 3 passes the limit under the integral sign by dominated convergence."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Gauss sequence",
+    "Euler Beta integral",
+    "dominated convergence"
+   ],
+   "concept_prerequisites": [
+    "c:gamma-function",
+    "c:euler-beta-function",
+    "c:improper-integral"
+   ],
+   "definitions": [
+    {
+     "name": "Gauss sequence",
+     "text": "G_n(s)=nˢ n!/∏_{j=0}^{n}(s+j). It is defined when s is not in {0,−1,…,−n}."
+    },
+    {
+     "name": "Euler Beta integral",
+     "text": "B(u,v)=∫₀¹x^{u−1}(1−x)^{v−1}dx for Re u>0 and Re v>0."
+    },
+    {
+     "name": "dominated convergence",
+     "text": "If fₙ→f pointwise and |fₙ|≤g with g integrable, then ∫fₙ→∫f."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L333-L360",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+    "declaration": "GammaSeq_tendsto_Gamma",
+    "lines": [
+     333,
+     360
+    ],
+    "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+    "excerpt": "/-- Euler's limit formula for the complex Gamma function. -/\ntheorem GammaSeq_tendsto_Gamma (s : ℂ) : Tendsto (GammaSeq s) atTop (𝓝 <| Gamma s) := by\n  suffices ∀ m : ℕ, ⌊1 - s.re⌋₊ = m → Tendsto (GammaSeq s) atTop (𝓝 <| Gamma s) by tauto\n  intro m\n  induction m generalizing s with intro hs\n  | zero => -- Base case: `0 < re s`, so Gamma is given by the integral formula\n    rw [Nat.floor_eq_zero, sub_lt_self_iff] at hs\n    apply (approx_Gamma_integral_tendsto_Gamma_integral hs).congr'\n    filter_upwards [eventually_ne_atTop 0] with n hn using\n      (GammaSeq_eq_approx_Gamma_integral hs hn).symm\n  | succ m IH => -- Induction step: use recurrence formulae in `s` for Gamma and GammaSeq\n    -- Silly case `s = 0`: both sides are zero\n    rcases eq_or_ne s 0 with rfl | hsne\n    · unfold GammaSeq\n      simp [Finset.prod_range_succ']\n    specialize IH (s + 1) ?_\n    · rw [Nat.floor_eq_iff' (by lia)] at hs\n      have : s.re ≤ -m := by grind\n      rw [Nat.floor_eq_iff <| by simpa using (show s.re ≤ 0 by grind)]\n      grind [add_re, one_re]\n    rw [Gamma_add_one _ hsne] at IH\n    have := (IH.div_const s).congr' <| by\n      filter_upwards [eventually_ne_atTop 0] with n using GammaSeq_add_one_left s\n    simp only [mul_comm _ (s.GammaSeq _)] at this\n    rwa [mul_div_cancel_left₀ _ hsne, ← mul_one (Gamma s),\n      tendsto_mul_iff_of_ne_zero _ (one_ne_zero' ℂ)] at this\n    simp_rw [add_assoc]\n    exact tendsto_natCast_div_add_atTop (1 + s)",
+    "excerpt_sha256": "ea7deb39197e244b3507af205d9e730d640de25e104c5eb803c60fbcc47e67f5",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that the Gauss sequence tends to Γ(s) for every complex s. The source name occurs in the Complex and the Real namespace. This record is the Complex one."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L232-L234",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "GammaSeq_eq_betaIntegral_of_re_pos",
+     "lines": [
+      232,
+      234
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "theorem GammaSeq_eq_betaIntegral_of_re_pos {s : ℂ} (hs : 0 < re s) (n : ℕ) :\n    GammaSeq s n = (n : ℂ) ^ s * betaIntegral s (n + 1) := by\n  rw [GammaSeq, betaIntegral_eval_nat_add_one_right hs n, ← mul_div_assoc]",
+     "excerpt_sha256": "6b2ff3cd8f9b82819b66e0167f92d6e95578011e729f84745cc710244f00879a",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves step 4 and step 5 together: G_n(s)=nˢB(s,n+1) for Re s>0."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L270-L331",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "approx_Gamma_integral_tendsto_Gamma_integral",
+     "lines": [
+      270,
+      331
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- The main technical lemma for `GammaSeq_tendsto_Gamma`, expressing the integral defining the\nGamma function for `0 < re s` as the limit of a sequence of integrals over finite intervals. -/\ntheorem approx_Gamma_integral_tendsto_Gamma_integral {s : ℂ} (hs : 0 < re s) :\n    Tendsto (fun n : ℕ => ∫ x : ℝ in 0..n, ((1 - x / n) ^ n : ℝ) * (x : ℂ) ^ (s - 1)) atTop\n      (𝓝 <| Gamma s) := by\n  rw [Gamma_eq_integral hs]\n  -- We apply dominated convergence to the following function, which we will show is uniformly\n  -- bounded above by the Gamma integrand `exp (-x) * x ^ (re s - 1)`.\n  let f : ℕ → ℝ → ℂ := fun n =>\n    indicator (Ioc 0 (n : ℝ)) fun x : ℝ => ((1 - x / n) ^ n : ℝ) * (x : ℂ) ^ (s - 1)\n  -- integrability of f\n  have f_ible : ∀ n : ℕ, Integrable (f n) (volume.restrict (Ioi 0)) := by\n    intro n\n    rw [integrable_indicator_iff (measurableSet_Ioc : MeasurableSet (Ioc (_ : ℝ) _)), IntegrableOn,\n      Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self, ← IntegrableOn, ←\n      intervalIntegrable_iff_integrableOn_Ioc_of_le (by positivity : (0 : ℝ) ≤ n)]\n    apply IntervalIntegrable.continuousOn_mul\n    · refine intervalIntegral.intervalIntegrable_cpow' ?_\n      rwa [sub_re, one_re, ← zero_sub, sub_lt_sub_iff_right]\n    · fun_prop\n  -- pointwise limit of f\n  have f_tends : ∀ x : ℝ, x ∈ Ioi (0 : ℝ) →\n      Tendsto (fun n : ℕ => f n x) atTop (𝓝 <| ↑(Real.exp (-x)) * (x : ℂ) ^ (s - 1)) := by\n    intro x hx\n    apply Tendsto.congr'\n    · change ∀ᶠ n : ℕ in atTop, ↑((1 - x / n) ^ n) * (x : ℂ) ^ (s - 1) = f n x\n      filter_upwards [eventually_ge_atTop ⌈x⌉₊] with n hn\n      rw [Nat.ceil_le] at hn\n      dsimp only [f]\n      rw [indicator_of_mem]\n      exact ⟨hx, hn⟩\n    · simp_rw [mul_comm]\n      refine (Tendsto.comp (continuous_ofReal.tendsto _) ?_).const_mul _\n      convert Real.tendsto_one_add_div_pow_exp (-x) using 1\n      ext1 n\n      rw [neg_div, ← sub_eq_add_neg]\n  -- let `convert` identify the remaining goals\n  convert!\n    tendsto_integral_of_dominated_convergence _ (fun n => (f_ible n).1)\n      (Real.GammaIntegral_convergent hs) _\n      ((ae_restrict_iff' measurableSet_Ioi).mpr (ae_of_all _ f_tends)) using 1\n    -- limit of f is the integrand we want\n\n  -- limit of f is the integrand we want\n  · ext1 n\n    rw [MeasureTheory.integral_indicator (measurableSet_Ioc : MeasurableSet (Ioc (_ : ℝ) _)),\n      intervalIntegral.integral_of_le (by positivity : 0 ≤ (n : ℝ)),\n      Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self]\n  -- f is uniformly bounded by the Gamma integrand\n  · intro n\n    rw [ae_restrict_iff' measurableSet_Ioi]\n    filter_upwards with x hx\n    simp only [mem_Ioi, f] at hx ⊢\n    rcases lt_or_ge (n : ℝ) x with (hxn | hxn)\n    · rw [indicator_of_notMem (notMem_Ioc_of_gt hxn), norm_zero,\n        mul_nonneg_iff_right_nonneg_of_pos (exp_pos _)]\n      positivity\n    · rw [indicator_of_mem (mem_Ioc.mpr ⟨mem_Ioi.mp hx, hxn⟩), norm_mul, Complex.norm_of_nonneg\n          (pow_nonneg (sub_nonneg.mpr <| div_le_one_of_le₀ hxn <| by positivity) _),\n          norm_cpow_eq_rpow_re_of_pos hx, sub_re, one_re]\n      gcongr\n      exact one_sub_div_pow_le_exp_neg hxn",
+     "excerpt_sha256": "0da8c6cb32c1c968867a84f4e102fbe49edf24b9e2de6e8a2cb89b8b8d3f2b6c",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves step 3, the dominated convergence step."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Truncated integrals. For Re s>0 and n≥1 put fₙ(t)=(1−t/n)ⁿt^{s−1} for 0<t<n, and fₙ(t)=0 for t≥n.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Domination. For 0≤t<n we have 0≤1−t/n≤e^{−t/n}. Raising to the power n gives 0≤(1−t/n)ⁿ≤e^{−t}. So |fₙ(t)|≤e^{−t}t^{Re s−1}, which is integrable on (0,∞).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Limit. For fixed t, (1−t/n)ⁿ→e^{−t}, so fₙ(t)→e^{−t}t^{s−1}. By dominated convergence, ∫₀ⁿ(1−t/n)ⁿt^{s−1}dt=∫₀^∞fₙ→Γ(s).",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s4",
+      "text": "Scale. Substitute t=nu. Then ∫₀ⁿ(1−t/n)ⁿt^{s−1}dt=nˢ∫₀¹(1−u)ⁿu^{s−1}du=nˢB(s,n+1).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Evaluate B(s,n+1) by parts. For Re s>0 and n≥1, integrate u^{s−1}(1−u)ⁿ: the boundary terms [u^s(1−u)ⁿ/s]₀¹ vanish, and we get B(s,n+1)=(n/s)B(s+1,n). Repeat n times and use B(s+n,1)=1/(s+n). The result is B(s,n+1)=n!/(s(s+1)⋯(s+n)). Hence nˢB(s,n+1)=G_n(s), and G_n(s)→Γ(s) for Re s>0.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Recursion for G_n. Directly from the definition, G_n(s)=G_n(s+1)·(s+n+1)/(sn), valid when s and s+1,…,s+n+1 are nonzero.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Extend to all other s. Let s not be a pole and choose m≥0 with Re(s+m)>0. By step 5, G_n(s+m)→Γ(s+m). Apply step 6 m times. Each time, (s+j+n+1)/n→1, so G_n(s+j)→Γ(s+j+1)/(s+j)=Γ(s+j) by the recursion Γ(w+1)=wΓ(w). Going down from j=m−1 to j=0 gives G_n(s)→Γ(s).",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Error size. From G_n(s)=G_n(s+1)(s+n+1)/(sn) and the Beta form one finds G_n(s)/Γ(s)−1=−s(s+1)/(2n)+O(1/n²). This is a numerical observation in the application below. The proof above gives convergence but no rate.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Convergence of the Gauss sequence for s=1/2, s=−1/2 and s=1/2+i",
+    "goal": "Compute G_n(s) for growing n and compare with Γ(s), including a point with Re s<0 and a complex point.",
+    "hypotheses": [
+     "n=10, 100, 1000, 10000.",
+     "Γ(1/2)=√π=1.7724538509 and Γ(−1/2)=−2√π=−3.5449077018."
+    ],
+    "why_theorem_applies": "The theorem covers every s outside the pole set. The point s=−1/2 has Re s<0 and uses the recursion step.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For s=1/2 the sequence G_n(1/2) is 1.70927548, 1.76584159, 1.77178953 and 1.77238739 for n=10,100,1000,10000. The relative errors are −3.56·10⁻², −3.73·10⁻³, −3.75·10⁻⁴ and −3.75·10⁻⁵.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The relative error is close to −s(s+1)/(2n)=−0.375/n. So the convergence is only like 1/n.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For s=−1/2 the sequence is −3.58947851, −3.54934159, −3.54535084 and −3.54495201. The limit is Γ(−1/2)=−3.54490770. The relative errors are 1.257·10⁻², 1.2508·10⁻³, 1.250·10⁻⁴ and 1.250·10⁻⁵, close to 0.125/n.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "For s=1/2+i and n=1000 the value is 0.30030705−0.42532128i. The exact value is Γ(1/2+i)=0.30069462−0.42496788i. The difference is of order 4·10⁻⁴, as expected.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The method is exact in n for the Beta integral part. For Re s>0 it is the identity nˢB(s,n+1)=G_n(s), and this identity checks to all printed digits in the 25 digit calculation.",
+      "uses": []
+     }
+    ],
+    "result": "G_n(s)→Γ(s) at the rate 1/n for s=1/2, −1/2 and 1/2+i. The Gauss limit is a formula for Γ on the whole plane minus the poles.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The convergence is slow, with error about s(s+1)/(2n). Practical computation of Γ uses Stirling series or Lanczos formulas instead.",
+    "At a pole s=−m the sequence G_n(s) is undefined (zero denominator). Mathlib uses the convention that division by zero is zero, and then Γ(−m)=0, which is a convention and not a limit.",
+    "The proof for Re s>0 uses the integral. The extension uses only the recursion Γ(s+1)=sΓ(s)."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "wd:Q2734084",
+      "relation": "related",
+      "reason": "The catalog record is the Bohr-Mollerup theorem, which also characterizes Γ. The Gauss limit gives a formula, and the proof does not need log convexity."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-gamma-reflection-formula",
+   "name": "Euler reflection formula Γ(z)Γ(1−z)=π/sin(πz)",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CV",
+    "math.CA",
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.CV",
+    "math.CA",
+    "math.NT"
+   ],
+   "statement": "For every complex z∉ℤ, Γ(z)Γ(1−z)=π/sin(πz). Consequently Γ has no zeros, Γ(1/2)=√π, and |Γ(1/2+it)|²=π/cosh(πt) for real t. The gauss product satisfies the exact finite identity G_n(z)G_n(1−z)=n/((n+1−z)·z·∏_{j=1}^{n}(1−z²/j²)).",
+   "hypotheses": [
+    "z is complex and not an integer. At integers one factor of Γ(z)Γ(1−z) is at a pole, and sin(πz)=0.",
+    "Γ(1/2)>0 is used to fix the sign of the square root."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-gamma-gauss-limit-formula",
+     "reason": "Step 2 uses the Gauss limit for z and for 1−z."
+    },
+    {
+     "id": "nm:technique-euler-sine-product",
+     "reason": "Step 5 uses the sine product for the limit of the partial products."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Gauss sequence",
+    "Euler sine product"
+   ],
+   "concept_prerequisites": [
+    "c:gamma-function",
+    "c:sine-function",
+    "c:infinite-product"
+   ],
+   "definitions": [
+    {
+     "name": "Gauss sequence",
+     "text": "G_n(z)=nᶻ n!/∏_{j=0}^{n}(z+j). By the Gauss limit formula, G_n(z)→Γ(z) when z is not a pole."
+    },
+    {
+     "name": "Euler sine product",
+     "text": "sin(πz)=πz∏_{n≥1}(1−z²/n²), absolutely convergent for all complex z."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L396-L422",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+    "declaration": "Gamma_mul_Gamma_one_sub",
+    "lines": [
+     396,
+     422
+    ],
+    "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+    "excerpt": "/-- Euler's reflection formula for the complex Gamma function. -/\ntheorem Gamma_mul_Gamma_one_sub (z : ℂ) : Gamma z * Gamma (1 - z) = π / sin (π * z) := by\n  have pi_ne : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr pi_ne_zero\n  by_cases hs : sin (↑π * z) = 0\n  · -- first deal with silly case z = integer\n    rw [hs, div_zero]\n    rw [← neg_eq_zero, ← Complex.sin_neg, ← mul_neg, Complex.sin_eq_zero_iff, mul_comm] at hs\n    obtain ⟨k, hk⟩ := hs\n    rw [mul_eq_mul_right_iff, eq_false (ofReal_ne_zero.mpr pi_pos.ne'), or_false,\n      neg_eq_iff_eq_neg] at hk\n    rw [hk]\n    cases k\n    · rw [Int.ofNat_eq_natCast, Int.cast_natCast, Complex.Gamma_neg_nat_eq_zero, zero_mul]\n    · rw [Int.cast_negSucc, neg_neg, Nat.cast_add, Nat.cast_one, add_comm, sub_add_cancel_left,\n        Complex.Gamma_neg_nat_eq_zero, mul_zero]\n  refine tendsto_nhds_unique ((GammaSeq_tendsto_Gamma z).mul (GammaSeq_tendsto_Gamma <| 1 - z)) ?_\n  have : ↑π / sin (↑π * z) = 1 * (π / sin (π * z)) := by rw [one_mul]\n  convert\n    Tendsto.congr'\n      ((eventually_ne_atTop 0).mp (Eventually.of_forall fun n hn => (GammaSeq_mul z hn).symm))\n      (Tendsto.mul _ _)\n  · convert tendsto_natCast_div_add_atTop (1 - z) using 1; ext1 n; rw [add_sub_assoc]\n  · have : ↑π / sin (↑π * z) = 1 / (sin (π * z) / π) := by simp\n    convert tendsto_const_nhds.div _ (div_ne_zero hs pi_ne)\n    rw [← tendsto_mul_iff_of_ne_zero tendsto_const_nhds pi_ne, div_mul_cancel₀ _ pi_ne]\n    convert tendsto_euler_sin_prod z using 1\n    ext1 n; rw [mul_comm, ← mul_assoc]",
+    "excerpt_sha256": "5cf8997ebaed15d47f28756953f3b476848e22760a2301b647bf600d4d7f7a64",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the reflection formula for complex z. It also holds at integers with the Lean convention that division by zero is zero. The name occurs in the Complex and Real namespaces. This record is the Complex one."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L373-L394",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "GammaSeq_mul",
+     "lines": [
+      373,
+      394
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "theorem GammaSeq_mul (z : ℂ) {n : ℕ} (hn : n ≠ 0) :\n    GammaSeq z n * GammaSeq (1 - z) n =\n      n / (n + ↑1 - z) * (↑1 / (z * ∏ j ∈ Finset.range n, (↑1 - z ^ 2 / ((j : ℂ) + 1) ^ 2))) := by\n  -- also true for n = 0 but we don't need it\n  have aux : ∀ a b c d : ℂ, a * b * (c * d) = a * c * (b * d) := by intros; ring\n  rw [GammaSeq, GammaSeq, div_mul_div_comm, aux, ← pow_two]\n  have : (n : ℂ) ^ z * (n : ℂ) ^ (1 - z) = n := by\n    rw [← cpow_add _ _ (Nat.cast_ne_zero.mpr hn), add_sub_cancel, cpow_one]\n  rw [this, Finset.prod_range_succ', Finset.prod_range_succ, aux, ← Finset.prod_mul_distrib,\n    Nat.cast_zero, add_zero, add_comm (1 - z) n, ← add_sub_assoc]\n  have : ∀ j : ℕ, (z + ↑(j + 1)) * (↑1 - z + ↑j) =\n      ((j + 1) ^ 2 :) * (↑1 - z ^ 2 / ((j : ℂ) + 1) ^ 2) := by\n    intro j\n    push_cast\n    have : (j : ℂ) + 1 ≠ 0 := by rw [← Nat.cast_succ, Nat.cast_ne_zero]; exact Nat.succ_ne_zero j\n    field\n  simp_rw [this]\n  rw [Finset.prod_mul_distrib, ← Nat.cast_prod, Finset.prod_pow,\n    Finset.prod_range_add_one_eq_factorial, Nat.cast_pow,\n    (by intros; ring : ∀ a b c d : ℂ, a * b * (c * d) = a * (d * (b * c))), ← div_div,\n    mul_div_cancel_right₀, ← div_div, mul_comm z _, mul_one_div]\n  exact pow_ne_zero 2 (Nat.cast_ne_zero.mpr <| by positivity)",
+     "excerpt_sha256": "8d1aa4ace984c50121d158dfe8d1b6ecb5feb5f0bc51f6d2809032fbfe1ceae6",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the exact finite identity of step 4."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Fix z∉ℤ. Then neither z nor 1−z is a pole of Γ, and all denominators below are nonzero.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Limits. By the Gauss limit formula, G_n(z)→Γ(z) and G_n(1−z)→Γ(1−z). So G_n(z)G_n(1−z)→Γ(z)Γ(1−z).",
+      "uses": [
+       "nm:technique-gamma-gauss-limit-formula"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Product formula. Write G_n(1−z)=n^{1−z}n!/∏_{j=0}^{n}(1−z+j)=n^{1−z}n!/∏_{j=1}^{n+1}(j−z). The factors nᶻ and n^{1−z} multiply to n. So G_n(z)G_n(1−z)=n·(n!)²/[z·∏_{j=1}^{n}(z+j)·∏_{j=1}^{n+1}(j−z)].",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Regroup. Pull out the last factor n+1−z. The remaining product is ∏_{j=1}^{n}(j+z)(j−z)=∏_{j=1}^{n}(j²−z²)=(n!)²∏_{j=1}^{n}(1−z²/j²). So G_n(z)G_n(1−z)=n/((n+1−z)·z·∏_{j=1}^{n}(1−z²/j²)). This is an exact identity for each n.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Pass to the limit. We have n/(n+1−z)→1. By the Euler sine product, ∏_{j=1}^{n}(1−z²/j²)→sin(πz)/(πz), which is nonzero for z∉ℤ. Therefore the limit of the right side is 1/(z·sin(πz)/(πz))=π/sin(πz).",
+      "uses": [
+       "nm:technique-euler-sine-product"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Combine steps 2 and 5: Γ(z)Γ(1−z)=π/sin(πz) for z∉ℤ.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "No zeros. Since π/sin(πz) is finite and nonzero for z∉ℤ, both Γ(z) and Γ(1−z) are nonzero for z∉ℤ. At the poles Γ is not zero in the sense of a value, as 1/Γ vanishes there. So 1/Γ is entire with zeros exactly at 0,−1,−2,….",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Special values. Put z=1/2: Γ(1/2)²=π/sin(π/2)=π. Since Γ(t)>0 for t>0, Γ(1/2)=√π. For z=1/2+it, we have 1−z=1/2−it=conj(z) and Γ(conj z)=conj(Γ(z)). So |Γ(1/2+it)|²=π/sin(π/2+iπt)=π/cos(iπt)=π/cosh(πt).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Reflection checks: Γ(1/3)Γ(2/3), Γ(1/4)Γ(3/4) and |Γ(1/2+it)|²",
+    "goal": "Check the formula for rational points, for a complex point, and for the finite product identity at n=1000.",
+    "hypotheses": [
+     "z=1/3, z=1/4, z=0.3+0.4i, and z=1/2+it with t=0.5,1,2.",
+     "25 digit arithmetic."
+    ],
+    "why_theorem_applies": "All points are non integers. So the reflection formula applies, and the finite identity of step 4 applies for every n.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For z=1/3, Γ(1/3)Γ(2/3)=3.627598728468436 and π/sin(π/3)=2π/√3=3.627598728468436.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For z=1/4, Γ(1/4)Γ(3/4)=4.442882938158366=π√2.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For z=0.3+0.4i, Γ(z)Γ(1−z)=1.480107735−0.914201480i. The value of π/sin(πz) is the same in all printed digits.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "|Γ(1/2+it)|² for t=0.5,1,2 equals 1.252040331, 0.2710149514 and 0.01173344782. These equal π/cosh(πt).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Finite identity. For z=1/3 and n=1000 the right side of step 4 is 3.624779366. The product G_n(z)G_n(1−z) is also 3.624779366. The distance to 3.627598728 is 7.8·10⁻⁴, as predicted by the factor n/(n+1−z)≈1−0.667/n and the sine product error z²/n≈1.1·10⁻⁴.",
+      "uses": []
+     }
+    ],
+    "result": "The reflection formula holds at all tested points, and the finite identity of step 4 matches the Gauss product to all printed digits.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The formula excludes integers. At integers the Lean statement reads 0=0 because of the convention x/0=0. It is not a limit statement there.",
+    "The proof needs the Gauss limit and the sine product. Both need z outside the pole set for the first factor.",
+    "Reflection links Γ(z) and Γ(1−z) only. It does not give Γ(z) alone."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:euler-s-reflection-formula-for-the-digamma-function",
+      "relation": "related",
+      "reason": "The catalog record is the digamma form, which is the logarithmic derivative of this formula."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-gamma-legendre-duplication",
+   "name": "Legendre duplication formula for the Gamma function",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.CA",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.CA",
+    "math.CV"
+   ],
+   "statement": "For every complex s, Γ(s)Γ(s+1/2)=2^{1−2s}√π·Γ(2s). (Where s or s+1/2 is a pole of Γ, both sides vanish under the convention Γ(pole)=0, or both sides have poles.) Equivalently, Γ(n+1/2)=(2n)!√π/(4ⁿ n!) for integers n≥0.",
+   "hypotheses": [
+    "2^{1−2s}=exp((1−2s)ln 2).",
+    "The proof first assumes s is real and positive. The identity theorem then extends it to the plane minus the poles."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-beta-gamma-integral",
+     "reason": "Steps 1 and 2 use B(a,b)=Γ(a)Γ(b)/Γ(a+b)."
+    },
+    {
+     "id": "wd:Q1038716",
+     "reason": "Step 6 extends the real identity to the plane by the identity theorem."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Euler Beta function",
+    "pole set"
+   ],
+   "concept_prerequisites": [
+    "c:gamma-function",
+    "c:euler-beta-function",
+    "c:analytic-continuation"
+   ],
+   "definitions": [
+    {
+     "name": "Euler Beta function",
+     "text": "B(a,b)=∫₀¹u^{a−1}(1−u)^{b−1}du=Γ(a)Γ(b)/Γ(a+b) for a,b>0."
+    },
+    {
+     "name": "pole set",
+     "text": "The set of s with 2s∈{0,−1,−2,…}. Both sides of the formula are holomorphic on its complement."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L558-L588",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+    "declaration": "Gamma_mul_Gamma_add_half",
+    "lines": [
+     558,
+     588
+    ],
+    "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+    "excerpt": "theorem Gamma_mul_Gamma_add_half (s : ℂ) :\n    Gamma s * Gamma (s + 1 / 2) = Gamma (2 * s) * (2 : ℂ) ^ (1 - 2 * s) * ↑(√π) := by\n  suffices (fun z => (Gamma z)⁻¹ * (Gamma (z + 1 / 2))⁻¹) = fun z =>\n      (Gamma (2 * z))⁻¹ * (2 : ℂ) ^ (2 * z - 1) / ↑(√π) by\n    convert congr_arg Inv.inv (congr_fun this s) using 1\n    · rw [mul_inv, inv_inv, inv_inv]\n    · rw [div_eq_mul_inv, mul_inv, mul_inv, inv_inv, inv_inv, ← cpow_neg, neg_sub]\n  have h1 : AnalyticOnNhd ℂ (fun z : ℂ => (Gamma z)⁻¹ * (Gamma (z + 1 / 2))⁻¹) univ := by\n    refine DifferentiableOn.analyticOnNhd ?_ isOpen_univ\n    refine (differentiable_one_div_Gamma.mul ?_).differentiableOn\n    exact differentiable_one_div_Gamma.comp (differentiable_id.add (differentiable_const _))\n  have h2 : AnalyticOnNhd ℂ\n      (fun z => (Gamma (2 * z))⁻¹ * (2 : ℂ) ^ (2 * z - 1) / ↑(√π)) univ := by\n    refine DifferentiableOn.analyticOnNhd ?_ isOpen_univ\n    refine (Differentiable.mul ?_ (differentiable_const _)).differentiableOn\n    apply Differentiable.mul\n    · exact differentiable_one_div_Gamma.comp (differentiable_id.const_mul _)\n    · refine fun t => DifferentiableAt.const_cpow ?_ (Or.inl two_ne_zero)\n      exact DifferentiableAt.sub_const (differentiableAt_id.const_mul _) _\n  have h3 : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] 1) (𝓝[≠] 1) := by\n    rw [tendsto_nhdsWithin_iff]; constructor\n    · exact tendsto_nhdsWithin_of_tendsto_nhds continuous_ofReal.continuousAt\n    · exact eventually_nhdsWithin_iff.mpr (Eventually.of_forall fun t ht => ofReal_ne_one.mpr ht)\n  refine AnalyticOnNhd.eq_of_frequently_eq h1 h2 (h3.frequently ?_)\n  refine ((Eventually.filter_mono nhdsWithin_le_nhds) ?_).frequently\n  refine (eventually_gt_nhds zero_lt_one).mp (Eventually.of_forall fun t ht => ?_)\n  rw [← mul_inv, Gamma_ofReal, (by simp : (t : ℂ) + 1 / 2 = ↑(t + 1 / 2)), Gamma_ofReal, ←\n    ofReal_mul, Gamma_mul_Gamma_add_half_of_pos ht, ofReal_mul, ofReal_mul, ← Gamma_ofReal,\n    mul_inv, mul_inv, (by simp : 2 * (t : ℂ) = ↑(2 * t)), Gamma_ofReal,\n    ofReal_cpow zero_le_two, show (2 : ℝ) = (2 : ℂ) by norm_cast, ← cpow_neg, ofReal_sub,\n    ofReal_one, neg_sub, ← div_eq_mul_inv]",
+    "excerpt_sha256": "9f72df186dc548dda4fa13915d8bb8d807359b8584c60c5789f7f64a1c0d1a97",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves Γ(s)Γ(s+1/2)=Γ(2s)·2^{1−2s}·√π for every complex s. The name occurs in the Complex and Real namespaces. This record is the Complex one."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L122-L138",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "Gamma_mul_Gamma_eq_betaIntegral",
+     "lines": [
+      122,
+      138
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- Relation between Beta integral and Gamma function. -/\ntheorem Gamma_mul_Gamma_eq_betaIntegral {s t : ℂ} (hs : 0 < re s) (ht : 0 < re t) :\n    Gamma s * Gamma t = Gamma (s + t) * betaIntegral s t := by\n  -- Note that we haven't proved (yet) that the Gamma function has no zeroes, so we can't formulate\n  -- this as a formula for the Beta function.\n  have conv_int := integral_posConvolution\n    (GammaIntegral_convergent hs) (GammaIntegral_convergent ht) (ContinuousLinearMap.mul ℝ ℂ)\n  simp_rw [ContinuousLinearMap.mul_apply'] at conv_int\n  have hst : 0 < re (s + t) := by rw [add_re]; exact add_pos hs ht\n  rw [Gamma_eq_integral hs, Gamma_eq_integral ht, Gamma_eq_integral hst, GammaIntegral,\n    GammaIntegral, GammaIntegral, ← conv_int, ← MeasureTheory.integral_mul_const (betaIntegral _ _)]\n  refine setIntegral_congr_fun measurableSet_Ioi fun x hx => ?_\n  rw [mul_assoc, ← betaIntegral_scaled s t hx, ← intervalIntegral.integral_const_mul]\n  congr 1 with y : 1\n  push_cast\n  suffices Complex.exp (-x) = Complex.exp (-y) * Complex.exp (-(x - y)) by rw [this]; ring\n  rw [← Complex.exp_add]; congr 1; abel",
+     "excerpt_sha256": "83e7233aaf2900ae70b95a62e07583752c79a94e556cfd2b3c8c67d74fdc5fcc",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the Beta–Gamma factorization used in step 1 for complex parameters."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Beta–Gamma. For real s>0, B(s,s)=Γ(s)²/Γ(2s) and B(s,1/2)=Γ(s)Γ(1/2)/Γ(s+1/2).",
+      "uses": [
+       "nm:technique-beta-gamma-integral"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Value of Γ(1/2). Put s=1/2 in step 1 with both parameters equal to 1/2: Γ(1/2)²=B(1/2,1/2)Γ(1)=∫₀¹du/√(u(1−u)). With u=sin²θ this integral is ∫₀^{π/2}2dθ=π. So Γ(1/2)=√π.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Fold the integral. The function u(1−u) is symmetric about u=1/2. So B(s,s)=∫₀¹(u(1−u))^{s−1}du=2∫₀^{1/2}(u(1−u))^{s−1}du.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Substitute v=4u(1−u). On [0,1/2] this is increasing from 0 to 1. We have dv=4(1−2u)du and (1−2u)²=1−v. So du=dv/(4√(1−v)), and u(1−u)=v/4.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Compute. B(s,s)=2∫₀¹(v/4)^{s−1}dv/(4√(1−v))=2·4^{−s}∫₀¹v^{s−1}(1−v)^{−1/2}dv=2^{1−2s}B(s,1/2).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Apply step 1 on both sides: Γ(s)²/Γ(2s)=2^{1−2s}Γ(s)√π/Γ(s+1/2). Cancel Γ(s)>0 and rearrange: Γ(s)Γ(s+1/2)=2^{1−2s}√π Γ(2s) for real s>0.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Extend. Let U=ℂ∖{s: 2s∈{0,−1,−2,…}}. It is open and connected. Both sides of the formula are holomorphic on U, because the poles of Γ(s), Γ(s+1/2) and Γ(2s) all lie in the excluded set. They agree on (0,∞), which has accumulation points in U. By the identity theorem they agree on U.",
+      "uses": [
+       "wd:Q1038716"
+      ]
+     },
+     {
+      "id": "s8",
+      "text": "Poles. At s=−m (m≥0) Γ(s)=0 in the Lean convention. At s=−m−1/2 we have Γ(s+1/2)=0. In both cases Γ(2s)=0 too. So the formula holds for all s as a statement about values with that convention.",
+      "uses": []
+     },
+     {
+      "id": "s9",
+      "text": "Half integer values. Put s=n≥1 and use Γ(n)=(n−1)! and Γ(2n)=(2n−1)!. Then Γ(n+1/2)=2^{1−2n}√π(2n−1)!/(n−1)!=(2n)!√π/(4ⁿ n!), because (2n−1)!=(2n)!/(2n) and (n−1)!=n!/n. The case n=0 is Γ(1/2)=√π.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Half integer Gamma values and a central binomial coefficient",
+    "goal": "Use the duplication formula to compute Γ(n+1/2) and C(2n,n), and check it at a complex point.",
+    "hypotheses": [
+     "n=1,2,5,10.",
+     "The complex point is s=0.3+0.7i."
+    ],
+    "why_theorem_applies": "The duplication formula holds for all s outside the pole set. The half integer formula is the special case s=n.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For n=1: Γ(3/2)=2!√π/(4·1!)=√π/2=0.886226925. For n=2: Γ(5/2)=4!√π/(16·2)=3√π/4=1.329340388.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For n=5: Γ(11/2)=10!√π/(4⁵·5!)=52.34277778. For n=10: Γ(21/2)=20!√π/(4¹⁰·10!)=1133278.388949. A direct numerical Gamma routine returns the same values to all printed digits.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Central binomial coefficient. Rearranging the half integer formula gives C(2n,n)=(2n)!/(n!)²=4ⁿΓ(n+1/2)/(√π n!). For n=10 this is 4¹⁰·1133278.388949/(1.772453851·3628800)=184756. This is C(20,10)=184756.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Complex check. At s=0.3+0.7i, Γ(s)Γ(s+1/2)=−0.09653486317−0.66383396576i. The right side 2^{1−2s}√π Γ(2s) has the same value in all printed digits.",
+      "uses": []
+     }
+    ],
+    "result": "Γ(n+1/2)=(2n)!√π/(4ⁿ n!) gives 0.8862, 1.3293, 52.3428 and 1133278.389 for n=1,2,5,10, and the duplication formula is verified at s=0.3+0.7i.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The formula is the case m=2 of the Gauss multiplication formula. The general case needs a different proof, for example by the Gauss limit and Wallis type products.",
+    "The proof uses Γ(1/2)=√π, which comes from the same Beta integral. The formula alone does not fix Γ(1/2) without this input.",
+    "The argument folds the integral at the point 1/2. This works only because both Beta parameters are equal."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nl:22766",
+      "relation": "related",
+      "reason": "The catalog record is the general Gauss multiplication formula. This entry proves the case of two factors and gives the half integer values."
+     },
+     {
+      "id": "nm:euler-s-reflection-formula-for-the-digamma-function",
+      "relation": "related",
+      "reason": "The digamma duplication formula in the catalog is the logarithmic derivative of this identity."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-jacobi-theta-inversion-poisson",
+   "name": "Jacobi theta inversion from Poisson summation of a Gaussian",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CA"
+   ],
+   "statement": "For real t>0 let θ(t)=∑_{n∈ℤ}e^{−πn²t}. Then θ(1/t)=√t·θ(t). More generally, for complex τ with Im τ>0, ∑_{n∈ℤ}e^{πi n²τ}=(−iτ)^{−1/2}∑_{n∈ℤ}e^{−πi n²/τ}. The proof uses the Poisson summation formula ∑_{n}f(n)=∑_{m}f̂(m) for the Gaussian f(x)=e^{−πtx²}, with f̂(ξ)=∫f(x)e^{−2πixξ}dx.",
+   "hypotheses": [
+    "t>0 is real. The complex form uses the principal square root, which is positive for Im τ>0.",
+    "The Fourier transform has the convention f̂(ξ)=∫f(x)e^{−2πixξ}dx."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-gaussian-quadratic-integral",
+     "reason": "Step 1 computes the Fourier transform of a Gaussian by the Gaussian integral with a linear term."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Poisson summation",
+    "periodization"
+   ],
+   "concept_prerequisites": [
+    "c:jacobi-theta-function",
+    "c:fourier-series",
+    "c:gaussian-integral"
+   ],
+   "definitions": [
+    {
+     "name": "Poisson summation",
+     "text": "For f smooth with f and f′ decaying faster than 1/|x|², ∑_{n}f(n)=∑_{m}f̂(m)."
+    },
+    {
+     "name": "periodization",
+     "text": "F(x)=∑_{n}f(x+n). It is 1-periodic."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/ModularForms/JacobiTheta/OneVariable.lean#L43-L53",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable",
+    "declaration": "jacobiTheta_S_smul",
+    "lines": [
+     43,
+     53
+    ],
+    "module_sha256": "d52b43a505bb197440e09c71d4aa98f4519760eaaa8fb79a5f0b25a8a0830c5a",
+    "excerpt": "theorem jacobiTheta_S_smul (τ : ℍ) :\n    jacobiTheta ↑(ModularGroup.S • τ) = (-I * τ) ^ (1 / 2 : ℂ) * jacobiTheta τ := by\n  have h0 : (τ : ℂ) ≠ 0 := ne_of_apply_ne im (zero_im.symm ▸ ne_of_gt τ.2)\n  have h1 : (-I * τ) ^ (1 / 2 : ℂ) ≠ 0 := by\n    rw [Ne, cpow_eq_zero_iff, not_and_or]\n    exact Or.inl <| mul_ne_zero (neg_ne_zero.mpr I_ne_zero) h0\n  simp_rw [UpperHalfPlane.modular_S_smul, jacobiTheta_eq_jacobiTheta₂, ← ofReal_zero]\n  norm_cast\n  simp_rw [jacobiTheta₂_functional_equation 0 τ, zero_pow two_ne_zero, mul_zero, zero_div,\n    Complex.exp_zero, mul_one, ← mul_assoc, mul_one_div, div_self h1, one_mul,\n    inv_neg, neg_div, one_div]",
+    "excerpt_sha256": "ddeb62ddd704f0bfcb92fba90eec654dc9f43fdf9223d52aae3296124a37342d",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the modular inversion θ(−1/τ)=(−iτ)^{1/2}θ(τ) for τ in the upper half plane. The source proof goes through the two-variable theta function and the general Poisson summation formula, not through the periodization above."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Fourier transform of the Gaussian. For a>0, ∫e^{−ax²−2πixξ}dx=√(π/a)e^{−π²ξ²/a}, by completing the square. With a=πt this gives f̂(ξ)=t^{−1/2}e^{−πξ²/t}.",
+      "uses": [
+       "nm:technique-gaussian-quadratic-integral"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Periodize. Put F(x)=∑_{n∈ℤ}f(x+n). The series and the series of derivatives converge uniformly on [0,1] by the Gaussian decay. So F is C¹ and 1-periodic.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Fourier coefficients of F. For m∈ℤ, ∫₀¹F(x)e^{−2πimx}dx=∑_n∫₀¹f(x+n)e^{−2πimx}dx=∑_n∫_n^{n+1}f(y)e^{−2πimy}dy=f̂(m). Here e^{−2πim(y−n)}=e^{−2πimy}. The interchange of sum and integral is allowed by uniform convergence.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Pointwise convergence. A C¹ periodic function equals its Fourier series at every point, and here the series converges absolutely because the coefficients f̂(m) have Gaussian decay. At x=0 this gives F(0)=∑_m f̂(m).",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Read off both sides. F(0)=∑_n e^{−πtn²}=θ(t). Also ∑_m f̂(m)=t^{−1/2}∑_m e^{−πm²/t}=t^{−1/2}θ(1/t). So θ(t)=t^{−1/2}θ(1/t), that is, θ(1/t)=√t θ(t).",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Complex form. Both sides of ∑e^{πin²τ}=(−iτ)^{−1/2}∑e^{−πin²/τ} are holomorphic in τ on the upper half plane. They agree for τ=it with t>0 by step 5, which is a set with accumulation points. The identity theorem gives equality for all Im τ>0.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Numerical check of θ(1/t)=√t θ(t)",
+    "goal": "Compute θ(t) for t=1/2, 1/3 and 2 by summing e^{−πn²t}, and compare the two sides.",
+    "hypotheses": [
+     "t=1/2, 1/3, 2.",
+     "25 digit arithmetic with n from −∞ to ∞ (the terms decay like Gaussians)."
+    ],
+    "why_theorem_applies": "The theorem holds for every t>0.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "θ(2)=1.00373488548773909104768 and θ(1/2)=1.419495488083766123362187. Then √(1/2)·θ(1/2)=1.0037348854877391, which equals θ(2).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For t=1/3, θ(1/3)=1.732330358898033570212218 and θ(3)=1.000161399035140694021502. Also √(1/3)·θ(1/3)=1.0001613990351407, which equals θ(3).",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Fixed point t=1. The identity says θ(1)=θ(1). The value is θ(1)=π^{1/4}/Γ(3/4)=1.0864348112133080146.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "The fast tail. For t=2 the terms with |n|≥2 are below e^{−8π}=1.2·10⁻¹¹. So θ(2)≈1+2e^{−2π}=1.00373489. Hence θ(1/2) is also 1.4194955 to 8 digits, which a direct sum needs many more terms to reach.",
+      "uses": []
+     }
+    ],
+    "result": "Both sides agree to 25 digits for t=1/2 and t=1/3. A tiny sum for large t fixes a slow sum for small t.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The Poisson summation step needs smoothness and decay. It is not valid for arbitrary f.",
+    "The proof gives a transformation for τ→−1/τ only. The full modular group needs also τ→τ+2 for this theta function.",
+    "The square root branch matters. It is the principal root of −iτ, which has positive real part."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-zeta-functional-equation-theta-mellin",
+   "name": "Riemann zeta functional equation by the theta–Mellin method",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "statement": "Let Λ(s)=π^{−s/2}Γ(s/2)ζ(s). Then Λ extends to a meromorphic function on ℂ with simple poles only at s=0 and s=1, with residues −1 and 1, and Λ(1−s)=Λ(s). Equivalently, for s∉{1,0,−1,−2,…}, ζ(1−s)=2(2π)^{−s}Γ(s)cos(πs/2)ζ(s). The proof gives the formula Λ(s)=1/(s−1)−1/s+∫₁^∞ψ(t)(t^{s/2−1}+t^{(1−s)/2−1})dt, with ψ(t)=∑_{n≥1}e^{−πn²t}.",
+   "hypotheses": [
+    "Re s>1 for the first step. The final formula holds on all of ℂ by analytic continuation.",
+    "Γ(s/2) has poles at s=0,−2,−4,…. Those poles are cancelled by the trivial zeros of ζ except at s=0."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-jacobi-theta-inversion-poisson",
+     "reason": "Step 2 uses the inversion θ(1/t)=√t θ(t)."
+    },
+    {
+     "id": "nm:technique-gamma-reflection-formula",
+     "reason": "Step 8 uses the reflection formula for Γ((1±s)/2)."
+    },
+    {
+     "id": "nm:technique-gamma-legendre-duplication",
+     "reason": "Step 8 uses the duplication formula to write Γ(s/2)Γ((s+1)/2) as a multiple of Γ(s)."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "completed zeta function",
+    "half theta"
+   ],
+   "concept_prerequisites": [
+    "c:riemann-zeta-function",
+    "c:mellin-transform",
+    "c:jacobi-theta-function",
+    "c:analytic-continuation",
+    "c:meromorphic-function"
+   ],
+   "definitions": [
+    {
+     "name": "completed zeta function",
+     "text": "Λ(s)=π^{−s/2}Γ(s/2)ζ(s) for Re s>1."
+    },
+    {
+     "name": "half theta",
+     "text": "ψ(t)=∑_{n≥1}e^{−πn²t}=(θ(t)−1)/2. It is smooth on t>0 and ψ(t)≤e^{−πt}/(1−e^{−πt}) for t>0."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L103-L107",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+    "declaration": "completedRiemannZeta_one_sub",
+    "lines": [
+     103,
+     107
+    ],
+    "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+    "excerpt": "/-- Riemann zeta functional equation, formulated for `Λ`: for any complex `s` we have\n`Λ (1 - s) = Λ s`. -/\ntheorem completedRiemannZeta_one_sub (s : ℂ) :\n    completedRiemannZeta (1 - s) = completedRiemannZeta s := by\n  rw [← completedHurwitzZetaEven_zero, ← completedCosZeta_zero, completedHurwitzZetaEven_one_sub]",
+    "excerpt_sha256": "f93b7d34b598be43e088e22c4e7f622404914ee8533cdb36d56c7b0eef22f01b",
+    "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves Λ(1−s)=Λ(s) for every complex s with the completed zeta function. Its proof uses Hurwitz zeta and Mellin transforms of theta kernels."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L175-L179",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+     "declaration": "riemannZeta_one_sub",
+     "lines": [
+      175,
+      179
+     ],
+     "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+     "excerpt": "/-- Riemann zeta functional equation, formulated for `ζ`: if `1 - s ∉ ℕ`, then we have\n`ζ (1 - s) = 2 ^ (1 - s) * π ^ (-s) * Γ s * sin (π * (1 - s) / 2) * ζ s`. -/\ntheorem riemannZeta_one_sub {s : ℂ} (hs : ∀ n : ℕ, s ≠ -n) (hs' : s ≠ 1) :\n    riemannZeta (1 - s) = 2 * (2 * π) ^ (-s) * Gamma s * cos (π * s / 2) * riemannZeta s := by\n  rw [riemannZeta, hurwitzZetaEven_one_sub 0 hs (Or.inr hs'), cosZeta_zero, hurwitzZetaEven_zero]",
+     "excerpt_sha256": "8d2760aeca3cf00e0f72e0092a3ea2afbc0a0747a95940277eb2ae38e15f6e65",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves ζ(1−s)=2(2π)^{−s}Γ(s)cos(πs/2)ζ(s) for s not a non-positive integer and s≠1."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Mellin transform of ψ. For Re s>1 and n≥1, the substitution u=πn²t gives ∫₀^∞e^{−πn²t}t^{s/2−1}dt=π^{−s/2}Γ(s/2)n^{−s}. Sum over n. The interchange of sum and integral is allowed because ∑∫|e^{−πn²t}t^{s/2−1}|dt=π^{−σ/2}Γ(σ/2)ζ(σ)<∞ with σ=Re s. So Λ(s)=∫₀^∞ψ(t)t^{s/2−1}dt for Re s>1.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Theta inversion. For t>0, θ(1/t)=√tθ(t). With θ=1+2ψ this reads ψ(1/t)=√tψ(t)+(√t−1)/2.",
+      "uses": [
+       "nm:technique-jacobi-theta-inversion-poisson"
+      ]
+     },
+     {
+      "id": "s3",
+      "text": "Split the integral at t=1. Write Λ(s)=∫₁^∞ψ(t)t^{s/2−1}dt+∫₀¹ψ(t)t^{s/2−1}dt. In the second integral put t→1/t. It becomes ∫₁^∞ψ(1/t)t^{−s/2−1}dt.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Insert step 2. ∫₁^∞[√tψ(t)+(√t−1)/2]t^{−s/2−1}dt=∫₁^∞ψ(t)t^{(1−s)/2−1}dt+(1/2)∫₁^∞(t^{−(s+1)/2}−t^{−s/2−1})dt. For Re s>1 the last integral is (1/2)(2/(s−1)−2/s)=1/(s−1)−1/s.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Result. For Re s>1, Λ(s)=1/(s−1)−1/s+∫₁^∞ψ(t)(t^{s/2−1}+t^{(1−s)/2−1})dt.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Continuation. Since ψ(t)≤2e^{−πt} for t≥1, the integral converges locally uniformly in s∈ℂ and is entire. So the right side of step 5 is meromorphic on ℂ with simple poles at s=1 (residue 1) and s=0 (residue −1). This is the continuation of Λ.",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Symmetry. The right side of step 5 is unchanged under s→1−s. The terms 1/(s−1)−1/s become 1/(−s)−1/(1−s)=1/(s−1)−1/s. The integrand t^{s/2−1}+t^{(1−s)/2−1} swaps its two terms. So Λ(1−s)=Λ(s) on ℂ.",
+      "uses": []
+     },
+     {
+      "id": "s8",
+      "text": "Convert to ζ. Λ(1−s)=Λ(s) gives π^{−(1−s)/2}Γ((1−s)/2)ζ(1−s)=π^{−s/2}Γ(s/2)ζ(s). By reflection, Γ((1−s)/2)Γ((1+s)/2)=π/cos(πs/2). By duplication, Γ(s)=2^{s−1}π^{−1/2}Γ(s/2)Γ((s+1)/2). Together, Γ(s/2)/Γ((1−s)/2)=Γ(s/2)Γ((1+s)/2)cos(πs/2)/π=2^{1−s}π^{−1/2}Γ(s)cos(πs/2). So ζ(1−s)=π^{1/2−s}·2^{1−s}π^{−1/2}Γ(s)cos(πs/2)ζ(s)=2(2π)^{−s}Γ(s)cos(πs/2)ζ(s).",
+      "uses": [
+       "nm:technique-gamma-reflection-formula",
+       "nm:technique-gamma-legendre-duplication"
+      ]
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Tests of Λ(1−s)=Λ(s), of the integral formula and of the zeta form",
+    "goal": "Check the symmetry at a complex point, the explicit integral formula, and the zeta form at s=5/2.",
+    "hypotheses": [
+     "s=0.3+2i for the symmetry and the integral formula.",
+     "s=5/2 for the zeta form.",
+     "25 digit arithmetic. The integral formula uses numerical quadrature on [1,∞)."
+    ],
+    "why_theorem_applies": "The theorem holds on all of ℂ. At s=0.3+2i neither s nor 1−s is a pole.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Λ(0.3+2i)=−0.2071726133932247621577777+0.04337566908254863974910895i. Λ(1−s)=Λ(0.7−2i) is the same number to 24 digits.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "The right side of the formula in the statement, 1/(s−1)−1/s plus the integral from 1 to ∞, gives −0.2071726133932247621577777+0.04337566908254863974910894i. This equals Λ(s) in 24 digits.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "At s=5/2: ζ(−3/2)=−0.02548520188983303594954299. The right side 2(2π)^{−5/2}Γ(5/2)cos(5π/4)ζ(5/2) is −0.02548520188983303594954299.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Size of the parts at s=0.3+2i. The pole part 1/(s−1)−1/s is −0.22925163770617672+0.04356325657124499i, with modulus 0.2334. The integral part is 0.02207902431295196−0.00018758748869635i, with modulus 0.0221. So the pole part carries most of the value.",
+      "uses": []
+     }
+    ],
+    "result": "Λ(1−s)=Λ(s), the explicit continuation formula and the ζ functional equation all agree with numerical values to 24 digits.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The formula for ζ(1−s) needs s∉{0,−1,−2,…} and s≠1. At those points a pole of Γ meets a zero or pole of other factors, so the values come as limits.",
+    "The proof is for ζ(s) in terms of ζ on Re s>1. It does not locate the non-trivial zeros.",
+    "The method extends to Dirichlet L-functions of even characters through the same theta function. Odd characters need a different theta function."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:functional-equation-for-the-riemann-zeta-function-in-logarithmic-derivative-form",
+      "relation": "related",
+      "reason": "The catalog record is the logarithmic derivative form. This entry proves the equation itself."
+     },
+     {
+      "id": "nm:functional-equation-for-the-riemann-zeta-function-in-logarithmic-derivative-form",
+      "relation": "refines",
+      "reason": "The catalog record gives the logarithmic derivative form. This entry proves the functional equation itself."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-zeta-negative-integers-bernoulli",
+   "name": "Values ζ(−n)=(−1)ⁿB_{n+1}/(n+1) and the trivial zeros",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "statement": "For every integer n≥0, ζ(−n)=(−1)ⁿB_{n+1}/(n+1), where B₁=−1/2. In particular ζ(0)=−1/2, ζ(−1)=−1/12, ζ(−2k)=0 for k≥1 and ζ(1−2k)=−B_{2k}/(2k) for k≥1. So ζ(−3)=1/120 and ζ(−5)=−1/252.",
+   "hypotheses": [
+    "n is an integer with n≥0.",
+    "ζ means the meromorphic continuation of the Dirichlet series to ℂ∖{1}."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-zeta-functional-equation-theta-mellin",
+     "reason": "Steps 1 to 3 apply the functional equation at s=m+1."
+    },
+    {
+     "id": "nm:technique-euler-zeta-even-values-bernoulli",
+     "reason": "Step 4 inserts the value of ζ(2k)."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "trivial zeros"
+   ],
+   "concept_prerequisites": [
+    "c:riemann-zeta-function",
+    "c:bernoulli-number",
+    "c:gamma-function"
+   ],
+   "definitions": [
+    {
+     "name": "trivial zeros",
+     "text": "The points −2,−4,−6,… where ζ vanishes because cos(πs/2) vanishes in the functional equation."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L250-L255",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+    "declaration": "riemannZeta_neg_nat_eq_bernoulli",
+    "lines": [
+     250,
+     255
+    ],
+    "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+    "excerpt": "/-- Value of Riemann zeta at `-ℕ` in terms of `bernoulli`. -/\ntheorem riemannZeta_neg_nat_eq_bernoulli (k : ℕ) :\n    riemannZeta (-k) = (-1 : ℂ) ^ k * bernoulli (k + 1) / (k + 1) := by\n  rw [riemannZeta_neg_nat_eq_bernoulli', bernoulli, Rat.cast_mul, Rat.cast_pow, Rat.cast_neg,\n    Rat.cast_one, ← neg_one_mul, ← mul_assoc, pow_succ, ← mul_assoc, ← mul_pow, neg_one_mul (-1),\n    neg_neg, one_pow, one_mul]",
+    "excerpt_sha256": "65ff02c0e9239dd5b1887cfe8d51a75e197b5b1f53bc61e873253281b5f791cd",
+    "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves ζ(−k)=(−1)^k B_{k+1}/(k+1) for every k. Its proof goes through Hurwitz zeta values at negative integers, not through the functional equation used here."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L171-L173",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+     "declaration": "riemannZeta_neg_two_mul_nat_add_one",
+     "lines": [
+      171,
+      173
+     ],
+     "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+     "excerpt": "/-- The trivial zeroes of the zeta function. -/\ntheorem riemannZeta_neg_two_mul_nat_add_one (n : ℕ) : riemannZeta (-2 * (n + 1)) = 0 :=\n  hurwitzZetaEven_neg_two_mul_nat_add_one 0 n",
+     "excerpt_sha256": "58dfbb11b3f26b7123c39738090633739a7058936d268acad682d770a67fdbe4",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the trivial zeros ζ(−2(n+1))=0."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Functional equation. For s∉{1,0,−1,…}, ζ(1−s)=2(2π)^{−s}Γ(s)cos(πs/2)ζ(s). Put s=m+1 for an integer m≥1. Then 1−s=−m, and s is not a pole of Γ.",
+      "uses": [
+       "nm:technique-zeta-functional-equation-theta-mellin"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Even m. If m is even, then s=m+1 is odd and cos(π(m+1)/2)=0. Since Γ(s) and ζ(s) are finite (s≥3), ζ(−m)=0. For m=2k this gives the trivial zeros. It also matches the claim, because B_{m+1}=0 for odd index m+1≥3.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Odd m. Let m=2k−1 with k≥1, so s=2k. Then cos(πk)=(−1)^k, Γ(2k)=(2k−1)!, and ζ(1−2k)=2(2π)^{−2k}(2k−1)!(−1)^kζ(2k).",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Insert the even values. ζ(2k)=(−1)^{k+1}(2π)^{2k}B_{2k}/(2(2k)!). The product is 2·(2k−1)!·(−1)^k·(−1)^{k+1}B_{2k}/(2·(2k)!)=−B_{2k}/(2k). So ζ(1−2k)=−B_{2k}/(2k). This agrees with (−1)^{n}B_{n+1}/(n+1) for n=2k−1, because (−1)^n=−1.",
+      "uses": [
+       "nm:technique-euler-zeta-even-values-bernoulli"
+      ]
+     },
+     {
+      "id": "s5",
+      "text": "The case n=0. Here s=1 is the pole of ζ and step 1 does not apply. Use the limit s→1. We have ζ(s)=1/(s−1)+O(1), so (s−1)ζ(s)→1. Also cos(πs/2)=−sin(π(s−1)/2)=−(π/2)(s−1)+O((s−1)³). So cos(πs/2)ζ(s)→−π/2. Then ζ(1−s)→2(2π)^{−1}Γ(1)(−π/2)=−1/2. Since ζ is continuous at 0, ζ(0)=−1/2. This equals B₁·(−1)⁰/1 with B₁=−1/2.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Combine. The cases of steps 2, 4 and 5 cover every n≥0. In each case ζ(−n)=(−1)ⁿB_{n+1}/(n+1).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "A table of ζ(−n) for n=0,…,11",
+    "goal": "Compute (−1)ⁿB_{n+1}/(n+1) from the Bernoulli recursion and compare it with a numerical zeta value.",
+    "hypotheses": [
+     "n=0,…,11.",
+     "Bernoulli numbers: B₁=−1/2, B₂=1/6, B₄=−1/30, B₆=1/42, B₈=−1/30, B₁₀=5/66, B₁₂=−691/2730."
+    ],
+    "why_theorem_applies": "The theorem holds for all n≥0. The numerical zeta routine uses the continuation, so it is an independent check.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "n=0: ζ(0)=−1/2. n=1: ζ(−1)=(−1)(1/6)/2=−1/12. n=3: ζ(−3)=(−1)B₄/4=1/120. n=5: ζ(−5)=−B₆/6=−1/252.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "n=7: ζ(−7)=−B₈/8=1/240. n=9: ζ(−9)=−B₁₀/10=−1/132. n=11: ζ(−11)=−B₁₂/12=691/32760=0.0210927960927960928.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For n=2,4,6,8,10 the formula gives 0 because B₃=B₅=…=0. The numerical zeta routine returns 0 at each of these points.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "All twelve values agree with the numerical zeta routine to 25 digits.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Warning. The series 1+2+3+… does not converge. The value −1/12 is the value of the continuation. It does not say that the divergent sum equals −1/12.",
+      "uses": []
+     }
+    ],
+    "result": "ζ(0)=−1/2, ζ(−1)=−1/12, ζ(−3)=1/120, ζ(−5)=−1/252, ζ(−7)=1/240, ζ(−9)=−1/132 and ζ(−11)=691/32760. All even negative integers are zeros.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof for n≥1 uses the functional equation and the even values. The even values need the cotangent expansion, so the chain is long.",
+    "At n=0 the functional equation form has a pole times a zero. A limit step is needed.",
+    "The formula does not make the divergent series 1+2+3+… sum to −1/12 in the usual sense."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:functional-equation-for-the-riemann-zeta-function-in-logarithmic-derivative-form",
+      "relation": "related",
+      "reason": "The logarithmic derivative form concerns ζ′/ζ. This entry gives the values of ζ itself at negative integers."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-abel-partial-summation-formula",
+   "name": "Abel partial summation formula",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CA"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CA"
+   ],
+   "statement": "Let (a_n) be complex numbers and A(t)=∑_{1≤n≤t}a_n. Let f be continuously differentiable on [1,x]. Then ∑_{1≤n≤x}a_n f(n)=A(x)f(x)−∫₁^x A(t)f′(t)dt. If A(x)f(x)→0 and ∫₁^∞|A f′|<∞, then ∑_{n≥1}a_n f(n) converges and equals −∫₁^∞A(t)f′(t)dt.",
+   "hypotheses": [
+    "x≥1 is real and f is C¹ on [1,x].",
+    "A(t)=0 for t<1. The function A is a step function that is constant on each interval [n,n+1)."
+   ],
+   "prerequisites": [],
+   "empty_prerequisites_reason": "The proof is an exchange of a finite sum and an integral. It uses only the fundamental theorem of calculus.",
+   "concepts": [
+    "summatory function"
+   ],
+   "concept_prerequisites": [
+    "c:abel-summation",
+    "c:floor-function",
+    "c:improper-integral"
+   ],
+   "definitions": [
+    {
+     "name": "summatory function",
+     "text": "A(t)=∑_{1≤n≤t}a_n. It has jumps a_n at the integers n."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/AbelSummation.lean#L199-L207",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.AbelSummation",
+    "declaration": "sum_mul_eq_sub_integral_mul'",
+    "lines": [
+     199,
+     207
+    ],
+    "module_sha256": "f445b32b316a1d3566235ea53cee7cf121a34dea305a504c00c8bb2838e5baf7",
+    "excerpt": "/-- A version of `sum_mul_eq_sub_integral_mul` where the endpoint is a `Nat`. -/\ntheorem sum_mul_eq_sub_integral_mul' (m : ℕ)\n    (hf_diff : ∀ t ∈ Set.Icc (0 : ℝ) m, DifferentiableAt ℝ f t)\n    (hf_int : IntegrableOn (deriv f) (Set.Icc (0 : ℝ) m)) :\n    ∑ k ∈ Icc 0 m, f k * c k =\n      f m * (∑ k ∈ Icc 0 m, c k) -\n        ∫ t in Set.Ioc (0 : ℝ) m, deriv f t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k := by\n  convert sum_mul_eq_sub_integral_mul c m.cast_nonneg hf_diff hf_int\n  all_goals rw [Nat.floor_natCast]",
+    "excerpt_sha256": "49a483c83158ae8c01164ab7165d74da5b9e2012dafde86f6c96811ca728bf9e",
+    "attribution": "/-\nCopyright (c) 2024 Xavier Roblot. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Xavier Roblot\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves the formula for a natural number endpoint m, with sums over k from 0 to m. Taking c 0 = 0 gives the sums from 1 used here, as in the lemmas with the suffix 0 in the same file."
+   },
+   "source_references": [],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Write f(n) as an integral. For 1≤n≤x, f(x)−f(n)=∫_n^x f′(t)dt, so f(n)=f(x)−∫_n^xf′(t)dt.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Multiply by a_n and sum over 1≤n≤x. ∑a_n f(n)=f(x)A(x)−∑_{n≤x}a_n∫_n^xf′(t)dt.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Swap sum and integral. The sum is finite. ∑_{n≤x}a_n∫_n^xf′(t)dt=∫₁^x(∑_{n≤t}a_n)f′(t)dt=∫₁^xA(t)f′(t)dt, because the integral over t∈[n,x] includes t exactly when n≤t.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Combine steps 2 and 3 to get the formula.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Infinite version. Let x→∞. The boundary term A(x)f(x)→0 by assumption. The integral ∫₁^xA f′ converges as x→∞ by absolute integrability. Hence the partial sums ∑_{n≤x}a_nf(n) converge.",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Sum of 1/n², and the partial sums of 1/n",
+    "goal": "Apply the formula with a_n=1, so A(t)=⌊t⌋, and with f(t)=t⁻². Then apply it with f(t)=1/t.",
+    "hypotheses": [
+     "x=N=10 for f(t)=t⁻².",
+     "The harmonic case uses N=1000."
+    ],
+    "why_theorem_applies": "With a_n=1 and f of class C¹, the finite formula applies for all N.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For f(t)=t⁻² and N=10, A(N)f(N)=10/100=0.1. The integral ∫₁^{10}⌊t⌋·(−2t⁻³)dt equals −∑_{k=1}^{9}k(k⁻²−(k+1)⁻²), which is −1.4497677311665406, since ⌊t⌋=k on [k,k+1).",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "So the right side is 0.1+1.4497677311665406=1.5497677311665406, and the direct sum ∑_{n=1}^{10}n⁻² is 1.5497677311665406. The two agree.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "For f(t)=1/t and N an integer, the formula gives H_N=1+∫₁^N⌊t⌋t⁻²dt. Write ⌊t⌋=t−{t} to get H_N=1+ln N−∫₁^N{t}t⁻²dt.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "For N=1000 this means H_N−ln N=0.57771558156820786 and 1−∫₁^N{t}t⁻²dt has the same value. As N→∞ both tend to the Euler-Mascheroni constant γ=0.5772156649.",
+      "uses": []
+     }
+    ],
+    "result": "The finite Abel formula reproduces ∑_{n≤10}n⁻² exactly. The same method turns the harmonic sum into the integral formula for γ.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The function f must be C¹. For f merely of bounded variation use a Stieltjes integral.",
+    "The infinite version needs A(x)f(x)→0. Without it the series may diverge.",
+    "The formula moves the sum into an integral where the integrand is smoother, but it needs bounds on A(t)."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:abel-s-lemma",
+      "relation": "overlaps",
+      "reason": "The catalog record states Abel lemma. This entry adds the integral form, error bounds and an analytic number theory application. Report as new with overlap noted."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-zeta-laurent-constant-euler-mascheroni",
+   "name": "Laurent constant of ζ at 1 is the Euler-Mascheroni constant",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "application_cats": [
+    "math.NT",
+    "math.CV"
+   ],
+   "statement": "For Re s>1, ζ(s)=s/(s−1)−s∫₁^∞{t}t^{−s−1}dt, where {t}=t−⌊t⌋. The right side is holomorphic for Re s>0 except for the simple pole at s=1. Hence ζ extends to Re s>0, and lim_{s→1}(ζ(s)−1/(s−1))=1−∫₁^∞{t}t⁻²dt=γ, where γ=lim_{N→∞}(∑_{n≤N}1/n−ln N)=0.5772156649….",
+   "hypotheses": [
+    "For the first formula Re s>1. The continuation is to Re s>0, s≠1.",
+    "{t} is the fractional part. It takes values in [0,1)."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-abel-partial-summation-formula",
+     "reason": "Steps 1 and 6 apply Abel summation to f(t)=t^(-s) and to f(t)=1/t."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Euler-Mascheroni constant"
+   ],
+   "concept_prerequisites": [
+    "c:riemann-zeta-function",
+    "c:harmonic-number",
+    "c:floor-function",
+    "c:laurent-series"
+   ],
+   "definitions": [
+    {
+     "name": "Euler-Mascheroni constant",
+     "text": "γ=lim_{N→∞}(H_N−ln N), where H_N=∑_{n=1}^{N}1/n."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Harmonic/ZetaAsymp.lean#L342-L374",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.Harmonic.ZetaAsymp",
+    "declaration": "tendsto_riemannZeta_sub_one_div",
+    "lines": [
+     342,
+     374
+    ],
+    "module_sha256": "89d8ae132498047b4c0bb507f132c577bdcf5edf2f2ae13ecfd47f46850d39fd",
+    "excerpt": "/-- The function `ζ s - 1 / (s - 1)` tends to `γ` as `s → 1`. -/\ntheorem _root_.tendsto_riemannZeta_sub_one_div :\n    Tendsto (fun s : ℂ ↦ riemannZeta s - 1 / (s - 1)) (𝓝[≠] 1) (𝓝 γ) := by\n  -- We use the removable-singularity theorem to show that *some* limit over `𝓝[≠] (1 : ℂ)` exists,\n  -- and then use the previous result to deduce that this limit must be `γ`.\n  let f (s : ℂ) := riemannZeta s - 1 / (s - 1)\n  suffices ∃ C, Tendsto f (𝓝[≠] 1) (𝓝 C) by\n    obtain ⟨C, hC⟩ := this\n    suffices Tendsto (fun s : ℝ ↦ f s) _ _\n      from (tendsto_nhds_unique this tendsto_riemannZeta_sub_one_div_nhds_right) ▸ hC\n    refine hC.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_)\n    · exact (Complex.continuous_ofReal.tendsto 1).mono_left (nhdsWithin_le_nhds ..)\n    · filter_upwards [self_mem_nhdsWithin] with a ha\n      rw [mem_compl_singleton_iff, ← Complex.ofReal_one, Ne, Complex.ofReal_inj]\n      exact ne_of_gt ha\n  refine ⟨_, Complex.tendsto_limUnder_of_differentiable_on_punctured_nhds_of_isLittleO ?_ ?_⟩\n  · filter_upwards [self_mem_nhdsWithin] with s hs\n    refine (differentiableAt_riemannZeta hs).sub ((differentiableAt_const _).div ?_ ?_)\n    · fun_prop\n    · rwa [mem_compl_singleton_iff, ← sub_ne_zero] at hs\n  · refine Asymptotics.isLittleO_of_tendsto' ?_ ?_\n    · filter_upwards [self_mem_nhdsWithin] with t ht ht'\n      rw [inv_eq_zero, sub_eq_zero] at ht'\n      tauto\n    · simp_rw [div_eq_mul_inv, inv_inv, sub_mul,\n        (by ring_nf : 𝓝 (0 : ℂ) = 𝓝 ((1 - 1) - f 1 * (1 - 1)))]\n      apply Tendsto.sub\n      · simp_rw [mul_comm (f _), f, mul_sub]\n        apply riemannZeta_residue_one.sub\n        refine Tendsto.congr' ?_ (tendsto_const_nhds.mono_left nhdsWithin_le_nhds)\n        filter_upwards [self_mem_nhdsWithin] with x hx\n        field [sub_ne_zero.mpr <| mem_compl_singleton_iff.mp hx]\n      · exact ((tendsto_id.sub tendsto_const_nhds).mono_left nhdsWithin_le_nhds).const_mul _",
+    "excerpt_sha256": "69189ccdb232b062af710a14afff9e35f4284228ced2f8ff4f850b1520b5aca0",
+    "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler, Terence Tao\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves that ζ(s)−1/(s−1) tends to γ as s→1 in the complex plane."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Harmonic/EulerMascheroni.lean#L151-L155",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Harmonic.EulerMascheroni",
+     "declaration": "tendsto_harmonic_sub_log",
+     "lines": [
+      151,
+      155
+     ],
+     "module_sha256": "ee7833ec45cc748317713270793f08dd8a0b72af42838cd81b79f8cefed76cb8",
+     "excerpt": "lemma tendsto_harmonic_sub_log :\n    Tendsto (fun n : ℕ ↦ harmonic n - log n) atTop (𝓝 eulerMascheroniConstant) := by\n  apply tendsto_eulerMascheroniSeq'.congr'\n  filter_upwards [eventually_ne_atTop 0] with n hn\n  simp_rw [eulerMascheroniSeq', hn, ite_false]",
+     "excerpt_sha256": "68631c16f49f140d925fbce396661e453b0eedf5a5f3363455d26a6396638bd3",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that H_N−ln N tends to γ."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Apply Abel summation with a_n=1, so A(t)=⌊t⌋, and f(t)=t^{−s}. For Re s>1 and integer N, ∑_{n≤N}n^{−s}=N·N^{−s}+s∫₁^N⌊t⌋t^{−s−1}dt.",
+      "uses": [
+       "nm:technique-abel-partial-summation-formula"
+      ]
+     },
+     {
+      "id": "s2",
+      "text": "Let N→∞. Since Re s>1, N^{1−s}→0 and the integral converges absolutely. So ζ(s)=s∫₁^∞⌊t⌋t^{−s−1}dt.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Split ⌊t⌋=t−{t}. Then s∫₁^∞t·t^{−s−1}dt=s∫₁^∞t^{−s}dt=s/(s−1). So ζ(s)=s/(s−1)−s∫₁^∞{t}t^{−s−1}dt.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Continuation. The function J(s)=∫₁^∞{t}t^{−s−1}dt satisfies |{t}t^{−s−1}|≤t^{−Re s−1}, which is integrable when Re s>0. The integral is holomorphic there, by dominated convergence and Morera. So the right side of step 3 is holomorphic on Re s>0 except at s=1, and it agrees with ζ for Re s>1. It is the continuation of ζ.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Pole and constant. s/(s−1)=1+1/(s−1). So ζ(s)−1/(s−1)=1−sJ(s), which is holomorphic at s=1. Its value at s=1 is 1−J(1)=1−∫₁^∞{t}t⁻²dt.",
+      "uses": []
+     },
+     {
+      "id": "s6",
+      "text": "Identify J(1). Abel summation with f(t)=1/t and an integer N gives H_N=1+∫₁^N⌊t⌋t⁻²dt=1+ln N−∫₁^N{t}t⁻²dt. So H_N−ln N=1−∫₁^N{t}t⁻²dt. The right side tends to 1−J(1) as N→∞. The left side tends to γ by definition.",
+      "uses": [
+       "nm:technique-abel-partial-summation-formula"
+      ]
+     },
+     {
+      "id": "s7",
+      "text": "Conclusion. lim_{s→1}(ζ(s)−1/(s−1))=1−J(1)=γ. So the Laurent expansion at s=1 is ζ(s)=1/(s−1)+γ+O(s−1).",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "Check of γ and of the Laurent expansion",
+    "goal": "Compute H_N−ln N for growing N. Then compare ζ(s)−1/(s−1) with γ for s=1.001.",
+    "hypotheses": [
+     "N=10, 100, 1000, 10000.",
+     "s=1.001. The next Laurent coefficient is the Stieltjes constant γ₁=−0.0728158…."
+    ],
+    "why_theorem_applies": "The formula holds for Re s>0, s≠1. The point s=1.001 lies in this region.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "H_N−ln N is 0.62638316, 0.58220733, 0.57771558 and 0.57726566 for N=10, 100, 1000, 10000. The distances to γ are 0.0492, 0.00499, 0.000500 and 0.0000500. This is about 1/(2N), as the proof suggests.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "At s=1.001: ζ(s)−1/(s−1)=0.57728847590149273.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The next Laurent term is −γ₁(s−1) with γ₁=−0.0728158454836767. So the expansion predicts γ+0.0000728158=0.5772884807 at s=1.001. The direct value 0.5772884759 agrees to 8 digits. The rest is the O((s−1)²) term.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "So the constant term of the Laurent series at s=1 is γ.",
+      "uses": []
+     }
+    ],
+    "result": "ζ(s)=1/(s−1)+γ+O(s−1). Numerically, ζ(1.001)−1000=0.5772885 is within 7.3·10⁻⁵ of γ, as the next term predicts.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "The proof of the first formula needs Re s>1. The continuation goes only to Re s>0. For the whole plane use the theta method.",
+    "The identification of γ uses the integer N limit. It does not give a rate beyond 1/(2N).",
+    "The formula gives the constant. The next Laurent coefficients are the Stieltjes constants, which need more terms of the Euler-Maclaurin expansion."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-euler-mascheroni-monotone-sandwich",
+      "relation": "related",
+      "reason": "That entry proves that the limit γ exists. This entry shows γ is the Laurent constant of ζ."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
+  },
+  {
+   "id": "nm:technique-dirichlet-series-convolution-product",
+   "name": "Dirichlet series of a convolution is the product of the series",
+   "aliases": [],
+   "type": "theorem",
+   "cats": [
+    "math.NT"
+   ],
+   "application_cats": [
+    "math.NT"
+   ],
+   "statement": "Let f,g:ℕ→ℂ and let (f∗g)(n)=∑_{d|n}f(d)g(n/d). If the series L(f,s)=∑f(n)n^{−s} and L(g,s)=∑g(n)n^{−s} converge absolutely at s, then L(f∗g,s) also converges absolutely and L(f∗g,s)=L(f,s)·L(g,s). Consequence for μ and ζ: for Re s>1, 1/ζ(s)=∑_{n≥1}μ(n)n^{−s}. For the density of coprime pairs, lim_{N→∞}#{(a,b)∈[1,N]²:gcd(a,b)=1}/N²=1/ζ(2)=6/π².",
+   "hypotheses": [
+    "Re s>1 for the series of 1 and of μ. These series converge absolutely there.",
+    "f(0)=g(0)=0, so only n≥1 counts.",
+    "μ is the Möbius function, defined by ∑_{d|n}μ(d)=1 if n=1 and 0 if n>1."
+   ],
+   "prerequisites": [
+    {
+     "id": "nm:technique-moebius-inversion",
+     "reason": "Step 5 uses the Möbius identity ∑_{d|n}μ(d)=[n=1]."
+    }
+   ],
+   "empty_prerequisites_reason": null,
+   "concepts": [
+    "Dirichlet convolution",
+    "Möbius function"
+   ],
+   "concept_prerequisites": [
+    "c:dirichlet-series",
+    "c:coprime-integers",
+    "c:riemann-zeta-function"
+   ],
+   "definitions": [
+    {
+     "name": "Dirichlet convolution",
+     "text": "(f∗g)(n)=∑_{ab=n}f(a)g(b), the sum over ordered pairs of positive integers with product n."
+    },
+    {
+     "name": "Möbius function",
+     "text": "μ(1)=1. μ(n)=(−1)^r if n is a product of r distinct primes. μ(n)=0 if a square greater than 1 divides n."
+    }
+   ],
+   "source": {
+    "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/Convolution.lean#L153-L159",
+    "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+    "module": "Mathlib.NumberTheory.LSeries.Convolution",
+    "declaration": "LSeries_convolution",
+    "lines": [
+     153,
+     159
+    ],
+    "module_sha256": "6df16a1d03e5efd53bfeb6bca0d1dfc17e8c1ab88b18e3f72cdb5d9b3261dd1d",
+    "excerpt": "/-- The L-series of the convolution product `f ⍟ g` of two sequences `f` and `g`\nequals the product of their L-series in their common half-plane of absolute convergence. -/\nlemma LSeries_convolution {f g : ℕ → ℂ} {s : ℂ}\n    (hf : abscissaOfAbsConv f < s.re) (hg : abscissaOfAbsConv g < s.re) :\n    LSeries (f ⍟ g) s = LSeries f s * LSeries g s :=\n  LSeries_convolution' (LSeriesSummable_of_abscissaOfAbsConv_lt_re hf)\n    (LSeriesSummable_of_abscissaOfAbsConv_lt_re hg)",
+    "excerpt_sha256": "48f7e47e826948783076099443bc861a2ef9dc106d0ccdf4e7db71053dc767e9",
+    "attribution": "/-\nCopyright (c) 2024 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+    "reuse": "Apache-2.0",
+    "alignment": "The source proves L(f∗g,s)=L(f,s)·L(g,s) when both series converge absolutely at s. The source uses the convolution of functions on ℕ, which is the divisor sum form above."
+   },
+   "source_references": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/Convolution.lean#L194-L199",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.Convolution",
+     "declaration": "LSeries_mul",
+     "lines": [
+      194,
+      199
+     ],
+     "module_sha256": "6df16a1d03e5efd53bfeb6bca0d1dfc17e8c1ab88b18e3f72cdb5d9b3261dd1d",
+     "excerpt": "/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`\nequals the product of their L-series in their common half-plane of absolute convergence. -/\nlemma LSeries_mul {f g : ArithmeticFunction ℂ} {s : ℂ}\n    (hf : abscissaOfAbsConv ↗f < s.re) (hg : abscissaOfAbsConv ↗g < s.re) :\n    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s :=\n  coe_mul f g ▸ LSeries_convolution hf hg",
+     "excerpt_sha256": "974720f23e78f37c8b44f1974596cfd8650d6eb495f06cc5e0b1edb6f6569c44",
+     "attribution": "/-\nCopyright (c) 2024 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the same product rule for arithmetic functions."
+    }
+   ],
+   "proof_status": "source declaration inspected; authored proof awaits inference review; no local Lean check",
+   "authored": "2026-10-11",
+   "proof": {
+    "kind": "authored",
+    "verification": "No local formal verification. No accepted judgment exists yet.",
+    "scope": "The full statement under all listed hypotheses.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "Write the product as a double series. L(f,s)L(g,s)=∑_{a≥1}∑_{b≥1}f(a)a^{−s}g(b)b^{−s}=∑_{a,b}f(a)g(b)(ab)^{−s}.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "Absolute convergence. ∑_{a,b}|f(a)||g(b)|(ab)^{−σ}=(∑|f(a)|a^{−σ})(∑|g(b)|b^{−σ})<∞ with σ=Re s. So we may sum the terms in any order.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "Group by the product n=ab. Each n≥1 collects the terms with ab=n. The sum over these terms is ∑_{ab=n}f(a)g(b)n^{−s}=(f∗g)(n)n^{−s}.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Result. L(f,s)L(g,s)=∑_{n≥1}(f∗g)(n)n^{−s}=L(f∗g,s). The same grouping applied to |f|,|g| shows absolute convergence of L(f∗g,s), since |f∗g|≤|f|∗|g|.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "The Möbius inverse. Let 1 be the constant function 1. The Möbius property ∑_{d|n}μ(d)=[n=1] says μ∗1=δ, where δ(1)=1 and δ(n)=0 otherwise. Apply step 4 with f=μ and g=1: L(μ,s)ζ(s)=L(δ,s)=1 for Re s>1. So 1/ζ(s)=∑μ(n)n^{−s}.",
+      "uses": [
+       "nm:technique-moebius-inversion"
+      ]
+     },
+     {
+      "id": "s6",
+      "text": "Coprime pairs. For a,b∈[1,N], [gcd(a,b)=1]=∑_{k|gcd(a,b)}μ(k). Sum over a and b. The number of multiples of k in [1,N] is ⌊N/k⌋. So C(N)=#{coprime pairs}=∑_{k≤N}μ(k)⌊N/k⌋².",
+      "uses": []
+     },
+     {
+      "id": "s7",
+      "text": "Limit. ⌊N/k⌋²=N²/k²+O(N/k). So C(N)/N²=∑_{k≤N}μ(k)/k²+O(ln N/N). The first sum tends to L(μ,2)=1/ζ(2)=6/π². So C(N)/N²→6/π².",
+      "uses": []
+     }
+    ]
+   },
+   "worked_application": {
+    "title": "The coprime pair count and the series ∑μ(n)/n²",
+    "goal": "Count coprime pairs for N=10 and N=1000. Compare with 6/π² and with partial sums of μ(n)/n².",
+    "hypotheses": [
+     "N=10 and N=1000 for the count.",
+     "Partial sum of μ(n)/n² for n≤10000.",
+     "Partial sum of d(n)/n² for n≤3000 against ζ(2)²."
+    ],
+    "why_theorem_applies": "Re s=2>1, so the series of μ, 1 and the divisor function d=1∗1 converge absolutely. The count formula of step 6 is exact.",
+    "steps": [
+     {
+      "id": "s1",
+      "text": "For N=10 the count is 63. The formula ∑μ(k)⌊10/k⌋² gives the same number, and 63/100=0.63.",
+      "uses": []
+     },
+     {
+      "id": "s2",
+      "text": "For N=1000 the count is 608383, so the ratio is 0.608383. The value 6/π² is 0.6079271018. The difference is 4.6·10⁻⁴. The formula ∑_{k≤1000}μ(k)⌊1000/k⌋² also gives 608383.",
+      "uses": []
+     },
+     {
+      "id": "s3",
+      "text": "The partial sum ∑_{n≤10000}μ(n)/n² is 0.6079268973. This differs from 6/π² by 2·10⁻⁷.",
+      "uses": []
+     },
+     {
+      "id": "s4",
+      "text": "Divisor function. Since d=1∗1, L(d,2)=ζ(2)²=π⁴/36=2.7058080843. The partial sum for n≤3000 is 2.7024226331. The gap 0.0034 is of the size of the tail, about (ln 3000)/3000.",
+      "uses": []
+     },
+     {
+      "id": "s5",
+      "text": "Check of μ∗1=δ for n=1,…,12. The sums ∑_{d|n}μ(d) are 1,0,0,0,0,0,0,0,0,0,0,0.",
+      "uses": []
+     }
+    ],
+    "result": "Two random integers up to N are coprime with probability near 6/π²=0.6079. The count 608383 for N=1000 matches within 0.0005.",
+    "verification": "Authored calculation; mathematical review remains pending."
+   },
+   "limitations": [
+    "Without absolute convergence the regrouping in step 3 may change the sum.",
+    "The coprime density needs ζ(2)=π²/6. The proof shows the density is 1/ζ(2) for any value of ζ(2).",
+    "The error O(ln N/N) in step 7 is sharp only up to the constant. The observed error 4.6·10⁻⁴ for N=1000 is below ln(1000)/1000=0.0069."
+   ],
+   "identity_review": {
+    "basis": "Committed catalog names, aliases, statements and source declarations, plus the first batch.",
+    "related": [
+     {
+      "id": "nm:technique-euler-zeta-even-values-bernoulli",
+      "relation": "related",
+      "reason": "The value ζ(2)=π²/6 from the even value formula gives the number 6/π² in the application."
+     }
+    ],
+    "decision": "candidate; semantic review remains necessary"
+   },
+   "status": "candidate"
   }
  ]
 }

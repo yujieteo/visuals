@@ -1588,6 +1588,360 @@
      "alignment": "The source proves that ∏_{i<n}(1+sineTerm x i) tends to sin(πx)/(πx) for x≠0, where sineTerm x i=−x²/(i+1)². This is the same product with the factor πx divided out."
     }
    ]
+  },
+  {
+   "id": "nm:technique-euler-zeta-even-values-bernoulli",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L200-L212",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+     "declaration": "riemannZeta_two_mul_nat",
+     "lines": [
+      200,
+      212
+     ],
+     "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+     "excerpt": "/-- Explicit formula for `ζ (2 * k)`, for `k ∈ ℕ` with `k ≠ 0`, in terms of the Bernoulli number\n`bernoulli (2 * k)`.\n\nCompare `hasSum_zeta_nat` for a version formulated in terms of a sum over `1 / n ^ (2 * k)`, and\n`riemannZeta_neg_nat_eq_bernoulli` for values at negative integers (equivalent to the above via\nthe functional equation). -/\ntheorem riemannZeta_two_mul_nat {k : ℕ} (hk : k ≠ 0) :\n    riemannZeta (2 * k) = (-1) ^ (k + 1) * (2 : ℂ) ^ (2 * k - 1)\n      * (π : ℂ) ^ (2 * k) * bernoulli (2 * k) / (2 * k)! := by\n  convert congr(($((hasSum_zeta_nat hk).tsum_eq) : ℂ))\n  · rw [← Nat.cast_two, ← Nat.cast_mul, zeta_nat_eq_tsum_of_gt_one (by lia)]\n    simp [push_cast]\n  · norm_cast",
+     "excerpt_sha256": "3c00ab2e9a6333e1d16a27578e48bb4e42196423451128454902419cbd3caf66",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves ζ(2k)=(−1)^{k+1}2^{2k−1}π^{2k}B_{2k}/(2k)! for k≠0, in the form of the statement. The source proof goes through Fourier series of Bernoulli polynomials, not through the cotangent expansion used here."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L226-L230",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+     "declaration": "riemannZeta_two",
+     "lines": [
+      226,
+      230
+     ],
+     "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+     "excerpt": "theorem riemannZeta_two : riemannZeta 2 = (π : ℂ) ^ 2 / 6 := by\n  convert congr(($hasSum_zeta_two.tsum_eq : ℂ))\n  · rw [← Nat.cast_two, zeta_nat_eq_tsum_of_gt_one one_lt_two]\n    simp [push_cast]\n  · norm_cast",
+     "excerpt_sha256": "79ebdc2709e2b088e8f29cdb4505cc0a06a01764648e8b5074f02ca877d946a0",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source gives the case k=1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gamma-gauss-limit-formula",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L333-L360",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "GammaSeq_tendsto_Gamma",
+     "lines": [
+      333,
+      360
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- Euler's limit formula for the complex Gamma function. -/\ntheorem GammaSeq_tendsto_Gamma (s : ℂ) : Tendsto (GammaSeq s) atTop (𝓝 <| Gamma s) := by\n  suffices ∀ m : ℕ, ⌊1 - s.re⌋₊ = m → Tendsto (GammaSeq s) atTop (𝓝 <| Gamma s) by tauto\n  intro m\n  induction m generalizing s with intro hs\n  | zero => -- Base case: `0 < re s`, so Gamma is given by the integral formula\n    rw [Nat.floor_eq_zero, sub_lt_self_iff] at hs\n    apply (approx_Gamma_integral_tendsto_Gamma_integral hs).congr'\n    filter_upwards [eventually_ne_atTop 0] with n hn using\n      (GammaSeq_eq_approx_Gamma_integral hs hn).symm\n  | succ m IH => -- Induction step: use recurrence formulae in `s` for Gamma and GammaSeq\n    -- Silly case `s = 0`: both sides are zero\n    rcases eq_or_ne s 0 with rfl | hsne\n    · unfold GammaSeq\n      simp [Finset.prod_range_succ']\n    specialize IH (s + 1) ?_\n    · rw [Nat.floor_eq_iff' (by lia)] at hs\n      have : s.re ≤ -m := by grind\n      rw [Nat.floor_eq_iff <| by simpa using (show s.re ≤ 0 by grind)]\n      grind [add_re, one_re]\n    rw [Gamma_add_one _ hsne] at IH\n    have := (IH.div_const s).congr' <| by\n      filter_upwards [eventually_ne_atTop 0] with n using GammaSeq_add_one_left s\n    simp only [mul_comm _ (s.GammaSeq _)] at this\n    rwa [mul_div_cancel_left₀ _ hsne, ← mul_one (Gamma s),\n      tendsto_mul_iff_of_ne_zero _ (one_ne_zero' ℂ)] at this\n    simp_rw [add_assoc]\n    exact tendsto_natCast_div_add_atTop (1 + s)",
+     "excerpt_sha256": "ea7deb39197e244b3507af205d9e730d640de25e104c5eb803c60fbcc47e67f5",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that the Gauss sequence tends to Γ(s) for every complex s. The source name occurs in the Complex and the Real namespace. This record is the Complex one."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L232-L234",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "GammaSeq_eq_betaIntegral_of_re_pos",
+     "lines": [
+      232,
+      234
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "theorem GammaSeq_eq_betaIntegral_of_re_pos {s : ℂ} (hs : 0 < re s) (n : ℕ) :\n    GammaSeq s n = (n : ℂ) ^ s * betaIntegral s (n + 1) := by\n  rw [GammaSeq, betaIntegral_eval_nat_add_one_right hs n, ← mul_div_assoc]",
+     "excerpt_sha256": "6b2ff3cd8f9b82819b66e0167f92d6e95578011e729f84745cc710244f00879a",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves step 4 and step 5 together: G_n(s)=nˢB(s,n+1) for Re s>0."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L270-L331",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "approx_Gamma_integral_tendsto_Gamma_integral",
+     "lines": [
+      270,
+      331
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- The main technical lemma for `GammaSeq_tendsto_Gamma`, expressing the integral defining the\nGamma function for `0 < re s` as the limit of a sequence of integrals over finite intervals. -/\ntheorem approx_Gamma_integral_tendsto_Gamma_integral {s : ℂ} (hs : 0 < re s) :\n    Tendsto (fun n : ℕ => ∫ x : ℝ in 0..n, ((1 - x / n) ^ n : ℝ) * (x : ℂ) ^ (s - 1)) atTop\n      (𝓝 <| Gamma s) := by\n  rw [Gamma_eq_integral hs]\n  -- We apply dominated convergence to the following function, which we will show is uniformly\n  -- bounded above by the Gamma integrand `exp (-x) * x ^ (re s - 1)`.\n  let f : ℕ → ℝ → ℂ := fun n =>\n    indicator (Ioc 0 (n : ℝ)) fun x : ℝ => ((1 - x / n) ^ n : ℝ) * (x : ℂ) ^ (s - 1)\n  -- integrability of f\n  have f_ible : ∀ n : ℕ, Integrable (f n) (volume.restrict (Ioi 0)) := by\n    intro n\n    rw [integrable_indicator_iff (measurableSet_Ioc : MeasurableSet (Ioc (_ : ℝ) _)), IntegrableOn,\n      Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self, ← IntegrableOn, ←\n      intervalIntegrable_iff_integrableOn_Ioc_of_le (by positivity : (0 : ℝ) ≤ n)]\n    apply IntervalIntegrable.continuousOn_mul\n    · refine intervalIntegral.intervalIntegrable_cpow' ?_\n      rwa [sub_re, one_re, ← zero_sub, sub_lt_sub_iff_right]\n    · fun_prop\n  -- pointwise limit of f\n  have f_tends : ∀ x : ℝ, x ∈ Ioi (0 : ℝ) →\n      Tendsto (fun n : ℕ => f n x) atTop (𝓝 <| ↑(Real.exp (-x)) * (x : ℂ) ^ (s - 1)) := by\n    intro x hx\n    apply Tendsto.congr'\n    · change ∀ᶠ n : ℕ in atTop, ↑((1 - x / n) ^ n) * (x : ℂ) ^ (s - 1) = f n x\n      filter_upwards [eventually_ge_atTop ⌈x⌉₊] with n hn\n      rw [Nat.ceil_le] at hn\n      dsimp only [f]\n      rw [indicator_of_mem]\n      exact ⟨hx, hn⟩\n    · simp_rw [mul_comm]\n      refine (Tendsto.comp (continuous_ofReal.tendsto _) ?_).const_mul _\n      convert Real.tendsto_one_add_div_pow_exp (-x) using 1\n      ext1 n\n      rw [neg_div, ← sub_eq_add_neg]\n  -- let `convert` identify the remaining goals\n  convert!\n    tendsto_integral_of_dominated_convergence _ (fun n => (f_ible n).1)\n      (Real.GammaIntegral_convergent hs) _\n      ((ae_restrict_iff' measurableSet_Ioi).mpr (ae_of_all _ f_tends)) using 1\n    -- limit of f is the integrand we want\n\n  -- limit of f is the integrand we want\n  · ext1 n\n    rw [MeasureTheory.integral_indicator (measurableSet_Ioc : MeasurableSet (Ioc (_ : ℝ) _)),\n      intervalIntegral.integral_of_le (by positivity : 0 ≤ (n : ℝ)),\n      Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self]\n  -- f is uniformly bounded by the Gamma integrand\n  · intro n\n    rw [ae_restrict_iff' measurableSet_Ioi]\n    filter_upwards with x hx\n    simp only [mem_Ioi, f] at hx ⊢\n    rcases lt_or_ge (n : ℝ) x with (hxn | hxn)\n    · rw [indicator_of_notMem (notMem_Ioc_of_gt hxn), norm_zero,\n        mul_nonneg_iff_right_nonneg_of_pos (exp_pos _)]\n      positivity\n    · rw [indicator_of_mem (mem_Ioc.mpr ⟨mem_Ioi.mp hx, hxn⟩), norm_mul, Complex.norm_of_nonneg\n          (pow_nonneg (sub_nonneg.mpr <| div_le_one_of_le₀ hxn <| by positivity) _),\n          norm_cpow_eq_rpow_re_of_pos hx, sub_re, one_re]\n      gcongr\n      exact one_sub_div_pow_le_exp_neg hxn",
+     "excerpt_sha256": "0da8c6cb32c1c968867a84f4e102fbe49edf24b9e2de6e8a2cb89b8b8d3f2b6c",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves step 3, the dominated convergence step."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gamma-reflection-formula",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L396-L422",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "Gamma_mul_Gamma_one_sub",
+     "lines": [
+      396,
+      422
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- Euler's reflection formula for the complex Gamma function. -/\ntheorem Gamma_mul_Gamma_one_sub (z : ℂ) : Gamma z * Gamma (1 - z) = π / sin (π * z) := by\n  have pi_ne : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr pi_ne_zero\n  by_cases hs : sin (↑π * z) = 0\n  · -- first deal with silly case z = integer\n    rw [hs, div_zero]\n    rw [← neg_eq_zero, ← Complex.sin_neg, ← mul_neg, Complex.sin_eq_zero_iff, mul_comm] at hs\n    obtain ⟨k, hk⟩ := hs\n    rw [mul_eq_mul_right_iff, eq_false (ofReal_ne_zero.mpr pi_pos.ne'), or_false,\n      neg_eq_iff_eq_neg] at hk\n    rw [hk]\n    cases k\n    · rw [Int.ofNat_eq_natCast, Int.cast_natCast, Complex.Gamma_neg_nat_eq_zero, zero_mul]\n    · rw [Int.cast_negSucc, neg_neg, Nat.cast_add, Nat.cast_one, add_comm, sub_add_cancel_left,\n        Complex.Gamma_neg_nat_eq_zero, mul_zero]\n  refine tendsto_nhds_unique ((GammaSeq_tendsto_Gamma z).mul (GammaSeq_tendsto_Gamma <| 1 - z)) ?_\n  have : ↑π / sin (↑π * z) = 1 * (π / sin (π * z)) := by rw [one_mul]\n  convert\n    Tendsto.congr'\n      ((eventually_ne_atTop 0).mp (Eventually.of_forall fun n hn => (GammaSeq_mul z hn).symm))\n      (Tendsto.mul _ _)\n  · convert tendsto_natCast_div_add_atTop (1 - z) using 1; ext1 n; rw [add_sub_assoc]\n  · have : ↑π / sin (↑π * z) = 1 / (sin (π * z) / π) := by simp\n    convert tendsto_const_nhds.div _ (div_ne_zero hs pi_ne)\n    rw [← tendsto_mul_iff_of_ne_zero tendsto_const_nhds pi_ne, div_mul_cancel₀ _ pi_ne]\n    convert tendsto_euler_sin_prod z using 1\n    ext1 n; rw [mul_comm, ← mul_assoc]",
+     "excerpt_sha256": "5cf8997ebaed15d47f28756953f3b476848e22760a2301b647bf600d4d7f7a64",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the reflection formula for complex z. It also holds at integers with the Lean convention that division by zero is zero. The name occurs in the Complex and Real namespaces. This record is the Complex one."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L373-L394",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "GammaSeq_mul",
+     "lines": [
+      373,
+      394
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "theorem GammaSeq_mul (z : ℂ) {n : ℕ} (hn : n ≠ 0) :\n    GammaSeq z n * GammaSeq (1 - z) n =\n      n / (n + ↑1 - z) * (↑1 / (z * ∏ j ∈ Finset.range n, (↑1 - z ^ 2 / ((j : ℂ) + 1) ^ 2))) := by\n  -- also true for n = 0 but we don't need it\n  have aux : ∀ a b c d : ℂ, a * b * (c * d) = a * c * (b * d) := by intros; ring\n  rw [GammaSeq, GammaSeq, div_mul_div_comm, aux, ← pow_two]\n  have : (n : ℂ) ^ z * (n : ℂ) ^ (1 - z) = n := by\n    rw [← cpow_add _ _ (Nat.cast_ne_zero.mpr hn), add_sub_cancel, cpow_one]\n  rw [this, Finset.prod_range_succ', Finset.prod_range_succ, aux, ← Finset.prod_mul_distrib,\n    Nat.cast_zero, add_zero, add_comm (1 - z) n, ← add_sub_assoc]\n  have : ∀ j : ℕ, (z + ↑(j + 1)) * (↑1 - z + ↑j) =\n      ((j + 1) ^ 2 :) * (↑1 - z ^ 2 / ((j : ℂ) + 1) ^ 2) := by\n    intro j\n    push_cast\n    have : (j : ℂ) + 1 ≠ 0 := by rw [← Nat.cast_succ, Nat.cast_ne_zero]; exact Nat.succ_ne_zero j\n    field\n  simp_rw [this]\n  rw [Finset.prod_mul_distrib, ← Nat.cast_prod, Finset.prod_pow,\n    Finset.prod_range_add_one_eq_factorial, Nat.cast_pow,\n    (by intros; ring : ∀ a b c d : ℂ, a * b * (c * d) = a * (d * (b * c))), ← div_div,\n    mul_div_cancel_right₀, ← div_div, mul_comm z _, mul_one_div]\n  exact pow_ne_zero 2 (Nat.cast_ne_zero.mpr <| by positivity)",
+     "excerpt_sha256": "8d1aa4ace984c50121d158dfe8d1b6ecb5feb5f0bc51f6d2809032fbfe1ceae6",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the exact finite identity of step 4."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-gamma-legendre-duplication",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L558-L588",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "Gamma_mul_Gamma_add_half",
+     "lines": [
+      558,
+      588
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "theorem Gamma_mul_Gamma_add_half (s : ℂ) :\n    Gamma s * Gamma (s + 1 / 2) = Gamma (2 * s) * (2 : ℂ) ^ (1 - 2 * s) * ↑(√π) := by\n  suffices (fun z => (Gamma z)⁻¹ * (Gamma (z + 1 / 2))⁻¹) = fun z =>\n      (Gamma (2 * z))⁻¹ * (2 : ℂ) ^ (2 * z - 1) / ↑(√π) by\n    convert congr_arg Inv.inv (congr_fun this s) using 1\n    · rw [mul_inv, inv_inv, inv_inv]\n    · rw [div_eq_mul_inv, mul_inv, mul_inv, inv_inv, inv_inv, ← cpow_neg, neg_sub]\n  have h1 : AnalyticOnNhd ℂ (fun z : ℂ => (Gamma z)⁻¹ * (Gamma (z + 1 / 2))⁻¹) univ := by\n    refine DifferentiableOn.analyticOnNhd ?_ isOpen_univ\n    refine (differentiable_one_div_Gamma.mul ?_).differentiableOn\n    exact differentiable_one_div_Gamma.comp (differentiable_id.add (differentiable_const _))\n  have h2 : AnalyticOnNhd ℂ\n      (fun z => (Gamma (2 * z))⁻¹ * (2 : ℂ) ^ (2 * z - 1) / ↑(√π)) univ := by\n    refine DifferentiableOn.analyticOnNhd ?_ isOpen_univ\n    refine (Differentiable.mul ?_ (differentiable_const _)).differentiableOn\n    apply Differentiable.mul\n    · exact differentiable_one_div_Gamma.comp (differentiable_id.const_mul _)\n    · refine fun t => DifferentiableAt.const_cpow ?_ (Or.inl two_ne_zero)\n      exact DifferentiableAt.sub_const (differentiableAt_id.const_mul _) _\n  have h3 : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] 1) (𝓝[≠] 1) := by\n    rw [tendsto_nhdsWithin_iff]; constructor\n    · exact tendsto_nhdsWithin_of_tendsto_nhds continuous_ofReal.continuousAt\n    · exact eventually_nhdsWithin_iff.mpr (Eventually.of_forall fun t ht => ofReal_ne_one.mpr ht)\n  refine AnalyticOnNhd.eq_of_frequently_eq h1 h2 (h3.frequently ?_)\n  refine ((Eventually.filter_mono nhdsWithin_le_nhds) ?_).frequently\n  refine (eventually_gt_nhds zero_lt_one).mp (Eventually.of_forall fun t ht => ?_)\n  rw [← mul_inv, Gamma_ofReal, (by simp : (t : ℂ) + 1 / 2 = ↑(t + 1 / 2)), Gamma_ofReal, ←\n    ofReal_mul, Gamma_mul_Gamma_add_half_of_pos ht, ofReal_mul, ofReal_mul, ← Gamma_ofReal,\n    mul_inv, mul_inv, (by simp : 2 * (t : ℂ) = ↑(2 * t)), Gamma_ofReal,\n    ofReal_cpow zero_le_two, show (2 : ℝ) = (2 : ℂ) by norm_cast, ← cpow_neg, ofReal_sub,\n    ofReal_one, neg_sub, ← div_eq_mul_inv]",
+     "excerpt_sha256": "9f72df186dc548dda4fa13915d8bb8d807359b8584c60c5789f7f64a1c0d1a97",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves Γ(s)Γ(s+1/2)=Γ(2s)·2^{1−2s}·√π for every complex s. The name occurs in the Complex and Real namespaces. This record is the Complex one."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/Analysis/SpecialFunctions/Gamma/Beta.lean#L122-L138",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Beta",
+     "declaration": "Gamma_mul_Gamma_eq_betaIntegral",
+     "lines": [
+      122,
+      138
+     ],
+     "module_sha256": "274d9785aa8bd33128d2afdea1641d23b5ed36ed1743af88deed4b1ba413df04",
+     "excerpt": "/-- Relation between Beta integral and Gamma function. -/\ntheorem Gamma_mul_Gamma_eq_betaIntegral {s t : ℂ} (hs : 0 < re s) (ht : 0 < re t) :\n    Gamma s * Gamma t = Gamma (s + t) * betaIntegral s t := by\n  -- Note that we haven't proved (yet) that the Gamma function has no zeroes, so we can't formulate\n  -- this as a formula for the Beta function.\n  have conv_int := integral_posConvolution\n    (GammaIntegral_convergent hs) (GammaIntegral_convergent ht) (ContinuousLinearMap.mul ℝ ℂ)\n  simp_rw [ContinuousLinearMap.mul_apply'] at conv_int\n  have hst : 0 < re (s + t) := by rw [add_re]; exact add_pos hs ht\n  rw [Gamma_eq_integral hs, Gamma_eq_integral ht, Gamma_eq_integral hst, GammaIntegral,\n    GammaIntegral, GammaIntegral, ← conv_int, ← MeasureTheory.integral_mul_const (betaIntegral _ _)]\n  refine setIntegral_congr_fun measurableSet_Ioi fun x hx => ?_\n  rw [mul_assoc, ← betaIntegral_scaled s t hx, ← intervalIntegral.integral_const_mul]\n  congr 1 with y : 1\n  push_cast\n  suffices Complex.exp (-x) = Complex.exp (-y) * Complex.exp (-(x - y)) by rw [this]; ring\n  rw [← Complex.exp_add]; congr 1; abel",
+     "excerpt_sha256": "83e7233aaf2900ae70b95a62e07583752c79a94e556cfd2b3c8c67d74fdc5fcc",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the Beta–Gamma factorization used in step 1 for complex parameters."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-jacobi-theta-inversion-poisson",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/ModularForms/JacobiTheta/OneVariable.lean#L43-L53",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable",
+     "declaration": "jacobiTheta_S_smul",
+     "lines": [
+      43,
+      53
+     ],
+     "module_sha256": "d52b43a505bb197440e09c71d4aa98f4519760eaaa8fb79a5f0b25a8a0830c5a",
+     "excerpt": "theorem jacobiTheta_S_smul (τ : ℍ) :\n    jacobiTheta ↑(ModularGroup.S • τ) = (-I * τ) ^ (1 / 2 : ℂ) * jacobiTheta τ := by\n  have h0 : (τ : ℂ) ≠ 0 := ne_of_apply_ne im (zero_im.symm ▸ ne_of_gt τ.2)\n  have h1 : (-I * τ) ^ (1 / 2 : ℂ) ≠ 0 := by\n    rw [Ne, cpow_eq_zero_iff, not_and_or]\n    exact Or.inl <| mul_ne_zero (neg_ne_zero.mpr I_ne_zero) h0\n  simp_rw [UpperHalfPlane.modular_S_smul, jacobiTheta_eq_jacobiTheta₂, ← ofReal_zero]\n  norm_cast\n  simp_rw [jacobiTheta₂_functional_equation 0 τ, zero_pow two_ne_zero, mul_zero, zero_div,\n    Complex.exp_zero, mul_one, ← mul_assoc, mul_one_div, div_self h1, one_mul,\n    inv_neg, neg_div, one_div]",
+     "excerpt_sha256": "ddeb62ddd704f0bfcb92fba90eec654dc9f43fdf9223d52aae3296124a37342d",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the modular inversion θ(−1/τ)=(−iτ)^{1/2}θ(τ) for τ in the upper half plane. The source proof goes through the two-variable theta function and the general Poisson summation formula, not through the periodization above."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-zeta-functional-equation-theta-mellin",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L103-L107",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+     "declaration": "completedRiemannZeta_one_sub",
+     "lines": [
+      103,
+      107
+     ],
+     "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+     "excerpt": "/-- Riemann zeta functional equation, formulated for `Λ`: for any complex `s` we have\n`Λ (1 - s) = Λ s`. -/\ntheorem completedRiemannZeta_one_sub (s : ℂ) :\n    completedRiemannZeta (1 - s) = completedRiemannZeta s := by\n  rw [← completedHurwitzZetaEven_zero, ← completedCosZeta_zero, completedHurwitzZetaEven_one_sub]",
+     "excerpt_sha256": "f93b7d34b598be43e088e22c4e7f622404914ee8533cdb36d56c7b0eef22f01b",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves Λ(1−s)=Λ(s) for every complex s with the completed zeta function. Its proof uses Hurwitz zeta and Mellin transforms of theta kernels."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L175-L179",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+     "declaration": "riemannZeta_one_sub",
+     "lines": [
+      175,
+      179
+     ],
+     "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+     "excerpt": "/-- Riemann zeta functional equation, formulated for `ζ`: if `1 - s ∉ ℕ`, then we have\n`ζ (1 - s) = 2 ^ (1 - s) * π ^ (-s) * Γ s * sin (π * (1 - s) / 2) * ζ s`. -/\ntheorem riemannZeta_one_sub {s : ℂ} (hs : ∀ n : ℕ, s ≠ -n) (hs' : s ≠ 1) :\n    riemannZeta (1 - s) = 2 * (2 * π) ^ (-s) * Gamma s * cos (π * s / 2) * riemannZeta s := by\n  rw [riemannZeta, hurwitzZetaEven_one_sub 0 hs (Or.inr hs'), cosZeta_zero, hurwitzZetaEven_zero]",
+     "excerpt_sha256": "8d2760aeca3cf00e0f72e0092a3ea2afbc0a0747a95940277eb2ae38e15f6e65",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves ζ(1−s)=2(2π)^{−s}Γ(s)cos(πs/2)ζ(s) for s not a non-positive integer and s≠1."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-zeta-negative-integers-bernoulli",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/HurwitzZetaValues.lean#L250-L255",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.HurwitzZetaValues",
+     "declaration": "riemannZeta_neg_nat_eq_bernoulli",
+     "lines": [
+      250,
+      255
+     ],
+     "module_sha256": "a64553efa74b94ca4140efc3c622ccc0d15f912fab7c9148f330dd02c8ce8af7",
+     "excerpt": "/-- Value of Riemann zeta at `-ℕ` in terms of `bernoulli`. -/\ntheorem riemannZeta_neg_nat_eq_bernoulli (k : ℕ) :\n    riemannZeta (-k) = (-1 : ℂ) ^ k * bernoulli (k + 1) / (k + 1) := by\n  rw [riemannZeta_neg_nat_eq_bernoulli', bernoulli, Rat.cast_mul, Rat.cast_pow, Rat.cast_neg,\n    Rat.cast_one, ← neg_one_mul, ← mul_assoc, pow_succ, ← mul_assoc, ← mul_pow, neg_one_mul (-1),\n    neg_neg, one_pow, one_mul]",
+     "excerpt_sha256": "65ff02c0e9239dd5b1887cfe8d51a75e197b5b1f53bc61e873253281b5f791cd",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves ζ(−k)=(−1)^k B_{k+1}/(k+1) for every k. Its proof goes through Hurwitz zeta values at negative integers, not through the functional equation used here."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/RiemannZeta.lean#L171-L173",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.RiemannZeta",
+     "declaration": "riemannZeta_neg_two_mul_nat_add_one",
+     "lines": [
+      171,
+      173
+     ],
+     "module_sha256": "b759715ee4dfd6cde4f220665b7230c087a193ba24f1be175bb759bb116c1704",
+     "excerpt": "/-- The trivial zeroes of the zeta function. -/\ntheorem riemannZeta_neg_two_mul_nat_add_one (n : ℕ) : riemannZeta (-2 * (n + 1)) = 0 :=\n  hurwitzZetaEven_neg_two_mul_nat_add_one 0 n",
+     "excerpt_sha256": "58dfbb11b3f26b7123c39738090633739a7058936d268acad682d770a67fdbe4",
+     "attribution": "/-\nCopyright (c) 2023 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the trivial zeros ζ(−2(n+1))=0."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-abel-partial-summation-formula",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/AbelSummation.lean#L199-L207",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.AbelSummation",
+     "declaration": "sum_mul_eq_sub_integral_mul'",
+     "lines": [
+      199,
+      207
+     ],
+     "module_sha256": "f445b32b316a1d3566235ea53cee7cf121a34dea305a504c00c8bb2838e5baf7",
+     "excerpt": "/-- A version of `sum_mul_eq_sub_integral_mul` where the endpoint is a `Nat`. -/\ntheorem sum_mul_eq_sub_integral_mul' (m : ℕ)\n    (hf_diff : ∀ t ∈ Set.Icc (0 : ℝ) m, DifferentiableAt ℝ f t)\n    (hf_int : IntegrableOn (deriv f) (Set.Icc (0 : ℝ) m)) :\n    ∑ k ∈ Icc 0 m, f k * c k =\n      f m * (∑ k ∈ Icc 0 m, c k) -\n        ∫ t in Set.Ioc (0 : ℝ) m, deriv f t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k := by\n  convert sum_mul_eq_sub_integral_mul c m.cast_nonneg hf_diff hf_int\n  all_goals rw [Nat.floor_natCast]",
+     "excerpt_sha256": "49a483c83158ae8c01164ab7165d74da5b9e2012dafde86f6c96811ca728bf9e",
+     "attribution": "/-\nCopyright (c) 2024 Xavier Roblot. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Xavier Roblot\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the formula for a natural number endpoint m, with sums over k from 0 to m. Taking c 0 = 0 gives the sums from 1 used here, as in the lemmas with the suffix 0 in the same file."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-zeta-laurent-constant-euler-mascheroni",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Harmonic/ZetaAsymp.lean#L342-L374",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Harmonic.ZetaAsymp",
+     "declaration": "tendsto_riemannZeta_sub_one_div",
+     "lines": [
+      342,
+      374
+     ],
+     "module_sha256": "89d8ae132498047b4c0bb507f132c577bdcf5edf2f2ae13ecfd47f46850d39fd",
+     "excerpt": "/-- The function `ζ s - 1 / (s - 1)` tends to `γ` as `s → 1`. -/\ntheorem _root_.tendsto_riemannZeta_sub_one_div :\n    Tendsto (fun s : ℂ ↦ riemannZeta s - 1 / (s - 1)) (𝓝[≠] 1) (𝓝 γ) := by\n  -- We use the removable-singularity theorem to show that *some* limit over `𝓝[≠] (1 : ℂ)` exists,\n  -- and then use the previous result to deduce that this limit must be `γ`.\n  let f (s : ℂ) := riemannZeta s - 1 / (s - 1)\n  suffices ∃ C, Tendsto f (𝓝[≠] 1) (𝓝 C) by\n    obtain ⟨C, hC⟩ := this\n    suffices Tendsto (fun s : ℝ ↦ f s) _ _\n      from (tendsto_nhds_unique this tendsto_riemannZeta_sub_one_div_nhds_right) ▸ hC\n    refine hC.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_)\n    · exact (Complex.continuous_ofReal.tendsto 1).mono_left (nhdsWithin_le_nhds ..)\n    · filter_upwards [self_mem_nhdsWithin] with a ha\n      rw [mem_compl_singleton_iff, ← Complex.ofReal_one, Ne, Complex.ofReal_inj]\n      exact ne_of_gt ha\n  refine ⟨_, Complex.tendsto_limUnder_of_differentiable_on_punctured_nhds_of_isLittleO ?_ ?_⟩\n  · filter_upwards [self_mem_nhdsWithin] with s hs\n    refine (differentiableAt_riemannZeta hs).sub ((differentiableAt_const _).div ?_ ?_)\n    · fun_prop\n    · rwa [mem_compl_singleton_iff, ← sub_ne_zero] at hs\n  · refine Asymptotics.isLittleO_of_tendsto' ?_ ?_\n    · filter_upwards [self_mem_nhdsWithin] with t ht ht'\n      rw [inv_eq_zero, sub_eq_zero] at ht'\n      tauto\n    · simp_rw [div_eq_mul_inv, inv_inv, sub_mul,\n        (by ring_nf : 𝓝 (0 : ℂ) = 𝓝 ((1 - 1) - f 1 * (1 - 1)))]\n      apply Tendsto.sub\n      · simp_rw [mul_comm (f _), f, mul_sub]\n        apply riemannZeta_residue_one.sub\n        refine Tendsto.congr' ?_ (tendsto_const_nhds.mono_left nhdsWithin_le_nhds)\n        filter_upwards [self_mem_nhdsWithin] with x hx\n        field [sub_ne_zero.mpr <| mem_compl_singleton_iff.mp hx]\n      · exact ((tendsto_id.sub tendsto_const_nhds).mono_left nhdsWithin_le_nhds).const_mul _",
+     "excerpt_sha256": "69189ccdb232b062af710a14afff9e35f4284228ced2f8ff4f850b1520b5aca0",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler, Terence Tao\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that ζ(s)−1/(s−1) tends to γ as s→1 in the complex plane."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/Harmonic/EulerMascheroni.lean#L151-L155",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.Harmonic.EulerMascheroni",
+     "declaration": "tendsto_harmonic_sub_log",
+     "lines": [
+      151,
+      155
+     ],
+     "module_sha256": "ee7833ec45cc748317713270793f08dd8a0b72af42838cd81b79f8cefed76cb8",
+     "excerpt": "lemma tendsto_harmonic_sub_log :\n    Tendsto (fun n : ℕ ↦ harmonic n - log n) atTop (𝓝 eulerMascheroniConstant) := by\n  apply tendsto_eulerMascheroniSeq'.congr'\n  filter_upwards [eventually_ne_atTop 0] with n hn\n  simp_rw [eulerMascheroniSeq', hn, ite_false]",
+     "excerpt_sha256": "68631c16f49f140d925fbce396661e453b0eedf5a5f3363455d26a6396638bd3",
+     "attribution": "/-\nCopyright (c) 2024 David Loeffler. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: David Loeffler\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves that H_N−ln N tends to γ."
+    }
+   ]
+  },
+  {
+   "id": "nm:technique-dirichlet-series-convolution-product",
+   "sources": [
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/Convolution.lean#L153-L159",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.Convolution",
+     "declaration": "LSeries_convolution",
+     "lines": [
+      153,
+      159
+     ],
+     "module_sha256": "6df16a1d03e5efd53bfeb6bca0d1dfc17e8c1ab88b18e3f72cdb5d9b3261dd1d",
+     "excerpt": "/-- The L-series of the convolution product `f ⍟ g` of two sequences `f` and `g`\nequals the product of their L-series in their common half-plane of absolute convergence. -/\nlemma LSeries_convolution {f g : ℕ → ℂ} {s : ℂ}\n    (hf : abscissaOfAbsConv f < s.re) (hg : abscissaOfAbsConv g < s.re) :\n    LSeries (f ⍟ g) s = LSeries f s * LSeries g s :=\n  LSeries_convolution' (LSeriesSummable_of_abscissaOfAbsConv_lt_re hf)\n    (LSeriesSummable_of_abscissaOfAbsConv_lt_re hg)",
+     "excerpt_sha256": "48f7e47e826948783076099443bc861a2ef9dc106d0ccdf4e7db71053dc767e9",
+     "attribution": "/-\nCopyright (c) 2024 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves L(f∗g,s)=L(f,s)·L(g,s) when both series converge absolutely at s. The source uses the convolution of functions on ℕ, which is the divisor sum form above."
+    },
+    {
+     "url": "https://github.com/leanprover-community/mathlib4/blob/119fab72f5ecf69de785450dfb8f8b58ca5f310e/Mathlib/NumberTheory/LSeries/Convolution.lean#L194-L199",
+     "revision": "119fab72f5ecf69de785450dfb8f8b58ca5f310e",
+     "module": "Mathlib.NumberTheory.LSeries.Convolution",
+     "declaration": "LSeries_mul",
+     "lines": [
+      194,
+      199
+     ],
+     "module_sha256": "6df16a1d03e5efd53bfeb6bca0d1dfc17e8c1ab88b18e3f72cdb5d9b3261dd1d",
+     "excerpt": "/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`\nequals the product of their L-series in their common half-plane of absolute convergence. -/\nlemma LSeries_mul {f g : ArithmeticFunction ℂ} {s : ℂ}\n    (hf : abscissaOfAbsConv ↗f < s.re) (hg : abscissaOfAbsConv ↗g < s.re) :\n    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s :=\n  coe_mul f g ▸ LSeries_convolution hf hg",
+     "excerpt_sha256": "974720f23e78f37c8b44f1974596cfd8650d6eb495f06cc5e0b1edb6f6569c44",
+     "attribution": "/-\nCopyright (c) 2024 Michael Stoll. All rights reserved.\nReleased under Apache 2.0 license as described in the file LICENSE.\nAuthors: Michael Stoll\n-/",
+     "reuse": "Apache-2.0",
+     "alignment": "The source proves the same product rule for arithmetic functions."
+    }
+   ]
   }
  ],
  "duplicate_exclusions": [
