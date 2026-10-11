@@ -7,7 +7,8 @@ user-home path; every tracked Python file parses on this interpreter (CI runs Py
 Git tracks no build or OS artifact (__pycache__, *.pyc, .DS_Store, AppleDouble ._*) and .gitignore keeps them
 out; and the shared tooling's Python (scripts/, tests/) has no unused import or local
 and no definition made twice; the vendored MathJax files match the SHA-256 list in scripts/vendor/mathjax/SOURCES.json;
-and the kit's copied files match scripts/kit/SOURCES.json. Each visual's own checks are scripts/check.py's; the
+the kit's copied files match scripts/kit/SOURCES.json; and the colour tokens of the pages that carry them match look/src/theme.rs
+(scripts/theme_tokens.py). Each visual's own checks are scripts/check.py's; the
 rules are scripts/rules.py.
 
 Usage: scripts/check_repo.py
@@ -18,6 +19,7 @@ import subprocess
 import sys
 
 import rules
+import theme_tokens
 import visual_kit
 from build_catalogue import load
 from visuals import ROOT
@@ -53,6 +55,8 @@ def shared_copy_problems(root=ROOT):
     """Vendored files and copied kit files that changed."""
     problems = visual_kit.vendor_problems(root / "scripts" / "vendor" / "mathjax")
     kit = root / "scripts" / "kit"
+    if theme_tokens.THEME_RS.exists():
+        problems += [f"{path}: differs from the palettes of look/src/theme.rs; run python3 scripts/theme_tokens.py" for path in theme_tokens.stale()]
     for name, source in json.loads((kit / "SOURCES.json").read_text(encoding="utf-8"))["files"].items():
         if visual_kit.sha256((kit / name).read_bytes()) != source["sha256"]:
             problems.append(f"scripts/kit/{name}: differs from {source['source']} at {source['commit'][:12]} (scripts/kit/SOURCES.json); "

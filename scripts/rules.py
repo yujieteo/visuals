@@ -18,7 +18,7 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 and series 3:1), no control is outlined in a token below 3:1 (such as --border), and its two
                 dark-theme blocks agree
   theme         the page carries the site's theme script (style_guide.THEME_SCRIPT) unchanged, before its first
-                <style>, so the reader's Light or Dark choice applies, and each [data-theme] block sets the
+                <style>, so the reader's theme and Light or Dark choice apply, and each palette block sets the
                 matching color-scheme so form controls and scroll bars follow it
   python        unused imports, unused local variables and definitions made twice in the visual's Python
   source-tests  tests whose every assertion checks the page's source text, or a value read out of it, instead
@@ -192,31 +192,46 @@ def request_problems(html, data):
 ROOT_BLOCK = re.compile(r"(@media[^{]*\{\s*)?:root((?:\[[^\]]*\]|:not\(\[[^\]]*\]\))*)\s*\{([^{}]*)\}")
 TOKEN = re.compile(r"--([\w-]+)\s*:\s*([^;]+)")
 VAR = re.compile(r"^var\(--([\w-]+)\)$")
+SELECTOR_ATTR = re.compile(r"\[data-(theme|mode)=[\"']?([\w-]+)[\"']?\]")
+NEGATED = re.compile(r":not\([^)]*\)")
 # The style guide's names, and the older names one page still uses for them.
 ALIASES = {"background": "bg", "foreground": "fg"}
-TEXT = ("fg", "muted", "focus", "hl", "ok", "warn", "bad")
+TEXT = ("fg", "fg2", "muted", "focus", "hl", "ok", "warn", "bad")
 SERIES = ("c1", "c2", "c3", "c4")
 TEXT_RATIO, GRAPHIC_RATIO = 4.5, 3.0
 
 
 def themes(html):
-    """The page's colour tokens as {"light": {...}, "dark": {...}}, and its dark blocks as raw dicts.
+    """The page's colour tokens as {"light": {...}, "dark": {...}, "<family> light": ...}, and the pairs of dark
+    blocks that disagree.
 
-    Light is every plain :root block plus :root[data-theme="light"]; dark is light overridden by the
-    prefers-color-scheme: dark block and the :root[data-theme="dark"] block, the two ways the site's theme
-    choice reaches a page.
-    """
+    The default family is every plain :root block (the site's Rose Pine); another family is its
+    :root[data-theme="family"] blocks over the default ones. Light is the base. Dark is the block under
+    prefers-color-scheme: dark and the block under [data-mode="dark"], the two ways the reader's choice reaches a
+    page: both are read, and ``disagree`` lists the names whose values differ."""
     light, media_dark, forced_dark = {}, {}, {}
     for m in ROOT_BLOCK.finditer(html):
         media, selector, body = m.group(1) or "", m.group(2), m.group(3)
+        attrs = dict(SELECTOR_ATTR.findall(NEGATED.sub("", selector)))
+        family = attrs.get("theme")
         tokens = {ALIASES.get(name, name): value.strip() for name, value in TOKEN.findall(body)}
         if "dark" in media:
-            media_dark.update(tokens)
-        elif 'data-theme="dark"' in selector or "data-theme='dark'" in selector or "data-theme=dark" in selector:
-            forced_dark.update(tokens)
-        elif not media:
-            light.update(tokens)
-    return {"light": light, "dark": {**light, **forced_dark, **media_dark}}, media_dark, forced_dark
+            media_dark.setdefault(family, {}).update(tokens)
+        elif attrs.get("mode") == "dark":
+            forced_dark.setdefault(family, {}).update(tokens)
+        elif not media and attrs.get("mode") in (None, "light"):
+            light.setdefault(family, {}).update(tokens)
+    out, disagree = {}, []
+    for family in sorted({*light, *media_dark, *forced_dark}, key=lambda f: (f is not None, f or "")):
+        base = {**light.get(None, {}), **light.get(family, {})}
+        dark = {**light.get(None, {}), **media_dark.get(None, {}), **forced_dark.get(None, {}),
+                **light.get(family, {}), **media_dark.get(family, {}), **forced_dark.get(family, {})}
+        label = f"{family} " if family else ""
+        out[label + "light"], out[label + "dark"] = base, dark
+        a, b = media_dark.get(family, {}), forced_dark.get(family, {})
+        if a and b:
+            disagree += [(label, name, a.get(name), b.get(name)) for name in sorted(set(a) | set(b)) if a.get(name) != b.get(name)]
+    return out, disagree
 
 
 def rgb(value, tokens, depth=0):
@@ -290,7 +305,7 @@ def outline_tokens(html):
 def contrast_problems(html):
     """Token pairs below their WCAG ratio in either theme, controls outlined in a token below 3:1 on --bg,
     and dark-theme blocks that disagree."""
-    by_theme, media_dark, forced_dark = themes(html)
+    by_theme, disagree = themes(html)
     problems = []
     outlines = outline_tokens(html)
     for theme, tokens in by_theme.items():
@@ -307,11 +322,9 @@ def contrast_problems(html):
             if a is not None and b is not None and token not in ("control", "bg") and (r := ratio(a, b)) < GRAPHIC_RATIO:
                 problems.append(f"{theme}: {selector} outlines a control in --{token}, {r:.2f}:1 on --bg, "
                                 f"below {GRAPHIC_RATIO}:1; use --control")
-    if media_dark and forced_dark:
-        for name in sorted(set(media_dark) | set(forced_dark)):
-            if media_dark.get(name) != forced_dark.get(name):
-                problems.append(f"dark: --{name} is {media_dark.get(name)} under prefers-color-scheme but "
-                                f"{forced_dark.get(name)} under [data-theme=\"dark\"]")
+    for label, name, under_media, under_mode in disagree:
+        problems.append(f"{label}dark: --{name} is {under_media} under prefers-color-scheme but "
+                        f'{under_mode} under [data-mode="dark"]')
     return problems
 
 
@@ -339,12 +352,11 @@ def budget_problems(folder, look):
 # theme ------------------------------------------------------------------------------------------------------
 
 SITE_THEME = re.compile(r"<script\b[^>]*\bid\s*=\s*[\"']?site-theme\b[^>]*>.*?</script>", re.I | re.S)
-THEME_BLOCK = re.compile(r"(?:(?<=[{};\s])|^)(?::root|html)?\[data-theme=[\"']?(dark|light)[\"']?\](?::not\([^)]*\))*\s*\{([^{}]*)\}", re.M)
 COLOR_SCHEME = re.compile(r"(?<![\w-])color-scheme\s*:\s*([\w ]+?)\s*(?:;|!|$)")
 
 
 def theme_problems(html):
-    """Where the page does not follow the site's Light or Dark choice."""
+    """Where the page does not follow the reader's theme: the site's theme and mode choice."""
     problems = []
     scripts = SITE_THEME.findall(html)
     style = html.find("<style")
@@ -354,12 +366,21 @@ def theme_problems(html):
         problems.append("index.html site-theme script is not style_guide.THEME_SCRIPT unchanged")
     elif style != -1 and html.find(THEME_SCRIPT) > style:
         problems.append("index.html site-theme script comes after the first <style>, so the page first paints in the wrong theme")
-    schemes = {}
-    for theme, body in THEME_BLOCK.findall(html):
-        schemes.setdefault(theme, set()).update(COLOR_SCHEME.findall(body))
-    for theme, found in sorted(schemes.items()):
-        if found != {theme}:
-            problems.append(f'index.html [data-theme="{theme}"] sets color-scheme {sorted(found) or "nowhere"}, not {theme}')
+    # Each palette block sets the color-scheme of its own mode: dark under [data-mode="dark"] and under
+    # prefers-color-scheme: dark, light in the others.
+    for m in ROOT_BLOCK.finditer(html):
+        media, selector, body = m.group(1) or "", m.group(2), m.group(3)
+        attrs = dict(SELECTOR_ATTR.findall(NEGATED.sub("", selector)))
+        if not attrs and not media:
+            continue
+        found = set(COLOR_SCHEME.findall(body))
+        if not found and "--bg" not in body:
+            continue
+        want = "dark" if "dark" in media or attrs.get("mode") == "dark" else "light"
+        if found != {want}:
+            where = f'[data-theme="{attrs["theme"]}"]' if "theme" in attrs else ":root"
+            where += '[data-mode="dark"]' if attrs.get("mode") == "dark" else " under prefers-color-scheme: dark" if "dark" in media else ""
+            problems.append(f"index.html {where} sets color-scheme {sorted(found) or 'nowhere'}, not {want}")
     return problems
 
 

@@ -231,7 +231,7 @@ Remaining risks: the Firefox result is first seen in CI; the WebKit jobs in CI c
 | Interface | Canonical owner | Copies |
 | --- | --- | --- |
 | beamdswitch report template | visuals `scripts/templates/beamdswitch.js`, the copy a new visual gets (the site no longer keeps one) | `viz/*/beamdswitch.js`, each the visual's own |
-| Theme script and style tokens | visuals `scripts/style_guide.py`, `scripts/kit/style-tokens.css` (source yujieteo/skills) | inline in each page |
+| Theme script and style tokens | visuals `scripts/style_guide.py`, `scripts/kit/style-tokens.css` (generated from `look/src/theme.rs`, the site palettes) | inline in each page |
 | Catalogue entry of a visual | visuals `viz/<slug>/visual.json` | read by the site build |
 | Published files of a visual | visuals `viz/<slug>/` (`index.html`, `data.json`, declared assets) | copied by the site build |
 | Standalone contract | visuals `e2e/tests/standalone.test.js` | none |

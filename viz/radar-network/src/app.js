@@ -1150,7 +1150,7 @@
     });
     window.addEventListener("popstate", () => { const notes = applyHash(); syncTimeInputs(); derive(); $("#example-select").value = view().example || ""; setTab(app.tab, false); renderAll(true); if (notes.length) notice(notes.join(" ")); });
     for (const mq of ["(prefers-color-scheme: dark)"]) { try { matchMedia(mq).addEventListener("change", () => { drawScene(); renderTab(); }); } catch (e) { /* old browsers */ } }
-    new MutationObserver(() => { drawScene(); renderTab(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    new MutationObserver(() => { drawScene(); renderTab(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-mode"] });
   }
   /** View presets change presentation only: layers, tab and camera. */
   function applyPreset(p) {

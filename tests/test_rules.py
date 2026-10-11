@@ -10,8 +10,8 @@ import rules
 
 THEMES = (
     ":root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--focus:#0071e3;--on-focus:#ffffff;--warn:#9a6700}"
-    '@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--warn:#e3b341}}'
-    ':root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--warn:#e3b341}'
+    '@media (prefers-color-scheme:dark){:root:not([data-mode="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--warn:#e3b341}}'
+    ':root[data-mode="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--warn:#e3b341}'
 )
 
 
@@ -178,8 +178,8 @@ class ContrastTest(unittest.TestCase):
         self.assertEqual(rules.contrast_problems(html), ["light: --warn on --bg is 4.20:1, below 4.5:1 for text"])
 
     def test_the_two_dark_blocks_must_agree(self):
-        html = page().replace(':root[data-theme="dark"]{--bg:#1d1d1f', ':root[data-theme="dark"]{--bg:#000000')
-        self.assertIn('dark: --bg is #1d1d1f under prefers-color-scheme but #000000 under [data-theme="dark"]', rules.contrast_problems(html))
+        html = page().replace(':root[data-mode="dark"]{--bg:#1d1d1f', ':root[data-mode="dark"]{--bg:#000000')
+        self.assertIn('dark: --bg is #1d1d1f under prefers-color-scheme but #000000 under [data-mode="dark"]', rules.contrast_problems(html))
 
     def test_colours_resolve_through_var_and_skip_translucent_values(self):
         tokens = {"a": "var(--b)", "b": "#fff", "c": "rgba(0,0,0,.5)"}
@@ -189,12 +189,13 @@ class ContrastTest(unittest.TestCase):
 
 
 class ThemeTest(unittest.TestCase):
-    LIGHT = ':root[data-theme="light"]{color-scheme:light}'
+    LIGHT = ":root{color-scheme:light}"
 
     def themed(self, head=None, css=""):
         head = rules.THEME_SCRIPT if head is None else head
         return f"<!doctype html><head>{head}<style>{THEMES}{self.LIGHT}{css}</style></head>".replace(
-            ':root[data-theme="dark"]{', ':root[data-theme="dark"]{color-scheme:dark;')
+            ":not([data-mode=\"light\"]){", ":not([data-mode=\"light\"]){color-scheme:dark;").replace(
+            ':root[data-mode="dark"]{', ':root[data-mode="dark"]{color-scheme:dark;')
 
     def test_the_site_theme_script_before_the_first_style_passes(self):
         self.assertEqual(rules.theme_problems(self.themed()), [])
@@ -202,7 +203,7 @@ class ThemeTest(unittest.TestCase):
     def test_a_missing_changed_or_late_theme_script_is_named(self):
         self.assertEqual(rules.theme_problems(self.themed("")),
                          ["index.html has no site-theme script (style_guide.THEME_SCRIPT), so it ignores the reader's theme choice"])
-        changed = rules.THEME_SCRIPT.replace('t === "dark"', 't === "night"')
+        changed = rules.THEME_SCRIPT.replace('m === "dark"', 'm === "night"')
         self.assertEqual(rules.theme_problems(self.themed(changed)), ["index.html site-theme script is not style_guide.THEME_SCRIPT unchanged"])
         late = self.themed("").replace("</style>", "</style>" + rules.THEME_SCRIPT)
         self.assertEqual(rules.theme_problems(late),
@@ -211,8 +212,8 @@ class ThemeTest(unittest.TestCase):
     def test_a_theme_block_must_set_its_own_color_scheme(self):
         html = self.themed().replace("color-scheme:dark;", "").replace("color-scheme:light", "color-scheme:dark")
         self.assertEqual(rules.theme_problems(html), [
-            'index.html [data-theme="dark"] sets color-scheme nowhere, not dark',
-            "index.html [data-theme=\"light\"] sets color-scheme ['dark'], not light",
+            "index.html :root under prefers-color-scheme: dark sets color-scheme nowhere, not dark",
+            'index.html :root[data-mode="dark"] sets color-scheme nowhere, not dark',
         ])
 
 
