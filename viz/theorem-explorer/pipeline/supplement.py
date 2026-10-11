@@ -134,7 +134,12 @@ def load(pack, data=None):
 
 
 def check_source(rid, source):
-    for key in ("url", "revision", "module", "declaration", "module_sha256", "alignment", "attribution", "reuse", "excerpt"):
+    kind = source.get("kind", "mathlib")
+    if kind not in {"mathlib", "literature"}:
+        raise ValueError(f"{rid}: unsupported source kind {kind}")
+    fields = ("url", "revision", "module", "declaration", "alignment", "attribution", "reuse", "excerpt")
+    fields += ("citation", "page") if kind == "literature" else ("module_sha256",)
+    for key in fields:
         if not isinstance(source.get(key), str) or not source[key].strip():
             raise ValueError(f"{rid}: source requires {key}")
     if urlparse(source["url"]).scheme != "https" or not urlparse(source["url"]).netloc:
@@ -164,8 +169,15 @@ def check_record(r, ids, concepts, checker, existing, names):
     if not r.get("hypotheses") or any(not h.strip() for h in r["hypotheses"]):
         raise ValueError(f"{rid}: missing hypotheses")
     proof = r["proof"]
-    if proof["kind"] not in {"authored", "source-derived"} or not proof["scope"] or not proof["verification"]:
+    if proof["kind"] not in {"authored", "source-derived", "outline"} or not proof["scope"] or not proof["verification"]:
         raise ValueError(f"{rid}: missing proof scope or status")
+    if proof["kind"] == "outline":
+        cited = proof.get("source", {})
+        if ("outline" not in proof["scope"].lower() or cited.get("kind") != "cited"
+                or not cited.get("ref") or not cited.get("url")):
+            raise ValueError(f"{rid}: an outline requires an explicit scope and a published proof reference")
+        if urlparse(cited["url"]).scheme != "https" or not urlparse(cited["url"]).netloc:
+            raise ValueError(f"{rid}: unsupported published proof URL")
     if not proof["steps"] or len({s["id"] for s in proof["steps"]}) != len(proof["steps"]):
         raise ValueError(f"{rid}: empty proof or duplicate step IDs")
     pre = [p["id"] for p in r["prerequisites"]]
@@ -181,8 +193,8 @@ def check_record(r, ids, concepts, checker, existing, names):
         if len(step["text"]) < 30 or any(p not in pre for p in step["uses"]):
             raise ValueError(f"{rid}: incomplete proof step or unknown dependency")
     if r["selection"] == "core":
-        if sum(len(s["text"]) for s in proof["steps"]) < MIN_CORE_PROOF or proof["kind"] != "authored":
-            raise ValueError(f"{rid}: a counted result needs a complete authored proof of at least {MIN_CORE_PROOF} characters")
+        if sum(len(s["text"]) for s in proof["steps"]) < MIN_CORE_PROOF or proof["kind"] not in {"authored", "outline"}:
+            raise ValueError(f"{rid}: a counted result needs an authored proof or cited outline of at least {MIN_CORE_PROOF} characters")
         if not r["applications"]:
             raise ValueError(f"{rid}: a counted result needs a worked application")
     apps = r["applications"]
@@ -467,16 +479,27 @@ def overlay(raw, data=None):
                          "supplement": SCHEMA})
         core["rows"].append(template)
         source = r["source"]
-        ev = {"id": f"ev:{p}:{r['id']}", "kind": "formal declaration", "explicit": True, "url": source["url"],
-              "revision": source["revision"], "location": source["declaration"], "claim": source["excerpt"],
-              "dates": {"observed": r["authored"]}, "method": "source text inspected; no local Lean check", "reuse": source["reuse"]}
+        literature = source.get("kind") == "literature"
+        location = ", ".join(source[k] for k in ("module", "declaration", "page")) if literature else source["declaration"]
+        ev = {"id": f"ev:{p}:{r['id']}", "kind": "source statement" if literature else "formal declaration",
+              "explicit": True, "url": source["url"], "revision": source["revision"], "location": location,
+              "claim": source["excerpt"], "dates": {"observed": r["authored"]},
+              "method": "published source inspected; no formal check" if literature else "source text inspected; no local Lean check",
+              "reuse": source["reuse"]}
+        if literature:
+            ev["citation"] = source["citation"]
+        if r["proof"]["kind"] == "outline":
+            core["rows"][-1]["evk"] = ["source-proof", "cited-outline"]
         detail.append({"al": r["aliases"], "why": j["why"], "why2": None, "cn": r["concepts"], "wd": None, "sig": None,
-                       "concl": None, "hyps": None, "cls": None, "mod": source["module"], "decls": [source["declaration"]],
-                       "ndecls": 1, "evs": [ev], "rs": [], "list": r["statement"], "authored_statement": r["statement"],
+                       "concl": None, "hyps": None, "cls": None, "mod": None if literature else source["module"],
+                       "decls": [] if literature else [source["declaration"]], "ndecls": 0 if literature else 1,
+                       "evs": [ev], "rs": [], "list": r["statement"], "authored_statement": r["statement"],
                        "authored_hypotheses": r["hypotheses"], "pack": p, "selection": r["selection"],
                        "definitions": r["definitions"], "applications": r["applications"],
                        "limitations": r.get("limitations", []), "source_references": r["source_references"],
-                       "proof": {**r["proof"], "verification": "agent inference review accepted; no local Lean check"},
+                       "proof": {**r["proof"], "verification":
+                                 "outline review accepted; published proof cited; no formal check" if r["proof"]["kind"] == "outline"
+                                 else "agent inference review accepted; no local Lean check"},
                        "prerequisite_evidence": r["prerequisites"], "concept_prerequisites": r["concept_prerequisites"],
                        "assessment": j})
         for x in r["prerequisites"]:
@@ -509,6 +532,9 @@ def overlay(raw, data=None):
                                                           for p in sorted(packs)},
                                     "source": "pinned mathlib source excerpts", "reuse": "Apache-2.0; authored proofs and statements for this catalog",
                                     "accepted": len(add), "formal_checks": 0}
+    if any(r["source"].get("kind") == "literature" for _, r in add):
+        raw["sources"]["supplement"].update(source="Mathlib source excerpts and published literature",
+                                              reuse="Each source states its reuse terms; authored explanations for this catalog")
     snapshot = raw["snapshot"]
     snapshot["supplement_judges"] = judges
     if SCHEMA not in snapshot["rules"]:
