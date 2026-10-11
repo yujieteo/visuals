@@ -137,7 +137,7 @@ fn main() {
     let app = App::new(Index::new(back));
     let body = app.body();
     let script = format!("<script>const WASM = \"{}\";\nconst DATA = \"{}\";\n{HOST}</script>", look::base64(&wasm), look::base64(&z));
-    let description = "Search 16,431 links to papers, lecture notes, slides, books and talks, filter them by tag or by site, and export BibTeX for the links you pick.";
+    let description = "Search 2,523 links to papers, lecture notes, slides, books and talks, filter them by tag or by site, and export BibTeX for the links you pick.";
     let html = look::page(&look::Page { title: "Paper links", description, root: "../../", style: STYLE, body: &body, script: &script });
     assert!(!html.contains("/Users/") && !html.contains("/home/"), "no home paths in the page");
     std::fs::write(out, html).expect("index.html");

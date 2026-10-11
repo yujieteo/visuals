@@ -1,4 +1,4 @@
-//! Paper links: the 16,431 links of the old site's Paper Links page, with its search, filters and BibTeX
+//! Paper links: the 2,523 links of the old site's Paper Links page, with its search, filters and BibTeX
 //! export, compiled to WebAssembly. The page builder (bin/page.rs) packs and compresses links.json into the page.
 
 pub mod app;
