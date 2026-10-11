@@ -1,36 +1,48 @@
 # Technique batch status
 
-The target was 200 new accepted entries. The batch has 160 accepted entries and 2 deferred entries.
-The target is not met. Each accepted entry has a statement, hypotheses, an authored proof, definitions, limitations, source references and a worked application.
+The batch has 198 accepted entries and 20 deferred entries. The target was about 200, so the shortfall is 2.
+Each accepted entry has a statement, hypotheses, an authored proof, definitions, limitations, source references and a worked application.
+The accepted entries are in `raw.json` (shared `supplement.py` workflow) and in the Theorem Learner (`te-learning/1` files).
 
 | State | Count | Reason |
 | --- | ---: | --- |
-| Authored candidates | 162 | 88 from the first pass, 64 from the second pass and 10 from the third pass. |
-| Accepted entries | 160 | An independent model review accepted every proof step and every worked-application step. |
-| Deferred after review | 2 | Ax-Grothendieck (a wrong hypothesis note) and the Bernstein modulus bound (the claim of sharpness uses only numbers up to n = 1024). |
-| Deferred stubs | 19 | Each stub has no verified source declaration and only a short sketch proof. The named result already has a catalog record. See `technique-deferred.json`. |
-| Shortfall against 200 | 40 | No further candidate passed the duplicate check and the proof standard in this session. |
-| Improvements to existing records | 7 | Gauss lemma (refines nl:16938), Euler sine product (wd:Q810431), Yoneda (nl:466), snake lemma (nl:1777), Catalan cycle lemma (nm:ballot-problem), Abel partial summation (nm:abel-s-lemma), exponential tilting (nm:chernoff-bound). These overlap an existing record. |
-| New entries | 153 | The other accepted entries have no semantic duplicate in the catalog. |
+| Authored candidates | 218 | 88 from the first pass, 64 from the second pass, 10 from the third pass, 4 removed as duplicates, 60 from the fourth pass. |
+| Accepted entries | 198 | An independent model review accepted every proof step and every worked-application step. |
+| Deferred after review | 20 | 2 from earlier passes (Ax-Grothendieck, Bernstein modulus bound). 18 from the fourth pass. See the list below. |
+| Deferred stubs | 19 | Each stub has no verified source declaration and only a short sketch proof. See `technique-deferred.json`. |
+| Shortfall against 200 | 2 | The 18 fourth-pass deferrals are not repaired yet. |
+| Removed after the rebase | 4 | 2 duplicates of methods records in the t1 pack and 2 entries that depended on them. |
+| Improvements to existing records | 7 | Gauss lemma, Euler sine product, Yoneda, snake lemma, Catalan cycle lemma, Abel partial summation, exponential tilting. These overlap an existing record. |
+| New entries | 191 | The other accepted entries have no semantic duplicate in the catalog. |
+
+## Deferred entries from the fourth pass
+
+Most proofs are valid. The judges deferred the entries for a defect in the worked application or a small proof defect.
+
+| Entry | Reason |
+| --- | --- |
+| Poincare lemma, discrete Fourier transform, character expansion, log-sum inequality, Laplacian bounds, stochastic matrix, Collatz-Wielandt | The worked application uses an object that the record does not state. |
+| Donoho-Stark, Courant-Fischer, Weyl, Ky Fan, one-point compactification, quasicomponents | The worked application has an unstated input, a wrong label or a missing case. |
+| Partition of unity, Ackermann, Rasiowa-Sikorski, Luroth | A proof step is wrong or incomplete. |
+| Cohomology of cyclic groups | The worked application uses a matrix that the record does not define. |
 
 ## Review process and caveats
 
 - Judges were independent Sonnet 5.5 model reviews through the shared `supplement.py` workflow.
-- The first pass accepted 106 of 162 entries. The judges found real mathematical defects in 56 entries, for example an undefined basis polynomial, wrong numbers and a missing case.
-- Fixer agents repaired the entries. Two more review passes accepted 54 of them. Two stay deferred.
+- The first pass accepted 106 of 162 entries. The judges found real mathematical defects in 56 entries. Fixer agents repaired them.
+- The fourth pass judged 60 new entries and accepted 42.
 - A model review is not a formal verification. No proof was checked in Lean. The proof field of each entry says this.
+- The Learner files for the accepted entries are authored by model agents and pass `cargo run --release -- check` with 0 problems.
 
 ## Excluded as duplicate or basic
 
 Faulhaber sums, Baire nested balls, Hensel-Newton, freshman's dream, tower law, minimal polynomial divisibility, totient divisor sum, tree edge count, convex chord slope and a second Wirtinger entry.
-The authors also skipped Nielsen-Schreier, Turan and many other results that the catalog already holds.
+The authors also skipped Nielsen-Schreier, Turan, Niven, Chevalley-Warning, Wilson and many other results that the catalog already holds.
 
 ## Build check
 
-The shared `pipeline/supplement.py` is on `origin/fm/visuals-theorem-data-t1`, not on this branch.
-A scratch copy of the t1 tree ran `run.py --supplement --pack technique build` in about 1 second.
-The built `raw.json` holds 160 `nm:technique-` rows in the core pack. Each detail row has the statement, hypotheses, definitions, applications, limitations, source references and proof.
-`tests/test_supplement.py` (12 tests, 1.0 s) and `tests/theorem-explorer-model.test.mjs` (33 tests, 0.7 s) pass in that copy.
+`python3 pipeline/run.py --supplement --pack technique build` appended the accepted rows to `raw.json` and rebuilt `index.html`.
+`python3 scripts/check.py theorem-explorer theorem-learner` passes.
 
 ## Source-backed topic context
 
@@ -53,29 +65,3 @@ A paper can have more than 1 topic. These counts must not be added as disjoint t
 The existing catalog contains 2,389 records across 78 assigned arXiv topics.
 The topic assignments are agent judgments. They are separate from the source-backed paper counts.
 No new bulk download occurred.
-
-## Shared integration dependency
-
-The shared `pipeline/supplement.py` currently hardcodes `supplement-results.json` and `supplement-judgments.json`.
-Its CLI rejects a separate technique file. The exact error is:
-
-```text
-supplement.py: error: unrecognized arguments: --results viz/theorem-explorer/data/technique-results.json
-```
-
-Its review prompt covers theorem proofs and scores. It does not review the worked application.
-Its packet does not include the application, definitions, limitations, or additional source references.
-Its build does not include the worked application in the detail pack.
-The shared workflow must include these fields before this batch can publish.
-
-Firstmate must coordinate these changes with the first worker:
-
-1. Read both batch files through the shared workflow.
-2. Preserve both batches in the final build.
-3. Include complete definitions, additional source references, limitations, and applications in each bounded review packet.
-4. Review each application hypothesis and each computation step.
-5. Include proof and application fields in the built viewer and its result export.
-6. Check duplicates and prerequisite links against both batches.
-
-This worker did not edit the first worker's worktree or create another prompt framework.
-The first worker's changes must land before final integration and end-to-end tests.

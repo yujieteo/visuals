@@ -1,0 +1,913 @@
+[
+ {
+  "id": "nm:technique-fourier-transform-of-convolution-l1",
+  "statement": "Let $f, g$ be [integrable functions](c:integrable-function) on $\\mathbb{R}^n$ with [Lebesgue measure](c:lebesgue-measure). Then $f * g$ converges absolutely almost everywhere, is integrable with $\\|f * g\\|_1 \\le \\|f\\|_1 \\|g\\|_1$, and satisfies $f * g = g * f$ almost everywhere. Also $\\mathcal{F}(f * g)(\\xi) = \\mathcal{F}f(\\xi)\\,\\mathcal{F}g(\\xi)$ for every $\\xi$.",
+  "hypotheses": [
+   {
+    "id": "h:integrable",
+    "text": "The functions $f$ and $g$ are measurable and [integrable](c:integrable-function): $\\int |f| < \\infty$ and $\\int |g| < \\infty$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:lebesgue",
+    "text": "The measure is [Lebesgue measure](c:lebesgue-measure), which is invariant under translation and under $x \\mapsto -x$.",
+    "concept": "c:lebesgue-measure"
+   },
+   {
+    "id": "h:complex",
+    "text": "The functions take complex values.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [convolution](c:convolution) $f * g$ is defined almost everywhere, is integrable with norm at most $\\|f\\|_1\\|g\\|_1$, is commutative, and has [Fourier transform](c:fourier-transform) $\\mathcal{F}f \\cdot \\mathcal{F}g$.",
+  "formal": {
+   "decl": "fourier_mul_convolution_eq",
+   "difference": "The declaration states only the product rule, for integrable functions with values in a normed algebra. Integrability and commutativity of the convolution are separate facts."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Tonelli bound, then a Fubini swap",
+    "slogan": "Bound the double integral of absolute values by Tonelli, then swap the integrals and factor the exponential.",
+    "scope": "The whole statement under all listed hypotheses.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:change-of-variables",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:integrable",
+      "why": "Finite norms make the double integral of absolute values finite.",
+      "steps": [
+       "s:tonelli",
+       "s:exist",
+       "s:swap"
+      ]
+     },
+     {
+      "h": "h:lebesgue",
+      "why": "Invariance of the measure under shears and translations keeps measurability and the norms.",
+      "steps": [
+       "s:measurable",
+       "s:tonelli",
+       "s:commute",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:complex",
+      "why": "Complex values let the exponential factor split the transform.",
+      "steps": [
+       "s:swap",
+       "s:factor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:measurable",
+      "slogan": "Show that the integrand $f(y)g(x-y)$ is measurable on the product space.",
+      "detail": "The map $(x,y) \\mapsto (y, x-y)$ is a linear bijection of $\\mathbb{R}^{2n}$ with determinant $\\pm 1$. It preserves Lebesgue measure. So $(x,y) \\mapsto f(y)g(x-y)$ is measurable.",
+      "uses": []
+     },
+     {
+      "id": "s:tonelli",
+      "slogan": "Bound the double integral of the absolute values with Tonelli's theorem.",
+      "detail": "By Tonelli, $\\iint |f(y)||g(x-y)|\\,dy\\,dx = \\int |f(y)| \\big(\\int |g(x-y)|\\,dx\\big)dy$. Translation invariance gives $\\int |g(x-y)|\\,dx = \\|g\\|_1$. So the double integral equals $\\|f\\|_1\\|g\\|_1 < \\infty$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Read the existence and the norm bound from the finite double integral.",
+      "detail": "A finite double integral makes the inner integral finite for almost every $x$. Also $|(f*g)(x)| \\le \\int |f(y)||g(x-y)|\\,dy$, and integration in $x$ gives $\\|f*g\\|_1 \\le \\|f\\|_1\\|g\\|_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Substitute $y \\mapsto x-y$ to prove that the convolution is commutative.",
+      "detail": "The substitution preserves Lebesgue measure. So $\\int f(y)g(x-y)\\,dy = \\int f(x-y)g(y)\\,dy$ at each $x$ where one side converges absolutely.",
+      "uses": []
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Swap the two integrals in the Fourier transform of the convolution with Fubini's theorem.",
+      "detail": "Fix $\\xi$. The integrand of $\\mathcal{F}(f*g)(\\xi)$ has absolute value $|f(y)||g(x-y)|$, which is integrable on $\\mathbb{R}^{2n}$ by the Tonelli bound. So Fubini gives $\\int f(y)\\big(\\int g(x-y)e^{-2\\pi i\\langle x,\\xi\\rangle}dx\\big)dy$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor the exponential in the inner integral to split the product of transforms.",
+      "detail": "Put $x = y + w$. Then $e^{-2\\pi i\\langle y+w,\\xi\\rangle} = e^{-2\\pi i\\langle y,\\xi\\rangle}e^{-2\\pi i\\langle w,\\xi\\rangle}$, so the inner integral is $e^{-2\\pi i\\langle y,\\xi\\rangle}\\mathcal{F}g(\\xi)$. The outer integral then gives $\\mathcal{F}f(\\xi)\\,\\mathcal{F}g(\\xi)$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the four parts of the statement from the earlier steps.",
+      "detail": "The steps give absolute convergence and integrability with the norm bound, commutativity, and the product rule for the transform at every $\\xi$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:measurable",
+      "s:tonelli"
+     ],
+     [
+      "s:tonelli",
+      "s:exist"
+     ],
+     [
+      "s:tonelli",
+      "s:swap"
+     ],
+     [
+      "s:exist",
+      "s:swap"
+     ],
+     [
+      "s:exist",
+      "s:commute"
+     ],
+     [
+      "s:swap",
+      "s:factor"
+     ],
+     [
+      "s:exist",
+      "s:collect"
+     ],
+     [
+      "s:commute",
+      "s:collect"
+     ],
+     [
+      "s:factor",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:integrable-function": "Integrability of both functions makes the double integral finite.",
+     "c:lebesgue-measure": "Invariance of the measure supports the shear, the translation and the substitution.",
+     "c:convolution": "The proof studies the integral that defines $f * g$.",
+     "c:fourier-transform": "The product rule is the claim about the transform of the convolution."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-young-convolution-inequality",
+  "statement": "Let $1 \\le p, q, r < \\infty$ with $1/p + 1/q = 1 + 1/r$. Let $f \\in L^p(\\mathbb{R}^n)$ and $g \\in L^q(\\mathbb{R}^n)$. Then $\\int |f(y)||g(x-y)|\\,dy$ is finite for almost every $x$, the [convolution](c:convolution) $f * g$ lies in $L^r$, and $\\|f * g\\|_r \\le \\|f\\|_p \\|g\\|_q$.",
+  "hypotheses": [
+   {
+    "id": "h:lebesgue",
+    "text": "The measure is [Lebesgue measure](c:lebesgue-measure) on $\\mathbb{R}^n$.",
+    "concept": "c:lebesgue-measure"
+   },
+   {
+    "id": "h:exponents",
+    "text": "The exponents satisfy $1 \\le p, q, r < \\infty$ and $1/p + 1/q = 1 + 1/r$, which forces $p \\le r$ and $q \\le r$.",
+    "concept": null
+   },
+   {
+    "id": "h:lp",
+    "text": "The function $f$ is in $L^p$ and the function $g$ is in $L^q$.",
+    "concept": "c:lp-space"
+   }
+  ],
+  "conclusion": "The function $f * g$ is defined almost everywhere, lies in $L^r$, and has [norm](c:norm) at most $\\|f\\|_p \\|g\\|_q$.",
+  "formal": {
+   "decl": "eLpNorm_convolution_integrand_le",
+   "difference": "The declaration states the pointwise Holder bound for the integrand, for a Holder triple of exponents. It is a smaller fact that step 4 uses, not the Young inequality."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Three-exponent Holder splitting",
+    "slogan": "Split the integrand into three factors, apply Holder with three exponents, then integrate in $x$.",
+    "scope": "The whole statement. The constant 1 is not claimed to be sharp.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:cauchy-schwarz",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:lebesgue",
+      "why": "Translation invariance turns the integral of $G(x-y)^q$ in $x$ into $\\|G\\|_q^q$.",
+      "steps": [
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:exponents",
+      "why": "The relation between the exponents defines $s, t$ and makes the final powers equal $r$.",
+      "steps": [
+       "s:exponents",
+       "s:split",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:lp",
+      "why": "Finite $L^p$ and $L^q$ norms bound the three integrals that Holder produces.",
+      "steps": [
+       "s:holder",
+       "s:integrate",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:exponents",
+      "slogan": "Define the exponents $s$ and $t$ and check that $1/r + 1/s + 1/t = 1$.",
+      "detail": "Put $1/s = 1/p - 1/r$ and $1/t = 1/q - 1/r$. From $1/p = 1 + 1/r - 1/q \\ge 1/r$ we get $1/s \\ge 0$, and likewise $1/t \\ge 0$. Also $1/r + 1/s + 1/t = 1/p + 1/q - 1/r = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the claim to nonnegative functions by the bound $|f*g| \\le |f|*|g|$.",
+      "detail": "Since $|f * g| \\le |f| * |g|$, it is enough to treat $F = |f|$ and $G = |g|$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the integrand $F(y)G(x-y)$ into three factors with exponents $r, s, t$.",
+      "detail": "Write $F(y)G(x-y) = [F(y)^p G(x-y)^q]^{1/r} \\cdot F(y)^{p/s} \\cdot G(x-y)^{q/t}$. The exponent of $F$ is $p/r + p/s = p \\cdot (1/p) = 1$, and the exponent of $G$ is checked in the same way. If $1/s = 0$, the factor $F^{p/s}$ is 1.",
+      "uses": []
+     },
+     {
+      "id": "s:holder",
+      "slogan": "Apply the three-exponent [Holder inequality](c:holder-triple) with exponents $r, s, t$ at fixed $x$.",
+      "detail": "This gives $(F*G)(x) \\le \\big(\\int F(y)^p G(x-y)^q\\,dy\\big)^{1/r} \\big(\\int F^p\\big)^{1/s} \\big(\\int G^q\\big)^{1/t}$. Here $(F^{p/s})^s = F^p$, and the same holds for $G$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Raise the bound to the power $r$ and integrate in $x$ with Tonelli's theorem.",
+      "detail": "By Tonelli and translation invariance, $\\iint F(y)^p G(x-y)^q\\,dy\\,dx = \\|F\\|_p^p \\|G\\|_q^q$. Hence $\\|F*G\\|_r^r \\le \\|F\\|_p^p \\|G\\|_q^q \\cdot \\|F\\|_p^{pr/s} \\|G\\|_q^{qr/t}$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the exponents of the two norms and take the $r$-th root.",
+      "detail": "The power of $\\|F\\|_p$ is $p + pr/s = p(1 + r(1/p - 1/r)) = r$, and the power of $\\|G\\|_q$ is $r$ in the same way. So $\\|F*G\\|_r^r \\le (\\|F\\|_p\\|G\\|_q)^r$. A finite norm makes $F*G(x)$ finite almost everywhere.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exponents",
+      "s:split"
+     ],
+     [
+      "s:reduce",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:holder"
+     ],
+     [
+      "s:exponents",
+      "s:holder"
+     ],
+     [
+      "s:holder",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:count"
+     ],
+     [
+      "s:exponents",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:convolution": "The proof bounds the integral that defines $f * g$.",
+     "c:lebesgue-measure": "Translation invariance of the measure evaluates the integral in $x$.",
+     "c:norm": "The claim bounds one norm by a product of two norms.",
+     "c:lp-space": "The hypotheses put $f$ and $g$ in $L^p$ spaces with finite norms.",
+     "c:holder-triple": "Holder with three exponents is the main estimate of the proof."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-harnack-inequality-positive-harmonic-disc",
+  "statement": "Let $u$ be a real [harmonic function](c:harmonic-function) near the closed disc $\\bar B(c,R)$ with $u \\ge 0$ on the circle $|z-c|=R$. Let $|w-c| = \\rho < R$. Then $\\frac{R-\\rho}{R+\\rho}\\,u(c) \\le u(w) \\le \\frac{R+\\rho}{R-\\rho}\\,u(c)$. If $u \\ge 0$ is harmonic on all of $\\mathbb{C}$, then $u$ is constant.",
+  "hypotheses": [
+   {
+    "id": "h:harmonic",
+    "text": "The function $u$ is real valued and [harmonic](c:harmonic-function) on a neighbourhood of the closed disc.",
+    "concept": "c:harmonic-function"
+   },
+   {
+    "id": "h:nonneg",
+    "text": "The function $u$ is nonnegative on the circle $|z-c|=R$.",
+    "concept": null
+   },
+   {
+    "id": "h:point",
+    "text": "The point $w$ has $|w-c| = \\rho < R$.",
+    "concept": null
+   },
+   {
+    "id": "h:entire",
+    "text": "For the second claim, $u$ is harmonic and nonnegative on all of $\\mathbb{C}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The two-sided Harnack bound holds at $w$, and a nonnegative harmonic function on $\\mathbb{C}$ is constant.",
+  "formal": {
+   "decl": "re_herglotzRieszKernel_le",
+   "difference": "The declaration states the upper bound for the real part of the Herglotz-Riesz kernel on the circle. It is a smaller fact that gives the kernel bound of step 3."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Poisson kernel bounds",
+    "slogan": "Write $u(w)$ as a Poisson integral, bound the kernel on both sides, and let the radius grow for Liouville.",
+    "scope": "The whole statement. The disc inequality uses steps 1 to 5; the Liouville claim uses step 6 as well.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:triangle-inequality",
+     "m:maximum-principle"
+    ],
+    "roles": [
+     {
+      "h": "h:harmonic",
+      "why": "Harmonicity gives the Poisson formula and the mean value property.",
+      "steps": [
+       "s:poisson",
+       "s:mean"
+      ]
+     },
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegativity on the circle lets the kernel bounds pass to $u$.",
+      "steps": [
+       "s:two-sided"
+      ]
+     },
+     {
+      "h": "h:point",
+      "why": "The distance $\\rho < R$ keeps the kernel positive and bounded.",
+      "steps": [
+       "s:kernel-form",
+       "s:kernel-bounds"
+      ]
+     },
+     {
+      "h": "h:entire",
+      "why": "Harmonicity and nonnegativity on $\\mathbb{C}$ allow every radius $R$.",
+      "steps": [
+       "s:liouville"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:poisson",
+      "slogan": "Write $u(w)$ as the Poisson integral of its values on the circle.",
+      "detail": "For $u$ harmonic near the closed disc, $u(w) = \\frac{1}{2\\pi}\\int_0^{2\\pi} u(c + Re^{i\\theta})\\,P(\\theta)\\,d\\theta$, where $P$ is the real part of the Herglotz-Riesz kernel.",
+      "uses": [
+       "nm:poisson-integral-formula"
+      ]
+     },
+     {
+      "id": "s:kernel-form",
+      "slogan": "Compute the closed form of the [Poisson kernel](c:poisson-kernel) $P(\\theta)$.",
+      "detail": "Put $\\zeta = Re^{i\\theta}$ and $\\eta = w-c$. Then $\\mathrm{Re}\\big((\\zeta+\\eta)(\\bar\\zeta-\\bar\\eta)\\big) = |\\zeta|^2 - |\\eta|^2 + \\mathrm{Re}(\\eta\\bar\\zeta - \\zeta\\bar\\eta)$. The last term is purely imaginary, so $P(\\theta) = (R^2-\\rho^2)/|\\zeta-\\eta|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:kernel-bounds",
+      "slogan": "Bound the kernel above and below with the triangle inequality.",
+      "detail": "The triangle inequality gives $R-\\rho \\le |\\zeta-\\eta| \\le R+\\rho$. So $\\frac{R-\\rho}{R+\\rho} \\le P(\\theta) \\le \\frac{R+\\rho}{R-\\rho}$ for all $\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:two-sided",
+      "slogan": "Multiply the kernel bounds by the nonnegative values of $u$ on the circle.",
+      "detail": "Since $u \\ge 0$ on the circle, the inequalities survive the multiplication and the integration. So $\\frac{R-\\rho}{R+\\rho}\\,\\mathrm{avg}(u) \\le u(w) \\le \\frac{R+\\rho}{R-\\rho}\\,\\mathrm{avg}(u)$, where $\\mathrm{avg}(u)$ is the circle average.",
+      "uses": []
+     },
+     {
+      "id": "s:mean",
+      "slogan": "Replace the circle average by $u(c)$ with the mean value property.",
+      "detail": "For harmonic $u$, the circle average equals $u(c)$. Put this in the two-sided bound to get the Harnack inequality.",
+      "uses": [
+       "nm:mean-value-property"
+      ]
+     },
+     {
+      "id": "s:liouville",
+      "slogan": "Let $R$ tend to infinity to prove that a nonnegative entire harmonic function is constant.",
+      "detail": "Fix $c$ and $w$. For every $R > |w-c|$ the Harnack inequality holds. As $R \\to \\infty$, both ratios $\\frac{R-\\rho}{R+\\rho}$ and $\\frac{R+\\rho}{R-\\rho}$ tend to 1, so $u(w) = u(c)$. Hence $u$ is constant.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:poisson",
+      "s:kernel-form"
+     ],
+     [
+      "s:kernel-form",
+      "s:kernel-bounds"
+     ],
+     [
+      "s:kernel-bounds",
+      "s:two-sided"
+     ],
+     [
+      "s:poisson",
+      "s:two-sided"
+     ],
+     [
+      "s:two-sided",
+      "s:mean"
+     ],
+     [
+      "s:mean",
+      "s:liouville"
+     ]
+    ],
+    "conclusion": "s:liouville",
+    "concepts": {
+     "c:harmonic-function": "Harmonicity gives the integral representation and the mean value property.",
+     "c:poisson-kernel": "Bounds on the kernel give the two sides of the Harnack inequality."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-heat-equation-line-gaussian-fourier-kernel",
+  "statement": "For $t > 0$ put $G_t(x) = (4\\pi t)^{-1/2} e^{-x^2/(4t)}$. Then $\\mathcal{F}G_t(\\xi) = e^{-4\\pi^2 t\\xi^2}$ and $G_s * G_t = G_{s+t}$. For an [integrable function](c:integrable-function) $f$ on $\\mathbb{R}$, the function $u = G_t * f$ is smooth, solves $u_t = u_{xx}$, and has $\\mathcal{F}u(t,\\cdot) = e^{-4\\pi^2 t\\xi^2}\\mathcal{F}f$, $\\|u(t,\\cdot)\\|_1 \\le \\|f\\|_1$ and $\\int u = \\int f$.",
+  "hypotheses": [
+   {
+    "id": "h:integrable",
+    "text": "The function $f$ is [integrable](c:integrable-function) on $\\mathbb{R}$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:positive",
+    "text": "The time variable $t$ is positive.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [heat kernel](c:heat-kernel) has the stated [Fourier transform](c:fourier-transform) and semigroup law, and $u = G_t * f$ solves the [heat equation](c:heat-equation) with the stated transform, norm bound and total mass.",
+  "formal": {
+   "decl": "fourier_gaussian_pi",
+   "difference": "The declaration states the transform of the Gaussian $e^{-\\pi b x^2}$ only. It gives part (i) after scaling; the other parts are separate facts."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Gaussian transform and differentiation under the integral",
+    "slogan": "Find the transform of the Gaussian by an ODE, scale it, then differentiate the convolution under the integral.",
+    "scope": "The whole statement. The entry does not prove that $u(t,\\cdot)$ tends to $f$ as $t \\to 0$, and it does not prove uniqueness.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:change-of-variables",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:integrable",
+      "why": "Integrability of $f$ bounds the differentiated integrand and gives the norm and mass identities.",
+      "steps": [
+       "s:differentiate",
+       "s:transform-norm"
+      ]
+     },
+     {
+      "h": "h:positive",
+      "why": "A positive time makes $G_t$ defined, positive and smooth.",
+      "steps": [
+       "s:scaling",
+       "s:semigroup",
+       "s:kernel-equation",
+       "s:differentiate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gauss",
+      "slogan": "Find the transform $e^{-\\pi\\xi^2}$ of the standard Gaussian with a differential equation.",
+      "detail": "Let $H(\\xi) = \\int e^{-\\pi x^2}e^{-2\\pi i x\\xi}dx$. Since $-2\\pi i x\\,e^{-\\pi x^2} = i\\,(e^{-\\pi x^2})'$, integration by parts gives $H'(\\xi) = -2\\pi\\xi H(\\xi)$. With $H(0) = 1$ this gives $H(\\xi) = e^{-\\pi\\xi^2}$.",
+      "uses": [
+       "nm:technique-fourier-derivative-multiplier-decay"
+      ]
+     },
+     {
+      "id": "s:scaling",
+      "slogan": "Scale the standard Gaussian to get the transform of $G_t$.",
+      "detail": "Let $a = (4\\pi t)^{-1/2}$. Then $G_t(x) = a\\,e^{-\\pi(ax)^2}$, and dilation gives $\\mathcal{F}G_t(\\xi) = H(\\xi/a) = e^{-4\\pi^2 t\\xi^2}$. This is part (i).",
+      "uses": []
+     },
+     {
+      "id": "s:semigroup",
+      "slogan": "Add the variances of the two normal laws to prove the semigroup law.",
+      "detail": "The function $G_t$ is the density of a normal law with variance $2t$. The convolution of normal laws adds variances, so $G_s * G_t$ has variance $2(s+t)$ and equals $G_{s+t}$.",
+      "uses": [
+       "nm:technique-gaussian-convolution-variance-addition"
+      ]
+     },
+     {
+      "id": "s:kernel-equation",
+      "slogan": "Check by direct differentiation that the kernel solves the heat equation.",
+      "detail": "We have $\\partial_x G_t = -\\frac{x}{2t}G_t$, so $\\partial_x^2 G_t = \\big(-\\frac{1}{2t} + \\frac{x^2}{4t^2}\\big)G_t$. The same factor gives $\\partial_t G_t$. So $\\partial_t G_t = \\partial_x^2 G_t$.",
+      "uses": []
+     },
+     {
+      "id": "s:differentiate",
+      "slogan": "Differentiate under the integral sign with a bound that does not depend on $x$.",
+      "detail": "For $t \\in [a,b] \\subset (0,\\infty)$, every derivative of $G_t(z)$ in $(t,z)$ is bounded by a constant $C$. So $|f(y)\\,\\partial G_t(x-y)| \\le C|f(y)|$, which is integrable. Dominated convergence shows that $u$ is smooth and $u_t = f * \\partial_t G_t = f * \\partial_x^2 G_t = u_{xx}$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:transform-norm",
+      "slogan": "Take the transform, the norm and the mass of $u$ from the convolution theorem.",
+      "detail": "The convolution theorem for $L^1$ gives $\\mathcal{F}u(t) = \\mathcal{F}G_t \\cdot \\mathcal{F}f$. Since $G_t > 0$ and $\\int G_t = 1$, we get $\\|u(t)\\|_1 \\le \\|f\\|_1\\|G_t\\|_1 = \\|f\\|_1$ and $\\int u = \\int f \\int G_t = \\int f$.",
+      "uses": [
+       "nm:technique-fourier-transform-of-convolution-l1"
+      ]
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the kernel and solution properties into the statement.",
+      "detail": "Steps 2 and 3 give parts (i) and (ii). Steps 5 and 6 give smoothness, the equation, the transform, the norm bound and the mass.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:gauss",
+      "s:scaling"
+     ],
+     [
+      "s:scaling",
+      "s:transform-norm"
+     ],
+     [
+      "s:scaling",
+      "s:collect"
+     ],
+     [
+      "s:semigroup",
+      "s:collect"
+     ],
+     [
+      "s:kernel-equation",
+      "s:differentiate"
+     ],
+     [
+      "s:differentiate",
+      "s:collect"
+     ],
+     [
+      "s:transform-norm",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:integrable-function": "Integrability bounds the differentiated integrand and gives the norm and mass identities.",
+     "c:fourier-transform": "The transform turns the Gaussian into a Gaussian and the convolution into a product.",
+     "c:heat-kernel": "The Gaussian $G_t$ is the kernel whose convolution solves the equation.",
+     "c:heat-equation": "The equation $u_t = u_{xx}$ is the claim that the convolution satisfies."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-characteristic-function-uniqueness-gaussian-smoothing",
+  "statement": "Let $\\mu, \\nu$ be [finite](c:finite-measure) [Borel measures](c:borel-measure) on $\\mathbb{R}^d$. Put $\\hat\\mu(t) = \\int e^{i\\langle x,t\\rangle}d\\mu(x)$. If $\\hat\\mu = \\hat\\nu$ everywhere, then $\\mu = \\nu$. For the convolution of finite measures, $\\widehat{\\mu*\\nu}(t) = \\hat\\mu(t)\\hat\\nu(t)$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measures $\\mu$ and $\\nu$ are [finite](c:finite-measure) Borel measures.",
+    "concept": "c:finite-measure"
+   },
+   {
+    "id": "h:space",
+    "text": "The space is $\\mathbb{R}^d$ with the Euclidean inner product.",
+    "concept": null
+   },
+   {
+    "id": "h:equal",
+    "text": "For part (i), $\\hat\\mu(t) = \\hat\\nu(t)$ for all $t \\in \\mathbb{R}^d$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The measures $\\mu$ and $\\nu$ are equal, and the [characteristic function](c:characteristic-function) of a convolution is the product of the characteristic functions.",
+  "formal": {
+   "decl": "Measure.ext_of_charFun",
+   "difference": "The declaration states part (i) only, for finite measures on a complete second-countable inner product space. Part (ii) is a separate fact."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Gaussian smoothing",
+    "slogan": "Smooth both measures with a Gaussian, show that the smoothings agree, then let the width shrink to recover the measures.",
+    "scope": "The whole statement. Part (i) uses steps 1 to 4; part (ii) uses step 5.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:characteristic-function",
+     "m:dominated-convergence",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finite mass bounds the smoothed integrals and allows Fubini and dominated convergence.",
+      "steps": [
+       "s:smooth",
+       "s:limit",
+       "s:convolution"
+      ]
+     },
+     {
+      "h": "h:space",
+      "why": "The inner product defines the characters and the Gaussian kernel.",
+      "steps": [
+       "s:smooth",
+       "s:riesz"
+      ]
+     },
+     {
+      "h": "h:equal",
+      "why": "Equal characteristic functions make the two smoothings equal.",
+      "steps": [
+       "s:equal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:smooth",
+      "slogan": "Smooth the measure $\\mu$ with a Gaussian and write the result through $\\hat\\mu$.",
+      "detail": "For $\\varepsilon > 0$ the Gaussian identity (see the [Gaussian integral](c:gaussian-integral)) gives $e^{-\\varepsilon^2|z|^2/2} = (2\\pi)^{-d/2}\\varepsilon^{-d}\\int e^{i\\langle z,t\\rangle}e^{-|t|^2/(2\\varepsilon^2)}dt$. Put $z = x-y$ and integrate in $\\mu$. The integrand is bounded by $e^{-|t|^2/(2\\varepsilon^2)}$ times the finite mass, so Fubini gives $\\int e^{-\\varepsilon^2|x-y|^2/2}d\\mu(x) = (2\\pi)^{-d/2}\\varepsilon^{-d}\\int e^{-|t|^2/(2\\varepsilon^2)}e^{-i\\langle y,t\\rangle}\\hat\\mu(t)\\,dt$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Conclude that the two smoothed integrals agree for every point and every width.",
+      "detail": "The right side depends on $\\mu$ only through $\\hat\\mu$. So if $\\hat\\mu = \\hat\\nu$, then $\\int k_\\varepsilon(x-y)\\,d\\mu(x) = \\int k_\\varepsilon(x-y)\\,d\\nu(x)$ for every $y$ and every $\\varepsilon > 0$, where $k_\\varepsilon$ is the Gaussian kernel.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Integrate against a compactly supported continuous function and let the width shrink.",
+      "detail": "Let $\\varphi$ be continuous with compact support. Fubini and the evenness of $k_\\varepsilon$ give $\\int (k_\\varepsilon * \\varphi)\\,d\\mu = \\int (k_\\varepsilon * \\varphi)\\,d\\nu$. As the kernel concentrates, $k_\\varepsilon * \\varphi \\to \\varphi$ uniformly, with bound $\\sup|\\varphi|$. Dominated convergence gives $\\int\\varphi\\,d\\mu = \\int\\varphi\\,d\\nu$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:riesz",
+      "slogan": "Identify the measures from their integrals of compactly supported continuous functions.",
+      "detail": "Two finite Borel measures on $\\mathbb{R}^d$ that agree on all continuous functions of compact support are equal, by uniqueness in the Riesz-Markov-Kakutani representation. So $\\mu = \\nu$.",
+      "uses": [
+       "nm:riesz-markov-kakutani-representation-theorem"
+      ]
+     },
+     {
+      "id": "s:convolution",
+      "slogan": "Split the double integral of the convolution into a product by Fubini's theorem.",
+      "detail": "We have $\\widehat{\\mu*\\nu}(t) = \\iint e^{i\\langle x+y,t\\rangle}d\\mu(x)\\,d\\nu(y)$. The integrand has modulus 1 and the measures are finite, so Fubini applies and the integral splits into $\\hat\\mu(t)\\hat\\nu(t)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the uniqueness claim and the product rule as the conclusion.",
+      "detail": "Step 4 gives $\\mu = \\nu$ from equal characteristic functions. Step 5 gives the product rule for the convolution.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:smooth",
+      "s:equal"
+     ],
+     [
+      "s:equal",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:riesz"
+     ],
+     [
+      "s:riesz",
+      "s:collect"
+     ],
+     [
+      "s:convolution",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:finite-measure": "Finite mass makes the smoothed integrals converge and allows Fubini.",
+     "c:borel-measure": "Borel measures are the objects that integrals of continuous functions determine.",
+     "c:characteristic-function": "The transform $\\hat\\mu$ carries all information about $\\mu$.",
+     "c:gaussian-integral": "The Gaussian integral supplies the identity that smooths the measure."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:technique-riesz-thorin-interpolation-finite-dimensional",
+  "statement": "Let $T$ be a complex [matrix](c:matrix) with finite index sets $J$ (columns) and $I$ (rows). Let $1 \\le p_0, p_1 < \\infty$ and $1 < q_0, q_1 < \\infty$. Let $M_i$ be the [operator norm](c:operator-norm) of $T$ from $\\ell^{p_i}(J)$ to $\\ell^{q_i}(I)$. For $0 < t < 1$, define $p, q$ by $1/p = (1-t)/p_0 + t/p_1$ and $1/q = (1-t)/q_0 + t/q_1$. Then $\\|Tf\\|_q \\le M_0^{1-t}M_1^t\\|f\\|_p$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The sets $I$ and $J$ are finite and carry counting measure.",
+    "concept": null
+   },
+   {
+    "id": "h:complex",
+    "text": "The scalars are complex numbers, which the complex three lines theorem needs.",
+    "concept": null
+   },
+   {
+    "id": "h:exponents",
+    "text": "The exponents satisfy $p_i < \\infty$ and $q_i > 1$, so the [conjugate exponents](c:holder-conjugate-exponents) $q_i'$ are finite.",
+    "concept": "c:holder-conjugate-exponents"
+   }
+  ],
+  "conclusion": "The $\\ell^q$ norm of $Tf$ is at most $M_0^{1-t}M_1^t$ times the $\\ell^p$ norm of $f$, for every $f$.",
+  "formal": {
+   "decl": "norm_le_interp_of_mem_verticalClosedStrip₀₁'",
+   "difference": "The declaration states the Hadamard three lines theorem for bounded functions on the strip. It is the analytic step 5, not Riesz-Thorin; mathlib has no Riesz-Thorin theorem."
+  },
+  "proofs": [
+   {
+    "id": "main",
+    "name": "Three lines theorem",
+    "slogan": "Dualize the norm, build a holomorphic family in one variable, and bound it by the three lines theorem.",
+    "scope": "The whole statement. If $M_0$ or $M_1$ is 0, then $T = 0$ and the claim is trivial.",
+    "mechanisms": [
+     "m:duality",
+     "m:complex-integration",
+     "m:interpolation",
+     "m:maximum-principle"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finite sums make the family $\\Phi$ a finite sum of exponentials, so it is entire and bounded on the strip.",
+      "steps": [
+       "s:family"
+      ]
+     },
+     {
+      "h": "h:complex",
+      "why": "Complex phases and complex exponents allow a [holomorphic](c:holomorphic-function) family on the strip.",
+      "steps": [
+       "s:family",
+       "s:three-lines"
+      ]
+     },
+     {
+      "h": "h:exponents",
+      "why": "Finite conjugate exponents make the duality and the exponent maps defined.",
+      "steps": [
+       "s:duality",
+       "s:exponents",
+       "s:edges"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:duality",
+      "slogan": "Write the $\\ell^q$ norm as a supremum over unit vectors of the dual space.",
+      "detail": "For $1 < q < \\infty$, $\\|h\\|_q = \\sup\\{|\\sum_i h_i g_i| : \\|g\\|_{q'} = 1\\}$. So it suffices to prove $|\\sum_i (Tf)_i g_i| \\le M_0^{1-t}M_1^t$ for $\\|f\\|_p = 1$ and $\\|g\\|_{q'} = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:exponents",
+      "slogan": "Define exponent maps $a(z)$ and $b(z)$ on the strip with $a(t) = b(t) = 1$.",
+      "detail": "Note $1/q' = (1-t)/q_0' + t/q_1'$. For $\\mathrm{Re}\\,z \\in [0,1]$ put $a(z) = p((1-z)/p_0 + z/p_1)$ and $b(z) = q'((1-z)/q_0' + z/q_1')$. Then $a(t) = b(t) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:family",
+      "slogan": "Build the entire function $\\Phi(z)$ from $f$ and $g$ with phases and varying powers.",
+      "detail": "Put $f_z(j) = (f_j/|f_j|)|f_j|^{a(z)}$ and $g_z(i) = (g_i/|g_i|)|g_i|^{b(z)}$, with value 0 where the entry is 0, and $\\Phi(z) = \\sum_{i,j} T_{ij} f_z(j) g_z(i)$. Each term is a constant times an exponential of a linear function of $z$, so $\\Phi$ is entire and bounded on $0 \\le \\mathrm{Re}\\,z \\le 1$. Also $\\Phi(t) = \\sum_i (Tf)_i g_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:edges",
+      "slogan": "Bound $\\Phi$ on the two edges of the strip by Holder and the operator norms.",
+      "detail": "On $\\mathrm{Re}\\,z = 0$, $|f_{iy}(j)| = |f_j|^{p/p_0}$, so $\\|f_{iy}\\|_{p_0} = 1$, and likewise $\\|g_{iy}\\|_{q_0'} = 1$. Holder and the definition of $M_0$ give $|\\Phi(iy)| \\le \\|Tf_{iy}\\|_{q_0}\\|g_{iy}\\|_{q_0'} \\le M_0$. The same argument gives $|\\Phi(1+iy)| \\le M_1$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:three-lines",
+      "slogan": "Apply Hadamard's three lines theorem to $\\Phi$ on the strip.",
+      "detail": "The theorem gives $|\\Phi(z)| \\le M_0^{1-\\mathrm{Re}\\,z}M_1^{\\mathrm{Re}\\,z}$ for all $z$ in the strip. At $z = t$ this reads $|\\Phi(t)| \\le M_0^{1-t}M_1^t$.",
+      "uses": [
+       "wd:Q3527250"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Take the supremum over $g$ and extend from unit vectors $f$ by homogeneity.",
+      "detail": "By step 3, $\\Phi(t) = \\sum_i (Tf)_i g_i$. The supremum over $g$ and the duality of step 1 give $\\|Tf\\|_q \\le M_0^{1-t}M_1^t$ for $\\|f\\|_p = 1$. Homogeneity gives the general case.",
+      "uses": [
+       "nl:18096"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:exponents",
+      "s:family"
+     ],
+     [
+      "s:family",
+      "s:edges"
+     ],
+     [
+      "s:duality",
+      "s:edges"
+     ],
+     [
+      "s:edges",
+      "s:three-lines"
+     ],
+     [
+      "s:three-lines",
+      "s:conclude"
+     ],
+     [
+      "s:duality",
+      "s:conclude"
+     ],
+     [
+      "s:family",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:matrix": "The operator is a matrix, so every sum in the proof is finite.",
+     "c:operator-norm": "The numbers $M_0$ and $M_1$ are the norms that the bound interpolates.",
+     "c:holder-conjugate-exponents": "The conjugate exponents $q_i'$ define the dual norms in the duality and the edge bounds.",
+     "c:holomorphic-function": "The three lines theorem needs a function holomorphic inside the strip."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Authored proof of this catalog; reviewed by an independent model, not Lean-checked."
+    }
+   }
+  ]
+ }
+]
